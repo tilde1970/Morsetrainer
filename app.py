@@ -19,6 +19,7 @@ from stats_widget import StatsPanel
 DEFAULT_CHARSET = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
 DEFAULT_GEOMETRY = "520x980"
 WINDOW_STATE_FILE = Path(__file__).parent / "window_state.json"
+FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 
 
 class MorseTrainerApp:
@@ -258,6 +259,13 @@ class MorseTrainerApp:
         return None
 
     def _dispatch_key(self, event):
+        # Funktionstasten sind Kürzel des aktiven Reiters und gelten auch in
+        # Eingabefeldern (dort haben sie sonst keine Bedeutung).
+        if event.keysym in FUNCTION_KEYS:
+            mode = self._active_mode()
+            if mode is not None and hasattr(mode, "on_function_key"):
+                mode.on_function_key(event.keysym)
+            return
         # Tastendrücke, die eigentlich für ein Eingabefeld gedacht sind (z. B.
         # das WPM-Feld beim Ändern der Geschwindigkeit, oder das Antwortfeld im
         # Gruppen-/Rufzeichen-Modus), sollen nicht zusätzlich als Morse-Antwort

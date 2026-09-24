@@ -68,6 +68,10 @@ PILEUP_STRENGTH = (0.4, 0.9)
 WRITE_CHUNK_SECONDS = 0.02
 FINISH_GRACE_SECONDS = 3
 TICK_MS = 250
+# Tempo automatisch anpassen: (Mindest-Trefferquote, WPM-Änderung), die
+# erste passende Stufe gilt; Grenzen wie im WPM-Feld.
+ADAPTIVE_STEPS = ((1.0, 2), (0.9, 1), (0.6, 0), (0.4, -1), (0.0, -2))
+WPM_LIMITS = (5, 40)
 
 # Station 1 bzw. Run-Station, dann abwechselnd für die Gegenstationen.
 STATION_COLORS = ("#1f5fbf", "#b35900", "#2e8b57")
@@ -134,11 +138,12 @@ class QsoModeFrame:
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", **pad)
-        self.start_button = ttk.Button(controls, text="Neues QSO", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text="Neues QSO (F5)", command=self.toggle_running)
         self.start_button.pack(side="left", **pad)
-        self.replay_button = ttk.Button(controls, text="Nochmal hören", command=self.replay, state="disabled")
+        self.replay_button = ttk.Button(controls, text="Nochmal (F6)", command=self.replay, state="disabled")
         self.replay_button.pack(side="left", **pad)
-        self.reveal_button = ttk.Button(controls, text="Text zeigen", command=self.toggle_reveal, state="disabled")
+        self.reveal_button = ttk.Button(controls, text="Text zeigen (F7)", command=self.toggle_reveal,
+                                        state="disabled")
         self.reveal_button.pack(side="left", **pad)
 
         self.status_var = tk.StringVar(value="Bereit. Drücke „Neues QSO“.")
@@ -207,6 +212,12 @@ class QsoModeFrame:
         self.length_hint_var = tk.StringVar(value="")
         ttk.Label(length_row, textvariable=self.length_hint_var).pack(side="left", padx=(8, 0))
 
+        self.adaptive_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            box, text="Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert WPM oben)",
+            variable=self.adaptive_var,
+        ).grid(row=3, column=0, columnspan=2, sticky="w", padx=8, pady=(0, 6))
+
     def _kind(self) -> str:
         for key, label in qso_text.QSO_TYPES.items():
             if label == self.kind_var.get():
@@ -268,7 +279,7 @@ class QsoModeFrame:
         )
         self.reveal_button.config(
             state="normal" if allowed else "disabled",
-            text="Text verbergen" if self.revealed else "Text zeigen",
+            text="Text verbergen (F7)" if self.revealed else "Text zeigen (F7)",
         )
 
     # --- Ablauf -----------------------------------------------------------
@@ -327,7 +338,7 @@ class QsoModeFrame:
             self.typed_preview_var.set("")
 
         self.running = True
-        self.start_button.config(text="Stop")
+        self.start_button.config(text="Stop (F5)")
         self.replay_button.config(state="disabled")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
             combo.config(state="disabled")
@@ -445,17 +456,17 @@ class QsoModeFrame:
         if self.play_thread is not None:
             self.play_thread.join(timeout=2)
             self.play_thread = None
-        self.start_button.config(text="Neues QSO")
+        self.start_button.config(text="Neues QSO (F5)")
         self.replay_button.config(state="normal")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
             combo.config(state="readonly")
 
         mode = self._eval_mode()
         if self.tracking:
-            self._finalize_session()
+            accuracy = self._finalize_session()
             self.revealed = True
             self.tracking = False
-            self.status_var.set("Ausgewertet – rot markiert: falsch oder verpasst.")
+            self.status_var.set("Ausgewertet – rot markiert: falsch oder verpasst." + self._adapt_speed(accuracy))
         elif mode == EVAL_QUIZ and not self.quiz_checked:
             what = "Ergänze dein Log" if self.qso.is_contest else "Trag ein, was du gehört hast,"
             self.status_var.set(f"{what} und drück „Prüfen“.")
@@ -472,8 +483,10 @@ class QsoModeFrame:
         self.on_stop_cb()
 
     def _finalize_session(self):
+        """Wertet das Mittippen aus; gibt die Trefferquote (0..1) zurück, oder
+        None, wenn es nichts auszuwerten gab."""
         if self.session_stats is None:
-            return
+            return None
         sent_str = "".join(e["char"] for e in self.sent_log)
         typed_str = "".join(e["char"] for e in self.typed_log)
         missed = set()
@@ -497,10 +510,12 @@ class QsoModeFrame:
         self.char_marks = (len(sent_str), missed)
         self.session_stats.record_group(self.qso.text(), typed_str)
 
-        self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
+        summary = self.session_stats.summary()
+        self.stats_panel.refresh(summary, self.session_stats.char_rows())
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path)
         self.session_stats = None
+        return summary["accuracy_pct"] / 100 if summary["total"] else None
 
     # --- Klartext -----------------------------------------------------------
     def toggle_reveal(self):
@@ -545,12 +560,38 @@ class QsoModeFrame:
     def _on_quiz_checked(self, correct: int, total: int):
         self.quiz_checked = True
         self.revealed = True
-        self.status_var.set("Abfrage ausgewertet.")
+        self.status_var.set("Abfrage ausgewertet." + self._adapt_speed(correct / total if total else None))
         self._render_reveal()
         self._update_layout()
         self._update_reveal_button()
 
+    def _adapt_speed(self, accuracy) -> str:
+        """Passt bei eingeschalteter Option die WPM-Einstellung an die
+        Trefferquote an; gibt einen Hinweis für die Statuszeile zurück."""
+        if accuracy is None or not self.adaptive_var.get():
+            return ""
+        try:
+            wpm = self.wpm_var.get()
+        except tk.TclError:
+            return ""
+        change = next(step for threshold, step in ADAPTIVE_STEPS if accuracy >= threshold)
+        new_wpm = min(max(wpm + change, WPM_LIMITS[0]), WPM_LIMITS[1])
+        if new_wpm == wpm:
+            return f" Tempo bleibt bei {wpm} WPM."
+        self.wpm_var.set(new_wpm)
+        return f" Tempo: {wpm} → {new_wpm} WPM."
+
     # --- Schnittstelle zur App ------------------------------------------------
+    def on_function_key(self, key: str):
+        if key == "F5":
+            self.toggle_running()
+        elif key == "F6" and str(self.replay_button["state"]) != "disabled":
+            self.replay()
+        elif key == "F7" and str(self.reveal_button["state"]) != "disabled":
+            self.toggle_reveal()
+        elif key == "F8" and self._eval_mode() == EVAL_QUIZ and self.quiz_ready:
+            self.quiz.check()
+
     def settings(self) -> dict:
         """Einstellungen zum Speichern in window_state.json (Schlüssel statt
         Beschriftungen, damit Umbenennungen alte Dateien nicht entwerten)."""
@@ -558,6 +599,7 @@ class QsoModeFrame:
             "kind": self._kind(),
             "eval": self._eval_mode(),
             "length": LENGTH_LABELS.index(self.length_var.get()),
+            "adaptive": self.adaptive_var.get(),
             "band": self.band_panel.settings(),
         }
 
@@ -571,6 +613,8 @@ class QsoModeFrame:
         length = data.get("length")
         if isinstance(length, int) and 0 <= length < len(LENGTH_LABELS):
             self.length_var.set(LENGTH_LABELS[length])
+        if isinstance(data.get("adaptive"), bool):
+            self.adaptive_var.set(data["adaptive"])
         self.band_panel.restore(data.get("band"))
 
     def on_close(self):
