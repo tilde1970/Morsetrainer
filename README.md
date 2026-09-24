@@ -51,9 +51,15 @@ python -m unittest discover tests
 - `stats/`: Sitzungsprotokolle, Gesamtstatistik (`all_time.json`) und
   Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`).
 - `window_state.json`: Fenstergröße und alle Einstellungen.
-- `callsigns.scp`: Rufzeichenliste von
-  [supercheckpartial.com](https://www.supercheckpartial.com). Zum
-  Aktualisieren die aktuelle `MASTER.SCP` unter diesem Namen ablegen.
+- `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
+  im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von
+  [supercheckpartial.com](https://www.supercheckpartial.com) herunter und
+  lege sie als `callsigns.scp` ins Programmverzeichnis. Ohne die Datei
+  erzeugt der Trainer Rufzeichen nach Landesmuster.
+
+## Lizenz
+
+MIT, siehe [LICENSE](LICENSE). © 2026 DL4YM
 
 ---
 
