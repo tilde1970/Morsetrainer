@@ -1,6 +1,8 @@
-"""Morsetrainer: Trainingsmodi (Einzelzeichen, Gruppen, Rufzeichen, Kontinuierlich, QSO)
-über Tabs, mit gemeinsamen Einstellungen für Zeichensatz, Geschwindigkeit
-und Tonhöhe."""
+"""Morsetrainer von DL4YM.
+
+Trainingsmodi über Tabs (Einzelzeichen, Gruppen, Rufzeichen, Kontinuierlich,
+QSO-Hörtraining, aktiver Contest-Betrieb) plus Statistik, mit gemeinsamen
+Einstellungen für Zeichensatz, Geschwindigkeit und Tonhöhe."""
 import json
 import re
 import tkinter as tk
@@ -18,6 +20,9 @@ from progress_widget import ProgressPanel
 from stats_widget import StatsPanel
 from ui_widgets import ScrollableFrame
 
+__author__ = "DL4YM"
+__version__ = "2.0"
+
 # Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
 DEFAULT_CHARSET = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
 DEFAULT_GEOMETRY = "520x980"
@@ -28,13 +33,14 @@ FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 class MorseTrainerApp:
     def __init__(self, root):
         self.root = root
-        root.title("Morsetrainer")
+        root.title(f"Morsetrainer von {__author__}")
         self.saved_state = self._load_state()
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
 
         self._build_settings()
         self._restore_shared_settings()
+        self._build_footer()
         self._build_notebook()
         self._build_all_time_tab()
         self._refresh_all_time()
@@ -134,6 +140,13 @@ class MorseTrainerApp:
             settings, text="Schwache Zeichen bevorzugen (gilt ab nächstem Start)",
             variable=self.weighted_var,
         ).grid(row=3, column=0, columnspan=4, sticky="w", **pad)
+
+    def _build_footer(self):
+        # Vor dem Notebook gepackt, damit es bei kleinem Fenster nicht verdrängt wird.
+        ttk.Label(
+            self.root, text=f"Morsetrainer {__version__} · entwickelt von {__author__} · 73!",
+            foreground="gray45", font=("Sans", 8),
+        ).pack(side="bottom", anchor="e", padx=10, pady=(0, 4))
 
     def _shared_vars(self) -> dict:
         """Gemeinsame Einstellungen: Schlüssel -> (Variable, erlaubter Bereich
