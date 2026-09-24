@@ -12,6 +12,7 @@ from callsign_mode import CallsignModeFrame
 from continuous_mode import ContinuousModeFrame
 from group_mode import GroupModeFrame
 from qso_mode import QsoModeFrame
+from run_mode import RunModeFrame
 from single_mode import SingleModeFrame
 from progress_widget import ProgressPanel
 from stats_widget import StatsPanel
@@ -251,6 +252,7 @@ class MorseTrainerApp:
             ("Rufzeichen", CallsignModeFrame),
             ("Kontinuierlich", ContinuousModeFrame),
             ("QSO", QsoModeFrame),
+            ("Contest", RunModeFrame),
         ]
 
         self.modes = []

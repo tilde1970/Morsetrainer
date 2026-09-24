@@ -487,3 +487,49 @@ def _generate_contest(kind: str, count: int) -> Qso:
         pileups=tuple(pileups),
         transmissions=tuple(txs), quiz_columns=("Rufzeichen", "Austausch"), quiz_rows=tuple(rows),
     )
+
+
+# --- Für den aktiven Contest-Modus -----------------------------------------------
+def cut_number(number: int) -> str:
+    """Seriennummer dreistellig mit T für führende Nullen (7 -> TT7), wie
+    Contest-Software sie sendet; ab 100 unverändert."""
+    return str(number) if number >= 100 else f"{number:03d}".replace("0", "T", 3 - len(str(number)))
+
+
+def contest_test_word(kind: str) -> str:
+    return "WAG" if kind == "wag" else "TEST"
+
+
+def uses_serial(kind: str, my_call: str) -> bool:
+    """Sendet man in diesem Contest eine laufende Nummer statt eines festen
+    Austauschs?"""
+    country = _country_of(my_call)
+    return kind == "wpx" or (kind == "wag" and (country is None or country.key != "DL"))
+
+
+def default_my_exchange(kind: str, my_call: str) -> str:
+    """Vorschlag für den eigenen Austausch; leer, wenn er sich nicht aus dem
+    Rufzeichen ableiten lässt (z. B. DOK im WAG) oder eine Nummer ist."""
+    country = _country_of(my_call)
+    if uses_serial(kind, my_call) or country is None:
+        return ""
+    if kind == "cqww":
+        return str(cq_zone(my_call, country))
+    if kind == "iaru":
+        return IARU_HQ_STATIONS.get(my_call) or str(itu_zone(my_call, country))
+    if kind == "arrldx":
+        return US_STATES[_district(my_call)][0] if country.key == "W" else "100"
+    return ""  # WAG in DL: DOK
+
+
+def contest_caller(kind: str, my_call: str, exclude):
+    """Ein Anrufer für die eigene Run-Station: (Rufzeichen, Austausch, Art des
+    Austauschs für den Vergleich)."""
+    my_country = _country_of(my_call)
+    countries = None
+    if kind == "arrldx":
+        # W/VE arbeiten den Rest der Welt und umgekehrt.
+        countries = ({c.key for c in COUNTRIES} - {"W"}) if my_country and my_country.key == "W" else {"W"}
+    call, country = _pick_contest_call(kind, set(exclude) | {my_call}, countries, IARU_HQ_CALLER_PROBABILITY)
+    exchange, exchange_kind = _Exchange(kind, call, country, random.randint(1, 1500)).next()
+    return call, exchange, exchange_kind
