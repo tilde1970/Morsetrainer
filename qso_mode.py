@@ -29,6 +29,8 @@ import sounddevice as sd
 import align
 import qso_text
 from band import BandConditions
+from qso_quiz import QuizPanel
+from ui_widgets import BandSettingsPanel, ScrollableFrame
 from morse import (
     AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
     word_gap_extra_seconds,
@@ -63,36 +65,8 @@ WRITE_CHUNK_SECONDS = 0.02
 FINISH_GRACE_SECONDS = 3
 TICK_MS = 250
 
-# Bandbedingungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
-BAND_OPTIONS = (
-    ("noise", "Rauschen", 40),
-    ("qrn", "Knackstörungen (QRN)", 50),
-    ("qsb", "QSB (Fading)", 50),
-    ("chirp", "Chirp", 50),
-    ("ssb", "SSB-Gebrabbel", 40),
-    ("cw_qrm", "CW-QRM (Nachbar-Run)", 35),
-)
-
 # Station 1 bzw. Run-Station, dann abwechselnd für die Gegenstationen.
 STATION_COLORS = ("#1f5fbf", "#b35900", "#2e8b57")
-OK_BG, WRONG_BG = "#d4f4d4", "#f8d0d0"
-
-
-def normalize(text: str, kind: str = qso_text.TEXT) -> str:
-    text = text.upper().replace("Ä", "AE").replace("Ö", "OE").replace("Ü", "UE")
-    text = "".join(ch for ch in text if ch.isalnum() or ch == "/")
-    if kind == qso_text.NUMBER:
-        text = text.replace("KW", "1000")
-    if kind in (qso_text.RST, qso_text.NUMBER):
-        # Kurzzahlen zulassen: 5NN = 599, TT7 = 007.
-        text = text.replace("N", "9").replace("T", "0")
-    if kind == qso_text.NUMBER:
-        # Mitgeloggter Rapport vor dem Austausch ("599 14") und führende
-        # Nullen zählen nicht.
-        if len(text) > 3 and text.startswith("599"):
-            text = text[3:]
-        text = text.lstrip("0") or "0"
-    return text
 
 
 def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
@@ -100,42 +74,6 @@ def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
     if not 300 <= freq + offset <= 1000:
         offset = -offset
     return max(wpm + random.choice(wpm_offsets), 5), freq + offset
-
-
-class ScrollableFrame:
-    """Frame mit senkrechter Scrollleiste, falls der Inhalt (z. B. ein
-    langes Contest-Log samt Klartext) nicht ins Fenster passt."""
-
-    def __init__(self, parent):
-        self.canvas = tk.Canvas(parent, highlightthickness=0, borderwidth=0)
-        scroll = ttk.Scrollbar(parent, orient="vertical", command=self.canvas.yview)
-        self.canvas.config(yscrollcommand=scroll.set)
-        scroll.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.inner = ttk.Frame(self.canvas)
-        window = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
-        self.inner.bind("<Configure>", lambda e: self.canvas.config(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(window, width=e.width))
-        self.canvas.bind("<Enter>", lambda e: self._bind_wheel(True))
-        self.canvas.bind("<Leave>", lambda e: self._bind_wheel(False))
-
-    def _bind_wheel(self, active: bool):
-        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
-            if active:
-                self.canvas.bind_all(sequence, self._on_wheel)
-            else:
-                self.canvas.unbind_all(sequence)
-
-    def _on_wheel(self, event):
-        # Textfelder scrollen selbst.
-        if isinstance(event.widget, tk.Text):
-            return
-        if self.canvas.yview() == (0.0, 1.0):
-            return
-        if event.num == 4 or event.delta > 0:
-            self.canvas.yview_scroll(-1, "units")
-        else:
-            self.canvas.yview_scroll(1, "units")
 
 
 class QsoModeFrame:
@@ -182,7 +120,7 @@ class QsoModeFrame:
         ).pack(anchor="w", padx=8, pady=(4, 8))
 
         self._build_qso_settings(parent)
-        self._build_band_settings(parent)
+        self.band_panel = BandSettingsPanel(parent, on_change=self._apply_band_settings)
 
         self.eval_var.trace_add("write", lambda *_: self._on_eval_change())
         self.kind_var.trace_add("write", lambda *_: self._on_kind_change())
@@ -213,7 +151,8 @@ class QsoModeFrame:
             anchor="w"
         )
 
-        self._build_quiz(parent)
+        self.quiz = QuizPanel(parent, on_checked=self._on_quiz_checked)
+        self.quiz_box = self.quiz.box
 
         self.reveal_box = ttk.LabelFrame(parent, text="QSO-Text")
         self.reveal_text = tk.Text(self.reveal_box, height=8, wrap="word", font=("Consolas", 11))
@@ -261,59 +200,6 @@ class QsoModeFrame:
         self.length_hint_var = tk.StringVar(value="")
         ttk.Label(length_row, textvariable=self.length_hint_var).pack(side="left", padx=(8, 0))
 
-    def _build_band_settings(self, parent):
-        """Je Störung: Schalter, Regler (0–100 %) und Anzeige des Werts. Der
-        Regler ist nur aktiv, wenn die Störung eingeschaltet ist."""
-        box = ttk.LabelFrame(parent, text="Bandbedingungen")
-        box.pack(fill="x", padx=8, pady=4)
-        box.columnconfigure(1, weight=1)
-        self.band_controls = {}  # Schlüssel -> (an/aus, Pegel, Regler, Anzeigetext, Anzeige)
-        for row, (key, label, default) in enumerate(BAND_OPTIONS):
-            enabled = tk.BooleanVar(value=False)
-            level = tk.DoubleVar(value=default)
-            shown = tk.StringVar(value=f"{default} %")
-            ttk.Checkbutton(box, text=label, variable=enabled, command=self._apply_band_settings).grid(
-                row=row, column=0, sticky="w", padx=(8, 12), pady=1
-            )
-            scale = ttk.Scale(box, from_=0, to=100, variable=level,
-                              command=lambda _, key=key: self._on_band_level(key))
-            scale.grid(row=row, column=1, sticky="we", pady=1)
-            value_label = ttk.Label(box, textvariable=shown, width=5, anchor="e")
-            value_label.grid(row=row, column=2, padx=(4, 8))
-            self.band_controls[key] = (enabled, level, scale, shown, value_label)
-        buttons = ttk.Frame(box)
-        buttons.grid(row=len(BAND_OPTIONS), column=0, columnspan=3, sticky="e", padx=8, pady=(2, 6))
-        ttk.Button(buttons, text="Alle aus", command=lambda: self._set_all_band(False)).pack(side="right")
-        ttk.Button(buttons, text="Alle an", command=lambda: self._set_all_band(True)).pack(side="right", padx=4)
-        self._apply_band_settings()
-
-    def _on_band_level(self, key):
-        _, level, _, shown, _ = self.band_controls[key]
-        shown.set(f"{round(level.get())} %")
-        self._apply_band_settings()
-
-    def _set_all_band(self, enabled: bool):
-        for var, *_ in self.band_controls.values():
-            var.set(enabled)
-        self._apply_band_settings()
-
-    def _build_quiz(self, parent):
-        self.quiz_box = ttk.LabelFrame(parent, text="Abfrage – was hast du mitbekommen?")
-        # Inhalt hängt vom QSO ab und wird in _reset_quiz() neu aufgebaut.
-        self.quiz_grid = ttk.Frame(self.quiz_box)
-        self.quiz_grid.pack(fill="x", padx=4, pady=4)
-        self.quiz_vars, self.quiz_entries, self.quiz_marks = {}, {}, {}
-
-        bottom = ttk.Frame(self.quiz_box)
-        bottom.pack(fill="x", padx=4, pady=(0, 4))
-        self.check_button = ttk.Button(bottom, text="Prüfen", command=self.check_quiz)
-        self.check_button.pack(side="left")
-        self.quiz_score_var = tk.StringVar(value="")
-        ttk.Label(bottom, textvariable=self.quiz_score_var, font=("Sans", 12, "bold")).pack(side="left", padx=12)
-        self.quiz_fix_var = tk.StringVar(value="")
-        ttk.Label(self.quiz_box, textvariable=self.quiz_fix_var, foreground="red", wraplength=440,
-                  justify="left").pack(anchor="w", padx=4, pady=(0, 4))
-
     def _kind(self) -> str:
         for key, label in qso_text.QSO_TYPES.items():
             if label == self.kind_var.get():
@@ -323,13 +209,8 @@ class QsoModeFrame:
     def _apply_band_settings(self):
         """Auch während der Wiedergabe: der Audio-Thread liest nur die
         einfachen Attribute von self.band."""
-        for key, (enabled, level, scale, _, value_label) in self.band_controls.items():
-            scale.state(["!disabled"] if enabled.get() else ["disabled"])
-            value_label.config(foreground="" if enabled.get() else "gray55")
-            if self.band is not None:
-                self.band.enabled[key] = enabled.get()
-                self.band.levels[key] = level.get() / 100
         if self.band is not None:
+            self.band_panel.apply_to(self.band)
             self.band.prepare(self.voices[0][1])
 
     def _on_kind_change(self):
@@ -411,7 +292,7 @@ class QsoModeFrame:
         self.quiz_ready = False
         self.quiz_checked = False
         self.char_marks = None
-        self._reset_quiz()
+        self.quiz.reset(self.qso)
         self.notes.delete("1.0", "end")
         self._play(tracking=self._eval_mode() == EVAL_TYPING)
 
@@ -444,7 +325,7 @@ class QsoModeFrame:
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
             combo.config(state="disabled")
         if not self.quiz_ready:
-            self.check_button.config(state="disabled")
+            self.quiz.set_check_enabled(False)
         self._update_reveal_button()
         self._update_layout()
         self.on_start_cb()
@@ -539,8 +420,7 @@ class QsoModeFrame:
         if stopped:
             self.status_var.set("Gestoppt. " + self.status_var.get())
         self.quiz_ready = True
-        if not self.quiz_checked:
-            self.check_button.config(state="normal")
+        self.quiz.set_check_enabled(True)
 
         self._update_layout()
         self._update_reveal_button()
@@ -611,48 +491,7 @@ class QsoModeFrame:
         text.config(state="disabled")
 
     # --- Abfrage ------------------------------------------------------------
-    def _reset_quiz(self):
-        grid = self.quiz_grid
-        for child in grid.winfo_children():
-            child.destroy()
-        self.quiz_vars, self.quiz_entries, self.quiz_marks = {}, {}, {}
-        for col, header in enumerate(self.qso.quiz_columns):
-            ttk.Label(grid, text=header).grid(row=0, column=1 + 2 * col, columnspan=2, sticky="w")
-        for row, (label, cells) in enumerate(self.qso.quiz_rows, start=1):
-            ttk.Label(grid, text=label + ":").grid(row=row, column=0, sticky="w", padx=(0, 6), pady=1)
-            for col, cell in enumerate(cells):
-                if cell is None:
-                    continue
-                var = tk.StringVar()
-                # tk.Entry statt ttk.Entry, damit sich der Hintergrund einfärben lässt.
-                entry = tk.Entry(grid, textvariable=var, width=13, font=("Consolas", 11))
-                entry.grid(row=row, column=1 + 2 * col, sticky="w", pady=1)
-                mark = ttk.Label(grid, text="", width=2)
-                mark.grid(row=row, column=2 + 2 * col, sticky="w", padx=(2, 6))
-                self.quiz_vars[row - 1, col] = var
-                self.quiz_entries[row - 1, col] = entry
-                self.quiz_marks[row - 1, col] = mark
-        self.quiz_score_var.set("")
-        self.quiz_fix_var.set("")
-        self.check_button.config(state="normal")
-
-    def check_quiz(self):
-        if self.qso is None:
-            return
-        correct, fixes = 0, []
-        for (row, col), var in self.quiz_vars.items():
-            label, cells = self.qso.quiz_rows[row]
-            expected, kind = cells[col]
-            ok = normalize(var.get(), kind) == normalize(expected, kind)
-            correct += ok
-            bg = OK_BG if ok else WRONG_BG
-            self.quiz_entries[row, col].config(background=bg, readonlybackground=bg, state="readonly")
-            self.quiz_marks[row, col].config(text="✓" if ok else "✗", foreground="green" if ok else "red")
-            if not ok:
-                fixes.append(f"{label} ({self.qso.quiz_columns[col]}): {expected}")
-        self.quiz_score_var.set(f"{correct} / {len(self.quiz_vars)} richtig")
-        self.quiz_fix_var.set("Richtig wäre: " + ", ".join(fixes) if fixes else "")
-        self.check_button.config(state="disabled")
+    def _on_quiz_checked(self, correct: int, total: int):
         self.quiz_checked = True
         self.revealed = True
         self.status_var.set("Abfrage ausgewertet.")
@@ -668,10 +507,7 @@ class QsoModeFrame:
             "kind": self._kind(),
             "eval": self._eval_mode(),
             "length": LENGTH_LABELS.index(self.length_var.get()),
-            "band": {
-                key: {"enabled": enabled.get(), "level": round(level.get())}
-                for key, (enabled, level, *_) in self.band_controls.items()
-            },
+            "band": self.band_panel.settings(),
         }
 
     def restore_settings(self, data: dict) -> None:
@@ -684,21 +520,7 @@ class QsoModeFrame:
         length = data.get("length")
         if isinstance(length, int) and 0 <= length < len(LENGTH_LABELS):
             self.length_var.set(LENGTH_LABELS[length])
-        band = data.get("band")
-        if isinstance(band, dict):
-            for key, values in band.items():
-                if key not in self.band_controls or not isinstance(values, dict):
-                    continue
-                enabled, level, _, shown, _ = self.band_controls[key]
-                enabled.set(bool(values.get("enabled", False)))
-                try:
-                    value = min(max(float(values.get("level", level.get())), 0.0), 100.0)
-                except (TypeError, ValueError):
-                    continue
-                level.set(value)
-                shown.set(f"{round(value)} %")
-        self._apply_band_settings()
-
+        self.band_panel.restore(data.get("band"))
 
     def on_close(self):
         if self.running:
