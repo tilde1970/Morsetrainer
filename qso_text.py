@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from callsign_mode import load_callsigns
-from morse import MORSE_CODE
+from morse import BK, KN, MORSE_CODE, SK
 
 # Kurz: nur Rapport/Name/QTH; Normal: + Rig, Leistung, Wetter;
 # Lang: + Antenne, Alter, lizenziert seit, QSL-Info.
@@ -270,6 +270,12 @@ def _greeting() -> str:
     return "GM" if hour < 12 else "GA" if hour < 18 else "GE"
 
 
+def _over() -> str:
+    """Ende eines Durchgangs an eine bestimmte Station: KN (nur die
+    Gegenstation soll antworten) oder einfach K."""
+    return KN if random.random() < 0.6 else "K"
+
+
 def _repeat(word: str, times: int) -> str:
     return " ".join([word] * times)
 
@@ -313,30 +319,32 @@ def _generate_ragchew(length: int) -> Qso:
     opening = "TNX FER CALL" if length == LENGTH_SHORT else f"{greet} DR OM ES TNX FER CALL"
     tx = [f"{b.call} DE {a.call}", opening, "=",
           f"UR RST {rst_a} {rst_a}", "=", f"NAME {_repeat(a.name, 2)}", "=", f"QTH {_repeat(a.qth, 2)}", "=",
-          "HW?", "+", f"{b.call} DE {a.call} K"]
+          "HW?", "+", f"{b.call} DE {a.call} {_over()}"]
     txs.append((0, " ".join(tx)))
 
     tx = [f"{a.call} DE {b.call} R", f"{greet} {a.name} TNX FER RPRT", "=",
           f"UR RST {rst_b} {rst_b}", "=", f"NAME {_repeat(b.name, 2)}", "=", f"QTH {_repeat(b.qth, 2)}", "="]
     tx += _station_info(b, length)
     if length == LENGTH_SHORT:
-        tx += ["TNX QSO 73 ES GL", "+", f"{a.call} DE {b.call} K"]
+        tx += ["TNX QSO 73 ES GL", SK, f"{a.call} DE {b.call}"]
     else:
         if length >= LENGTH_LONG:
             tx += ["QSL VIA BURO", "="]
-        tx += ["HW?", "+", f"{a.call} DE {b.call} K"]
+        tx += ["HW?", "+", f"{a.call} DE {b.call} {_over()}"]
     txs.append((1, " ".join(tx)))
 
     if length == LENGTH_SHORT:
         txs.append((0, f"{b.call} DE {a.call} R TNX {b.name} 73 GL TU E E"))
     else:
-        tx = [f"{b.call} DE {a.call} R R TNX {b.name} FER INFO", "="]
+        # Schneller Wechsel ohne Rufzeichen: BK.
+        opening = f"{BK} R R" if random.random() < 0.3 else f"{b.call} DE {a.call} R R"
+        tx = [f"{opening} TNX {b.name} FER INFO", "="]
         tx += _station_info(a, length)
         if length >= LENGTH_LONG:
             tx += ["QSL OK VIA BURO", "="]
-        tx += ["TNX FER NICE QSO ES HPE CUAGN", "=", "73 ES GL", "+", f"{b.call} DE {a.call} K"]
+        tx += ["TNX FER NICE QSO ES HPE CUAGN", "=", "73 ES GL", SK, f"{b.call} DE {a.call}"]
         txs.append((0, " ".join(tx)))
-        txs.append((1, f"{a.call} DE {b.call} R TNX {a.name} FER QSO 73 ES GD DX + {a.call} DE {b.call} TU E E"))
+        txs.append((1, f"{a.call} DE {b.call} R TNX {a.name} FER QSO 73 ES GD DX {SK} {a.call} DE {b.call} TU E E"))
 
     _check(txs)
     return Qso(

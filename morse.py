@@ -12,7 +12,21 @@ MORSE_CODE = {
     "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----.",
     ".": ".-.-.-", ",": "--..--", "?": "..--..", "/": "-..-.",
     "=": "-...-", "+": ".-.-.",
+    # Zusammengezogene Betriebszeichen ohne eigenes Satzzeichen; im Text
+    # steht dafür ein Platzhalter (siehe PROSIGNS).
+    "*": "...-.-", "(": "-.--.", "#": "-...-.-",
 }
+
+# Platzhalter -> Name der Betriebszeichen, die in Texten nur als Platzhalter
+# vorkommen (angezeigt als <SK> usw.). AR (+) und BT (=) sind eigene Zeichen
+# und werden wie gewohnt geschrieben. KN entspricht der öffnenden Klammer.
+PROSIGNS = {"*": "SK", "(": "KN", "#": "BK"}
+SK, KN, BK = "*", "(", "#"
+
+
+def display_text(text: str) -> str:
+    """Text mit Betriebszeichen-Platzhaltern lesbar machen (* -> <SK>)."""
+    return "".join(f"<{PROSIGNS[ch]}>" if ch in PROSIGNS else ch for ch in text)
 
 # 48 kHz ist die native Rate von PipeWire/PulseAudio und den meisten
 # Soundkarten; bei 44,1 kHz würde der Soundserver umrechnen.

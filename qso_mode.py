@@ -32,7 +32,7 @@ from band import BandConditions
 from qso_quiz import QuizPanel
 from ui_widgets import BandSettingsPanel, ScrollableFrame
 from morse import (
-    AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
+    AUDIO_LATENCY, MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
     word_gap_extra_seconds,
 )
 from stats import SessionStats
@@ -114,7 +114,8 @@ class QsoModeFrame:
             parent,
             text="Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine "
                  "eigene Tonhöhe. "
-                 "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs). "
+                 "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs); <SK>, <KN> und <BK> "
+                 "werden zusammengezogen gesendet und beim Mittippen nicht gezählt. "
                  "Der Zeichensatz oben gilt hier nicht.",
             wraplength=460, justify="left",
         ).pack(anchor="w", padx=8, pady=(4, 8))
@@ -354,7 +355,7 @@ class QsoModeFrame:
                         continue
                     if not self._write(stream, build_samples(ch, wpm, freq, self.fw, self.band.chirp_for(station)), station):
                         return
-                    if self.tracking:
+                    if self.tracking and ch not in PROSIGNS:
                         # Wie im Kontinuierlich-Modus: hörbar endet der Ton erst
                         # nach stream.latency, die Zeichenpause zählt nicht mit.
                         tone_end = time.time() + stream.latency - char_gap_seconds(wpm, self.fw)
@@ -473,12 +474,15 @@ class QsoModeFrame:
         text = self.reveal_text
         text.config(state="normal")
         text.delete("1.0", "end")
-        index = 0  # Position im gesendeten Text ohne Leerzeichen (wie sent_log)
+        index = 0  # Position im gesendeten Text ohne Leerzeichen und Betriebszeichen (wie sent_log)
         for n, (station, tx) in enumerate(self.qso.transmissions):
             if n:
                 text.insert("end", "\n\n")
             for ch in tx:
                 tags = [f"st{0 if station == 0 else 1 + (station - 1) % 2}"]
+                if ch in PROSIGNS:
+                    text.insert("end", f"<{PROSIGNS[ch]}>", tuple(tags))
+                    continue
                 if ch != " ":
                     if self.char_marks is not None:
                         sent_count, missed = self.char_marks
