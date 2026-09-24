@@ -28,6 +28,10 @@ from morse import BK, KN, MORSE_CODE, SK
 # Im Contest bestimmt die Länge die Anzahl der QSOs im Run.
 LENGTH_SHORT, LENGTH_NORMAL, LENGTH_LONG = 0, 1, 2
 CONTEST_QSO_COUNTS = (3, 5, 8)
+# Anteil der Anrufe, bei denen weitere Stationen gleichzeitig rufen, und
+# wie viele.
+PILEUP_PROBABILITY = 0.45
+PILEUP_EXTRA_CALLERS = (1, 2)
 
 RAGCHEW = "ragchew"
 QSO_TYPES = {
@@ -169,6 +173,11 @@ class Qso:
     transmissions: tuple     # ((Stationsindex, Text), …)
     quiz_columns: tuple      # Spaltenüberschriften der Abfrage
     quiz_rows: tuple         # ((Zeilenname, (Zelle, …)), …); Zelle = (Erwartet, Art) oder None
+    # Pile-up: weitere Stationen, die gleichzeitig mit einem Durchgang rufen,
+    # aber nicht gearbeitet werden: ((Durchgangsindex, ((Station, Text,
+    # Verzögerung in s), …)), …). Ihre Stationsindizes folgen in `calls` nach
+    # den gearbeiteten Stationen.
+    pileups: tuple = ()
 
     @property
     def is_contest(self) -> bool:
@@ -435,6 +444,7 @@ def _generate_contest(kind: str, count: int) -> Qso:
     # Wechselt der Austausch der Run-Station (Seriennummer), wird er nicht abgefragt.
     rows = [("Run-Station", ((run, TEXT), run_exchange.fixed))]
 
+    extra_calls, pileups = [], []
     for i in range(count):
         station = i + 1
         call, country = _pick_contest_call(kind, used, caller_countries, IARU_HQ_CALLER_PROBABILITY)
@@ -446,6 +456,15 @@ def _generate_contest(kind: str, count: int) -> Qso:
                 f"CQ {test} {run} {run}", f"CQ {run} {run} {test}", f"CQ {test} {run}", f"{test} {run}",
             ]))
         send(station, call if random.random() < 0.7 else f"{call} {call}")
+        if random.random() < PILEUP_PROBABILITY:
+            others = []
+            for _ in range(random.randint(*PILEUP_EXTRA_CALLERS)):
+                other, _ = _pick_contest_call(kind, used, caller_countries, IARU_HQ_CALLER_PROBABILITY)
+                used.add(other)
+                extra_calls.append(other)
+                others.append((count + len(extra_calls), other if random.random() < 0.6 else f"{other} {other}",
+                               round(random.uniform(0.0, 0.5), 2)))
+            pileups.append((len(txs) - 1, tuple(others)))
         if len(call) >= 4 and random.random() < 0.2:
             # Nur einen Teil des Rufzeichens aufgenommen: Rückfrage.
             send(0, f"{call[:random.randint(3, len(call) - 1)]}?")
@@ -464,6 +483,7 @@ def _generate_contest(kind: str, count: int) -> Qso:
 
     _check(txs)
     return Qso(
-        kind=kind, calls=(run, *(cells[0][0] for _, cells in rows[1:])),
+        kind=kind, calls=(run, *(cells[0][0] for _, cells in rows[1:]), *extra_calls),
+        pileups=tuple(pileups),
         transmissions=tuple(txs), quiz_columns=("Rufzeichen", "Austausch"), quiz_rows=tuple(rows),
     )

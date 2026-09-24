@@ -189,7 +189,7 @@ def _cw_qrm_loop(rng, freq: int) -> np.ndarray:
     return np.concatenate(parts).astype(np.float32)
 
 
-def _soft_limit(x: np.ndarray, knee: float = 0.8) -> np.ndarray:
+def soft_limit(x: np.ndarray, knee: float = 0.8) -> np.ndarray:
     """Unterhalb von `knee` unverändert, darüber weich gegen 1 begrenzt;
     starke Knackstörungen übersteuern so nicht hart."""
     mag = np.abs(x)
@@ -251,7 +251,7 @@ class BandConditions:
 
     def chirp_for(self, station: int):
         """Chirp-Parameter für morse.build_samples, oder None."""
-        chirp = self.chirps[station]
+        chirp = self.chirps[station % len(self.chirps)]
         if chirp is None or not self._on("chirp"):
             return None
         delta, tau = chirp
@@ -267,30 +267,45 @@ class BandConditions:
         self.crash = np.zeros(0, dtype=np.float32)  # Rest einer laufenden Knackstörung
 
     def process(self, block: np.ndarray, station: int) -> np.ndarray:
-        n = len(block)
-        out = block
+        """Ein Block einer einzelnen Station, mit QSB und Hintergrund."""
+        return self.mix([(block, station)], len(block))
+
+    def mix(self, sources, n: int) -> np.ndarray:
+        """Mischt mehrere gleichzeitige Signale [(Block, Station), …] zu
+        einem Block der Länge `n` (kürzere Blöcke werden mit Stille
+        aufgefüllt) und legt Rauschen/QRM darunter. Station None steht für
+        den eigenen Mithörton (kein QSB)."""
+        out = np.zeros(n, dtype=np.float64)
+        for block, station in sources:
+            out[:len(block)] += block[:n] * self.station_gain(station, len(block[:n]))
         levels = self.levels
-        if self._on("qsb"):
-            scale = 2 * levels["qsb"]
-            freq, depth, phase = self.qsb[station]
-            t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
-            fading = 1 - min(depth * scale, 0.95) * 0.5 * (1 + np.sin(2 * np.pi * freq * t + phase))
-            strength = max(1 - (1 - self.strengths[station]) * scale, 0.05)
-            out = out * (strength * fading)
         if self._on("noise"):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
-            out = out + noise * (MAX_NOISE_RMS * levels["noise"])
+            out += noise * (MAX_NOISE_RMS * levels["noise"])
         if self._on("qrn"):
-            out = out + self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
+            out += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
         ssb, cw_qrm = self.ssb, self.cw_qrm  # können parallel in prepare() entstehen
         if self._on("ssb") and ssb is not None:
             self.ssb_pos, part = _loop_slice(ssb, self.ssb_pos, n)
-            out = out + part * (MAX_SSB_RMS * levels["ssb"])
+            out += part * (MAX_SSB_RMS * levels["ssb"])
         if self._on("cw_qrm") and cw_qrm is not None:
             self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos, n)
-            out = out + part * levels["cw_qrm"]
+            out += part * levels["cw_qrm"]
         self.sample_pos += n
-        return _soft_limit(out).astype(np.float32)
+        return soft_limit(out).astype(np.float32)
+
+    def station_gain(self, station, n: int):
+        """Lautstärke einer Station über die nächsten `n` Samples (QSB);
+        1, wenn QSB aus ist oder für den eigenen Mithörton (None)."""
+        if station is None or not self._on("qsb"):
+            return 1.0
+        station %= len(self.qsb)
+        scale = 2 * self.levels["qsb"]
+        freq, depth, phase = self.qsb[station]
+        t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
+        fading = 1 - min(depth * scale, 0.95) * 0.5 * (1 + np.sin(2 * np.pi * freq * t + phase))
+        strength = max(1 - (1 - self.strengths[station]) * scale, 0.05)
+        return strength * fading
 
     def _crashes(self, n: int) -> np.ndarray:
         """Knackstörungen im nächsten Block (meist Stille)."""

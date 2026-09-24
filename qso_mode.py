@@ -28,7 +28,9 @@ import sounddevice as sd
 
 import align
 import qso_text
-from band import BandConditions
+import numpy as np
+
+from band import BandConditions, soft_limit
 from qso_quiz import QuizPanel
 from ui_widgets import BandSettingsPanel, ScrollableFrame
 from morse import (
@@ -61,6 +63,8 @@ FREQ_OFFSET_RANGE = (80, 150)
 CONTEST_FREQ_OFFSET_RANGE = (40, 250)
 WPM_OFFSETS = (-2, -1, 0, 1, 2)
 CONTEST_WPM_OFFSETS = (-3, -2, -1, 0, 1, 2, 3)
+# Pile-up-Anrufer sind unterschiedlich laut (relativ zu den anderen Stationen).
+PILEUP_STRENGTH = (0.4, 0.9)
 WRITE_CHUNK_SECONDS = 0.02
 FINISH_GRACE_SECONDS = 3
 TICK_MS = 250
@@ -96,6 +100,7 @@ class QsoModeFrame:
         self.typed_log = []        # [{"char": str, "time": float}]
         self.char_marks = None     # (Anzahl gesendeter Zeichen, Indizes falscher/verpasster)
         self.play_thread = None
+        self.overlays = []         # [[Samples, Position, Station]] gleichzeitig laufender Pile-up-Anrufer
         self.session_stats = None
         self.session_id = 0
         self.finishing = False
@@ -165,6 +170,7 @@ class QsoModeFrame:
             self.reveal_text.tag_config(f"st{i}", foreground=color)
         self.reveal_text.tag_config("miss", foreground="white", background="#d9534f")
         self.reveal_text.tag_config("unsent", foreground="#999999")
+        self.reveal_text.tag_config("extra", foreground="#999999", font=("Sans", 9, "italic"))
         self.reveal_text.config(state="disabled")
 
         self.stats_box = ttk.Frame(parent)
@@ -343,11 +349,15 @@ class QsoModeFrame:
             if not self._write(stream, silence(lead_in)):
                 return
             gap = CONTEST_TX_GAP_SECONDS if self.qso.is_contest else TX_GAP_SECONDS
+            pileups = dict(self.qso.pileups)
+            self.overlays = []
             for tx_index, (station, text) in enumerate(self.qso.transmissions):
                 self.current_tx = tx_index
                 wpm, freq = self.voices[station]
                 if tx_index and not self._write(stream, silence(gap)):
                     return
+                for other, other_text, delay in pileups.get(tx_index, ()):
+                    self._start_overlay(other, other_text, delay)
                 for ch in text:
                     if ch == " ":
                         if not self._write(stream, silence(word_gap_extra_seconds(wpm, self.fw))):
@@ -360,19 +370,52 @@ class QsoModeFrame:
                         # nach stream.latency, die Zeichenpause zählt nicht mit.
                         tone_end = time.time() + stream.latency - char_gap_seconds(wpm, self.fw)
                         self.sent_log.append({"char": ch, "end_time": tone_end})
+                # Pile-up-Anrufer, die länger rufen, noch ausklingen lassen.
+                while self.overlays:
+                    if not self._write(stream, silence(WRITE_CHUNK_SECONDS)):
+                        return
             if self.band.has_background:
                 self._write(stream, silence(NOISE_TAIL_SECONDS))
 
+    def _start_overlay(self, station: int, text: str, delay: float):
+        wpm, freq = self.voices[station]
+        parts = [silence(delay)] + [
+            silence(word_gap_extra_seconds(wpm, self.fw)) if ch == " "
+            else build_samples(ch, wpm, freq, self.fw, self.band.chirp_for(station))
+            for ch in text
+        ]
+        samples = np.concatenate(parts) * random.uniform(*PILEUP_STRENGTH)
+        self.overlays.append([samples.astype(np.float32), 0, station])
+
+    def _overlay_blocks(self, n: int):
+        """Nächste `n` Samples aller laufenden Pile-up-Anrufer; fertige
+        fallen heraus."""
+        blocks = []
+        for overlay in self.overlays:
+            samples, pos, station = overlay
+            blocks.append((samples[pos:pos + n], station))
+            overlay[1] = pos + n
+        self.overlays = [o for o in self.overlays if o[1] < len(o[0])]
+        return blocks
+
     def _write(self, stream, samples, station: int = 0) -> bool:
         """Schreibt `samples` (von Station `station`) häppchenweise, ggf. mit
-        Rauschen/QSB; False, wenn zwischendurch gestoppt wurde."""
+        Pile-up-Anrufern und Rauschen/QSB; False, wenn zwischendurch
+        gestoppt wurde."""
         chunk = int(SAMPLE_RATE * WRITE_CHUNK_SECONDS)
         for start in range(0, len(samples), chunk):
             if not self.running:
                 return False
             block = samples[start:start + chunk]
-            if self.band.active:
-                block = self.band.process(block, station)
+            if self.overlays or self.band.active:
+                sources = [(block, station)] + self._overlay_blocks(len(block))
+                if self.band.active:
+                    block = self.band.mix(sources, len(block))
+                else:
+                    mixed = np.zeros(len(block))
+                    for part, _ in sources:
+                        mixed[:len(part)] += part
+                    block = soft_limit(mixed).astype(np.float32)
             stream.write(block)
         return True
 
@@ -471,6 +514,7 @@ class QsoModeFrame:
     def _render_reveal(self):
         if not self.revealed or self.qso is None:
             return
+        pileups = dict(self.qso.pileups)
         text = self.reveal_text
         text.config(state="normal")
         text.delete("1.0", "end")
@@ -492,6 +536,9 @@ class QsoModeFrame:
                             tags.append("miss")
                     index += 1
                 text.insert("end", ch, tuple(tags))
+            if n in pileups:
+                others = ", ".join(self.qso.calls[station] for station, _, _ in pileups[n])
+                text.insert("end", f"   (gleichzeitig: {others})", ("extra",))
         text.config(state="disabled")
 
     # --- Abfrage ------------------------------------------------------------
