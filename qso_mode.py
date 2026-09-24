@@ -37,6 +37,7 @@ from morse import (
     AUDIO_LATENCY, MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
     word_gap_extra_seconds,
 )
+import stats
 from stats import SessionStats
 from stats_widget import StatsPanel
 
@@ -558,6 +559,9 @@ class QsoModeFrame:
 
     # --- Abfrage ------------------------------------------------------------
     def _on_quiz_checked(self, correct: int, total: int):
+        stats.log_result("qso_quiz", correct, total, self.voices[0][0], kind=self.qso.kind,
+                         length=self.length_var.get())
+        self.on_stop_cb()  # Statistik-Reiter (Verlauf) aktualisieren
         self.quiz_checked = True
         self.revealed = True
         self.status_var.set("Abfrage ausgewertet." + self._adapt_speed(correct / total if total else None))

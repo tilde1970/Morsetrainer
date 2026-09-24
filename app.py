@@ -13,6 +13,7 @@ from continuous_mode import ContinuousModeFrame
 from group_mode import GroupModeFrame
 from qso_mode import QsoModeFrame
 from single_mode import SingleModeFrame
+from progress_widget import ProgressPanel
 from stats_widget import StatsPanel
 from ui_widgets import ScrollableFrame
 
@@ -206,7 +207,7 @@ class MorseTrainerApp:
                  "typische Klangverwandte – am besten gezielt zusammen üben, z. B. nur diese "
                  "Zeichen im Zeichensatz oben.",
         ).pack(anchor="w", padx=8, pady=(0, 6))
-        self.statistics_frame = frame  # weitere Bereiche (Fortschritt) hängen sich hier an
+        self.progress_panel = ProgressPanel(frame)
 
         ttk.Button(frame, text="Gesamtstatistik zurücksetzen", command=self._reset_all_time).pack(
             side="bottom", anchor="w", **pad
@@ -216,12 +217,13 @@ class MorseTrainerApp:
         data = stats.load_all_time()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
         self.confusion_var.set(self._confusion_text(data))
+        self.progress_panel.refresh()
 
     @staticmethod
     def _confusion_text(data: dict) -> str:
         pairs = stats.top_confusions(data)
         if not pairs:
-            return "Noch keine Verwechslungen erfasst (werden ab jetzt mitgezählt)."
+            return "Noch keine Verwechslungen erfasst\n(werden ab jetzt mitgezählt)."
         seen = {(sent, typed) for sent, typed, _, _ in pairs}
         lines = []
         for sent, typed, count, share in pairs:

@@ -239,3 +239,86 @@ def top_confusions(all_time: dict, limit: int = 10):
                 pairs.append((char, typed, count, count / attempts if attempts else 0.0))
     pairs.sort(key=lambda p: (-p[2], p[0], p[1]))
     return pairs[:limit]
+
+
+# --- Verlauf -------------------------------------------------------------------
+# Ergebnisse, die keine Zeichenstatistik haben (QSO-Abfrage, Contest-Runs),
+# eine Zeile pro Durchgang.
+RESULTS_FILE = STATS_DIR / "results.jsonl"
+
+HISTORY_MODES = {
+    "single": "Einzelzeichen",
+    "group": "Gruppen",
+    "callsign": "Rufzeichen",
+    "continuous": "Kontinuierlich",
+    "qso": "QSO mittippen",
+    "qso_quiz": "QSO-Abfrage",
+    "contest": "Contest (aktiv)",
+}
+
+
+def log_result(mode: str, correct: int, total: int, wpm: int, **extra) -> None:
+    """Hängt ein Ergebnis an stats/results.jsonl an (für den Verlauf)."""
+    STATS_DIR.mkdir(exist_ok=True)
+    entry = {
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "mode": mode,
+        "correct": correct,
+        "total": total,
+        "accuracy_pct": round(correct / total * 100, 1) if total else 0.0,
+        "wpm": wpm,
+        **extra,
+    }
+    with open(RESULTS_FILE, "a", encoding="utf-8") as fp:
+        fp.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def _read_jsonl(path: Path):
+    try:
+        with open(path, "rt", encoding="utf-8") as fp:
+            for line in fp:
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # z. B. halb geschriebene Zeile nach einem Absturz
+    except OSError:
+        return
+
+
+def load_history():
+    """Alle abgeschlossenen Durchgänge, chronologisch: [{"time": datetime,
+    "mode", "accuracy_pct", "wpm", "total"}]. Quelle sind die Sitzungsdateien
+    (Zeile "config" + "summary") und results.jsonl."""
+    history = []
+    for path in STATS_DIR.glob("20*.jsonl"):
+        config = summary = None
+        for obj in _read_jsonl(path):
+            if obj.get("type") == "config":
+                config = obj
+            elif obj.get("type") == "summary":
+                summary = obj
+        if not config or not summary or not summary.get("total"):
+            continue
+        try:
+            history.append({
+                "time": datetime.fromisoformat(config["start_time"]),
+                "mode": config["mode"],
+                "accuracy_pct": float(summary["accuracy_pct"]),
+                "wpm": int(config["wpm"]),
+                "total": int(summary["total"]),
+            })
+        except (KeyError, TypeError, ValueError):
+            continue
+    for obj in _read_jsonl(RESULTS_FILE):
+        try:
+            history.append({
+                "time": datetime.fromisoformat(obj["time"]),
+                "mode": obj["mode"],
+                "accuracy_pct": float(obj["accuracy_pct"]),
+                "wpm": int(obj["wpm"]),
+                "total": int(obj["total"]),
+            })
+        except (KeyError, TypeError, ValueError):
+            continue
+    history.sort(key=lambda entry: entry["time"])
+    return history
