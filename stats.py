@@ -9,7 +9,8 @@ A session file looks like:
     {"type": "group", "sent": "KMU", "typed": "KMU", ...}   (group mode only)
     {"type": "summary", "total": 12, "correct": 10, "per_char": {...}}
 
-stats/all_time.json accumulates per-character totals across all sessions.
+stats/all_time.json accumulates per-character totals across all sessions,
+including which characters were typed instead ("confusions"; "" = missed).
 """
 import json
 import statistics
@@ -22,6 +23,15 @@ ALL_TIME_FILE = STATS_DIR / "all_time.json"
 # Latenzen darüber (z. B. weil man kurz abgelenkt war) werden gekappt,
 # damit ein einzelner Ausreißer den Schnitt eines Zeichens nicht verzerrt.
 LATENCY_CAP_S = 5.0
+
+# So viele Verwechslungen je Zeichen zeigt die Tabelle an.
+CONFUSIONS_SHOWN = 3
+
+
+def format_confusions(confusions: dict) -> str:
+    """{"5": 12, "S": 3, "": 2} -> "5 (12), S (3), – (2)"; "–" = verpasst."""
+    top = sorted(confusions.items(), key=lambda item: (-item[1], item[0]))[:CONFUSIONS_SHOWN]
+    return ", ".join(f"{typed or '–'} ({count})" for typed, count in top)
 
 
 class SessionStats:
@@ -75,7 +85,7 @@ class SessionStats:
 
         agg = self.per_char.setdefault(
             char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
-                   "latencies": []}
+                   "latencies": [], "confusions": {}}
         )
         if correct:
             agg["good"] += 1
@@ -84,6 +94,7 @@ class SessionStats:
                 agg["latencies"].append(min(max(latency, 0.0), LATENCY_CAP_S))
         else:
             agg["wrong"] += 1
+            agg["confusions"][typed] = agg["confusions"].get(typed, 0) + 1
         agg["reaction_times"].append(reaction_time)
         agg["effective_wpms"].append(effective_wpm)
 
@@ -93,14 +104,14 @@ class SessionStats:
         self._write_line({"type": "group", "sent": sent, "typed": typed})
 
     def char_rows(self):
-        """Per-character rows (char, good, wrong, total, avg_reaction_s, avg_wpm),
-        sorted by error count descending, for display."""
+        """Per-character rows (char, good, wrong, total, avg_reaction_s, avg_wpm,
+        confusions text), sorted by error count descending, for display."""
         rows = []
         for char, e in self.per_char.items():
             total = e["good"] + e["wrong"]
             avg_rt = statistics.mean(e["reaction_times"]) if e["reaction_times"] else 0.0
             avg_wpm = statistics.mean(e["effective_wpms"]) if e["effective_wpms"] else 0.0
-            rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm))
+            rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm, format_confusions(e["confusions"])))
         rows.sort(key=lambda r: (-r[2], r[0]))
         return rows
 
@@ -127,6 +138,7 @@ class SessionStats:
                 if e["reaction_times"] else 0.0,
                 "avg_effective_wpm": round(statistics.mean(e["effective_wpms"]), 1)
                 if e["effective_wpms"] else 0.0,
+                "confusions": e["confusions"],
             }
         return out
 
@@ -164,6 +176,9 @@ def _merge_all_time(session: "SessionStats") -> None:
         # Ältere all_time.json-Einträge kennen die Latenz-Felder noch nicht.
         x["total_latency_s"] = x.get("total_latency_s", 0.0) + sum(e["latencies"])
         x["latency_count"] = x.get("latency_count", 0) + len(e["latencies"])
+        confusions = x.setdefault("confusions", {})
+        for typed, count in e["confusions"].items():
+            confusions[typed] = confusions.get(typed, 0) + count
     STATS_DIR.mkdir(exist_ok=True)
     with open(ALL_TIME_FILE, "wt", encoding="utf-8") as fp:
         json.dump(all_time, fp, indent=2, ensure_ascii=False)
@@ -192,7 +207,7 @@ def all_time_char_rows(all_time: dict):
         total = e["good"] + e["wrong"]
         avg_rt = e["total_reaction_time_s"] / total if total else 0.0
         avg_wpm = e["total_effective_wpm"] / total if total else 0.0
-        rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm))
+        rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm, format_confusions(e.get("confusions", {}))))
     rows.sort(key=lambda r: (-r[2], r[0]))
     return rows
 
@@ -211,3 +226,16 @@ def all_time_summary(all_time: dict):
         "accuracy_pct": round(accuracy, 1),
         "avg_effective_wpm": round(avg_wpm, 1),
     }
+
+def top_confusions(all_time: dict, limit: int = 10):
+    """Häufigste Verwechslungen über alle Zeichen: [(gesendet, getippt,
+    Anzahl, Anteil an den Versuchen des Zeichens)], verpasste Zeichen nicht
+    mitgezählt."""
+    pairs = []
+    for char, e in all_time.items():
+        attempts = e["good"] + e["wrong"]
+        for typed, count in e.get("confusions", {}).items():
+            if typed:
+                pairs.append((char, typed, count, count / attempts if attempts else 0.0))
+    pairs.sort(key=lambda p: (-p[2], p[0], p[1]))
+    return pairs[:limit]

@@ -18,16 +18,16 @@ class StatsPanel:
         ttk.Label(box, textvariable=self.speed_var, font=("Sans", 12)).pack(anchor="w", **pad)
 
         ttk.Label(parent, text="Zeichen (nach Fehlern sortiert):").pack(anchor="w", padx=8, pady=(8, 0))
-        columns = ("char", "good", "wrong", "avg_rt", "avg_wpm")
+        columns = ("char", "good", "wrong", "avg_rt", "avg_wpm", "confusions")
         self.char_tree = ttk.Treeview(parent, columns=columns, show="headings", height=tree_height)
         headings = {
             "char": "Zeichen", "good": "Richtig", "wrong": "Falsch",
-            "avg_rt": "Ø Zeit (s)", "avg_wpm": "Ø WPM",
+            "avg_rt": "Ø Zeit (s)", "avg_wpm": "Ø WPM", "confusions": "Verwechselt mit",
         }
-        widths = {"char": 60, "good": 70, "wrong": 70, "avg_rt": 90, "avg_wpm": 80}
+        widths = {"char": 55, "good": 60, "wrong": 55, "avg_rt": 70, "avg_wpm": 60, "confusions": 140}
         for col in columns:
             self.char_tree.heading(col, text=headings[col])
-            self.char_tree.column(col, width=widths[col], anchor="center")
+            self.char_tree.column(col, width=widths[col], anchor="w" if col == "confusions" else "center")
         self.char_tree.pack(fill="x", padx=8, pady=4)
 
         self.save_var = tk.StringVar(value="")
@@ -46,8 +46,8 @@ class StatsPanel:
         self.speed_var.set(f"Ø effektive Geschwindigkeit: {summary['avg_effective_wpm']:.1f} WPM")
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
-        for char, good, wrong, _total, avg_rt, avg_wpm in rows:
-            self.char_tree.insert("", "end", values=(char, good, wrong, f"{avg_rt:.2f}", f"{avg_wpm:.1f}"))
+        for char, good, wrong, _total, avg_rt, avg_wpm, confusions in rows:
+            self.char_tree.insert("", "end", values=(char, good, wrong, f"{avg_rt:.2f}", f"{avg_wpm:.1f}", confusions))
 
     def show_saved(self, path):
         if path is not None:

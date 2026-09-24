@@ -14,6 +14,7 @@ from group_mode import GroupModeFrame
 from qso_mode import QsoModeFrame
 from single_mode import SingleModeFrame
 from stats_widget import StatsPanel
+from ui_widgets import ScrollableFrame
 
 # Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
 DEFAULT_CHARSET = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
@@ -186,18 +187,47 @@ class MorseTrainerApp:
         """Eigener Reiter hinter den Trainingsmodi; ist kein Modus, Tasten
         werden dort nicht ausgewertet (siehe _active_mode)."""
         pad = {"padx": 8, "pady": 4}
-        frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="Gesamtstatistik")
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text="Statistik")
+        frame = ScrollableFrame(tab).inner
         self.all_time_panel = StatsPanel(
-            frame, title="Gesamtstatistik (alle Durchgänge)", tree_height=20, show_save_label=False
+            frame, title="Gesamtstatistik (alle Durchgänge)", tree_height=12, show_save_label=False
         )
-        ttk.Button(frame, text="Gesamtstatistik zurücksetzen", command=self._reset_all_time).pack(
+
+        confusion_box = ttk.LabelFrame(frame, text="Häufigste Verwechslungen")
+        confusion_box.pack(fill="x", **pad)
+        self.confusion_var = tk.StringVar(value="")
+        ttk.Label(confusion_box, textvariable=self.confusion_var, font=("Consolas", 11), justify="left").pack(
             anchor="w", **pad
+        )
+        ttk.Label(
+            confusion_box, wraplength=440, justify="left", foreground="gray40",
+            text="Gesendet → getippt. Paare, die in beide Richtungen auftauchen (↔), sind "
+                 "typische Klangverwandte – am besten gezielt zusammen üben, z. B. nur diese "
+                 "Zeichen im Zeichensatz oben.",
+        ).pack(anchor="w", padx=8, pady=(0, 6))
+        self.statistics_frame = frame  # weitere Bereiche (Fortschritt) hängen sich hier an
+
+        ttk.Button(frame, text="Gesamtstatistik zurücksetzen", command=self._reset_all_time).pack(
+            side="bottom", anchor="w", **pad
         )
 
     def _refresh_all_time(self):
         data = stats.load_all_time()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
+        self.confusion_var.set(self._confusion_text(data))
+
+    @staticmethod
+    def _confusion_text(data: dict) -> str:
+        pairs = stats.top_confusions(data)
+        if not pairs:
+            return "Noch keine Verwechslungen erfasst (werden ab jetzt mitgezählt)."
+        seen = {(sent, typed) for sent, typed, _, _ in pairs}
+        lines = []
+        for sent, typed, count, share in pairs:
+            arrow = "↔" if (typed, sent) in seen else "→"
+            lines.append(f"{sent} {arrow} {typed}   {count:>3}×   ({share:.0%} der {sent})")
+        return "\n".join(lines)
 
     def _reset_all_time(self):
         if messagebox.askyesno(
