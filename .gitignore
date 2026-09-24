@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+stats/
+window_state.json
+.idea/
