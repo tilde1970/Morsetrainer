@@ -18,8 +18,9 @@ rm -rf "$APPDIR"
 mkdir -p "$APPDIR/usr/lib"
 cp -a dist/morsetrainer "$APPDIR/usr/lib/"
 # Audio-Systembibliotheken nicht mitliefern, sie müssen zum ALSA/JACK/
-# PipeWire des Zielsystems passen (vgl. AppImage-Excludelist).
-rm -f "$APPDIR"/usr/lib/morsetrainer/_internal/{libasound.so.2,libjack.so.0}
+# PipeWire des Zielsystems passen (vgl. AppImage-Excludelist). Ebenso die
+# C++-Laufzeit: die System-libjack braucht die (neuere) System-libstdc++.
+rm -f "$APPDIR"/usr/lib/morsetrainer/_internal/{libasound.so.2,libjack.so.0,libstdc++.so.6,libgcc_s.so.1}
 cp packaging/morsetrainer.desktop packaging/morsetrainer.svg "$APPDIR/"
 cat > "$APPDIR/AppRun" <<'RUN'
 #!/bin/sh
