@@ -87,7 +87,7 @@ class SequenceModeFrame:
         self.start_button = ttk.Button(controls, text="Start", command=self.toggle_running)
         self.start_button.pack(side="left", **pad)
         self.repeat_button = ttk.Button(
-            controls, text="Wiederholen", command=self.repeat_sequence, state="disabled"
+            controls, text="Wiederholen (Leertaste)", command=self.repeat_sequence, state="disabled"
         )
         self.repeat_button.pack(side="left", **pad)
         self.sound_var = tk.BooleanVar(value=False)
@@ -112,6 +112,8 @@ class SequenceModeFrame:
         self.entry = ttk.Entry(entry_frame, textvariable=self.input_var, width=20, state="disabled")
         self.entry.pack(side="left")
         self.entry.bind("<Return>", self.on_submit)
+        # Ein Leerzeichen gehört nie zur Antwort, die Leertaste wiederholt.
+        self.entry.bind("<space>", lambda e: (self.repeat_sequence(), "break")[1])
 
         self.feedback_var = tk.StringVar(value="")
         self.feedback_label = ttk.Label(parent, textvariable=self.feedback_var, font=("Sans", 16, "bold"))
@@ -326,5 +328,6 @@ class SequenceModeFrame:
 
     def on_key(self, event):
         # Eingabe erfolgt über das Entry-Feld (self.entry), nicht über eine
-        # globale Tastenbindung; hier gibt es nichts zu tun.
-        pass
+        # globale Tastenbindung; nur die Leertaste wirkt auch außerhalb.
+        if event.keysym == "space":
+            self.repeat_sequence()

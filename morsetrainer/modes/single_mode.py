@@ -45,7 +45,7 @@ class SingleModeFrame:
         self.start_button = ttk.Button(controls, text="Start", command=self.toggle_running)
         self.start_button.pack(side="left", **pad)
         self.repeat_button = ttk.Button(
-            controls, text="Wiederholen", command=self.repeat_char, state="disabled"
+            controls, text="Wiederholen (Leertaste)", command=self.repeat_char, state="disabled"
         )
         self.repeat_button.pack(side="left", **pad)
         self.sound_var = tk.BooleanVar(value=False)
@@ -158,6 +158,9 @@ class SingleModeFrame:
             self.play_current()
 
     def on_key(self, event):
+        if event.keysym == "space":
+            self.repeat_char()
+            return
         if not self.waiting_for_input:
             return
         typed = event.char.upper()

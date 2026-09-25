@@ -24,6 +24,7 @@ Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz.
 
 ### Tastenkürzel
 
+- **Einzelzeichen, Gruppen, Rufzeichen:** Leertaste wiederholt.
 - **QSO:** F5 neues QSO/Stop, F6 nochmal hören, F7 Text zeigen, F8 prüfen.
 - **Contest:** F1 CQ, F2 Austausch, F3 TU/loggen, F4 eigenes Call,
   F5 sein Call, F7 „?“, F8 „AGN“. Enter sendet die passende nächste
