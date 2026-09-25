@@ -21,7 +21,7 @@ from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 __author__ = "DL4YM"
-__version__ = "2.0"
+__version__ = "2.1"
 
 # Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
 DEFAULT_CHARSET = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
