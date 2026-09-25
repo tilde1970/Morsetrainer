@@ -26,20 +26,20 @@ from tkinter import ttk
 
 import sounddevice as sd
 
-import align
-import qso_text
+from morsetrainer.core import align
+from morsetrainer.core import qso_text
 import numpy as np
 
-from band import BandConditions, soft_limit
-from qso_quiz import QuizPanel
-from ui_widgets import BandSettingsPanel, ScrollableFrame
-from morse import (
+from morsetrainer.core.band import BandConditions, soft_limit
+from morsetrainer.modes.qso_quiz import QuizPanel
+from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
+from morsetrainer.core.morse import (
     AUDIO_LATENCY, MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
     word_gap_extra_seconds,
 )
-import stats
-from stats import SessionStats
-from stats_widget import StatsPanel
+from morsetrainer.core import stats
+from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets.stats_widget import StatsPanel
 
 EVAL_QUIZ, EVAL_TYPING, EVAL_LISTEN = "quiz", "typing", "listen"
 EVAL_LABELS = {

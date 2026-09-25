@@ -16,10 +16,10 @@ from tkinter import ttk
 import numpy as np
 import sounddevice as sd
 
-import sfx
-from morse import AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, code_units
-from stats import SessionStats
-from stats_widget import StatsPanel
+from morsetrainer.core import sfx
+from morsetrainer.core.morse import AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, code_units
+from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets.stats_widget import StatsPanel
 
 
 class SequenceModeFrame:

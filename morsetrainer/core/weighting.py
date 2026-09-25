@@ -19,7 +19,7 @@ Tempo erkannt wird."""
 import random
 import statistics
 
-import stats
+from morsetrainer.core import stats
 
 MIN_WEIGHT = 0.1
 SPEED_WEIGHT = 0.5

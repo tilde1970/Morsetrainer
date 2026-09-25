@@ -3,10 +3,10 @@ import random
 import unittest
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-import morse
-import qso_text
-from qso_quiz import is_correct, normalize
-from run_mode import call_matches
+from morsetrainer.core import morse
+from morsetrainer.core import qso_text
+from morsetrainer.modes.qso_quiz import is_correct, normalize
+from morsetrainer.modes.run_mode import call_matches
 
 
 class MorseTest(unittest.TestCase):

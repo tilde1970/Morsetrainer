@@ -21,8 +21,8 @@ import random
 
 import numpy as np
 
-import qso_text
-from morse import SAMPLE_RATE, build_text, silence
+from morsetrainer.core import qso_text
+from morsetrainer.core.morse import SAMPLE_RATE, build_text, silence
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
 # indiziert.

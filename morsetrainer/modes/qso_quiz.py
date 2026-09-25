@@ -4,7 +4,7 @@ mit dem, was tatsächlich gesendet wurde."""
 import tkinter as tk
 from tkinter import ttk
 
-import qso_text
+from morsetrainer.core import qso_text
 
 OK_BG, WRONG_BG = "#d4f4d4", "#f8d0d0"
 

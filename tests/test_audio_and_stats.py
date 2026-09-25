@@ -9,9 +9,9 @@ from unittest import mock
 import numpy as np
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-import align
-import band
-import stats
+from morsetrainer.core import align
+from morsetrainer.core import band
+from morsetrainer.core import stats
 
 
 class AlignTest(unittest.TestCase):

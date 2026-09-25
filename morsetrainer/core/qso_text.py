@@ -20,8 +20,8 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from callsign_mode import load_callsigns
-from morse import BK, KN, MORSE_CODE, SK
+from morsetrainer.modes.callsign_mode import load_callsigns
+from morsetrainer.core.morse import BK, KN, MORSE_CODE, SK
 
 # Kurz: nur Rapport/Name/QTH; Normal: + Rig, Leistung, Wetter;
 # Lang: + Antenne, Alter, lizenziert seit, QSL-Info.

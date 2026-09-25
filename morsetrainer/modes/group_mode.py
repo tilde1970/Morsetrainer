@@ -4,9 +4,9 @@ import random
 import tkinter as tk
 from tkinter import ttk
 
-from morse import MORSE_CODE
-from sequence_mode import SequenceModeFrame
-from weighting import CharPicker
+from morsetrainer.core.morse import MORSE_CODE
+from morsetrainer.modes.sequence_mode import SequenceModeFrame
+from morsetrainer.core.weighting import CharPicker
 
 
 class GroupModeFrame(SequenceModeFrame):

@@ -34,13 +34,13 @@ from tkinter import ttk
 import numpy as np
 import sounddevice as sd
 
-import align
-import qso_text
-import stats
-from band import BandConditions
-from morse import AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_text
-from qso_quiz import is_correct
-from ui_widgets import BandSettingsPanel, ScrollableFrame
+from morsetrainer.core import align
+from morsetrainer.core import qso_text
+from morsetrainer.core import stats
+from morsetrainer.core.band import BandConditions
+from morsetrainer.core.morse import AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_text
+from morsetrainer.modes.qso_quiz import is_correct
+from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
 
 DEFAULT_CALL = "DL4YM"
 TICK_MS = 30

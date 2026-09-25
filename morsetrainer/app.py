@@ -6,19 +6,19 @@ Einstellungen für Zeichensatz, Geschwindigkeit und Tonhöhe."""
 import json
 import re
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox, ttk
 
-import stats
-from callsign_mode import CallsignModeFrame
-from continuous_mode import ContinuousModeFrame
-from group_mode import GroupModeFrame
-from qso_mode import QsoModeFrame
-from run_mode import RunModeFrame
-from single_mode import SingleModeFrame
-from progress_widget import ProgressPanel
-from stats_widget import StatsPanel
-from ui_widgets import ScrollableFrame
+from morsetrainer import PROJECT_DIR
+from morsetrainer.core import stats
+from morsetrainer.modes.callsign_mode import CallsignModeFrame
+from morsetrainer.modes.continuous_mode import ContinuousModeFrame
+from morsetrainer.modes.group_mode import GroupModeFrame
+from morsetrainer.modes.qso_mode import QsoModeFrame
+from morsetrainer.modes.run_mode import RunModeFrame
+from morsetrainer.modes.single_mode import SingleModeFrame
+from morsetrainer.widgets.progress_widget import ProgressPanel
+from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 __author__ = "DL4YM"
 __version__ = "2.0"
@@ -26,7 +26,7 @@ __version__ = "2.0"
 # Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
 DEFAULT_CHARSET = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
 DEFAULT_GEOMETRY = "520x980"
-WINDOW_STATE_FILE = Path(__file__).parent / "window_state.json"
+WINDOW_STATE_FILE = PROJECT_DIR / "window_state.json"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 
 

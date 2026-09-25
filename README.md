@@ -37,13 +37,25 @@ Voraussetzung ist Python 3.10 oder neuer mit Tk.
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python app.py
+python main.py
 ```
 
 Tests:
 
 ```bash
 python -m unittest discover tests
+```
+
+## Projektstruktur
+
+```
+main.py              Startdatei
+morsetrainer/
+  app.py             Hauptfenster mit allen Reitern
+  core/              Morsecode, Ton, Bandbedingungen, Texte, Statistik
+  modes/             ein Modul je Trainingsreiter
+  widgets/           wiederverwendbare Oberflächen-Bausteine
+tests/               automatische Tests
 ```
 
 ## Daten

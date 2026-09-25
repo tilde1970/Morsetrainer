@@ -4,7 +4,7 @@ in WZab/morse_trainer)."""
 import numpy as np
 import sounddevice as sd
 
-from morse import AUDIO_LATENCY, SAMPLE_RATE, shaped_tone, silence
+from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE, shaped_tone, silence
 
 
 def ok_samples() -> np.ndarray:

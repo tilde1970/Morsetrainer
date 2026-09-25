@@ -8,11 +8,11 @@ from tkinter import ttk
 
 import sounddevice as sd
 
-import sfx
-from morse import AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, code_units, duration_seconds
-from stats import SessionStats
-from stats_widget import StatsPanel
-from weighting import CharPicker
+from morsetrainer.core import sfx
+from morsetrainer.core.morse import AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, code_units, duration_seconds
+from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.core.weighting import CharPicker
 
 
 class SingleModeFrame:

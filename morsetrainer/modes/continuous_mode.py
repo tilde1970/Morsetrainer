@@ -19,14 +19,14 @@ from tkinter import ttk
 import numpy as np
 import sounddevice as sd
 
-import align
-from morse import (
+from morsetrainer.core import align
+from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
     char_gap_seconds, code_units, silence, word_gap_extra_seconds,
 )
-from stats import SessionStats
-from stats_widget import StatsPanel
-from weighting import CharPicker
+from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.core.weighting import CharPicker
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
 # damit ein Stop nicht erst das ganze (evtl. lange Farnsworth-)Zeichen

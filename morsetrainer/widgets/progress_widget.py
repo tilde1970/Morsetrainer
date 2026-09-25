@@ -8,7 +8,7 @@ Werte; „Tabelle“ zeigt dieselben Daten als Liste."""
 import tkinter as tk
 from tkinter import ttk
 
-import stats
+from morsetrainer.core import stats
 
 MAX_POINTS = 100
 CHART_HEIGHT = 140
