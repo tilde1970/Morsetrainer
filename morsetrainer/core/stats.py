@@ -17,9 +17,9 @@ import statistics
 from datetime import datetime
 from pathlib import Path
 
-from morsetrainer import PROJECT_DIR
+from morsetrainer import DATA_DIR
 
-STATS_DIR = PROJECT_DIR / "stats"
+STATS_DIR = DATA_DIR / "stats"
 ALL_TIME_FILE = STATS_DIR / "all_time.json"
 
 # Latenzen darüber (z. B. weil man kurz abgelenkt war) werden gekappt,

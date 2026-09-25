@@ -18,14 +18,14 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
-from morsetrainer import PROJECT_DIR
+from morsetrainer import DATA_DIR
 from morsetrainer.modes.sequence_mode import SequenceModeFrame
 from morsetrainer.core.weighting import CharPicker
 
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 DIGITS = "0123456789"
 CALL_CHARS = LETTERS + DIGITS + "/"
-CALLSIGN_FILE = PROJECT_DIR / "callsigns.scp"
+CALLSIGN_FILE = DATA_DIR / "callsigns.scp"
 
 # Bei gewichteter Auswahl wird aus so vielen zufälligen Kandidaten dasjenige
 # Rufzeichen bevorzugt, das die meisten deiner schwachen Zeichen enthält.

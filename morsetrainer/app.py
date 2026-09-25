@@ -8,7 +8,7 @@ import re
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from morsetrainer import PROJECT_DIR
+from morsetrainer import DATA_DIR
 from morsetrainer.core import stats
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
@@ -26,7 +26,7 @@ __version__ = "2.0"
 # Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
 DEFAULT_CHARSET = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
 DEFAULT_GEOMETRY = "520x980"
-WINDOW_STATE_FILE = PROJECT_DIR / "window_state.json"
+WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 
 

@@ -5,3 +5,6 @@ stats/
 window_state.json
 .idea/
 callsigns.scp
+build/
+dist/
+*.spec

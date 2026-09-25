@@ -29,7 +29,20 @@ Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz.
   F5 sein Call, F7 „?“, F8 „AGN“. Enter sendet die passende nächste
   Nachricht (ESM), Esc bricht das Senden ab.
 
-## Installation und Start
+## Download
+
+Fertige Programme gibt es unter
+[Releases](https://github.com/tilde1970/Morsetrainer/releases):
+
+- **Linux:** `Morsetrainer-x86_64.AppImage` herunterladen, ausführbar machen
+  (`chmod +x Morsetrainer-x86_64.AppImage`) und starten.
+- **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
+  nicht signiert ist, warnt Windows SmartScreen beim ersten Start
+  („Weitere Informationen“ → „Trotzdem ausführen“).
+
+Python wird dafür nicht benötigt.
+
+## Aus dem Quelltext starten
 
 Voraussetzung ist Python 3.10 oder neuer mit Tk.
 
@@ -56,9 +69,16 @@ morsetrainer/
   modes/             ein Modul je Trainingsreiter
   widgets/           wiederverwendbare Oberflächen-Bausteine
 tests/               automatische Tests
+packaging/           AppImage-Build (Icon, Desktop-Datei)
+.github/workflows/   baut AppImage und exe für Releases
 ```
 
 ## Daten
+
+Aus dem Quelltext gestartet liegen die Daten im Programmverzeichnis, beim
+AppImage in `~/.local/share/morsetrainer/`, bei der exe in
+`%APPDATA%\Morsetrainer\`.
+
 
 - `stats/`: Sitzungsprotokolle, Gesamtstatistik (`all_time.json`) und
   Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`).
@@ -66,7 +86,7 @@ tests/               automatische Tests
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
   im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von
   [supercheckpartial.com](https://www.supercheckpartial.com) herunter und
-  lege sie als `callsigns.scp` ins Programmverzeichnis. Ohne die Datei
+  lege sie als `callsigns.scp` in das Datenverzeichnis. Ohne die Datei
   erzeugt der Trainer Rufzeichen nach Landesmuster.
 
 ## Lizenz

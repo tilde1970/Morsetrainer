@@ -1,0 +1,61 @@
+# Baut AppImage (Linux) und exe (Windows).
+# Tag "v*" pushen -> GitHub-Release mit beiden Dateien.
+# Manuell gestartet (workflow_dispatch) -> nur Build-Artefakte zum Testen.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  appimage:
+    # Älteres Ubuntu = ältere glibc, damit läuft das AppImage auf mehr Systemen.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y libportaudio2 libtk8.6
+      - run: pip install -r requirements.txt pyinstaller
+      - name: appimagetool
+        run: |
+          curl -sSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+      - run: packaging/build_appimage.sh
+        env:
+          APPIMAGETOOL: ./appimagetool
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: dist/Morsetrainer-x86_64.AppImage
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller
+      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/Morsetrainer.exe
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [appimage, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer.exe
+        env:
+          GH_TOKEN: ${{ github.token }}

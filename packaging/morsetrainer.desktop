@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Morsetrainer
+Comment=CW-Trainer von DL4YM
+Exec=morsetrainer
+Icon=morsetrainer
+Categories=Education;HamRadio;
+Terminal=false
