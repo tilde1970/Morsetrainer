@@ -49,7 +49,7 @@ WORDS = {
     # Abkürzungen
     "ABT": "about – ungefähr", "AGN": "again – nochmal", "ANT": "antenna – Antenne",
     "BK": "break – Umschalten", "CFM": "confirm – bestätige", "CL": "closing – schließe die Station",
-    "CPY": "copy – aufnehmen", "CQ": "allgemeiner Anruf", "CUAGN": "see you again – bis wieder",
+    "CPY": "copy – aufnehmen", "CQ": "allgemeiner Anruf", "CUAGN": "see you again – auf Wiederhören",
     "CUL": "see you later – bis später", "DE": "von", "DR": "dear – lieber",
     "ES": "und", "FB": "fine business – prima", "FER": "for – für", "GA": "good afternoon",
     "GB": "goodbye", "GD": "guten Tag", "GE": "good evening", "GL": "good luck – viel Glück",
