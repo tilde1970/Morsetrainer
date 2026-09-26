@@ -2,9 +2,9 @@
 answers and a low buzzer for wrong answers (inspired by sig_ok/sig_err
 in WZab/morse_trainer)."""
 import numpy as np
-import sounddevice as sd
 
-from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE, shaped_tone, silence
+from morsetrainer.core import audio
+from morsetrainer.core.morse import shaped_tone, silence
 
 
 def ok_samples() -> np.ndarray:
@@ -17,8 +17,8 @@ def error_samples() -> np.ndarray:
 
 
 def play_ok() -> None:
-    sd.play(ok_samples(), SAMPLE_RATE, latency=AUDIO_LATENCY)
+    audio.play_quietly(ok_samples())
 
 
 def play_error() -> None:
-    sd.play(error_samples(), SAMPLE_RATE, latency=AUDIO_LATENCY)
+    audio.play_quietly(error_samples())

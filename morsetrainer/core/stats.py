@@ -18,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 from morsetrainer import DATA_DIR
+from morsetrainer.core import storage
 
 STATS_DIR = DATA_DIR / "stats"
 ALL_TIME_FILE = STATS_DIR / "all_time.json"
@@ -47,9 +48,16 @@ class SessionStats:
         self.rounds = []  # flat list of per-character results, across the whole session
         self.per_char = {}
 
-        STATS_DIR.mkdir(exist_ok=True)
         self.log_path = STATS_DIR / f"{self.start_time.strftime('%Y-%m-%d_%H%M%S')}-{mode}.jsonl"
-        self._fp = open(self.log_path, "a", encoding="utf-8")
+        # Lässt sich das Protokoll nicht schreiben (Platte voll, keine
+        # Schreibrechte), geht die Übung ohne Protokoll weiter.
+        self.log_error = None
+        try:
+            STATS_DIR.mkdir(exist_ok=True)
+            self._fp = open(self.log_path, "a", encoding="utf-8")
+        except OSError as exc:
+            self._fp = None
+            self.log_error = str(exc)
         self._write_line({
             "type": "config",
             "mode": mode,
@@ -62,8 +70,22 @@ class SessionStats:
         })
 
     def _write_line(self, obj: dict) -> None:
-        self._fp.write(json.dumps(obj, ensure_ascii=False) + "\n")
-        self._fp.flush()
+        if self._fp is None:
+            return
+        try:
+            self._fp.write(json.dumps(obj, ensure_ascii=False) + "\n")
+            self._fp.flush()
+        except OSError as exc:
+            self.log_error = str(exc)
+            self._close()
+
+    def _close(self) -> None:
+        if self._fp is not None:
+            try:
+                self._fp.close()
+            except OSError:
+                pass
+            self._fp = None
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
                     latency=None) -> None:
@@ -100,10 +122,14 @@ class SessionStats:
         agg["reaction_times"].append(reaction_time)
         agg["effective_wpms"].append(effective_wpm)
 
-    def record_group(self, sent: str, typed: str) -> None:
+    def record_group(self, sent: str, typed: str, wpm=None) -> None:
         """Log a group-mode commit at the group level (in addition to the
-        per-character record_char calls the caller makes for it)."""
-        self._write_line({"type": "group", "sent": sent, "typed": typed})
+        per-character record_char calls the caller makes for it). `wpm` is
+        the speed it was sent at, if that differs from the session's."""
+        entry = {"type": "group", "sent": sent, "typed": typed}
+        if wpm is not None:
+            entry["wpm"] = wpm
+        self._write_line(entry)
 
     def char_rows(self):
         """Per-character rows (char, good, wrong, total, avg_reaction_s, avg_wpm,
@@ -144,18 +170,24 @@ class SessionStats:
             }
         return out
 
-    def finalize(self):
+    def finalize(self, extra=None):
         """Write the closing summary line, merge into all_time.json, and
         close the log file. Returns the log file path, or None if nothing
-        was ever recorded (in which case the empty file is removed)."""
+        was ever recorded (in which case the empty file is removed).
+        `extra` adds fields to the summary line (e.g. "wpm_reached")."""
         if not self.rounds:
-            self._fp.close()
-            self.log_path.unlink(missing_ok=True)
+            self._close()
+            try:
+                self.log_path.unlink(missing_ok=True)
+            except OSError:
+                pass
             return None
-        self._write_line({"type": "summary", **self.summary(), "per_char": self._per_char_summary()})
-        self._fp.close()
+        self._write_line({
+            "type": "summary", **self.summary(), **(extra or {}), "per_char": self._per_char_summary(),
+        })
+        self._close()
         _merge_all_time(self)
-        return self.log_path
+        return self.log_path if self.log_error is None else None
 
 
 def _merge_all_time(session: "SessionStats") -> None:
@@ -181,17 +213,17 @@ def _merge_all_time(session: "SessionStats") -> None:
         confusions = x.setdefault("confusions", {})
         for typed, count in e["confusions"].items():
             confusions[typed] = confusions.get(typed, 0) + count
-    STATS_DIR.mkdir(exist_ok=True)
-    with open(ALL_TIME_FILE, "wt", encoding="utf-8") as fp:
-        json.dump(all_time, fp, indent=2, ensure_ascii=False)
+    try:
+        STATS_DIR.mkdir(exist_ok=True)
+        storage.write_json_atomic(ALL_TIME_FILE, all_time, indent=2)
+    except OSError:
+        pass  # Gesamtstatistik bleibt auf dem alten Stand; das Sitzungsprotokoll ist geschrieben
 
 
 def load_all_time() -> dict:
-    """Cumulative per-character totals across all past sessions."""
-    if ALL_TIME_FILE.exists():
-        with open(ALL_TIME_FILE, "rt", encoding="utf-8") as fp:
-            return json.load(fp)
-    return {}
+    """Cumulative per-character totals across all past sessions. A broken
+    file is set aside (see storage.load_json) instead of crashing."""
+    return storage.load_json(ALL_TIME_FILE, {})
 
 
 def reset_all_time() -> None:
@@ -251,6 +283,7 @@ RESULTS_FILE = STATS_DIR / "results.jsonl"
 HISTORY_MODES = {
     "single": "Einzelzeichen",
     "group": "Gruppen",
+    "word": "Wörter",
     "callsign": "Rufzeichen",
     "continuous": "Kontinuierlich",
     "qso": "QSO mittippen",
@@ -287,18 +320,40 @@ def _read_jsonl(path: Path):
         return
 
 
+# So viel vom Dateiende wird gelesen, um die Zeile "summary" zu finden
+# (enthält die Werte je Zeichen, daher etwas Reserve).
+SUMMARY_TAIL_BYTES = 65536
+
+
+def _config_and_summary(path: Path):
+    """Erste Zeile (config) und letzte Zeile (summary) einer Sitzungsdatei,
+    ohne die Zeilen dazwischen zu lesen; fehlt eine, steht dort None."""
+    try:
+        with open(path, "rb") as fp:
+            first = fp.readline()
+            size = fp.seek(0, 2)
+            fp.seek(max(size - SUMMARY_TAIL_BYTES, 0))
+            tail = fp.read()
+    except OSError:
+        return None, None
+    lines = tail.rstrip(b"\n").rsplit(b"\n", 1)
+    parsed = []
+    for raw, kind in ((first, "config"), (lines[-1], "summary")):
+        try:
+            obj = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            obj = None
+        parsed.append(obj if isinstance(obj, dict) and obj.get("type") == kind else None)
+    return parsed[0], parsed[1]
+
+
 def load_history():
     """Alle abgeschlossenen Durchgänge, chronologisch: [{"time": datetime,
     "mode", "accuracy_pct", "wpm", "total"}]. Quelle sind die Sitzungsdateien
     (Zeile "config" + "summary") und results.jsonl."""
     history = []
     for path in STATS_DIR.glob("20*.jsonl"):
-        config = summary = None
-        for obj in _read_jsonl(path):
-            if obj.get("type") == "config":
-                config = obj
-            elif obj.get("type") == "summary":
-                summary = obj
+        config, summary = _config_and_summary(path)
         if not config or not summary or not summary.get("total"):
             continue
         try:
@@ -306,7 +361,8 @@ def load_history():
                 "time": datetime.fromisoformat(config["start_time"]),
                 "mode": config["mode"],
                 "accuracy_pct": float(summary["accuracy_pct"]),
-                "wpm": int(config["wpm"]),
+                # Bei mitwachsendem Tempo zählt das erreichte.
+                "wpm": int(summary.get("wpm_reached") or config["wpm"]),
                 "total": int(summary["total"]),
             })
         except (KeyError, TypeError, ValueError):

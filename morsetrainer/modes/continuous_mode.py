@@ -17,11 +17,10 @@ import tkinter as tk
 from tkinter import ttk
 
 import numpy as np
-import sounddevice as sd
 
-from morsetrainer.core import align
+from morsetrainer.core import align, audio
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
+    END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
     char_gap_seconds, code_units, silence, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import SessionStats
@@ -36,6 +35,13 @@ WRITE_CHUNK_SECONDS = 0.02
 # Nach Ablauf der eingestellten Dauer wird nichts Neues mehr gesendet; so
 # lange bleibt noch Zeit, die zuletzt gehörten Zeichen einzutippen.
 FINISH_GRACE_SECONDS = 3
+
+# Die vorläufige Trefferquote während der Sitzung bezieht sich auf die
+# zuletzt gesendeten Zeichen; die ganze Sitzung wird erst beim Stop
+# ausgewertet. Getippte Zeichen zählen zum Fenster, wenn sie höchstens
+# PREVIEW_SLACK_SECONDS vor dem Ende seines ersten Zeichens kamen.
+PREVIEW_CHARS = 200
+PREVIEW_SLACK_SECONDS = 1.0
 
 
 class ContinuousModeFrame:
@@ -62,6 +68,8 @@ class ContinuousModeFrame:
         self.finishing = False    # Zeit abgelaufen, Auto-Stop ist eingeplant
         self.end_sent = False     # Schlusszeichen schon gesendet
         self.session_id = 0       # damit ein alter Auto-Stop keine neue Sitzung beendet
+        self.koch_result = None   # (Zeichensatz, richtig, gesamt) für den Koch-Aufstieg
+        self.audio_error = None   # Fehlermeldung aus dem Audio-Thread
 
         self._build_widgets(parent)
 
@@ -119,6 +127,8 @@ class ContinuousModeFrame:
         self.deadline = time.time() + minutes * 60 if minutes else None
         self.finishing = False
         self.end_sent = False
+        self.koch_result = None
+        self.audio_error = None
         self.session_id += 1
         self.charset = charset
         self.wpm = self.wpm_var.get()
@@ -144,12 +154,16 @@ class ContinuousModeFrame:
         self.root.after(1000, self._tick)
 
     def _play_loop(self):
+        try:
+            self._play_session()
+        except audio.ERRORS as exc:
+            self.audio_error = audio.describe(exc)  # _tick beendet die Sitzung
+
+    def _play_session(self):
         # Ein durchgehender Stream für die ganze Sitzung: Zeichen werden
         # lückenlos hintergeschrieben. Ein eigener Stream pro Zeichen
         # (sd.play + sd.wait) knackt beim Öffnen/Schließen und reißt Lücken.
-        with sd.OutputStream(
-            samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency=AUDIO_LATENCY
-        ) as stream:
+        with audio.output_stream() as stream:
             # Einleitung, wird nicht ausgewertet (landet nicht in sent_log).
             if not self._write(stream, build_text(START_TEXT + " ", self.wpm, self.freq, self.fw)):
                 return
@@ -192,17 +206,25 @@ class ContinuousModeFrame:
     def _tick(self):
         if not self.running:
             return
-        sent_str = "".join(e["char"] for e in self.sent_log)
-        typed_str = "".join(e["char"] for e in self.typed_log)
-        live = f"Gesendet: {len(self.sent_log)} Zeichen"
-        if sent_str:
+        if self.audio_error:
+            self.stop()
+            self.status_var.set(self.audio_error)
+            return
+        sent_log, typed_log = list(self.sent_log), list(self.typed_log)  # Audio-Thread hängt weiter an
+        window = sent_log[-PREVIEW_CHARS:]
+        live = f"Gesendet: {len(sent_log)} Zeichen"
+        if window:
+            since = window[0]["end_time"] - PREVIEW_SLACK_SECONDS
+            sent_str = "".join(e["char"] for e in window)
+            typed_str = "".join(e["char"] for e in typed_log if e["time"] >= since)
             ops = align.align(sent_str, typed_str)
             matches = sum(1 for op in ops if op.kind == align.OpKind.MATCH)
             expected_total = sum(
                 1 for op in ops if op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE, align.OpKind.DELETE)
             )
             pct = (matches / expected_total * 100) if expected_total else 0.0
-            live += f" · vorläufige Trefferquote: {pct:.0f}%"
+            scope = f" (letzte {PREVIEW_CHARS})" if len(sent_log) > PREVIEW_CHARS else ""
+            live += f" · vorläufige Trefferquote{scope}: {pct:.0f}%"
         if self.deadline is not None:
             remaining = max(int(self.deadline - time.time()), 0)
             live += f" · Restzeit {remaining // 60}:{remaining % 60:02d}"
@@ -213,7 +235,7 @@ class ContinuousModeFrame:
             self.finishing = True
             self.status_var.set("Zeit abgelaufen – tippe die letzten Zeichen noch ein…")
             self.root.after(FINISH_GRACE_SECONDS * 1000, self._auto_stop, self.session_id)
-        self.typed_preview_var.set(typed_str[-60:])
+        self.typed_preview_var.set("".join(e["char"] for e in typed_log[-60:]))
         self.root.after(1000, self._tick)
 
     def stop(self):
@@ -225,7 +247,7 @@ class ContinuousModeFrame:
             # Manueller Stop: Schlusszeichen nachschieben (eigener Stream,
             # der Sitzungs-Stream ist schon zu).
             self.end_sent = True
-            sd.play(build_text(END_TEXT, self.wpm, self.freq), SAMPLE_RATE, latency=AUDIO_LATENCY)
+            audio.play_quietly(build_text(END_TEXT, self.wpm, self.freq))
         self.start_button.config(text="Start")
         self.status_var.set("Werte aus…")
         self._finalize_session()
@@ -255,9 +277,11 @@ class ContinuousModeFrame:
             # INSERT (stray keystroke with no corresponding sent character) is not
             # attributable to any Morse character and is skipped for the stats.
 
-        self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
+        summary = self.session_stats.summary()
+        self.koch_result = (self.charset, summary["correct"], summary["total"])
+        self.stats_panel.refresh(summary, self.session_stats.char_rows())
         path = self.session_stats.finalize()
-        self.stats_panel.show_saved(path)
+        self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
 
     def on_close(self):

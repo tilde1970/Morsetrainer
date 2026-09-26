@@ -49,6 +49,8 @@ class StatsPanel:
         for char, good, wrong, _total, avg_rt, avg_wpm, confusions in rows:
             self.char_tree.insert("", "end", values=(char, good, wrong, f"{avg_rt:.2f}", f"{avg_wpm:.1f}", confusions))
 
-    def show_saved(self, path):
-        if path is not None:
+    def show_saved(self, path, error=None):
+        if error:
+            self.save_var.set(f"Protokoll nicht gespeichert: {error}")
+        elif path is not None:
             self.save_var.set(f"Gespeichert: {path.relative_to(path.parent.parent)}")

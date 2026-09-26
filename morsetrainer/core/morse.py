@@ -1,4 +1,6 @@
 """Morse code table and audio generation."""
+import random
+
 import numpy as np
 
 MORSE_CODE = {
@@ -78,6 +80,19 @@ def shaped_tone(freq: float, duration: float, amplitude: float = AMPLITUDE, harm
 
 def silence(duration: float) -> np.ndarray:
     return np.zeros(int(round(SAMPLE_RATE * duration)), dtype=np.float32)
+
+
+# Variation gegen Gewöhnung an genau einen Klang: Tonhöhe um bis zu
+# ±VARY_FREQ_HZ, Tempo um bis zu ±VARY_WPM_SHARE.
+VARY_FREQ_HZ = 100
+VARY_WPM_SHARE = 0.1
+
+
+def vary_voice(wpm: int, freq: int, rng=random) -> tuple[int, int]:
+    """Zufällig leicht verstimmte Tonhöhe und leicht geändertes Tempo."""
+    new_freq = min(max(freq + rng.randint(-VARY_FREQ_HZ, VARY_FREQ_HZ), 300), 1000)
+    new_wpm = max(round(wpm * rng.uniform(1 - VARY_WPM_SHARE, 1 + VARY_WPM_SHARE)), 5)
+    return new_wpm, new_freq
 
 
 def char_gap_seconds(wpm: int, farnsworth_wpm=None) -> float:

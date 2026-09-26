@@ -188,13 +188,20 @@ class Qso:
 
 
 _call_pool = None  # [(Rufzeichen, Country)], beim ersten Gebrauch geladen
+# Nach Länderauswahl gefilterte Teile von _call_pool (Schlüssel: frozenset
+# der Länder-Keys, None = alle), damit nicht jedes Rufzeichen die ganze
+# Liste neu filtert.
+_filtered_pools = {}
+
+# Alle Länder-Muster in einem Regex, je als benannte Gruppe c<Index>. Die
+# Alternativen werden der Reihe nach probiert, es gewinnt also wie bei
+# einer Schleife über COUNTRIES das erste passende Land.
+_COUNTRY_RE = re.compile("|".join(f"(?P<c{i}>{country.pattern})" for i, country in enumerate(COUNTRIES)))
 
 
 def _country_of(call: str):
-    for country in COUNTRIES:
-        if re.match(country.pattern, call):
-            return country
-    return None
+    match = _COUNTRY_RE.match(call)
+    return COUNTRIES[int(match.lastgroup[1:])] if match else None
 
 
 def _load_pool():
@@ -203,6 +210,15 @@ def _load_pool():
         calls, _release = load_callsigns()
         _call_pool = [(c, country) for c in calls if "/" not in c and (country := _country_of(c))]
     return _call_pool
+
+
+def _pool_for(countries):
+    key = frozenset(countries) if countries is not None else None
+    pool = _filtered_pools.get(key)
+    if pool is None:
+        pool = [(c, k) for c, k in _load_pool() if key is None or k.key in key]
+        _filtered_pools[key] = pool
+    return pool
 
 
 def _generated_call(country: Country) -> str:
@@ -215,7 +231,7 @@ def _generated_call(country: Country) -> str:
 
 def _pick_call(exclude=(), countries=None):
     """Zufälliges Rufzeichen, optional nur aus bestimmten Ländern (Keys)."""
-    pool = [(c, k) for c, k in _load_pool() if countries is None or k.key in countries]
+    pool = _pool_for(countries)
     candidates = [k for k in COUNTRIES if countries is None or k.key in countries]
     while True:
         if pool:

@@ -21,7 +21,6 @@ import random
 
 import numpy as np
 
-from morsetrainer.core import qso_text
 from morsetrainer.core.morse import SAMPLE_RATE, build_text, silence
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
@@ -174,6 +173,9 @@ def _ssb_babble_loop() -> np.ndarray:
 def _cw_qrm_loop(rng, freq: int) -> np.ndarray:
     """Nur die Run-Station eines Contest-Runs auf der Nachbarfrequenz; ihre
     Anrufer sind zu schwach und fallen in die Pausen."""
+    # Erst hier importiert: qso_text lädt die Rufzeichenliste aus den
+    # Modi, und die Modi importieren dieses Modul.
+    from morsetrainer.core import qso_text
     offset = rng.uniform(*CW_QRM_OFFSET_HZ) * rng.choice((-1, 1))
     if not 250 <= freq + offset <= 1200:
         offset = -offset
@@ -330,3 +332,37 @@ def _loop_slice(loop: np.ndarray, pos: int, n: int):
     """Nächste `n` Samples einer Endlosschleife ab `pos`; (neue Position, Samples)."""
     idx = (pos + np.arange(n)) % len(loop)
     return int((pos + n) % len(loop)), loop[idx]
+
+# Stufen für die Übungsmodi mit Einzelsequenzen (Gruppen, Wörter,
+# Rufzeichen): Störung -> Pegel. Dort gibt es keine eigenen Regler, nur
+# die Wahl der Stufe.
+PRESETS = {
+    "light": {"noise": 0.25, "qsb": 0.3},
+    "medium": {"noise": 0.4, "qrn": 0.3, "qsb": 0.5},
+    "heavy": {"noise": 0.6, "qrn": 0.5, "qsb": 0.8, "cw_qrm": 0.3},
+}
+# Rauschen schon vor dem ersten und noch nach dem letzten Zeichen.
+PRESET_LEAD_SECONDS = (0.4, 0.3)
+PRESET_BLOCK_SECONDS = 0.02
+
+
+def preset_conditions(preset: str, freq: int) -> BandConditions:
+    """BandConditions für eine Station mit den Pegeln aus PRESETS."""
+    band = BandConditions(1)
+    for effect, level in PRESETS[preset].items():
+        band.enabled[effect] = True
+        band.levels[effect] = level
+    band.prepare(freq)
+    return band
+
+
+def apply_preset(band: BandConditions, samples: np.ndarray) -> tuple[np.ndarray, float]:
+    """Legt die Bandbedingungen unter `samples` (Station 0), mit etwas
+    Rauschen davor und danach. Gibt (Samples, Vorlauf in Sekunden) zurück."""
+    lead, tail = PRESET_LEAD_SECONDS
+    padded = np.concatenate([silence(lead), samples, silence(tail)])
+    band.rewind()
+    block = int(SAMPLE_RATE * PRESET_BLOCK_SECONDS)
+    # Blockweise wie im QSO-Modus, damit Knackstörungen im richtigen Takt kommen.
+    out = [band.mix([(padded[i:i + block], 0)], len(padded[i:i + block])) for i in range(0, len(padded), block)]
+    return np.concatenate(out), lead

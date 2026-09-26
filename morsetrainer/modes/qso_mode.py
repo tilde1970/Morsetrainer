@@ -24,9 +24,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-import sounddevice as sd
-
-from morsetrainer.core import align
+from morsetrainer.core import align, audio
 from morsetrainer.core import qso_text
 import numpy as np
 
@@ -34,7 +32,7 @@ from morsetrainer.core.band import BandConditions, soft_limit
 from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
+    MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
     word_gap_extra_seconds,
 )
 from morsetrainer.core import stats
@@ -349,14 +347,19 @@ class QsoModeFrame:
         self._update_layout()
         self.on_start_cb()
 
+        self.audio_error = None  # Fehlermeldung aus dem Audio-Thread
         self.play_thread = threading.Thread(target=self._play_loop, daemon=True)
         self.play_thread.start()
         self.root.after(TICK_MS, self._tick, self.session_id)
 
     def _play_loop(self):
-        with sd.OutputStream(
-            samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency=AUDIO_LATENCY
-        ) as stream:
+        try:
+            self._play_qso()
+        except audio.ERRORS as exc:
+            self.audio_error = audio.describe(exc)  # _tick beendet das QSO
+
+    def _play_qso(self):
+        with audio.output_stream() as stream:
             lead_in = NOISE_LEAD_IN_SECONDS if self.band.has_background else LEAD_IN_SECONDS
             if not self._write(stream, silence(lead_in)):
                 return
@@ -433,6 +436,10 @@ class QsoModeFrame:
 
     def _tick(self, session_id):
         if not self.running or session_id != self.session_id:
+            return
+        if self.audio_error:
+            self._finish(stopped=True)
+            self.status_var.set(self.audio_error)
             return
         if self.tracking:
             self.typed_preview_var.set("".join(e["char"] for e in self.typed_log)[-60:])
@@ -514,7 +521,7 @@ class QsoModeFrame:
         summary = self.session_stats.summary()
         self.stats_panel.refresh(summary, self.session_stats.char_rows())
         path = self.session_stats.finalize()
-        self.stats_panel.show_saved(path)
+        self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
         return summary["accuracy_pct"] / 100 if summary["total"] else None
 

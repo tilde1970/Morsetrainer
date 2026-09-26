@@ -32,13 +32,12 @@ from dataclasses import dataclass
 from tkinter import ttk
 
 import numpy as np
-import sounddevice as sd
 
-from morsetrainer.core import align
+from morsetrainer.core import align, audio
 from morsetrainer.core import qso_text
 from morsetrainer.core import stats
 from morsetrainer.core.band import BandConditions
-from morsetrainer.core.morse import AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_text
+from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE, build_text
 from morsetrainer.modes.qso_quiz import is_correct
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
 
@@ -98,6 +97,7 @@ class Mixer:
         self.clock = 0
         self.running = False
         self.thread = None
+        self.error = None  # Fehlermeldung, falls die Tonausgabe scheitert
 
     def start(self):
         self.running = True
@@ -121,8 +121,14 @@ class Mixer:
             self.sources = [s for s in self.sources if s[2] != station]
 
     def _run(self):
+        try:
+            self._mix()
+        except audio.ERRORS as exc:
+            self.error = audio.describe(exc)  # RunModeFrame._tick beendet den Contest
+
+    def _mix(self):
         n = int(SAMPLE_RATE * MIX_CHUNK_SECONDS)
-        with sd.OutputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency=AUDIO_LATENCY) as stream:
+        with audio.output_stream() as stream:
             while self.running:
                 begin, end = self.clock, self.clock + n
                 parts = []
@@ -403,6 +409,11 @@ class RunModeFrame:
 
     def _tick(self, session_id):
         if not self.running or session_id != self.session_id:
+            return
+        if self.mixer.error:
+            error = self.mixer.error
+            self.stop()
+            self.status_var.set(f"{error} – {self.status_var.get()}")
             return
         now = self.mixer.clock
         due = [e for e in self.events if e[0] <= now]

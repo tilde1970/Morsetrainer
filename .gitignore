@@ -5,6 +5,7 @@ stats/
 window_state.json
 .idea/
 callsigns.scp
+woerter.txt
 build/
 dist/
 *.spec

@@ -180,3 +180,16 @@ class CallsignModeFrame(SequenceModeFrame):
             return {"pattern": "prefix(1-2 Buchstaben) + Ziffer + suffix(1-3 Buchstaben)"}
         return {"source": "callsigns.scp", "prefixes": parse_prefixes(self.prefix_var.get()),
                 "pool_size": len(self.pool), "affixes": self.affix_var.get()}
+
+    def settings(self) -> dict:
+        data = super().settings()
+        data["prefixes"] = self.prefix_var.get()
+        data["affix"] = self.affix_var.get()
+        return data
+
+    def restore_settings(self, data: dict) -> None:
+        super().restore_settings(data)
+        if isinstance(data.get("prefixes"), str):
+            self.prefix_var.set(data["prefixes"])
+        if isinstance(data.get("affix"), bool):
+            self.affix_var.set(data["affix"])
