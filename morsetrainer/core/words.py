@@ -54,7 +54,7 @@ WORDS = {
     "ES": "und", "FB": "fine business – prima", "FER": "for – für", "GA": "good afternoon",
     "GB": "goodbye", "GD": "guten Tag", "GE": "good evening", "GL": "good luck – viel Glück",
     "GM": "good morning", "GN": "good night", "HI": "Lachen", "HR": "here – hier",
-    "HW": "how – wie (aufgenommen)?", "MNI": "many – viele", "NR": "number – Nummer",
+    "HW": "how – wie (aufgenommen)?", "MNI": "many – viele", "NR": "number / near – Nummer / nahe bei",
     "NW": "now – jetzt", "OM": "old man – Funkfreund", "OP": "operator – Funker",
     "PSE": "please – bitte", "PWR": "power – Leistung", "RIG": "Funkgerät",
     "RPT": "repeat/report – wiederholen/Rapport", "RST": "Rapport (Lesbarkeit, Stärke, Ton)",
