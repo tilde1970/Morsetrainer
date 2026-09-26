@@ -39,7 +39,7 @@ _UMLAUTS = str.maketrans({"Ä": "AE", "Ö": "OE", "Ü": "UE", "ß": "SS", "ẞ":
 
 WORDS = {
     # Q-Gruppen
-    "QRG": "Frequenz", "QRL": "Frequenz belegt?", "QRM": "Störungen durch andere Stationen",
+    "QRG": "Frequenz", "QRL": "beschäftigt / Frequenz belegt? (auch: Arbeit)", "QRM": "Störungen durch andere Stationen",
     "QRN": "atmosphärische Störungen", "QRO": "hohe Leistung", "QRP": "kleine Leistung",
     "QRQ": "schneller geben", "QRS": "langsamer geben", "QRT": "Sendeschluss",
     "QRU": "nichts mehr für dich", "QRV": "bereit", "QRX": "bitte warten",
