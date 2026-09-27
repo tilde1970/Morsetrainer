@@ -148,6 +148,17 @@ class GroupEvaluationTest(AppTestCase):
         self.assertNotIn("Lektion", words.feedback_var.get())
 
 
+class CallsignTest(AppTestCase):
+    def test_learned_only_explains_missing_digit(self):
+        calls = self.mode("Rufzeichen")
+        calls.all_calls = ["DL4YM", "DK1AB"] * 40
+        self.app.charset_var.set("KMURESNAPTLWI")  # noch keine Ziffer
+        self.assertFalse(calls._validate_settings())
+        self.assertIn("Ziffer", calls.status_var.get())
+        calls.learned_var.set(False)
+        self.assertTrue(calls._validate_settings())
+
+
 class SingleCharTest(AppTestCase):
     def setUp(self):
         super().setUp()

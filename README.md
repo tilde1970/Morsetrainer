@@ -12,7 +12,7 @@ Contest-Pile-up unter realistischen Kurzwellenbedingungen.
 | **Einzelzeichen** | Einzelne Zeichen erkennen, gemessen wird auch die Reaktionszeit. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist. |
 | **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
-| **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, auf Wunsch mit /P, /M, OE/… |
+| **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. |
 | **Kontinuierlich** | Der Ton läuft ohne Pause durch, du tippst mit (wie beim Mithören). Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit Pile-ups. Auswertung per Abfrage/Log, durch Mittippen oder nur zum Hören. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Das Log wird am Ende geprüft. |

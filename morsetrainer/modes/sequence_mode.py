@@ -277,7 +277,8 @@ class SequenceModeFrame:
         theme.hint(controls, textvariable=self.remaining_var).pack(side="right")
 
         self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
-        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
+        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel", wraplength=560,
+                  justify="center").pack(pady=(14, 6))
 
         # Eingabezeile; beim Kopfhören stattdessen die Knöpfe zum Auflösen
         # und Bewerten (siehe _show_answer_row).

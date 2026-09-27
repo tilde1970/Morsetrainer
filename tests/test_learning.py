@@ -300,3 +300,22 @@ class RetryQueueTest(unittest.TestCase):
         picker = CharPicker("KM", weighted=False)
         self.assertTrue(all(picker.pick(exclude="M") == "K" for _ in range(20)))
         self.assertIn(picker.pick(exclude="KM"), "KM")  # nichts übrig: Ausschluss entfällt
+
+
+class CallsignFilterTest(unittest.TestCase):
+    def test_filter_by_learned_chars_and_prefix(self):
+        from morsetrainer.modes.callsign_mode import filter_calls
+        calls = ["DL4YM", "DK1AB", "W1AW", "G3XYZ"]
+        self.assertEqual(filter_calls(calls, [], set("DLYMK41AB")), ["DL4YM", "DK1AB"])
+        self.assertEqual(filter_calls(calls, ["DK"], None), ["DK1AB"])
+
+    def test_affixes_are_rare_and_use_only_allowed_chars(self):
+        from morsetrainer.modes import callsign_mode
+        random.seed(3)
+        results = [callsign_mode.add_affix("DL4YM", set("DL4YMP/")) for _ in range(4000)]
+        with_affix = [r for r in results if r != "DL4YM"]
+        self.assertLess(len(with_affix) / len(results), 0.12)
+        self.assertTrue(all(set(r) <= set("DL4YMP/") for r in results))  # nur /P möglich
+        self.assertTrue(all(r == "DL4YM" for r in
+                            (callsign_mode.add_affix("DL4YM", set("DL4YM")) for _ in range(200))))  # ohne "/"
+
