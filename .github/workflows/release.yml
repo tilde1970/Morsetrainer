@@ -27,10 +27,16 @@ jobs:
         env:
           APPIMAGETOOL: ./appimagetool
           APPIMAGE_EXTRACT_AND_RUN: "1"
+          # Update-Quelle im AppImage (für Gear Lever, AppImageUpdate …):
+          # immer das neueste Release dieses Repos.
+          UPDATE_INFORMATION: "gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|Morsetrainer-x86_64.AppImage.zsync"
+      - run: test -f dist/Morsetrainer-x86_64.AppImage.zsync
       - uses: actions/upload-artifact@v7
         with:
           name: appimage
-          path: dist/Morsetrainer-x86_64.AppImage
+          path: |
+            dist/Morsetrainer-x86_64.AppImage
+            dist/Morsetrainer-x86_64.AppImage.zsync
 
   windows:
     runs-on: windows-latest
@@ -56,6 +62,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer.exe
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe
         env:
           GH_TOKEN: ${{ github.token }}

@@ -2,6 +2,11 @@
 # Baut dist/Morsetrainer-x86_64.AppImage. Voraussetzungen: pyinstaller im
 # aktiven Python, libportaudio2 installiert, appimagetool im PATH oder als
 # $APPIMAGETOOL.
+#
+# Mit $UPDATE_INFORMATION (z. B. "gh-releases-zsync|user|repo|latest|
+# Morsetrainer-x86_64.AppImage.zsync") wird die Update-Quelle eingebettet
+# und dist/Morsetrainer-x86_64.AppImage.zsync erzeugt; AppImage-Verwalter
+# wie Gear Lever finden Updates dann ohne manuelle Einstellung.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -29,4 +34,10 @@ exec "$HERE/usr/lib/morsetrainer/morsetrainer" "$@"
 RUN
 chmod +x "$APPDIR/AppRun"
 
-ARCH=x86_64 "${APPIMAGETOOL:-appimagetool}" "$APPDIR" dist/Morsetrainer-x86_64.AppImage
+UPDATE_ARGS=()
+[ -n "${UPDATE_INFORMATION:-}" ] && UPDATE_ARGS=(-u "$UPDATE_INFORMATION")
+ARCH=x86_64 "${APPIMAGETOOL:-appimagetool}" "${UPDATE_ARGS[@]}" "$APPDIR" dist/Morsetrainer-x86_64.AppImage
+# appimagetool legt die .zsync-Datei im aktuellen Verzeichnis ab.
+if [ -f Morsetrainer-x86_64.AppImage.zsync ]; then
+    mv Morsetrainer-x86_64.AppImage.zsync dist/
+fi
