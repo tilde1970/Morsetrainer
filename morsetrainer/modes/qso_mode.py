@@ -25,7 +25,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import align, audio
-from morsetrainer.core import qso_text
+from morsetrainer.core import qso_text, tempo
 import numpy as np
 
 from morsetrainer.core.band import BandConditions, soft_limit
@@ -68,10 +68,10 @@ PILEUP_STRENGTH = (0.4, 0.9)
 WRITE_CHUNK_SECONDS = 0.02
 FINISH_GRACE_SECONDS = 3
 TICK_MS = 250
-# Tempo automatisch anpassen: (Mindest-Trefferquote, WPM-Änderung), die
-# erste passende Stufe gilt; Grenzen wie im WPM-Feld.
-ADAPTIVE_STEPS = ((1.0, 2), (0.9, 1), (0.6, 0), (0.4, -1), (0.0, -2))
-WPM_LIMITS = (5, 40)
+# Tempo automatisch anpassen: (Mindest-Trefferquote, Änderung des effektiven
+# Tempos in WPM), die erste passende Stufe gilt. Nur ±1: ein QSO hat nur
+# wenige abgefragte Felder, ein Ausreißer soll nicht gleich zwei Stufen machen.
+ADAPTIVE_STEPS = ((0.9, 1), (0.6, 0), (0.0, -1))
 
 # Station 1 bzw. Run-Station, dann abwechselnd für die Gegenstationen.
 STATION_COLORS = ("#1f5fbf", "#b35900", "#2e8b57")
@@ -85,11 +85,15 @@ def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
 
 
 class QsoModeFrame:
-    def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop):
+    uses_tempo_adjust = True
+
+    def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
+                 adjust_tempo=None):
         self.root = parent.winfo_toplevel()
         self.wpm_var = wpm_var
         self.freq_var = freq_var
         self.farnsworth_wpm = farnsworth_wpm  # callable -> effektive WPM oder None
+        self.adjust_tempo = adjust_tempo      # callable(delta) -> (vorher, nachher) als Text
         self.on_start_cb = on_start
         self.on_stop_cb = on_stop
 
@@ -210,7 +214,7 @@ class QsoModeFrame:
 
         self.adaptive_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            box, text="Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert WPM oben)",
+            box, text="Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert das Tempo oben)",
             variable=self.adaptive_var,
         ).grid(row=3, column=0, columnspan=2, sticky="w")
 
@@ -568,7 +572,7 @@ class QsoModeFrame:
 
     # --- Abfrage ------------------------------------------------------------
     def _on_quiz_checked(self, correct: int, total: int):
-        stats.log_result("qso_quiz", correct, total, self.voices[0][0], kind=self.qso.kind,
+        stats.log_result("qso_quiz", correct, total, tempo.effective(self.voices[0][0], self.fw), kind=self.qso.kind,
                          length=self.length_var.get())
         self.on_stop_cb()  # Statistik-Reiter (Verlauf) aktualisieren
         self.quiz_checked = True
@@ -579,20 +583,17 @@ class QsoModeFrame:
         self._update_reveal_button()
 
     def _adapt_speed(self, accuracy) -> str:
-        """Passt bei eingeschalteter Option die WPM-Einstellung an die
+        """Passt bei eingeschalteter Option das Tempo (gemeinsame Einstellung,
+        Regel aus core/tempo.py: erst die Farnsworth-Pausen) an die
         Trefferquote an; gibt einen Hinweis für die Statuszeile zurück."""
-        if accuracy is None or not self.adaptive_var.get():
-            return ""
-        try:
-            wpm = self.wpm_var.get()
-        except tk.TclError:
+        if accuracy is None or not self.adaptive_var.get() or self.adjust_tempo is None:
             return ""
         change = next(step for threshold, step in ADAPTIVE_STEPS if accuracy >= threshold)
-        new_wpm = min(max(wpm + change, WPM_LIMITS[0]), WPM_LIMITS[1])
-        if new_wpm == wpm:
-            return f" Tempo bleibt bei {wpm} WPM."
-        self.wpm_var.set(new_wpm)
-        return f" Tempo: {wpm} → {new_wpm} WPM."
+        result = self.adjust_tempo(change)
+        if result is None:
+            return ""
+        before, after = result
+        return f" Tempo bleibt bei {before}." if before == after else f" Tempo: {before} → {after}."
 
     # --- Schnittstelle zur App ------------------------------------------------
     def on_function_key(self, key: str):

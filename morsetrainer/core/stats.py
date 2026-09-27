@@ -19,6 +19,7 @@ from pathlib import Path
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core import storage
+from morsetrainer.core import tempo
 from morsetrainer.core.morse import display_text
 
 STATS_DIR = DATA_DIR / "stats"
@@ -181,7 +182,7 @@ class SessionStats:
         """Write the closing summary line, merge into all_time.json, and
         close the log file. Returns the log file path, or None if nothing
         was ever recorded (in which case the empty file is removed).
-        `extra` adds fields to the summary line (e.g. "wpm_reached")."""
+        `extra` adds fields to the summary line (e.g. "wpm_effective_reached")."""
         if not self.rounds:
             self._close()
             try:
@@ -355,6 +356,17 @@ def _config_and_summary(path: Path):
     return parsed[0], parsed[1]
 
 
+def _session_effective_wpm(config: dict, summary: dict) -> int:
+    """Effektives Tempo eines Durchgangs für den Verlauf, damit Durchgänge
+    mit und ohne Farnsworth vergleichbar sind. Bei mitwachsendem Tempo das
+    erreichte; ältere Dateien kennen nur das erreichte Zeichentempo."""
+    if summary.get("wpm_effective_reached"):
+        return int(summary["wpm_effective_reached"])
+    wpm = int(summary.get("wpm_reached") or config["wpm"])
+    fw = config.get("farnsworth_wpm")
+    return tempo.effective(wpm, int(fw) if fw else None)
+
+
 def load_history():
     """Alle abgeschlossenen Durchgänge, chronologisch: [{"time": datetime,
     "mode", "accuracy_pct", "wpm", "total"}]. Quelle sind die Sitzungsdateien
@@ -369,8 +381,7 @@ def load_history():
                 "time": datetime.fromisoformat(config["start_time"]),
                 "mode": config["mode"],
                 "accuracy_pct": float(summary["accuracy_pct"]),
-                # Bei mitwachsendem Tempo zählt das erreichte.
-                "wpm": int(summary.get("wpm_reached") or config["wpm"]),
+                "wpm": _session_effective_wpm(config, summary),
                 "total": int(summary["total"]),
             })
         except (KeyError, TypeError, ValueError):

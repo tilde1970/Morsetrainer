@@ -119,6 +119,21 @@ class GroupEvaluationTest(AppTestCase):
         self.assertIsNone(g.koch_result)
         self.assertEqual(stats.load_all_time(), {})
 
+    def test_growing_tempo_passes_character_speed(self):
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_wpm_var.set(19)
+        self.app.farnsworth_enabled_var.set(True)
+        self.group.tempo_var.set(True)
+        self._start()
+        self.assertEqual(self.group.tempo_info_var.get(), "aktuell 20/19 WPM")
+        self._answer("KMU", "KMU")
+        self.assertEqual(self.group.tempo_info_var.get(), "aktuell 20 WPM")
+        self._answer("KMU", "KMU")
+        self.assertEqual(self.group.tempo_info_var.get(), "aktuell 21 WPM")
+        self._answer("KMU", "KKK")
+        self._answer("KMU", "KKK")
+        self.assertEqual(self.group.tempo_info_var.get(), "aktuell 19 WPM")
+
     def test_word_mode_has_no_lesson_note(self):
         words = self.mode("Wörter")
         words.style_var.set(sq.COPY)
@@ -210,6 +225,18 @@ class QsoRevealTest(AppTestCase):
         q.quiz_checked = True
         q._update_reveal_button()
         self.assertEqual(str(q.reveal_button["state"]), "normal")
+
+
+class QsoTempoTest(AppTestCase):
+    def test_automatic_tempo_changes_pauses_first(self):
+        q = self.mode("QSO")
+        q.adaptive_var.set(True)
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_wpm_var.set(10)
+        self.app.farnsworth_enabled_var.set(True)
+        self.assertIn("20/10 WPM → 20/11 WPM", q._adapt_speed(1.0))
+        self.assertEqual(self.app.wpm_var.get(), 20)
+        self.assertIn("→ 20/10 WPM", q._adapt_speed(0.3))
 
 
 class ContestLogTest(AppTestCase):

@@ -25,10 +25,9 @@ zu viel Getipptes zählt als Fehler. Kopfhören beruht auf Selbstbewertung
 und zählt weder für den Aufstieg noch für die Gesamtstatistik.
 
 Wahlweise wächst das Tempo mit (wie bei RufzXP): richtig beim ersten
-Versuch +1 WPM, falsch beim ersten Versuch −1 WPM. Mit Farnsworth ändert
-sich nur das effektive Tempo (die Pausen), die Zeichen bleiben im vollen
-Tempo; ohne Farnsworth sinkt das Zeichentempo nicht unter TEMPO_MIN_CHAR,
-damit die Zeichen nicht so gedehnt werden, dass man mitzählen kann. Es
+Versuch +1 WPM, falsch beim ersten Versuch −1 WPM, angewandt auf das
+effektive Tempo nach der gemeinsamen Regel in core/tempo.py (erst die
+Pausen, die Zeichen bleiben schnell). Es
 lassen sich Bandbedingungen in drei Stufen unterlegen. Mit „Tonhöhe und Tempo
 variieren“ (gemeinsame Einstellung) klingt jede Sequenz etwas anders.
 
@@ -45,7 +44,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import align, audio, band, sfx
+from morsetrainer.core import align, audio, band, sfx, tempo
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
     code_units, display_text, vary_voice,
@@ -60,11 +59,8 @@ DEFAULT_GIVE_UP = 3
 COPY, MEMORIZE, HEAD = "copy", "memorize", "head"
 INPUT_STYLES = ((COPY, "Mitschreiben"), (MEMORIZE, "Erst merken"), (HEAD, "Kopfhören"))
 
-# Mitwachsendes Tempo: Schritt und Grenzen in WPM. Das Zeichentempo sinkt
-# nicht unter TEMPO_MIN_CHAR (außer es war schon beim Start niedriger).
+# Mitwachsendes Tempo: Schritt in WPM (Regel siehe core/tempo.py).
 TEMPO_STEP = 1
-TEMPO_RANGE = (5, 60)
-TEMPO_MIN_CHAR = 15
 
 # Zeitfenster für eine Antwort, die für den Koch-Aufstieg zählt: ab dem
 # Ende des Tons so viele Sekunden plus je Zeichen der Sequenz.
@@ -125,14 +121,13 @@ class SequenceModeFrame:
         self.typed_so_far = ""
         self.replayed = False  # Sequenz in diesem Versuch mehrfach gehört
         self.enter_time = None  # Enter schon während des Tons gedrückt (time.time())
-        self.tempo_effective = False  # mitwachsendes Tempo ändert nur die Pausen (Farnsworth)
-        self.tempo_floor = TEMPO_RANGE[0]
+        self.tempo_fw = None     # effektives Tempo beim mitwachsenden Tempo (Farnsworth), None = aus
         self.attempts = 0      # Versuche für die aktuelle Sequenz
         self.first_try_correct = 0
         self.first_try_total = 0
         self.koch_result = None  # (Zeichensatz, richtig, gesamt) des letzten Durchgangs
-        self.tempo = None        # mitwachsendes Tempo, None = aus
-        self.tempo_best = None   # höchstes Tempo mit einer beim ersten Versuch richtigen Sequenz
+        self.tempo = None        # mitwachsendes Zeichentempo, None = aus
+        self.tempo_best = None   # höchstes effektives Tempo mit einer beim ersten Versuch richtigen Sequenz
         self.band = None         # BandConditions, None = ohne Störungen
         self.repeat_pending = False
         self.deadline = None   # time.time(), ab der keine neue Sequenz mehr kommt
@@ -225,15 +220,15 @@ class SequenceModeFrame:
         ttk.Label(give_up, text="Fehlversuchen").pack(side="left", padx=(4, 0))
         theme.hint(give_up, text="(0 = nie)").pack(side="left", padx=(4, 0))
 
-        tempo = ttk.Frame(options)
-        tempo.pack(fill="x", pady=1)
+        tempo_row = ttk.Frame(options)
+        tempo_row.pack(fill="x", pady=1)
         self.tempo_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            tempo, text=f"Tempo wächst mit (richtig +{TEMPO_STEP}, falsch −{TEMPO_STEP} WPM)",
+            tempo_row, text=f"Tempo wächst mit (richtig +{TEMPO_STEP}, falsch −{TEMPO_STEP} WPM)",
             variable=self.tempo_var,
         ).pack(side="left")
         self.tempo_info_var = tk.StringVar(value="")
-        theme.hint(tempo, textvariable=self.tempo_info_var).pack(side="left", padx=(8, 0))
+        theme.hint(tempo_row, textvariable=self.tempo_info_var).pack(side="left", padx=(8, 0))
 
         band_row = ttk.Frame(options)
         band_row.pack(fill="x", pady=1)
@@ -383,13 +378,9 @@ class SequenceModeFrame:
         self.revealed = False
         self.first_try_correct = self.first_try_total = 0
         self.koch_result = None
-        self.tempo, self.tempo_effective = None, False
+        self.tempo, self.tempo_fw = None, None
         if self.tempo_var.get():
-            fw = self.farnsworth_wpm()
-            # Mit Farnsworth wächst das effektive Tempo, das Zeichentempo bleibt.
-            self.tempo_effective = fw is not None
-            self.tempo = fw if self.tempo_effective else wpm
-            self.tempo_floor = TEMPO_RANGE[0] if self.tempo_effective else min(TEMPO_MIN_CHAR, wpm)
+            self.tempo, self.tempo_fw = wpm, self.farnsworth_wpm()
         self.tempo_best = None
         self._show_tempo()
         preset = BAND_LABELS.get(self.band_var.get())
@@ -441,8 +432,8 @@ class SequenceModeFrame:
         self.status_var.set("Gestoppt.")
         self.remaining_var.set("")
         if self.tempo is not None:
-            best = f"{self.tempo_best} WPM" if self.tempo_best else "–"
-            self.tempo_info_var.set(f"Bestwert {best}, zuletzt {self.tempo} WPM")
+            best = f"{self.tempo_best} WPM effektiv" if self.tempo_best else "–"
+            self.tempo_info_var.set(f"Bestwert {best}, zuletzt {tempo.label(self.tempo, self.tempo_fw)}")
         self.on_stop_cb()
 
     def _time_up(self) -> bool:
@@ -465,7 +456,8 @@ class SequenceModeFrame:
             self.koch_result = (getattr(self, "charset", ""), self.first_try_correct, self.first_try_total)
         extra = {}
         if self.tempo is not None:
-            extra = {"wpm_reached": self.tempo_best, "wpm_end": self.tempo}
+            extra = {"wpm_effective_reached": self.tempo_best,
+                     "wpm_effective_end": tempo.effective(self.tempo, self.tempo_fw)}
         path = self.session_stats.finalize(extra)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         if self.session_stats.self_assessed and path is not None:
@@ -538,7 +530,7 @@ class SequenceModeFrame:
     def _pick_voice(self):
         """Tempo und Tonhöhe für eine neue Sequenz; Wiederholungen behalten sie."""
         wpm, freq = self._audio_settings()
-        if self.tempo is not None and not self.tempo_effective:
+        if self.tempo is not None:
             wpm = self.tempo
         if self.vary_var is not None and self.vary_var.get():
             wpm, freq = vary_voice(wpm, freq)
@@ -548,13 +540,7 @@ class SequenceModeFrame:
         if self.tempo is None:
             self.tempo_info_var.set("")
         else:
-            self.tempo_info_var.set(f"aktuell {self.tempo} WPM{' effektiv' if self.tempo_effective else ''}")
-
-    def _tempo_ceiling(self) -> int:
-        # Effektiv schneller als die Zeichen geht nicht; dort ist Farnsworth aus.
-        if self.tempo_effective:
-            return self._audio_settings()[0]
-        return TEMPO_RANGE[1]
+            self.tempo_info_var.set(f"aktuell {tempo.label(self.tempo, self.tempo_fw)}")
 
     def _update_tempo(self, correct: bool, attempts: int):
         """Nur der erste Versuch zählt: ein Fehler bei der Wiederholung
@@ -562,18 +548,17 @@ class SequenceModeFrame:
         if self.tempo is None or attempts != 1:
             return
         if correct:
-            self.tempo_best = max(self.tempo_best or 0, self.tempo)
-            self.tempo = min(self.tempo + TEMPO_STEP, self._tempo_ceiling())
-        else:
-            self.tempo = max(self.tempo - TEMPO_STEP, self.tempo_floor)
+            self.tempo_best = max(self.tempo_best or 0, tempo.effective(self.tempo, self.tempo_fw))
+        self.tempo, self.tempo_fw = tempo.step(self.tempo, self.tempo_fw, TEMPO_STEP if correct else -TEMPO_STEP)
         self._show_tempo()
 
     def _farnsworth(self):
-        """Effektives Tempo für die Pausen: beim mitwachsenden effektiven
-        Tempo dieses (solange langsamer als die Zeichen), sonst die
-        gemeinsame Einstellung."""
-        if self.tempo is not None and self.tempo_effective:
-            return self.tempo if self.tempo < self.voice[0] else None
+        """Effektives Tempo für die Pausen: beim mitwachsenden Tempo dessen
+        eigenes (solange langsamer als die Zeichen), sonst die gemeinsame
+        Einstellung."""
+        if self.tempo is not None:
+            fw = self.tempo_fw
+            return fw if fw is not None and fw < self.voice[0] else None
         return self.farnsworth_wpm()
 
     def play_current(self, listen_only=False, on_done=None):
@@ -727,7 +712,9 @@ class SequenceModeFrame:
         """Gemeinsamer Abschluss eines Versuchs: Statistik, Anpassungen,
         Rückmeldung und was als Nächstes kommt."""
         sent = self.current_sequence
-        self.session_stats.record_group(sent, typed, wpm=self.tempo)
+        self.session_stats.record_group(
+            sent, typed, wpm=self.tempo if self.tempo is None else tempo.effective(self.tempo, self.tempo_fw)
+        )
         self.attempts += 1
         # Für den Koch-Aufstieg zählt nur ein flüssiger erster Versuch: ohne
         # Wiederholen, im Zeitfenster; Kopfhören (Selbstbewertung) gar nicht.

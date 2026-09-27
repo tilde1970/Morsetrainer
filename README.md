@@ -25,10 +25,12 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
   J = gewusst, N = nicht gewusst). Kopfhören beruht auf deiner eigenen
   Bewertung und zählt daher nicht für die Gesamtstatistik und die Lektion.
 - **Tempo wächst mit** (wie bei RufzXP): richtig beim ersten Versuch +1 WPM,
-  falsch beim ersten Versuch −1 WPM. Mit Farnsworth ändert sich nur das
-  effektive Tempo (die Pausen), die Zeichen bleiben schnell; ohne Farnsworth
-  sinkt das Zeichentempo nicht unter 15 WPM. Der Fortschrittsverlauf zeigt
-  das erreichte Tempo.
+  falsch beim ersten Versuch −1 WPM – gemeint ist das effektive Tempo. Mit
+  Farnsworth werden erst die Pausen kürzer; sind sie weg, wird das
+  Zeichentempo schneller. Langsamer werden die Zeichen höchstens bis 15 WPM,
+  darunter werden die Pausen länger, damit man nicht mitzählen kann. Dieselbe
+  Regel gilt für „Tempo automatisch anpassen“ im QSO-Reiter. Der
+  Fortschrittsverlauf zeigt das effektive Tempo (z. B. 10 bei 20/10 WPM).
 - **Bandbedingungen** in drei Stufen: leicht, mittel, stark.
 
 ### Lernweg für Einsteiger

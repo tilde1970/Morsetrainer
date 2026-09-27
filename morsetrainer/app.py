@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from morsetrainer import DATA_DIR
-from morsetrainer.core import audio, koch, practice, stats, storage
+from morsetrainer.core import audio, koch, practice, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
@@ -417,6 +417,24 @@ class MorseTrainerApp:
             return None
         return effective if 0 < effective < wpm else None
 
+    def adjust_tempo(self, delta: int):
+        """Gemeinsames Tempo um `delta` WPM effektiv ändern (core/tempo.py);
+        gibt (vorher, nachher) als Text zurück oder None bei ungültigen Feldern."""
+        try:
+            wpm = self.wpm_var.get()
+        except tk.TclError:
+            return None
+        fw = self.farnsworth_wpm()
+        limits = self._shared_vars()["wpm"][1]
+        new_wpm, new_fw = tempo.step(wpm, fw, delta, limits)
+        self.wpm_var.set(new_wpm)
+        if new_fw is None:
+            self.farnsworth_enabled_var.set(False)
+        else:
+            self.farnsworth_wpm_var.set(new_fw)
+            self.farnsworth_enabled_var.set(True)
+        return tempo.label(wpm, fw), tempo.label(new_wpm, new_fw)
+
     def _build_all_time_tab(self):
         """Eigener Reiter hinter den Trainingsmodi; ist kein Modus, Tasten
         werden dort nicht ausgewertet (siehe _active_mode)."""
@@ -528,6 +546,8 @@ class MorseTrainerApp:
             tab = ttk.Frame(self.notebook)
             self.notebook.add(tab, text=title)
             extra = {"vary_var": self.vary_var} if getattr(frame_cls, "uses_vary", False) else {}
+            if getattr(frame_cls, "uses_tempo_adjust", False):
+                extra["adjust_tempo"] = self.adjust_tempo
             mode = frame_cls(
                 tab, self.charset_var, self.wpm_var, self.freq_var, self.weighted_var, self.farnsworth_wpm,
                 on_start=self._lock_tabs, on_stop=self._handle_mode_stop, **extra,

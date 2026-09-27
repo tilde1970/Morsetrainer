@@ -2,6 +2,7 @@
 Gruppen per Alignment und die mitwachsende Gruppenlänge."""
 import random
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -245,8 +246,41 @@ class TempoHistoryTest(unittest.TestCase):
                     mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"):
                 session = stats.SessionStats("group", "KM", 20, 600)
                 session.record_char("K", "K", True, 0.5, 20.0)
-                session.finalize({"wpm_reached": 27, "wpm_end": 25})
+                session.finalize({"wpm_reached": 27, "wpm_end": 25})  # ältere Dateien
                 self.assertEqual(stats.load_history()[0]["wpm"], 27)
+
+    def test_history_uses_effective_tempo(self):
+        from unittest import mock
+        from morsetrainer.core import stats
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            with mock.patch.object(stats, "STATS_DIR", directory), \
+                    mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"), \
+                    mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"):
+                for extra in (None, {"wpm_effective_reached": 13}):
+                    session = stats.SessionStats("group", "KM", 20, 600, farnsworth_wpm=10)
+                    session.record_char("K", "K", True, 0.5, 20.0)
+                    session.finalize(extra)
+                    time.sleep(1.1)  # eigener Dateiname je Sekunde
+                self.assertEqual([e["wpm"] for e in stats.load_history()], [10, 13])
+
+
+class TempoRuleTest(unittest.TestCase):
+    def test_faster_shortens_pauses_then_raises_char_speed(self):
+        from morsetrainer.core import tempo
+        self.assertEqual(tempo.step(20, 10, 1), (20, 11))
+        self.assertEqual(tempo.step(20, 19, 1), (20, None))   # Farnsworth fällt weg
+        self.assertEqual(tempo.step(20, None, 1), (21, None))
+
+    def test_slower_never_stretches_characters_below_minimum(self):
+        from morsetrainer.core import tempo
+        self.assertEqual(tempo.step(20, 10, -1), (20, 9))      # nur die Pausen
+        self.assertEqual(tempo.step(18, None, -1), (17, None))
+        self.assertEqual(tempo.step(15, None, -1), (15, 14))   # ab hier Farnsworth
+        self.assertEqual(tempo.step(12, None, -1), (12, 11))   # Start unter 15: Zeichen bleiben
+        self.assertEqual(tempo.step(20, 5, -1), (20, 5))       # Untergrenze
+        self.assertEqual(tempo.label(20, 12), "20/12 WPM")
+        self.assertEqual(tempo.label(20, None), "20 WPM")
 
 
 class RetryQueueTest(unittest.TestCase):
