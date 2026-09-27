@@ -166,6 +166,24 @@ class VariationTest(unittest.TestCase):
             self.assertEqual(lead, band.PRESET_LEAD_SECONDS[0])
             self.assertLessEqual(float(np.max(np.abs(mixed))), 1.0)
 
+    def test_background_gain_scales_only_interference(self):
+        import numpy as np
+        from morsetrainer.core import band
+        from morsetrainer.core.morse import build_text
+        samples = build_text("KM", 20, 600)
+        conditions = band.preset_conditions("heavy", 600)
+        conditions.enabled["qsb"] = False  # QSB ändert das Signal selbst
+        conditions.background_gain = 0.0
+        mixed, lead = band.apply_preset(conditions, samples)
+        start = round(lead * band.SAMPLE_RATE)
+        np.testing.assert_allclose(mixed[start:start + len(samples)], band.soft_limit(samples), atol=1e-6)
+
+        def background_rms(gain):
+            conditions.background_gain = gain
+            mixed, _ = band.apply_preset(conditions, np.zeros(0, dtype=np.float32))
+            return float(np.sqrt(np.mean(mixed ** 2)))
+        self.assertLess(background_rms(0.3), background_rms(1.0))
+
 
 class IcrLimitTest(unittest.TestCase):
     def test_limit_adapts_within_range(self):

@@ -206,13 +206,16 @@ class BandConditions:
     """Mischt die Bandbedingungen in die Audio-Blöcke eines QSOs. `enabled`
     und `levels` (je Schlüssel aus EFFECTS) dürfen während der Wiedergabe vom
     GUI-Thread aus geändert werden; danach dort prepare() aufrufen, damit
-    die Schleifen nicht erst im Audio-Thread erzeugt werden."""
+    die Schleifen nicht erst im Audio-Thread erzeugt werden.
+    `background_gain` skaliert alle Störgeräusche gemeinsam (nicht die
+    Stationen selbst), z. B. um sie gegenüber den Zeichen leiser zu machen."""
 
     def __init__(self, station_count: int):
         self.rng = np.random.default_rng()
         self.noise = _shaped_noise_loop()
         self.enabled = dict.fromkeys(EFFECTS, False)
         self.levels = dict.fromkeys(EFFECTS, 0.5)
+        self.background_gain = 1.0
         self.ssb = None
         self.cw_qrm = None
         self.strengths = [self.rng.uniform(*STRENGTH_FIRST)] + [
@@ -281,18 +284,20 @@ class BandConditions:
         for block, station in sources:
             out[:len(block)] += block[:n] * self.station_gain(station, len(block[:n]))
         levels = self.levels
+        background = np.zeros(n, dtype=np.float64)
         if self._on("noise"):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
-            out += noise * (MAX_NOISE_RMS * levels["noise"])
+            background += noise * (MAX_NOISE_RMS * levels["noise"])
         if self._on("qrn"):
-            out += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
+            background += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
         ssb, cw_qrm = self.ssb, self.cw_qrm  # können parallel in prepare() entstehen
         if self._on("ssb") and ssb is not None:
             self.ssb_pos, part = _loop_slice(ssb, self.ssb_pos, n)
-            out += part * (MAX_SSB_RMS * levels["ssb"])
+            background += part * (MAX_SSB_RMS * levels["ssb"])
         if self._on("cw_qrm") and cw_qrm is not None:
             self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos, n)
-            out += part * levels["cw_qrm"]
+            background += part * levels["cw_qrm"]
+        out += background * self.background_gain
         self.sample_pos += n
         return soft_limit(out).astype(np.float32)
 
@@ -335,7 +340,7 @@ def _loop_slice(loop: np.ndarray, pos: int, n: int):
 
 # Stufen für die Übungsmodi mit Einzelsequenzen (Gruppen, Wörter,
 # Rufzeichen): Störung -> Pegel. Dort gibt es keine eigenen Regler, nur
-# die Wahl der Stufe.
+# die Wahl der Stufe und die Lautstärke der Störungen (background_gain).
 PRESETS = {
     "light": {"noise": 0.25, "qsb": 0.3},
     "medium": {"noise": 0.4, "qrn": 0.3, "qsb": 0.5},

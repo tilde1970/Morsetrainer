@@ -55,6 +55,8 @@ TEMPO_RANGE = (5, 60)
 
 # Bandbedingungen: Beschriftung -> Stufe aus band.PRESETS (None = aus).
 BAND_LABELS = {"aus": None, "leicht": "light", "mittel": "medium", "stark": "heavy"}
+# Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
+BAND_GAIN_RANGE = (10, 150)
 
 
 def clean_input(text: str) -> str:
@@ -148,6 +150,7 @@ class SequenceModeFrame:
             "input_style": self.style_var.get(),
             "adaptive_tempo": self.tempo_var.get(),
             "band": BAND_LABELS.get(self.band_var.get()),
+            "band_gain": round(self.band_gain_var.get()),
         }
         for key, var in (("duration", self.duration_var), ("give_up", self.give_up_var)):
             try:
@@ -166,10 +169,12 @@ class SequenceModeFrame:
         for label, preset in BAND_LABELS.items():
             if data.get("band") == preset:
                 self.band_var.set(label)
-        for key, var, limits in (("duration", self.duration_var, (0, 120)), ("give_up", self.give_up_var, (0, 9))):
+        for key, var, limits in (("duration", self.duration_var, (0, 120)), ("give_up", self.give_up_var, (0, 9)),
+                                 ("band_gain", self.band_gain_var, BAND_GAIN_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)
+        self._show_band_gain()
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
@@ -211,6 +216,23 @@ class SequenceModeFrame:
         ttk.Combobox(band_row, textvariable=self.band_var, values=list(BAND_LABELS), state="readonly",
                      width=8).pack(side="left")
         theme.hint(band_row, text="(Rauschen, QSB, Knacken, QRM)").pack(side="left", padx=(6, 0))
+
+        gain_row = ttk.Frame(options)
+        gain_row.pack(fill="x", pady=1)
+        ttk.Label(gain_row, text="Störgeräusche:").pack(side="left", padx=(0, 4))
+        theme.hint(gain_row, text="leiser").pack(side="left")
+        self.band_gain_var = tk.DoubleVar(value=100)
+        self.band_gain_scale = ttk.Scale(
+            gain_row, from_=BAND_GAIN_RANGE[0], to=BAND_GAIN_RANGE[1], variable=self.band_gain_var, length=180,
+            command=lambda _: self._show_band_gain(),
+        )
+        self.band_gain_scale.pack(side="left", padx=6)
+        theme.hint(gain_row, text="lauter").pack(side="left")
+        self.band_gain_text = tk.StringVar(value="")
+        self.band_gain_label = ttk.Label(gain_row, textvariable=self.band_gain_text, width=6, anchor="e")
+        self.band_gain_label.pack(side="left", padx=(6, 0))
+        self.band_var.trace_add("write", lambda *_: self._show_band_gain())
+        self._show_band_gain()
 
         duration = ttk.Frame(options)
         duration.pack(fill="x", pady=1)
@@ -277,6 +299,13 @@ class SequenceModeFrame:
         history = theme.card(parent, "Verlauf")
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
+
+    def _show_band_gain(self):
+        """Prozentanzeige; ohne Bandbedingungen ist der Regler gesperrt."""
+        self.band_gain_text.set(f"{round(self.band_gain_var.get())} %")
+        active = BAND_LABELS.get(self.band_var.get()) is not None
+        self.band_gain_scale.state(["!disabled"] if active else ["disabled"])
+        self.band_gain_label.config(foreground="" if active else theme.DISABLED)
 
     def _show_answer_row(self):
         if self.style == HEAD:
@@ -506,6 +535,8 @@ class SequenceModeFrame:
         samples = np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
         lead = 0.0
         if self.band is not None:
+            # Der Regler gilt auch mitten im Durchgang ab der nächsten Sequenz.
+            self.band.background_gain = self.band_gain_var.get() / 100
             samples, lead = band.apply_preset(self.band, samples)
         # Hörbar wird der Ton erst nach der Ausgabelatenz; ab dann zählt die
         # Reaktionszeit, und erst danach ist er zu Ende.
