@@ -12,6 +12,11 @@ ist nur eine grobe, alle 1s neu berechnete Vorschau; die für die Statistik
 verwendete, endgültige Zuordnung passiert erst beim Stop in einem einzigen
 Alignment-Durchlauf über die komplette Session.
 
+Die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen, wie
+bei Koch-Kursen und im Funkbetrieb; das gibt dem Ohr Wortgrenzen, und mit
+Farnsworth stimmt das effektive Tempo (die ARRL-Formel rechnet mit
+Wortpausen). Gruppenlänge 0 = ununterbrochener Strom.
+
 Ehrliche Wertung: Eine Taste zählt nur dann für ein gesendetes Zeichen,
 wenn sie zeitlich dazu passt – nicht vor dessen Ende (Vorausraten) und
 höchstens MAX_LAG_SECONDS danach; sonst gilt das Zeichen als verpasst und
@@ -43,6 +48,9 @@ WRITE_CHUNK_SECONDS = 0.02
 # Nach Ablauf der eingestellten Dauer wird nichts Neues mehr gesendet; so
 # lange bleibt noch Zeit, die zuletzt gehörten Zeichen einzutippen.
 FINISH_GRACE_SECONDS = 3
+
+DEFAULT_GROUP_LEN = 5
+GROUP_LEN_RANGE = (0, 10)
 
 # Zeitliche Plausibilität einer Zuordnung Taste -> gesendetes Zeichen: so
 # viel früher als das Tonende (Messungenauigkeit) bzw. höchstens so viel
@@ -107,6 +115,14 @@ class ContinuousModeFrame:
         ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
         ttk.Label(duration, text="Min.").pack(side="left", padx=(4, 0))
         theme.hint(duration, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        grouping = ttk.Frame(options)
+        grouping.pack(fill="x", pady=(2, 0))
+        ttk.Label(grouping, text="Gruppen zu").pack(side="left", padx=(0, 4))
+        self.group_len_var = tk.IntVar(value=DEFAULT_GROUP_LEN)
+        ttk.Spinbox(grouping, from_=GROUP_LEN_RANGE[0], to=GROUP_LEN_RANGE[1], textvariable=self.group_len_var,
+                    width=3).pack(side="left")
+        ttk.Label(grouping, text="Zeichen").pack(side="left", padx=(4, 0))
+        theme.hint(grouping, text="(mit Wortpause dazwischen; 0 = durchgehend)").pack(side="left", padx=(4, 0))
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
@@ -124,6 +140,22 @@ class ContinuousModeFrame:
         ttk.Label(typed, textvariable=self.typed_preview_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
         self.stats_panel = StatsPanel(parent)
+
+    def settings(self) -> dict:
+        data = {}
+        for key, var in (("duration", self.duration_var), ("group_len", self.group_len_var)):
+            try:
+                data[key] = var.get()
+            except tk.TclError:
+                pass
+        return data
+
+    def restore_settings(self, data: dict) -> None:
+        for key, var, limits in (("duration", self.duration_var, (0, 120)),
+                                 ("group_len", self.group_len_var, GROUP_LEN_RANGE)):
+            value = data.get(key)
+            if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
+                var.set(value)
 
     def toggle_running(self):
         if self.running:
@@ -155,7 +187,12 @@ class ContinuousModeFrame:
         self.fw = self.farnsworth_wpm()
         self.sent_log = []
         self.typed_log = []
-        self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw)
+        try:
+            self.group_len = min(max(self.group_len_var.get(), GROUP_LEN_RANGE[0]), GROUP_LEN_RANGE[1])
+        except tk.TclError:
+            self.group_len = DEFAULT_GROUP_LEN
+        self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw,
+                                          group_len=self.group_len or None)
         # Ohne Session: die Zuordnung gesendet/getippt steht erst beim Stop
         # fest, während der Sitzung zählt daher nur die Gesamtstatistik.
         self.picker = CharPicker(charset, self.weighted_var.get())
@@ -186,7 +223,14 @@ class ContinuousModeFrame:
             # Einleitung, wird nicht ausgewertet (landet nicht in sent_log).
             if not self._write(stream, build_text(START_TEXT + " ", self.wpm, self.freq, self.fw)):
                 return
+            in_group = 0
             while self.running and not self._time_up():
+                if self.group_len and in_group == self.group_len:
+                    # Wortpause zwischen den Gruppen (zusätzlich zur Zeichenpause).
+                    if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
+                        break
+                    in_group = 0
+                in_group += 1
                 char = self.picker.pick()
                 samples = build_samples(char, self.wpm, self.freq, self.fw)
                 if not self._write(stream, samples):

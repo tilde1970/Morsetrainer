@@ -13,9 +13,9 @@ Contest-Pile-up unter realistischen Kurzwellenbedingungen.
 | **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
 | **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. |
-| **Kontinuierlich** | Der Ton läuft ohne Pause durch, du tippst mit (wie beim Mithören). Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
+| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit Pile-ups. Auswertung per Abfrage/Log, durch Mittippen oder nur zum Hören. |
-| **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Das Log wird am Ende geprüft. |
+| **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. |
 | **Statistik** | Gesamtstatistik je Zeichen, häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel und Fortschrittsverlauf je Modus. |
 
 In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
@@ -63,7 +63,8 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
    öfter dran. Nach den 40 Lektionen von lcwo.net folgen in den Lektionen
    41–44 die Betriebszeichen aus dem QSO: AR (Taste `+`), KN (`(`),
    SK (`*`) und BK (`#`).
-5. Ab etwa Lektion 5 lohnt sich der Reiter **Wörter**, danach
+5. Ab Lektion 7 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
+   dem neuesten Zeichen kommen bevorzugt), danach
    **Kontinuierlich** und **QSO**.
 6. Im Reiter **Statistik** zeigt „Die 4 häufigsten gezielt üben“, welche
    Zeichen du verwechselst, und übt genau diese gegeneinander. „↩ Lektion“

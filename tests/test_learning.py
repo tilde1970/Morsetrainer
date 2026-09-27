@@ -319,3 +319,26 @@ class CallsignFilterTest(unittest.TestCase):
         self.assertTrue(all(r == "DL4YM" for r in
                             (callsign_mode.add_affix("DL4YM", set("DL4YM")) for _ in range(200))))  # ohne "/"
 
+
+class WordLessonTest(unittest.TestCase):
+    def test_newest_char_is_favored(self):
+        random.seed(5)
+        pool = ["TNX", "ES", "UR", "RST", "NAME", "WX", "HW", "PSE", "AGN", "TEST"]
+        picker = words.WordPicker(pool, favor="W")
+        picks = [picker.pick() for _ in range(2000)]
+        share = sum("W" in p for p in picks) / len(picks)
+        self.assertGreater(share, 0.3)  # ohne Bevorzugung ~20 %
+
+    def test_few_favored_words_are_capped(self):
+        random.seed(6)
+        pool = ["TNX", "ES", "UR", "RST", "NAME", "PSE", "UP", "AGN", "TEST", "HR", "OM", "GM", "GE", "FB"]
+        picker = words.WordPicker(pool, favor="P")  # nur PSE und UP
+        picks = [picker.pick() for _ in range(4000)]
+        for word in ("PSE", "UP"):
+            self.assertLess(picks.count(word) / len(picks), 0.17)
+
+    def test_first_lesson_with_enough_words(self):
+        lesson = words.first_lesson_with_words()
+        self.assertGreaterEqual(len(words.words_for_charset(koch.lesson_charset(lesson))), words.MIN_WORDS)
+        self.assertLess(len(words.words_for_charset(koch.lesson_charset(lesson - 1))), words.MIN_WORDS)
+

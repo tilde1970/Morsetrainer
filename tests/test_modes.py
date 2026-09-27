@@ -148,6 +148,14 @@ class GroupEvaluationTest(AppTestCase):
         self.assertNotIn("Lektion", words.feedback_var.get())
 
 
+class WordModeTest(AppTestCase):
+    def test_too_few_words_points_to_groups(self):
+        w = self.mode("Wörter")
+        self.app.charset_var.set("KMUR")  # Lektion 3: nur RR und UR
+        self.assertFalse(w._validate_settings())
+        self.assertIn("Gruppen", w.status_var.get())
+
+
 class CallsignTest(AppTestCase):
     def test_learned_only_explains_missing_digit(self):
         calls = self.mode("Rufzeichen")
@@ -227,6 +235,37 @@ class ContinuousTest(AppTestCase):
         self.assertFalse(continuous_mode.plausible(now - 1, now))
 
 
+class ContinuousGroupingTest(AppTestCase):
+    def test_word_gap_after_each_group(self):
+        import contextlib
+        c = self.mode("Kontinuierlich")
+
+        class FakeStream:
+            latency = 0.0
+
+            def write(self, block):
+                pass
+
+        c.picker = single_mode.CharPicker("KM", False)
+        c.wpm, c.freq, c.fw, c.group_len = 20, 600, None, 3
+        c.sent_log, c.running, c.deadline = [], True, None
+        word_gap = continuous_mode.word_gap_extra_seconds(20, None)
+        gaps = []
+        real_silence = continuous_mode.silence
+
+        def counting_silence(seconds):
+            if abs(seconds - word_gap) < 1e-9:
+                gaps.append(seconds)
+                if len(gaps) == 4:
+                    c.running = False  # nach der vierten Wortpause aufhören
+            return real_silence(seconds)
+
+        with mock.patch.object(continuous_mode.audio, "output_stream", lambda: contextlib.nullcontext(FakeStream())), \
+                mock.patch.object(continuous_mode, "silence", counting_silence):
+            c._play_session()
+        self.assertEqual(len(c.sent_log), 12)  # 4 Wortpausen nach je 3 Zeichen
+
+
 class QsoRevealTest(AppTestCase):
     def test_text_hidden_until_quiz_checked(self):
         q = self.mode("QSO")
@@ -248,6 +287,57 @@ class QsoTempoTest(AppTestCase):
         self.assertIn("20/10 WPM → 20/11 WPM", q._adapt_speed(1.0))
         self.assertEqual(self.app.wpm_var.get(), 20)
         self.assertIn("→ 20/10 WPM", q._adapt_speed(0.3))
+
+
+class ContestBustedTest(AppTestCase):
+    def _contest_with_caller(self):
+        from morsetrainer.core import qso_text
+        r = self.mode("Contest")
+        patches = [mock.patch.object(run_mode.Mixer, "start"), mock.patch.object(run_mode.Mixer, "stop")]
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+        r.start()
+        caller = run_mode.Caller(call="DL1ABC", exchange="14", exchange_kind=qso_text.TEXT, station=1,
+                                 wpm=20, freq=600.0, strength=1.0, patience=3)
+        r.callers = [caller]
+        return r, caller
+
+    def test_near_call_gets_answer_and_correction_with_tu_logs_ok(self):
+        r, caller = self._contest_with_caller()
+        with mock.patch.object(run_mode.random, "random", return_value=0.0):
+            r._react("exchange", "DL1ABD", r.msg_id)
+        self.assertEqual(caller.state, "worked")  # antwortet trotz falschem Call
+        r.exchange_sent_to = "DL1ABD"
+        r.call_var.set("DL1ABC")  # Hörfehler bemerkt und korrigiert
+        r.exch_var.set("14")
+        r._on_enter()
+        self.assertEqual(r.log[-1]["ok"], True)
+        self.assertIn("DL1ABC TU", r.status_var.get())
+        r.stop()
+
+    def test_unnoticed_busted_call_is_marked(self):
+        r, caller = self._contest_with_caller()
+        with mock.patch.object(run_mode.random, "random", return_value=0.0):
+            r._react("exchange", "DL1ABD", r.msg_id)
+        r.exchange_sent_to = "DL1ABD"
+        r.call_var.set("DL1ABD")
+        r.exch_var.set("14")
+        r._on_enter()
+        self.assertEqual(r.log[-1]["ok"], False)
+        item = r.log_tree.get_children()[0]
+        self.assertIn("Busted", r.log_tree.item(item)["values"][3])
+        r.stop()
+
+    def test_new_call_before_logging_is_not_a_correction(self):
+        r, caller = self._contest_with_caller()
+        r.exchange_sent_to = "DL1ABC"
+        r.exch_var.set("14")
+        r.call_var.set("K3LR")  # nächste Station, nicht geloggt
+        r._on_enter()
+        self.assertEqual(r.log, [])
+        self.assertIn("K3LR 5NN", r.status_var.get())
+        r.stop()
 
 
 class ContestLogTest(AppTestCase):

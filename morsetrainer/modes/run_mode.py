@@ -63,6 +63,12 @@ WAITING_RETRY_WAIT = (4.0, 6.0)
 PATIENCE = (3, 6)
 # Wie oft nach CQ niemand antwortet.
 NOBODY_PROBABILITY = 0.12
+# Busted Call: Gibst du den Austausch an ein fast richtiges Rufzeichen (ein
+# Zeichen daneben), antwortet der Anrufer mit dieser Wahrscheinlichkeit
+# trotzdem – wie im echten Contest. Mal korrigiert er dabei sein Rufzeichen
+# („DL1ABC 5NN 14“), mal nicht; den Hörfehler musst du selbst bemerken.
+BUSTED_ANSWER_PROBABILITY = 0.4
+BUSTED_CORRECTS_PROBABILITY = 0.6
 
 MESSAGES = {  # Taste -> (Nachrichtentyp, Beschriftung)
     "F1": ("cq", "CQ"), "F2": ("exchange", "Austausch"), "F3": ("tu", "TU/Log"),
@@ -282,7 +288,9 @@ class RunModeFrame:
             keys.columnconfigure(col, weight=1, uniform="keys")
         theme.hint(entry_box, wrap=540,
                    text="Enter sendet die passende nächste Nachricht (leer: CQ, mit Call: Austausch, mit "
-                       "Austausch: TU + loggen). Esc bricht ab, Leertaste wechselt das Feld.").pack(
+                       "Austausch: TU + loggen). Call nach dem Austausch korrigiert: Enter sendet „Call TU“ "
+                       "und loggt. Achtung: Anrufer antworten manchmal auch auf ein fast richtiges Call. "
+                       "Esc bricht ab, Leertaste wechselt das Feld.").pack(
             anchor="w")
 
         log_box = theme.card(parent, "Log")
@@ -463,13 +471,14 @@ class RunModeFrame:
             "cq": f"CQ {test} {self.my_call_str}",
             "exchange": f"{call} 5NN {self._my_exchange_text()}",
             "tu": f"TU {self.my_call_str}",
+            "correct_tu": f"{call} TU {self.my_call_str}",
             "mycall": self.my_call_str,
             "hiscall": call,
             "query": "?",
             "agn": "AGN",
         }[kind]
         unlogged = None
-        if kind == "tu":
+        if kind in ("tu", "correct_tu"):
             # Geloggt wird nur ein vollständiges QSO; ein versehentliches F3
             # soll keinen Fehleintrag erzeugen.
             if call and self.exch_var.get().strip():
@@ -485,7 +494,7 @@ class RunModeFrame:
         start = self.mixer.clock + int(0.05 * SAMPLE_RATE)
         self.my_tx_start = start
         self.my_tx_end = self.mixer.add(samples, None, start)
-        self._schedule(self.my_tx_end, self._react, kind, call, self.msg_id)
+        self._schedule(self.my_tx_end, self._react, "tu" if kind == "correct_tu" else kind, call, self.msg_id)
         if unlogged:
             self.status_var.set(f"Sende: {text} – nicht geloggt ({unlogged} fehlt)")
         else:
@@ -505,6 +514,12 @@ class RunModeFrame:
         call = self.call_var.get().strip()
         if not call:
             self._send("cq")
+        elif (call != self.exchange_sent_to and self.exchange_sent_to and self.exch_var.get().strip()
+              and _distance(call, self.exchange_sent_to) <= 2):
+            # Call nach dem Austausch korrigiert: „<Call> TU“ bestätigt die
+            # Korrektur und loggt, statt den Austausch zu wiederholen. Ein
+            # ganz anderes Call ist die nächste Station, keine Korrektur.
+            self._send("correct_tu")
         elif call != self.exchange_sent_to:
             self._send("exchange")
             self.exch_entry.focus_set()
@@ -526,7 +541,7 @@ class RunModeFrame:
         if worked is None:
             ok, result = False, "NIL – keine Station hat dir einen Austausch gegeben"
         elif call != worked.call:
-            ok, result = False, f"Call falsch – richtig: {worked.call}"
+            ok, result = False, f"Busted – richtig: {worked.call}"
         elif not is_correct(exch, worked.exchange, worked.exchange_kind):
             ok, result = False, f"Austausch falsch – richtig: {worked.exchange}"
         else:
@@ -585,10 +600,12 @@ class RunModeFrame:
         text = f"{caller.call} {caller.call}" if twice or random.random() < 0.25 else caller.call
         self._caller_send(caller, text, random.uniform(*REPLY_DELAY) if delay is None else delay)
 
-    def _send_exchange(self, caller: Caller, repeat: bool = False):
+    def _send_exchange(self, caller: Caller, repeat: bool = False, correct_call: bool = False):
         caller.state = "worked"
         if repeat:
             text = f"{caller.exchange} {caller.exchange}"
+        elif correct_call:
+            text = f"{caller.call} 5NN {caller.exchange}"
         else:
             text = random.choice(["TU 5NN", "5NN", "R 5NN"]) + f" {caller.exchange}"
         self._caller_send(caller, text, random.uniform(*REPLY_DELAY))
@@ -632,6 +649,15 @@ class RunModeFrame:
         if kind in ("exchange", "hiscall"):
             matches = {c.call: call_matches(sent_call, c.call) for c in active}
             exact = next((c for c in active if matches[c.call] == "exact"), None)
+            if exact is None and kind == "exchange" and "?" not in sent_call:
+                near = [c for c in active if _distance(sent_call, c.call) == 1]
+                if near and random.random() < BUSTED_ANSWER_PROBABILITY:
+                    busted = random.choice(near)
+                    for caller in active:
+                        if caller is not busted and caller.state in ("calling", "worked"):
+                            caller.state = "waiting"
+                    self._send_exchange(busted, correct_call=random.random() < BUSTED_CORRECTS_PROBABILITY)
+                    return
             for caller in active:
                 if caller is exact:
                     continue
