@@ -10,6 +10,12 @@ dem Muster Präfix + Ziffer + Suffix erzeugt. Auf Wunsch bekommt ein kleiner
 Teil der Rufzeichen einen Anhang (/P, /M, selten /QRP, /MM, /AM) oder ein
 Gast-Präfix (OE/DL4YM), etwa so häufig wie im Contest.
 
+Rufz-Durchgang (angelehnt an RufzXP): genau RUFZ_CALLS Rufzeichen, je ein
+Versuch, kein Wiederholen, das Tempo wächst immer mit; Punkte je richtiges
+Rufzeichen = Länge × effektives Tempo (eigene Formel, nicht die von
+RufzXP). Vollständige Durchgänge landen im Verlauf, der Bestwert wird
+gespeichert.
+
 Standardmäßig kommen nur Rufzeichen aus Zeichen, die im Zeichensatz oben
 stehen (auch Anhänge): Ungelernte Zeichen zu raten untergräbt die
 Koch-Methode. Abschaltbar für alle, die schon alle Zeichen können."""
@@ -19,8 +25,8 @@ from pathlib import Path
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR
-from morsetrainer.core import koch
-from morsetrainer.modes.sequence_mode import SequenceModeFrame
+from morsetrainer.core import koch, stats, tempo
+from morsetrainer.modes.sequence_mode import HEAD, SequenceModeFrame
 from morsetrainer.widgets import theme
 from morsetrainer.core.weighting import CharPicker
 
@@ -35,6 +41,8 @@ WEIGHTED_CANDIDATES = 50
 # Weniger passende Rufzeichen reichen nicht für einen Durchgang (man würde
 # sie auswendig lernen).
 MIN_POOL = 30
+# Rufzeichen je Rufz-Durchgang.
+RUFZ_CALLS = 50
 
 
 def load_callsigns(path: Path = CALLSIGN_FILE):
@@ -157,6 +165,21 @@ class CallsignModeFrame(SequenceModeFrame):
             variable=self.affix_var,
         ).pack(anchor="w", pady=1)
 
+        self.rufz_var = tk.BooleanVar(value=False)
+        rufz = ttk.Frame(parent)
+        rufz.pack(fill="x", pady=1)
+        ttk.Checkbutton(
+            rufz, text=f"Rufz-Durchgang: {RUFZ_CALLS} Rufzeichen, je ein Versuch, Punkte", variable=self.rufz_var,
+        ).pack(side="left")
+        self.rufz_best = 0
+        self.rufz_best_var = tk.StringVar(value="")
+        theme.hint(rufz, textvariable=self.rufz_best_var).pack(side="left", padx=(8, 0))
+        self.rufz_done = self.rufz_correct = self.rufz_score = 0
+        self.rufz_active = False  # Rufz-Durchgang läuft (Schalter beim Start)
+        self.rufz_summary = ""
+        self.rufz_used = set()
+        self.rufz_start_wpm = 0
+
         if self.all_calls:
             self.list_text = f"Liste: {len(self.all_calls):,} Rufzeichen".replace(",", ".")
             if release:
@@ -168,6 +191,67 @@ class CallsignModeFrame(SequenceModeFrame):
         for var in (self.prefix_var, self.learned_var, self.charset_var):
             var.trace_add("write", lambda *_: self._update_pool())
         self._update_pool()
+
+    # --- Rufz-Durchgang --------------------------------------------------------
+    def _fixed_run(self) -> bool:
+        return self.rufz_active
+
+    def _run_complete(self) -> bool:
+        return self.rufz_active and self.rufz_done >= RUFZ_CALLS
+
+    def _show_rufz_best(self):
+        self.rufz_best_var.set(f"Bestwert {self.rufz_best:,} Punkte".replace(",", ".") if self.rufz_best else "")
+
+    def _show_rufz_progress(self):
+        score = f"{self.rufz_score:,}".replace(",", ".")
+        self.remaining_var.set(f"Rufzeichen {self.rufz_done}/{RUFZ_CALLS} · {score} Punkte")
+
+    def start(self):
+        self.rufz_active = self.rufz_var.get()
+        self.rufz_done = self.rufz_correct = self.rufz_score = 0
+        self.rufz_used = set()  # im Durchgang schon gesendete Rufzeichen
+        super().start()
+        if self.running and self.tempo is not None:
+            self.rufz_start_wpm = tempo.effective(self.tempo, self.tempo_fw)
+        if self.running and self.rufz_active:
+            self.repeat_button.config(state="disabled")  # kein „nochmal“ im Rufz
+            self._show_rufz_progress()
+
+    def _after_result(self, correct: bool, attempts: int):
+        if not self.rufz_active:
+            return
+        self.rufz_done += 1
+        # attempts > 1 heißt hier: richtig, aber zu langsam (nur ein Versuch).
+        if correct and attempts == 1:
+            # Vor der Tempo-Anpassung: das Tempo, mit dem es gesendet wurde.
+            self.rufz_correct += 1
+            self.rufz_score += len(self.current_sequence) * tempo.effective(self.tempo, self.tempo_fw)
+        self._show_rufz_progress()
+
+    def _finalize_session(self):
+        self.rufz_summary = ""
+        self.rufz_used = set()
+        self.rufz_start_wpm = 0
+        if self.rufz_active and self.session_stats is not None:
+            score = f"{self.rufz_score:,}".replace(",", ".")
+            if self.rufz_done >= RUFZ_CALLS:
+                new_best = self.rufz_score > self.rufz_best
+                stats.log_result("rufz", self.rufz_correct, self.rufz_done,
+                                 self.tempo_best or self.rufz_start_wpm, score=self.rufz_score)
+                if new_best:
+                    self.rufz_best = self.rufz_score
+                    self._show_rufz_best()
+                self.rufz_summary = (f"Rufz: {score} Punkte, {self.rufz_correct} von {self.rufz_done} richtig"
+                                     + (" – neuer Bestwert!" if new_best else ""))
+            else:
+                self.rufz_summary = f"Rufz abgebrochen nach {self.rufz_done} Rufzeichen ({score} Punkte, nicht gewertet)."
+        super()._finalize_session()
+
+    def stop(self):
+        super().stop()
+        if self.rufz_summary:
+            self.status_var.set(self.rufz_summary)
+        self.rufz_active = False
 
     def _allowed(self):
         """Erlaubte Zeichen (Zeichensatz oben) oder None, wenn alle."""
@@ -187,6 +271,9 @@ class CallsignModeFrame(SequenceModeFrame):
                 self.list_info_var.set(self.list_text)
 
     def _validate_settings(self) -> bool:
+        if self.rufz_var.get() and self.style_var.get() == HEAD:
+            self.status_var.set("Der Rufz-Durchgang braucht eine Eingabe – Mitschreiben oder Erst merken.")
+            return False
         allowed = self._allowed()
         if not self.all_calls:
             self.pool = []
@@ -195,7 +282,8 @@ class CallsignModeFrame(SequenceModeFrame):
                 return False
             return True
         self._update_pool()
-        if len(self.pool) < MIN_POOL:
+        needed = max(MIN_POOL, RUFZ_CALLS) if self.rufz_var.get() else MIN_POOL
+        if len(self.pool) < needed:
             if allowed is not None and not allowed & set(DIGITS):
                 first = next(n for n in range(1, koch.MAX_LESSON + 1) if koch.newest_char(n) in DIGITS)
                 hint = f"Die erste Ziffer kommt mit Koch-Lektion {first}."
@@ -223,9 +311,19 @@ class CallsignModeFrame(SequenceModeFrame):
     def _pick_base_call(self) -> str:
         if not self.pool:
             return generate_callsign(self.letter_picker, self.digit_picker)
+        pool = self.pool
+        if self.rufz_active:
+            # Im Rufz kein Rufzeichen zweimal: Wiedererkennen schönte die Punkte.
+            pool = [c for c in self.pool if c not in self.rufz_used] or self.pool
+        call = self._choose(pool)
+        if self.rufz_active:
+            self.rufz_used.add(call)
+        return call
+
+    def _choose(self, pool) -> str:
         if not self.weighted:
-            return random.choice(self.pool)
-        candidates = random.sample(self.pool, min(WEIGHTED_CANDIDATES, len(self.pool)))
+            return random.choice(pool)
+        candidates = random.sample(pool, min(WEIGHTED_CANDIDATES, len(pool)))
         char_weight = dict(zip(CALL_CHARS, self.char_picker.weights()))
         # Nach dem schwächsten Zeichen: im Mittelwert ginge ein schwaches
         # Zeichen unter fünf sicheren unter.
@@ -249,6 +347,8 @@ class CallsignModeFrame(SequenceModeFrame):
         data["prefixes"] = self.prefix_var.get()
         data["affix"] = self.affix_var.get()
         data["learned_only"] = self.learned_var.get()
+        data["rufz"] = self.rufz_var.get()
+        data["rufz_best"] = self.rufz_best
         return data
 
     def restore_settings(self, data: dict) -> None:
@@ -259,3 +359,9 @@ class CallsignModeFrame(SequenceModeFrame):
             self.affix_var.set(data["affix"])
         if isinstance(data.get("learned_only"), bool):
             self.learned_var.set(data["learned_only"])
+        if isinstance(data.get("rufz"), bool):
+            self.rufz_var.set(data["rufz"])
+        best = data.get("rufz_best")
+        if isinstance(best, int) and not isinstance(best, bool) and best >= 0:
+            self.rufz_best = best
+            self._show_rufz_best()

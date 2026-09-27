@@ -185,10 +185,12 @@ class ProgressPanel:
         if entries:
             first = entries[0]["accuracy_pct"]
             last = entries[-1]["accuracy_pct"]
-            self.info_var.set(
-                f"{len(entries)} Durchgänge seit {entries[0]['time'].strftime('%d.%m.%Y')} · "
-                f"Trefferquote {first:g} % → {last:g} %, Tempo {entries[0]['wpm']} → {entries[-1]['wpm']} WPM"
-            )
+            text = (f"{len(entries)} Durchgänge seit {entries[0]['time'].strftime('%d.%m.%Y')} · "
+                    f"Trefferquote {first:g} % → {last:g} %, Tempo {entries[0]['wpm']} → {entries[-1]['wpm']} WPM")
+            scores = [e["score"] for e in entries if "score" in e]
+            if scores:
+                text += f" · Punkte zuletzt {scores[-1]:,}, bester {max(scores):,}".replace(",", ".")
+            self.info_var.set(text)
         else:
             self.info_var.set("Noch keine abgeschlossenen Durchgänge.")
         self.accuracy_chart.set_data(entries, [e["accuracy_pct"] for e in entries])

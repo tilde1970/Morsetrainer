@@ -156,6 +156,16 @@ class SequenceModeFrame:
     def _session_group_len(self):
         return None
 
+    def _fixed_run(self) -> bool:
+        """True für einen festen Durchgang (z. B. Rufz): ein Versuch je
+        Sequenz, kein Wiederholen, Tempo wächst immer mit, keine Dauer,
+        Lösung nur anzeigen statt nochmal vorspielen."""
+        return False
+
+    def _run_complete(self) -> bool:
+        """Fester Durchgang zu Ende (vor der nächsten Sequenz geprüft)."""
+        return False
+
     def _after_result(self, correct: bool, attempts: int):
         """Nach jeder Auswertung; `attempts` zählt die Versuche für diese
         Sequenz einschließlich des aktuellen."""
@@ -370,7 +380,7 @@ class SequenceModeFrame:
         if minutes < 0:
             self.status_var.set("Ungültige Dauer!")
             return
-        self.deadline = time.time() + minutes * 60 if minutes else None
+        self.deadline = time.time() + minutes * 60 if minutes and not self._fixed_run() else None
         self.session_id += 1
         self.running = True
         self.style = self.style_var.get()
@@ -380,7 +390,7 @@ class SequenceModeFrame:
         self.first_try_correct = self.first_try_total = 0
         self.koch_result = None
         self.tempo, self.tempo_fw = None, None
-        if self.tempo_var.get():
+        if self.tempo_var.get() or self._fixed_run():
             self.tempo, self.tempo_fw = wpm, self.farnsworth_wpm()
         self.tempo_best = None
         self._show_tempo()
@@ -393,7 +403,7 @@ class SequenceModeFrame:
         self.session_stats = SessionStats(
             self.session_mode, self._log_charset(), wpm, freq,
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
-            self_assessed=self.style == HEAD,
+            self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
         )
         self._setup_pickers(self.weighted_var.get())
         self.history = []
@@ -493,6 +503,9 @@ class SequenceModeFrame:
         if self._time_up():
             self.stop()
             self.status_var.set("Zeit abgelaufen – Durchgang ausgewertet.")
+            return
+        if self._run_complete():
+            self.stop()
             return
         self.waiting_for_input = False
         self.submit_pending = False
@@ -627,7 +640,10 @@ class SequenceModeFrame:
 
     def repeat_sequence(self):
         # Während die Lösung vorgespielt wird oder die Rückmeldung steht, ist
-        # die Eingabe zu; dann gibt es auch nichts zu wiederholen.
+        # die Eingabe zu; dann gibt es auch nichts zu wiederholen. Im festen
+        # Durchgang gibt es wie im Contest kein „nochmal“.
+        if self._fixed_run():
+            return
         if self.running and self.current_sequence and (self.input_open or self.waiting_for_input):
             self.waiting_for_input = False
             self.submit_pending = False
@@ -729,7 +745,7 @@ class SequenceModeFrame:
         except tk.TclError:
             give_up_after = DEFAULT_GIVE_UP
         # Beim Kopfhören gibt es keinen zweiten Versuch: die Lösung ist schon zu sehen.
-        give_up = not all_correct and (head or 0 < give_up_after <= self.attempts)
+        give_up = not all_correct and (head or self._fixed_run() or 0 < give_up_after <= self.attempts)
         self.repeat_pending = not all_correct and not give_up
         # Richtig, aber nur mit Wiederholen oder zu langsam, zählt für Länge und
         # Tempo wie richtig erst im zweiten Versuch (kein Aufstieg).
@@ -742,7 +758,10 @@ class SequenceModeFrame:
             if self.sound_var.get():
                 sfx.play_ok()
             note = ""
-            if not self.koch_progress:
+            if self._fixed_run():
+                if slow:
+                    note = "\n(zu langsam – keine Punkte)"
+            elif not self.koch_progress:
                 pass  # Modus zählt ohnehin nicht für die Lektion
             elif slow and self.attempts == 1:
                 note = "\n(zu langsam – zählt nicht für die Lektion)"
@@ -777,7 +796,9 @@ class SequenceModeFrame:
 
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 
-        if give_up:
+        if give_up and self._fixed_run():
+            self._later(1500, self.next_sequence)  # Lösung lesen, weiter im Takt
+        elif give_up:
             # Lösung sehen und dabei noch einmal hören, dann weiter.
             self.status_var.set("Hör dir die Lösung noch einmal an…")
             self._later(900, self.play_current, True, lambda: self._later(900, self.next_sequence))

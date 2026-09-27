@@ -167,6 +167,90 @@ class CallsignTest(AppTestCase):
         self.assertTrue(calls._validate_settings())
 
 
+class RufzTest(AppTestCase):
+    def _answer(self, g, call, typed):
+        g.current_sequence, g.attempts, g.replayed, g.repeat_pending = call, 0, False, False
+        g.voice = (g.tempo, 600)
+        g.tone_starts = [time.time() - 1.0] * len(call)
+        g.tone_ends = [time.time() - 0.1] * len(call)
+        g.enter_time, g.waiting_for_input = None, True
+        g.input_var.set(typed)
+        g.on_submit()
+
+    def test_run_of_50_scores_logs_and_keeps_best(self):
+        g = self.mode("Rufzeichen")
+        g.all_calls = [f"DL{i}YM" for i in range(60)]
+        g.learned_var.set(False)
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_enabled_var.set(False)
+        g.rufz_var.set(True)
+        g.style_var.set(sq.COPY)
+        g.start()
+        self.assertTrue(g.running)
+        g.repeat_sequence()
+        self.assertFalse(g.replayed)  # kein Wiederholen im Rufz
+        self.assertEqual(str(g.repeat_button["state"]), "disabled")
+        for i in range(50):
+            call = "DL4YM"
+            self._answer(g, call, call if i % 5 else "DL4YN")  # jedes 5. falsch
+        self.assertEqual((g.rufz_done, g.rufz_correct), (50, 40))
+        self.assertGreater(g.rufz_score, 40 * 5 * 20)  # Tempo ist mitgewachsen
+        g.next_sequence()  # vor dem 51. Rufzeichen: Ende
+        self.assertFalse(g.running)
+        self.assertIn("40 von 50 richtig", g.status_var.get())
+        self.assertIn("Bestwert", g.status_var.get())
+        self.assertEqual(g.settings()["rufz_best"], g.rufz_score)
+        self.assertIn("rufz", [e["mode"] for e in stats.load_history()])
+
+    def _start_rufz(self, calls):
+        g = self.mode("Rufzeichen")
+        g.all_calls = calls
+        g.learned_var.set(False)
+        g.affix_var.set(False)
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_enabled_var.set(False)
+        g.rufz_var.set(True)
+        g.style_var.set(sq.COPY)
+        g.start()
+        return g
+
+    def test_slow_correct_answer_gets_no_points(self):
+        g = self._start_rufz([f"DL{i}ABC" for i in range(60)])
+        g.current_sequence, g.attempts, g.replayed, g.voice = "DL1ABC", 0, False, (20, 600)
+        g.tone_starts = [time.time() - 10] * 6
+        g.tone_ends = [time.time() - sq.answer_limit(6) - 1] * 6
+        g.enter_time, g.waiting_for_input = None, True
+        g.input_var.set("DL1ABC")
+        g.on_submit()
+        self.assertEqual((g.rufz_done, g.rufz_score), (1, 0))
+        self.assertIn("keine Punkte", g.feedback_var.get())
+
+    def test_no_call_twice_and_history_only_as_rufz(self):
+        calls = [f"DL{i}ABC" for i in range(60)]
+        g = self._start_rufz(calls)
+        sent = [g._generate_sequence() for _ in range(50)]
+        self.assertEqual(len(set(sent)), 50)
+        for call in sent:
+            self._answer(g, call, call)
+        g.next_sequence()
+        modes = [e["mode"] for e in stats.load_history()]
+        self.assertEqual(modes, ["rufz"])  # nicht zusätzlich als „Rufzeichen“
+        self.assertEqual(stats.load_history()[0]["score"], g.rufz_score)
+
+    def test_rufz_needs_enough_calls(self):
+        g = self.mode("Rufzeichen")
+        g.all_calls = [f"DL{i}ABC" for i in range(40)]
+        g.learned_var.set(False)
+        g.rufz_var.set(True)
+        self.assertFalse(g._validate_settings())
+
+    def test_head_copy_not_allowed(self):
+        g = self.mode("Rufzeichen")
+        g.rufz_var.set(True)
+        g.style_var.set(sq.HEAD)
+        self.assertFalse(g._validate_settings())
+
+
 class SingleCharTest(AppTestCase):
     def setUp(self):
         super().setUp()

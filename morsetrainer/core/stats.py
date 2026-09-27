@@ -41,10 +41,12 @@ def format_confusions(confusions: dict) -> str:
 
 class SessionStats:
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
-                 self_assessed=False):
+                 self_assessed=False, in_history=True):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
         J/N). Sie werden protokolliert, aber nicht in all_time.json und den
-        Fortschrittsverlauf übernommen."""
+        Fortschrittsverlauf übernommen. `in_history=False`: Die Sitzung hat
+        einen eigenen Eintrag im Verlauf (z. B. Rufz über log_result) und
+        erscheint dort nicht zusätzlich; die Zeichenstatistik zählt normal."""
         self.start_time = datetime.now()
         self.self_assessed = self_assessed
         self.mode = mode
@@ -75,6 +77,7 @@ class SessionStats:
             "farnsworth_wpm": farnsworth_wpm,
             "start_time": self.start_time.isoformat(timespec="seconds"),
             **({"self_assessed": True} if self_assessed else {}),
+            **({"in_history": False} if not in_history else {}),
         })
 
     def _write_line(self, obj: dict) -> None:
@@ -294,6 +297,7 @@ HISTORY_MODES = {
     "group": "Gruppen",
     "word": "Wörter",
     "callsign": "Rufzeichen",
+    "rufz": "Rufz-Durchgang",
     "continuous": "Kontinuierlich",
     "qso": "QSO mittippen",
     "qso_quiz": "QSO-Abfrage",
@@ -374,7 +378,8 @@ def load_history():
     history = []
     for path in STATS_DIR.glob("20*.jsonl"):
         config, summary = _config_and_summary(path)
-        if not config or not summary or not summary.get("total") or config.get("self_assessed"):
+        if (not config or not summary or not summary.get("total") or config.get("self_assessed")
+                or config.get("in_history") is False):
             continue
         try:
             history.append({
@@ -394,6 +399,7 @@ def load_history():
                 "accuracy_pct": float(obj["accuracy_pct"]),
                 "wpm": int(obj["wpm"]),
                 "total": int(obj["total"]),
+                **({"score": int(obj["score"])} if "score" in obj else {}),
             })
         except (KeyError, TypeError, ValueError):
             continue
