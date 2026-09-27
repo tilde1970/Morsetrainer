@@ -69,6 +69,14 @@ class WordsTest(unittest.TestCase):
         self.assertTrue(all(a != b for a, b in zip(picks, picks[1:])))
 
 
+class KochPassedTest(unittest.TestCase):
+    def test_needs_enough_chars_and_accuracy(self):
+        self.assertTrue(koch.passed(45, 50))
+        self.assertFalse(koch.passed(44, 50))   # 88 %
+        self.assertFalse(koch.passed(40, 40))   # zu wenige Zeichen
+        self.assertFalse(koch.can_advance(koch.lesson_charset(koch.MAX_LESSON), 50, 50))
+
+
 class GroupScoringTest(unittest.TestCase):
     def test_missed_char_is_one_error(self):
         results = align.char_results("KMR", "KR")

@@ -97,6 +97,9 @@ class SingleModeFrame:
         self.play_start_time = 0.0
         self.retries = RetryQueue()
         self.correcting = False     # Korrekturton läuft, keine Eingabe erwartet
+        # (Zeichensatz, richtig, gesamt) eines Durchgangs mit Zeitlimit; die
+        # App bietet danach ggf. den Wechsel zu den Gruppen an.
+        self.groups_result = None
 
         self._build_widgets(ScrollableFrame(parent).inner)
 
@@ -196,6 +199,9 @@ class SingleModeFrame:
     def _finalize_session(self):
         if self.session_stats is None:
             return
+        summary = self.session_stats.summary()
+        if self.icr_var.get():
+            self.groups_result = (self.charset, summary["correct"], summary["total"])
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None

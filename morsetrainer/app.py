@@ -43,6 +43,7 @@ class MorseTrainerApp:
     def __init__(self, root):
         self.root = root
         self.running_mode = False
+        self.groups_offered = set()  # Lektionen, für die der Gruppen-Hinweis schon kam
         root.title(f"Morsetrainer von {__author__}")
         self.saved_state = self._load_state()
         root.geometry(self._initial_geometry())
@@ -288,6 +289,30 @@ class MorseTrainerApp:
             self.charset_var.set(koch.lesson_charset(lesson + 1))
             self._play_new_char()
 
+    def _offer_groups(self, mode):
+        """Nach einem Einzelzeichen-Durchgang mit Zeitlimit und mindestens
+        90 %: vorschlagen, im Reiter Gruppen weiterzuüben. Einzelzeichen
+        allein reichen nicht, im Funkbetrieb kommen die Zeichen ohne Pause
+        hintereinander. Je Lektion nur einmal pro Programmstart."""
+        result = getattr(mode, "groups_result", None)
+        if result is None:
+            return
+        mode.groups_result = None
+        charset, correct, total = result
+        lesson = koch.lesson_of(charset)
+        if lesson is None or lesson in self.groups_offered or not koch.passed(correct, total):
+            return
+        self.groups_offered.add(lesson)
+        if messagebox.askyesno(
+            "Weiter mit Gruppen",
+            f"Die Zeichen von Lektion {lesson} sitzen: {correct} von {total} richtig "
+            f"({correct / total:.0%}), mit Zeitlimit.\n\n"
+            "Im Reiter Gruppen kommen sie ohne Pause hintereinander, wie im Funkbetrieb. "
+            "Dort wird dir auch die nächste Lektion angeboten.\n\n"
+            "Zum Reiter Gruppen wechseln?",
+        ):
+            self.notebook.select(self.tab_ids[self.mode_titles.index("Gruppen")])
+
     def _build_footer(self):
         # Vor dem Notebook gepackt, damit es bei kleinem Fenster nicht verdrängt wird.
         footer = ttk.Frame(self.root, padding=(10, 4))
@@ -448,9 +473,13 @@ class MorseTrainerApp:
 
     @staticmethod
     def _confusion_charset(data: dict) -> str:
-        """Zeichen der häufigsten Verwechslungspaare, in Reihenfolge."""
+        """Zeichen der häufigsten Verwechslungspaare, in Reihenfolge. Nur
+        Paare, deren getipptes Zeichen auch schon gesendet wurde: ein
+        Vertipper wie „(“ statt „/“ (Umschalttaste) soll nicht in den
+        Übungs-Zeichensatz geraten."""
         chars = []
-        for sent, typed, _, _ in stats.top_confusions(data, limit=CONFUSION_PAIRS):
+        pairs = [p for p in stats.top_confusions(data, limit=None) if p[1] in data]
+        for sent, typed, _, _ in pairs[:CONFUSION_PAIRS]:
             for ch in (sent, typed):
                 if ch not in chars:
                     chars.append(ch)
@@ -536,6 +565,7 @@ class MorseTrainerApp:
         self._unlock_tabs()
         self._refresh_all_time()
         self._offer_next_lesson(self._active_mode())
+        self._offer_groups(self._active_mode())
 
     def _active_mode(self):
         current = self.notebook.select()

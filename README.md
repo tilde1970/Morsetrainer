@@ -39,6 +39,8 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
    Punkten und Strichen, das Zeichen muss als Klangbild kommen. Ein falsch
    erkanntes Zeichen hörst du gleich noch einmal, während die Lösung
    dasteht; abgefragt wird es erst nach ein paar anderen Zeichen wieder.
+   Nach einem Durchgang mit mindestens 50 Zeichen und 90 % richtig schlägt
+   die App vor, bei den Gruppen weiterzumachen.
 3. Im Reiter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
    Einzelzeichen. Falsche Stellen werden markiert, und nach 3 Fehlversuchen
    siehst und hörst du die Lösung.

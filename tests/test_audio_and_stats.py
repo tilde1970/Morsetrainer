@@ -101,6 +101,19 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(top[0][:3], ("H", "5", 3))
         self.assertNotIn("", [typed for _, typed, _, _ in top])  # verpasst zählt nicht als Paar
 
+    def test_confusion_drill_ignores_untrained_chars(self):
+        from morsetrainer.app import MorseTrainerApp
+        data = {
+            "6": {"good": 30, "wrong": 3, "confusions": {"B": 2, "N": 1}},
+            "8": {"good": 20, "wrong": 3, "confusions": {"9": 2, "7": 1}},
+            "/": {"good": 20, "wrong": 1, "confusions": {"(": 1}},  # Vertipper mit Umschalttaste
+            "5": {"good": 17, "wrong": 1, "confusions": {"H": 1}},
+        }
+        for ch in "B9HN7":
+            data[ch] = {"good": 10, "wrong": 0, "confusions": {}}
+        chars = MorseTrainerApp._confusion_charset(data)
+        self.assertEqual(chars, "6B895HN")  # "/ → (" entfällt ("(" nie gesendet), "6 → N" rückt nach
+
     def test_old_all_time_without_confusions_still_works(self):
         stats.ALL_TIME_FILE.write_text(json.dumps({"K": {
             "good": 3, "wrong": 1, "total_reaction_time_s": 2.0, "total_effective_wpm": 80.0,

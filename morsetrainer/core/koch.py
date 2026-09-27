@@ -37,12 +37,13 @@ def newest_char(lesson: int) -> str:
     return lesson_charset(lesson)[-1]
 
 
+def passed(correct: int, total: int) -> bool:
+    """Durchgang mit genug Zeichen und mindestens ADVANCE_ACCURACY_PCT."""
+    return total >= ADVANCE_MIN_CHARS and correct / total * 100 >= ADVANCE_ACCURACY_PCT
+
+
 def can_advance(charset: str, correct: int, total: int) -> bool:
     """True, wenn `charset` eine Lektion (nicht die letzte) ist und der
     Durchgang das Kriterium erfüllt."""
     lesson = lesson_of(charset)
-    return (
-        lesson is not None and lesson < MAX_LESSON
-        and total >= ADVANCE_MIN_CHARS
-        and correct / total * 100 >= ADVANCE_ACCURACY_PCT
-    )
+    return lesson is not None and lesson < MAX_LESSON and passed(correct, total)

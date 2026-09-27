@@ -261,10 +261,10 @@ def all_time_summary(all_time: dict):
         "avg_effective_wpm": round(avg_wpm, 1),
     }
 
-def top_confusions(all_time: dict, limit: int = 10):
+def top_confusions(all_time: dict, limit=10):
     """Häufigste Verwechslungen über alle Zeichen: [(gesendet, getippt,
     Anzahl, Anteil an den Versuchen des Zeichens)], verpasste Zeichen nicht
-    mitgezählt."""
+    mitgezählt. `limit` None: alle."""
     pairs = []
     for char, e in all_time.items():
         attempts = e["good"] + e["wrong"]
