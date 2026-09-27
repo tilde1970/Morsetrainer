@@ -17,7 +17,9 @@ from morsetrainer.core.morse import (
     AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, code_units, duration_seconds, vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 from morsetrainer.core.weighting import CharPicker
 
 # Zeitlimit in Sekunden ab Tonende: Start, Grenzen und Faktoren pro Antwort.
@@ -60,48 +62,45 @@ class SingleModeFrame:
         self.play_start_time = 0.0
         self.repeat_pending = False
 
-        self._build_widgets(parent)
+        self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
-        pad = {"padx": 8, "pady": 4}
-
-        controls = ttk.Frame(parent)
-        controls.pack(fill="x", **pad)
-        self.start_button = ttk.Button(controls, text="Start", command=self.toggle_running)
-        self.start_button.pack(side="left", **pad)
-        self.repeat_button = ttk.Button(
-            controls, text="Wiederholen (Leertaste)", command=self.repeat_char, state="disabled"
-        )
-        self.repeat_button.pack(side="left", **pad)
-        self.sound_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(controls, text="Quittungston", variable=self.sound_var).pack(side="left", **pad)
-
-        icr = ttk.Frame(parent)
-        icr.pack(fill="x", padx=8)
+        options = theme.card(parent, "Einstellungen")
+        icr = ttk.Frame(options)
+        icr.pack(fill="x")
         self.icr_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             icr, text="Zeitlimit (wird kürzer, solange du sicher bist)", variable=self.icr_var,
             command=self._show_limit,
-        ).pack(side="left", padx=(8, 0))
+        ).pack(side="left")
         self.limit_var = tk.StringVar(value="")
-        ttk.Label(icr, textvariable=self.limit_var, foreground="gray40").pack(side="left", padx=(8, 0))
-        ttk.Button(icr, text="zurücksetzen", command=self._reset_limit).pack(side="left", padx=(8, 0))
+        theme.hint(icr, textvariable=self.limit_var).pack(side="left", padx=(8, 0))
+        ttk.Button(icr, text="zurücksetzen", command=self._reset_limit).pack(side="right")
+        self.sound_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(options, text="Quittungston", variable=self.sound_var).pack(anchor="w")
         self._show_limit()
 
+        controls = ttk.Frame(parent)
+        controls.pack(fill="x", padx=10, pady=(8, 0))
+        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button.pack(side="left")
+        self.repeat_button = ttk.Button(
+            controls, text="Wiederholen (Leertaste)", command=self.repeat_char, state="disabled"
+        )
+        self.repeat_button.pack(side="left", padx=8)
+
         self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
-        ttk.Label(parent, textvariable=self.status_var, font=("Sans", 14)).pack(pady=10)
+        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 4))
 
         self.feedback_var = tk.StringVar(value="")
-        self.feedback_label = ttk.Label(parent, textvariable=self.feedback_var, font=("Sans", 20, "bold"))
-        self.feedback_label.pack(pady=10)
+        self.feedback_label = ttk.Label(parent, textvariable=self.feedback_var, style="Feedback.TLabel")
+        self.feedback_label.pack(pady=(4, 10))
 
         self.stats_panel = StatsPanel(parent)
 
-        ttk.Label(parent, text="Verlauf (letzte 40):").pack(anchor="w", padx=8)
+        history = theme.card(parent, "Verlauf (letzte 40)")
         self.history_var = tk.StringVar(value="")
-        ttk.Label(
-            parent, textvariable=self.history_var, font=("Consolas", 12), wraplength=440
-        ).pack(anchor="w", padx=8)
+        ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=520).pack(anchor="w")
 
     def _show_limit(self):
         self.limit_var.set(f"{self.limit:.2f} s".replace(".", ",") if self.icr_var.get() else "")
@@ -242,7 +241,7 @@ class SingleModeFrame:
         if self.sound_var.get():
             sfx.play_error()
         self.feedback_var.set(f"Zu langsam: war {self.current_char}")
-        self.feedback_label.config(foreground="red")
+        self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
         self.root.after(700, self.next_char)
 
@@ -287,12 +286,12 @@ class SingleModeFrame:
             if self.sound_var.get():
                 sfx.play_ok()
             self.feedback_var.set(f"Richtig: {self.current_char}  ({effective_wpm:.0f} WPM)")
-            self.feedback_label.config(foreground="green")
+            self.feedback_label.config(foreground=theme.OK)
         else:
             if self.sound_var.get():
                 sfx.play_error()
             self.feedback_var.set(f"Falsch: war {self.current_char}, du: {typed}")
-            self.feedback_label.config(foreground="red")
+            self.feedback_label.config(foreground=theme.ERROR)
 
         self._add_history(correct)
         self.root.after(700, self.next_char)

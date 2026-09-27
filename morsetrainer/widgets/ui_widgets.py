@@ -3,6 +3,8 @@ Bandbedingungen (genutzt vom QSO- und vom Contest-Reiter)."""
 import tkinter as tk
 from tkinter import ttk
 
+from morsetrainer.widgets import theme
+
 # Bandbedingungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
     ("noise", "Rauschen", 40),
@@ -19,10 +21,9 @@ class ScrollableFrame:
     langes Contest-Log samt Klartext) nicht ins Fenster passt."""
 
     def __init__(self, parent):
-        self.canvas = tk.Canvas(parent, highlightthickness=0, borderwidth=0)
-        scroll = ttk.Scrollbar(parent, orient="vertical", command=self.canvas.yview)
-        self.canvas.config(yscrollcommand=scroll.set)
-        scroll.pack(side="right", fill="y")
+        self.canvas = tk.Canvas(parent, highlightthickness=0, borderwidth=0, background=theme.BG)
+        self.scroll = ttk.Scrollbar(parent, orient="vertical", command=self.canvas.yview)
+        self.canvas.config(yscrollcommand=self._on_scroll)
         self.canvas.pack(side="left", fill="both", expand=True)
         self.inner = ttk.Frame(self.canvas)
         window = self.canvas.create_window((0, 0), window=self.inner, anchor="nw")
@@ -30,6 +31,14 @@ class ScrollableFrame:
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(window, width=e.width))
         self.canvas.bind("<Enter>", lambda e: self._bind_wheel(True))
         self.canvas.bind("<Leave>", lambda e: self._bind_wheel(False))
+
+    def _on_scroll(self, first, last):
+        """Scrollleiste nur zeigen, wenn der Inhalt nicht ganz hineinpasst."""
+        self.scroll.set(first, last)
+        if float(first) <= 0.0 and float(last) >= 1.0:
+            self.scroll.pack_forget()
+        elif not self.scroll.winfo_ismapped():
+            self.scroll.pack(side="right", fill="y", before=self.canvas)
 
     def _bind_wheel(self, active: bool):
         for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
@@ -58,8 +67,7 @@ class BandSettingsPanel:
 
     def __init__(self, parent, on_change):
         self.on_change = on_change
-        box = ttk.LabelFrame(parent, text="Bandbedingungen")
-        box.pack(fill="x", padx=8, pady=4)
+        box = theme.card(parent, "Bandbedingungen")
         box.columnconfigure(1, weight=1)
         self.controls = {}  # Schlüssel -> (an/aus, Pegel, Regler, Anzeigetext, Anzeige)
         for row, (key, label, default) in enumerate(BAND_OPTIONS):
@@ -67,16 +75,16 @@ class BandSettingsPanel:
             level = tk.DoubleVar(value=default)
             shown = tk.StringVar(value=f"{default} %")
             ttk.Checkbutton(box, text=label, variable=enabled, command=self._changed).grid(
-                row=row, column=0, sticky="w", padx=(8, 12), pady=1
+                row=row, column=0, sticky="w", padx=(0, 12), pady=1
             )
             scale = ttk.Scale(box, from_=0, to=100, variable=level,
                               command=lambda _, key=key: self._on_level(key))
             scale.grid(row=row, column=1, sticky="we", pady=1)
             value_label = ttk.Label(box, textvariable=shown, width=5, anchor="e")
-            value_label.grid(row=row, column=2, padx=(4, 8))
+            value_label.grid(row=row, column=2, padx=(6, 0))
             self.controls[key] = (enabled, level, scale, shown, value_label)
         buttons = ttk.Frame(box)
-        buttons.grid(row=len(BAND_OPTIONS), column=0, columnspan=3, sticky="e", padx=8, pady=(2, 6))
+        buttons.grid(row=len(BAND_OPTIONS), column=0, columnspan=3, sticky="e", pady=(6, 0))
         ttk.Button(buttons, text="Alle aus", command=lambda: self.set_all(False)).pack(side="right")
         ttk.Button(buttons, text="Alle an", command=lambda: self.set_all(True)).pack(side="right", padx=4)
         self._update_widgets()
@@ -93,7 +101,7 @@ class BandSettingsPanel:
     def _update_widgets(self):
         for enabled, _, scale, _, value_label in self.controls.values():
             scale.state(["!disabled"] if enabled.get() else ["disabled"])
-            value_label.config(foreground="" if enabled.get() else "gray55")
+            value_label.config(foreground="" if enabled.get() else theme.DISABLED)
 
     def set_all(self, enabled: bool):
         for var, *_ in self.controls.values():

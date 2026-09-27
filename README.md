@@ -30,8 +30,8 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 
 ### Lernweg für Einsteiger
 
-1. **Koch-Lektion** oben auf 1 stellen (K und M) und mit **Koch-Tempo 20/10**
-   das empfohlene Tempo setzen: Die Zeichen kommen schnell genug, dass du
+1. **Koch-Lektion** oben auf 1 stellen (K und M) und unter „▸ Weitere
+   Optionen“ mit **Koch-Tempo 20/10** das empfohlene Tempo setzen: Die Zeichen kommen schnell genug, dass du
    sie als Klangbild hörst statt Punkte und Striche zu zählen, dafür mit
    längeren Pausen dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
 2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen.

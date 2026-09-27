@@ -24,7 +24,9 @@ from morsetrainer.core.morse import (
     char_gap_seconds, code_units, silence, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 from morsetrainer.core.weighting import CharPicker
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
@@ -71,38 +73,38 @@ class ContinuousModeFrame:
         self.koch_result = None   # (Zeichensatz, richtig, gesamt) für den Koch-Aufstieg
         self.audio_error = None   # Fehlermeldung aus dem Audio-Thread
 
-        self._build_widgets(parent)
+        self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
-        pad = {"padx": 8, "pady": 4}
-
-        ttk.Label(
-            parent,
+        theme.hint(
+            parent, wrap=560,
             text="Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
                  "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen.",
-            wraplength=440, justify="left",
-        ).pack(anchor="w", padx=8, pady=(4, 8))
+        ).pack(anchor="w", padx=10, pady=(8, 2))
+
+        options = theme.card(parent, "Einstellungen")
+        duration = ttk.Frame(options)
+        duration.pack(fill="x")
+        ttk.Label(duration, text="Dauer:").pack(side="left", padx=(0, 4))
+        self.duration_var = tk.IntVar(value=5)
+        ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
+        ttk.Label(duration, text="Min.").pack(side="left", padx=(4, 0))
+        theme.hint(duration, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
 
         controls = ttk.Frame(parent)
-        controls.pack(fill="x", **pad)
-        self.start_button = ttk.Button(controls, text="Start", command=self.toggle_running)
-        self.start_button.pack(side="left", **pad)
-        ttk.Label(controls, text="Dauer:").pack(side="left", padx=(8, 4))
-        self.duration_var = tk.IntVar(value=5)
-        ttk.Spinbox(controls, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
-        ttk.Label(controls, text="Min. (0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        controls.pack(fill="x", padx=10, pady=(8, 0))
+        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button.pack(side="left")
 
         self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
-        ttk.Label(parent, textvariable=self.status_var, font=("Sans", 14)).pack(pady=10)
+        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         self.live_var = tk.StringVar(value="")
-        ttk.Label(parent, textvariable=self.live_var, font=("Sans", 11)).pack(anchor="w", padx=8)
+        ttk.Label(parent, textvariable=self.live_var).pack(anchor="w", padx=10)
 
-        ttk.Label(parent, text="Deine Eingabe (letzte Zeichen):").pack(anchor="w", padx=8, pady=(8, 0))
+        typed = theme.card(parent, "Deine Eingabe (letzte Zeichen)")
         self.typed_preview_var = tk.StringVar(value="")
-        ttk.Label(
-            parent, textvariable=self.typed_preview_var, font=("Consolas", 12), wraplength=440
-        ).pack(anchor="w", padx=8)
+        ttk.Label(typed, textvariable=self.typed_preview_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
         self.stats_panel = StatsPanel(parent)
 

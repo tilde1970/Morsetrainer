@@ -22,6 +22,7 @@ from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 __author__ = "DL4YM"
@@ -29,7 +30,7 @@ __version__ = "2.2"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
-DEFAULT_GEOMETRY = "580x980"
+DEFAULT_GEOMETRY = "640x900"
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
@@ -47,8 +48,10 @@ class MorseTrainerApp:
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
 
+        theme.apply(root)
         self._build_settings()
         self._restore_shared_settings()
+        self._update_more()
         self._build_footer()
         self._build_notebook()
         self._build_all_time_tab()
@@ -106,81 +109,113 @@ class MorseTrainerApp:
             pass
 
     def _build_settings(self):
-        pad = {"padx": 8, "pady": 4}
-        settings = ttk.LabelFrame(self.root, text="Einstellungen (gemeinsam)")
-        settings.pack(fill="x", **pad)
+        """Kopfleiste: Koch-Lektion, Tempo, Tonhöhe und Zeichensatz immer
+        sichtbar; seltener gebrauchte Optionen klappen darunter auf."""
+        header = ttk.Frame(self.root, padding=(10, 8, 10, 4))
+        header.pack(fill="x")
+        header.columnconfigure(1, weight=1)
 
-        ttk.Label(settings, text="Zeichen:").grid(row=0, column=0, sticky="w", **pad)
+        top = ttk.Frame(header)
+        top.grid(row=0, column=0, columnspan=2, sticky="we")
         self.charset_var = tk.StringVar(value=DEFAULT_CHARSET)
-        ttk.Entry(settings, textvariable=self.charset_var, width=40).grid(
-            row=0, column=1, columnspan=3, sticky="we", **pad
-        )
-
-        self._build_koch_row(settings, row=1)
-
-        ttk.Label(settings, text="Geschwindigkeit (WPM):").grid(row=2, column=0, sticky="w", **pad)
-        self.wpm_var = tk.IntVar(value=15)
-        ttk.Spinbox(settings, from_=5, to=40, textvariable=self.wpm_var, width=6).grid(
-            row=2, column=1, sticky="w", **pad
-        )
-
-        ttk.Label(settings, text="Tonhöhe (Hz):").grid(row=2, column=2, sticky="w", **pad)
+        self._build_koch_row(top)
         self.freq_var = tk.IntVar(value=600)
-        ttk.Spinbox(settings, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=6).grid(
-            row=2, column=3, sticky="w", **pad
+        ttk.Label(top, text="Hz").pack(side="right", padx=(4, 0))
+        ttk.Spinbox(top, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5).pack(side="right")
+        self.wpm_var = tk.IntVar(value=15)
+        ttk.Label(top, text="WPM").pack(side="right", padx=(4, 16))
+        ttk.Spinbox(top, from_=5, to=40, textvariable=self.wpm_var, width=4).pack(side="right")
+
+        ttk.Label(header, text="Zeichen").grid(row=1, column=0, sticky="w", pady=(6, 0), padx=(0, 8))
+        ttk.Entry(header, textvariable=self.charset_var, font=theme.MONO).grid(
+            row=1, column=1, sticky="we", pady=(6, 0)
         )
 
-        farnsworth = ttk.Frame(settings)
-        farnsworth.grid(row=3, column=0, columnspan=4, sticky="w", **pad)
+        toggle_row = ttk.Frame(header)
+        toggle_row.grid(row=2, column=0, columnspan=2, sticky="we", pady=(4, 0))
+        self.more_var = tk.BooleanVar(value=False)
+        self.more_button = ttk.Button(toggle_row, style="Flat.TButton", command=self._toggle_more)
+        self.more_button.pack(side="left")
+        self.extras_var = tk.StringVar(value="")
+        theme.hint(toggle_row, textvariable=self.extras_var).pack(side="left", padx=(8, 0))
+
+        self.more_frame = ttk.Frame(header)
+        farnsworth = ttk.Frame(self.more_frame)
+        farnsworth.pack(fill="x", pady=2)
         self.farnsworth_enabled_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(farnsworth, text="Farnsworth, effektiv", variable=self.farnsworth_enabled_var).pack(
             side="left"
         )
         self.farnsworth_wpm_var = tk.IntVar(value=10)
         ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4).pack(
-            side="left", padx=(4, 4)
+            side="left", padx=4
         )
-        ttk.Label(farnsworth, text="WPM (alle außer Einzelzeichen)").pack(side="left")
+        theme.hint(farnsworth, text="WPM (alle außer Einzelzeichen)").pack(side="left")
+        ttk.Button(
+            farnsworth, text=f"Koch-Tempo {koch.RECOMMENDED_WPM}/{koch.RECOMMENDED_EFFECTIVE_WPM}",
+            command=self._set_koch_tempo,
+        ).pack(side="right")
 
         self.weighted_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
-            settings, text="Schwache Zeichen bevorzugen (gilt ab nächstem Start)",
+            self.more_frame, text="Schwache Zeichen bevorzugen (gilt ab nächstem Start)",
             variable=self.weighted_var,
-        ).grid(row=4, column=0, columnspan=4, sticky="w", **pad)
+        ).pack(anchor="w", pady=2)
 
         self.vary_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            settings, text="Tonhöhe und Tempo leicht variieren (gegen Gewöhnung an einen Klang)",
+            self.more_frame, text="Tonhöhe und Tempo leicht variieren (gegen Gewöhnung an einen Klang)",
             variable=self.vary_var,
-        ).grid(row=5, column=0, columnspan=4, sticky="w", **pad)
+        ).pack(anchor="w", pady=2)
+
+        for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
+                    self.weighted_var, self.vary_var):
+            var.trace_add("write", lambda *_: self._update_more())
+        ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
 
         # Einstellbar im Reiter Statistik, angezeigt in der Fußzeile.
         self.daily_goal_var = tk.IntVar(value=15)
 
-    def _build_koch_row(self, settings, row):
+    def _toggle_more(self):
+        self.more_var.set(not self.more_var.get())
+
+    def _update_more(self):
+        """Weitere Optionen ein-/ausklappen; zugeklappt steht daneben, was
+        davon gerade aktiv ist."""
+        expanded = self.more_var.get()
+        self.more_button.config(text="▾ Weitere Optionen" if expanded else "▸ Weitere Optionen")
+        if expanded:
+            self.more_frame.grid(row=3, column=0, columnspan=2, sticky="we", pady=(2, 0))
+            self.extras_var.set("")
+            return
+        self.more_frame.grid_remove()
+        active = []
+        effective = self.farnsworth_wpm()
+        if effective is not None:
+            active.append(f"Farnsworth {effective}")
+        if self.weighted_var.get():
+            active.append("schwache bevorzugt")
+        if self.vary_var.get():
+            active.append("variiert")
+        self.extras_var.set(" · ".join(active))
+
+    def _build_koch_row(self, parent):
         """Koch-Lektion: setzt den Zeichensatz auf die ersten Zeichen der
         Koch-Reihenfolge. Das Feld "Zeichen" bleibt frei editierbar; passt
-        es zu keiner Lektion, steht dort "eigener Zeichensatz"."""
-        pad = {"padx": 8, "pady": 4}
-        ttk.Label(settings, text="Koch-Lektion:").grid(row=row, column=0, sticky="w", **pad)
-        frame = ttk.Frame(settings)
-        frame.grid(row=row, column=1, columnspan=3, sticky="w", **pad)
+        es zu keiner Lektion, steht dort "eigene Zeichen"."""
+        ttk.Label(parent, text="Koch-Lektion").pack(side="left", padx=(0, 6))
         self.lesson_var = tk.IntVar(value=1)
         spinbox = ttk.Spinbox(
-            frame, from_=1, to=koch.MAX_LESSON, textvariable=self.lesson_var, width=4, command=self._apply_lesson
+            parent, from_=1, to=koch.MAX_LESSON, textvariable=self.lesson_var, width=3, command=self._apply_lesson
         )
         spinbox.pack(side="left")
         spinbox.bind("<Return>", lambda e: self._apply_lesson())
         self.lesson_info_var = tk.StringVar(value="")
-        ttk.Label(frame, textvariable=self.lesson_info_var).pack(side="left", padx=(8, 4))
+        theme.hint(parent, textvariable=self.lesson_info_var).pack(side="left", padx=(8, 4))
         # Spielt das neue Zeichen vor; bei eigenem Zeichensatz (z. B. nach
         # "Verwechslungen üben") führt er zurück zur Lektion.
-        self.new_char_button = ttk.Button(frame, text="▶ anhören", width=12, command=self._lesson_button)
+        self.new_char_button = ttk.Button(parent, text="▶ anhören", command=self._lesson_button)
         self.new_char_button.pack(side="left")
-        ttk.Button(
-            frame, text=f"Koch-Tempo {koch.RECOMMENDED_WPM}/{koch.RECOMMENDED_EFFECTIVE_WPM}",
-            command=self._set_koch_tempo,
-        ).pack(side="left", padx=(8, 0))
         self.charset_var.trace_add("write", lambda *_: self._sync_lesson())
         self._sync_lesson()
 
@@ -255,14 +290,14 @@ class MorseTrainerApp:
 
     def _build_footer(self):
         # Vor dem Notebook gepackt, damit es bei kleinem Fenster nicht verdrängt wird.
-        footer = ttk.Frame(self.root)
-        footer.pack(side="bottom", fill="x", padx=10, pady=(0, 4))
+        footer = ttk.Frame(self.root, padding=(10, 4))
+        footer.pack(side="bottom", fill="x")
         self.practice_var = tk.StringVar(value="")
-        ttk.Label(footer, textvariable=self.practice_var, font=("Sans", 9)).pack(side="left")
+        ttk.Label(footer, textvariable=self.practice_var).pack(side="left")
         ttk.Label(
-            footer, text=f"Morsetrainer {__version__} · entwickelt von {__author__} · 73!",
-            foreground="gray45", font=("Sans", 8),
+            footer, text=f"Morsetrainer {__version__} · entwickelt von {__author__} · 73!", style="Footer.TLabel",
         ).pack(side="right")
+        ttk.Separator(self.root).pack(side="bottom", fill="x", padx=10)
         self.practice_started = None  # time.time() beim Start eines Durchgangs
         self.practice_tick_id = None
         self.daily_goal_var.trace_add("write", lambda *_: self._update_practice())
@@ -315,6 +350,7 @@ class MorseTrainerApp:
             "weighted": (self.weighted_var, None),
             "vary": (self.vary_var, None),
             "daily_goal": (self.daily_goal_var, (0, 240)),
+            "more_options": (self.more_var, None),
         }
 
     def _shared_settings(self) -> dict:
@@ -358,7 +394,6 @@ class MorseTrainerApp:
     def _build_all_time_tab(self):
         """Eigener Reiter hinter den Trainingsmodi; ist kein Modus, Tasten
         werden dort nicht ausgewertet (siehe _active_mode)."""
-        pad = {"padx": 8, "pady": 4}
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Statistik")
         frame = ScrollableFrame(tab).inner
@@ -366,35 +401,31 @@ class MorseTrainerApp:
             frame, title="Gesamtstatistik (alle Durchgänge)", tree_height=12, show_save_label=False
         )
 
-        goal = ttk.Frame(frame)
-        goal.pack(fill="x", **pad)
-        ttk.Label(goal, text="Tagesziel:").pack(side="left")
-        ttk.Spinbox(goal, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5).pack(
-            side="left", padx=4
-        )
-        ttk.Label(goal, text="Min. pro Tag (0 = ohne Ziel) – lieber täglich kurz als selten lang",
-                  foreground="gray40").pack(side="left")
+        goal = theme.card(frame, "Tagesziel")
+        row = ttk.Frame(goal)
+        row.pack(fill="x")
+        ttk.Spinbox(row, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5).pack(side="left")
+        ttk.Label(row, text="Min. pro Tag").pack(side="left", padx=(4, 0))
+        theme.hint(goal, text="0 = ohne Ziel. Lieber täglich kurz als selten lang.").pack(anchor="w", pady=(4, 0))
 
-        confusion_box = ttk.LabelFrame(frame, text="Häufigste Verwechslungen")
-        confusion_box.pack(fill="x", **pad)
+        confusion_box = theme.card(frame, "Häufigste Verwechslungen")
         self.confusion_var = tk.StringVar(value="")
-        ttk.Label(confusion_box, textvariable=self.confusion_var, font=("Consolas", 11), justify="left").pack(
-            anchor="w", **pad
+        ttk.Label(confusion_box, textvariable=self.confusion_var, font=theme.MONO, justify="left").pack(
+            anchor="w", pady=4
         )
-        ttk.Label(
-            confusion_box, wraplength=440, justify="left", foreground="gray40",
+        theme.hint(
+            confusion_box, wrap=520,
             text="Gesendet → getippt. Paare, die in beide Richtungen auftauchen (↔), sind "
-                 "typische Klangverwandte – am besten gezielt zusammen üben, z. B. nur diese "
-                 "Zeichen im Zeichensatz oben.",
-        ).pack(anchor="w", padx=8, pady=(0, 6))
+                 "typische Klangverwandte – am besten gezielt zusammen üben.",
+        ).pack(anchor="w", pady=(0, 6))
         self.confusion_button = ttk.Button(
             confusion_box, text=f"Die {CONFUSION_PAIRS} häufigsten gezielt üben", command=self._drill_confusions
         )
-        self.confusion_button.pack(anchor="w", padx=8, pady=(0, 8))
+        self.confusion_button.pack(anchor="w")
         self.progress_panel = ProgressPanel(frame)
 
         ttk.Button(frame, text="Gesamtstatistik zurücksetzen", command=self._reset_all_time).pack(
-            side="bottom", anchor="w", **pad
+            anchor="e", padx=10, pady=(4, 10)
         )
 
     def _refresh_all_time(self):
@@ -447,7 +478,7 @@ class MorseTrainerApp:
 
     def _build_notebook(self):
         self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True, padx=8, pady=4)
+        self.notebook.pack(fill="both", expand=True, padx=6, pady=(6, 4))
 
         mode_classes = [
             ("Einzelzeichen", SingleModeFrame),

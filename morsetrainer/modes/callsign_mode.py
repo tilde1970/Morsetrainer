@@ -20,6 +20,7 @@ from tkinter import ttk
 
 from morsetrainer import DATA_DIR
 from morsetrainer.modes.sequence_mode import SequenceModeFrame
+from morsetrainer.widgets import theme
 from morsetrainer.core.weighting import CharPicker
 
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -113,19 +114,18 @@ class CallsignModeFrame(SequenceModeFrame):
         self.all_calls, release = load_callsigns()
         self.pool = []
 
-        pad = {"padx": 8, "pady": 4}
         settings = ttk.Frame(parent)
-        settings.pack(fill="x", **pad)
+        settings.pack(fill="x", pady=1)
         ttk.Label(settings, text="Präfix-Filter:").pack(side="left", padx=(0, 4))
         self.prefix_var = tk.StringVar(value="")
         ttk.Entry(settings, textvariable=self.prefix_var, width=24).pack(side="left")
-        ttk.Label(settings, text="(leer = alle)").pack(side="left", padx=(6, 0))
+        theme.hint(settings, text="(leer = alle)").pack(side="left", padx=(6, 0))
 
         self.affix_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
             parent, text="Anhänge und Gast-Präfixe (/P, /M, /MM, /AM, /QRP, OE/…)",
             variable=self.affix_var,
-        ).pack(anchor="w", padx=8)
+        ).pack(anchor="w", pady=1)
 
         if self.all_calls:
             info = f"Liste: {len(self.all_calls):,} Rufzeichen".replace(",", ".")
@@ -134,7 +134,7 @@ class CallsignModeFrame(SequenceModeFrame):
         else:
             info = "callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt."
         self.list_info_var = tk.StringVar(value=info)
-        ttk.Label(parent, textvariable=self.list_info_var).pack(anchor="w", padx=8)
+        theme.hint(parent, textvariable=self.list_info_var).pack(anchor="w", pady=(0, 4))
 
     def _validate_settings(self) -> bool:
         if not self.all_calls:

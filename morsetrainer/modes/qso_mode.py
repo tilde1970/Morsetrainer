@@ -30,6 +30,7 @@ import numpy as np
 
 from morsetrainer.core.band import BandConditions, soft_limit
 from morsetrainer.modes.qso_quiz import QuizPanel
+from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
 from morsetrainer.core.morse import (
     MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
@@ -116,17 +117,14 @@ class QsoModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
-        pad = {"padx": 8, "pady": 4}
-
-        ttk.Label(
-            parent,
+        theme.hint(
+            parent, wrap=560,
             text="Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine "
                  "eigene Tonhöhe. "
                  "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs); <SK>, <KN> und <BK> "
                  "werden zusammengezogen gesendet und beim Mittippen nicht gezählt. "
                  "Der Zeichensatz oben gilt hier nicht.",
-            wraplength=460, justify="left",
-        ).pack(anchor="w", padx=8, pady=(4, 8))
+        ).pack(anchor="w", padx=10, pady=(8, 2))
 
         self._build_qso_settings(parent)
         self.band_panel = BandSettingsPanel(parent, on_change=self._apply_band_settings)
@@ -136,55 +134,54 @@ class QsoModeFrame:
         self.length_var.trace_add("write", lambda *_: self._update_length_hint())
 
         controls = ttk.Frame(parent)
-        controls.pack(fill="x", **pad)
-        self.start_button = ttk.Button(controls, text="Neues QSO (F5)", command=self.toggle_running)
-        self.start_button.pack(side="left", **pad)
+        controls.pack(fill="x", padx=10, pady=(8, 0))
+        self.start_button = ttk.Button(controls, text="Neues QSO (F5)", style="Accent.TButton",
+                                       command=self.toggle_running)
+        self.start_button.pack(side="left")
         self.replay_button = ttk.Button(controls, text="Nochmal (F6)", command=self.replay, state="disabled")
-        self.replay_button.pack(side="left", **pad)
+        self.replay_button.pack(side="left", padx=8)
         self.reveal_button = ttk.Button(controls, text="Text zeigen (F7)", command=self.toggle_reveal,
                                         state="disabled")
-        self.reveal_button.pack(side="left", **pad)
+        self.reveal_button.pack(side="left")
 
         self.status_var = tk.StringVar(value="Bereit. Drücke „Neues QSO“.")
-        ttk.Label(parent, textvariable=self.status_var, font=("Sans", 14)).pack(pady=8)
+        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         # Ein- und ausblendbare Bereiche; _update_layout() packt die jeweils
         # sichtbaren in fester Reihenfolge.
-        self.notes_box = ttk.LabelFrame(parent, text="Notizen (frei, werden nicht ausgewertet)")
-        self.notes = tk.Text(self.notes_box, height=4, wrap="word", font=("Consolas", 11))
-        self.notes.pack(fill="x", padx=4, pady=4)
+        self.notes_box = ttk.LabelFrame(parent, text="Notizen (frei, werden nicht ausgewertet)", padding=(8, 4, 8, 8))
+        self.notes = tk.Text(self.notes_box, height=4, wrap="word", font=theme.MONO)
+        self.notes.pack(fill="x")
 
-        self.typed_box = ttk.Frame(parent)
-        ttk.Label(self.typed_box, text="Deine Eingabe (letzte Zeichen):").pack(anchor="w")
+        self.typed_box = ttk.LabelFrame(parent, text="Deine Eingabe (letzte Zeichen)", padding=(8, 4, 8, 8))
         self.typed_preview_var = tk.StringVar(value="")
-        ttk.Label(self.typed_box, textvariable=self.typed_preview_var, font=("Consolas", 12), wraplength=440).pack(
+        ttk.Label(self.typed_box, textvariable=self.typed_preview_var, font=theme.MONO, wraplength=540).pack(
             anchor="w"
         )
 
         self.quiz = QuizPanel(parent, on_checked=self._on_quiz_checked)
         self.quiz_box = self.quiz.box
 
-        self.reveal_box = ttk.LabelFrame(parent, text="QSO-Text")
-        self.reveal_text = tk.Text(self.reveal_box, height=8, wrap="word", font=("Consolas", 11))
+        self.reveal_box = ttk.LabelFrame(parent, text="QSO-Text", padding=(8, 4, 8, 8))
+        self.reveal_text = tk.Text(self.reveal_box, height=8, wrap="word", font=theme.MONO)
         scroll = ttk.Scrollbar(self.reveal_box, orient="vertical", command=self.reveal_text.yview)
         self.reveal_text.config(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
-        self.reveal_text.pack(fill="x", padx=4, pady=4)
+        self.reveal_text.pack(fill="x")
         for i, color in enumerate(STATION_COLORS):
             self.reveal_text.tag_config(f"st{i}", foreground=color)
-        self.reveal_text.tag_config("miss", foreground="white", background="#d9534f")
-        self.reveal_text.tag_config("unsent", foreground="#999999")
-        self.reveal_text.tag_config("extra", foreground="#999999", font=("Sans", 9, "italic"))
+        self.reveal_text.tag_config("miss", foreground="white", background=theme.ERROR)
+        self.reveal_text.tag_config("unsent", foreground=theme.DISABLED)
+        self.reveal_text.tag_config("extra", foreground=theme.DISABLED, font=theme.SMALL_ITALIC)
         self.reveal_text.config(state="disabled")
 
         self.stats_box = ttk.Frame(parent)
         self.stats_panel = StatsPanel(self.stats_box, tree_height=5)
 
     def _build_qso_settings(self, parent):
-        box = ttk.LabelFrame(parent, text="QSO")
-        box.pack(fill="x", padx=8, pady=4)
+        box = theme.card(parent, "QSO")
         box.columnconfigure(1, weight=1)
-        row_pad = {"padx": (8, 4), "pady": 2}
+        row_pad = {"padx": (0, 8), "pady": 2}
 
         ttk.Label(box, text="Art:").grid(row=0, column=0, sticky="w", **row_pad)
         self.kind_var = tk.StringVar(value=qso_text.QSO_TYPES[qso_text.RAGCHEW])
@@ -209,13 +206,13 @@ class QsoModeFrame:
         )
         self.length_combo.pack(side="left")
         self.length_hint_var = tk.StringVar(value="")
-        ttk.Label(length_row, textvariable=self.length_hint_var).pack(side="left", padx=(8, 0))
+        theme.hint(length_row, textvariable=self.length_hint_var).pack(side="left", padx=(8, 0))
 
         self.adaptive_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             box, text="Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert WPM oben)",
             variable=self.adaptive_var,
-        ).grid(row=3, column=0, columnspan=2, sticky="w", padx=8, pady=(0, 6))
+        ).grid(row=3, column=0, columnspan=2, sticky="w")
 
     def _kind(self) -> str:
         for key, label in qso_text.QSO_TYPES.items():
@@ -268,7 +265,8 @@ class QsoModeFrame:
             box.pack_forget()
         for box, visible in boxes:
             if visible:
-                box.pack(fill="x", padx=8, pady=4)
+                # Das Statistik-Panel bringt seinen eigenen Rahmen mit.
+                box.pack(fill="x", **({} if box is self.stats_box else {"padx": 10, "pady": 5}))
 
     def _update_reveal_button(self):
         # Während des ersten Durchlaufs nur im reinen Hörmodus aufdeckbar,

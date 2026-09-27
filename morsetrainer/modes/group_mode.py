@@ -9,6 +9,7 @@ from tkinter import ttk
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.modes.sequence_mode import SequenceModeFrame
+from morsetrainer.widgets import theme
 
 # So viele Gruppen in Folge beim ersten Versuch richtig -> eine länger.
 LONGER_AFTER = 5
@@ -54,26 +55,25 @@ class GroupModeFrame(SequenceModeFrame):
     koch_progress = True
 
     def _build_extra_settings(self, parent):
-        pad = {"padx": 8, "pady": 4}
         settings = ttk.Frame(parent)
-        settings.pack(fill="x", **pad)
-        ttk.Label(settings, text="Gruppenlänge von:").pack(side="left", padx=(0, 4))
+        settings.pack(fill="x", pady=1)
+        ttk.Label(settings, text="Gruppenlänge von").pack(side="left", padx=(0, 4))
         self.min_len_var = tk.IntVar(value=2)
         ttk.Spinbox(settings, from_=1, to=10, textvariable=self.min_len_var, width=4).pack(side="left")
-        ttk.Label(settings, text="bis:").pack(side="left", padx=(8, 4))
+        ttk.Label(settings, text="bis").pack(side="left", padx=(8, 4))
         self.max_len_var = tk.IntVar(value=5)
         ttk.Spinbox(settings, from_=1, to=10, textvariable=self.max_len_var, width=4).pack(side="left")
 
         adaptive = ttk.Frame(parent)
-        adaptive.pack(fill="x", padx=8)
+        adaptive.pack(fill="x", pady=1)
         self.adaptive_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
             adaptive, text=f"Länge wächst mit ({LONGER_AFTER}× richtig: länger, "
                            f"{SHORTER_AFTER} Fehler: kürzer)",
             variable=self.adaptive_var,
-        ).pack(side="left", padx=(8, 0))
+        ).pack(side="left")
         self.length_info_var = tk.StringVar(value="")
-        ttk.Label(parent, textvariable=self.length_info_var, foreground="gray40").pack(anchor="w", padx=16)
+        theme.hint(parent, textvariable=self.length_info_var).pack(anchor="w", padx=(24, 0))
         self.adaptive = None
         self.saved_length = None  # zuletzt erreichte Länge, Start beim nächsten Mal
 

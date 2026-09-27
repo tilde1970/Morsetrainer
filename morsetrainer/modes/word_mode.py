@@ -15,6 +15,7 @@ from morsetrainer.core import words
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.modes.sequence_mode import SequenceModeFrame
+from morsetrainer.widgets import theme
 
 
 def open_in_editor(path) -> None:
@@ -47,12 +48,10 @@ class WordModeFrame(SequenceModeFrame):
         self.user_words, self.skipped = {}, []
         self.words_mtime = -1  # Änderungszeit von woerter.txt beim letzten Einlesen (None = fehlt)
         row = ttk.Frame(parent)
-        row.pack(fill="x", padx=8)
-        ttk.Button(row, text="Eigene Wörter bearbeiten", command=self._edit_user_words).pack(side="left")
+        row.pack(fill="x", pady=(0, 4))
         self.count_var = tk.StringVar(value="")
-        ttk.Label(parent, textvariable=self.count_var, foreground="gray40", wraplength=460, justify="left").pack(
-            anchor="w", padx=8, pady=(2, 0)
-        )
+        theme.hint(row, textvariable=self.count_var, wrap=360).pack(side="left")
+        ttk.Button(row, text="Eigene Wörter bearbeiten", command=self._edit_user_words).pack(side="right")
         self.charset_var.trace_add("write", lambda *_: self._show_count())
         # Nach dem Bearbeiten im Editor: beim Zurückkehren ins Fenster neu zählen.
         self.root.bind("<FocusIn>", lambda e: self._show_count(), add="+")

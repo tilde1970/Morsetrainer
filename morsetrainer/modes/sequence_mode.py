@@ -40,7 +40,9 @@ from morsetrainer.core.morse import (
     code_units, vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
+from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 DEFAULT_GIVE_UP = 3
 
@@ -108,7 +110,7 @@ class SequenceModeFrame:
         self.deadline = None   # time.time(), ab der keine neue Sequenz mehr kommt
         self.session_id = 0    # damit ein alter Timer keine neue Sitzung anzeigt
 
-        self._build_widgets(parent)
+        self._build_widgets(ScrollableFrame(parent).inner)
 
     # --- Überschreibbar durch Subklassen -------------------------------
     def _build_extra_settings(self, parent):
@@ -171,69 +173,68 @@ class SequenceModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
-        pad = {"padx": 8, "pady": 4}
-
         if self.intro_text:
-            ttk.Label(parent, text=self.intro_text, wraplength=460, justify="left").pack(
-                anchor="w", padx=8, pady=(4, 8)
-            )
+            theme.hint(parent, text=self.intro_text, wrap=560).pack(anchor="w", padx=10, pady=(8, 2))
 
-        self._build_extra_settings(parent)
+        options = theme.card(parent, "Einstellungen")
+        self._build_extra_settings(options)
 
-        style = ttk.Frame(parent)
-        style.pack(fill="x", padx=8)
-        ttk.Label(style, text="Eingabe:").pack(side="left", padx=(8, 4))
+        style = ttk.Frame(options)
+        style.pack(fill="x", pady=1)
+        ttk.Label(style, text="Eingabe:").pack(side="left", padx=(0, 6))
         self.style_var = tk.StringVar(value=COPY)
         for value, label in INPUT_STYLES:
-            ttk.Radiobutton(style, text=label, value=value, variable=self.style_var).pack(side="left", padx=(0, 8))
+            ttk.Radiobutton(style, text=label, value=value, variable=self.style_var).pack(side="left", padx=(0, 10))
 
-        give_up = ttk.Frame(parent)
-        give_up.pack(fill="x", padx=8)
-        ttk.Label(give_up, text="Lösung zeigen nach").pack(side="left", padx=(8, 4))
+        give_up = ttk.Frame(options)
+        give_up.pack(fill="x", pady=1)
+        ttk.Label(give_up, text="Lösung zeigen nach").pack(side="left", padx=(0, 4))
         self.give_up_var = tk.IntVar(value=DEFAULT_GIVE_UP)
         ttk.Spinbox(give_up, from_=0, to=9, textvariable=self.give_up_var, width=3).pack(side="left")
-        ttk.Label(give_up, text="Fehlversuchen (0 = nie)").pack(side="left", padx=(4, 0))
+        ttk.Label(give_up, text="Fehlversuchen").pack(side="left", padx=(4, 0))
+        theme.hint(give_up, text="(0 = nie)").pack(side="left", padx=(4, 0))
 
-        tempo = ttk.Frame(parent)
-        tempo.pack(fill="x", padx=8)
+        tempo = ttk.Frame(options)
+        tempo.pack(fill="x", pady=1)
         self.tempo_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             tempo, text=f"Tempo wächst mit (richtig +{TEMPO_STEP}, falsch −{TEMPO_STEP} WPM)",
             variable=self.tempo_var,
-        ).pack(side="left", padx=(8, 0))
+        ).pack(side="left")
         self.tempo_info_var = tk.StringVar(value="")
-        ttk.Label(tempo, textvariable=self.tempo_info_var, foreground="gray40").pack(side="left", padx=(8, 0))
+        theme.hint(tempo, textvariable=self.tempo_info_var).pack(side="left", padx=(8, 0))
 
-        band_row = ttk.Frame(parent)
-        band_row.pack(fill="x", padx=8)
-        ttk.Label(band_row, text="Bandbedingungen:").pack(side="left", padx=(8, 4))
+        band_row = ttk.Frame(options)
+        band_row.pack(fill="x", pady=1)
+        ttk.Label(band_row, text="Bandbedingungen:").pack(side="left", padx=(0, 4))
         self.band_var = tk.StringVar(value="aus")
         ttk.Combobox(band_row, textvariable=self.band_var, values=list(BAND_LABELS), state="readonly",
                      width=8).pack(side="left")
-        ttk.Label(band_row, text="(Rauschen, QSB, Knacken, QRM)", foreground="gray40").pack(side="left", padx=(6, 0))
+        theme.hint(band_row, text="(Rauschen, QSB, Knacken, QRM)").pack(side="left", padx=(6, 0))
+
+        duration = ttk.Frame(options)
+        duration.pack(fill="x", pady=1)
+        ttk.Label(duration, text="Dauer:").pack(side="left", padx=(0, 4))
+        self.duration_var = tk.IntVar(value=5)
+        ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
+        ttk.Label(duration, text="Min.").pack(side="left", padx=(4, 0))
+        theme.hint(duration, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        self.sound_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(duration, text="Quittungston", variable=self.sound_var).pack(side="right")
 
         controls = ttk.Frame(parent)
-        controls.pack(fill="x", **pad)
-        self.start_button = ttk.Button(controls, text="Start", command=self.toggle_running)
-        self.start_button.pack(side="left", **pad)
+        controls.pack(fill="x", padx=10, pady=(8, 0))
+        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(
             controls, text="Wiederholen (Leertaste)", command=self.repeat_sequence, state="disabled"
         )
-        self.repeat_button.pack(side="left", **pad)
-        self.sound_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(controls, text="Quittungston", variable=self.sound_var).pack(side="left", **pad)
-
-        duration = ttk.Frame(parent)
-        duration.pack(fill="x", padx=8)
-        ttk.Label(duration, text="Dauer:").pack(side="left", padx=(8, 4))
-        self.duration_var = tk.IntVar(value=5)
-        ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
-        ttk.Label(duration, text="Min. (0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        self.repeat_button.pack(side="left", padx=8)
         self.remaining_var = tk.StringVar(value="")
-        ttk.Label(duration, textvariable=self.remaining_var).pack(side="left", padx=(16, 0))
+        theme.hint(controls, textvariable=self.remaining_var).pack(side="right")
 
         self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
-        ttk.Label(parent, textvariable=self.status_var, font=("Sans", 14)).pack(pady=10)
+        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         # Eingabezeile; beim Kopfhören stattdessen die Knöpfe zum Auflösen
         # und Bewerten (siehe _show_answer_row).
@@ -241,14 +242,15 @@ class SequenceModeFrame:
         self.answer_area.pack(pady=4)
         self.entry_frame = ttk.Frame(self.answer_area)
         self.entry_frame.pack()
-        ttk.Label(self.entry_frame, text="Eingabe (Enter bestätigt):").pack(side="left", padx=(0, 6))
         self.input_var = tk.StringVar(value="")
         self.input_var.trace_add("write", self._on_input_change)
-        self.entry = ttk.Entry(self.entry_frame, textvariable=self.input_var, width=20, state="disabled")
-        self.entry.pack(side="left")
+        self.entry = ttk.Entry(self.entry_frame, textvariable=self.input_var, width=18, state="disabled",
+                               font=theme.MONO_LARGE, justify="center")
+        self.entry.pack()
         self.entry.bind("<Return>", self.on_submit)
         # Ein Leerzeichen gehört nie zur Antwort, die Leertaste wiederholt.
         self.entry.bind("<space>", lambda e: (self.repeat_sequence(), "break")[1])
+        theme.hint(self.entry_frame, text="Enter bestätigt").pack(pady=(2, 0))
 
         self.head_frame = ttk.Frame(self.answer_area)
         self.reveal_button = ttk.Button(self.head_frame, text="Auflösen (Enter)", command=self.reveal,
@@ -263,20 +265,18 @@ class SequenceModeFrame:
 
         self.feedback_var = tk.StringVar(value="")
         self.feedback_label = ttk.Label(
-            parent, textvariable=self.feedback_var, font=("Sans", 16, "bold"), wraplength=460, justify="center"
+            parent, textvariable=self.feedback_var, style="Feedback.TLabel", wraplength=560, justify="center"
         )
         self.feedback_label.pack(pady=(10, 2))
         # Gesendet / getippt / Markierung untereinander, daher Festbreitenschrift.
         self.diff_var = tk.StringVar(value="")
-        ttk.Label(parent, textvariable=self.diff_var, font=("Consolas", 13), justify="left").pack(pady=(0, 8))
+        ttk.Label(parent, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
 
         self.stats_panel = StatsPanel(parent)
 
-        ttk.Label(parent, text="Verlauf (letzte):").pack(anchor="w", padx=8)
+        history = theme.card(parent, "Verlauf")
         self.history_var = tk.StringVar(value="")
-        ttk.Label(
-            parent, textvariable=self.history_var, font=("Consolas", 11), wraplength=460
-        ).pack(anchor="w", padx=8)
+        ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
     def _show_answer_row(self):
         if self.style == HEAD:
@@ -651,7 +651,7 @@ class SequenceModeFrame:
             if self.sound_var.get():
                 sfx.play_ok()
             self.feedback_var.set(f"Richtig: {sent}" + (f"\n{explanation}" if explanation else ""))
-            self.feedback_label.config(foreground="green")
+            self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
         else:
             if self.sound_var.get():
@@ -661,7 +661,7 @@ class SequenceModeFrame:
             else:
                 text = "Leider falsch – hör noch einmal hin."
             self.feedback_var.set(text)
-            self.feedback_label.config(foreground="red")
+            self.feedback_label.config(foreground=theme.ERROR)
             if not head:
                 sent_row, typed_row, marks = align.diff_rows(sent, typed)
                 self.diff_var.set(f"gesendet  {sent_row}\ngetippt   {typed_row}\n          {marks}")

@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import stats
+from morsetrainer.widgets import theme
 
 MAX_POINTS = 100
 CHART_HEIGHT = 140
@@ -16,12 +17,12 @@ MARGIN = {"left": 38, "right": 62, "top": 12, "bottom": 22}
 # Punkte nur bis zu dieser Anzahl zeichnen, darüber nur die Linie.
 MAX_MARKERS = 40
 
-SURFACE = "#fcfcfb"
-TEXT_PRIMARY = "#0b0b0b"
-TEXT_SECONDARY = "#52514e"
-GRID = "#e4e3df"
-SERIES = "#2a78d6"
-FONT = ("Sans", 8)
+SURFACE = theme.SURFACE
+TEXT_PRIMARY = theme.TEXT
+TEXT_SECONDARY = theme.MUTED
+GRID = "#e4e6ea"
+SERIES = theme.ACCENT
+FONT = theme.SMALL
 
 
 def _nice_range(values, step: int = 5):
@@ -36,9 +37,9 @@ class _LineChart:
     """Ein Liniendiagramm auf einem Canvas; Achsen- und Hover-Logik."""
 
     def __init__(self, parent, title: str, unit: str, fixed_range=None, on_hover=None):
-        ttk.Label(parent, text=title, font=("Sans", 10, "bold")).pack(anchor="w", padx=8, pady=(6, 0))
+        ttk.Label(parent, text=title, font=theme.HEADING).pack(anchor="w", pady=(6, 2))
         self.canvas = tk.Canvas(parent, height=CHART_HEIGHT, background=SURFACE, highlightthickness=0)
-        self.canvas.pack(fill="x", padx=8, pady=(2, 4))
+        self.canvas.pack(fill="x", pady=(2, 4))
         self.unit = unit
         self.fixed_range = fixed_range
         self.on_hover = on_hover
@@ -62,7 +63,7 @@ class _LineChart:
         self.points = []
         if not self.values:
             c.create_text(c.winfo_width() / 2, CHART_HEIGHT / 2, text="Noch keine Daten für diesen Modus.",
-                          fill=TEXT_SECONDARY, font=("Sans", 9))
+                          fill=TEXT_SECONDARY, font=FONT)
             return
         x0, y0, x1, y1 = self._plot_box()
         if x1 <= x0:
@@ -106,7 +107,7 @@ class _LineChart:
         # Direkte Beschriftung nur am letzten Wert, in Textfarbe.
         x, y, value, _ = self.points[-1]
         c.create_text(x + 8, y, text=f"{value:g}{self.unit}", anchor="w", fill=TEXT_PRIMARY,
-                      font=("Sans", 9, "bold"))
+                      font=theme.HEADING)
 
     def _motion(self, event):
         if not self.points or self.on_hover is None:
@@ -136,11 +137,10 @@ class _LineChart:
 
 class ProgressPanel:
     def __init__(self, parent):
-        box = ttk.LabelFrame(parent, text="Fortschritt")
-        box.pack(fill="x", padx=8, pady=4)
+        box = theme.card(parent, "Fortschritt")
 
         top = ttk.Frame(box)
-        top.pack(fill="x", padx=8, pady=(4, 0))
+        top.pack(fill="x", pady=(0, 4))
         ttk.Label(top, text="Modus:").pack(side="left")
         self.mode_var = tk.StringVar()
         self.mode_combo = ttk.Combobox(top, textvariable=self.mode_var, state="readonly", width=20)
@@ -149,8 +149,7 @@ class ProgressPanel:
         self.table_button = ttk.Button(top, text="Tabelle", command=self._toggle_table)
         self.table_button.pack(side="right")
         self.info_var = tk.StringVar(value="")
-        ttk.Label(box, textvariable=self.info_var, foreground=TEXT_SECONDARY, wraplength=440,
-                  justify="left").pack(anchor="w", padx=8)
+        theme.hint(box, textvariable=self.info_var, wrap=520).pack(anchor="w")
 
         self.charts = ttk.Frame(box)
         self.charts.pack(fill="x")
@@ -208,7 +207,7 @@ class ProgressPanel:
         self.table_visible = not self.table_visible
         if self.table_visible:
             self.charts.pack_forget()
-            self.table.pack(fill="x", padx=8, pady=4)
+            self.table.pack(fill="x", pady=4)
             self.table_button.config(text="Diagramm")
         else:
             self.table.pack_forget()

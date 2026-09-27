@@ -5,8 +5,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import qso_text
+from morsetrainer.widgets import theme
 
-OK_BG, WRONG_BG = "#d4f4d4", "#f8d0d0"
+OK_BG, WRONG_BG = theme.OK_BG, theme.ERROR_BG
 
 
 def normalize(text: str, kind: str = qso_text.TEXT) -> str:
@@ -42,20 +43,20 @@ class QuizPanel:
         self.on_checked = on_checked
         self.qso = None
         self.checked = False
-        self.box = ttk.LabelFrame(parent, text="Abfrage – was hast du mitbekommen?")
+        self.box = ttk.LabelFrame(parent, text="Abfrage – was hast du mitbekommen?", padding=(8, 4, 8, 8))
         self.grid = ttk.Frame(self.box)
-        self.grid.pack(fill="x", padx=4, pady=4)
+        self.grid.pack(fill="x", pady=(0, 6))
         self.vars, self.entries, self.marks = {}, {}, {}
 
         bottom = ttk.Frame(self.box)
-        bottom.pack(fill="x", padx=4, pady=(0, 4))
+        bottom.pack(fill="x")
         self.check_button = ttk.Button(bottom, text="Prüfen (F8)", command=self.check)
         self.check_button.pack(side="left")
         self.score_var = tk.StringVar(value="")
-        ttk.Label(bottom, textvariable=self.score_var, font=("Sans", 12, "bold")).pack(side="left", padx=12)
+        ttk.Label(bottom, textvariable=self.score_var, style="Score.TLabel").pack(side="left", padx=12)
         self.fix_var = tk.StringVar(value="")
-        ttk.Label(self.box, textvariable=self.fix_var, foreground="red", wraplength=440,
-                  justify="left").pack(anchor="w", padx=4, pady=(0, 4))
+        ttk.Label(self.box, textvariable=self.fix_var, foreground=theme.ERROR, wraplength=540,
+                  justify="left").pack(anchor="w", pady=(4, 0))
 
     def reset(self, qso) -> None:
         self.qso = qso
@@ -63,7 +64,7 @@ class QuizPanel:
             child.destroy()
         self.vars, self.entries, self.marks = {}, {}, {}
         for col, header in enumerate(qso.quiz_columns):
-            ttk.Label(self.grid, text=header).grid(row=0, column=1 + 2 * col, columnspan=2, sticky="w")
+            ttk.Label(self.grid, text=header, style="Hint.TLabel").grid(row=0, column=1 + 2 * col, columnspan=2, sticky="w")
         for row, (label, cells) in enumerate(qso.quiz_rows, start=1):
             ttk.Label(self.grid, text=label + ":").grid(row=row, column=0, sticky="w", padx=(0, 6), pady=1)
             for col, cell in enumerate(cells):
@@ -71,7 +72,9 @@ class QuizPanel:
                     continue
                 var = tk.StringVar()
                 # tk.Entry statt ttk.Entry, damit sich der Hintergrund einfärben lässt.
-                entry = tk.Entry(self.grid, textvariable=var, width=13, font=("Consolas", 11))
+                entry = tk.Entry(self.grid, textvariable=var, width=13, font=theme.MONO, relief="flat",
+                                 highlightthickness=1, highlightbackground=theme.BORDER,
+                                 highlightcolor=theme.ACCENT, background=theme.SURFACE)
                 entry.grid(row=row, column=1 + 2 * col, sticky="w", pady=1)
                 mark = ttk.Label(self.grid, text="", width=2)
                 mark.grid(row=row, column=2 + 2 * col, sticky="w", padx=(2, 6))
@@ -97,7 +100,7 @@ class QuizPanel:
             correct += ok
             bg = OK_BG if ok else WRONG_BG
             self.entries[row, col].config(background=bg, readonlybackground=bg, state="readonly")
-            self.marks[row, col].config(text="✓" if ok else "✗", foreground="green" if ok else "red")
+            self.marks[row, col].config(text="✓" if ok else "✗", foreground=theme.OK if ok else theme.ERROR)
             if not ok:
                 fixes.append(f"{label} ({self.qso.quiz_columns[col]}): {expected}")
         total = len(self.vars)

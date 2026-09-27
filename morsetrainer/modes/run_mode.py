@@ -39,6 +39,7 @@ from morsetrainer.core import stats
 from morsetrainer.core.band import BandConditions
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE, build_text
 from morsetrainer.modes.qso_quiz import is_correct
+from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
 
 DEFAULT_CALL = "DL4YM"
@@ -190,17 +191,16 @@ class RunModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
-        ttk.Label(
-            parent, wraplength=460, justify="left",
+        theme.hint(
+            parent, wrap=560,
             text="Du bist die Run-Station: F1 ruft CQ, nimm ein Rufzeichen auf, gib mit Enter den "
                  "Austausch, trag seinen Austausch ein und logge mit Enter (TU). "
                  "Am Ende wird dein Log mit dem verglichen, was wirklich gesendet wurde.",
-        ).pack(anchor="w", padx=8, pady=(4, 8))
+        ).pack(anchor="w", padx=10, pady=(8, 2))
 
-        box = ttk.LabelFrame(parent, text="Contest")
-        box.pack(fill="x", padx=8, pady=4)
+        box = theme.card(parent, "Contest")
         box.columnconfigure(1, weight=1)
-        row_pad = {"padx": (8, 4), "pady": 2}
+        row_pad = {"padx": (0, 8), "pady": 2}
         ttk.Label(box, text="Contest:").grid(row=0, column=0, sticky="w", **row_pad)
         self.kind_var = tk.StringVar(value=qso_text.QSO_TYPES["cqww"])
         self.kind_combo = ttk.Combobox(
@@ -221,7 +221,7 @@ class RunModeFrame:
         self.my_exchange_entry = ttk.Entry(exchange_row, textvariable=self.my_exchange_var, width=12)
         self.my_exchange_entry.pack(side="left")
         self.exchange_hint_var = tk.StringVar(value="")
-        ttk.Label(exchange_row, textvariable=self.exchange_hint_var, foreground="gray40").pack(side="left", padx=6)
+        theme.hint(exchange_row, textvariable=self.exchange_hint_var).pack(side="left", padx=6)
 
         ttk.Label(box, text="Aktivität:").grid(row=3, column=0, sticky="w", **row_pad)
         activity_row = ttk.Frame(box)
@@ -229,40 +229,40 @@ class RunModeFrame:
         self.activity_var = tk.IntVar(value=2)
         self.activity_spin = ttk.Spinbox(activity_row, from_=1, to=5, textvariable=self.activity_var, width=4)
         self.activity_spin.pack(side="left")
-        ttk.Label(activity_row, text="Anrufer gleichzeitig (ca.)").pack(side="left", padx=6)
+        theme.hint(activity_row, text="Anrufer gleichzeitig (ca.)").pack(side="left", padx=6)
 
         ttk.Label(box, text="Dauer:").grid(row=4, column=0, sticky="w", **row_pad)
         duration_row = ttk.Frame(box)
-        duration_row.grid(row=4, column=1, columnspan=2, sticky="w", pady=(2, 6))
+        duration_row.grid(row=4, column=1, columnspan=2, sticky="w", pady=2)
         self.duration_var = tk.IntVar(value=10)
         self.duration_spin = ttk.Spinbox(duration_row, from_=0, to=240, textvariable=self.duration_var, width=4)
         self.duration_spin.pack(side="left")
-        ttk.Label(duration_row, text="Min. (0 = ohne Limit)").pack(side="left", padx=6)
+        ttk.Label(duration_row, text="Min.").pack(side="left", padx=(4, 0))
+        theme.hint(duration_row, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
 
         self.kind_var.trace_add("write", lambda *_: self._on_setup_change())
         self.my_call_var.trace_add("write", lambda *_: self._on_setup_change())
 
         controls = ttk.Frame(parent)
-        controls.pack(fill="x", padx=8, pady=4)
-        self.start_button = ttk.Button(controls, text="Start", command=self.toggle_running)
-        self.start_button.pack(side="left", padx=8, pady=4)
+        controls.pack(fill="x", padx=10, pady=(8, 0))
+        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button.pack(side="left")
         self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
-        ttk.Label(controls, textvariable=self.status_var, font=("Sans", 11)).pack(side="left", padx=8)
+        ttk.Label(controls, textvariable=self.status_var, style="Status.TLabel").pack(side="left", padx=12)
 
         self.score_var = tk.StringVar(value="")
-        ttk.Label(parent, textvariable=self.score_var, font=("Sans", 12, "bold")).pack(anchor="w", padx=16)
+        ttk.Label(parent, textvariable=self.score_var, style="Score.TLabel").pack(anchor="w", padx=10, pady=(6, 0))
 
-        entry_box = ttk.LabelFrame(parent, text="Eingabe")
-        entry_box.pack(fill="x", padx=8, pady=4)
+        entry_box = theme.card(parent, "Eingabe")
         fields = ttk.Frame(entry_box)
-        fields.pack(anchor="w", padx=8, pady=4)
-        ttk.Label(fields, text="Call").grid(row=0, column=0, sticky="w")
-        ttk.Label(fields, text="Austausch").grid(row=0, column=1, sticky="w", padx=(12, 0))
+        fields.pack(anchor="w", pady=(0, 6))
+        theme.hint(fields, text="Call").grid(row=0, column=0, sticky="w")
+        theme.hint(fields, text="Austausch").grid(row=0, column=1, sticky="w", padx=(12, 0))
         self.call_var = tk.StringVar()
         self.exch_var = tk.StringVar()
-        self.call_entry = ttk.Entry(fields, textvariable=self.call_var, width=12, font=("Consolas", 16))
+        self.call_entry = ttk.Entry(fields, textvariable=self.call_var, width=12, font=theme.MONO_ENTRY)
         self.call_entry.grid(row=1, column=0)
-        self.exch_entry = ttk.Entry(fields, textvariable=self.exch_var, width=8, font=("Consolas", 16))
+        self.exch_entry = ttk.Entry(fields, textvariable=self.exch_var, width=8, font=theme.MONO_ENTRY)
         self.exch_entry.grid(row=1, column=1, padx=(12, 0))
         for var in (self.call_var, self.exch_var):
             var.trace_add("write", lambda *_, v=var: self._uppercase(v))
@@ -274,26 +274,27 @@ class RunModeFrame:
         self.exch_entry.bind("<space>", lambda e: (self.call_entry.focus_set(), "break")[1])
 
         keys = ttk.Frame(entry_box)
-        keys.pack(fill="x", padx=4, pady=(0, 6))
+        keys.pack(fill="x", pady=(0, 6))
         for i, (key, (_, label)) in enumerate(MESSAGES.items()):
-            ttk.Button(keys, text=f"{key} {label}", width=11,
-                       command=lambda k=key: self.on_function_key(k)).grid(row=i // 4, column=i % 4, padx=2, pady=1)
-        ttk.Label(entry_box, foreground="gray40", wraplength=440, justify="left",
-                  text="Enter sendet die passende nächste Nachricht (leer: CQ, mit Call: Austausch, mit "
+            ttk.Button(keys, text=f"{key} {label}", command=lambda k=key: self.on_function_key(k)).grid(
+                row=i // 4, column=i % 4, padx=(0, 4), pady=2, sticky="we")
+        for col in range(4):
+            keys.columnconfigure(col, weight=1, uniform="keys")
+        theme.hint(entry_box, wrap=540,
+                   text="Enter sendet die passende nächste Nachricht (leer: CQ, mit Call: Austausch, mit "
                        "Austausch: TU + loggen). Esc bricht ab, Leertaste wechselt das Feld.").pack(
-            anchor="w", padx=8, pady=(0, 6))
+            anchor="w")
 
-        log_box = ttk.LabelFrame(parent, text="Log")
-        log_box.pack(fill="x", padx=8, pady=4)
+        log_box = theme.card(parent, "Log")
         columns = ("nr", "call", "exch", "result")
         self.log_tree = ttk.Treeview(log_box, columns=columns, show="headings", height=8)
         for col, heading, width, anchor in (("nr", "Nr", 40, "center"), ("call", "Call", 100, "w"),
                                             ("exch", "Austausch", 90, "w"), ("result", "Ergebnis", 200, "w")):
             self.log_tree.heading(col, text=heading)
             self.log_tree.column(col, width=width, anchor=anchor)
-        self.log_tree.tag_configure("wrong", foreground="#c0392b")
-        self.log_tree.tag_configure("ok", foreground="#1e7e34")
-        self.log_tree.pack(fill="x", padx=4, pady=4)
+        self.log_tree.tag_configure("wrong", foreground=theme.ERROR)
+        self.log_tree.tag_configure("ok", foreground=theme.OK)
+        self.log_tree.pack(fill="x")
 
         # Unten, damit Eingabe und Log im laufenden Contest ohne Scrollen sichtbar sind.
         self.band_panel = BandSettingsPanel(parent, on_change=self._apply_band_settings)

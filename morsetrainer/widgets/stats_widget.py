@@ -5,34 +5,35 @@ and isn't duplicated."""
 import tkinter as tk
 from tkinter import ttk
 
+from morsetrainer.widgets import theme
+
 
 class StatsPanel:
     def __init__(self, parent, title="Statistik (aktueller Durchgang)", tree_height=8, show_save_label=True):
-        pad = {"padx": 8, "pady": 4}
-
-        box = ttk.LabelFrame(parent, text=title)
-        box.pack(fill="x", **pad)
+        box = theme.card(parent, title)
+        summary = ttk.Frame(box)
+        summary.pack(fill="x", pady=(0, 6))
         self.stats_var = tk.StringVar(value="0 / 0 (0%)")
-        ttk.Label(box, textvariable=self.stats_var, font=("Sans", 12)).pack(anchor="w", **pad)
+        ttk.Label(summary, textvariable=self.stats_var, style="Score.TLabel").pack(side="left")
         self.speed_var = tk.StringVar(value="Ø effektive Geschwindigkeit: –")
-        ttk.Label(box, textvariable=self.speed_var, font=("Sans", 12)).pack(anchor="w", **pad)
+        ttk.Label(summary, textvariable=self.speed_var).pack(side="left", padx=(16, 0))
 
-        ttk.Label(parent, text="Zeichen (nach Fehlern sortiert):").pack(anchor="w", padx=8, pady=(8, 0))
+        theme.hint(box, text="Zeichen, nach Fehlern sortiert").pack(anchor="w")
         columns = ("char", "good", "wrong", "avg_rt", "avg_wpm", "confusions")
-        self.char_tree = ttk.Treeview(parent, columns=columns, show="headings", height=tree_height)
+        self.char_tree = ttk.Treeview(box, columns=columns, show="headings", height=tree_height)
         headings = {
             "char": "Zeichen", "good": "Richtig", "wrong": "Falsch",
             "avg_rt": "Ø Zeit (s)", "avg_wpm": "Ø WPM", "confusions": "Verwechselt mit",
         }
-        widths = {"char": 55, "good": 60, "wrong": 55, "avg_rt": 70, "avg_wpm": 60, "confusions": 140}
+        widths = {"char": 60, "good": 60, "wrong": 55, "avg_rt": 75, "avg_wpm": 60, "confusions": 140}
         for col in columns:
             self.char_tree.heading(col, text=headings[col])
             self.char_tree.column(col, width=widths[col], anchor="w" if col == "confusions" else "center")
-        self.char_tree.pack(fill="x", padx=8, pady=4)
+        self.char_tree.pack(fill="x", pady=(2, 0))
 
         self.save_var = tk.StringVar(value="")
         if show_save_label:
-            ttk.Label(parent, textvariable=self.save_var, font=("Sans", 9)).pack(anchor="w", padx=8)
+            theme.hint(box, textvariable=self.save_var).pack(anchor="w", pady=(4, 0))
 
     def reset(self):
         self.stats_var.set("0 / 0 (0%)")
