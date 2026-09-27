@@ -14,7 +14,7 @@ including which characters were typed instead ("confusions"; "" = missed).
 """
 import json
 import statistics
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from morsetrainer import DATA_DIR
@@ -240,9 +240,55 @@ def load_all_time() -> dict:
 
 def reset_all_time() -> None:
     """Wipe the cumulative statistics. Individual session log files are
-    untouched — only the running totals in all_time.json are cleared."""
+    untouched — only the running totals in all_time.json are cleared. The
+    reset time is remembered so that recent_char_data() ignores older logs."""
     if ALL_TIME_FILE.exists():
         ALL_TIME_FILE.unlink()
+    try:
+        storage.write_json_atomic(RESET_FILE, {"time": datetime.now().isoformat(timespec="seconds")})
+    except OSError:
+        pass
+
+
+# Verwechslungen „vergessen“: nur Sitzungen der letzten so vielen Tage.
+RECENT_DAYS = 30
+RESET_FILE = STATS_DIR / "reset.json"
+
+
+def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
+    """Zeichenstatistik wie in all_time.json ({Zeichen: {"good", "wrong",
+    "confusions"}}), aber nur aus den Sitzungsdateien der letzten `days`
+    Tage und nach dem letzten Zurücksetzen. Längst behobene Verwechslungen
+    fallen so heraus. Selbst bewertete Sitzungen zählen nicht."""
+    now = now or datetime.now()
+    cutoff = now - timedelta(days=days)
+    reset = storage.load_json(RESET_FILE, {}).get("time") if RESET_FILE.exists() else None
+    try:
+        cutoff = max(cutoff, datetime.fromisoformat(reset)) if reset else cutoff
+    except (TypeError, ValueError):
+        pass
+    data = {}
+    for path in STATS_DIR.glob("20*.jsonl"):
+        try:
+            started = datetime.strptime(path.name[:17], "%Y-%m-%d_%H%M%S")
+        except ValueError:
+            continue
+        if started < cutoff:
+            continue
+        for obj in _read_jsonl(path):
+            kind = obj.get("type")
+            if kind == "config" and obj.get("self_assessed"):
+                break
+            if kind != "char" or "char" not in obj:
+                continue
+            e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}})
+            if obj.get("correct"):
+                e["good"] += 1
+            else:
+                e["wrong"] += 1
+                typed = obj.get("typed", "")
+                e["confusions"][typed] = e["confusions"].get(typed, 0) + 1
+    return data
 
 
 def all_time_char_rows(all_time: dict):

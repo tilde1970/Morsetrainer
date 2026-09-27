@@ -9,7 +9,7 @@ Contest-Pile-up unter realistischen Kurzwellenbedingungen.
 
 | Reiter | Was du übst |
 |---|---|
-| **Einzelzeichen** | Einzelne Zeichen erkennen, gemessen wird auch die Reaktionszeit. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist. |
+| **Einzelzeichen** | Einzelne Zeichen erkennen; nach jeder Antwort steht deine Zeit und das aktuelle Limit, z. B. „0,38 s, Limit 1,20 s“. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist. Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen direkt nacheinander. |
 | **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
 | **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert und Verlauf. |
@@ -66,7 +66,7 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 5. Ab Lektion 7 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
    dem neuesten Zeichen kommen bevorzugt), danach
    **Kontinuierlich** und **QSO**.
-6. Im Reiter **Statistik** zeigt „Die 4 häufigsten gezielt üben“, welche
+6. Im Reiter **Statistik** (Verwechslungen der letzten 30 Tage) zeigt „Die 4 häufigsten gezielt üben“, welche
    Zeichen du verwechselst, und übt genau diese gegeneinander. „↩ Lektion“
    oben führt zurück zu deiner Lektion.
 

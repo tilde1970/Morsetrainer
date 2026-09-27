@@ -452,7 +452,7 @@ class MorseTrainerApp:
         ttk.Label(row, text="Min. pro Tag").pack(side="left", padx=(4, 0))
         theme.hint(goal, text="0 = ohne Ziel. Lieber täglich kurz als selten lang.").pack(anchor="w", pady=(4, 0))
 
-        confusion_box = theme.card(frame, "Häufigste Verwechslungen")
+        confusion_box = theme.card(frame, f"Häufigste Verwechslungen (letzte {stats.RECENT_DAYS} Tage)")
         self.confusion_var = tk.StringVar(value="")
         ttk.Label(confusion_box, textvariable=self.confusion_var, font=theme.MONO, justify="left").pack(
             anchor="w", pady=4
@@ -475,14 +475,14 @@ class MorseTrainerApp:
     def _refresh_all_time(self):
         data = stats.load_all_time()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
-        self.confusion_var.set(self._confusion_text(data))
+        self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
         self.progress_panel.refresh()
 
     @staticmethod
     def _confusion_text(data: dict) -> str:
         pairs = stats.top_confusions(data)
         if not pairs:
-            return "Noch keine Verwechslungen erfasst\n(werden ab jetzt mitgezählt)."
+            return f"Keine Verwechslungen in den letzten {stats.RECENT_DAYS} Tagen."
         seen = {(sent, typed) for sent, typed, _, _ in pairs}
         lines = []
         for sent, typed, count, share in pairs:
@@ -492,13 +492,14 @@ class MorseTrainerApp:
         return "\n".join(lines)
 
     @staticmethod
-    def _confusion_charset(data: dict) -> str:
-        """Zeichen der häufigsten Verwechslungspaare, in Reihenfolge. Nur
-        Paare, deren getipptes Zeichen auch schon gesendet wurde: ein
-        Vertipper wie „(“ statt „/“ (Umschalttaste) soll nicht in den
-        Übungs-Zeichensatz geraten."""
+    def _confusion_charset(data: dict, sent=None) -> str:
+        """Zeichen der häufigsten Verwechslungspaare aus `data`, in
+        Reihenfolge. Nur Paare, deren getipptes Zeichen schon einmal
+        gesendet wurde (`sent`, Standard `data`): ein Vertipper wie „(“
+        statt „/“ (Umschalttaste) soll nicht in den Übungs-Zeichensatz."""
+        sent = data if sent is None else sent
         chars = []
-        pairs = [p for p in stats.top_confusions(data, limit=None) if p[1] in data]
+        pairs = [p for p in stats.top_confusions(data, limit=None) if p[1] in sent]
         for sent, typed, _, _ in pairs[:CONFUSION_PAIRS]:
             for ch in (sent, typed):
                 if ch not in chars:
@@ -508,7 +509,7 @@ class MorseTrainerApp:
     def _drill_confusions(self):
         """Setzt den Zeichensatz auf die verwechselten Zeichen und wechselt zu
         den Einzelzeichen: ähnlich klingende Zeichen direkt gegeneinander."""
-        chars = self._confusion_charset(stats.load_all_time())
+        chars = self._confusion_charset(stats.recent_char_data(), stats.load_all_time())
         if len(chars) < 2:
             self.confusion_var.set("Noch zu wenige Verwechslungen zum gezielten Üben.")
             return

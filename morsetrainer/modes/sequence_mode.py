@@ -635,6 +635,10 @@ class SequenceModeFrame:
         if self.submit_pending:
             self.submit_pending = False
             self.on_submit()
+        elif self.koch_progress and self.attempts == 0 and not self.replayed:
+            # Für die Lektion zählt nur eine zügige Antwort; das soll man wissen.
+            limit = f"{answer_limit(len(self.current_sequence)):.1f}".replace(".", ",")
+            self.status_var.set(f"Deine Eingabe? (für die Lektion zügig: {limit} s)")
         else:
             self.status_var.set("Deine Eingabe?")
 
@@ -783,12 +787,13 @@ class SequenceModeFrame:
             self.feedback_label.config(foreground=theme.ERROR)
             if not head:
                 sent_row, typed_row, marks = align.diff_rows(sent, typed)
+                legend = "\n          – fehlt/zu viel, ^ falsch"
                 if give_up:
-                    self.diff_var.set(f"gesendet  {sent_row}\ngetippt   {typed_row}\n          {marks}")
+                    self.diff_var.set(f"gesendet  {sent_row}\ngetippt   {typed_row}\n          {marks}{legend}")
                 else:
                     # Nur markieren, wo es hakt; die gesendete Sequenz zu
                     # zeigen hieße, beim nächsten Versuch abzuschreiben.
-                    self.diff_var.set(f"getippt   {typed_row}\n          {marks}")
+                    self.diff_var.set(f"getippt   {typed_row}\n          {marks}{legend}")
 
         self.history.append(f"{sent}{'=' if all_correct else '≠'}{typed}")
         self.history = self.history[-10:]

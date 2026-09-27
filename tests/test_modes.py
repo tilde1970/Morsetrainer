@@ -26,6 +26,7 @@ class AppTestCase(unittest.TestCase):
             mock.patch.object(stats, "STATS_DIR", directory),
             mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
             mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
+            mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
             mock.patch.object(app_module, "WINDOW_STATE_FILE", directory / "window_state.json"),
         ]
         for patch in self.patches:
@@ -99,6 +100,15 @@ class GroupEvaluationTest(AppTestCase):
         g.on_submit()
         self.assertEqual(len(g.session_stats.rounds), 3)  # zweiter Versuch nicht gezählt
         self.assertEqual(g.first_try_correct, 1)  # nur das K aus dem ersten Versuch
+
+    def test_lesson_hint_and_legend(self):
+        self._start()
+        g = self.group
+        g.current_sequence, g.attempts, g.replayed, g.submit_pending = "KMU", 0, False, False
+        g.on_playback_done()
+        self.assertIn("zügig", g.status_var.get())
+        self._answer("KMU", "KKK")
+        self.assertIn("– fehlt/zu viel, ^ falsch", g.diff_var.get())
 
     def test_give_up_shows_solution(self):
         self._start()
@@ -268,6 +278,18 @@ class SingleCharTest(AppTestCase):
         self._key("K")
         self.assertEqual(s.session_stats.summary()["correct"], 0)
         self.assertIn("K", s.retries.waiting)
+
+    def test_wrong_answer_plays_both_and_shows_latency_when_right(self):
+        s = self.single
+        s.current_char, s.voice, s.waiting_for_input = "K", (20, 600), True
+        s.play_start_time = time.time() - 0.5
+        self._key("R")
+        s._play_correction(s.timeout_token)
+        self.assertIn("und so R (dein Tipp)", s.status_var.get())
+        s.current_char, s.waiting_for_input, s.correcting = "M", True, False
+        s.play_start_time = time.time() - 0.6
+        self._key("M")
+        self.assertRegex(s.feedback_var.get(), r"Richtig: M  \(\d+,\d\d s, Limit \d+,\d\d s\)")
 
     def test_space_during_feedback_pause_is_ignored(self):
         s = self.single

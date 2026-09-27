@@ -73,6 +73,7 @@ class StatsTest(unittest.TestCase):
             mock.patch.object(stats, "STATS_DIR", directory),
             mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
             mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
+            mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
         ]
         for patch in self.patches:
             patch.start()
@@ -113,6 +114,22 @@ class StatsTest(unittest.TestCase):
             data[ch] = {"good": 10, "wrong": 0, "confusions": {}}
         chars = MorseTrainerApp._confusion_charset(data)
         self.assertEqual(chars, "6B895HN")  # "/ → (" entfällt ("(" nie gesendet), "6 → N" rückt nach
+
+    def test_recent_confusions_forget_old_sessions_and_reset(self):
+        from datetime import datetime, timedelta
+        def write(days_ago, pairs):
+            start = datetime.now() - timedelta(days=days_ago)
+            path = stats.STATS_DIR / f"{start.strftime('%Y-%m-%d_%H%M%S')}-single.jsonl"
+            lines = [{"type": "config", "mode": "single"}]
+            lines += [{"type": "char", "char": c, "typed": t, "correct": c == t} for c, t in pairs]
+            path.write_text("\n".join(json.dumps(line) for line in lines), encoding="utf-8")
+        write(60, [("B", "6")] * 5)   # zu alt
+        write(2, [("8", "9"), ("8", "8")])
+        data = stats.recent_char_data()
+        self.assertNotIn("B", data)
+        self.assertEqual(data["8"]["confusions"], {"9": 1})
+        stats.reset_all_time()
+        self.assertEqual(stats.recent_char_data(), {})
 
     def test_old_all_time_without_confusions_still_works(self):
         stats.ALL_TIME_FILE.write_text(json.dumps({"K": {

@@ -9,6 +9,12 @@ schon, bevor man hinhört. Bei kleinen Zeichensätzen (unter RETRY_EXCLUDE_MIN
 Zeichen) wird das vorgemerkte Zeichen dazwischen nicht ausgeschlossen,
 sonst stünde die Folge fest (bei K und M käme bis dahin sicher nur M).
 
+Die Rückmeldung nennt die Zeit bis zum Tastendruck in Sekunden, gezählt
+wie das Zeitlimit ab dem Ende des Zeichens samt folgender Zeichenpause,
+und daneben das aktuelle Limit (eine WPM-Angabe hinge von der
+Zeichenlänge ab). War die Antwort ein anderes Zeichen, klingt beim
+Korrekturton richtig – getippt – richtig: „So klingt K – und so M“.
+
 Die Leertaste wiederholt das Zeichen, verlängert aber die Frist nicht, und
 ein erst nach der Wiederholung erkanntes Zeichen gilt als nicht erkannt.
 
@@ -24,9 +30,12 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
+import numpy as np
+
 from morsetrainer.core import audio, sfx
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, code_units, duration_seconds, vary_voice,
+    AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, code_units, duration_seconds, silence,
+    vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.widgets import theme
@@ -47,6 +56,8 @@ AFTER_CORRECTION_MS = 600
 # Ab so vielen verschiedenen Zeichen werden vorgemerkte Zeichen bis zu ihrer
 # erneuten Abfrage aus der Zufallsauswahl genommen.
 RETRY_EXCLUDE_MIN = 5
+# Pause zwischen richtigem und getipptem Zeichen beim Korrekturton.
+COMPARE_GAP_SECONDS = 0.6
 # Hinweis auf die Gruppen nur, wenn das Zeitlimit am Ende höchstens so lang ist.
 GROUPS_HINT_MAX_LIMIT = 1.5
 
@@ -116,6 +127,7 @@ class SingleModeFrame:
         self.icr_whole_session = False  # Zeitlimit den ganzen Durchgang an
         self.deadline = None        # Frist für das aktuelle Zeichen (time.time()), ab erstem Hören
         self.replayed = False       # aktuelles Zeichen mit der Leertaste wiederholt
+        self.last_typed = None      # falsche Antwort, zum Vergleich mit vorgespielt
 
         self._build_widgets(ScrollableFrame(parent).inner)
 
@@ -276,15 +288,24 @@ class SingleModeFrame:
     def _play_correction(self, token):
         if not self.running or token != self.timeout_token:
             return
-        self.status_var.set(f"So klingt {display_text(self.current_char)}:")
         wpm, freq = self.voice
+        samples = build_samples(self.current_char, wpm, freq)
+        typed = self.last_typed
+        if typed and typed != self.current_char:
+            # Richtig und Getipptes direkt nacheinander: so hört man den Unterschied.
+            self.status_var.set(f"So klingt {display_text(self.current_char)} – und so {display_text(typed)} (dein Tipp):")
+            # Zum Schluss nochmal das richtige, damit dieses Klangbild bleibt.
+            samples = np.concatenate([samples, silence(COMPARE_GAP_SECONDS), build_samples(typed, wpm, freq),
+                                      silence(COMPARE_GAP_SECONDS), samples])
+        else:
+            self.status_var.set(f"So klingt {display_text(self.current_char)}:")
         try:
-            audio.play(build_samples(self.current_char, wpm, freq))
+            audio.play(samples)
         except audio.AudioError as exc:
             self.stop()
             self.status_var.set(str(exc))
             return
-        dur_ms = int(duration_seconds(self.current_char, wpm) * 1000) + int(AUDIO_LATENCY * 1000)
+        dur_ms = int(len(samples) / SAMPLE_RATE * 1000) + int(AUDIO_LATENCY * 1000)
         self.root.after(dur_ms + AFTER_CORRECTION_MS, self._after_correction, token)
 
     def _after_correction(self, token):
@@ -352,6 +373,7 @@ class SingleModeFrame:
             self._show_limit()
         if self.sound_var.get():
             sfx.play_error()
+        self.last_typed = None
         self.feedback_var.set(f"Zu langsam: war {display_text(self.current_char)}")
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
@@ -387,6 +409,7 @@ class SingleModeFrame:
         correct = typed == self.current_char
         # Erst nach dem Wiederholen erkannt zählt als nicht erkannt.
         helped = correct and self.replayed
+        self.last_typed = typed
 
         reaction_time = max(time.time() - self.play_start_time, 0.001)
         effective_wpm = code_units(self.current_char) * 1.2 / reaction_time
@@ -407,7 +430,10 @@ class SingleModeFrame:
         elif correct:
             if self.sound_var.get():
                 sfx.play_ok()
-            self.feedback_var.set(f"Richtig: {display_text(self.current_char)}  ({effective_wpm:.0f} WPM)")
+            shown = f"{max(latency, 0):.2f} s"
+            if self.icr_var.get():
+                shown += f", Limit {self.limit:.2f} s"
+            self.feedback_var.set(f"Richtig: {display_text(self.current_char)}  ({shown.replace('.', ',')})")
             self.feedback_label.config(foreground=theme.OK)
         else:
             if self.sound_var.get():
