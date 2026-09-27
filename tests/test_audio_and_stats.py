@@ -131,6 +131,20 @@ class StatsTest(unittest.TestCase):
         stats.reset_all_time()
         self.assertEqual(stats.recent_char_data(), {})
 
+    def test_assumed_latencies_do_not_raise_the_usual_latency(self):
+        from morsetrainer.core.weighting import CharPicker
+        session = stats.SessionStats("group", "KM", 20, 600)
+        for _ in range(4):
+            session.record_char("K", "K", True, 0.5, 20.0, latency=0.6)
+            session.record_char("M", "M", True, 0.5, 20.0, latency=0.6)
+            session.record_char("M", "M", True, 0.5, 20.0, latency=1.2, assumed=True)
+        session.finalize()
+        self.assertEqual(stats.load_all_time()["M"]["assumed_latency_count"], 4)
+        picker = CharPicker("KM", weighted=True)
+        self.assertAlmostEqual(picker.median_latency(), 0.6)  # nur gemessen
+        weights = dict(zip("KM", picker.weights()))
+        self.assertGreater(weights["M"], weights["K"])  # für das Zeichen zählen sie mit
+
     def test_old_all_time_without_confusions_still_works(self):
         stats.ALL_TIME_FILE.write_text(json.dumps({"K": {
             "good": 3, "wrong": 1, "total_reaction_time_s": 2.0, "total_effective_wpm": 80.0,

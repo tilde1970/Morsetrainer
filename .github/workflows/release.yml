@@ -46,7 +46,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer main.py
+      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "README.md:." --add-data "CHANGELOG.md:." main.py
       - uses: actions/upload-artifact@v7
         with:
           name: windows

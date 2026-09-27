@@ -710,11 +710,12 @@ class SequenceModeFrame:
             unsure = self.replayed or (slow and self.style != COPY)
             for index, (expected, got, typed_index) in enumerate(results):
                 reaction_time, latency = self._char_timing(index, typed_index)
-                if unsure and got == expected:
+                assumed = unsure and got == expected
+                if assumed:
                     latency = self.unsure_latency
                 effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
                 self.session_stats.record_char(
-                    expected, got, got == expected, reaction_time, effective_wpm, latency=latency
+                    expected, got, got == expected, reaction_time, effective_wpm, latency=latency, assumed=assumed
                 )
         hits = sum(1 for expected, got, _ in results if got == expected)
         correct_chars = max(hits - align.extra_count(sent, typed), 0)

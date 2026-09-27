@@ -20,6 +20,7 @@ from morsetrainer.modes.qso_mode import QsoModeFrame
 from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
+from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets import theme
@@ -320,6 +321,8 @@ class MorseTrainerApp:
         footer.pack(side="bottom", fill="x")
         self.practice_var = tk.StringVar(value="")
         ttk.Label(footer, textvariable=self.practice_var).pack(side="left")
+        ttk.Button(footer, text="Hilfe", style="Flat.TButton",
+                   command=lambda: HelpWindow.show(self.root)).pack(side="right", padx=(8, 0))
         ttk.Label(
             footer, text=f"Morsetrainer {__version__} · entwickelt von {__author__} · 73!", style="Footer.TLabel",
         ).pack(side="right")

@@ -99,13 +99,15 @@ class SessionStats:
             self._fp = None
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
-                    latency=None) -> None:
+                    latency=None, assumed=False) -> None:
         """Record the result for a single character and flush it to disk.
 
         `latency` is the time from the end of the character's playback to the
         keypress, independent of character length and WPM. Only modes that
         can attribute it to a single character pass it (not the group modes,
-        where only the whole group's time is known)."""
+        where only the whole group's time is known). `assumed`: not measured
+        but set for a correct but unsure answer (2 × the usual latency); it
+        counts for that character's weight, not for the usual latency."""
         entry = {
             "char": char,
             "typed": typed,
@@ -115,18 +117,23 @@ class SessionStats:
         }
         if latency is not None:
             entry["latency_s"] = round(latency, 3)
+            if assumed:
+                entry["latency_assumed"] = True
         self.rounds.append(entry)
         self._write_line({"type": "char", **entry})
 
         agg = self.per_char.setdefault(
             char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
-                   "latencies": [], "confusions": {}}
+                   "latencies": [], "assumed_latencies": [], "confusions": {}}
         )
         if correct:
             agg["good"] += 1
             agg["correct_effective_wpms"].append(effective_wpm)
             if latency is not None:
-                agg["latencies"].append(min(max(latency, 0.0), LATENCY_CAP_S))
+                capped = min(max(latency, 0.0), LATENCY_CAP_S)
+                agg["latencies"].append(capped)
+                if assumed:
+                    agg["assumed_latencies"].append(capped)
         else:
             agg["wrong"] += 1
             agg["confusions"][typed] = agg["confusions"].get(typed, 0) + 1
@@ -222,6 +229,9 @@ def _merge_all_time(session: "SessionStats") -> None:
         # Ältere all_time.json-Einträge kennen die Latenz-Felder noch nicht.
         x["total_latency_s"] = x.get("total_latency_s", 0.0) + sum(e["latencies"])
         x["latency_count"] = x.get("latency_count", 0) + len(e["latencies"])
+        # Davon angenommen statt gemessen (siehe record_char, `assumed`).
+        x["assumed_latency_s"] = x.get("assumed_latency_s", 0.0) + sum(e["assumed_latencies"])
+        x["assumed_latency_count"] = x.get("assumed_latency_count", 0) + len(e["assumed_latencies"])
         confusions = x.setdefault("confusions", {})
         for typed, count in e["confusions"].items():
             confusions[typed] = confusions.get(typed, 0) + count

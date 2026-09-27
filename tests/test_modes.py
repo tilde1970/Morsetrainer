@@ -660,3 +660,27 @@ class ContestLogTest(AppTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HelpWindowTest(AppTestCase):
+    def test_markdown_blocks(self):
+        from morsetrainer.widgets import help_window
+        blocks = help_window.parse("# Titel\n\nEin **fetter**\nAbsatz.\n\n- Punkt eins\n  weiter\n"
+                                   "| A | B |\n|---|---|\n| **X** | y |\n```\ncode\n```\n")
+        self.assertEqual(blocks[0], ("h1", "Titel"))
+        self.assertIn(("p", "Ein **fetter** Absatz."), blocks)
+        self.assertIn(("li", "• Punkt eins weiter"), blocks)
+        self.assertIn(("row", "**X**\ty"), blocks)
+        self.assertIn(("code", "code"), blocks)
+
+    def test_help_shows_changelog_and_readme(self):
+        from morsetrainer.widgets import help_window
+        help_window.HelpWindow.show(self.root)
+        window = help_window.HelpWindow._open
+        changelog = window.texts["CHANGELOG.md"].get("1.0", "end")
+        readme = window.texts["README.md"].get("1.0", "end")
+        self.assertIn(app_module.__version__, changelog)  # aktuelle Version steht drin
+        self.assertIn("Trainingsmodi", readme)
+        self.assertNotIn("**", readme)
+        help_window.HelpWindow.show(self.root)  # zweiter Aufruf: dasselbe Fenster
+        self.assertIs(help_window.HelpWindow._open, window)

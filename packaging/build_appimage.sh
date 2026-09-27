@@ -16,6 +16,7 @@ PORTAUDIO=$(ldconfig -p | awk '/libportaudio\.so\.2 .*x86-64/ {print $NF}' | hea
 pyinstaller --noconfirm --clean --windowed --name morsetrainer \
     --add-binary "$PORTAUDIO:." \
     --runtime-hook packaging/rthook_portaudio.py \
+    --add-data README.md:. --add-data CHANGELOG.md:. \
     main.py
 
 APPDIR=build/Morsetrainer.AppDir

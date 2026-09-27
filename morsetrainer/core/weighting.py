@@ -47,22 +47,33 @@ class CharPicker:
                 wrong += e["wrong"]
         return (wrong + 1) / (good + wrong + 2)
 
-    def _mean_latency(self, ch: str):
+    def _mean_latency(self, ch: str, measured_only=False):
+        """Mittlere Latenz eines Zeichens. `measured_only`: ohne die für
+        unsichere Antworten angenommenen Werte (die hängen selbst am Median
+        und trieben ihn sonst Durchgang für Durchgang hoch)."""
         total, count = 0.0, 0
         e = self.all_time.get(ch)
         if e:
             total += e.get("total_latency_s", 0.0)
             count += e.get("latency_count", 0)
+            if measured_only:
+                total -= e.get("assumed_latency_s", 0.0)
+                count -= e.get("assumed_latency_count", 0)
         e = self._session_chars().get(ch)
         if e:
             total += sum(e["latencies"])
             count += len(e["latencies"])
+            if measured_only:
+                total -= sum(e.get("assumed_latencies", ()))
+                count -= len(e.get("assumed_latencies", ()))
         return total / count if count >= MIN_LATENCY_SAMPLES else None
 
     def median_latency(self):
-        """Median der mittleren Latenzen über den Zeichensatz, oder None,
-        solange kein Zeichen genug Messungen hat."""
-        known = [lat for lat in map(self._mean_latency, self.charset) if lat is not None]
+        """Median der gemessenen mittleren Latenzen über den Zeichensatz, oder
+        None, solange kein Zeichen genug Messungen hat. Maßstab sowohl für
+        die Langsamkeit als auch für die Latenz unsicherer Antworten."""
+        known = [lat for lat in (self._mean_latency(ch, measured_only=True) for ch in self.charset)
+                 if lat is not None]
         return statistics.median(known) if known else None
 
     def weights(self):

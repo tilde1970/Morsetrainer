@@ -63,7 +63,7 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
    öfter dran. Nach den 40 Lektionen von lcwo.net folgen in den Lektionen
    41–44 die Betriebszeichen aus dem QSO: AR (Taste `+`), KN (`(`),
    SK (`*`) und BK (`#`).
-5. Ab Lektion 7 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
+5. Ab Lektion 6 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
    dem neuesten Zeichen kommen bevorzugt), danach
    **Kontinuierlich** und **QSO**.
 6. Im Reiter **Statistik** (Verwechslungen der letzten 30 Tage) zeigt „Die 4 häufigsten gezielt üben“, welche
@@ -82,6 +82,11 @@ Außerdem hilfreich:
 
 Einzeln zuschaltbar und regelbar: Rauschen, Knackstörungen (QRN), QSB,
 Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz.
+
+### Hilfe im Programm
+
+Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
+Versionen (CHANGELOG.md) und diese Anleitung.
 
 ### Tastenkürzel
 
