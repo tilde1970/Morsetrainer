@@ -37,7 +37,7 @@ import numpy as np
 from morsetrainer.core import align, audio, band, sfx
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
-    code_units, vary_voice,
+    code_units, display_text, vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.widgets import theme
