@@ -26,9 +26,22 @@ PROSIGNS = {"*": "SK", "(": "KN", "#": "BK"}
 SK, KN, BK = "*", "(", "#"
 
 
+# Betriebszeichen, die als einzelnes Zeichen geübt werden (Koch-Lektionen
+# 41–44): Zeichen bzw. Platzhalter -> Name. Die Taste ist das Zeichen selbst.
+PROSIGN_KEYS = {"+": "AR", "(": "KN", "*": "SK", "#": "BK"}
+
+
 def display_text(text: str) -> str:
     """Text mit Betriebszeichen-Platzhaltern lesbar machen (* -> <SK>)."""
     return "".join(f"<{PROSIGNS[ch]}>" if ch in PROSIGNS else ch for ch in text)
+
+
+def key_hint(ch: str) -> str:
+    """Anzeige eines zu lernenden Zeichens samt Taste bei Betriebszeichen,
+    z. B. "<SK> · Taste *"; sonst das Zeichen selbst."""
+    if ch in PROSIGN_KEYS:
+        return f"<{PROSIGN_KEYS[ch]}> · Taste {ch}"
+    return ch
 
 # 48 kHz ist die native Rate von PipeWire/PulseAudio und den meisten
 # Soundkarten; bei 44,1 kHz würde der Soundserver umrechnen.

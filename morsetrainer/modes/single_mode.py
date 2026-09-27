@@ -21,7 +21,7 @@ from tkinter import ttk
 
 from morsetrainer.core import audio, sfx
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, code_units, duration_seconds, vary_voice,
+    AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, code_units, duration_seconds, vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.widgets import theme
@@ -241,7 +241,7 @@ class SingleModeFrame:
     def _play_correction(self, token):
         if not self.running or token != self.timeout_token:
             return
-        self.status_var.set(f"So klingt {self.current_char}:")
+        self.status_var.set(f"So klingt {display_text(self.current_char)}:")
         wpm, freq = self.voice
         try:
             audio.play(build_samples(self.current_char, wpm, freq))
@@ -315,7 +315,7 @@ class SingleModeFrame:
             self._show_limit()
         if self.sound_var.get():
             sfx.play_error()
-        self.feedback_var.set(f"Zu langsam: war {self.current_char}")
+        self.feedback_var.set(f"Zu langsam: war {display_text(self.current_char)}")
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
         self._after_error()
@@ -359,12 +359,12 @@ class SingleModeFrame:
         if correct:
             if self.sound_var.get():
                 sfx.play_ok()
-            self.feedback_var.set(f"Richtig: {self.current_char}  ({effective_wpm:.0f} WPM)")
+            self.feedback_var.set(f"Richtig: {display_text(self.current_char)}  ({effective_wpm:.0f} WPM)")
             self.feedback_label.config(foreground=theme.OK)
         else:
             if self.sound_var.get():
                 sfx.play_error()
-            self.feedback_var.set(f"Falsch: war {self.current_char}, du: {typed}")
+            self.feedback_var.set(f"Falsch: war {display_text(self.current_char)}, du: {display_text(typed)}")
             self.feedback_label.config(foreground=theme.ERROR)
 
         self._add_history(correct)

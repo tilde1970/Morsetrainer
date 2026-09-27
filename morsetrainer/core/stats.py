@@ -19,6 +19,7 @@ from pathlib import Path
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core import storage
+from morsetrainer.core.morse import display_text
 
 STATS_DIR = DATA_DIR / "stats"
 ALL_TIME_FILE = STATS_DIR / "all_time.json"
@@ -34,7 +35,7 @@ CONFUSIONS_SHOWN = 3
 def format_confusions(confusions: dict) -> str:
     """{"5": 12, "S": 3, "": 2} -> "5 (12), S (3), – (2)"; "–" = verpasst."""
     top = sorted(confusions.items(), key=lambda item: (-item[1], item[0]))[:CONFUSIONS_SHOWN]
-    return ", ".join(f"{typed or '–'} ({count})" for typed, count in top)
+    return ", ".join(f"{display_text(typed) or '–'} ({count})" for typed, count in top)
 
 
 class SessionStats:

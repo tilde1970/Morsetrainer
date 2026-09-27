@@ -69,6 +69,17 @@ class WordsTest(unittest.TestCase):
         self.assertTrue(all(a != b for a, b in zip(picks, picks[1:])))
 
 
+class ProsignLessonTest(unittest.TestCase):
+    def test_last_lessons_are_prosigns_with_key_hint(self):
+        from morsetrainer.core.morse import PROSIGN_KEYS, display_text, key_hint
+        self.assertEqual(koch.MAX_LESSON, 44)
+        self.assertEqual("".join(koch.newest_char(n) for n in range(41, 45)), "+(*#")
+        self.assertTrue(all(ch in PROSIGN_KEYS for ch in "+(*#"))
+        self.assertEqual(key_hint(koch.newest_char(43)), "<SK> · Taste *")
+        self.assertEqual(key_hint("K"), "K")
+        self.assertEqual(display_text("K*#"), "K<SK><BK>")
+
+
 class KochPassedTest(unittest.TestCase):
     def test_needs_enough_chars_and_accuracy(self):
         self.assertTrue(koch.passed(45, 50))

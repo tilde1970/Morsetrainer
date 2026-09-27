@@ -12,7 +12,7 @@ from tkinter import messagebox, ttk
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core import audio, koch, practice, stats, storage
-from morsetrainer.core.morse import build_text
+from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
 from morsetrainer.modes.group_mode import GroupModeFrame
@@ -238,7 +238,7 @@ class MorseTrainerApp:
             self.new_char_button.config(text=f"↩ Lektion {back}")
         else:
             self.lesson_var.set(lesson)
-            self.lesson_info_var.set(f"neu: {koch.newest_char(lesson)}")
+            self.lesson_info_var.set(f"neu: {key_hint(koch.newest_char(lesson))}")
             self.new_char_button.config(text="▶ anhören")
         self.new_char_button.config(state="disabled" if self.running_mode else "normal")
 
@@ -284,7 +284,7 @@ class MorseTrainerApp:
             "Nächste Koch-Lektion",
             f"Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig "
             f"({correct / total:.0%}).\n\n"
-            f"Mit Lektion {lesson + 1} weitermachen? Neu dazu kommt „{new_char}“.",
+            f"Mit Lektion {lesson + 1} weitermachen? Neu dazu kommt „{key_hint(new_char)}“.",
         ):
             self.charset_var.set(koch.lesson_charset(lesson + 1))
             self._play_new_char()
@@ -468,6 +468,7 @@ class MorseTrainerApp:
         lines = []
         for sent, typed, count, share in pairs:
             arrow = "↔" if (typed, sent) in seen else "→"
+            sent, typed = display_text(sent), display_text(typed)
             lines.append(f"{sent} {arrow} {typed}   {count:>3}×   ({share:.0%} der {sent})")
         return "\n".join(lines)
 

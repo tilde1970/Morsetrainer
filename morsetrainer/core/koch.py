@@ -1,12 +1,14 @@
 """Koch-Methode: Zeichen werden in fester Reihenfolge einzeln dazugenommen,
 immer im vollen Zeichentempo. Lektion 1 sind die ersten beiden Zeichen,
-jede weitere Lektion bringt ein neues dazu (Reihenfolge wie bei lcwo.net).
+jede weitere Lektion bringt ein neues dazu (Reihenfolge wie bei lcwo.net,
+danach die Betriebszeichen AR, KN, SK und BK, die im QSO ständig vorkommen).
 
 Weiter geht es, sobald ein Durchgang mit genug Zeichen zu mindestens
 ADVANCE_ACCURACY_PCT richtig mitgeschrieben wurde."""
 
-# Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
-KOCH_ORDER = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
+# Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net), ergänzt um
+# die Betriebszeichen (Lektionen 41–44; Platzhalter siehe morse.PROSIGN_KEYS).
+KOCH_ORDER = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X" + "+(*#"
 MAX_LESSON = len(KOCH_ORDER) - 1
 
 ADVANCE_ACCURACY_PCT = 90.0

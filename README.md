@@ -47,7 +47,9 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 4. Wer in den Gruppen (oder im Modus Kontinuierlich) in einem Durchgang mit
    mindestens 50 Zeichen 90 % beim ersten Versuch schafft, bekommt die
    nächste Lektion angeboten. Schwache und neue Zeichen kommen automatisch
-   öfter dran.
+   öfter dran. Nach den 40 Lektionen von lcwo.net folgen in den Lektionen
+   41–44 die Betriebszeichen aus dem QSO: AR (Taste `+`), KN (`(`),
+   SK (`*`) und BK (`#`).
 5. Ab etwa Lektion 5 lohnt sich der Reiter **Wörter**, danach
    **Kontinuierlich** und **QSO**.
 6. Im Reiter **Statistik** zeigt „Die 4 häufigsten gezielt üben“, welche

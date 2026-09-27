@@ -637,7 +637,7 @@ class SequenceModeFrame:
             return
         self.revealed = True
         explanation = self._explain(self.current_sequence)
-        self.feedback_var.set(self.current_sequence + (f"\n{explanation}" if explanation else ""))
+        self.feedback_var.set(display_text(self.current_sequence) + (f"\n{explanation}" if explanation else ""))
         self.feedback_label.config(foreground="")
         self.status_var.set("Gewusst? J oder N")
         self._set_head_buttons(assess=True)
@@ -681,14 +681,14 @@ class SequenceModeFrame:
         if all_correct:
             if self.sound_var.get():
                 sfx.play_ok()
-            self.feedback_var.set(f"Richtig: {sent}" + (f"\n{explanation}" if explanation else ""))
+            self.feedback_var.set(f"Richtig: {display_text(sent)}" + (f"\n{explanation}" if explanation else ""))
             self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
         else:
             if self.sound_var.get():
                 sfx.play_error()
             if give_up:
-                text = f"Lösung: {sent}" + (f"\n{explanation}" if explanation else "")
+                text = f"Lösung: {display_text(sent)}" + (f"\n{explanation}" if explanation else "")
             else:
                 text = "Leider falsch – hör noch einmal hin."
             self.feedback_var.set(text)

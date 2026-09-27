@@ -5,6 +5,7 @@ and isn't duplicated."""
 import tkinter as tk
 from tkinter import ttk
 
+from morsetrainer.core.morse import display_text
 from morsetrainer.widgets import theme
 
 
@@ -48,7 +49,7 @@ class StatsPanel:
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
         for char, good, wrong, _total, avg_rt, avg_wpm, confusions in rows:
-            self.char_tree.insert("", "end", values=(char, good, wrong, f"{avg_rt:.2f}", f"{avg_wpm:.1f}", confusions))
+            self.char_tree.insert("", "end", values=(display_text(char), good, wrong, f"{avg_rt:.2f}", f"{avg_wpm:.1f}", confusions))
 
     def show_saved(self, path, error=None):
         if error:
