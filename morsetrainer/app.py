@@ -7,6 +7,7 @@ Geschwindigkeit und Tonhöhe."""
 import re
 import time
 from datetime import date
+from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -38,6 +39,11 @@ FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 CONFUSION_PAIRS = 4
 # Übungszeit in der Fußzeile während eines Durchgangs so oft auffrischen.
 PRACTICE_TICK_MS = 15000
+# Programmicon (aus packaging/morsetrainer.svg, wie im AppImage); in
+# AppImage und exe per --add-data mit eingepackt.
+ICON_DIR = Path(__file__).resolve().parent / "assets"
+# Höchstens 128: ein 256er-Icon kommt unter X leer an (Tk 8.6).
+ICON_SIZES = (128, 64, 32)
 
 
 class MorseTrainerApp:
@@ -46,6 +52,7 @@ class MorseTrainerApp:
         self.running_mode = False
         self.groups_offered = set()  # Lektionen, für die der Gruppen-Hinweis schon kam
         root.title(f"Morsetrainer von {__author__}")
+        self._set_icon()
         self.saved_state = self._load_state()
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
@@ -61,6 +68,15 @@ class MorseTrainerApp:
 
         root.bind("<Key>", self._dispatch_key)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def _set_icon(self):
+        """Fenstericon, auch für das Hilfefenster (default=True). Fehlt die
+        Datei, bleibt das Standardicon."""
+        try:
+            self.icons = [tk.PhotoImage(master=self.root, file=ICON_DIR / f"icon-{n}.png") for n in ICON_SIZES]
+            self.root.iconphoto(True, *self.icons)
+        except tk.TclError:
+            self.icons = []
 
     def _load_state(self) -> dict:
         """window_state.json: Fenstergröße, gemeinsame Einstellungen und die
@@ -627,7 +643,9 @@ class MorseTrainerApp:
 
 
 def main():
-    root = tk.Tk()
+    # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
+    # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
+    root = tk.Tk(className="Morsetrainer")
     MorseTrainerApp(root)
     root.mainloop()
 

@@ -684,3 +684,8 @@ class HelpWindowTest(AppTestCase):
         self.assertNotIn("**", readme)
         help_window.HelpWindow.show(self.root)  # zweiter Aufruf: dasselbe Fenster
         self.assertIs(help_window.HelpWindow._open, window)
+
+
+class IconTest(AppTestCase):
+    def test_window_icon_is_set(self):
+        self.assertEqual([icon.width() for icon in self.app.icons], list(app_module.ICON_SIZES))

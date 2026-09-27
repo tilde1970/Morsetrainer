@@ -17,6 +17,7 @@ pyinstaller --noconfirm --clean --windowed --name morsetrainer \
     --add-binary "$PORTAUDIO:." \
     --runtime-hook packaging/rthook_portaudio.py \
     --add-data README.md:. --add-data CHANGELOG.md:. \
+    --add-data morsetrainer/assets:morsetrainer/assets \
     main.py
 
 APPDIR=build/Morsetrainer.AppDir

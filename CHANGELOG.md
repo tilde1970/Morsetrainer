@@ -1,5 +1,10 @@
 # Änderungen
 
+## 2.12
+
+- **Programmicon:** Fenster, Taskleiste und die Windows-exe zeigen jetzt
+  dasselbe Icon wie Gear Lever (blau mit Punkt, Strich und „CW“).
+
 ## 2.11
 
 - **Hilfe im Programm:** Der Knopf „Hilfe“ in der Fußzeile zeigt diese

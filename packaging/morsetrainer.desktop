@@ -6,3 +6,4 @@ Exec=morsetrainer
 Icon=morsetrainer
 Categories=Education;HamRadio;
 Terminal=false
+StartupWMClass=Morsetrainer
