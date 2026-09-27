@@ -10,10 +10,10 @@ Contest-Pile-up unter realistischen Kurzwellenbedingungen.
 | Reiter | Was du übst |
 |---|---|
 | **Einzelzeichen** | Einzelne Zeichen erkennen, gemessen wird auch die Reaktionszeit. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist. |
-| **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 Fehlern eine kürzer. |
+| **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
 | **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, auf Wunsch mit /P, /M, OE/… |
-| **Kontinuierlich** | Der Ton läuft ohne Pause durch, du tippst mit (wie beim Mithören). |
+| **Kontinuierlich** | Der Ton läuft ohne Pause durch, du tippst mit (wie beim Mithören). Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit Pile-ups. Auswertung per Abfrage/Log, durch Mittippen oder nur zum Hören. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Das Log wird am Ende geprüft. |
 | **Statistik** | Gesamtstatistik je Zeichen, häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel und Fortschrittsverlauf je Modus. |
@@ -22,31 +22,42 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 
 - **Eingabe:** *Mitschreiben* (tippen, während der Ton läuft), *Erst merken*
   (tippen nach dem Ton) oder *Kopfhören* (nichts tippen; Enter löst auf, dann
-  J = gewusst, N = nicht gewusst).
+  J = gewusst, N = nicht gewusst). Kopfhören beruht auf deiner eigenen
+  Bewertung und zählt daher nicht für die Gesamtstatistik und die Lektion.
 - **Tempo wächst mit** (wie bei RufzXP): richtig beim ersten Versuch +1 WPM,
-  jeder Fehlversuch −1 WPM. Der Fortschrittsverlauf zeigt dann das erreichte
-  Tempo.
+  falsch beim ersten Versuch −1 WPM. Mit Farnsworth ändert sich nur das
+  effektive Tempo (die Pausen), die Zeichen bleiben schnell; ohne Farnsworth
+  sinkt das Zeichentempo nicht unter 15 WPM. Der Fortschrittsverlauf zeigt
+  das erreichte Tempo.
 - **Bandbedingungen** in drei Stufen: leicht, mittel, stark.
 
 ### Lernweg für Einsteiger
 
-1. **Koch-Lektion** oben auf 1 stellen (K und M) und unter „▸ Weitere
-   Optionen“ mit **Koch-Tempo 20/10** das empfohlene Tempo setzen: Die Zeichen kommen schnell genug, dass du
-   sie als Klangbild hörst statt Punkte und Striche zu zählen, dafür mit
-   längeren Pausen dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
+1. **Koch-Lektion** oben auf 1 stellen (K und M). Voreingestellt ist das
+   **Koch-Tempo 20/10** (unter „▸ Weitere Optionen“ jederzeit wieder
+   herstellbar): Die Zeichen kommen schnell genug, dass du sie als Klangbild
+   hörst statt Punkte und Striche zu zählen, dafür mit längeren Pausen
+   dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
 2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen. Das **Zeitlimit**
    ist von Anfang an eingeschaltet: Es bleibt keine Zeit zum Zählen von
    Punkten und Strichen, das Zeichen muss als Klangbild kommen. Ein falsch
    erkanntes Zeichen hörst du gleich noch einmal, während die Lösung
    dasteht; abgefragt wird es erst nach ein paar anderen Zeichen wieder.
-   Nach einem Durchgang mit mindestens 50 Zeichen und 90 % richtig schlägt
-   die App vor, bei den Gruppen weiterzumachen.
+   Die Leertaste wiederholt ein Zeichen, verlängert aber die Frist nicht;
+   erst nach der Wiederholung erkannt zählt als nicht erkannt.
+   Nach einem Durchgang mit mindestens 50 Zeichen und 90 % richtig – mit
+   Zeitlimit von Anfang bis Ende, am Schluss höchstens 1,5 s – schlägt die
+   App vor, bei den Gruppen weiterzumachen.
 3. Im Reiter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
-   Einzelzeichen. Falsche Stellen werden markiert, und nach 3 Fehlversuchen
-   siehst und hörst du die Lösung.
+   Einzelzeichen. Nach einem Fehler werden nur die falschen Stellen markiert
+   und die Gruppe kommt noch einmal – hör sie dir an, statt sie abzulesen.
+   Nach 3 Fehlversuchen siehst und hörst du die Lösung.
 4. Wer in den Gruppen (oder im Modus Kontinuierlich) in einem Durchgang mit
    mindestens 50 Zeichen 90 % beim ersten Versuch schafft, bekommt die
-   nächste Lektion angeboten. Schwache und neue Zeichen kommen automatisch
+   nächste Lektion angeboten. Für die Lektion zählt ein erster Versuch nur,
+   wenn du die Gruppe nicht mit der Leertaste wiederholt hast und zügig
+   geantwortet hast (1,5 s plus 0,6 s je Zeichen nach Tonende); zu viel
+   Getipptes zählt als Fehler. Schwache und neue Zeichen kommen automatisch
    öfter dran. Nach den 40 Lektionen von lcwo.net folgen in den Lektionen
    41–44 die Betriebszeichen aus dem QSO: AR (Taste `+`), KN (`(`),
    SK (`*`) und BK (`#`).

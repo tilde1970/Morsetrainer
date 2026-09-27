@@ -29,13 +29,17 @@ class AdaptiveLength:
     def update(self, correct: bool, attempts: int) -> int:
         """Gibt -1, 0 oder +1 zurück, je nachdem wie sich die Länge ändert.
         Richtig erst nach einer Wiederholung zählt weder als Erfolg noch
-        als Fehler, unterbricht aber die Erfolgsserie."""
+        als Fehler: es unterbricht die Erfolgsserie, lässt aber die
+        Fehlerserie stehen (sonst würde die Länge nie kürzer, solange die
+        Wiederholung klappt). Fehler zählen nur im ersten Versuch: eine
+        einzelne schwierige Gruppe, die zweimal danebengeht, soll die Länge
+        nicht gleich kürzen."""
         if correct and attempts == 1:
             self.good_streak += 1
             self.bad_streak = 0
         elif correct:
-            self.good_streak = self.bad_streak = 0
-        else:
+            self.good_streak = 0
+        elif attempts == 1:
             self.bad_streak += 1
             self.good_streak = 0
         if self.good_streak >= LONGER_AFTER and self.length < self.high:

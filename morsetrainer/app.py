@@ -123,7 +123,8 @@ class MorseTrainerApp:
         self.freq_var = tk.IntVar(value=600)
         ttk.Label(top, text="Hz").pack(side="right", padx=(4, 0))
         ttk.Spinbox(top, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5).pack(side="right")
-        self.wpm_var = tk.IntVar(value=15)
+        # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
+        self.wpm_var = tk.IntVar(value=koch.RECOMMENDED_WPM)
         ttk.Label(top, text="WPM").pack(side="right", padx=(4, 16))
         ttk.Spinbox(top, from_=5, to=40, textvariable=self.wpm_var, width=4).pack(side="right")
 
@@ -143,11 +144,11 @@ class MorseTrainerApp:
         self.more_frame = ttk.Frame(header)
         farnsworth = ttk.Frame(self.more_frame)
         farnsworth.pack(fill="x", pady=2)
-        self.farnsworth_enabled_var = tk.BooleanVar(value=False)
+        self.farnsworth_enabled_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(farnsworth, text="Farnsworth, effektiv", variable=self.farnsworth_enabled_var).pack(
             side="left"
         )
-        self.farnsworth_wpm_var = tk.IntVar(value=10)
+        self.farnsworth_wpm_var = tk.IntVar(value=koch.RECOMMENDED_EFFECTIVE_WPM)
         ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4).pack(
             side="left", padx=4
         )

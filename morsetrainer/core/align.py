@@ -97,6 +97,12 @@ def char_results(expected: str, received: str) -> list[tuple[str, str, Optional[
     ]
 
 
+def extra_count(expected: str, received: str) -> int:
+    """Anzahl getippter Zeichen, die zu keinem gesendeten gehören (zu viel
+    getippt). Zählt als Fehler, sonst brächte Drauflostippen Treffer."""
+    return sum(1 for op in align(expected, received) if op.kind == OpKind.INSERT)
+
+
 def diff_rows(expected: str, received: str) -> tuple[str, str, str]:
     """Drei gleich lange Zeilen zum Untereinanderschreiben: gesendet,
     getippt und "^" unter jeder falschen Stelle. Lücken sind "–"."""

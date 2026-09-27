@@ -10,7 +10,13 @@ Zeichen übersprungen wurden.
 Vereinfachung gegenüber dem Original: die Live-Anzeige während der Session
 ist nur eine grobe, alle 1s neu berechnete Vorschau; die für die Statistik
 verwendete, endgültige Zuordnung passiert erst beim Stop in einem einzigen
-Alignment-Durchlauf über die komplette Session."""
+Alignment-Durchlauf über die komplette Session.
+
+Ehrliche Wertung: Eine Taste zählt nur dann für ein gesendetes Zeichen,
+wenn sie zeitlich dazu passt – nicht vor dessen Ende (Vorausraten) und
+höchstens MAX_LAG_SECONDS danach; sonst gilt das Zeichen als verpasst und
+die Taste als überzählig. Überzählige Tasten werden für den Koch-Aufstieg
+abgezogen, sonst brächte Drauflostippen volle Punktzahl."""
 import threading
 import time
 import tkinter as tk
@@ -37,6 +43,17 @@ WRITE_CHUNK_SECONDS = 0.02
 # Nach Ablauf der eingestellten Dauer wird nichts Neues mehr gesendet; so
 # lange bleibt noch Zeit, die zuletzt gehörten Zeichen einzutippen.
 FINISH_GRACE_SECONDS = 3
+
+# Zeitliche Plausibilität einer Zuordnung Taste -> gesendetes Zeichen: so
+# viel früher als das Tonende (Messungenauigkeit) bzw. höchstens so viel
+# später darf die Taste kommen.
+EARLY_TOLERANCE_SECONDS = 0.15
+MAX_LAG_SECONDS = 5.0
+
+
+def plausible(typed_time: float, tone_end: float) -> bool:
+    """Passt ein Tastendruck zeitlich zu einem Zeichen mit diesem Tonende?"""
+    return tone_end - EARLY_TOLERANCE_SECONDS <= typed_time <= tone_end + MAX_LAG_SECONDS
 
 # Die vorläufige Trefferquote während der Sitzung bezieht sich auf die
 # zuletzt gesendeten Zeichen; die ganze Sitzung wird erst beim Stop
@@ -262,6 +279,7 @@ class ContinuousModeFrame:
         sent_str = "".join(e["char"] for e in self.sent_log)
         typed_str = "".join(e["char"] for e in self.typed_log)
         ops = align.align(sent_str, typed_str)
+        extra = 0  # Tasten ohne passendes gesendetes Zeichen
         for op in ops:
             if op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE):
                 expected_char = op.expected_char
@@ -269,6 +287,11 @@ class ContinuousModeFrame:
                 correct = op.kind == align.OpKind.MATCH
                 play_end = self.sent_log[op.expected_index]["end_time"]
                 typed_time = self.typed_log[op.received_index]["time"]
+                if not plausible(typed_time, play_end):
+                    # Vorausgeraten oder viel zu spät: verpasst plus überzählig.
+                    self.session_stats.record_char(expected_char, "", False, 0.0, 0.0)
+                    extra += 1
+                    continue
                 reaction_time = max(typed_time - play_end, 0.001)
                 effective_wpm = code_units(expected_char) * 1.2 / reaction_time
                 self.session_stats.record_char(
@@ -276,11 +299,13 @@ class ContinuousModeFrame:
                 )
             elif op.kind == align.OpKind.DELETE:
                 self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
-            # INSERT (stray keystroke with no corresponding sent character) is not
-            # attributable to any Morse character and is skipped for the stats.
+            else:
+                # INSERT: Taste ohne gesendetes Zeichen; keinem Zeichen
+                # zuzuordnen, zählt aber für den Aufstieg als Fehler.
+                extra += 1
 
         summary = self.session_stats.summary()
-        self.koch_result = (self.charset, summary["correct"], summary["total"])
+        self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])
         self.stats_panel.refresh(summary, self.session_stats.char_rows())
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path, self.session_stats.log_error)

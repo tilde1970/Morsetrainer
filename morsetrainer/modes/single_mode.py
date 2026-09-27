@@ -5,7 +5,12 @@ Nach einem Fehler (falsch oder zu langsam) wird das Zeichen noch einmal
 vorgespielt, während die Lösung dasteht, damit Klang und Buchstabe
 zusammenkommen. Abgefragt wird es erst wieder nach ein paar anderen
 Zeichen und ohne Ankündigung: Käme es sofort, wüsste man die Antwort
-schon, bevor man hinhört.
+schon, bevor man hinhört. Bei kleinen Zeichensätzen (unter RETRY_EXCLUDE_MIN
+Zeichen) wird das vorgemerkte Zeichen dazwischen nicht ausgeschlossen,
+sonst stünde die Folge fest (bei K und M käme bis dahin sicher nur M).
+
+Die Leertaste wiederholt das Zeichen, verlängert aber die Frist nicht, und
+ein erst nach der Wiederholung erkanntes Zeichen gilt als nicht erkannt.
 
 Zeitlimit (Instant Character Recognition): Wer nach dem Ton nicht innerhalb
 des Limits tippt, hat das Zeichen verpasst. So bleibt keine Zeit, Punkte
@@ -39,6 +44,11 @@ RETRY_AFTER = (2, 4)
 # Pause nach der Rückmeldung bzw. nach dem Korrekturton, in ms.
 FEEDBACK_MS = 700
 AFTER_CORRECTION_MS = 600
+# Ab so vielen verschiedenen Zeichen werden vorgemerkte Zeichen bis zu ihrer
+# erneuten Abfrage aus der Zufallsauswahl genommen.
+RETRY_EXCLUDE_MIN = 5
+# Hinweis auf die Gruppen nur, wenn das Zeitlimit am Ende höchstens so lang ist.
+GROUPS_HINT_MAX_LIMIT = 1.5
 
 
 def next_limit(limit: float, in_time_and_correct: bool) -> float:
@@ -67,6 +77,9 @@ class RetryQueue:
         for ch in self.waiting:
             self.waiting[ch] -= 1
         return None
+
+    def discard(self, ch: str) -> None:
+        self.waiting.pop(ch, None)
 
 
 class SingleModeFrame:
@@ -100,6 +113,9 @@ class SingleModeFrame:
         # (Zeichensatz, richtig, gesamt) eines Durchgangs mit Zeitlimit; die
         # App bietet danach ggf. den Wechsel zu den Gruppen an.
         self.groups_result = None
+        self.icr_whole_session = False  # Zeitlimit den ganzen Durchgang an
+        self.deadline = None        # Frist für das aktuelle Zeichen (time.time()), ab erstem Hören
+        self.replayed = False       # aktuelles Zeichen mit der Leertaste wiederholt
 
         self._build_widgets(ScrollableFrame(parent).inner)
 
@@ -110,7 +126,7 @@ class SingleModeFrame:
         self.icr_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
             icr, text="Zeitlimit (wird kürzer, solange du sicher bist)", variable=self.icr_var,
-            command=self._show_limit,
+            command=self._on_icr_toggle,
         ).pack(side="left")
         self.limit_var = tk.StringVar(value="")
         theme.hint(icr, textvariable=self.limit_var).pack(side="left", padx=(8, 0))
@@ -140,6 +156,13 @@ class SingleModeFrame:
         history = theme.card(parent, "Verlauf (letzte 40)")
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=520).pack(anchor="w")
+
+    def _on_icr_toggle(self):
+        if self.running:
+            # Mitten im Durchgang umgeschaltet: der Durchgang zählt nicht als
+            # durchgehend mit Zeitlimit (Gruppen-Hinweis).
+            self.icr_whole_session = False
+        self._show_limit()
 
     def _show_limit(self):
         self.limit_var.set(f"{self.limit:.2f} s".replace(".", ",") if self.icr_var.get() else "")
@@ -174,6 +197,7 @@ class SingleModeFrame:
         self.running = True
         self.retries = RetryQueue()
         self.correcting = False
+        self.icr_whole_session = self.icr_var.get()
         self.start_button.config(text="Stop")
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
@@ -200,7 +224,7 @@ class SingleModeFrame:
         if self.session_stats is None:
             return
         summary = self.session_stats.summary()
-        if self.icr_var.get():
+        if self.icr_whole_session and self.limit <= GROUPS_HINT_MAX_LIMIT:
             self.groups_result = (self.charset, summary["correct"], summary["total"])
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path, self.session_stats.log_error)
@@ -214,13 +238,20 @@ class SingleModeFrame:
             return
         self.waiting_for_input = False
         self.correcting = False
+        self.replayed = False
+        self.deadline = None
         due = self.retries.next_due()
-        if due is None:
+        if due is not None:
+            self.current_char = due
+        elif len(set(self.charset)) >= RETRY_EXCLUDE_MIN:
             # Vorgemerkte Zeichen nicht vorzeitig ziehen (sie sind nach dem
             # Fehler gerade die mit dem höchsten Gewicht).
             self.current_char = self.picker.pick(exclude="".join(self.retries.waiting))
         else:
-            self.current_char = due
+            # Wenige Zeichen: Ausschließen machte die Folge vorhersagbar. Kommt
+            # das vorgemerkte Zeichen zufällig dran, ist die Abfrage erledigt.
+            self.current_char = self.picker.pick()
+            self.retries.discard(self.current_char)
         self.voice = self._pick_voice()
         # Eine erneute Abfrage zählt wie ein erstes Hören (auch fürs Zeitlimit):
         # dazwischen lagen andere Zeichen.
@@ -229,14 +260,18 @@ class SingleModeFrame:
         self.status_var.set("Höre zu…")
         self.play_current()
 
-    def _after_error(self):
+    def _after_error(self, play_correction=True):
         """Falsches oder verpasstes Zeichen: später erneut abfragen und es
-        jetzt, mit der Lösung vor Augen, noch einmal vorspielen."""
+        jetzt, mit der Lösung vor Augen, noch einmal vorspielen (entfällt,
+        wenn es nach der Wiederholung richtig war)."""
         self.retries.add(self.current_char)
-        self.correcting = True  # Leertaste würde die Korrektur abbrechen
+        self.correcting = True
         self.timeout_token += 1
         token = self.timeout_token
-        self.root.after(FEEDBACK_MS, self._play_correction, token)
+        if play_correction:
+            self.root.after(FEEDBACK_MS, self._play_correction, token)
+        else:
+            self.root.after(FEEDBACK_MS, self._after_correction, token)
 
     def _play_correction(self, token):
         if not self.running or token != self.timeout_token:
@@ -296,10 +331,12 @@ class SingleModeFrame:
         self.waiting_for_input = True
         self.status_var.set("Deine Eingabe?")
         if self.icr_var.get():
-            # Das Limit zählt ab dem gleichen Zeitpunkt wie die Latenz.
-            deadline = self.play_start_time + duration_seconds(self.current_char, self.voice[0]) + self.limit
+            # Das Limit zählt ab dem gleichen Zeitpunkt wie die Latenz, und
+            # zwar ab dem ersten Hören: Wiederholen verschafft keine Zeit.
+            if self.deadline is None:
+                self.deadline = self.play_start_time + duration_seconds(self.current_char, self.voice[0]) + self.limit
             token = self.timeout_token
-            self.root.after(max(int((deadline - time.time()) * 1000), 50), self._on_timeout, token)
+            self.root.after(max(int((self.deadline - time.time()) * 1000), 50), self._on_timeout, token)
 
     def _on_timeout(self, token):
         if not self.running or not self.waiting_for_input or token != self.timeout_token:
@@ -327,8 +364,11 @@ class SingleModeFrame:
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 
     def repeat_char(self):
-        if self.running and self.current_char and not self.correcting:
+        # Nur solange eine Antwort erwartet wird; in der Pause nach einer
+        # Antwort würde sonst dasselbe Zeichen ein zweites Mal gewertet.
+        if self.running and self.current_char and self.waiting_for_input and not self.correcting:
             self.first_hearing = False
+            self.replayed = True
             self.waiting_for_input = False
             self.status_var.set("Höre zu… (Wiederholung)")
             self.play_current()
@@ -345,18 +385,26 @@ class SingleModeFrame:
         self.waiting_for_input = False
         self.timeout_token += 1
         correct = typed == self.current_char
+        # Erst nach dem Wiederholen erkannt zählt als nicht erkannt.
+        helped = correct and self.replayed
 
         reaction_time = max(time.time() - self.play_start_time, 0.001)
         effective_wpm = code_units(self.current_char) * 1.2 / reaction_time
         latency = reaction_time - duration_seconds(self.current_char, self.voice[0])
-        self.session_stats.record_char(
-            self.current_char, typed, correct, reaction_time, effective_wpm, latency=latency
-        )
+        if helped:
+            self.session_stats.record_char(self.current_char, "", False, reaction_time, effective_wpm)
+        else:
+            self.session_stats.record_char(
+                self.current_char, typed, correct, reaction_time, effective_wpm, latency=latency
+            )
         if self.icr_var.get() and self.first_hearing:
             self.limit = next_limit(self.limit, correct)
             self._show_limit()
 
-        if correct:
+        if helped:
+            self.feedback_var.set(f"{display_text(self.current_char)} – erst nach Wiederholung, kommt gleich noch mal")
+            self.feedback_label.config(foreground=theme.MUTED)
+        elif correct:
             if self.sound_var.get():
                 sfx.play_ok()
             self.feedback_var.set(f"Richtig: {display_text(self.current_char)}  ({effective_wpm:.0f} WPM)")
@@ -367,8 +415,11 @@ class SingleModeFrame:
             self.feedback_var.set(f"Falsch: war {display_text(self.current_char)}, du: {display_text(typed)}")
             self.feedback_label.config(foreground=theme.ERROR)
 
-        self._add_history(correct)
-        if correct:
-            self.root.after(FEEDBACK_MS, self.next_char)
+        self._add_history(correct and not helped)
+        if helped:
+            self._after_error(play_correction=False)
+        elif correct:
+            token = self.timeout_token
+            self.root.after(FEEDBACK_MS, self._after_correction, token)
         else:
             self._after_error()

@@ -468,8 +468,14 @@ class RunModeFrame:
             "query": "?",
             "agn": "AGN",
         }[kind]
+        unlogged = None
         if kind == "tu":
-            self._log_qso()
+            # Geloggt wird nur ein vollständiges QSO; ein versehentliches F3
+            # soll keinen Fehleintrag erzeugen.
+            if call and self.exch_var.get().strip():
+                self._log_qso()
+            else:
+                unlogged = "Rufzeichen" if not call else "Austausch"
         elif kind == "exchange":
             self.exchange_sent_to = call
 
@@ -480,7 +486,10 @@ class RunModeFrame:
         self.my_tx_start = start
         self.my_tx_end = self.mixer.add(samples, None, start)
         self._schedule(self.my_tx_end, self._react, kind, call, self.msg_id)
-        self.status_var.set(f"Sende: {text}")
+        if unlogged:
+            self.status_var.set(f"Sende: {text} – nicht geloggt ({unlogged} fehlt)")
+        else:
+            self.status_var.set(f"Sende: {text}")
 
     def _abort_sending(self):
         if self.running and self.mixer is not None:

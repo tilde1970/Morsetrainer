@@ -114,8 +114,23 @@ class AdaptiveLengthTest(unittest.TestCase):
         self.assertEqual(length.length, 3)
         for _ in range(SHORTER_AFTER - 1):
             self.assertEqual(length.update(False, 1), 0)
-        self.assertEqual(length.update(False, 2), -1)
+        self.assertEqual(length.update(False, 1), -1)
         self.assertEqual(length.length, 2)
+
+    def test_shrinks_even_if_repeats_succeed(self):
+        length = AdaptiveLength(2, 4, start=3)
+        for _ in range(SHORTER_AFTER - 1):
+            self.assertEqual(length.update(False, 1), 0)  # erster Versuch falsch …
+            self.assertEqual(length.update(True, 2), 0)   # … Wiederholung richtig
+        self.assertEqual(length.update(False, 1), -1)
+        self.assertEqual(length.length, 2)
+
+    def test_repeated_misses_of_one_group_do_not_shrink(self):
+        length = AdaptiveLength(2, 4, start=3)
+        self.assertEqual(length.update(False, 1), 0)   # erster Versuch falsch
+        for attempts in range(2, 2 + 3 * SHORTER_AFTER):
+            self.assertEqual(length.update(False, attempts), 0)  # dieselbe Gruppe nochmal falsch
+        self.assertEqual(length.length, 3)
 
     def test_success_after_repeat_breaks_streak(self):
         length = AdaptiveLength(2, 5)

@@ -271,9 +271,13 @@ class QsoModeFrame:
     def _update_reveal_button(self):
         # Während des ersten Durchlaufs nur im reinen Hörmodus aufdeckbar,
         # sonst wäre die Abfrage bzw. das Mittippen witzlos.
-        allowed = self.qso is not None and not self.tracking and (
-            not self.running or self.quiz_ready or self._eval_mode() == EVAL_LISTEN
-        )
+        if self._eval_mode() == EVAL_QUIZ:
+            # Bei der Abfrage erst nach „Prüfen“, sonst ließe sich abschreiben.
+            allowed = self.qso is not None and self.quiz_checked
+        else:
+            allowed = self.qso is not None and not self.tracking and (
+                not self.running or self.quiz_ready or self._eval_mode() == EVAL_LISTEN
+            )
         self.reveal_button.config(
             state="normal" if allowed else "disabled",
             text="Text verbergen (F7)" if self.revealed else "Text zeigen (F7)",

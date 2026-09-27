@@ -12,13 +12,24 @@ Drei Eingabearten:
 
 Ausgewertet wird per Alignment (core/align.py): ein ausgelassenes Zeichen
 ist genau ein Fehler und verschiebt nicht alle folgenden. Die falschen
-Stellen werden markiert. Bei einem Fehler kommt dieselbe Sequenz noch
-einmal, nach der eingestellten Zahl an Fehlversuchen wird die Lösung
-gezeigt und noch einmal vorgespielt, dann geht es weiter.
+Stellen werden markiert, die gesendete Sequenz aber erst beim Aufgeben
+gezeigt: Bei einem Fehler kommt dieselbe Sequenz noch einmal, und dann
+soll sie gehört, nicht abgeschrieben werden. Nach der eingestellten Zahl
+an Fehlversuchen wird die Lösung gezeigt und noch einmal vorgespielt.
 
-Wahlweise wächst das Tempo mit (wie bei RufzXP: richtig beim ersten
-Versuch +1 WPM, jeder Fehlversuch −1 WPM), und es lassen sich
-Bandbedingungen in drei Stufen unterlegen. Mit „Tonhöhe und Tempo
+Ehrliche Messwerte: In die Zeichenstatistik (und damit Gewichtung und
+Gesamtstatistik) geht nur der erste Versuch ein. Für den Koch-Aufstieg
+zählt ein erster Versuch nur, wenn die Sequenz nicht wiederholt wurde
+(Leertaste) und die Antwort innerhalb des Zeitfensters kam (answer_limit);
+zu viel Getipptes zählt als Fehler. Kopfhören beruht auf Selbstbewertung
+und zählt weder für den Aufstieg noch für die Gesamtstatistik.
+
+Wahlweise wächst das Tempo mit (wie bei RufzXP): richtig beim ersten
+Versuch +1 WPM, falsch beim ersten Versuch −1 WPM. Mit Farnsworth ändert
+sich nur das effektive Tempo (die Pausen), die Zeichen bleiben im vollen
+Tempo; ohne Farnsworth sinkt das Zeichentempo nicht unter TEMPO_MIN_CHAR,
+damit die Zeichen nicht so gedehnt werden, dass man mitzählen kann. Es
+lassen sich Bandbedingungen in drei Stufen unterlegen. Mit „Tonhöhe und Tempo
 variieren“ (gemeinsame Einstellung) klingt jede Sequenz etwas anders.
 
 Optional mit fester Dauer: nach Ablauf wird die laufende Sequenz noch
@@ -49,9 +60,21 @@ DEFAULT_GIVE_UP = 3
 COPY, MEMORIZE, HEAD = "copy", "memorize", "head"
 INPUT_STYLES = ((COPY, "Mitschreiben"), (MEMORIZE, "Erst merken"), (HEAD, "Kopfhören"))
 
-# Mitwachsendes Tempo: Schritt und Grenzen in WPM.
+# Mitwachsendes Tempo: Schritt und Grenzen in WPM. Das Zeichentempo sinkt
+# nicht unter TEMPO_MIN_CHAR (außer es war schon beim Start niedriger).
 TEMPO_STEP = 1
 TEMPO_RANGE = (5, 60)
+TEMPO_MIN_CHAR = 15
+
+# Zeitfenster für eine Antwort, die für den Koch-Aufstieg zählt: ab dem
+# Ende des Tons so viele Sekunden plus je Zeichen der Sequenz.
+ANSWER_BASE_S = 1.5
+ANSWER_PER_CHAR_S = 0.6
+
+
+def answer_limit(length: int) -> float:
+    """Sekunden nach Tonende, in denen eine Antwort als flüssig gilt."""
+    return ANSWER_BASE_S + ANSWER_PER_CHAR_S * length
 
 # Bandbedingungen: Beschriftung -> Stufe aus band.PRESETS (None = aus).
 BAND_LABELS = {"aus": None, "leicht": "light", "mittel": "medium", "stark": "heavy"}
@@ -101,6 +124,9 @@ class SequenceModeFrame:
         self.key_times = []    # Zeitpunkt jedes Zeichens im Eingabefeld
         self.typed_so_far = ""
         self.replayed = False  # Sequenz in diesem Versuch mehrfach gehört
+        self.enter_time = None  # Enter schon während des Tons gedrückt (time.time())
+        self.tempo_effective = False  # mitwachsendes Tempo ändert nur die Pausen (Farnsworth)
+        self.tempo_floor = TEMPO_RANGE[0]
         self.attempts = 0      # Versuche für die aktuelle Sequenz
         self.first_try_correct = 0
         self.first_try_total = 0
@@ -357,7 +383,13 @@ class SequenceModeFrame:
         self.revealed = False
         self.first_try_correct = self.first_try_total = 0
         self.koch_result = None
-        self.tempo = wpm if self.tempo_var.get() else None
+        self.tempo, self.tempo_effective = None, False
+        if self.tempo_var.get():
+            fw = self.farnsworth_wpm()
+            # Mit Farnsworth wächst das effektive Tempo, das Zeichentempo bleibt.
+            self.tempo_effective = fw is not None
+            self.tempo = fw if self.tempo_effective else wpm
+            self.tempo_floor = TEMPO_RANGE[0] if self.tempo_effective else min(TEMPO_MIN_CHAR, wpm)
         self.tempo_best = None
         self._show_tempo()
         preset = BAND_LABELS.get(self.band_var.get())
@@ -369,6 +401,7 @@ class SequenceModeFrame:
         self.session_stats = SessionStats(
             self.session_mode, self._log_charset(), wpm, freq,
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
+            self_assessed=self.style == HEAD,
         )
         self._setup_pickers(self.weighted_var.get())
         self.history = []
@@ -428,13 +461,17 @@ class SequenceModeFrame:
     def _finalize_session(self):
         if self.session_stats is None:
             return
-        if self.koch_progress and self.first_try_total:
+        if self.koch_progress and self.first_try_total and not self.session_stats.self_assessed:
             self.koch_result = (getattr(self, "charset", ""), self.first_try_correct, self.first_try_total)
         extra = {}
         if self.tempo is not None:
             extra = {"wpm_reached": self.tempo_best, "wpm_end": self.tempo}
         path = self.session_stats.finalize(extra)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
+        if self.session_stats.self_assessed and path is not None:
+            self.stats_panel.save_var.set(
+                self.stats_panel.save_var.get() + " – selbst bewertet, zählt nicht für Gesamtstatistik und Lektion"
+            )
         self.session_stats = None
 
     def on_close(self):
@@ -477,6 +514,7 @@ class SequenceModeFrame:
             self.diff_var.set("")
         self.repeat_pending = False
         self.replayed = False
+        self.enter_time = None
         self.input_var.set("")
         self.status_var.set("Höre zu… (Wiederholung)" if was_repeat else "Höre zu…")
         self.play_current()
@@ -500,24 +538,43 @@ class SequenceModeFrame:
     def _pick_voice(self):
         """Tempo und Tonhöhe für eine neue Sequenz; Wiederholungen behalten sie."""
         wpm, freq = self._audio_settings()
-        if self.tempo is not None:
+        if self.tempo is not None and not self.tempo_effective:
             wpm = self.tempo
         if self.vary_var is not None and self.vary_var.get():
             wpm, freq = vary_voice(wpm, freq)
         return wpm, freq
 
     def _show_tempo(self):
-        self.tempo_info_var.set(f"aktuell {self.tempo} WPM" if self.tempo is not None else "")
+        if self.tempo is None:
+            self.tempo_info_var.set("")
+        else:
+            self.tempo_info_var.set(f"aktuell {self.tempo} WPM{' effektiv' if self.tempo_effective else ''}")
+
+    def _tempo_ceiling(self) -> int:
+        # Effektiv schneller als die Zeichen geht nicht; dort ist Farnsworth aus.
+        if self.tempo_effective:
+            return self._audio_settings()[0]
+        return TEMPO_RANGE[1]
 
     def _update_tempo(self, correct: bool, attempts: int):
-        if self.tempo is None:
+        """Nur der erste Versuch zählt: ein Fehler bei der Wiederholung
+        derselben Sequenz bremst nicht noch einmal."""
+        if self.tempo is None or attempts != 1:
             return
-        if correct and attempts == 1:
+        if correct:
             self.tempo_best = max(self.tempo_best or 0, self.tempo)
-            self.tempo = min(self.tempo + TEMPO_STEP, TEMPO_RANGE[1])
-        elif not correct:
-            self.tempo = max(self.tempo - TEMPO_STEP, TEMPO_RANGE[0])
+            self.tempo = min(self.tempo + TEMPO_STEP, self._tempo_ceiling())
+        else:
+            self.tempo = max(self.tempo - TEMPO_STEP, self.tempo_floor)
         self._show_tempo()
+
+    def _farnsworth(self):
+        """Effektives Tempo für die Pausen: beim mitwachsenden effektiven
+        Tempo dieses (solange langsamer als die Zeichen), sonst die
+        gemeinsame Einstellung."""
+        if self.tempo is not None and self.tempo_effective:
+            return self.tempo if self.tempo < self.voice[0] else None
+        return self.farnsworth_wpm()
 
     def play_current(self, listen_only=False, on_done=None):
         """Spielt die aktuelle Sequenz. Beim Mitschreiben ist die Eingabe
@@ -526,7 +583,7 @@ class SequenceModeFrame:
         # Farnsworth streckt nur die Pausen zwischen den Zeichen; nach dem
         # letzten Zeichen bleibt die normale Pause, damit die Eingabe nicht
         # unnötig spät freigegeben wird.
-        fw = self.farnsworth_wpm()
+        fw = self._farnsworth()
         last = len(self.current_sequence) - 1
         parts = [
             build_samples(ch, wpm, freq, fw if i < last else None)
@@ -588,6 +645,7 @@ class SequenceModeFrame:
         if self.running and self.current_sequence and (self.input_open or self.waiting_for_input):
             self.waiting_for_input = False
             self.submit_pending = False
+            self.enter_time = None
             self.replayed = True
             self.status_var.set("Höre zu… (Wiederholung)")
             self.play_current()
@@ -614,22 +672,29 @@ class SequenceModeFrame:
             if self.input_open:
                 # Beim Mitschreiben vorzeitig Enter gedrückt: nach dem Ton werten.
                 self.submit_pending = True
+                self.enter_time = time.time()
                 self.status_var.set("Wird nach dem Ton ausgewertet…")
             return
+        answer_time = self.enter_time or time.time()
         typed = clean_input(self.input_var.get())
         self.waiting_for_input = False
         self._set_input_open(False)
 
         sent = self.current_sequence
         results = align.char_results(sent, typed)
-        for index, (expected, got, typed_index) in enumerate(results):
-            reaction_time, latency = self._char_timing(index, typed_index)
-            effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
-            self.session_stats.record_char(
-                expected, got, got == expected, reaction_time, effective_wpm, latency=latency
-            )
-        correct_chars = sum(1 for expected, got, _ in results if got == expected)
-        self._finish_attempt(typed, typed == sent, correct_chars)
+        # Nur der erste Versuch geht in die Zeichenstatistik; bei der
+        # Wiederholung ist die Sequenz schon bekannt.
+        if self.attempts == 0:
+            for index, (expected, got, typed_index) in enumerate(results):
+                reaction_time, latency = self._char_timing(index, typed_index)
+                effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
+                self.session_stats.record_char(
+                    expected, got, got == expected, reaction_time, effective_wpm, latency=latency
+                )
+        hits = sum(1 for expected, got, _ in results if got == expected)
+        correct_chars = max(hits - align.extra_count(sent, typed), 0)
+        slow = answer_time - self.tone_ends[-1] > answer_limit(len(sent)) if self.tone_ends else False
+        self._finish_attempt(typed, typed == sent, correct_chars, slow=slow)
 
     def reveal(self):
         """Kopfhören: Lösung aufdecken, danach bewerten."""
@@ -658,15 +723,19 @@ class SequenceModeFrame:
             )
         self._finish_attempt(sent if known else "", known, len(sent) if known else 0, head=True)
 
-    def _finish_attempt(self, typed: str, all_correct: bool, correct_chars: int, head=False):
+    def _finish_attempt(self, typed: str, all_correct: bool, correct_chars: int, head=False, slow=False):
         """Gemeinsamer Abschluss eines Versuchs: Statistik, Anpassungen,
         Rückmeldung und was als Nächstes kommt."""
         sent = self.current_sequence
-        self.session_stats.record_group(sent, typed, wpm=self.voice[0] if self.tempo is not None else None)
+        self.session_stats.record_group(sent, typed, wpm=self.tempo)
         self.attempts += 1
-        if self.attempts == 1:
+        # Für den Koch-Aufstieg zählt nur ein flüssiger erster Versuch: ohne
+        # Wiederholen, im Zeitfenster; Kopfhören (Selbstbewertung) gar nicht.
+        clean = self.attempts == 1 and not self.replayed and not slow
+        if self.attempts == 1 and not head:
             self.first_try_total += len(sent)
-            self.first_try_correct += correct_chars
+            if clean:
+                self.first_try_correct += correct_chars
         try:
             give_up_after = self.give_up_var.get()
         except tk.TclError:
@@ -674,14 +743,26 @@ class SequenceModeFrame:
         # Beim Kopfhören gibt es keinen zweiten Versuch: die Lösung ist schon zu sehen.
         give_up = not all_correct and (head or 0 < give_up_after <= self.attempts)
         self.repeat_pending = not all_correct and not give_up
-        self._after_result(all_correct, self.attempts)
-        self._update_tempo(all_correct, self.attempts)
+        # Richtig, aber nur mit Wiederholen oder zu langsam, zählt für Länge und
+        # Tempo wie richtig erst im zweiten Versuch (kein Aufstieg).
+        rated_attempts = self.attempts if clean or not all_correct else max(self.attempts, 2)
+        self._after_result(all_correct, rated_attempts)
+        self._update_tempo(all_correct, rated_attempts)
 
         explanation = self._explain(sent)
         if all_correct:
             if self.sound_var.get():
                 sfx.play_ok()
-            self.feedback_var.set(f"Richtig: {display_text(sent)}" + (f"\n{explanation}" if explanation else ""))
+            note = ""
+            if not self.koch_progress:
+                pass  # Modus zählt ohnehin nicht für die Lektion
+            elif slow and self.attempts == 1:
+                note = "\n(zu langsam – zählt nicht für die Lektion)"
+            elif self.replayed and self.attempts == 1:
+                note = "\n(mit Wiederholen – zählt nicht für die Lektion)"
+            self.feedback_var.set(
+                f"Richtig: {display_text(sent)}" + (f"\n{explanation}" if explanation else "") + note
+            )
             self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
         else:
@@ -695,7 +776,12 @@ class SequenceModeFrame:
             self.feedback_label.config(foreground=theme.ERROR)
             if not head:
                 sent_row, typed_row, marks = align.diff_rows(sent, typed)
-                self.diff_var.set(f"gesendet  {sent_row}\ngetippt   {typed_row}\n          {marks}")
+                if give_up:
+                    self.diff_var.set(f"gesendet  {sent_row}\ngetippt   {typed_row}\n          {marks}")
+                else:
+                    # Nur markieren, wo es hakt; die gesendete Sequenz zu
+                    # zeigen hieße, beim nächsten Versuch abzuschreiben.
+                    self.diff_var.set(f"getippt   {typed_row}\n          {marks}")
 
         self.history.append(f"{sent}{'=' if all_correct else '≠'}{typed}")
         self.history = self.history[-10:]

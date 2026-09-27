@@ -39,8 +39,13 @@ def format_confusions(confusions: dict) -> str:
 
 
 class SessionStats:
-    def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None):
+    def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
+                 self_assessed=False):
+        """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
+        J/N). Sie werden protokolliert, aber nicht in all_time.json und den
+        Fortschrittsverlauf übernommen."""
         self.start_time = datetime.now()
+        self.self_assessed = self_assessed
         self.mode = mode
         self.charset = charset
         self.wpm = wpm
@@ -68,6 +73,7 @@ class SessionStats:
             "group_len": group_len,
             "farnsworth_wpm": farnsworth_wpm,
             "start_time": self.start_time.isoformat(timespec="seconds"),
+            **({"self_assessed": True} if self_assessed else {}),
         })
 
     def _write_line(self, obj: dict) -> None:
@@ -187,7 +193,8 @@ class SessionStats:
             "type": "summary", **self.summary(), **(extra or {}), "per_char": self._per_char_summary(),
         })
         self._close()
-        _merge_all_time(self)
+        if not self.self_assessed:
+            _merge_all_time(self)
         return self.log_path if self.log_error is None else None
 
 
@@ -355,7 +362,7 @@ def load_history():
     history = []
     for path in STATS_DIR.glob("20*.jsonl"):
         config, summary = _config_and_summary(path)
-        if not config or not summary or not summary.get("total"):
+        if not config or not summary or not summary.get("total") or config.get("self_assessed"):
             continue
         try:
             history.append({
