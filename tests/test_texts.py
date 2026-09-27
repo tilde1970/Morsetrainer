@@ -68,6 +68,11 @@ class QsoTextTest(unittest.TestCase):
                     self.assertGreaterEqual(delay, 0)
         self.assertTrue(seen, "in 100 Runs kein einziger Pile-up")
 
+    def test_wag_non_dl_only_gets_dl_callers(self):
+        for _ in range(30):
+            call, _, _ = qso_text.contest_caller("wag", "G3XYZ", set())
+            self.assertEqual(qso_text._country_of(call).key, "DL")
+
     def test_no_pileups_by_default(self):
         for _ in range(30):
             self.assertEqual(qso_text.generate_qso("wpx", qso_text.LENGTH_LONG).pileups, ())

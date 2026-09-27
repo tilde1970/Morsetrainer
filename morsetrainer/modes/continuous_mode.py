@@ -21,7 +21,11 @@ Ehrliche Wertung: Eine Taste zählt nur dann für ein gesendetes Zeichen,
 wenn sie zeitlich dazu passt – nicht vor dessen Ende (Vorausraten) und
 höchstens MAX_LAG_SECONDS danach; sonst gilt das Zeichen als verpasst und
 die Taste als überzählig. Überzählige Tasten werden für den Koch-Aufstieg
-abgezogen, sonst brächte Drauflostippen volle Punktzahl."""
+abgezogen, sonst brächte Drauflostippen volle Punktzahl. Beim Stoppen
+von Hand zählen Zeichen der letzten STOP_GRACE_SECONDS nicht als verpasst
+(man war gerade dabei, sie zu tippen). Nach dem Stoppen zeigt eine
+Gegenüberstellung die letzten Zeichen gesendet/getippt. F5 startet und
+stoppt, Esc stoppt."""
 import threading
 import time
 import tkinter as tk
@@ -57,6 +61,13 @@ GROUP_LEN_RANGE = (0, 10)
 # später darf die Taste kommen.
 EARLY_TOLERANCE_SECONDS = 0.15
 MAX_LAG_SECONDS = 5.0
+
+
+# Beim Stoppen von Hand: so kurz vor dem Stopp gesendete Zeichen, die noch
+# nicht getippt sind, zählen nicht als verpasst.
+STOP_GRACE_SECONDS = 2.0
+# So viele der letzten Zeichen zeigt die Gegenüberstellung nach dem Stopp.
+DIFF_TAIL = 30
 
 
 def plausible(typed_time: float, tone_end: float) -> bool:
@@ -104,7 +115,8 @@ class ContinuousModeFrame:
         theme.hint(
             parent, wrap=560,
             text="Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
-                 "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen.",
+                 "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen. "
+                 "F5 startet und stoppt, Esc stoppt.",
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
         options = theme.card(parent, "Einstellungen")
@@ -134,6 +146,10 @@ class ContinuousModeFrame:
 
         self.live_var = tk.StringVar(value="")
         ttk.Label(parent, textvariable=self.live_var).pack(anchor="w", padx=10)
+
+        self.diff_box = theme.card(parent, "Auswertung (letzte Zeichen)")
+        self.diff_var = tk.StringVar(value="Erscheint nach dem Stoppen.")
+        ttk.Label(self.diff_box, textvariable=self.diff_var, font=theme.MONO, justify="left").pack(anchor="w")
 
         typed = theme.card(parent, "Deine Eingabe (letzte Zeichen)")
         self.typed_preview_var = tk.StringVar(value="")
@@ -199,6 +215,7 @@ class ContinuousModeFrame:
         self.stats_panel.reset()
         self.live_var.set("Gesendet: 0 Zeichen")
         self.typed_preview_var.set("")
+        self.diff_var.set("Erscheint nach dem Stoppen.")
 
         self.running = True
         self.start_button.config(text="Stop")
@@ -313,18 +330,29 @@ class ContinuousModeFrame:
             audio.play_quietly(build_text(END_TEXT, self.wpm, self.freq))
         self.start_button.config(text="Start")
         self.status_var.set("Werte aus…")
-        self._finalize_session()
+        self._finalize_session(stopped_at=None if self.finishing else time.time())
         self.status_var.set("Gestoppt.")
         self.on_stop_cb()
 
-    def _finalize_session(self):
+    def _finalize_session(self, stopped_at=None):
+        """Wertet aus. `stopped_at`: Zeitpunkt eines Stopps von Hand; dann
+        zählen gerade erst gesendete, noch nicht getippte Zeichen nicht."""
         if self.session_stats is None:
             return
         sent_str = "".join(e["char"] for e in self.sent_log)
         typed_str = "".join(e["char"] for e in self.typed_log)
         ops = align.align(sent_str, typed_str)
         extra = 0  # Tasten ohne passendes gesendetes Zeichen
+        rows = []  # (gesendet, getippt, Markierung) für die Gegenüberstellung
         for op in ops:
+            if (op.kind == align.OpKind.DELETE and stopped_at is not None
+                    and self.sent_log[op.expected_index]["end_time"] > stopped_at - STOP_GRACE_SECONDS):
+                continue  # beim Stoppen gerade erst gesendet
+            late = (op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE)
+                    and not plausible(self.typed_log[op.received_index]["time"],
+                                      self.sent_log[op.expected_index]["end_time"]))
+            rows.append((op.expected_char or "–", op.received_char or "–",
+                         " " if op.kind == align.OpKind.MATCH and not late else "^"))
             if op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE):
                 expected_char = op.expected_char
                 typed_char = op.received_char
@@ -348,6 +376,12 @@ class ContinuousModeFrame:
                 # zuzuordnen, zählt aber für den Aufstieg als Fehler.
                 extra += 1
 
+        tail = rows[-DIFF_TAIL:]
+        if tail:
+            self.diff_var.set(
+                "gesendet  " + " ".join(r[0] for r in tail) + "\ngetippt   " + " ".join(r[1] for r in tail)
+                + "\n          " + " ".join(r[2] for r in tail).rstrip() + "\n          – fehlt/zu viel, ^ falsch oder nicht rechtzeitig"
+            )
         summary = self.session_stats.summary()
         self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])
         self.stats_panel.refresh(summary, self.session_stats.char_rows())
@@ -362,7 +396,15 @@ class ContinuousModeFrame:
                 self.play_thread.join(timeout=2)
         self._finalize_session()
 
+    def on_function_key(self, key: str):
+        if key == "F5":
+            self.toggle_running()
+
     def on_key(self, event):
+        if event.keysym == "Escape":
+            if self.running:
+                self.stop()
+            return
         if not self.running:
             return
         typed = event.char.upper()

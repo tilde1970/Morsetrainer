@@ -25,6 +25,7 @@ Technik: Ein Audio-Thread (Mixer) spielt durchgehend alle Signale plus
 Bandbedingungen ab. Die Spiellogik läuft im GUI-Thread und plant Ereignisse
 in Samples der Mixer-Uhr."""
 import random
+import re
 import threading
 import time
 import tkinter as tk
@@ -48,9 +49,12 @@ MIX_CHUNK_SECONDS = 0.02
 # Stationen je Sitzung (Stimmen für Chirp/QSB werden reihum vergeben).
 MAX_STATIONS = 64
 
-# Anrufer: Tempo relativ zu deinem, Abstand zu deiner Tonhöhe, Lautstärke.
-CALLER_WPM_OFFSET = (-4, 4)
+# Anrufer: Streuung von Tempo und Tonhöhe um deine (Standard, einstellbar),
+# Lautstärke.
+CALLER_WPM_SPREAD = 4
+CALLER_WPM_SPREAD_RANGE = (0, 10)
 CALLER_FREQ_OFFSET_HZ = 300
+CALLER_FREQ_SPREAD_RANGE = (50, 500)
 CALLER_STRENGTH = (0.35, 1.0)
 # Reaktionszeit der Anrufer nach deinem Durchgang und Wahrscheinlichkeit,
 # dass ein wartender Anrufer nach CQ/TU überhaupt (sofort) wieder ruft.
@@ -162,8 +166,11 @@ def call_matches(sent: str, call: str) -> str:
     if sent == call:
         return "exact"
     if "?" in sent:
-        part = sent.replace("?", "")
-        return "similar" if len(part) >= 2 and part in call else ""
+        # „?“ steht für ein einzelnes Zeichen: DL1? und DL?ABC passen zu DL1ABC.
+        if len(sent.replace("?", "")) < 2:
+            return ""
+        pattern = ".".join(re.escape(part) for part in sent.split("?"))
+        return "similar" if re.search(pattern, call) else ""
     if len(sent) >= 3 and (_distance(sent, call) <= 2 or sent in call):
         return "similar"
     return ""
@@ -246,6 +253,25 @@ class RunModeFrame:
         ttk.Label(duration_row, text="Min.").pack(side="left", padx=(4, 0))
         theme.hint(duration_row, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
 
+        ttk.Label(box, text="Anrufer:").grid(row=5, column=0, sticky="w", **row_pad)
+        spread_row = ttk.Frame(box)
+        spread_row.grid(row=5, column=1, columnspan=2, sticky="w", pady=(2, 0))
+        ttk.Label(spread_row, text="Tempo ±").pack(side="left")
+        self.wpm_spread_var = tk.IntVar(value=CALLER_WPM_SPREAD)
+        self.wpm_spread_spin = ttk.Spinbox(spread_row, from_=CALLER_WPM_SPREAD_RANGE[0], to=CALLER_WPM_SPREAD_RANGE[1],
+                                           textvariable=self.wpm_spread_var, width=3)
+        self.wpm_spread_spin.pack(side="left", padx=(4, 4))
+        ttk.Label(spread_row, text="WPM, Tonhöhe ±").pack(side="left")
+        self.freq_spread_var = tk.IntVar(value=CALLER_FREQ_OFFSET_HZ)
+        self.freq_spread_spin = ttk.Spinbox(spread_row, from_=CALLER_FREQ_SPREAD_RANGE[0],
+                                            to=CALLER_FREQ_SPREAD_RANGE[1], increment=50,
+                                            textvariable=self.freq_spread_var, width=4)
+        self.freq_spread_spin.pack(side="left", padx=(4, 4))
+        ttk.Label(spread_row, text="Hz").pack(side="left")
+        theme.hint(box, text="Wenig Tonhöhen-Streuung = dichtes Pile-up nahe deiner Frequenz. "
+                             "F10 startet und beendet den Contest.", wrap=520).grid(
+            row=6, column=0, columnspan=3, sticky="w", pady=(2, 6))
+
         self.kind_var.trace_add("write", lambda *_: self._on_setup_change())
         self.my_call_var.trace_add("write", lambda *_: self._on_setup_change())
 
@@ -289,7 +315,8 @@ class RunModeFrame:
         theme.hint(entry_box, wrap=540,
                    text="Enter sendet die passende nächste Nachricht (leer: CQ, mit Call: Austausch, mit "
                        "Austausch: TU + loggen). Call nach dem Austausch korrigiert: Enter sendet „Call TU“ "
-                       "und loggt. Achtung: Anrufer antworten manchmal auch auf ein fast richtiges Call. "
+                       "und loggt. Call mit „?“ (z. B. DL1? oder DL?ABC) fragt nur nach. "
+                       "Achtung: Anrufer antworten manchmal auch auf ein fast richtiges Call. "
                        "Esc bricht ab, Leertaste wechselt das Feld.").pack(
             anchor="w")
 
@@ -361,9 +388,12 @@ class RunModeFrame:
         try:
             self.wpm, self.freq = self.wpm_var.get(), self.freq_var.get()
             activity, minutes = self.activity_var.get(), self.duration_var.get()
+            wpm_spread, freq_spread = self.wpm_spread_var.get(), self.freq_spread_var.get()
         except tk.TclError:
-            self.status_var.set("Ungültige Einstellung (WPM, Tonhöhe, Aktivität oder Dauer).")
+            self.status_var.set("Ungültige Einstellung (WPM, Tonhöhe, Aktivität, Dauer oder Anrufer).")
             return
+        self.wpm_spread = min(max(wpm_spread, CALLER_WPM_SPREAD_RANGE[0]), CALLER_WPM_SPREAD_RANGE[1])
+        self.freq_spread = min(max(freq_spread, CALLER_FREQ_SPREAD_RANGE[0]), CALLER_FREQ_SPREAD_RANGE[1])
 
         self.kind, self.my_call_str, self.my_exchange = kind, my_call, my_exchange
         self.activity = min(max(activity, 1), 5)
@@ -387,7 +417,7 @@ class RunModeFrame:
         self.running = True
         self.start_button.config(text="Stop")
         for widget in (self.kind_combo, self.my_call_entry, self.my_exchange_entry, self.activity_spin,
-                       self.duration_spin):
+                       self.duration_spin, self.wpm_spread_spin, self.freq_spread_spin):
             widget.config(state="disabled")
         self.status_var.set("Läuft – F1 oder Enter ruft CQ.")
         self._update_score()
@@ -401,7 +431,8 @@ class RunModeFrame:
             self.mixer.stop()
             self.mixer = None
         self.start_button.config(text="Start")
-        for widget in (self.my_call_entry, self.activity_spin, self.duration_spin):
+        for widget in (self.my_call_entry, self.activity_spin, self.duration_spin, self.wpm_spread_spin,
+                       self.freq_spread_spin):
             widget.config(state="normal")
         self.kind_combo.config(state="readonly")
         self._on_setup_change()
@@ -409,9 +440,13 @@ class RunModeFrame:
         correct = sum(entry["ok"] for entry in self.log)
         if total:
             minutes = (time.time() - self.started_at) / 60
+            counts = {kind: sum(entry["category"] == kind for entry in self.log) for kind in ("busted", "nil", "exchange")}
             stats.log_result("contest", correct, total, self.wpm, contest=self.kind, activity=self.activity,
-                             minutes=round(minutes, 1))
-            self.status_var.set(f"Beendet: {correct} von {total} QSOs richtig geloggt.")
+                             minutes=round(minutes, 1), **counts)
+            details = [f"{n} {label}" for n, label in ((counts["busted"], "Busted"), (counts["nil"], "NIL"),
+                                                       (counts["exchange"], "Austausch falsch")) if n]
+            self.status_var.set(f"Beendet: {correct} von {total} QSOs richtig geloggt"
+                                + (f" · {', '.join(details)}." if details else "."))
         else:
             self.status_var.set("Beendet.")
         self.on_stop_cb()
@@ -514,6 +549,9 @@ class RunModeFrame:
         call = self.call_var.get().strip()
         if not call:
             self._send("cq")
+        elif "?" in call:
+            # Nur Teil aufgenommen: nur das Teil-Call mit „?“ senden.
+            self._send("hiscall")
         elif (call != self.exchange_sent_to and self.exchange_sent_to and self.exch_var.get().strip()
               and _distance(call, self.exchange_sent_to) <= 2):
             # Call nach dem Austausch korrigiert: „<Call> TU“ bestätigt die
@@ -539,16 +577,23 @@ class RunModeFrame:
         exch = self.exch_var.get().strip()
         worked = next((c for c in self.callers if c.state == "worked"), None)
         if worked is None:
-            ok, result = False, "NIL – keine Station hat dir einen Austausch gegeben"
+            ok, category = False, "nil"
+            result = "NIL – keine Station hat dir einen Austausch gegeben"
+            # Nur Stationen, die noch rufen: eine längst geloggte oder
+            # abgewanderte zu nennen, schickte dich auf die Suche nach einem
+            # Hörfehler, den es nicht gab.
+            near = min(self._active(), key=lambda c: _distance(call, c.call), default=None)
+            if near is not None and _distance(call, near.call) <= 3:
+                result += f" (ähnlich ruft: {near.call})"
         elif call != worked.call:
-            ok, result = False, f"Busted – richtig: {worked.call}"
+            ok, category, result = False, "busted", f"Busted – richtig: {worked.call}"
         elif not is_correct(exch, worked.exchange, worked.exchange_kind):
-            ok, result = False, f"Austausch falsch – richtig: {worked.exchange}"
+            ok, category, result = False, "exchange", f"Austausch falsch – richtig: {worked.exchange}"
         else:
-            ok, result = True, "✓"
+            ok, category, result = True, "ok", "✓"
         if worked is not None:
             worked.state = "done"
-        self.log.append({"call": call, "exch": exch, "ok": ok})
+        self.log.append({"call": call, "exch": exch, "ok": ok, "category": category})
         self.log_tree.insert("", 0, values=(len(self.log), call, exch, result), tags=("ok" if ok else "wrong",))
         self.my_serial += 1
         self.call_var.set("")
@@ -564,10 +609,10 @@ class RunModeFrame:
         call, exchange, exchange_kind = qso_text.contest_caller(
             self.kind, self.my_call_str, {c.call for c in self.callers}
         )
-        freq = self.freq + random.uniform(-CALLER_FREQ_OFFSET_HZ, CALLER_FREQ_OFFSET_HZ)
+        freq = self.freq + random.uniform(-self.freq_spread, self.freq_spread)
         caller = Caller(
             call=call, exchange=exchange, exchange_kind=exchange_kind, station=self.next_station % MAX_STATIONS,
-            wpm=max(self.wpm + random.randint(*CALLER_WPM_OFFSET), 8), freq=min(max(freq, 300), 1000),
+            wpm=max(self.wpm + random.randint(-self.wpm_spread, self.wpm_spread), 8), freq=min(max(freq, 300), 1000),
             strength=random.uniform(*CALLER_STRENGTH), patience=random.randint(*PATIENCE),
         )
         self.next_station += 1
@@ -685,6 +730,9 @@ class RunModeFrame:
 
     # --- Schnittstelle zur App ------------------------------------------------
     def on_function_key(self, key: str):
+        if key == "F10":
+            self.toggle_running()
+            return
         if key in MESSAGES and self.running:
             self._send(MESSAGES[key][0])
             if key == "F2":
@@ -707,8 +755,17 @@ class RunModeFrame:
             "my_exchanges": self.my_exchanges,
             "activity": activity,
             "duration": duration,
+            "wpm_spread": self._int_or(self.wpm_spread_var, CALLER_WPM_SPREAD),
+            "freq_spread": self._int_or(self.freq_spread_var, CALLER_FREQ_OFFSET_HZ),
             "band": self.band_panel.settings(),
         }
+
+    @staticmethod
+    def _int_or(var, default):
+        try:
+            return var.get()
+        except tk.TclError:
+            return default
 
     def restore_settings(self, data: dict) -> None:
         exchanges = data.get("my_exchanges")
@@ -719,7 +776,9 @@ class RunModeFrame:
             self.my_call_var.set(call)
         if data.get("kind") in qso_text.QSO_TYPES and data["kind"] != qso_text.RAGCHEW:
             self.kind_var.set(qso_text.QSO_TYPES[data["kind"]])
-        for key, var, limits in (("activity", self.activity_var, (1, 5)), ("duration", self.duration_var, (0, 240))):
+        for key, var, limits in (("activity", self.activity_var, (1, 5)), ("duration", self.duration_var, (0, 240)),
+                                 ("wpm_spread", self.wpm_spread_var, CALLER_WPM_SPREAD_RANGE),
+                                 ("freq_spread", self.freq_spread_var, CALLER_FREQ_SPREAD_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)

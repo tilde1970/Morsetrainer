@@ -583,6 +583,9 @@ def contest_caller(kind: str, my_call: str, exclude):
     if kind == "arrldx":
         # W/VE arbeiten den Rest der Welt und umgekehrt.
         countries = ({c.key for c in COUNTRIES} - {"W"}) if my_country and my_country.key == "W" else {"W"}
+    elif kind == "wag" and not (my_country and my_country.key == "DL"):
+        # Im WAG arbeiten Nicht-DL-Stationen nur DL.
+        countries = {"DL"}
     call, country = _pick_contest_call(kind, set(exclude) | {my_call}, countries, IARU_HQ_CALLER_PROBABILITY)
     exchange, exchange_kind = _Exchange(kind, call, country, random.randint(1, 1500)).next()
     return call, exchange, exchange_kind

@@ -341,6 +341,34 @@ class ContinuousTest(AppTestCase):
         self.assertFalse(continuous_mode.plausible(now - 1, now))
 
 
+class ContinuousStopTest(AppTestCase):
+    def _session(self, c, sent, typed):
+        c.charset = "KM"
+        c.session_stats = stats.SessionStats("continuous", "KM", 20, 600)
+        c.sent_log = [{"char": ch, "end_time": t} for ch, t in sent]
+        c.typed_log = [{"char": ch, "time": t} for ch, t in typed]
+
+    def test_manual_stop_does_not_count_last_chars_and_shows_diff(self):
+        c = self.mode("Kontinuierlich")
+        now = time.time()
+        # K und M gehört und getippt, das letzte K kam 0,5 s vor dem Stopp.
+        self._session(c, [("K", now - 5), ("M", now - 4), ("K", now - 0.5)],
+                      [("K", now - 4.6), ("M", now - 3.5)])
+        c._finalize_session(stopped_at=now)
+        self.assertEqual(c.koch_result[1:], (2, 2))  # das letzte K zählt nicht als verpasst
+        self.assertIn("gesendet  K M", c.diff_var.get())
+        self.assertIn("fehlt/zu viel", c.diff_var.get())
+
+    def test_function_keys_start_and_stop(self):
+        c = self.mode("Kontinuierlich")
+        with mock.patch.object(c, "start") as start, mock.patch.object(c, "stop") as stop:
+            c.on_function_key("F5")
+            start.assert_called_once()
+            c.running = True
+            c.on_key(type("E", (), {"keysym": "Escape", "char": ""})())
+            stop.assert_called_once()
+
+
 class ContinuousGroupingTest(AppTestCase):
     def test_word_gap_after_each_group(self):
         import contextlib
@@ -498,6 +526,39 @@ class ContestBustedTest(AppTestCase):
         item = r.log_tree.get_children()[0]
         self.assertIn("Busted", r.log_tree.item(item)["values"][3])
         r.stop()
+
+    def test_partial_call_sends_only_call_and_matches_wildcards(self):
+        self.assertEqual(run_mode.call_matches("DL1?", "DL1ABC"), "similar")
+        self.assertEqual(run_mode.call_matches("DL?ABC", "DL1ABC"), "similar")
+        self.assertEqual(run_mode.call_matches("DK?ABC", "DL1ABC"), "")
+        r, caller = self._contest_with_caller()
+        r.call_var.set("DL1?")
+        r._on_enter()
+        self.assertIn("Sende: DL1?", r.status_var.get())
+        self.assertNotIn("5NN", r.status_var.get())
+        r.stop()
+
+    def test_nil_names_caller_and_summary_counts_errors(self):
+        r, caller = self._contest_with_caller()
+        r.call_var.set("DL1ABD")
+        r.exch_var.set("14")
+        r._log_qso()  # niemand hat einen Austausch gegeben
+        item = r.log_tree.get_children()[0]
+        self.assertIn("ähnlich ruft: DL1ABC", r.log_tree.item(item)["values"][3])
+        caller.state = "done"  # schon geloggt: nicht mehr nennen
+        r.call_var.set("DL1ABD")
+        r.exch_var.set("14")
+        r._log_qso()
+        item = r.log_tree.get_children()[0]
+        self.assertNotIn("DL1ABC", r.log_tree.item(item)["values"][3])
+        r.stop()
+        self.assertIn("2 NIL", r.status_var.get())
+
+    def test_f10_starts_and_stops(self):
+        r = self.mode("Contest")
+        with mock.patch.object(r, "toggle_running") as toggle:
+            r.on_function_key("F10")
+            toggle.assert_called_once()
 
     def test_new_call_before_logging_is_not_a_correction(self):
         r, caller = self._contest_with_caller()
