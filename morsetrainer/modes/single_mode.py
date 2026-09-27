@@ -1,13 +1,20 @@
 """Einzelzeichen-Modus: spielt ein Morsezeichen ab, wartet auf Tastatureingabe,
-prüft die Antwort und spielt danach das nächste Zeichen. Bei einer falschen
-Antwort wird dasselbe Zeichen sofort wiederholt (statt zufällig weiterzumachen),
-bis es richtig erkannt wird.
+prüft die Antwort und spielt danach das nächste Zeichen.
+
+Nach einem Fehler (falsch oder zu langsam) wird das Zeichen noch einmal
+vorgespielt, während die Lösung dasteht, damit Klang und Buchstabe
+zusammenkommen. Abgefragt wird es erst wieder nach ein paar anderen
+Zeichen und ohne Ankündigung: Käme es sofort, wüsste man die Antwort
+schon, bevor man hinhört.
 
 Zeitlimit (Instant Character Recognition): Wer nach dem Ton nicht innerhalb
 des Limits tippt, hat das Zeichen verpasst. So bleibt keine Zeit, Punkte
 und Striche zu zählen; das Zeichen muss als Reflex kommen. Das Limit passt
 sich an: jede schnelle richtige Antwort macht es etwas kürzer, jeder Fehler
-und jedes Verpassen etwas länger (nur beim ersten Hören eines Zeichens)."""
+und jedes Verpassen etwas länger (nur beim ersten Hören eines Zeichens).
+Das Limit ist standardmäßig an; ohne kann man Punkte und Striche zählen,
+und genau diese Gewohnheit bremst später."""
+import random
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -27,11 +34,39 @@ ICR_START = 2.0
 ICR_RANGE = (0.4, 3.0)
 ICR_FASTER = 0.93
 ICR_SLOWER = 1.15
+# Ein falsch erkanntes Zeichen kommt nach so vielen anderen wieder.
+RETRY_AFTER = (2, 4)
+# Pause nach der Rückmeldung bzw. nach dem Korrekturton, in ms.
+FEEDBACK_MS = 700
+AFTER_CORRECTION_MS = 600
 
 
 def next_limit(limit: float, in_time_and_correct: bool) -> float:
     factor = ICR_FASTER if in_time_and_correct else ICR_SLOWER
     return round(min(max(limit * factor, ICR_RANGE[0]), ICR_RANGE[1]), 2)
+
+
+class RetryQueue:
+    """Falsch erkannte Zeichen, die nach einigen anderen Zeichen erneut
+    abgefragt werden. next_due() wird einmal je neuem Zeichen aufgerufen."""
+
+    def __init__(self, rng=random):
+        self.rng = rng
+        self.waiting = {}  # Zeichen -> Anzahl anderer Zeichen, die noch davor kommen
+
+    def add(self, ch: str) -> None:
+        self.waiting[ch] = self.rng.randint(*RETRY_AFTER)
+
+    def next_due(self):
+        """Das fällige Zeichen (und aus der Liste nehmen) oder None; dann
+        rückt die Wartezeit aller anderen um eins vor."""
+        for ch, remaining in self.waiting.items():
+            if remaining <= 0:
+                del self.waiting[ch]
+                return ch
+        for ch in self.waiting:
+            self.waiting[ch] -= 1
+        return None
 
 
 class SingleModeFrame:
@@ -60,7 +95,8 @@ class SingleModeFrame:
         self.history = []
         self.session_stats = None
         self.play_start_time = 0.0
-        self.repeat_pending = False
+        self.retries = RetryQueue()
+        self.correcting = False     # Korrekturton läuft, keine Eingabe erwartet
 
         self._build_widgets(ScrollableFrame(parent).inner)
 
@@ -68,7 +104,7 @@ class SingleModeFrame:
         options = theme.card(parent, "Einstellungen")
         icr = ttk.Frame(options)
         icr.pack(fill="x")
-        self.icr_var = tk.BooleanVar(value=False)
+        self.icr_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
             icr, text="Zeitlimit (wird kürzer, solange du sicher bist)", variable=self.icr_var,
             command=self._show_limit,
@@ -133,7 +169,8 @@ class SingleModeFrame:
             return
         self.charset = charset
         self.running = True
-        self.repeat_pending = False
+        self.retries = RetryQueue()
+        self.correcting = False
         self.start_button.config(text="Stop")
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
@@ -170,15 +207,48 @@ class SingleModeFrame:
         if not self.running:
             return
         self.waiting_for_input = False
-        if not self.repeat_pending:
-            self.current_char = self.picker.pick()
-            self.voice = self._pick_voice()
-        was_repeat = self.repeat_pending
-        self.first_hearing = not was_repeat
-        self.repeat_pending = False
+        self.correcting = False
+        due = self.retries.next_due()
+        if due is None:
+            # Vorgemerkte Zeichen nicht vorzeitig ziehen (sie sind nach dem
+            # Fehler gerade die mit dem höchsten Gewicht).
+            self.current_char = self.picker.pick(exclude="".join(self.retries.waiting))
+        else:
+            self.current_char = due
+        self.voice = self._pick_voice()
+        # Eine erneute Abfrage zählt wie ein erstes Hören (auch fürs Zeitlimit):
+        # dazwischen lagen andere Zeichen.
+        self.first_hearing = True
         self.feedback_var.set("")
-        self.status_var.set("Höre zu… (Wiederholung)" if was_repeat else "Höre zu…")
+        self.status_var.set("Höre zu…")
         self.play_current()
+
+    def _after_error(self):
+        """Falsches oder verpasstes Zeichen: später erneut abfragen und es
+        jetzt, mit der Lösung vor Augen, noch einmal vorspielen."""
+        self.retries.add(self.current_char)
+        self.correcting = True  # Leertaste würde die Korrektur abbrechen
+        self.timeout_token += 1
+        token = self.timeout_token
+        self.root.after(FEEDBACK_MS, self._play_correction, token)
+
+    def _play_correction(self, token):
+        if not self.running or token != self.timeout_token:
+            return
+        self.status_var.set(f"So klingt {self.current_char}:")
+        wpm, freq = self.voice
+        try:
+            audio.play(build_samples(self.current_char, wpm, freq))
+        except audio.AudioError as exc:
+            self.stop()
+            self.status_var.set(str(exc))
+            return
+        dur_ms = int(duration_seconds(self.current_char, wpm) * 1000) + int(AUDIO_LATENCY * 1000)
+        self.root.after(dur_ms + AFTER_CORRECTION_MS, self._after_correction, token)
+
+    def _after_correction(self, token):
+        if self.running and token == self.timeout_token:
+            self.next_char()
 
     def _pick_voice(self):
         # Falls das WPM-/Tonhöhe-Feld gerade mitten im Bearbeiten ist (z. B.
@@ -234,7 +304,6 @@ class SingleModeFrame:
         self.session_stats.record_char(
             self.current_char, "", False, reaction_time, code_units(self.current_char) * 1.2 / reaction_time
         )
-        self.repeat_pending = True
         if self.first_hearing:
             self.limit = next_limit(self.limit, False)
             self._show_limit()
@@ -243,7 +312,7 @@ class SingleModeFrame:
         self.feedback_var.set(f"Zu langsam: war {self.current_char}")
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
-        self.root.after(700, self.next_char)
+        self._after_error()
 
     def _add_history(self, correct: bool):
         self.history.append(correct)
@@ -252,7 +321,7 @@ class SingleModeFrame:
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 
     def repeat_char(self):
-        if self.running and self.current_char:
+        if self.running and self.current_char and not self.correcting:
             self.first_hearing = False
             self.waiting_for_input = False
             self.status_var.set("Höre zu… (Wiederholung)")
@@ -277,7 +346,6 @@ class SingleModeFrame:
         self.session_stats.record_char(
             self.current_char, typed, correct, reaction_time, effective_wpm, latency=latency
         )
-        self.repeat_pending = not correct
         if self.icr_var.get() and self.first_hearing:
             self.limit = next_limit(self.limit, correct)
             self._show_limit()
@@ -294,4 +362,7 @@ class SingleModeFrame:
             self.feedback_label.config(foreground=theme.ERROR)
 
         self._add_history(correct)
-        self.root.after(700, self.next_char)
+        if correct:
+            self.root.after(FEEDBACK_MS, self.next_char)
+        else:
+            self._after_error()

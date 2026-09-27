@@ -74,7 +74,14 @@ class CharPicker:
             weights.append(weight)
         return weights
 
-    def pick(self, k: int = 1) -> str:
-        if not self.weighted:
-            return "".join(random.choice(self.charset) for _ in range(k))
-        return "".join(random.choices(self.charset, weights=self.weights(), k=k))
+    def pick(self, k: int = 1, exclude: str = "") -> str:
+        """`exclude`: Zeichen, die gerade nicht gezogen werden sollen (bleibt
+        dann keins übrig, zählt es nicht)."""
+        pairs = [(ch, w) for ch, w in zip(self.charset, self._all_weights()) if ch not in exclude]
+        if not pairs:
+            pairs = list(zip(self.charset, self._all_weights()))
+        chars, weights = zip(*pairs)
+        return "".join(random.choices(chars, weights=weights, k=k))
+
+    def _all_weights(self):
+        return self.weights() if self.weighted else [1.0] * len(self.charset)

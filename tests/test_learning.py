@@ -1,5 +1,6 @@
 """Tests für die Lernhilfen: Koch-Lektionen, Wörter, Auswertung von
 Gruppen per Alignment und die mitwachsende Gruppenlänge."""
+import random
 import tempfile
 import unittest
 from pathlib import Path
@@ -212,3 +213,22 @@ class TempoHistoryTest(unittest.TestCase):
                 session.record_char("K", "K", True, 0.5, 20.0)
                 session.finalize({"wpm_reached": 27, "wpm_end": 25})
                 self.assertEqual(stats.load_history()[0]["wpm"], 27)
+
+
+class RetryQueueTest(unittest.TestCase):
+    def test_missed_char_returns_after_some_others(self):
+        from morsetrainer.modes.single_mode import RETRY_AFTER, RetryQueue
+        for seed in range(20):
+            queue = RetryQueue(random.Random(seed))
+            queue.add("B")
+            others = 0
+            while queue.next_due() is None:
+                others += 1
+            self.assertTrue(RETRY_AFTER[0] <= others <= RETRY_AFTER[1])
+            self.assertIsNone(queue.next_due())
+
+    def test_picker_skips_excluded_chars(self):
+        from morsetrainer.core.weighting import CharPicker
+        picker = CharPicker("KM", weighted=False)
+        self.assertTrue(all(picker.pick(exclude="M") == "K" for _ in range(20)))
+        self.assertIn(picker.pick(exclude="KM"), "KM")  # nichts übrig: Ausschluss entfällt

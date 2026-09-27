@@ -34,7 +34,11 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
    Optionen“ mit **Koch-Tempo 20/10** das empfohlene Tempo setzen: Die Zeichen kommen schnell genug, dass du
    sie als Klangbild hörst statt Punkte und Striche zu zählen, dafür mit
    längeren Pausen dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
-2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen.
+2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen. Das **Zeitlimit**
+   ist von Anfang an eingeschaltet: Es bleibt keine Zeit zum Zählen von
+   Punkten und Strichen, das Zeichen muss als Klangbild kommen. Ein falsch
+   erkanntes Zeichen hörst du gleich noch einmal, während die Lösung
+   dasteht; abgefragt wird es erst nach ein paar anderen Zeichen wieder.
 3. Im Reiter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
    Einzelzeichen. Falsche Stellen werden markiert, und nach 3 Fehlversuchen
    siehst und hörst du die Lösung.
@@ -44,10 +48,7 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
    öfter dran.
 5. Ab etwa Lektion 5 lohnt sich der Reiter **Wörter**, danach
    **Kontinuierlich** und **QSO**.
-6. Sitzen die Zeichen, im Reiter **Einzelzeichen** das **Zeitlimit**
-   einschalten: Dann bleibt keine Zeit mehr zum Zählen, das Zeichen muss als
-   Reflex kommen.
-7. Im Reiter **Statistik** zeigt „Die 4 häufigsten gezielt üben“, welche
+6. Im Reiter **Statistik** zeigt „Die 4 häufigsten gezielt üben“, welche
    Zeichen du verwechselst, und übt genau diese gegeneinander. „↩ Lektion“
    oben führt zurück zu deiner Lektion.
 
