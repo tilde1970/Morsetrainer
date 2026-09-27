@@ -19,7 +19,7 @@ an Fehlversuchen wird die Lösung gezeigt und noch einmal vorgespielt.
 
 Ehrliche Messwerte: In die Zeichenstatistik (und damit Gewichtung und
 Gesamtstatistik) geht nur der erste Versuch ein; nach Wiederholen oder (ohne
-Latenz je Zeichen) zu langsam zählen richtige Zeichen mit Höchstlatenz. Für den Koch-Aufstieg
+Latenz je Zeichen) zu langsam zählen richtige Zeichen mit doppelter üblicher Latenz (höchstens 5 s). Für den Koch-Aufstieg
 zählt ein erster Versuch nur, wenn die Sequenz nicht wiederholt wurde
 (Leertaste) und die Antwort innerhalb des Zeitfensters kam (answer_limit);
 zu viel Getipptes zählt als Fehler. Kopfhören beruht auf Selbstbewertung
@@ -51,6 +51,7 @@ from morsetrainer.core.morse import (
     code_units, display_text, vary_voice,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
+from morsetrainer.core.weighting import CharPicker
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
@@ -172,6 +173,10 @@ class SequenceModeFrame:
         """Nach jeder Auswertung; `attempts` zählt die Versuche für diese
         Sequenz einschließlich des aktuellen."""
         pass
+
+    def _latency_charset(self) -> str:
+        """Zeichen, deren übliche Latenz den Maßstab für „unsicher“ gibt."""
+        return self._log_charset()
 
     def _explain(self, sequence: str) -> str:
         """Zusatz zur Rückmeldung, z. B. die Bedeutung einer Abkürzung."""
@@ -408,6 +413,10 @@ class SequenceModeFrame:
             self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
         )
         self._setup_pickers(self.weighted_var.get())
+        # Latenz für richtig, aber unsicher (siehe on_submit): doppelt so lang
+        # wie üblich, höchstens LATENCY_CAP_S; ohne Messwerte die Obergrenze.
+        median = CharPicker(self._latency_charset(), weighted=True).median_latency()
+        self.unsure_latency = min(2 * median, LATENCY_CAP_S) if median else LATENCY_CAP_S
         self.history = []
         self.history_var.set("")
         self.stats_panel.reset()
@@ -695,14 +704,14 @@ class SequenceModeFrame:
         # Nur der erste Versuch geht in die Zeichenstatistik; bei der
         # Wiederholung ist die Sequenz schon bekannt. Mit Wiederholen (Leertaste)
         # oder, ohne Latenz je Zeichen, zu langsam ist ein richtiges Zeichen
-        # richtig, aber nicht flüssig: es bekommt die Höchstlatenz, damit die
-        # Gewichtung es öfter bringt, ohne die Trefferquote zu drücken.
+        # richtig, aber nicht flüssig: es bekommt die doppelte übliche Latenz,
+        # damit die Gewichtung es öfter bringt, ohne die Trefferquote zu drücken.
         if self.attempts == 0:
             unsure = self.replayed or (slow and self.style != COPY)
             for index, (expected, got, typed_index) in enumerate(results):
                 reaction_time, latency = self._char_timing(index, typed_index)
                 if unsure and got == expected:
-                    latency = LATENCY_CAP_S
+                    latency = self.unsure_latency
                 effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
                 self.session_stats.record_char(
                     expected, got, got == expected, reaction_time, effective_wpm, latency=latency

@@ -97,6 +97,12 @@ class GroupEvaluationTest(AppTestCase):
         self.assertEqual([r["correct"] for r in rounds], [True] * 5 + [False])  # Quote ehrlich
         self.assertTrue(all(r["latency_s"] == stats.LATENCY_CAP_S for r in rounds if r["correct"]))
 
+    def test_unsure_latency_is_twice_the_usual(self):
+        with mock.patch.object(sq.CharPicker, "median_latency", lambda self: 0.8):
+            self._start(sq.MEMORIZE)
+        self._answer("KMU", "KMU", replayed=True)
+        self.assertEqual({r["latency_s"] for r in self.group.session_stats.rounds}, {1.6})
+
     def test_second_attempt_hides_solution_and_is_not_recorded(self):
         self._start()
         self._answer("KMU", "KKK")

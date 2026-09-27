@@ -437,6 +437,9 @@ class CallsignModeFrame(SequenceModeFrame):
         scores = [max(char_weight[ch] for ch in call) for call in candidates]
         return random.choices(candidates, weights=scores)[0]
 
+    def _latency_charset(self) -> str:
+        return CALL_CHARS  # _log_charset ist hier nur eine Beschriftung
+
     def _log_charset(self) -> str:
         if not self.pool:
             return "A-Z0-9 (Rufzeichen-Muster)"

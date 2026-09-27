@@ -59,10 +59,15 @@ class CharPicker:
             count += len(e["latencies"])
         return total / count if count >= MIN_LATENCY_SAMPLES else None
 
+    def median_latency(self):
+        """Median der mittleren Latenzen über den Zeichensatz, oder None,
+        solange kein Zeichen genug Messungen hat."""
+        known = [lat for lat in map(self._mean_latency, self.charset) if lat is not None]
+        return statistics.median(known) if known else None
+
     def weights(self):
         latencies = {ch: self._mean_latency(ch) for ch in self.charset}
-        known = [lat for lat in latencies.values() if lat is not None]
-        median = statistics.median(known) if known else 0.0
+        median = self.median_latency() or 0.0
 
         weights = []
         for ch in self.charset:
