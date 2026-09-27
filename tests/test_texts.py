@@ -50,14 +50,15 @@ class QsoTextTest(unittest.TestCase):
                                     self.assertIn(cell[0], full_text, f"{label}: {cell[0]} nie gesendet")
 
     def test_contest_qso_count_follows_length(self):
-        for length, count in enumerate(qso_text.CONTEST_QSO_COUNTS):
-            qso = qso_text.generate_qso("cqww", length)
-            self.assertEqual(len(qso.quiz_rows), count + 1)  # + Run-Station
+        for length, (low, high) in enumerate(qso_text.CONTEST_QSO_RANGES):
+            for _ in range(10):
+                qso = qso_text.generate_qso("cqww", length)
+                self.assertTrue(low + 1 <= len(qso.quiz_rows) <= high + 1)  # + Run-Station
 
     def test_pileup_callers_are_extra_stations(self):
         seen = False
         for _ in range(100):
-            qso = qso_text.generate_qso("wpx", qso_text.LENGTH_LONG)
+            qso = qso_text.generate_qso("wpx", qso_text.LENGTH_LONG, qso_text.PILEUP_PROBABILITY)
             worked = len(qso.quiz_rows)  # Run-Station + gearbeitete Anrufer
             for tx_index, others in qso.pileups:
                 seen = True
@@ -66,6 +67,24 @@ class QsoTextTest(unittest.TestCase):
                     self.assertGreaterEqual(station, worked)
                     self.assertGreaterEqual(delay, 0)
         self.assertTrue(seen, "in 100 Runs kein einziger Pile-up")
+
+    def test_no_pileups_by_default(self):
+        for _ in range(30):
+            self.assertEqual(qso_text.generate_qso("wpx", qso_text.LENGTH_LONG).pileups, ())
+
+    def test_facts_are_actually_sent(self):
+        for kind in ("ragchew", "cqww", "wag"):
+            for length in range(len(qso_text.CONTEST_QSO_RANGES)):
+                qso = qso_text.generate_qso(kind, length)
+                self.assertGreaterEqual(len(qso.facts), 3)
+                text = qso.text()
+                for question, (expected, fact_kind) in qso.facts:
+                    if "Wie viele" in question:
+                        continue
+                    self.assertIn(expected.rstrip("W"), text, question)
+                    # Keine Frage nennt ein Rufzeichen, nach dem eine andere fragt.
+                    if kind == "ragchew":
+                        self.assertFalse(any(call in question for call in qso.calls), question)
 
     def test_zones(self):
         dl = qso_text._country_of("DL4YM")

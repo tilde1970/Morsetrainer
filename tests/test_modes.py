@@ -361,6 +361,70 @@ class QsoRevealTest(AppTestCase):
         self.assertEqual(str(q.reveal_button["state"]), "normal")
 
 
+class QsoHeadCopyTest(AppTestCase):
+    def _qso(self, mode):
+        from morsetrainer.core import qso_text
+        from morsetrainer.modes import qso_mode
+        q = self.mode("QSO")
+        q.eval_var.set(qso_mode.EVAL_LABELS[mode])
+        q.qso = qso_text.generate_qso(qso_text.RAGCHEW, qso_text.LENGTH_NORMAL)
+        q.voices, q.fw = ((20, 600), (20, 700)), None
+        q.quiz_checked, q.replays = False, 0
+        return q, qso_mode
+
+    def test_head_copy_asks_a_few_content_questions(self):
+        q, qso_mode = self._qso("head")
+        view = q._quiz_view()
+        self.assertEqual(len(view.quiz_rows), qso_mode.HEAD_QUESTIONS)
+        self.assertEqual(view.quiz_columns, ("Antwort (wie gesendet)",))
+        q.quiz.reset(view)
+        q.quiz_ready = True
+        q._update_layout()
+        self.assertEqual(q.notes_box.winfo_manager(), "")  # kein Notizfeld beim Kopfhören
+        self.assertEqual(q.quiz_box.winfo_manager(), "pack")
+
+    def test_head_copy_blocks_replay_and_keeps_tempo(self):
+        q, _ = self._qso("head")
+        q.qso_eval = "head"
+        q.adaptive_var.set(True)
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_enabled_var.set(False)
+        q.replay()
+        self.assertEqual(q.replays, 0)
+        self.assertFalse(q.running)
+        q._on_quiz_checked(3, 3)
+        self.assertEqual(self.app.wpm_var.get(), 20)
+        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["mode"], "qso_head")
+
+    def test_mode_is_fixed_at_start(self):
+        q, qso_mode = self._qso("quiz")
+        q.qso_eval = "quiz"
+        q.eval_var.set(qso_mode.EVAL_LABELS["head"])  # nach dem Hören umgeschaltet
+        q._on_quiz_checked(5, 8)
+        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["mode"], "qso_quiz")
+
+    def test_replays_before_check_are_logged_and_freeze_tempo(self):
+        q, _ = self._qso("quiz")
+        q.adaptive_var.set(True)
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_enabled_var.set(False)
+        q.replays = 2
+        q._on_quiz_checked(8, 8)
+        self.assertIn("2× „Nochmal“", q.status_var.get())
+        self.assertEqual(self.app.wpm_var.get(), 20)
+        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["replays"], 2)
+
+    def test_pileups_only_for_contests_and_short_default(self):
+        from morsetrainer.core import qso_text
+        q = self.mode("QSO")
+        self.assertEqual(q.length_var.get(), "Kurz")
+        self.assertEqual(str(q.pileup_combo["state"]), "disabled")  # normales QSO
+        q.kind_var.set(qso_text.QSO_TYPES["cqww"])
+        self.assertEqual(str(q.pileup_combo["state"]), "readonly")
+        self.assertEqual(q.pileup_var.get(), "aus")
+        self.assertIn("Min.", q.length_hint_var.get())
+
+
 class QsoTempoTest(AppTestCase):
     def test_automatic_tempo_changes_pauses_first(self):
         q = self.mode("QSO")

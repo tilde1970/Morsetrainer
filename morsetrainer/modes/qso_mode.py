@@ -12,12 +12,19 @@ Drei Arten der Auswertung:
 - Fortlaufend mittippen: wie im Kontinuierlich-Modus jedes Zeichen
   mittippen; am Ende Levenshtein-Abgleich mit dem gesendeten Text, die
   Zeichen fließen in die Statistik ein.
+- Kopfhören + Fragen: ohne Notizen zuhören, danach einige zufällige
+  Inhaltsfragen (Name, QTH, Rig, Wetter … bzw. Austausch, Anzahl QSOs).
 - Nur hören: keine Bewertung, der Klartext lässt sich jederzeit aufdecken.
+
+Wie oft ein QSO vor dem Prüfen mit „Nochmal“ wiederholt wurde, wird
+mitprotokolliert; dann passt die Tempo-Automatik das Tempo nicht an.
+Pile-ups (gleichzeitige Anrufer im Contest) sind einstellbar, Standard aus.
 
 Zuschaltbar sind Kurzwellen-Bandbedingungen (Rauschen mit Knackstörungen,
 QSB, Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz), siehe band.py.
 
 Unabhängig vom oben eingestellten Zeichensatz."""
+import dataclasses
 import random
 import threading
 import time
@@ -33,19 +40,26 @@ from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
 from morsetrainer.core.morse import (
-    MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence,
+    MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, duration_seconds, silence,
     word_gap_extra_seconds,
 )
 from morsetrainer.core import stats
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.widgets.stats_widget import StatsPanel
 
-EVAL_QUIZ, EVAL_TYPING, EVAL_LISTEN = "quiz", "typing", "listen"
+EVAL_QUIZ, EVAL_TYPING, EVAL_HEAD, EVAL_LISTEN = "quiz", "typing", "head", "listen"
 EVAL_LABELS = {
     EVAL_QUIZ: "Mitschreiben + Abfrage",
     EVAL_TYPING: "Fortlaufend mittippen",
+    EVAL_HEAD: "Kopfhören + Fragen",
     EVAL_LISTEN: "Nur hören",
 }
+# Auswertungen mit Abfrage-Tabelle (Prüfen, Text erst danach).
+QUIZ_MODES = (EVAL_QUIZ, EVAL_HEAD)
+# So viele Inhaltsfragen beim Kopfhören.
+HEAD_QUESTIONS = 3
+# Pile-ups im Contest: Beschriftung -> Anteil der Anrufe mit weiteren Rufern.
+PILEUP_LEVELS = {"aus": 0.0, "selten": 0.2, "oft": qso_text.PILEUP_PROBABILITY}
 LENGTH_LABELS = ["Kurz", "Normal", "Lang"]  # Index = qso_text.LENGTH_*
 
 # Pause zwischen zwei Durchgängen (Umschalten auf Empfang, Gegenstation
@@ -75,6 +89,20 @@ ADAPTIVE_STEPS = ((0.9, 1), (0.6, 0), (0.0, -1))
 
 # Station 1 bzw. Run-Station, dann abwechselnd für die Gegenstationen.
 STATION_COLORS = ("#1f5fbf", "#b35900", "#2e8b57")
+
+
+def estimate_minutes(kind: str, length: int, wpm: int, fw=None, samples: int = 3) -> float:
+    """Geschätzte Dauer eines QSOs dieser Art und Länge (Mittel über einige
+    zufällige QSOs, ohne Pile-ups und Hörpausen der Stationen)."""
+    total = 0.0
+    for _ in range(samples):
+        qso = qso_text.generate_qso(kind, length)
+        gap = CONTEST_TX_GAP_SECONDS if qso.is_contest else TX_GAP_SECONDS
+        for _, text in qso.transmissions:
+            words = text.split()
+            total += sum(duration_seconds(ch, wpm, fw) for word in words for ch in word)
+            total += word_gap_extra_seconds(wpm, fw) * (len(words) - 1) + gap
+    return total / samples / 60
 
 
 def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
@@ -115,8 +143,11 @@ class QsoModeFrame:
         self.revealed = False
         self.quiz_ready = False    # QSO einmal komplett gelaufen, Abfrage verfügbar
         self.quiz_checked = False
+        self.qso_eval = EVAL_QUIZ  # Auswertungsart des aktuellen QSOs (beim Start festgehalten)
 
         self._build_widgets(ScrollableFrame(parent).inner)
+        self.wpm_var.trace_add("write", lambda *_: self._update_length_hint())
+        self._on_kind_change()
         self._update_layout()
 
     # --- Widgets --------------------------------------------------------
@@ -204,7 +235,7 @@ class QsoModeFrame:
         ttk.Label(box, text="Länge:").grid(row=2, column=0, sticky="w", **row_pad)
         length_row = ttk.Frame(box)
         length_row.grid(row=2, column=1, sticky="w", pady=(2, 6))
-        self.length_var = tk.StringVar(value=LENGTH_LABELS[qso_text.LENGTH_NORMAL])
+        self.length_var = tk.StringVar(value=LENGTH_LABELS[qso_text.LENGTH_SHORT])
         self.length_combo = ttk.Combobox(
             length_row, textvariable=self.length_var, values=LENGTH_LABELS, state="readonly", width=10
         )
@@ -212,11 +243,20 @@ class QsoModeFrame:
         self.length_hint_var = tk.StringVar(value="")
         theme.hint(length_row, textvariable=self.length_hint_var).pack(side="left", padx=(8, 0))
 
+        ttk.Label(box, text="Pile-ups:").grid(row=3, column=0, sticky="w", **row_pad)
+        pileup_row = ttk.Frame(box)
+        pileup_row.grid(row=3, column=1, sticky="w", pady=(0, 6))
+        self.pileup_var = tk.StringVar(value="aus")
+        self.pileup_combo = ttk.Combobox(pileup_row, textvariable=self.pileup_var, values=list(PILEUP_LEVELS),
+                                         state="readonly", width=10)
+        self.pileup_combo.pack(side="left")
+        theme.hint(pileup_row, text="(im Contest rufen weitere Stationen gleichzeitig)").pack(side="left", padx=(8, 0))
+
         self.adaptive_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             box, text="Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert das Tempo oben)",
             variable=self.adaptive_var,
-        ).grid(row=3, column=0, columnspan=2, sticky="w")
+        ).grid(row=4, column=0, columnspan=2, sticky="w")
 
     def _kind(self) -> str:
         for key, label in qso_text.QSO_TYPES.items():
@@ -233,15 +273,24 @@ class QsoModeFrame:
 
     def _on_kind_change(self):
         self._update_length_hint()
+        self.pileup_combo.config(state="disabled" if self._kind() == qso_text.RAGCHEW else "readonly")
         if self.qso is None:
             self._update_layout()
 
     def _update_length_hint(self):
-        if self._kind() == qso_text.RAGCHEW:
-            self.length_hint_var.set("")
-        else:
-            count = qso_text.CONTEST_QSO_COUNTS[LENGTH_LABELS.index(self.length_var.get())]
-            self.length_hint_var.set(f"{count} QSOs")
+        length = LENGTH_LABELS.index(self.length_var.get())
+        parts = []
+        if self._kind() != qso_text.RAGCHEW:
+            low, high = qso_text.CONTEST_QSO_RANGES[length]
+            parts.append(f"{low}–{high} QSOs")
+        try:
+            wpm = self.wpm_var.get()
+        except tk.TclError:
+            wpm = None
+        if wpm:
+            minutes = estimate_minutes(self._kind(), length, wpm, self.farnsworth_wpm())
+            parts.append(f"ca. {max(round(minutes), 1)} Min. bei {tempo.label(wpm, self.farnsworth_wpm())}")
+        self.length_hint_var.set(" · ".join(parts))
 
     def _eval_mode(self) -> str:
         for key, label in EVAL_LABELS.items():
@@ -261,7 +310,7 @@ class QsoModeFrame:
         boxes = [
             (self.notes_box, mode == EVAL_LISTEN or (mode == EVAL_QUIZ and not contest and not self.quiz_checked)),
             (self.typed_box, mode == EVAL_TYPING),
-            (self.quiz_box, mode == EVAL_QUIZ and (self.quiz_ready or live_log)),
+            (self.quiz_box, mode in QUIZ_MODES and (self.quiz_ready or live_log)),
             (self.reveal_box, self.revealed),
             (self.stats_box, mode == EVAL_TYPING),
         ]
@@ -275,7 +324,7 @@ class QsoModeFrame:
     def _update_reveal_button(self):
         # Während des ersten Durchlaufs nur im reinen Hörmodus aufdeckbar,
         # sonst wäre die Abfrage bzw. das Mittippen witzlos.
-        if self._eval_mode() == EVAL_QUIZ:
+        if self._eval_mode() in QUIZ_MODES:
             # Bei der Abfrage erst nach „Prüfen“, sonst ließe sich abschreiben.
             allowed = self.qso is not None and self.quiz_checked
         else:
@@ -300,7 +349,8 @@ class QsoModeFrame:
         except tk.TclError:
             self.status_var.set("Ungültige Geschwindigkeit oder Tonhöhe!")
             return
-        self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()))
+        self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()),
+                                         PILEUP_LEVELS.get(self.pileup_var.get(), 0.0))
         if self.qso.is_contest:
             offsets, wpm_offsets = CONTEST_FREQ_OFFSET_RANGE, CONTEST_WPM_OFFSETS
         else:
@@ -315,13 +365,33 @@ class QsoModeFrame:
         self.quiz_ready = False
         self.quiz_checked = False
         self.char_marks = None
-        self.quiz.reset(self.qso)
+        self.replays = 0  # „Nochmal“ vor dem Prüfen
+        # Auswertungsart beim Start festhalten: wer mit Notizen hört und vor
+        # dem Prüfen auf Kopfhören umschaltet, soll nicht als Kopfhören zählen.
+        self.qso_eval = self._eval_mode()
+        self.quiz.reset(self._quiz_view())
         self.notes.delete("1.0", "end")
         self._play(tracking=self._eval_mode() == EVAL_TYPING)
+
+    def _quiz_view(self):
+        """Was die Abfrage-Tabelle zeigt: beim Kopfhören einige zufällige
+        Inhaltsfragen statt des ganzen Logs."""
+        if self._eval_mode() != EVAL_HEAD or not self.qso.facts:
+            return self.qso
+        facts = random.sample(self.qso.facts, min(HEAD_QUESTIONS, len(self.qso.facts)))
+        return dataclasses.replace(self.qso, quiz_columns=("Antwort (wie gesendet)",),
+                                   quiz_rows=tuple((question, (cell,)) for question, cell in facts))
 
     def replay(self):
         """Spielt das letzte QSO noch einmal ab, ohne Auswertung."""
         if self.qso is not None and not self.running:
+            if not self.quiz_checked:
+                if self.qso_eval == EVAL_HEAD:
+                    # Mit den Fragen vor Augen nochmal hören wäre gezieltes
+                    # Mitschreiben statt Kopfhören.
+                    self.status_var.set("Erst die Fragen beantworten und prüfen – dann „Nochmal“.")
+                    return
+                self.replays += 1
             self._play(tracking=False)
 
     def _play(self, tracking: bool):
@@ -471,7 +541,8 @@ class QsoModeFrame:
             self.play_thread.join(timeout=2)
             self.play_thread = None
         self.start_button.config(text="Neues QSO (F5)")
-        self.replay_button.config(state="normal")
+        head_unchecked = self.qso_eval == EVAL_HEAD and not self.quiz_checked
+        self.replay_button.config(state="disabled" if head_unchecked else "normal")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
             combo.config(state="readonly")
 
@@ -481,6 +552,8 @@ class QsoModeFrame:
             self.revealed = True
             self.tracking = False
             self.status_var.set("Ausgewertet – rot markiert: falsch oder verpasst." + self._adapt_speed(accuracy))
+        elif mode == EVAL_HEAD and not self.quiz_checked:
+            self.status_var.set("Beantworte die Fragen und drück „Prüfen“.")
         elif mode == EVAL_QUIZ and not self.quiz_checked:
             what = "Ergänze dein Log" if self.qso.is_contest else "Trag ein, was du gehört hast,"
             self.status_var.set(f"{what} und drück „Prüfen“.")
@@ -572,12 +645,23 @@ class QsoModeFrame:
 
     # --- Abfrage ------------------------------------------------------------
     def _on_quiz_checked(self, correct: int, total: int):
-        stats.log_result("qso_quiz", correct, total, tempo.effective(self.voices[0][0], self.fw), kind=self.qso.kind,
-                         length=self.length_var.get())
+        head = self.qso_eval == EVAL_HEAD
+        mode = "qso_head" if head else "qso_quiz"
+        stats.log_result(mode, correct, total, tempo.effective(self.voices[0][0], self.fw), kind=self.qso.kind,
+                         length=self.length_var.get(), replays=self.replays)
         self.on_stop_cb()  # Statistik-Reiter (Verlauf) aktualisieren
         self.quiz_checked = True
         self.revealed = True
-        self.status_var.set("Abfrage ausgewertet." + self._adapt_speed(correct / total if total else None))
+        self.replay_button.config(state="normal")
+        if self.replays:
+            # Mehrfach gehört: das Ergebnis sagt wenig über das Tempo.
+            times = "einmal" if self.replays == 1 else f"{self.replays}×"
+            note = f" (vorher {times} „Nochmal“ – Tempo bleibt)"
+        elif head:
+            note = ""  # drei Fragen sind zu wenig, um das Tempo anzupassen
+        else:
+            note = self._adapt_speed(correct / total if total else None)
+        self.status_var.set("Abfrage ausgewertet." + note)
         self._render_reveal()
         self._update_layout()
         self._update_reveal_button()
@@ -603,7 +687,7 @@ class QsoModeFrame:
             self.replay()
         elif key == "F7" and str(self.reveal_button["state"]) != "disabled":
             self.toggle_reveal()
-        elif key == "F8" and self._eval_mode() == EVAL_QUIZ and self.quiz_ready:
+        elif key == "F8" and self._eval_mode() in QUIZ_MODES and self.quiz_ready:
             self.quiz.check()
 
     def settings(self) -> dict:
@@ -614,6 +698,7 @@ class QsoModeFrame:
             "eval": self._eval_mode(),
             "length": LENGTH_LABELS.index(self.length_var.get()),
             "adaptive": self.adaptive_var.get(),
+            "pileups": self.pileup_var.get(),
             "band": self.band_panel.settings(),
         }
 
@@ -629,6 +714,8 @@ class QsoModeFrame:
             self.length_var.set(LENGTH_LABELS[length])
         if isinstance(data.get("adaptive"), bool):
             self.adaptive_var.set(data["adaptive"])
+        if data.get("pileups") in PILEUP_LEVELS:
+            self.pileup_var.set(data["pileups"])
         self.band_panel.restore(data.get("band"))
 
     def on_close(self):

@@ -301,6 +301,7 @@ HISTORY_MODES = {
     "continuous": "Kontinuierlich",
     "qso": "QSO mittippen",
     "qso_quiz": "QSO-Abfrage",
+    "qso_head": "QSO-Kopfhören",
     "contest": "Contest (aktiv)",
 }
 

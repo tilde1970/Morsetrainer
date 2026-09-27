@@ -27,10 +27,12 @@ from morsetrainer.core.morse import BK, KN, MORSE_CODE, SK
 # Lang: + Antenne, Alter, lizenziert seit, QSL-Info.
 # Im Contest bestimmt die Länge die Anzahl der QSOs im Run.
 LENGTH_SHORT, LENGTH_NORMAL, LENGTH_LONG = 0, 1, 2
-CONTEST_QSO_COUNTS = (3, 5, 8)
+# QSOs je Contest-Run und Länge; zufällig aus der Spanne, damit man die
+# Anzahl (eine Kopfhör-Frage) nicht aus der Einstellung ablesen kann.
+CONTEST_QSO_RANGES = ((2, 4), (4, 6), (7, 9))
 # Anteil der Anrufe, bei denen weitere Stationen gleichzeitig rufen, und
 # wie viele.
-PILEUP_PROBABILITY = 0.45
+PILEUP_PROBABILITY = 0.45  # Stufe „oft“; Standard sind keine Pile-ups
 PILEUP_EXTRA_CALLERS = (1, 2)
 
 RAGCHEW = "ragchew"
@@ -45,6 +47,8 @@ QSO_TYPES = {
 
 # Arten, wie ein Abfragefeld verglichen wird (siehe qso_mode.normalize).
 TEXT, RST, NUMBER = "text", "rst", "number"
+# DOK (WAG): „A5“ und „A05“ sind derselbe; Leistung: „100W“ und „100“.
+DOK, POWER = "dok", "power"
 
 
 @dataclass(frozen=True)
@@ -178,6 +182,9 @@ class Qso:
     # Verzögerung in s), …)), …). Ihre Stationsindizes folgen in `calls` nach
     # den gearbeiteten Stationen.
     pileups: tuple = ()
+    # Inhaltsfragen fürs Kopfhören: ((Frage, (Erwartet, Art)), …); daraus
+    # werden nach dem QSO einige zufällig gestellt.
+    facts: tuple = ()
 
     @property
     def is_contest(self) -> bool:
@@ -310,10 +317,12 @@ def _check(txs) -> None:
         assert all(ch == " " or ch in MORSE_CODE for ch in text), text
 
 
-def generate_qso(kind: str = RAGCHEW, length: int = LENGTH_NORMAL) -> Qso:
+def generate_qso(kind: str = RAGCHEW, length: int = LENGTH_NORMAL, pileup_probability: float = 0.0) -> Qso:
+    """`pileup_probability`: Anteil der Anrufe im Contest, bei denen weitere
+    Stationen gleichzeitig rufen (0 = keine Pile-ups)."""
     if kind == RAGCHEW:
         return _generate_ragchew(length)
-    return _generate_contest(kind, CONTEST_QSO_COUNTS[length])
+    return _generate_contest(kind, random.randint(*CONTEST_QSO_RANGES[length]), pileup_probability)
 
 
 # --- Normales QSO -------------------------------------------------------------
@@ -372,8 +381,33 @@ def _generate_ragchew(length: int) -> Qso:
         txs.append((1, f"{a.call} DE {b.call} R TNX {a.name} FER QSO 73 ES GD DX {SK} {a.call} DE {b.call} TU E E"))
 
     _check(txs)
+    # Fragen nach der Rolle, nicht nach dem Rufzeichen: sonst verriete
+    # „Name von DL1ABC“ die Antwort auf „Rufzeichen der CQ-Station“.
+    facts = []
+    stations = ((a, rst_a, "der CQ-Station", "die CQ-Station"), (b, rst_b, "der antwortenden Station",
+                                                                  "die antwortende Station"))
+    for st, rst, of, subject in stations:
+        facts += [
+            (f"Rufzeichen {of}", (st.call, TEXT)),
+            (f"Name {of}", (st.name, TEXT)),
+            (f"QTH {of}", (st.qth, TEXT)),
+            (f"Rapport, den {subject} gab", (rst, RST)),
+        ]
+    # Rig, Leistung, Wetter gibt es erst ab normaler Länge (dann von beiden).
+    for st, _, of, subject in stations if length >= LENGTH_NORMAL else ():
+        facts += [
+            (f"Rig {of}", (st.rig, TEXT)),
+            (f"Leistung {of}", (st.pwr, POWER)),
+            (f"Wetter {of}", (st.wx.split()[0], TEXT)),
+        ]
+        if length >= LENGTH_LONG:
+            facts += [
+                (f"Antenne {of}", (st.ant, TEXT)),
+                (f"Alter des OPs {of}", (str(st.age), NUMBER)),
+                (f"Lizenzjahr des OPs {of}", (str(st.licensed), NUMBER)),
+            ]
     return Qso(
-        kind=RAGCHEW, calls=(a.call, b.call), transmissions=tuple(txs),
+        kind=RAGCHEW, calls=(a.call, b.call), transmissions=tuple(txs), facts=tuple(facts),
         quiz_columns=("Station 1 (CQ)", "Station 2"),
         quiz_rows=(
             ("Rufzeichen", ((a.call, TEXT), (b.call, TEXT))),
@@ -407,7 +441,7 @@ class _Exchange:
         self.country = country
         self.serial = first_serial
         if kind == "wag" and country.key == "DL":
-            self.fixed = (f"{random.choice(DOK_LETTERS)}{random.randint(1, 60):02d}", TEXT)
+            self.fixed = (f"{random.choice(DOK_LETTERS)}{random.randint(1, 60):02d}", DOK)
         elif kind == "cqww":
             self.fixed = (str(cq_zone(call, country)), NUMBER)
         elif kind == "arrldx" and country.key == "W":
@@ -440,7 +474,7 @@ def _pick_contest_call(kind: str, exclude, countries, hq_probability: float):
     return _pick_call(exclude, countries)
 
 
-def _generate_contest(kind: str, count: int) -> Qso:
+def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) -> Qso:
     # WAG: DL arbeitet alle; ARRL DX: der Rest der Welt arbeitet W/VE.
     run_countries = {"wag": {"DL"}, "arrldx": {c.key for c in COUNTRIES} - {"W"}}.get(kind)
     caller_countries = {"arrldx": {"W"}}.get(kind)
@@ -472,7 +506,7 @@ def _generate_contest(kind: str, count: int) -> Qso:
                 f"CQ {test} {run} {run}", f"CQ {run} {run} {test}", f"CQ {test} {run}", f"{test} {run}",
             ]))
         send(station, call if random.random() < 0.7 else f"{call} {call}")
-        if random.random() < PILEUP_PROBABILITY:
+        if random.random() < pileup_probability:
             others = []
             for _ in range(random.randint(*PILEUP_EXTRA_CALLERS)):
                 other, _ = _pick_contest_call(kind, used, caller_countries, IARU_HQ_CALLER_PROBABILITY)
@@ -498,8 +532,11 @@ def _generate_contest(kind: str, count: int) -> Qso:
         rows.append((f"QSO {station}", ((call, TEXT), (exchange, exchange_kind))))
 
     _check(txs)
+    facts = [("Rufzeichen der Run-Station", (run, TEXT)), ("Wie viele QSOs hat die Run-Station geloggt?",
+                                                            (str(count), NUMBER))]
+    facts += [(f"Austausch von {cells[0][0]}", cells[1]) for _, cells in rows[1:]]
     return Qso(
-        kind=kind, calls=(run, *(cells[0][0] for _, cells in rows[1:]), *extra_calls),
+        kind=kind, calls=(run, *(cells[0][0] for _, cells in rows[1:]), *extra_calls), facts=tuple(facts),
         pileups=tuple(pileups),
         transmissions=tuple(txs), quiz_columns=("Rufzeichen", "Austausch"), quiz_rows=tuple(rows),
     )

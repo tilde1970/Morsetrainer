@@ -17,6 +17,13 @@ def normalize(text: str, kind: str = qso_text.TEXT) -> str:
     erlaubt."""
     text = text.upper().replace("Ä", "AE").replace("Ö", "OE").replace("Ü", "UE")
     text = "".join(ch for ch in text if ch.isalnum() or ch == "/")
+    if kind == qso_text.DOK:
+        # Führende Null der Nummer zählt nicht: A5 = A05.
+        letters = text.rstrip("0123456789")
+        return letters + (text[len(letters):].lstrip("0") or "0")
+    if kind == qso_text.POWER:
+        # „100“, „100W“ und „100 WATT“ sind dasselbe.
+        return text.removesuffix("WATT").removesuffix("W")
     if kind == qso_text.NUMBER:
         text = text.replace("KW", "1000")
     if kind in (qso_text.RST, qso_text.NUMBER):
