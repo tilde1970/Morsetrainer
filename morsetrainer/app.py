@@ -508,6 +508,9 @@ class MorseTrainerApp:
             self.tab_ids.append(str(tab))
 
     def _lock_tabs(self):
+        # Fokus aus Eingabefeldern oben (Zeichen, WPM …) nehmen, sonst
+        # landen die Antworten dort; Modi mit eigenem Feld setzen ihn danach.
+        self.root.focus_set()
         current = self.notebook.select()
         for tab_id in self.notebook.tabs():
             if tab_id != current:

@@ -26,6 +26,7 @@ MUTED = "#5f6670"
 DISABLED = "#a0a6ae"
 ACCENT = "#2a6fd0"
 ACCENT_ACTIVE = "#215bb0"
+FOCUS = "#8db4ea"  # Rahmen des Eingabefelds mit Tastaturfokus
 SELECT = "#d7e6fa"
 OK = "#1e7e34"
 ERROR = "#c0392b"
@@ -77,12 +78,17 @@ def apply(root) -> None:
     root.option_add("*Text.relief", "flat")
     root.option_add("*Text.highlightThickness", 1)
     root.option_add("*Text.highlightBackground", BORDER)
-    root.option_add("*Text.highlightColor", ACCENT)
+    root.option_add("*Text.highlightColor", FOCUS)
     root.option_add("*Text.selectBackground", SELECT)
     root.option_add("*Canvas.background", BG)
     root.option_add("*TCombobox*Listbox.background", SURFACE)
     root.option_add("*TCombobox*Listbox.selectBackground", SELECT)
     root.option_add("*TCombobox*Listbox.selectForeground", TEXT)
+    # Knöpfe und Schalter nehmen beim Anklicken keinen Tastaturfokus: Die
+    # Leertaste heißt in den Reitern "Wiederholen" und würde sonst den
+    # zuletzt angeklickten Knopf auslösen (z. B. Start/Stop).
+    for widget in ("TButton", "TCheckbutton", "TRadiobutton"):
+        root.option_add(f"*{widget}.takeFocus", 0)
 
     style = ttk.Style(root)
     style.theme_use("clam")
@@ -128,7 +134,7 @@ def apply(root) -> None:
     for widget in ("TEntry", "TSpinbox", "TCombobox"):
         style.configure(widget, fieldbackground=SURFACE, background=BUTTON, bordercolor=BORDER,
                         lightcolor=SURFACE, darkcolor=SURFACE, arrowcolor=MUTED, padding=(4, 2))
-        style.map(widget, bordercolor=[("focus", ACCENT)], lightcolor=[("focus", ACCENT)],
+        style.map(widget, bordercolor=[("focus", FOCUS)],
                   fieldbackground=[("disabled", BG), ("readonly", SURFACE)],
                   background=[("active", BUTTON_ACTIVE)])
     style.map("TCombobox", fieldbackground=[("readonly", SURFACE), ("disabled", BG)],

@@ -74,7 +74,7 @@ class QuizPanel:
                 # tk.Entry statt ttk.Entry, damit sich der Hintergrund einfärben lässt.
                 entry = tk.Entry(self.grid, textvariable=var, width=13, font=theme.MONO, relief="flat",
                                  highlightthickness=1, highlightbackground=theme.BORDER,
-                                 highlightcolor=theme.ACCENT, background=theme.SURFACE)
+                                 highlightcolor=theme.FOCUS, background=theme.SURFACE)
                 entry.grid(row=row, column=1 + 2 * col, sticky="w", pady=1)
                 mark = ttk.Label(self.grid, text="", width=2)
                 mark.grid(row=row, column=2 + 2 * col, sticky="w", padx=(2, 6))
