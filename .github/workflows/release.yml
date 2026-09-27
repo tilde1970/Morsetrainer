@@ -59,9 +59,16 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe
+      # Beschreibung: der Abschnitt dieser Version aus CHANGELOG.md, dazu die
+      # von GitHub erzeugten Hinweise (Vergleichslink).
+      - run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '/^## /{if(f)exit; if($2==v)f=1; next} f' CHANGELOG.md > notes.md
+          printf '\nAlle Änderungen: [CHANGELOG.md](%s/%s/blob/main/CHANGELOG.md), im Programm unter „Hilfe“.\n' \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> notes.md
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --notes-file notes.md --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe
         env:
           GH_TOKEN: ${{ github.token }}
