@@ -89,6 +89,7 @@ class SequenceModeFrame:
     send_prosigns = False
     # Ergebnis zählt für den Aufstieg in die nächste Koch-Lektion.
     koch_progress = False
+    default_style = COPY  # Eingabeart, solange nichts gespeichert ist
     # Bekommt die gemeinsame Einstellung "Tonhöhe und Tempo variieren".
     uses_vary = True
 
@@ -218,7 +219,7 @@ class SequenceModeFrame:
         style = ttk.Frame(options)
         style.pack(fill="x", pady=1)
         ttk.Label(style, text="Eingabe:").pack(side="left", padx=(0, 6))
-        self.style_var = tk.StringVar(value=COPY)
+        self.style_var = tk.StringVar(value=self.default_style)
         for value, label in INPUT_STYLES:
             ttk.Radiobutton(style, text=label, value=value, variable=self.style_var).pack(side="left", padx=(0, 10))
 

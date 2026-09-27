@@ -159,6 +159,10 @@ class GroupEvaluationTest(AppTestCase):
 
 
 class WordModeTest(AppTestCase):
+    def test_memorize_is_default_for_words(self):
+        self.assertEqual(self.mode("Wörter").style_var.get(), sq.MEMORIZE)
+        self.assertEqual(self.mode("Gruppen").style_var.get(), sq.COPY)
+
     def test_too_few_words_points_to_groups(self):
         w = self.mode("Wörter")
         self.app.charset_var.set("KMUR")  # Lektion 3: nur RR und UR
@@ -211,6 +215,18 @@ class RufzTest(AppTestCase):
         self.assertIn("Bestwert", g.status_var.get())
         self.assertEqual(g.settings()["rufz_best"], g.rufz_score)
         self.assertIn("rufz", [e["mode"] for e in stats.load_history()])
+        # Verpasste nachhören und Starttempo beim Bestwert
+        self.assertEqual(len(g.rufz_missed), 10)
+        self.assertEqual(g.rufz_missed[0][:2], ("DL4YM", "DL4YN"))
+        self.assertIn("(10)", g.review_button["text"])
+        self.assertIn("Start 20 WPM", g.rufz_best_var.get())
+        from morsetrainer.modes import callsign_mode
+        with mock.patch.object(g.review_button, "winfo_viewable", lambda: True), \
+                mock.patch.object(callsign_mode.audio, "play") as play:
+            g._review_missed()
+        play.assert_called_once()
+        self.assertIn("Verpasst 1/10: DL4YM", g.status_var.get())
+        self.assertIn("du: DL4YN", g.status_var.get())
 
     def _start_rufz(self, calls):
         g = self.mode("Rufzeichen")

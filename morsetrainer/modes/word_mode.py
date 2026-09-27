@@ -14,7 +14,7 @@ from tkinter import ttk
 from morsetrainer.core import koch, words
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
-from morsetrainer.modes.sequence_mode import SequenceModeFrame
+from morsetrainer.modes.sequence_mode import MEMORIZE, SequenceModeFrame
 from morsetrainer.widgets import theme
 
 
@@ -37,6 +37,9 @@ def open_in_editor(path) -> None:
 
 class WordModeFrame(SequenceModeFrame):
     session_mode = "word"
+    # Erst das ganze Wort hören, dann tippen: fördert das Wort als Klangbild
+    # statt Buchstabe für Buchstabe.
+    default_style = MEMORIZE
     send_prosigns = True
     intro_text = (
         "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs – nur solche, die "

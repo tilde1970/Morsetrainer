@@ -30,9 +30,9 @@ USER_WORDS_TEMPLATE = """\
 # Nach dem Speichern den Durchgang neu starten.
 #
 # Beispiele:
-# DOK = Distrikts-Ortsverbandskenner
 # DARC = Deutscher Amateur-Radio-Club
-# UFB = ultra fine business – super
+# OV = Ortsverband
+# SOTA = Summits on the Air
 """
 
 _UMLAUTS = str.maketrans({"Ä": "AE", "Ö": "OE", "Ü": "UE", "ß": "SS", "ẞ": "SS"})
@@ -51,7 +51,7 @@ WORDS = {
     "BK": "break – Umschalten", "CFM": "confirm – bestätige", "CL": "closing – schließe die Station",
     "CPY": "copy – aufnehmen", "CQ": "allgemeiner Anruf", "CUAGN": "see you again – auf Wiederhören",
     "CUL": "see you later – bis später", "DE": "von", "DR": "dear – lieber",
-    "ES": "und", "FB": "fine business – prima", "FER": "for – für", "GA": "good afternoon",
+    "ES": "und", "FB": "fine business – prima", "FER": "for – für", "GA": "good afternoon / go ahead – bitte senden",
     "GB": "goodbye", "GD": "guten Tag", "GE": "good evening", "GL": "good luck – viel Glück",
     "GM": "good morning", "GN": "good night", "HI": "Lachen", "HR": "here – hier",
     "HW": "how – wie (aufgenommen)?", "MNI": "many – viele", "NR": "number / near – Nummer / nahe bei",
@@ -82,6 +82,12 @@ WORDS = {
     "TMW": "tomorrow – morgen", "TDY": "today – heute", "YR": "year – Jahr",
     "BCNU": "be seeing you – bis bald", "ENUF": "enough – genug", "WKD": "worked – gearbeitet",
     "WL": "well/will", "WPM": "words per minute", "INFO": "", "SPEED": "",
+    "DX": "distance – Fernverbindung", "CU": "see you – bis dann", "RPRT": "report – Rapport",
+    "GUD": "good – gut", "HPE": "hope – hoffe", "CONDX": "conditions – Ausbreitungsbedingungen",
+    "SKED": "schedule – Verabredung", "OT": "old timer – alter Hase", "OB": "old boy – alter Freund",
+    "UFB": "ultra fine business – super", "DOK": "Distrikts-Ortsverbandskenner",
+    "SIGS": "signals – Signale", "HVY": "heavy – stark", "WID": "with – mit", "FM": "from – von (auch Betriebsart FM)",
+    "HV": "have – habe", "BTW": "by the way – übrigens", "ANTENNA": "", "CONTEST": "",
 }
 
 
@@ -148,7 +154,10 @@ def words_for_charset(charset: str, words=WORDS) -> list[str]:
 class WordPicker:
     """Wählt Wörter zufällig oder, gewichtet, bevorzugt solche mit
     schwachen Zeichen (Gewichte vom CharPicker). Dasselbe Wort kommt nicht
-    zweimal direkt hintereinander, sofern es mehr als eins gibt.
+    zweimal direkt hintereinander; Wörter unter den letzten RECENT_BLOCK
+    kommen nur mit Faktor RECENT_FACTOR. Eine harte Sperre über mehrere
+    Wörter würde bei kleinen Pools die Bevorzugung neuer oder schwacher
+    Zeichen aushebeln.
 
     `favor`: Zeichen (z. B. das neueste der Koch-Lektion); Wörter damit
     kommen mit Anteil FAVOR_SHARE, aber höchstens FAVOR_PER_WORD je
@@ -158,25 +167,37 @@ class WordPicker:
     CANDIDATES = 12
     FAVOR_SHARE = 0.4
     FAVOR_PER_WORD = 0.1
+    RECENT_BLOCK = 3
+    RECENT_FACTOR = 0.3
+    # Gewichtet halb nach dem schwächsten Zeichen, halb nach dem Mittel,
+    # und höchstens so viel stärker als das schwächste Wort: sonst wechselten
+    # sich bei kleinen Pools zwei Wörter mit dem Problemzeichen ab.
+    MAX_SCORE_RATIO = 4.0
 
     def __init__(self, words, char_picker=None, favor=""):
         self.words = list(words)
         self.char_picker = char_picker
         self.favored = [w for w in self.words if favor and any(ch in w for ch in favor)]
-        self.last = None
+        self.recent = []  # zuletzt gewählte Wörter, neuestes zuletzt
 
     def pick(self) -> str:
-        pool = [w for w in self.words if w != self.last] or self.words
-        favored = [w for w in self.favored if w != self.last]
+        last = self.recent[-1:]
+        pool = [w for w in self.words if w not in last] or self.words
+        favored = [w for w in self.favored if w not in last]
         share = min(self.FAVOR_SHARE, self.FAVOR_PER_WORD * len(self.favored))
         if favored and random.random() < share:
             pool = favored
         if self.char_picker is None or not self.char_picker.weighted:
-            word = random.choice(pool)
+            candidates = pool
+            scores = [1.0] * len(pool)
         else:
             weight = dict(zip(self.char_picker.charset, self.char_picker.weights()))
             candidates = random.sample(pool, min(self.CANDIDATES, len(pool)))
-            scores = [statistics.mean(weight[ch] for ch in w) for w in candidates]
-            word = random.choices(candidates, weights=scores)[0]
-        self.last = word
+            scores = [0.5 * max(weight[ch] for ch in w) + 0.5 * statistics.mean(weight[ch] for ch in w)
+                      for w in candidates]
+            cap = min(scores) * self.MAX_SCORE_RATIO
+            scores = [min(score, cap) for score in scores]
+        scores = [s * (self.RECENT_FACTOR if w in self.recent else 1.0) for w, s in zip(candidates, scores)]
+        word = random.choices(candidates, weights=scores)[0]
+        self.recent = (self.recent + [word])[-self.RECENT_BLOCK:]
         return word

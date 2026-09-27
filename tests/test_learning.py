@@ -329,6 +329,15 @@ class WordLessonTest(unittest.TestCase):
         share = sum("W" in p for p in picks) / len(picks)
         self.assertGreater(share, 0.3)  # ohne Bevorzugung ~20 %
 
+    def test_weak_char_raises_whole_word(self):
+        from morsetrainer.core.weighting import CharPicker
+        picker = CharPicker("ESTXQ", weighted=True)
+        picker.weights = lambda: [0.1, 0.1, 0.1, 2.0, 0.1]  # X schwach
+        random.seed(2)
+        chooser = words.WordPicker(["TEST", "ES", "SET", "TEX", "EST", "SEE", "TEE"], picker)
+        picks = [chooser.pick() for _ in range(1000)]
+        self.assertGreater(picks.count("TEX") / len(picks), 0.2)  # gleichverteilt ~14 %, gedeckelt ~25 %
+
     def test_few_favored_words_are_capped(self):
         random.seed(6)
         pool = ["TNX", "ES", "UR", "RST", "NAME", "PSE", "UP", "AGN", "TEST", "HR", "OM", "GM", "GE", "FB"]

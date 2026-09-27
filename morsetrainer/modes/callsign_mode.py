@@ -25,8 +25,9 @@ from pathlib import Path
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR
-from morsetrainer.core import koch, stats, tempo
-from morsetrainer.modes.sequence_mode import HEAD, SequenceModeFrame
+from morsetrainer.core import audio, koch, stats, tempo
+from morsetrainer.core.morse import SAMPLE_RATE, build_text
+from morsetrainer.modes.sequence_mode import HEAD, SequenceModeFrame, clean_input
 from morsetrainer.widgets import theme
 from morsetrainer.core.weighting import CharPicker
 
@@ -43,6 +44,8 @@ WEIGHTED_CANDIDATES = 50
 MIN_POOL = 30
 # Rufzeichen je Rufz-Durchgang.
 RUFZ_CALLS = 50
+# Pause zwischen zwei verpassten Rufzeichen beim Nachhören.
+REVIEW_GAP_MS = 1200
 
 
 def load_callsigns(path: Path = CALLSIGN_FILE):
@@ -172,8 +175,12 @@ class CallsignModeFrame(SequenceModeFrame):
             rufz, text=f"Rufz-Durchgang: {RUFZ_CALLS} Rufzeichen, je ein Versuch, Punkte", variable=self.rufz_var,
         ).pack(side="left")
         self.rufz_best = 0
+        self.rufz_best_start = ""  # Starttempo des Bestwerts, z. B. "20/10 WPM"
         self.rufz_best_var = tk.StringVar(value="")
         theme.hint(rufz, textvariable=self.rufz_best_var).pack(side="left", padx=(8, 0))
+        self.review_button = ttk.Button(rufz, text="▶ Verpasste nachhören", command=self._review_missed)
+        self.rufz_missed = []  # [(Rufzeichen, getippt, WPM, Hz, Farnsworth)] des letzten Durchgangs
+        self.review_token = 0
         self.rufz_done = self.rufz_correct = self.rufz_score = 0
         self.rufz_active = False  # Rufz-Durchgang läuft (Schalter beim Start)
         self.rufz_summary = ""
@@ -200,7 +207,39 @@ class CallsignModeFrame(SequenceModeFrame):
         return self.rufz_active and self.rufz_done >= RUFZ_CALLS
 
     def _show_rufz_best(self):
-        self.rufz_best_var.set(f"Bestwert {self.rufz_best:,} Punkte".replace(",", ".") if self.rufz_best else "")
+        if not self.rufz_best:
+            self.rufz_best_var.set("")
+            return
+        text = f"Bestwert {self.rufz_best:,} Punkte".replace(",", ".")
+        self.rufz_best_var.set(text + (f" (Start {self.rufz_best_start})" if self.rufz_best_start else ""))
+
+    def _review_missed(self):
+        """Die im letzten Rufz verpassten Rufzeichen nacheinander vorspielen,
+        jeweils mit Lösung und deiner Eingabe."""
+        if self.running or not self.rufz_missed:
+            return
+        self.review_token += 1
+        self._review_step(0, self.review_token)
+
+    def _review_step(self, index, token):
+        # Reiter gewechselt (Knopf nicht mehr zu sehen): aufhören, sonst
+        # bräche der Ton einen dort gestarteten Durchgang ab.
+        if token != self.review_token or self.running or not self.review_button.winfo_viewable():
+            return
+        if index >= len(self.rufz_missed):
+            self.status_var.set("Nachhören beendet.")
+            return
+        call, typed, wpm, freq, fw = self.rufz_missed[index]
+        self.status_var.set(f"Verpasst {index + 1}/{len(self.rufz_missed)}: {call}"
+                            + (f"  (du: {typed})" if typed else "  (nichts getippt)"))
+        samples = build_text(call, wpm, freq, fw)
+        try:
+            audio.play(samples)
+        except audio.AudioError as exc:
+            self.status_var.set(str(exc))
+            return
+        ms = int(len(samples) / SAMPLE_RATE * 1000) + REVIEW_GAP_MS
+        self.root.after(ms, self._review_step, index + 1, token)
 
     def _show_rufz_progress(self):
         score = f"{self.rufz_score:,}".replace(",", ".")
@@ -210,9 +249,14 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_active = self.rufz_var.get()
         self.rufz_done = self.rufz_correct = self.rufz_score = 0
         self.rufz_used = set()  # im Durchgang schon gesendete Rufzeichen
+        self.review_token += 1  # laufendes Nachhören beenden
         super().start()
         if self.running and self.tempo is not None:
             self.rufz_start_wpm = tempo.effective(self.tempo, self.tempo_fw)
+            self.rufz_start_label = tempo.label(self.tempo, self.tempo_fw)
+        if self.running and self.rufz_active:
+            self.rufz_missed = []
+            self.review_button.pack_forget()
         if self.running and self.rufz_active:
             self.repeat_button.config(state="disabled")  # kein „nochmal“ im Rufz
             self._show_rufz_progress()
@@ -221,6 +265,9 @@ class CallsignModeFrame(SequenceModeFrame):
         if not self.rufz_active:
             return
         self.rufz_done += 1
+        if not correct:
+            self.rufz_missed.append((self.current_sequence, clean_input(self.input_var.get()), *self.voice,
+                                     self._farnsworth()))
         # attempts > 1 heißt hier: richtig, aber zu langsam (nur ein Versuch).
         if correct and attempts == 1:
             # Vor der Tempo-Anpassung: das Tempo, mit dem es gesendet wurde.
@@ -240,7 +287,11 @@ class CallsignModeFrame(SequenceModeFrame):
                                  self.tempo_best or self.rufz_start_wpm, score=self.rufz_score)
                 if new_best:
                     self.rufz_best = self.rufz_score
+                    self.rufz_best_start = getattr(self, "rufz_start_label", "")
                     self._show_rufz_best()
+                if self.rufz_missed:
+                    self.review_button.config(text=f"▶ Verpasste nachhören ({len(self.rufz_missed)})")
+                    self.review_button.pack(side="left", padx=(8, 0))
                 self.rufz_summary = (f"Rufz: {score} Punkte, {self.rufz_correct} von {self.rufz_done} richtig"
                                      + (" – neuer Bestwert!" if new_best else ""))
             else:
@@ -349,6 +400,7 @@ class CallsignModeFrame(SequenceModeFrame):
         data["learned_only"] = self.learned_var.get()
         data["rufz"] = self.rufz_var.get()
         data["rufz_best"] = self.rufz_best
+        data["rufz_best_start"] = self.rufz_best_start
         return data
 
     def restore_settings(self, data: dict) -> None:
@@ -364,4 +416,6 @@ class CallsignModeFrame(SequenceModeFrame):
         best = data.get("rufz_best")
         if isinstance(best, int) and not isinstance(best, bool) and best >= 0:
             self.rufz_best = best
+            if isinstance(data.get("rufz_best_start"), str):
+                self.rufz_best_start = data["rufz_best_start"]
             self._show_rufz_best()
