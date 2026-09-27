@@ -18,7 +18,8 @@ soll sie gehört, nicht abgeschrieben werden. Nach der eingestellten Zahl
 an Fehlversuchen wird die Lösung gezeigt und noch einmal vorgespielt.
 
 Ehrliche Messwerte: In die Zeichenstatistik (und damit Gewichtung und
-Gesamtstatistik) geht nur der erste Versuch ein. Für den Koch-Aufstieg
+Gesamtstatistik) geht nur der erste Versuch ein; nach Wiederholen oder (ohne
+Latenz je Zeichen) zu langsam zählen richtige Zeichen mit Höchstlatenz. Für den Koch-Aufstieg
 zählt ein erster Versuch nur, wenn die Sequenz nicht wiederholt wurde
 (Leertaste) und die Antwort innerhalb des Zeitfensters kam (answer_limit);
 zu viel Getipptes zählt als Fehler. Kopfhören beruht auf Selbstbewertung
@@ -49,7 +50,7 @@ from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
     code_units, display_text, vary_voice,
 )
-from morsetrainer.core.stats import SessionStats
+from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
@@ -636,10 +637,11 @@ class SequenceModeFrame:
         if self.submit_pending:
             self.submit_pending = False
             self.on_submit()
-        elif self.koch_progress and self.attempts == 0 and not self.replayed:
-            # Für die Lektion zählt nur eine zügige Antwort; das soll man wissen.
+        elif self.attempts == 0 and not self.replayed:
+            # Gewertet wird nur eine zügige Antwort; das soll man wissen.
             limit = f"{answer_limit(len(self.current_sequence)):.1f}".replace(".", ",")
-            self.status_var.set(f"Deine Eingabe? (für die Lektion zügig: {limit} s)")
+            purpose = "für die Lektion " if self.koch_progress else ""
+            self.status_var.set(f"Deine Eingabe? ({purpose}zügig: {limit} s)")
         else:
             self.status_var.set("Deine Eingabe?")
 
@@ -689,18 +691,24 @@ class SequenceModeFrame:
 
         sent = self.current_sequence
         results = align.char_results(sent, typed)
+        slow = answer_time - self.tone_ends[-1] > answer_limit(len(sent)) if self.tone_ends else False
         # Nur der erste Versuch geht in die Zeichenstatistik; bei der
-        # Wiederholung ist die Sequenz schon bekannt.
+        # Wiederholung ist die Sequenz schon bekannt. Mit Wiederholen (Leertaste)
+        # oder, ohne Latenz je Zeichen, zu langsam ist ein richtiges Zeichen
+        # richtig, aber nicht flüssig: es bekommt die Höchstlatenz, damit die
+        # Gewichtung es öfter bringt, ohne die Trefferquote zu drücken.
         if self.attempts == 0:
+            unsure = self.replayed or (slow and self.style != COPY)
             for index, (expected, got, typed_index) in enumerate(results):
                 reaction_time, latency = self._char_timing(index, typed_index)
+                if unsure and got == expected:
+                    latency = LATENCY_CAP_S
                 effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
                 self.session_stats.record_char(
                     expected, got, got == expected, reaction_time, effective_wpm, latency=latency
                 )
         hits = sum(1 for expected, got, _ in results if got == expected)
         correct_chars = max(hits - align.extra_count(sent, typed), 0)
-        slow = answer_time - self.tone_ends[-1] > answer_limit(len(sent)) if self.tone_ends else False
         self._finish_attempt(typed, typed == sent, correct_chars, slow=slow)
 
     def reveal(self):
@@ -767,7 +775,9 @@ class SequenceModeFrame:
                 if slow:
                     note = "\n(zu langsam – keine Punkte)"
             elif not self.koch_progress:
-                pass  # Modus zählt ohnehin nicht für die Lektion
+                # Zählt nicht für die Lektion, aber Tempo und Gewichtung merken es.
+                if slow and self.attempts == 1:
+                    note = "\n(zu langsam" + (" – Tempo steigt nicht)" if self.tempo is not None else ")")
             elif slow and self.attempts == 1:
                 note = "\n(zu langsam – zählt nicht für die Lektion)"
             elif self.replayed and self.attempts == 1:

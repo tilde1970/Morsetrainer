@@ -44,8 +44,10 @@ WEIGHTED_CANDIDATES = 50
 MIN_POOL = 30
 # Rufzeichen je Rufz-Durchgang.
 RUFZ_CALLS = 50
-# Pause zwischen zwei verpassten Rufzeichen beim Nachhören.
-REVIEW_GAP_MS = 1200
+# Nachhören: Pause bis zur zweiten Wiedergabe (mit Lösung) und bis zum
+# nächsten verpassten Rufzeichen.
+REVIEW_REPLAY_MS = 600
+REVIEW_GAP_MS = 2000
 
 
 def load_callsigns(path: Path = CALLSIGN_FILE):
@@ -178,9 +180,12 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_best_start = ""  # Starttempo des Bestwerts, z. B. "20/10 WPM"
         self.rufz_best_var = tk.StringVar(value="")
         theme.hint(rufz, textvariable=self.rufz_best_var).pack(side="left", padx=(8, 0))
-        self.review_button = ttk.Button(rufz, text="▶ Verpasste nachhören", command=self._review_missed)
-        self.rufz_missed = []  # [(Rufzeichen, getippt, WPM, Hz, Farnsworth)] des letzten Durchgangs
+        self.review_button = ttk.Button(rufz, text="▶ Verpasste nachhören (F6)", command=self._review_missed)
+        # [(Rufzeichen, getippt, WPM, Hz, Farnsworth, zu langsam)] des letzten Durchgangs
+        self.rufz_missed = []
+        self.rufz_band = False  # letzter Durchgang lief mit Bandbedingungen
         self.review_token = 0
+        self.review_index = None  # gerade nachgehörtes Rufzeichen
         self.rufz_done = self.rufz_correct = self.rufz_score = 0
         self.rufz_active = False  # Rufz-Durchgang läuft (Schalter beim Start)
         self.rufz_summary = ""
@@ -213,33 +218,82 @@ class CallsignModeFrame(SequenceModeFrame):
         text = f"Bestwert {self.rufz_best:,} Punkte".replace(",", ".")
         self.rufz_best_var.set(text + (f" (Start {self.rufz_best_start})" if self.rufz_best_start else ""))
 
-    def _review_missed(self):
-        """Die im letzten Rufz verpassten Rufzeichen nacheinander vorspielen,
-        jeweils mit Lösung und deiner Eingabe."""
+    def _review_missed(self, start=0):
+        """Die im letzten Rufz verpassten (auch die zu langsam erkannten)
+        Rufzeichen nacheinander vorspielen: erst nur hören, dann mit
+        aufgedeckter Lösung noch einmal – im Originaltempo, denn an diesem
+        Klangbild lag es. Ohne Bandbedingungen, zum Einprägen."""
         if self.running or not self.rufz_missed:
             return
         self.review_token += 1
-        self._review_step(0, self.review_token)
+        self.root.focus_set()  # Esc soll ankommen, nicht im Eingabefeld hängen
+        self._review_step(start, self.review_token)
 
-    def _review_step(self, index, token):
+    def _review_alive(self, token) -> bool:
         # Reiter gewechselt (Knopf nicht mehr zu sehen): aufhören, sonst
         # bräche der Ton einen dort gestarteten Durchgang ab.
-        if token != self.review_token or self.running or not self.review_button.winfo_viewable():
-            return
-        if index >= len(self.rufz_missed):
-            self.status_var.set("Nachhören beendet.")
-            return
-        call, typed, wpm, freq, fw = self.rufz_missed[index]
-        self.status_var.set(f"Verpasst {index + 1}/{len(self.rufz_missed)}: {call}"
-                            + (f"  (du: {typed})" if typed else "  (nichts getippt)"))
+        return token == self.review_token and not self.running and self.review_button.winfo_viewable()
+
+    def _review_play(self, index) -> int:
+        """Spielt das verpasste Rufzeichen `index`; Dauer in ms, 0 bei Fehler."""
+        call, _typed, wpm, freq, fw, _slow = self.rufz_missed[index]
         samples = build_text(call, wpm, freq, fw)
         try:
             audio.play(samples)
         except audio.AudioError as exc:
+            self.review_token += 1
             self.status_var.set(str(exc))
+            return 0
+        return int(len(samples) / SAMPLE_RATE * 1000)
+
+    def _review_step(self, index, token):
+        if not self._review_alive(token):
             return
-        ms = int(len(samples) / SAMPLE_RATE * 1000) + REVIEW_GAP_MS
-        self.root.after(ms, self._review_step, index + 1, token)
+        if index >= len(self.rufz_missed):
+            self.review_index = None
+            self.status_var.set("Nachhören beendet. F6 fängt von vorn an.")
+            return
+        self.review_index = index
+        # Erst unvoreingenommen hören; Lösung und eigene Eingabe danach.
+        noise = " · ohne QRM/QRN" if self.rufz_band else ""
+        self.status_var.set(f"Verpasst {index + 1}/{len(self.rufz_missed)} – hör hin…{noise}")
+        ms = self._review_play(index)
+        if ms:
+            self.root.after(ms + REVIEW_REPLAY_MS, self._review_reveal, index, token)
+
+    def _review_reveal(self, index, token):
+        """Lösung aufdecken und dasselbe Rufzeichen noch einmal spielen."""
+        if not self._review_alive(token):
+            return
+        call, typed, *_rest, slow = self.rufz_missed[index]
+        mine = " (zu langsam)" if slow else (f" (du: {typed})" if typed else " (nichts getippt)")
+        self.status_var.set(f"Verpasst {index + 1}/{len(self.rufz_missed)}: {call}{mine}"
+                            " · F6 nochmal, F7 von vorn, Esc Stopp")
+        ms = self._review_play(index)
+        if ms:
+            self.root.after(ms + REVIEW_GAP_MS, self._review_step, index + 1, token)
+
+    def _review_stop(self):
+        if self.review_index is not None:
+            self.review_token += 1
+            self.review_index = None
+            self.status_var.set("Nachhören angehalten. F6 fängt von vorn an.")
+
+    def on_function_key(self, key: str):
+        # Wie im QSO-Reiter: F6 = nochmal (das aktuelle, erst hören, dann
+        # Lösung); ohne laufendes Nachhören fängt es an. F7 = von vorn.
+        if self.running or not self.rufz_missed or not self.review_button.winfo_viewable():
+            return
+        if key == "F6":
+            self._review_missed(self.review_index or 0)
+        elif key == "F7":
+            self._review_missed()
+
+    def on_key(self, event):
+        if event.keysym == "Escape" and not self.running:
+            self._review_stop()
+        else:
+            super().on_key(event)
 
     def _show_rufz_progress(self):
         score = f"{self.rufz_score:,}".replace(",", ".")
@@ -250,14 +304,15 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_done = self.rufz_correct = self.rufz_score = 0
         self.rufz_used = set()  # im Durchgang schon gesendete Rufzeichen
         self.review_token += 1  # laufendes Nachhören beenden
+        self.review_index = None
         super().start()
         if self.running and self.tempo is not None:
             self.rufz_start_wpm = tempo.effective(self.tempo, self.tempo_fw)
             self.rufz_start_label = tempo.label(self.tempo, self.tempo_fw)
         if self.running and self.rufz_active:
             self.rufz_missed = []
+            self.rufz_band = self.band is not None
             self.review_button.pack_forget()
-        if self.running and self.rufz_active:
             self.repeat_button.config(state="disabled")  # kein „nochmal“ im Rufz
             self._show_rufz_progress()
 
@@ -265,9 +320,10 @@ class CallsignModeFrame(SequenceModeFrame):
         if not self.rufz_active:
             return
         self.rufz_done += 1
-        if not correct:
+        # Auch richtig, aber zu langsam: das wurde noch zusammengesetzt, nicht erkannt.
+        if not correct or attempts > 1:
             self.rufz_missed.append((self.current_sequence, clean_input(self.input_var.get()), *self.voice,
-                                     self._farnsworth()))
+                                     self._farnsworth(), correct))
         # attempts > 1 heißt hier: richtig, aber zu langsam (nur ein Versuch).
         if correct and attempts == 1:
             # Vor der Tempo-Anpassung: das Tempo, mit dem es gesendet wurde.
@@ -290,7 +346,7 @@ class CallsignModeFrame(SequenceModeFrame):
                     self.rufz_best_start = getattr(self, "rufz_start_label", "")
                     self._show_rufz_best()
                 if self.rufz_missed:
-                    self.review_button.config(text=f"▶ Verpasste nachhören ({len(self.rufz_missed)})")
+                    self.review_button.config(text=f"▶ Verpasste nachhören ({len(self.rufz_missed)}, F6)")
                     self.review_button.pack(side="left", padx=(8, 0))
                 self.rufz_summary = (f"Rufz: {score} Punkte, {self.rufz_correct} von {self.rufz_done} richtig"
                                      + (" – neuer Bestwert!" if new_best else ""))

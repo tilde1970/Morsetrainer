@@ -82,12 +82,18 @@ WORDS = {
     "TMW": "tomorrow – morgen", "TDY": "today – heute", "YR": "year – Jahr",
     "BCNU": "be seeing you – bis bald", "ENUF": "enough – genug", "WKD": "worked – gearbeitet",
     "WL": "well/will", "WPM": "words per minute", "INFO": "", "SPEED": "",
-    "DX": "distance – Fernverbindung", "CU": "see you – bis dann", "RPRT": "report – Rapport",
+    "DX": "große Entfernung – Fernverbindung, ferne Station", "CU": "see you – bis dann", "RPRT": "report – Rapport",
     "GUD": "good – gut", "HPE": "hope – hoffe", "CONDX": "conditions – Ausbreitungsbedingungen",
-    "SKED": "schedule – Verabredung", "OT": "old timer – alter Hase", "OB": "old boy – alter Freund",
+    "SKED": "schedule – Verabredung", "OT": "old timer – alter Hase", "OB": "old boy – Funkfreund (wie OM)",
     "UFB": "ultra fine business – super", "DOK": "Distrikts-Ortsverbandskenner",
-    "SIGS": "signals – Signale", "HVY": "heavy – stark", "WID": "with – mit", "FM": "from – von (auch Betriebsart FM)",
+    "SIGS": "signals – Signale", "HVY": "heavy – stark (z. B. HVY QRM)", "WID": "with – mit", "FM": "from – von (auch Betriebsart FM)",
     "HV": "have – habe", "BTW": "by the way – übrigens", "ANTENNA": "", "CONTEST": "",
+    "SN": "soon – bald", "BN": "been – gewesen", "OPR": "operator – Funker", "HNY": "happy new year",
+    "WKG": "working – arbeite (mit)", "CONDS": "conditions – Ausbreitungsbedingungen",
+    "R": "roger – verstanden", "K": "kommen – bitte senden",
+    # Betriebszeichen als eigene „Wörter“ (Platzhalter siehe morse.PROSIGNS);
+    # AR (+) und BT (=) nicht, die rahmen den Durchgang schon ein.
+    "(": "KN – nur die gerufene Station senden", "*": "SK – Ende der Verbindung",
 }
 
 
@@ -133,14 +139,20 @@ def ensure_user_file(path: Path = None) -> Path:
 
 
 # Unter so vielen passenden Wörtern lernt man sie auswendig, statt zu hören.
+# Einzelzeichen (R, K, Betriebszeichen) zählen nicht mit: das wäre Zeichen-,
+# kein Wortdrill.
 MIN_WORDS = 10
+
+
+def enough_words(found) -> bool:
+    return sum(1 for w in found if len(w) > 1) >= MIN_WORDS
 
 
 def first_lesson_with_words(words=WORDS, minimum: int = MIN_WORDS):
     """Erste Koch-Lektion mit mindestens `minimum` Wörtern, oder None."""
     from morsetrainer.core import koch
     for lesson in range(1, koch.MAX_LESSON + 1):
-        if len(words_for_charset(koch.lesson_charset(lesson), words)) >= minimum:
+        if sum(1 for w in words_for_charset(koch.lesson_charset(lesson), words) if len(w) > 1) >= minimum:
             return lesson
     return None
 
@@ -169,6 +181,11 @@ class WordPicker:
     FAVOR_PER_WORD = 0.1
     RECENT_BLOCK = 3
     RECENT_FACTOR = 0.3
+    # Kein Wort über diesen Anteil aller Ziehungen (ab MIN_PICKS): ein
+    # schwaches Zeichen soll in wechselnden Wörtern kommen, nicht immer im
+    # selben – sonst wird das Wort erkannt statt das Zeichen gehört.
+    MAX_WORD_SHARE = 0.2
+    MIN_PICKS = 10
     # Gewichtet halb nach dem schwächsten Zeichen, halb nach dem Mittel,
     # und höchstens so viel stärker als das schwächste Wort: sonst wechselten
     # sich bei kleinen Pools zwei Wörter mit dem Problemzeichen ab.
@@ -179,13 +196,19 @@ class WordPicker:
         self.char_picker = char_picker
         self.favored = [w for w in self.words if favor and any(ch in w for ch in favor)]
         self.recent = []  # zuletzt gewählte Wörter, neuestes zuletzt
+        self.counts = {}  # wie oft jedes Wort kam
+        self.picks = 0
+
+    def _overused(self, word) -> bool:
+        return self.picks >= self.MIN_PICKS and self.counts.get(word, 0) > self.MAX_WORD_SHARE * self.picks
 
     def pick(self) -> str:
         last = self.recent[-1:]
         pool = [w for w in self.words if w not in last] or self.words
         favored = [w for w in self.favored if w not in last]
         share = min(self.FAVOR_SHARE, self.FAVOR_PER_WORD * len(self.favored))
-        if favored and random.random() < share:
+        # Mit nur einem übrigen bevorzugten Wort stünde es fest (X1 … X2 … X1).
+        if len(favored) >= 2 and random.random() < share:
             pool = favored
         if self.char_picker is None or not self.char_picker.weighted:
             candidates = pool
@@ -197,7 +220,10 @@ class WordPicker:
                       for w in candidates]
             cap = min(scores) * self.MAX_SCORE_RATIO
             scores = [min(score, cap) for score in scores]
-        scores = [s * (self.RECENT_FACTOR if w in self.recent else 1.0) for w, s in zip(candidates, scores)]
+        scores = [s * (self.RECENT_FACTOR if w in self.recent or self._overused(w) else 1.0)
+                  for w, s in zip(candidates, scores)]
         word = random.choices(candidates, weights=scores)[0]
         self.recent = (self.recent + [word])[-self.RECENT_BLOCK:]
+        self.counts[word] = self.counts.get(word, 0) + 1
+        self.picks += 1
         return word

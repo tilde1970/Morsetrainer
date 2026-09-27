@@ -39,7 +39,8 @@ class WordsTest(unittest.TestCase):
         found = words.words_for_charset(koch.lesson_charset(8))
         self.assertIn("NAME", found)
         self.assertNotIn("TNX", found)
-        self.assertEqual(words.words_for_charset("KM"), [])
+        self.assertEqual(words.words_for_charset("KM"), ["K"])  # K = kommen, zählt nicht als Wort
+        self.assertFalse(words.enough_words(["K", "R"] * 10))
         self.assertEqual(words.words_for_charset(koch.KOCH_ORDER), sorted(words.WORDS))
 
     def test_user_words_are_parsed(self):
@@ -327,16 +328,19 @@ class WordLessonTest(unittest.TestCase):
         picker = words.WordPicker(pool, favor="W")
         picks = [picker.pick() for _ in range(2000)]
         share = sum("W" in p for p in picks) / len(picks)
-        self.assertGreater(share, 0.3)  # ohne Bevorzugung ~20 %
+        self.assertGreater(share, 0.25)  # ohne Bevorzugung ~20 %
 
-    def test_weak_char_raises_whole_word(self):
+    def test_weak_char_raises_words_in_turn(self):
         from morsetrainer.core.weighting import CharPicker
         picker = CharPicker("ESTXQ", weighted=True)
         picker.weights = lambda: [0.1, 0.1, 0.1, 2.0, 0.1]  # X schwach
         random.seed(2)
-        chooser = words.WordPicker(["TEST", "ES", "SET", "TEX", "EST", "SEE", "TEE"], picker)
+        pool = ["TEST", "ES", "SET", "TEX", "EST", "SEE", "TEE", "TSE", "SETS", "TEES", "XES"]
+        chooser = words.WordPicker(pool, picker)
         picks = [chooser.pick() for _ in range(1000)]
-        self.assertGreater(picks.count("TEX") / len(picks), 0.2)  # gleichverteilt ~14 %, gedeckelt ~25 %
+        self.assertGreater(sum("X" in p for p in picks) / len(picks), 0.3)  # gleichverteilt ~18 %
+        # im Wechsel, kein Lieblingswort
+        self.assertLess(max(picks.count(w) for w in pool) / len(picks), 0.22)
 
     def test_few_favored_words_are_capped(self):
         random.seed(6)

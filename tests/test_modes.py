@@ -11,7 +11,7 @@ from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import app as app_module
-from morsetrainer.core import stats
+from morsetrainer.core import koch, stats
 from morsetrainer.modes import continuous_mode, run_mode, single_mode
 from morsetrainer.modes import sequence_mode as sq
 
@@ -89,6 +89,14 @@ class GroupEvaluationTest(AppTestCase):
         self.assertEqual(self.group.first_try_correct, 0)
         self.assertEqual(self.group.first_try_total, 3 + 3 + 5)
 
+    def test_unsure_answers_count_as_slow(self):
+        self._start(sq.MEMORIZE)
+        self._answer("KMU", "KMU", replayed=True)
+        self._answer("KMU", "KMM", seconds_after_tone=sq.answer_limit(3) + 1)
+        rounds = self.group.session_stats.rounds
+        self.assertEqual([r["correct"] for r in rounds], [True] * 5 + [False])  # Quote ehrlich
+        self.assertTrue(all(r["latency_s"] == stats.LATENCY_CAP_S for r in rounds if r["correct"]))
+
     def test_second_attempt_hides_solution_and_is_not_recorded(self):
         self._start()
         self._answer("KMU", "KKK")
@@ -163,6 +171,29 @@ class WordModeTest(AppTestCase):
         self.assertEqual(self.mode("Wörter").style_var.get(), sq.MEMORIZE)
         self.assertEqual(self.mode("Gruppen").style_var.get(), sq.COPY)
 
+    def test_old_settings_switch_to_memorize_once(self):
+        w = self.mode("Wörter")
+        w.restore_settings({"input_style": sq.COPY})  # von vor dem neuen Standard
+        self.assertEqual(w.style_var.get(), sq.MEMORIZE)
+        self.assertIn("Erst merken", w.status_var.get())
+        w.style_var.set(sq.COPY)
+        w.restore_settings(w.settings())  # danach bewusst gewählt: bleibt
+        self.assertEqual(w.style_var.get(), sq.COPY)
+
+    def test_slow_answer_is_noted(self):
+        w = self.mode("Wörter")
+        self.app.charset_var.set(koch.lesson_charset(20))
+        w.style_var.set(sq.MEMORIZE)
+        w.start()
+        w.current_sequence, w.attempts, w.replayed, w.repeat_pending = "TNX", 0, False, False
+        w.voice = (20, 600)
+        w.tone_starts = [time.time() - 10] * 3
+        w.tone_ends = [time.time() - sq.answer_limit(3) - 1] * 3
+        w.enter_time, w.waiting_for_input = None, True
+        w.input_var.set("TNX")
+        w.on_submit()
+        self.assertIn("zu langsam", w.feedback_var.get())
+
     def test_too_few_words_points_to_groups(self):
         w = self.mode("Wörter")
         self.app.charset_var.set("KMUR")  # Lektion 3: nur RR und UR
@@ -218,15 +249,35 @@ class RufzTest(AppTestCase):
         # Verpasste nachhören und Starttempo beim Bestwert
         self.assertEqual(len(g.rufz_missed), 10)
         self.assertEqual(g.rufz_missed[0][:2], ("DL4YM", "DL4YN"))
-        self.assertIn("(10)", g.review_button["text"])
+        self.assertIn("(10, F6)", g.review_button["text"])
         self.assertIn("Start 20 WPM", g.rufz_best_var.get())
         from morsetrainer.modes import callsign_mode
         with mock.patch.object(g.review_button, "winfo_viewable", lambda: True), \
                 mock.patch.object(callsign_mode.audio, "play") as play:
             g._review_missed()
-        play.assert_called_once()
+            play.assert_called_once()
+            # Erst unvoreingenommen hören: weder Lösung noch eigene Eingabe.
+            self.assertIn("hör hin", g.status_var.get())
+            self.assertNotIn("DL4Y", g.status_var.get())
+            g._review_reveal(0, g.review_token)  # nach dem Ton: aufdecken, noch einmal
+            self.assertEqual(play.call_count, 2)
         self.assertIn("Verpasst 1/10: DL4YM", g.status_var.get())
         self.assertIn("du: DL4YN", g.status_var.get())
+        g.on_key(mock.Mock(keysym="Escape"))
+        self.assertIsNone(g.review_index)
+        self.assertIn("angehalten", g.status_var.get())
+
+    def test_slow_correct_call_is_reviewed(self):
+        g = self._start_rufz([f"DL{i}ABC" for i in range(60)])
+        g.current_sequence, g.attempts, g.replayed, g.voice = "DL1ABC", 0, False, (20, 600)
+        g.tone_starts = [time.time() - 10] * 6
+        g.tone_ends = [time.time() - sq.answer_limit(6) - 1] * 6
+        g.enter_time, g.waiting_for_input = None, True
+        g.input_var.set("DL1ABC")
+        g.on_submit()
+        self.assertEqual(len(g.rufz_missed), 1)
+        self.assertEqual(g.rufz_missed[0][0], "DL1ABC")
+        self.assertTrue(g.rufz_missed[0][-1])  # richtig, aber zu langsam
 
     def _start_rufz(self, calls):
         g = self.mode("Rufzeichen")

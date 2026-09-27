@@ -14,7 +14,7 @@ from tkinter import ttk
 from morsetrainer.core import koch, words
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
-from morsetrainer.modes.sequence_mode import MEMORIZE, SequenceModeFrame
+from morsetrainer.modes.sequence_mode import COPY, MEMORIZE, SequenceModeFrame
 from morsetrainer.widgets import theme
 
 
@@ -97,12 +97,13 @@ class WordModeFrame(SequenceModeFrame):
         self._show_count()
         charset = self._charset()
         self.words = words.words_for_charset(charset, self.all_words)
-        if len(self.words) < words.MIN_WORDS:
+        if not words.enough_words(self.words):
             # Mit einer Handvoll Wörter stünde die Antwort fest (bei RR und UR
             # im Wechsel); dann lieber Gruppen üben.
             first = words.first_lesson_with_words(self.all_words)
             when = f" – genug gibt es ab Koch-Lektion {first}" if first else ""
-            self.status_var.set(f"Nur {len(self.words)} Wörter mit diesen Zeichen{when}.\nÜbe bis dahin im Reiter Gruppen.")
+            count = sum(1 for w in self.words if len(w) > 1)
+            self.status_var.set(f"Nur {count} Wörter mit diesen Zeichen{when}.\nÜbe bis dahin im Reiter Gruppen.")
             return False
         self.charset = charset
         return True
@@ -121,3 +122,17 @@ class WordModeFrame(SequenceModeFrame):
 
     def _log_charset(self) -> str:
         return self.charset
+
+    def settings(self) -> dict:
+        data = super().settings()
+        data["memorize_default"] = True  # Umstellung auf „Erst merken“ erledigt
+        return data
+
+    def restore_settings(self, data: dict) -> None:
+        super().restore_settings(data)
+        # Einstellungen von vor dem neuen Standard: einmalig auf „Erst merken“
+        # umstellen; danach gilt wieder, was gespeichert ist.
+        if data and not data.get("memorize_default") and self.style_var.get() == COPY:
+            self.style_var.set(MEMORIZE)
+            self.status_var.set("Neu: Wörter jetzt mit „Erst merken“ – erst das ganze Wort hören, "
+                                "dann tippen. Umstellbar unter Eingabe.")
