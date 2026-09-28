@@ -41,12 +41,15 @@ def format_confusions(confusions: dict) -> str:
 
 class SessionStats:
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
-                 self_assessed=False, in_history=True):
+                 self_assessed=False, in_history=True, review_promote=False):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
         J/N). Sie werden protokolliert, aber nicht in all_time.json und den
         Fortschrittsverlauf übernommen. `in_history=False`: Die Sitzung hat
         einen eigenen Eintrag im Verlauf (z. B. Rufz über log_result) und
-        erscheint dort nicht zusätzlich; die Zeichenstatistik zählt normal."""
+        erscheint dort nicht zusätzlich; die Zeichenstatistik zählt normal.
+        `review_promote`: Zufallszeichen, die Sitzung darf Zeichen in der
+        Lernkartei hochstufen (core/review.py); sonst nur zurückstufen."""
+        self.review_promote = review_promote
         self.start_time = datetime.now()
         self.self_assessed = self_assessed
         self.mode = mode
@@ -124,11 +127,12 @@ class SessionStats:
 
         agg = self.per_char.setdefault(
             char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
-                   "latencies": [], "assumed_latencies": [], "confusions": {}}
+                   "correct_reaction_times": [], "latencies": [], "assumed_latencies": [], "confusions": {}}
         )
         if correct:
             agg["good"] += 1
             agg["correct_effective_wpms"].append(effective_wpm)
+            agg["correct_reaction_times"].append(reaction_time)
             if latency is not None:
                 capped = min(max(latency, 0.0), LATENCY_CAP_S)
                 agg["latencies"].append(capped)
@@ -167,11 +171,13 @@ class SessionStats:
         accuracy = (correct / total * 100) if total else 0.0
         wpms = [r["effective_wpm"] for r in self.rounds if r["correct"]]
         avg_wpm = statistics.mean(wpms) if wpms else 0.0
+        times = [r["reaction_time_s"] for r in self.rounds if r["correct"]]
         return {
             "total": total,
             "correct": correct,
             "accuracy_pct": round(accuracy, 1),
             "avg_effective_wpm": round(avg_wpm, 1),
+            "cpm": _cpm(len(times), sum(times)),
         }
 
     def _per_char_summary(self):
@@ -206,6 +212,8 @@ class SessionStats:
         self._close()
         if not self.self_assessed:
             _merge_all_time(self)
+            from morsetrainer.core import review  # review importiert stats
+            review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset))
         return self.log_path if self.log_error is None else None
 
 
@@ -226,6 +234,11 @@ def _merge_all_time(session: "SessionStats") -> None:
         x["total_effective_wpm"] += sum(e["effective_wpms"])
         x["correct_effective_wpm_total"] += sum(e["correct_effective_wpms"])
         x["attempts"] += e["good"] + e["wrong"]
+        # Für die gemessenen Zeichen pro Minute; ältere Einträge ohne diese
+        # Felder zählen erst ab jetzt mit.
+        correct_times = e.get("correct_reaction_times", [])
+        x["correct_reaction_time_s"] = x.get("correct_reaction_time_s", 0.0) + sum(correct_times)
+        x["correct_timed_count"] = x.get("correct_timed_count", 0) + len(correct_times)
         # Ältere all_time.json-Einträge kennen die Latenz-Felder noch nicht.
         x["total_latency_s"] = x.get("total_latency_s", 0.0) + sum(e["latencies"])
         x["latency_count"] = x.get("latency_count", 0) + len(e["latencies"])
@@ -254,6 +267,8 @@ def reset_all_time() -> None:
     reset time is remembered so that recent_char_data() ignores older logs."""
     if ALL_TIME_FILE.exists():
         ALL_TIME_FILE.unlink()
+    from morsetrainer.core import review
+    review.reset()
     try:
         storage.write_json_atomic(RESET_FILE, {"time": datetime.now().isoformat(timespec="seconds")})
     except OSError:
@@ -322,12 +337,21 @@ def all_time_summary(all_time: dict):
     accuracy = (correct / total * 100) if total else 0.0
     correct_wpm_total = sum(e.get("correct_effective_wpm_total", 0.0) for e in all_time.values())
     avg_wpm = (correct_wpm_total / correct) if correct else 0.0
+    timed = sum(e.get("correct_timed_count", 0) for e in all_time.values())
+    timed_s = sum(e.get("correct_reaction_time_s", 0.0) for e in all_time.values())
     return {
         "total": total,
         "correct": correct,
         "accuracy_pct": round(accuracy, 1),
         "avg_effective_wpm": round(avg_wpm, 1),
+        "cpm": _cpm(timed, timed_s),
     }
+
+
+def _cpm(count: int, seconds: float) -> float:
+    """Gemessene Zeichen pro Minute: richtig erkannte Zeichen durch die dafür
+    gebrauchte Zeit (Zeichen plus Reaktion); 0.0 ohne Messung."""
+    return round(count * 60 / seconds, 1) if count and seconds > 0 else 0.0
 
 def top_confusions(all_time: dict, limit=10):
     """Häufigste Verwechslungen über alle Zeichen: [(gesendet, getippt,

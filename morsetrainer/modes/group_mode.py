@@ -57,6 +57,7 @@ class GroupModeFrame(SequenceModeFrame):
     session_mode = "group"
     send_prosigns = True
     koch_progress = True
+    review_promotes = True
 
     def _build_extra_settings(self, parent):
         settings = ttk.Frame(parent)

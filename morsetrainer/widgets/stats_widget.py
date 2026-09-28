@@ -45,7 +45,10 @@ class StatsPanel:
 
     def refresh(self, summary: dict, rows: list):
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f}%)")
-        self.speed_var.set(f"Ø effektive Geschwindigkeit: {summary['avg_effective_wpm']:.1f} WPM")
+        speed = f"Ø effektive Geschwindigkeit: {summary['avg_effective_wpm']:.1f} WPM"
+        if summary.get("cpm"):
+            speed += f" · {summary['cpm']:.0f} ZpM gemessen"
+        self.speed_var.set(speed)
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
         for char, good, wrong, _total, avg_rt, avg_wpm, confusions in rows:

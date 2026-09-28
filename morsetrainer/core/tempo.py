@@ -14,6 +14,7 @@ Zeichentempo). Angepasst wird immer das effektive Tempo:
 
 MIN_CHAR_WPM = 15
 LIMITS = (5, 60)
+CHARS_PER_WORD = 5  # Normwort PARIS: 1 WPM = 5 Zeichen pro Minute
 
 
 def effective(wpm: int, fw) -> int:
@@ -36,3 +37,10 @@ def label(wpm: int, fw) -> str:
     """"20 WPM" oder "20/12 WPM" (Zeichen/effektiv)."""
     eff = effective(wpm, fw)
     return f"{wpm} WPM" if eff == wpm else f"{wpm}/{eff} WPM"
+
+
+def cpm(wpm) -> int:
+    """Zeichen pro Minute (ZpM/BpM) nach der PARIS-Norm – eine Umrechnung,
+    kein Messwert: lange Zeichen (Ziffern, Q, Y) kommen bei gleichem WPM
+    seltener."""
+    return round(wpm * CHARS_PER_WORD)

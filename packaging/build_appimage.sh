@@ -13,12 +13,18 @@ cd "$(dirname "$0")/.."
 PORTAUDIO=$(ldconfig -p | awk '/libportaudio\.so\.2 .*x86-64/ {print $NF}' | head -n1 || true)
 [ -n "$PORTAUDIO" ] || { echo "libportaudio.so.2 nicht gefunden (apt install libportaudio2)"; exit 1; }
 
+packaging/get_voice.sh
+
 pyinstaller --noconfirm --clean --windowed --name morsetrainer \
     --add-binary "$PORTAUDIO:." \
     --runtime-hook packaging/rthook_portaudio.py \
     --add-data README.md:. --add-data CHANGELOG.md:. \
     --add-data morsetrainer/assets:morsetrainer/assets \
+    --add-data voices:voices --additional-hooks-dir packaging/hooks \
     main.py
+
+# Stimme und MP3 im gepackten Programm prüfen (ohne Fenster, ohne Ton).
+dist/morsetrainer/morsetrainer --selftest build/selftest.mp3
 
 APPDIR=build/Morsetrainer.AppDir
 rm -rf "$APPDIR"

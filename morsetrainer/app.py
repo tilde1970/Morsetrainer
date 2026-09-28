@@ -6,17 +6,18 @@ gemeinsamen Einstellungen für Zeichensatz (frei oder als Koch-Lektion),
 Geschwindigkeit und Tonhöhe."""
 import re
 import time
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 from morsetrainer import DATA_DIR
-from morsetrainer.core import audio, koch, practice, stats, storage, tempo
+from morsetrainer.core import audio, koch, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
 from morsetrainer.modes.group_mode import GroupModeFrame
+from morsetrainer.modes.listen_mode import ListenModeFrame
 from morsetrainer.modes.qso_mode import QsoModeFrame
 from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
@@ -157,6 +158,10 @@ class MorseTrainerApp:
         self.more_button.pack(side="left")
         self.extras_var = tk.StringVar(value="")
         theme.hint(toggle_row, textvariable=self.extras_var).pack(side="left", padx=(8, 0))
+        # Umrechnung für alle, die in ZpM/BpM denken (DL-Kurse, RufZ, HST);
+        # hier statt neben dem WPM-Feld, weil die obere Zeile voll ist.
+        self.cpm_var = tk.StringVar(value="")
+        theme.hint(toggle_row, textvariable=self.cpm_var).pack(side="right")
 
         self.more_frame = ttk.Frame(header)
         farnsworth = ttk.Frame(self.more_frame)
@@ -169,7 +174,8 @@ class MorseTrainerApp:
         ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4).pack(
             side="left", padx=4
         )
-        theme.hint(farnsworth, text="WPM (alle außer Einzelzeichen)").pack(side="left")
+        self.farnsworth_cpm_var = tk.StringVar(value="")
+        theme.hint(farnsworth, textvariable=self.farnsworth_cpm_var).pack(side="left")
         ttk.Button(
             farnsworth, text=f"Koch-Tempo {koch.RECOMMENDED_WPM}/{koch.RECOMMENDED_EFFECTIVE_WPM}",
             command=self._set_koch_tempo,
@@ -190,10 +196,27 @@ class MorseTrainerApp:
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
                     self.weighted_var, self.vary_var):
             var.trace_add("write", lambda *_: self._update_more())
+        for var in (self.wpm_var, self.farnsworth_wpm_var):
+            var.trace_add("write", lambda *_: self._update_cpm())
+        self._update_cpm()
         ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
 
         # Einstellbar im Reiter Statistik, angezeigt in der Fußzeile.
         self.daily_goal_var = tk.IntVar(value=15)
+
+    def _update_cpm(self):
+        """ZpM-Hinweise zu den WPM-Feldern (PARIS-Umrechnung, core/tempo.py);
+        leer bzw. ohne ZpM, solange ein Feld keine Zahl enthält."""
+        try:
+            wpm = self.wpm_var.get()
+            self.cpm_var.set(f"{wpm} WPM ≈ {tempo.cpm(wpm)} ZpM")
+        except tk.TclError:
+            self.cpm_var.set("")
+        try:
+            fw = f"WPM ≈ {tempo.cpm(self.farnsworth_wpm_var.get())} ZpM"
+        except tk.TclError:
+            fw = "WPM"
+        self.farnsworth_cpm_var.set(f"{fw} (alle außer Einzelzeichen)")
 
     def _toggle_more(self):
         self.more_var.set(not self.more_var.get())
@@ -471,6 +494,19 @@ class MorseTrainerApp:
         ttk.Label(row, text="Min. pro Tag").pack(side="left", padx=(4, 0))
         theme.hint(goal, text="0 = ohne Ziel. Lieber täglich kurz als selten lang.").pack(anchor="w", pady=(4, 0))
 
+        review_box = theme.card(frame, "Wiederholung über Tage (Lernkartei)")
+        self.review_var = tk.StringVar(value="")
+        ttk.Label(review_box, textvariable=self.review_var, justify="left", wraplength=520).pack(anchor="w", pady=4)
+        theme.hint(
+            review_box, wrap=520,
+            text="Sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, "
+                 "unsichere schon am nächsten Tag. Mit „schwache bevorzugt“ kommen fällige Zeichen öfter "
+                 "dran. Hochgestuft wird nur aus Zufallszeichen (Einzelzeichen, Gruppen, Kontinuierlich), "
+                 "entschieden einmal am Tag ab 5 Versuchen.",
+        ).pack(anchor="w", pady=(0, 6))
+        self.review_button = ttk.Button(review_box, text="Fällige gezielt üben", command=self._drill_due)
+        self.review_button.pack(anchor="w")
+
         confusion_box = theme.card(frame, f"Häufigste Verwechslungen (letzte {stats.RECENT_DAYS} Tage)")
         self.confusion_var = tk.StringVar(value="")
         ttk.Label(confusion_box, textvariable=self.confusion_var, font=theme.MONO, justify="left").pack(
@@ -495,7 +531,34 @@ class MorseTrainerApp:
         data = stats.load_all_time()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
+        self.review_var.set(self._review_text(review.load()))
         self.progress_panel.refresh()
+
+    @staticmethod
+    def _review_text(data: dict, today=None) -> str:
+        due = review.due_chars(data, today)
+        if due:
+            return f"Heute fällig ({len(due)}): " + " ".join(display_text(ch) for ch in due)
+        upcoming = review.next_due(data, today)
+        if upcoming is None:
+            return "Noch nichts in der Lernkartei – sie füllt sich mit jedem Durchgang."
+        day, chars = upcoming
+        when = "morgen" if day == (today or date.today()) + timedelta(days=1) else f"am {day:%d.%m.}"
+        return f"Heute ist nichts fällig. Als Nächstes {when}: " + " ".join(display_text(ch) for ch in chars)
+
+    def _drill_due(self):
+        """Fällige Zeichen gezielt: stark gewichtet unter dem ganzen
+        Zeichensatz (bei nur zwei, drei Zeichen wäre Raten zu leicht), in
+        den Einzelzeichen. Die Gewichtung wird dafür eingeschaltet."""
+        due = review.due_chars()
+        if not due:
+            self.review_var.set(self._review_text(review.load()))
+            return
+        charset = self.charset_var.get().upper()
+        self.charset_var.set(charset + "".join(ch for ch in due if ch not in charset))
+        review.focus = set(due)
+        self.weighted_var.set(True)
+        self.notebook.select(self.tab_ids[self.mode_titles.index("Einzelzeichen")])
 
     @staticmethod
     def _confusion_text(data: dict) -> str:
@@ -555,6 +618,7 @@ class MorseTrainerApp:
             ("Wörter", WordModeFrame),
             ("Rufzeichen", CallsignModeFrame),
             ("Kontinuierlich", ContinuousModeFrame),
+            ("Sprechen", ListenModeFrame),
             ("QSO", QsoModeFrame),
             ("Contest", RunModeFrame),
         ]
@@ -590,6 +654,7 @@ class MorseTrainerApp:
         self.running_mode = True
         self.new_char_button.config(state="disabled")
         self.confusion_button.config(state="disabled")
+        self.review_button.config(state="disabled")
         if self.practice_started is None:
             self.practice_started = time.time()
             self.practice_tick_id = self.root.after(PRACTICE_TICK_MS, self._practice_tick)
@@ -599,9 +664,11 @@ class MorseTrainerApp:
             self.notebook.tab(tab_id, state="normal")
         self.running_mode = False
         self.confusion_button.config(state="normal")
+        self.review_button.config(state="normal")
         self._sync_lesson()
 
     def _handle_mode_stop(self):
+        review.focus = set()  # gezieltes Üben der Fälligen endet mit dem Durchgang
         self._record_practice()
         self._update_practice()
         self._unlock_tabs()

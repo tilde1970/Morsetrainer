@@ -156,7 +156,7 @@ def apply(root) -> None:
 
     style.configure("TNotebook", background=BG, bordercolor=BORDER, tabmargins=(2, 4, 2, 0))
     style.configure("TNotebook.Tab", background=BUTTON, foreground=MUTED, bordercolor=BORDER,
-                    lightcolor=BUTTON, darkcolor=BUTTON, padding=(6, 3))
+                    lightcolor=BUTTON, darkcolor=BUTTON, padding=(5, 3), font=SMALL)
     style.map("TNotebook.Tab",
               background=[("selected", BG), ("active", BUTTON_ACTIVE)],
               lightcolor=[("selected", BG)],

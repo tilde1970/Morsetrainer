@@ -213,7 +213,8 @@ class SingleModeFrame:
         self.start_button.config(text="Stop")
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
-        self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get())
+        self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get(),
+                                          review_promote=True)
         self.picker = CharPicker(charset, self.weighted_var.get(), self.session_stats)
         self.history = []
         self.history_var.set("")

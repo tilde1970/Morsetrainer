@@ -15,11 +15,15 @@ Erst ab MIN_LATENCY_SAMPLES Messungen zählt das Tempo eines Zeichens.
 Auf alles kommt ein Grundgewicht MIN_WEIGHT, damit auch sicher
 beherrschte Zeichen weiter vorkommen: ein Zeichen mit 50 % Fehlern kommt
 dadurch rund 6-mal so oft wie eines, das nie falsch war und im üblichen
-Tempo erkannt wird."""
+Tempo erkannt wird.
+
+Heute fällige Zeichen der Lernkartei (core/review.py) zählen zusätzlich
+doppelt (review.DUE_FACTOR), beim gezielten Üben vierfach
+(review.FOCUS_FACTOR)."""
 import random
 import statistics
 
-from morsetrainer.core import stats
+from morsetrainer.core import review, stats
 
 MIN_WEIGHT = 0.1
 SPEED_WEIGHT = 0.5
@@ -34,6 +38,8 @@ class CharPicker:
         self.weighted = weighted
         self.session = session
         self.all_time = stats.load_all_time() if weighted else {}
+        # Heute fällig in der Lernkartei (core/review.py): öfter dran.
+        self.due = set(review.due_chars()) if weighted else set()
 
     def _session_chars(self):
         return self.session.per_char if self.session is not None else {}
@@ -87,6 +93,10 @@ class CharPicker:
             if lat is not None and median > 0:
                 slowness = min(max((lat - median) / median, 0.0), 1.0)
                 weight += SPEED_WEIGHT * slowness
+            if ch in review.focus:
+                weight *= review.FOCUS_FACTOR
+            elif ch in self.due:
+                weight *= review.DUE_FACTOR
             weights.append(weight)
         return weights
 

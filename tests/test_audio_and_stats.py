@@ -145,6 +145,20 @@ class StatsTest(unittest.TestCase):
         weights = dict(zip("KM", picker.weights()))
         self.assertGreater(weights["M"], weights["K"])  # für das Zeichen zählen sie mit
 
+    def test_measured_cpm_counts_only_correct_characters(self):
+        session = self._session([("H", "H"), ("S", "S"), ("5", "H")])  # je 0,5 s
+        self.assertEqual(session.summary()["cpm"], 120.0)
+        session.finalize()
+        self.assertEqual(stats.all_time_summary(stats.load_all_time())["cpm"], 120.0)
+        wrong_only = self._session([("H", "5")])
+        self.assertEqual(wrong_only.summary()["cpm"], 0.0)
+        wrong_only.finalize()
+
+    def test_cpm_is_five_times_wpm(self):
+        from morsetrainer.core import tempo
+        self.assertEqual(tempo.cpm(20), 100)
+        self.assertEqual(tempo.cpm(12), 60)
+
     def test_old_all_time_without_confusions_still_works(self):
         stats.ALL_TIME_FILE.write_text(json.dumps({"K": {
             "good": 3, "wrong": 1, "total_reaction_time_s": 2.0, "total_effective_wpm": 80.0,

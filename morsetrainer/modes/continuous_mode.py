@@ -42,7 +42,7 @@ from morsetrainer.core.stats import SessionStats
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
-from morsetrainer.core.weighting import CharPicker
+from morsetrainer.modes.content import ItemSource
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
 # damit ein Stop nicht erst das ganze (evtl. lange Farnsworth-)Zeichen
@@ -55,6 +55,11 @@ FINISH_GRACE_SECONDS = 3
 
 DEFAULT_GROUP_LEN = 5
 GROUP_LEN_RANGE = (0, 10)
+
+# Inhalt: Zufallszeichen in Gruppen (zählt für die Koch-Lektion) oder
+# Klartext aus Wörtern, Wendungen, Rufzeichen, QSOs (siehe modes/content.py).
+CONTENTS = {"Zufallszeichen": "chars", "Wörter": "words", "Wendungen": "phrases", "Rufzeichen": "calls",
+            "QSO-Klartext": "qso"}
 
 # Zeitliche Plausibilität einer Zuordnung Taste -> gesendetes Zeichen: so
 # viel früher als das Tonende (Messungenauigkeit) bzw. höchstens so viel
@@ -127,12 +132,23 @@ class ContinuousModeFrame:
         ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
         ttk.Label(duration, text="Min.").pack(side="left", padx=(4, 0))
         theme.hint(duration, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        content = ttk.Frame(options)
+        content.pack(fill="x", pady=(2, 0))
+        ttk.Label(content, text="Inhalt:").pack(side="left", padx=(0, 4))
+        self.content_var = tk.StringVar(value="Zufallszeichen")
+        ttk.Combobox(content, textvariable=self.content_var, values=list(CONTENTS), state="readonly",
+                     width=14).pack(side="left")
+        theme.hint(content, text="(Klartext zählt nicht für die Lektion)").pack(side="left", padx=(6, 0))
         grouping = ttk.Frame(options)
         grouping.pack(fill="x", pady=(2, 0))
         ttk.Label(grouping, text="Gruppen zu").pack(side="left", padx=(0, 4))
         self.group_len_var = tk.IntVar(value=DEFAULT_GROUP_LEN)
-        ttk.Spinbox(grouping, from_=GROUP_LEN_RANGE[0], to=GROUP_LEN_RANGE[1], textvariable=self.group_len_var,
-                    width=3).pack(side="left")
+        group_len_box = ttk.Spinbox(grouping, from_=GROUP_LEN_RANGE[0], to=GROUP_LEN_RANGE[1],
+                                    textvariable=self.group_len_var, width=3)
+        group_len_box.pack(side="left")
+        # Gruppenlänge gilt nur für Zufallszeichen; Klartext hat seine Wörter.
+        self.content_var.trace_add("write", lambda *_: group_len_box.state(
+            ["!disabled"] if self.content_var.get() == "Zufallszeichen" else ["disabled"]))
         ttk.Label(grouping, text="Zeichen").pack(side="left", padx=(4, 0))
         theme.hint(grouping, text="(mit Wortpause dazwischen; 0 = durchgehend)").pack(side="left", padx=(4, 0))
 
@@ -158,7 +174,7 @@ class ContinuousModeFrame:
         self.stats_panel = StatsPanel(parent)
 
     def settings(self) -> dict:
-        data = {}
+        data = {"content": CONTENTS.get(self.content_var.get())}
         for key, var in (("duration", self.duration_var), ("group_len", self.group_len_var)):
             try:
                 data[key] = var.get()
@@ -167,6 +183,9 @@ class ContinuousModeFrame:
         return data
 
     def restore_settings(self, data: dict) -> None:
+        for label, key in CONTENTS.items():
+            if data.get("content") == key:
+                self.content_var.set(label)
         for key, var, limits in (("duration", self.duration_var, (0, 120)),
                                  ("group_len", self.group_len_var, GROUP_LEN_RANGE)):
             value = data.get(key)
@@ -207,11 +226,19 @@ class ContinuousModeFrame:
             self.group_len = min(max(self.group_len_var.get(), GROUP_LEN_RANGE[0]), GROUP_LEN_RANGE[1])
         except tk.TclError:
             self.group_len = DEFAULT_GROUP_LEN
+        self.content = CONTENTS.get(self.content_var.get(), "chars")
+        if self.content == "chars":
+            # Gruppenlänge 0: ein Zeichen je Eintrag, ohne Wortpausen.
+            self.source = ItemSource("groups", charset, self.group_len or 1, self.weighted_var.get())
+        else:
+            self.source = ItemSource(self.content, charset, weighted=self.weighted_var.get())
+        problem = self.source.problem()
+        if problem:
+            self.status_var.set(problem)
+            return
         self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw,
+                                          review_promote=self.content == "chars",
                                           group_len=self.group_len or None)
-        # Ohne Session: die Zuordnung gesendet/getippt steht erst beim Stop
-        # fest, während der Sitzung zählt daher nur die Gesamtstatistik.
-        self.picker = CharPicker(charset, self.weighted_var.get())
         self.stats_panel.reset()
         self.live_var.set("Gesendet: 0 Zeichen")
         self.typed_preview_var.set("")
@@ -240,23 +267,29 @@ class ContinuousModeFrame:
             # Einleitung, wird nicht ausgewertet (landet nicht in sent_log).
             if not self._write(stream, build_text(START_TEXT + " ", self.wpm, self.freq, self.fw)):
                 return
-            in_group = 0
+            word_gaps = self.content != "chars" or self.group_len
+            first = True
             while self.running and not self._time_up():
-                if self.group_len and in_group == self.group_len:
-                    # Wortpause zwischen den Gruppen (zusätzlich zur Zeichenpause).
+                token, _ = self.source.next()
+                if word_gaps and not first:
+                    # Wortpause zwischen Gruppen bzw. Wörtern (zusätzlich zur Zeichenpause).
                     if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
                         break
-                    in_group = 0
-                in_group += 1
-                char = self.picker.pick()
-                samples = build_samples(char, self.wpm, self.freq, self.fw)
-                if not self._write(stream, samples):
-                    break
-                # write() kehrt zurück, sobald die Samples im Puffer sind; zu
-                # hören ist ihr Ende erst nach stream.latency. Die Reaktionszeit
-                # zählt ab dem Ende des Tons, also vor der Pause dahinter.
-                tone_end = time.time() + stream.latency - char_gap_seconds(self.wpm, self.fw)
-                self.sent_log.append({"char": char, "end_time": tone_end})
+                first = False
+                for char in token:
+                    if char == " ":
+                        # Wortabstand innerhalb einer Wendung („TNX FER CALL“).
+                        if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
+                            break
+                        continue
+                    samples = build_samples(char, self.wpm, self.freq, self.fw)
+                    if not self._write(stream, samples):
+                        break
+                    # write() kehrt zurück, sobald die Samples im Puffer sind; zu
+                    # hören ist ihr Ende erst nach stream.latency. Die Reaktionszeit
+                    # zählt ab dem Ende des Tons, also vor der Pause dahinter.
+                    tone_end = time.time() + stream.latency - char_gap_seconds(self.wpm, self.fw)
+                    self.sent_log.append({"char": char, "end_time": tone_end})
             if self.running:
                 # Zeit abgelaufen: Wortpause und Schlusszeichen direkt hinterher.
                 ending = np.concatenate([
@@ -383,7 +416,8 @@ class ContinuousModeFrame:
                 + "\n          " + " ".join(r[2] for r in tail).rstrip() + "\n          – fehlt/zu viel, ^ falsch oder nicht rechtzeitig"
             )
         summary = self.session_stats.summary()
-        self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])
+        if getattr(self, "content", "chars") == "chars":  # Klartext ist vorhersagbarer
+            self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])
         self.stats_panel.refresh(summary, self.session_stats.char_rows())
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path, self.session_stats.log_error)

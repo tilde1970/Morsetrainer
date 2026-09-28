@@ -96,6 +96,40 @@ WORDS = {
     "(": "KN – nur die gerufene Station senden", "*": "SK – Ende der Verbindung",
 }
 
+# Wendungen, wie sie in QSOs am Stück fallen: als Ganzes gehört statt Wort
+# für Wort (Chunking). Betriebszeichen als Platzhalter (siehe morse.PROSIGNS).
+PHRASES = {
+    "CQ CQ DE": "allgemeiner Anruf von …", "PSE K": "bitte kommen", "PSE (": "bitte kommen, nur du",
+    "TNX FER CALL": "danke für den Anruf", "TNX FER QSO": "danke für die Verbindung",
+    "TNX FER RPRT": "danke für den Rapport", "UR RST 599": "dein Rapport 599", "UR RST IS 579": "dein Rapport ist 579",
+    "UR 5NN": "dein Rapport 599", "NAME HR IS": "mein Name ist", "MY NAME IS": "mein Name ist",
+    "QTH HR IS": "mein Standort ist", "MY QTH IS": "mein Standort ist", "HW CPY": "wie aufgenommen?",
+    "HW CPY OM": "wie aufgenommen, OM?", "SOLID CPY": "alles gut aufgenommen", "FB OM": "prima, OM",
+    "R R TNX": "verstanden, danke", "ALL OK": "alles aufgenommen", "PSE AGN": "bitte nochmal",
+    "PSE RPT UR NAME": "bitte deinen Namen wiederholen", "QRZ": "wer ruft?", "AGN PSE": "nochmal bitte",
+    "RIG HR IS": "mein Funkgerät ist", "PWR IS 100W": "Leistung 100 Watt", "ANT IS DIPOLE": "Antenne ist ein Dipol",
+    "WX HR SUNNY": "hier sonnig", "WX IS CLOUDY": "Wetter bewölkt", "TEMP IS 20C": "Temperatur 20 Grad",
+    "GUD DX": "viel Erfolg bei Fernverbindungen", "73 ES GL": "viele Grüße und viel Glück",
+    "73 ES CUAGN": "viele Grüße, auf Wiederhören", "CUL 73": "bis später, viele Grüße", "TU 73": "danke, viele Grüße",
+    "GM OM": "guten Morgen, OM", "GA OM": "guten Tag, OM", "GE OM": "guten Abend, OM",
+    "GL ES 73": "viel Glück und viele Grüße", "HPE CUAGN": "hoffe auf Wiederhören", "VY 73": "sehr viele Grüße",
+    "QSL VIA BURO": "QSL über das Büro", "QSL VIA LOTW": "QSL über LoTW", "# TU": "Umschalten, danke",
+    "TNX ES 73": "danke und viele Grüße", "5NN TU": "599, danke", "TU UP": "danke, höre höher",
+    "QRL?": "Frequenz belegt?", "QSY UP": "gehe höher", "QRS PSE": "bitte langsamer", "QRQ": "schneller",
+    "UR SIGS FB": "deine Signale sind prima", "HVY QRM": "starke Störungen", "HVY QSB": "starker Schwund",
+    "CONDX NOT GUD": "Bedingungen nicht gut", "TNX FER NICE QSO": "danke für das nette QSO",
+    "SRI QRM": "Entschuldigung, Störungen", "DR OM": "lieber OM", "HR QRU": "hier nichts mehr",
+    "RR TU": "verstanden, danke", "TNX QSO": "danke für die Verbindung", "GM ES TNX": "guten Morgen und danke",
+    "73 TU EE": "viele Grüße, danke (dit dit)", "TU 73 *": "danke, viele Grüße, Ende", "OP HR IS": "Funker hier ist",
+    "UR NAME?": "dein Name?", "PSE QSL": "bitte bestätigen",
+}
+
+
+def phrases_for_charset(charset: str, phrases=PHRASES) -> list[str]:
+    """Wendungen, deren Zeichen (ohne Leerzeichen) alle im Zeichensatz sind."""
+    allowed = set(charset) | {" "}
+    return sorted(p for p in phrases if set(p) <= allowed)
+
 
 def parse_user_words(text: str) -> tuple[dict, list[str]]:
     """Liest den Inhalt von woerter.txt: ({Wort: Bedeutung}, übersprungene

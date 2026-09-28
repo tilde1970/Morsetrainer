@@ -46,7 +46,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "README.md:." --add-data "CHANGELOG.md:." --add-data "morsetrainer/assets:morsetrainer/assets" --icon packaging/morsetrainer.ico main.py
+      - run: bash packaging/get_voice.sh
+      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "README.md:." --add-data "CHANGELOG.md:." --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
+      # Stimme und MP3 in der exe prüfen (ohne Fenster, ohne Ton).
+      - shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\Morsetrainer.exe -ArgumentList '--selftest','selftest.mp3' -Wait -PassThru
+          if ($p.ExitCode -ne 0 -or -not (Test-Path selftest.mp3)) { Write-Error "Selbsttest fehlgeschlagen ($($p.ExitCode))"; exit 1 }
       - uses: actions/upload-artifact@v7
         with:
           name: windows

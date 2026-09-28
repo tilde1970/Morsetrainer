@@ -453,7 +453,8 @@ class ContinuousGroupingTest(AppTestCase):
             def write(self, block):
                 pass
 
-        c.picker = single_mode.CharPicker("KM", False)
+        from morsetrainer.modes.content import ItemSource
+        c.content, c.source = "chars", ItemSource("groups", "KM", 3)
         c.wpm, c.freq, c.fw, c.group_len = 20, 600, None, 3
         c.sent_log, c.running, c.deadline = [], True, None
         word_gap = continuous_mode.word_gap_extra_seconds(20, None)

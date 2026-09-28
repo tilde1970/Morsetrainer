@@ -1,5 +1,28 @@
 # Änderungen
 
+## 2.13
+
+- **Neuer Reiter „Sprechen“ (Hören & Sagen):** ohne Tastatur üben wie mit
+  Morse Code Ninja. Nach dem Morsezeichen sagst du laut, was du gehört hast;
+  dann sagt eine Stimme (Piper, offline) die Lösung an und das Zeichen kommt
+  noch einmal. Für Zeichen, Gruppen, Wörter, Wendungen und Rufzeichen;
+  Zeichen und Rufzeichen werden buchstabiert, Wörter und Wendungen als Ganzes
+  bzw. mit ihrer Bedeutung angesagt.
+- **Als MP3 speichern:** dieselbe Übung als Datei für Handy oder Auto.
+- **Klartext im Reiter Kontinuierlich:** statt Zufallszeichen auch Wörter,
+  QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs
+  am Stück.
+- **Lernkartei (Wiederholung über Tage):** Sicher und flüssig erkannte
+  Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, unsichere schon am
+  nächsten Tag. Entschieden wird einmal am Tag ab 5 Versuchen; hochgestuft
+  nur aus Zufallszeichen, weil in Wörtern und Klartext der Zusammenhang
+  mithilft. Fällige Zeichen kommen mit „schwache bevorzugt“ öfter; im Reiter
+  Statistik lassen sie sich gezielt üben.
+- **Zeichen pro Minute:** Neben den WPM-Feldern steht das Tempo auch in
+  ZpM (≈ 5 × WPM nach der PARIS-Norm). Die Statistik zeigt zusätzlich die
+  tatsächlich erreichten Zeichen pro Minute, gemessen aus den richtig
+  erkannten Zeichen und der dafür gebrauchten Zeit.
+
 ## 2.12
 
 - **Programmicon:** Fenster, Taskleiste und die Windows-exe zeigen jetzt

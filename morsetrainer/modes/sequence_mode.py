@@ -92,6 +92,8 @@ class SequenceModeFrame:
     # Ergebnis zählt für den Aufstieg in die nächste Koch-Lektion.
     koch_progress = False
     default_style = COPY  # Eingabeart, solange nichts gespeichert ist
+    # Zufallszeichen: darf Zeichen in der Lernkartei hochstufen (core/review.py).
+    review_promotes = False
     # Bekommt die gemeinsame Einstellung "Tonhöhe und Tempo variieren".
     uses_vary = True
 
@@ -411,6 +413,7 @@ class SequenceModeFrame:
             self.session_mode, self._log_charset(), wpm, freq,
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
             self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
+            review_promote=self.review_promotes,
         )
         self._setup_pickers(self.weighted_var.get())
         # Latenz für richtig, aber unsicher (siehe on_submit): doppelt so lang

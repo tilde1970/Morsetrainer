@@ -9,3 +9,4 @@ woerter.txt
 build/
 dist/
 *.spec
+voices/
