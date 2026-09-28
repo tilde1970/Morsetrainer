@@ -8,6 +8,7 @@ from tkinter import ttk
 
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
+from morsetrainer.i18n import tr
 from morsetrainer.modes.sequence_mode import SequenceModeFrame
 from morsetrainer.widgets import theme
 
@@ -62,10 +63,10 @@ class GroupModeFrame(SequenceModeFrame):
     def _build_extra_settings(self, parent):
         settings = ttk.Frame(parent)
         settings.pack(fill="x", pady=1)
-        ttk.Label(settings, text="Gruppenlänge von").pack(side="left", padx=(0, 4))
+        ttk.Label(settings, text=tr("Gruppenlänge von")).pack(side="left", padx=(0, 4))
         self.min_len_var = tk.IntVar(value=2)
         ttk.Spinbox(settings, from_=1, to=10, textvariable=self.min_len_var, width=4).pack(side="left")
-        ttk.Label(settings, text="bis").pack(side="left", padx=(8, 4))
+        ttk.Label(settings, text=tr("bis")).pack(side="left", padx=(8, 4))
         self.max_len_var = tk.IntVar(value=5)
         ttk.Spinbox(settings, from_=1, to=10, textvariable=self.max_len_var, width=4).pack(side="left")
 
@@ -73,8 +74,8 @@ class GroupModeFrame(SequenceModeFrame):
         adaptive.pack(fill="x", pady=1)
         self.adaptive_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
-            adaptive, text=f"Länge wächst mit ({LONGER_AFTER}× richtig: länger, "
-                           f"{SHORTER_AFTER} Fehler: kürzer)",
+            adaptive, text=tr("Länge wächst mit ({longer}× richtig: länger, {shorter} Fehler: kürzer)").format(
+                longer=LONGER_AFTER, shorter=SHORTER_AFTER),
             variable=self.adaptive_var,
         ).pack(side="left")
         self.length_info_var = tk.StringVar(value="")
@@ -85,15 +86,15 @@ class GroupModeFrame(SequenceModeFrame):
     def _validate_settings(self) -> bool:
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
-            self.status_var.set("Kein gültiges Zeichen im Zeichensatz!")
+            self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
             return False
         try:
             low, high = self.min_len_var.get(), self.max_len_var.get()
         except tk.TclError:
-            self.status_var.set("Ungültige Gruppenlänge!")
+            self.status_var.set(tr("Ungültige Gruppenlänge!"))
             return False
         if low > high:
-            self.status_var.set("Gruppenlänge 'von' darf nicht größer als 'bis' sein!")
+            self.status_var.set(tr("Gruppenlänge „von“ darf nicht größer als „bis“ sein!"))
             return False
         self.charset = charset
         if self.adaptive_var.get():
@@ -105,8 +106,8 @@ class GroupModeFrame(SequenceModeFrame):
         return True
 
     def _show_length(self, change: int = 0):
-        note = {1: " – länger, weiter so!", -1: " – etwas kürzer"}.get(change, "")
-        self.length_info_var.set(f"Aktuelle Gruppenlänge: {self.adaptive.length}{note}")
+        note = {1: tr(" – länger, weiter so!"), -1: tr(" – etwas kürzer")}.get(change, "")
+        self.length_info_var.set(tr("Aktuelle Gruppenlänge: {length}").format(length=self.adaptive.length) + note)
 
     def _setup_pickers(self, weighted: bool):
         self.picker = CharPicker(self.charset, weighted, self.session_stats)

@@ -39,9 +39,10 @@ from morsetrainer.core import qso_text
 from morsetrainer.core import stats
 from morsetrainer.core.band import BandConditions
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE, build_text
+from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.qso_quiz import is_correct
 from morsetrainer.widgets import theme
-from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
+from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ChoiceBox, ScrollableFrame
 
 DEFAULT_CALL = "DL4YM"
 TICK_MS = 30
@@ -75,8 +76,8 @@ BUSTED_ANSWER_PROBABILITY = 0.4
 BUSTED_CORRECTS_PROBABILITY = 0.6
 
 MESSAGES = {  # Taste -> (Nachrichtentyp, Beschriftung)
-    "F1": ("cq", "CQ"), "F2": ("exchange", "Austausch"), "F3": ("tu", "TU/Log"),
-    "F4": ("mycall", "Mein Call"), "F5": ("hiscall", "Sein Call"), "F7": ("query", "?"), "F8": ("agn", "AGN"),
+    "F1": ("cq", "CQ"), "F2": ("exchange", N_("Austausch")), "F3": ("tu", "TU/Log"),
+    "F4": ("mycall", N_("Mein Call")), "F5": ("hiscall", N_("Sein Call")), "F7": ("query", "?"), "F8": ("agn", "AGN"),
 }
 
 
@@ -206,28 +207,28 @@ class RunModeFrame:
     def _build_widgets(self, parent):
         theme.hint(
             parent, wrap=560,
-            text="Du bist die Run-Station: F1 ruft CQ, nimm ein Rufzeichen auf, gib mit Enter den "
-                 "Austausch, trag seinen Austausch ein und logge mit Enter (TU). "
-                 "Am Ende wird dein Log mit dem verglichen, was wirklich gesendet wurde.",
+            text=tr("Du bist die Run-Station: F1 ruft CQ, nimm ein Rufzeichen auf, gib mit Enter den "
+                    "Austausch, trag seinen Austausch ein und logge mit Enter (TU). "
+                    "Am Ende wird dein Log mit dem verglichen, was wirklich gesendet wurde."),
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
         box = theme.card(parent, "Contest")
         box.columnconfigure(1, weight=1)
         row_pad = {"padx": (0, 8), "pady": 2}
-        ttk.Label(box, text="Contest:").grid(row=0, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Contest:")).grid(row=0, column=0, sticky="w", **row_pad)
         self.kind_var = tk.StringVar(value=qso_text.QSO_TYPES["cqww"])
-        self.kind_combo = ttk.Combobox(
-            box, textvariable=self.kind_var, state="readonly", width=32,
-            values=[label for key, label in qso_text.QSO_TYPES.items() if key != qso_text.RAGCHEW],
+        self.kind_combo = ChoiceBox(
+            box, self.kind_var, [label for key, label in qso_text.QSO_TYPES.items() if key != qso_text.RAGCHEW],
+            width=32,
         )
         self.kind_combo.grid(row=0, column=1, columnspan=2, sticky="w", pady=2)
 
-        ttk.Label(box, text="Mein Rufzeichen:").grid(row=1, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Mein Rufzeichen:")).grid(row=1, column=0, sticky="w", **row_pad)
         self.my_call_var = tk.StringVar(value=DEFAULT_CALL)
         self.my_call_entry = ttk.Entry(box, textvariable=self.my_call_var, width=12)
         self.my_call_entry.grid(row=1, column=1, sticky="w", pady=2)
 
-        ttk.Label(box, text="Mein Austausch:").grid(row=2, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Mein Austausch:")).grid(row=2, column=0, sticky="w", **row_pad)
         exchange_row = ttk.Frame(box)
         exchange_row.grid(row=2, column=1, columnspan=2, sticky="w", pady=2)
         self.my_exchange_var = tk.StringVar(value="")
@@ -236,40 +237,40 @@ class RunModeFrame:
         self.exchange_hint_var = tk.StringVar(value="")
         theme.hint(exchange_row, textvariable=self.exchange_hint_var).pack(side="left", padx=6)
 
-        ttk.Label(box, text="Aktivität:").grid(row=3, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Aktivität:")).grid(row=3, column=0, sticky="w", **row_pad)
         activity_row = ttk.Frame(box)
         activity_row.grid(row=3, column=1, columnspan=2, sticky="w", pady=2)
         self.activity_var = tk.IntVar(value=2)
         self.activity_spin = ttk.Spinbox(activity_row, from_=1, to=5, textvariable=self.activity_var, width=4)
         self.activity_spin.pack(side="left")
-        theme.hint(activity_row, text="Anrufer gleichzeitig (ca.)").pack(side="left", padx=6)
+        theme.hint(activity_row, text=tr("Anrufer gleichzeitig (ca.)")).pack(side="left", padx=6)
 
-        ttk.Label(box, text="Dauer:").grid(row=4, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Dauer:")).grid(row=4, column=0, sticky="w", **row_pad)
         duration_row = ttk.Frame(box)
         duration_row.grid(row=4, column=1, columnspan=2, sticky="w", pady=2)
         self.duration_var = tk.IntVar(value=10)
         self.duration_spin = ttk.Spinbox(duration_row, from_=0, to=240, textvariable=self.duration_var, width=4)
         self.duration_spin.pack(side="left")
-        ttk.Label(duration_row, text="Min.").pack(side="left", padx=(4, 0))
-        theme.hint(duration_row, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        ttk.Label(duration_row, text=tr("Min.")).pack(side="left", padx=(4, 0))
+        theme.hint(duration_row, text=tr("(0 = ohne Limit)")).pack(side="left", padx=(4, 0))
 
-        ttk.Label(box, text="Anrufer:").grid(row=5, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Anrufer:")).grid(row=5, column=0, sticky="w", **row_pad)
         spread_row = ttk.Frame(box)
         spread_row.grid(row=5, column=1, columnspan=2, sticky="w", pady=(2, 0))
-        ttk.Label(spread_row, text="Tempo ±").pack(side="left")
+        ttk.Label(spread_row, text=tr("Tempo ±")).pack(side="left")
         self.wpm_spread_var = tk.IntVar(value=CALLER_WPM_SPREAD)
         self.wpm_spread_spin = ttk.Spinbox(spread_row, from_=CALLER_WPM_SPREAD_RANGE[0], to=CALLER_WPM_SPREAD_RANGE[1],
                                            textvariable=self.wpm_spread_var, width=3)
         self.wpm_spread_spin.pack(side="left", padx=(4, 4))
-        ttk.Label(spread_row, text="WPM, Tonhöhe ±").pack(side="left")
+        ttk.Label(spread_row, text=tr("WPM, Tonhöhe ±")).pack(side="left")
         self.freq_spread_var = tk.IntVar(value=CALLER_FREQ_OFFSET_HZ)
         self.freq_spread_spin = ttk.Spinbox(spread_row, from_=CALLER_FREQ_SPREAD_RANGE[0],
                                             to=CALLER_FREQ_SPREAD_RANGE[1], increment=50,
                                             textvariable=self.freq_spread_var, width=4)
         self.freq_spread_spin.pack(side="left", padx=(4, 4))
         ttk.Label(spread_row, text="Hz").pack(side="left")
-        theme.hint(box, text="Wenig Tonhöhen-Streuung = dichtes Pile-up nahe deiner Frequenz. "
-                             "F10 startet und beendet den Contest.", wrap=520).grid(
+        theme.hint(box, text=tr("Wenig Tonhöhen-Streuung = dichtes Pile-up nahe deiner Frequenz. "
+                                "F10 startet und beendet den Contest."), wrap=520).grid(
             row=6, column=0, columnspan=3, sticky="w", pady=(2, 6))
 
         self.kind_var.trace_add("write", lambda *_: self._on_setup_change())
@@ -277,19 +278,19 @@ class RunModeFrame:
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
-        self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
+        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(controls, textvariable=self.status_var, style="Status.TLabel").pack(side="left", padx=12)
 
         self.score_var = tk.StringVar(value="")
         ttk.Label(parent, textvariable=self.score_var, style="Score.TLabel").pack(anchor="w", padx=10, pady=(6, 0))
 
-        entry_box = theme.card(parent, "Eingabe")
+        entry_box = theme.card(parent, tr("Eingabe"))
         fields = ttk.Frame(entry_box)
         fields.pack(anchor="w", pady=(0, 6))
         theme.hint(fields, text="Call").grid(row=0, column=0, sticky="w")
-        theme.hint(fields, text="Austausch").grid(row=0, column=1, sticky="w", padx=(12, 0))
+        theme.hint(fields, text=tr("Austausch")).grid(row=0, column=1, sticky="w", padx=(12, 0))
         self.call_var = tk.StringVar()
         self.exch_var = tk.StringVar()
         self.call_entry = ttk.Entry(fields, textvariable=self.call_var, width=12, font=theme.MONO_ENTRY)
@@ -308,23 +309,23 @@ class RunModeFrame:
         keys = ttk.Frame(entry_box)
         keys.pack(fill="x", pady=(0, 6))
         for i, (key, (_, label)) in enumerate(MESSAGES.items()):
-            ttk.Button(keys, text=f"{key} {label}", command=lambda k=key: self.on_function_key(k)).grid(
+            ttk.Button(keys, text=f"{key} {tr(label)}", command=lambda k=key: self.on_function_key(k)).grid(
                 row=i // 4, column=i % 4, padx=(0, 4), pady=2, sticky="we")
         for col in range(4):
             keys.columnconfigure(col, weight=1, uniform="keys")
         theme.hint(entry_box, wrap=540,
-                   text="Enter sendet die passende nächste Nachricht (leer: CQ, mit Call: Austausch, mit "
-                       "Austausch: TU + loggen). Call nach dem Austausch korrigiert: Enter sendet „Call TU“ "
-                       "und loggt. Call mit „?“ (z. B. DL1? oder DL?ABC) fragt nur nach. "
-                       "Achtung: Anrufer antworten manchmal auch auf ein fast richtiges Call. "
-                       "Esc bricht ab, Leertaste wechselt das Feld.").pack(
+                   text=tr("Enter sendet die passende nächste Nachricht (leer: CQ, mit Call: Austausch, mit "
+                           "Austausch: TU + loggen). Call nach dem Austausch korrigiert: Enter sendet „Call TU“ "
+                           "und loggt. Call mit „?“ (z. B. DL1? oder DL?ABC) fragt nur nach. "
+                           "Achtung: Anrufer antworten manchmal auch auf ein fast richtiges Call. "
+                           "Esc bricht ab, Leertaste wechselt das Feld.")).pack(
             anchor="w")
 
         log_box = theme.card(parent, "Log")
         columns = ("nr", "call", "exch", "result")
         self.log_tree = ttk.Treeview(log_box, columns=columns, show="headings", height=8)
-        for col, heading, width, anchor in (("nr", "Nr", 40, "center"), ("call", "Call", 100, "w"),
-                                            ("exch", "Austausch", 90, "w"), ("result", "Ergebnis", 200, "w")):
+        for col, heading, width, anchor in (("nr", tr("Nr"), 40, "center"), ("call", "Call", 100, "w"),
+                                            ("exch", tr("Austausch"), 90, "w"), ("result", tr("Ergebnis"), 200, "w")):
             self.log_tree.heading(col, text=heading)
             self.log_tree.column(col, width=width, anchor=anchor)
         self.log_tree.tag_configure("wrong", foreground=theme.ERROR)
@@ -353,12 +354,12 @@ class RunModeFrame:
         kind, call = self._kind(), self._my_call()
         if qso_text.uses_serial(kind, call):
             self.my_exchange_entry.config(state="disabled")
-            self.exchange_hint_var.set("laufende Nummer (automatisch)")
+            self.exchange_hint_var.set(tr("laufende Nummer (automatisch)"))
             return
         self.my_exchange_entry.config(state="normal")
-        hints = {"cqww": "CQ-Zone", "iaru": "ITU-Zone oder Verband", "wag": "dein DOK",
-                 "arrldx": "Bundesstaat" if call[:1] in "KNW" else "Leistung (z. B. 100, KW)"}
-        self.exchange_hint_var.set(hints.get(kind, ""))
+        hints = {"cqww": N_("CQ-Zone"), "iaru": N_("ITU-Zone oder Verband"), "wag": N_("dein DOK"),
+                 "arrldx": N_("Bundesstaat") if call[:1] in "KNW" else N_("Leistung (z. B. 100, KW)")}
+        self.exchange_hint_var.set(tr(hints[kind]) if kind in hints else "")
         saved = self.my_exchanges.get(kind)
         self.my_exchange_var.set(saved if saved else qso_text.default_my_exchange(kind, call))
 
@@ -377,12 +378,12 @@ class RunModeFrame:
     def start(self):
         kind, my_call = self._kind(), self._my_call()
         if not my_call or not all(ch in MORSE_CODE for ch in my_call):
-            self.status_var.set("Bitte ein gültiges eigenes Rufzeichen eintragen.")
+            self.status_var.set(tr("Bitte ein gültiges eigenes Rufzeichen eintragen."))
             return
         my_exchange = self.my_exchange_var.get().strip().upper()
         if not qso_text.uses_serial(kind, my_call):
             if not my_exchange or not all(ch in MORSE_CODE for ch in my_exchange):
-                self.status_var.set("Bitte deinen Austausch eintragen.")
+                self.status_var.set(tr("Bitte deinen Austausch eintragen."))
                 return
             self.my_exchanges[kind] = my_exchange
         try:
@@ -390,7 +391,7 @@ class RunModeFrame:
             activity, minutes = self.activity_var.get(), self.duration_var.get()
             wpm_spread, freq_spread = self.wpm_spread_var.get(), self.freq_spread_var.get()
         except tk.TclError:
-            self.status_var.set("Ungültige Einstellung (WPM, Tonhöhe, Aktivität, Dauer oder Anrufer).")
+            self.status_var.set(tr("Ungültige Einstellung (WPM, Tonhöhe, Aktivität, Dauer oder Anrufer)."))
             return
         self.wpm_spread = min(max(wpm_spread, CALLER_WPM_SPREAD_RANGE[0]), CALLER_WPM_SPREAD_RANGE[1])
         self.freq_spread = min(max(freq_spread, CALLER_FREQ_SPREAD_RANGE[0]), CALLER_FREQ_SPREAD_RANGE[1])
@@ -415,11 +416,11 @@ class RunModeFrame:
         self.my_tx_start = self.my_tx_end = 0
 
         self.running = True
-        self.start_button.config(text="Stop")
+        self.start_button.config(text=tr("Stop"))
         for widget in (self.kind_combo, self.my_call_entry, self.my_exchange_entry, self.activity_spin,
                        self.duration_spin, self.wpm_spread_spin, self.freq_spread_spin):
             widget.config(state="disabled")
-        self.status_var.set("Läuft – F1 oder Enter ruft CQ.")
+        self.status_var.set(tr("Läuft – F1 oder Enter ruft CQ."))
         self._update_score()
         self.on_start_cb()
         self.call_entry.focus_set()
@@ -430,7 +431,7 @@ class RunModeFrame:
         if self.mixer is not None:
             self.mixer.stop()
             self.mixer = None
-        self.start_button.config(text="Start")
+        self.start_button.config(text=tr("Start"))
         for widget in (self.my_call_entry, self.activity_spin, self.duration_spin, self.wpm_spread_spin,
                        self.freq_spread_spin):
             widget.config(state="normal")
@@ -444,11 +445,11 @@ class RunModeFrame:
             stats.log_result("contest", correct, total, self.wpm, contest=self.kind, activity=self.activity,
                              minutes=round(minutes, 1), **counts)
             details = [f"{n} {label}" for n, label in ((counts["busted"], "Busted"), (counts["nil"], "NIL"),
-                                                       (counts["exchange"], "Austausch falsch")) if n]
-            self.status_var.set(f"Beendet: {correct} von {total} QSOs richtig geloggt"
-                                + (f" · {', '.join(details)}." if details else "."))
+                                                       (counts["exchange"], tr("Austausch falsch"))) if n]
+            self.status_var.set(tr("Beendet: {correct} von {total} QSOs richtig geloggt").format(
+                correct=correct, total=total) + (f" · {', '.join(details)}." if details else "."))
         else:
-            self.status_var.set("Beendet.")
+            self.status_var.set(tr("Beendet."))
         self.on_stop_cb()
 
     def _tick(self, session_id):
@@ -466,7 +467,7 @@ class RunModeFrame:
             callback(*args)
         if self.deadline is not None and time.time() >= self.deadline:
             self.stop()
-            self.status_var.set("Zeit abgelaufen. " + self.status_var.get())
+            self.status_var.set(tr("Zeit abgelaufen. ") + self.status_var.get())
             return
         self._update_score()
         self.root.after(TICK_MS, self._tick, session_id)
@@ -480,10 +481,11 @@ class RunModeFrame:
         # Laufzeit nach Audio-Uhr (gespielte Samples), sonst nach Wanduhr.
         seconds = self.mixer.clock / SAMPLE_RATE if self.mixer is not None else time.time() - self.started_at
         hours = max(seconds, 60) / 3600
-        text = f"QSOs: {total} · richtig: {correct} · Rate: {correct / hours:.0f}/h"
+        text = tr("QSOs: {total} · richtig: {correct} · Rate: {rate:.0f}/h").format(
+            total=total, correct=correct, rate=correct / hours)
         if self.deadline is not None and self.running:
             remaining = max(int(self.deadline - time.time()), 0)
-            text += f" · Rest {remaining // 60}:{remaining % 60:02d}"
+            text += tr(" · Rest {time}").format(time=f"{remaining // 60}:{remaining % 60:02d}")
         self.score_var.set(text)
 
     # --- Eigene Durchgänge ----------------------------------------------------
@@ -500,7 +502,7 @@ class RunModeFrame:
         call = self.call_var.get().strip()
         test = qso_text.contest_test_word(self.kind)
         if kind in ("exchange", "hiscall") and not call:
-            self.status_var.set("Erst ein Rufzeichen ins Call-Feld eintragen.")
+            self.status_var.set(tr("Erst ein Rufzeichen ins Call-Feld eintragen."))
             return
         text = {
             "cq": f"CQ {test} {self.my_call_str}",
@@ -519,7 +521,7 @@ class RunModeFrame:
             if call and self.exch_var.get().strip():
                 self._log_qso()
             else:
-                unlogged = "Rufzeichen" if not call else "Austausch"
+                unlogged = tr("Rufzeichen") if not call else tr("Austausch")
         elif kind == "exchange":
             self.exchange_sent_to = call
 
@@ -531,16 +533,16 @@ class RunModeFrame:
         self.my_tx_end = self.mixer.add(samples, None, start)
         self._schedule(self.my_tx_end, self._react, "tu" if kind == "correct_tu" else kind, call, self.msg_id)
         if unlogged:
-            self.status_var.set(f"Sende: {text} – nicht geloggt ({unlogged} fehlt)")
+            self.status_var.set(tr("Sende: {text} – nicht geloggt ({missing} fehlt)").format(text=text, missing=unlogged))
         else:
-            self.status_var.set(f"Sende: {text}")
+            self.status_var.set(tr("Sende: {text}").format(text=text))
 
     def _abort_sending(self):
         if self.running and self.mixer is not None:
             self.mixer.cancel(None)
             self.msg_id += 1
             self.my_tx_end = self.mixer.clock
-            self.status_var.set("Abgebrochen.")
+            self.status_var.set(tr("Abgebrochen."))
         return "break"
 
     def _on_enter(self, event=None):
@@ -578,17 +580,18 @@ class RunModeFrame:
         worked = next((c for c in self.callers if c.state == "worked"), None)
         if worked is None:
             ok, category = False, "nil"
-            result = "NIL – keine Station hat dir einen Austausch gegeben"
+            result = tr("NIL – keine Station hat dir einen Austausch gegeben")
             # Nur Stationen, die noch rufen: eine längst geloggte oder
             # abgewanderte zu nennen, schickte dich auf die Suche nach einem
             # Hörfehler, den es nicht gab.
             near = min(self._active(), key=lambda c: _distance(call, c.call), default=None)
             if near is not None and _distance(call, near.call) <= 3:
-                result += f" (ähnlich ruft: {near.call})"
+                result += tr(" (ähnlich ruft: {call})").format(call=near.call)
         elif call != worked.call:
-            ok, category, result = False, "busted", f"Busted – richtig: {worked.call}"
+            ok, category, result = False, "busted", tr("Busted – richtig: {call}").format(call=worked.call)
         elif not is_correct(exch, worked.exchange, worked.exchange_kind):
-            ok, category, result = False, "exchange", f"Austausch falsch – richtig: {worked.exchange}"
+            ok, category, result = False, "exchange", tr("Austausch falsch – richtig: {exchange}").format(
+                exchange=worked.exchange)
         else:
             ok, category, result = True, "ok", "✓"
         if worked is not None:

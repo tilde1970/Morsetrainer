@@ -5,6 +5,7 @@ import random
 
 from morsetrainer.core import qso_text, words
 from morsetrainer.core.weighting import CharPicker
+from morsetrainer.i18n import tr
 from morsetrainer.modes import callsign_mode
 
 # Unter so vielen passenden Wendungen stünde die Antwort fest.
@@ -55,24 +56,24 @@ class ItemSource:
     def problem(self):
         """Grund, warum mit diesem Zeichensatz nichts Sinnvolles kommt, sonst None."""
         if not self.charset:
-            return "Kein gültiges Zeichen im Zeichensatz!"
+            return tr("Kein gültiges Zeichen im Zeichensatz!")
         if self.kind == "words" and not words.enough_words(self.items):
-            return "Zu wenige Wörter mit diesen Zeichen – erst im Reiter Gruppen üben."
+            return tr("Zu wenige Wörter mit diesen Zeichen – erst im Reiter Gruppen üben.")
         if self.kind == "phrases" and len(self.items) < MIN_ITEMS:
             first = first_lesson_with_phrases()
-            when = f" – genug gibt es ab Koch-Lektion {first}" if first else ""
-            return f"Zu wenige Wendungen mit diesen Zeichen{when}."
+            when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
+            return tr("Zu wenige Wendungen mit diesen Zeichen") + when + "."
         if self.kind == "calls" and len(self.items) < MIN_CALLS:
             if not (set(self.charset) & set("0123456789")):
-                return "Rufzeichen brauchen eine Ziffer im Zeichensatz (ab Koch-Lektion 23)."
-            return "Zu wenige Rufzeichen mit diesen Zeichen (callsigns.scp fehlt oder Zeichensatz zu klein)."
+                return tr("Rufzeichen brauchen eine Ziffer im Zeichensatz (ab Koch-Lektion 23).")
+            return tr("Zu wenige Rufzeichen mit diesen Zeichen (callsigns.scp fehlt oder Zeichensatz zu klein).")
         if self.kind == "qso":
             needed = set()
             for _ in range(QSO_SAMPLES):
                 needed |= set(qso_text.generate_qso().text().replace(" ", ""))
             missing = "".join(sorted(ch for ch in needed - set(self.charset) if ch.isalnum()))
             if missing:
-                return f"QSO-Klartext braucht alle Buchstaben und Ziffern, es fehlen noch: {missing}"
+                return tr("QSO-Klartext braucht alle Buchstaben und Ziffern, es fehlen noch: {missing}").format(missing=missing)
         return None
 
     def next(self):

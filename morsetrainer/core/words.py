@@ -12,12 +12,13 @@ import random
 import statistics
 from pathlib import Path
 
-from morsetrainer import DATA_DIR
+from morsetrainer import DATA_DIR, i18n
+from morsetrainer.i18n import N_, tr
 from morsetrainer.core.morse import MORSE_CODE
 
 USER_WORDS_FILE = DATA_DIR / "woerter.txt"
 
-USER_WORDS_TEMPLATE = """\
+USER_WORDS_TEMPLATE = N_("""\
 # Eigene Wörter für den Reiter „Wörter“ im Morsetrainer.
 #
 # Ein Wort pro Zeile, optional mit Bedeutung nach dem ersten „=“, die nach
@@ -33,7 +34,7 @@ USER_WORDS_TEMPLATE = """\
 # DARC = Deutscher Amateur-Radio-Club
 # OV = Ortsverband
 # SOTA = Summits on the Air
-"""
+""")
 
 _UMLAUTS = str.maketrans({"Ä": "AE", "Ö": "OE", "Ü": "UE", "ß": "SS", "ẞ": "SS"})
 
@@ -125,6 +126,16 @@ PHRASES = {
 }
 
 
+def shown_meaning(word: str, meaning: str) -> str:
+    """Bedeutung zur Anzeige: auf Englisch die englische (i18n_en.MEANINGS),
+    sofern es die eingebaute ist; eigene aus woerter.txt bleiben, wie sie
+    sind. Die Sprachausgabe (deutsche Stimme) nimmt weiter die deutsche."""
+    if i18n.LANG == "en" and meaning and meaning in (WORDS.get(word), PHRASES.get(word)):
+        from morsetrainer.i18n_en import MEANINGS
+        return MEANINGS.get(word, meaning)
+    return meaning
+
+
 def phrases_for_charset(charset: str, phrases=PHRASES) -> list[str]:
     """Wendungen, deren Zeichen (ohne Leerzeichen) alle im Zeichensatz sind."""
     allowed = set(charset) | {" "}
@@ -168,7 +179,7 @@ def ensure_user_file(path: Path = None) -> Path:
     """Legt woerter.txt mit Anleitung an, falls es sie noch nicht gibt."""
     path = path or USER_WORDS_FILE
     if not path.exists():
-        path.write_text(USER_WORDS_TEMPLATE, encoding="utf-8")
+        path.write_text(tr(USER_WORDS_TEMPLATE), encoding="utf-8")
     return path
 
 

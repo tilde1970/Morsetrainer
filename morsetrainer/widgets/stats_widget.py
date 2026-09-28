@@ -6,25 +6,26 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core.morse import display_text
+from morsetrainer.i18n import tr
 from morsetrainer.widgets import theme
 
 
 class StatsPanel:
-    def __init__(self, parent, title="Statistik (aktueller Durchgang)", tree_height=8, show_save_label=True):
-        box = theme.card(parent, title)
+    def __init__(self, parent, title=None, tree_height=8, show_save_label=True):
+        box = theme.card(parent, title or tr("Statistik (aktueller Durchgang)"))
         summary = ttk.Frame(box)
         summary.pack(fill="x", pady=(0, 6))
         self.stats_var = tk.StringVar(value="0 / 0 (0%)")
         ttk.Label(summary, textvariable=self.stats_var, style="Score.TLabel").pack(side="left")
-        self.speed_var = tk.StringVar(value="Ø effektive Geschwindigkeit: –")
+        self.speed_var = tk.StringVar(value=tr("Ø effektive Geschwindigkeit: –"))
         ttk.Label(summary, textvariable=self.speed_var).pack(side="left", padx=(16, 0))
 
-        theme.hint(box, text="Zeichen, nach Fehlern sortiert").pack(anchor="w")
+        theme.hint(box, text=tr("Zeichen, nach Fehlern sortiert")).pack(anchor="w")
         columns = ("char", "good", "wrong", "avg_rt", "avg_wpm", "confusions")
         self.char_tree = ttk.Treeview(box, columns=columns, show="headings", height=tree_height)
         headings = {
-            "char": "Zeichen", "good": "Richtig", "wrong": "Falsch",
-            "avg_rt": "Ø Zeit (s)", "avg_wpm": "Ø WPM", "confusions": "Verwechselt mit",
+            "char": tr("Zeichen", context="Spalte"), "good": tr("Richtig"), "wrong": tr("Falsch"),
+            "avg_rt": tr("Ø Zeit (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),
         }
         widths = {"char": 60, "good": 60, "wrong": 55, "avg_rt": 75, "avg_wpm": 60, "confusions": 140}
         for col in columns:
@@ -38,16 +39,16 @@ class StatsPanel:
 
     def reset(self):
         self.stats_var.set("0 / 0 (0%)")
-        self.speed_var.set("Ø effektive Geschwindigkeit: –")
+        self.speed_var.set(tr("Ø effektive Geschwindigkeit: –"))
         self.save_var.set("")
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
 
     def refresh(self, summary: dict, rows: list):
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f}%)")
-        speed = f"Ø effektive Geschwindigkeit: {summary['avg_effective_wpm']:.1f} WPM"
+        speed = tr("Ø effektive Geschwindigkeit: {wpm:.1f} WPM").format(wpm=summary["avg_effective_wpm"])
         if summary.get("cpm"):
-            speed += f" · {summary['cpm']:.0f} ZpM gemessen"
+            speed += tr(" · {cpm:.0f} ZpM gemessen").format(cpm=summary["cpm"])
         self.speed_var.set(speed)
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
@@ -56,6 +57,6 @@ class StatsPanel:
 
     def show_saved(self, path, error=None):
         if error:
-            self.save_var.set(f"Protokoll nicht gespeichert: {error}")
+            self.save_var.set(tr("Protokoll nicht gespeichert: {error}").format(error=error))
         elif path is not None:
-            self.save_var.set(f"Gespeichert: {path.relative_to(path.parent.parent)}")
+            self.save_var.set(tr("Gespeichert: {path}").format(path=path.relative_to(path.parent.parent)))

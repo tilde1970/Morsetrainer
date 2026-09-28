@@ -22,6 +22,10 @@
   ZpM (≈ 5 × WPM nach der PARIS-Norm). Die Statistik zeigt zusätzlich die
   tatsächlich erreichten Zeichen pro Minute, gemessen aus den richtig
   erkannten Zeichen und der dafür gebrauchten Zeit.
+- **English:** Die Oberfläche gibt es jetzt auch auf Englisch, umschaltbar
+  unter „▸ Weitere Optionen“ → „Sprache / Language“ (wirkt nach Neustart).
+  Hilfe, Bedeutungen der Abkürzungen und die Fragen beim Kopfhören sind mit
+  übersetzt; die Stimme im Reiter „Sprechen“ bleibt deutsch.
 
 ## 2.12
 

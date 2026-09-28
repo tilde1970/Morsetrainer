@@ -36,9 +36,10 @@ from morsetrainer.core import qso_text, tempo
 import numpy as np
 
 from morsetrainer.core.band import BandConditions, soft_limit
+from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets import theme
-from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ScrollableFrame
+from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ChoiceBox, ScrollableFrame
 from morsetrainer.core.morse import (
     MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, duration_seconds, silence,
     word_gap_extra_seconds,
@@ -49,18 +50,18 @@ from morsetrainer.widgets.stats_widget import StatsPanel
 
 EVAL_QUIZ, EVAL_TYPING, EVAL_HEAD, EVAL_LISTEN = "quiz", "typing", "head", "listen"
 EVAL_LABELS = {
-    EVAL_QUIZ: "Mitschreiben + Abfrage",
-    EVAL_TYPING: "Fortlaufend mittippen",
-    EVAL_HEAD: "Kopfhören + Fragen",
-    EVAL_LISTEN: "Nur hören",
+    EVAL_QUIZ: N_("Mitschreiben + Abfrage"),
+    EVAL_TYPING: N_("Fortlaufend mittippen"),
+    EVAL_HEAD: N_("Kopfhören + Fragen"),
+    EVAL_LISTEN: N_("Nur hören"),
 }
 # Auswertungen mit Abfrage-Tabelle (Prüfen, Text erst danach).
 QUIZ_MODES = (EVAL_QUIZ, EVAL_HEAD)
 # So viele Inhaltsfragen beim Kopfhören.
 HEAD_QUESTIONS = 3
 # Pile-ups im Contest: Beschriftung -> Anteil der Anrufe mit weiteren Rufern.
-PILEUP_LEVELS = {"aus": 0.0, "selten": 0.2, "oft": qso_text.PILEUP_PROBABILITY}
-LENGTH_LABELS = ["Kurz", "Normal", "Lang"]  # Index = qso_text.LENGTH_*
+PILEUP_LEVELS = {N_("aus"): 0.0, N_("selten"): 0.2, N_("oft"): qso_text.PILEUP_PROBABILITY}
+LENGTH_LABELS = [N_("Kurz"), N_("Normal"), N_("Lang")]  # Index = qso_text.LENGTH_*
 
 # Pause zwischen zwei Durchgängen (Umschalten auf Empfang, Gegenstation
 # setzt ein); im Contest geht es deutlich zackiger.
@@ -154,11 +155,11 @@ class QsoModeFrame:
     def _build_widgets(self, parent):
         theme.hint(
             parent, wrap=560,
-            text="Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine "
-                 "eigene Tonhöhe. "
-                 "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs); <SK>, <KN> und <BK> "
-                 "werden zusammengezogen gesendet und beim Mittippen nicht gezählt. "
-                 "Der Zeichensatz oben gilt hier nicht.",
+            text=tr("Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine "
+                    "eigene Tonhöhe. "
+                    "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs); <SK>, <KN> und <BK> "
+                    "werden zusammengezogen gesendet und beim Mittippen nicht gezählt. "
+                    "Der Zeichensatz oben gilt hier nicht."),
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
         self._build_qso_settings(parent)
@@ -170,25 +171,25 @@ class QsoModeFrame:
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text="Neues QSO (F5)", style="Accent.TButton",
+        self.start_button = ttk.Button(controls, text=tr("Neues QSO (F5)"), style="Accent.TButton",
                                        command=self.toggle_running)
         self.start_button.pack(side="left")
-        self.replay_button = ttk.Button(controls, text="Nochmal (F6)", command=self.replay, state="disabled")
+        self.replay_button = ttk.Button(controls, text=tr("Nochmal (F6)"), command=self.replay, state="disabled")
         self.replay_button.pack(side="left", padx=8)
-        self.reveal_button = ttk.Button(controls, text="Text zeigen (F7)", command=self.toggle_reveal,
+        self.reveal_button = ttk.Button(controls, text=tr("Text zeigen (F7)"), command=self.toggle_reveal,
                                         state="disabled")
         self.reveal_button.pack(side="left")
 
-        self.status_var = tk.StringVar(value="Bereit. Drücke „Neues QSO“.")
+        self.status_var = tk.StringVar(value=tr("Bereit. Drücke „Neues QSO“."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         # Ein- und ausblendbare Bereiche; _update_layout() packt die jeweils
         # sichtbaren in fester Reihenfolge.
-        self.notes_box = ttk.LabelFrame(parent, text="Notizen (frei, werden nicht ausgewertet)", padding=(8, 4, 8, 8))
+        self.notes_box = ttk.LabelFrame(parent, text=tr("Notizen (frei, werden nicht ausgewertet)"), padding=(8, 4, 8, 8))
         self.notes = tk.Text(self.notes_box, height=4, wrap="word", font=theme.MONO)
         self.notes.pack(fill="x")
 
-        self.typed_box = ttk.LabelFrame(parent, text="Deine Eingabe (letzte Zeichen)", padding=(8, 4, 8, 8))
+        self.typed_box = ttk.LabelFrame(parent, text=tr("Deine Eingabe (letzte Zeichen)"), padding=(8, 4, 8, 8))
         self.typed_preview_var = tk.StringVar(value="")
         ttk.Label(self.typed_box, textvariable=self.typed_preview_var, font=theme.MONO, wraplength=540).pack(
             anchor="w"
@@ -197,7 +198,7 @@ class QsoModeFrame:
         self.quiz = QuizPanel(parent, on_checked=self._on_quiz_checked)
         self.quiz_box = self.quiz.box
 
-        self.reveal_box = ttk.LabelFrame(parent, text="QSO-Text", padding=(8, 4, 8, 8))
+        self.reveal_box = ttk.LabelFrame(parent, text=tr("QSO-Text"), padding=(8, 4, 8, 8))
         self.reveal_text = tk.Text(self.reveal_box, height=8, wrap="word", font=theme.MONO)
         scroll = ttk.Scrollbar(self.reveal_box, orient="vertical", command=self.reveal_text.yview)
         self.reveal_text.config(yscrollcommand=scroll.set)
@@ -218,27 +219,21 @@ class QsoModeFrame:
         box.columnconfigure(1, weight=1)
         row_pad = {"padx": (0, 8), "pady": 2}
 
-        ttk.Label(box, text="Art:").grid(row=0, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Art:")).grid(row=0, column=0, sticky="w", **row_pad)
         self.kind_var = tk.StringVar(value=qso_text.QSO_TYPES[qso_text.RAGCHEW])
-        self.kind_combo = ttk.Combobox(
-            box, textvariable=self.kind_var, values=list(qso_text.QSO_TYPES.values()), state="readonly", width=32,
-        )
+        self.kind_combo = ChoiceBox(box, self.kind_var, qso_text.QSO_TYPES.values(), width=32)
         self.kind_combo.grid(row=0, column=1, sticky="w", pady=2)
 
-        ttk.Label(box, text="Auswertung:").grid(row=1, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Auswertung:")).grid(row=1, column=0, sticky="w", **row_pad)
         self.eval_var = tk.StringVar(value=EVAL_LABELS[EVAL_QUIZ])
-        self.eval_combo = ttk.Combobox(
-            box, textvariable=self.eval_var, values=list(EVAL_LABELS.values()), state="readonly", width=32
-        )
+        self.eval_combo = ChoiceBox(box, self.eval_var, EVAL_LABELS.values(), width=32)
         self.eval_combo.grid(row=1, column=1, sticky="w", pady=2)
 
-        ttk.Label(box, text="Länge:").grid(row=2, column=0, sticky="w", **row_pad)
+        ttk.Label(box, text=tr("Länge:")).grid(row=2, column=0, sticky="w", **row_pad)
         length_row = ttk.Frame(box)
         length_row.grid(row=2, column=1, sticky="w", pady=(2, 6))
         self.length_var = tk.StringVar(value=LENGTH_LABELS[qso_text.LENGTH_SHORT])
-        self.length_combo = ttk.Combobox(
-            length_row, textvariable=self.length_var, values=LENGTH_LABELS, state="readonly", width=10
-        )
+        self.length_combo = ChoiceBox(length_row, self.length_var, LENGTH_LABELS, width=10)
         self.length_combo.pack(side="left")
         self.length_hint_var = tk.StringVar(value="")
         theme.hint(length_row, textvariable=self.length_hint_var).pack(side="left", padx=(8, 0))
@@ -247,14 +242,13 @@ class QsoModeFrame:
         pileup_row = ttk.Frame(box)
         pileup_row.grid(row=3, column=1, sticky="w", pady=(0, 6))
         self.pileup_var = tk.StringVar(value="aus")
-        self.pileup_combo = ttk.Combobox(pileup_row, textvariable=self.pileup_var, values=list(PILEUP_LEVELS),
-                                         state="readonly", width=10)
+        self.pileup_combo = ChoiceBox(pileup_row, self.pileup_var, PILEUP_LEVELS, width=10)
         self.pileup_combo.pack(side="left")
-        theme.hint(pileup_row, text="(im Contest rufen weitere Stationen gleichzeitig)").pack(side="left", padx=(8, 0))
+        theme.hint(pileup_row, text=tr("(im Contest rufen weitere Stationen gleichzeitig)")).pack(side="left", padx=(8, 0))
 
         self.adaptive_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            box, text="Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert das Tempo oben)",
+            box, text=tr("Tempo automatisch anpassen (nach Abfrage/Mittippen, ändert das Tempo oben)"),
             variable=self.adaptive_var,
         ).grid(row=4, column=0, columnspan=2, sticky="w")
 
@@ -289,7 +283,8 @@ class QsoModeFrame:
             wpm = None
         if wpm:
             minutes = estimate_minutes(self._kind(), length, wpm, self.farnsworth_wpm())
-            parts.append(f"ca. {max(round(minutes), 1)} Min. bei {tempo.label(wpm, self.farnsworth_wpm())}")
+            parts.append(tr("ca. {minutes} Min. bei {tempo}").format(
+                minutes=max(round(minutes), 1), tempo=tempo.label(wpm, self.farnsworth_wpm())))
         self.length_hint_var.set(" · ".join(parts))
 
     def _eval_mode(self) -> str:
@@ -333,7 +328,7 @@ class QsoModeFrame:
             )
         self.reveal_button.config(
             state="normal" if allowed else "disabled",
-            text="Text verbergen (F7)" if self.revealed else "Text zeigen (F7)",
+            text=tr("Text verbergen (F7)") if self.revealed else tr("Text zeigen (F7)"),
         )
 
     # --- Ablauf -----------------------------------------------------------
@@ -347,7 +342,7 @@ class QsoModeFrame:
         try:
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
-            self.status_var.set("Ungültige Geschwindigkeit oder Tonhöhe!")
+            self.status_var.set(tr("Ungültige Geschwindigkeit oder Tonhöhe!"))
             return
         self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()),
                                          PILEUP_LEVELS.get(self.pileup_var.get(), 0.0))
@@ -379,7 +374,7 @@ class QsoModeFrame:
         if self._eval_mode() != EVAL_HEAD or not self.qso.facts:
             return self.qso
         facts = random.sample(self.qso.facts, min(HEAD_QUESTIONS, len(self.qso.facts)))
-        return dataclasses.replace(self.qso, quiz_columns=("Antwort (wie gesendet)",),
+        return dataclasses.replace(self.qso, quiz_columns=(tr("Antwort (wie gesendet)"),),
                                    quiz_rows=tuple((question, (cell,)) for question, cell in facts))
 
     def replay(self):
@@ -389,7 +384,7 @@ class QsoModeFrame:
                 if self.qso_eval == EVAL_HEAD:
                     # Mit den Fragen vor Augen nochmal hören wäre gezieltes
                     # Mitschreiben statt Kopfhören.
-                    self.status_var.set("Erst die Fragen beantworten und prüfen – dann „Nochmal“.")
+                    self.status_var.set(tr("Erst die Fragen beantworten und prüfen – dann „Nochmal“."))
                     return
                 self.replays += 1
             self._play(tracking=False)
@@ -413,7 +408,7 @@ class QsoModeFrame:
             self.typed_preview_var.set("")
 
         self.running = True
-        self.start_button.config(text="Stop (F5)")
+        self.start_button.config(text=tr("Stop (F5)"))
         self.replay_button.config(state="disabled")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
             combo.config(state="disabled")
@@ -520,14 +515,15 @@ class QsoModeFrame:
         if self.tracking:
             self.typed_preview_var.set("".join(e["char"] for e in self.typed_log)[-60:])
         if self.play_thread.is_alive():
-            label = "Wiederholung – " if not self.tracking and self.quiz_ready else ""
-            self.status_var.set(f"{label}Durchgang {self.current_tx + 1} von {len(self.qso.transmissions)}")
+            label = tr("Wiederholung – ") if not self.tracking and self.quiz_ready else ""
+            self.status_var.set(label + tr("Durchgang {n} von {total}").format(
+                n=self.current_tx + 1, total=len(self.qso.transmissions)))
         elif not self.tracking:
             self._finish()
             return
         elif not self.finishing:
             self.finishing = True
-            self.status_var.set("QSO zu Ende – tippe die letzten Zeichen noch ein…")
+            self.status_var.set(tr("QSO zu Ende – tippe die letzten Zeichen noch ein…"))
             self.root.after(FINISH_GRACE_SECONDS * 1000, self._auto_finish, session_id)
         self.root.after(TICK_MS, self._tick, session_id)
 
@@ -540,7 +536,7 @@ class QsoModeFrame:
         if self.play_thread is not None:
             self.play_thread.join(timeout=2)
             self.play_thread = None
-        self.start_button.config(text="Neues QSO (F5)")
+        self.start_button.config(text=tr("Neues QSO (F5)"))
         head_unchecked = self.qso_eval == EVAL_HEAD and not self.quiz_checked
         self.replay_button.config(state="disabled" if head_unchecked else "normal")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
@@ -551,16 +547,16 @@ class QsoModeFrame:
             accuracy = self._finalize_session()
             self.revealed = True
             self.tracking = False
-            self.status_var.set("Ausgewertet – rot markiert: falsch oder verpasst." + self._adapt_speed(accuracy))
+            self.status_var.set(tr("Ausgewertet – rot markiert: falsch oder verpasst.") + self._adapt_speed(accuracy))
         elif mode == EVAL_HEAD and not self.quiz_checked:
-            self.status_var.set("Beantworte die Fragen und drück „Prüfen“.")
+            self.status_var.set(tr("Beantworte die Fragen und drück „Prüfen“."))
         elif mode == EVAL_QUIZ and not self.quiz_checked:
-            what = "Ergänze dein Log" if self.qso.is_contest else "Trag ein, was du gehört hast,"
-            self.status_var.set(f"{what} und drück „Prüfen“.")
+            self.status_var.set(tr("Ergänze dein Log und drück „Prüfen“.") if self.qso.is_contest
+                                else tr("Trag ein, was du gehört hast, und drück „Prüfen“."))
         else:
-            self.status_var.set("QSO beendet.")
+            self.status_var.set(tr("QSO beendet."))
         if stopped:
-            self.status_var.set("Gestoppt. " + self.status_var.get())
+            self.status_var.set(tr("Gestoppt. ") + self.status_var.get())
         self.quiz_ready = True
         self.quiz.set_check_enabled(True)
 
@@ -640,7 +636,7 @@ class QsoModeFrame:
                 text.insert("end", ch, tuple(tags))
             if n in pileups:
                 others = ", ".join(self.qso.calls[station] for station, _, _ in pileups[n])
-                text.insert("end", f"   (gleichzeitig: {others})", ("extra",))
+                text.insert("end", tr("   (gleichzeitig: {calls})").format(calls=others), ("extra",))
         text.config(state="disabled")
 
     # --- Abfrage ------------------------------------------------------------
@@ -655,13 +651,13 @@ class QsoModeFrame:
         self.replay_button.config(state="normal")
         if self.replays:
             # Mehrfach gehört: das Ergebnis sagt wenig über das Tempo.
-            times = "einmal" if self.replays == 1 else f"{self.replays}×"
-            note = f" (vorher {times} „Nochmal“ – Tempo bleibt)"
+            note = (tr(" (vorher einmal „Nochmal“ – Tempo bleibt)") if self.replays == 1
+                    else tr(" (vorher {n}× „Nochmal“ – Tempo bleibt)").format(n=self.replays))
         elif head:
             note = ""  # drei Fragen sind zu wenig, um das Tempo anzupassen
         else:
             note = self._adapt_speed(correct / total if total else None)
-        self.status_var.set("Abfrage ausgewertet." + note)
+        self.status_var.set(tr("Abfrage ausgewertet.") + note)
         self._render_reveal()
         self._update_layout()
         self._update_reveal_button()
@@ -677,7 +673,9 @@ class QsoModeFrame:
         if result is None:
             return ""
         before, after = result
-        return f" Tempo bleibt bei {before}." if before == after else f" Tempo: {before} → {after}."
+        if before == after:
+            return tr(" Tempo bleibt bei {tempo}.").format(tempo=before)
+        return tr(" Tempo: {before} → {after}.").format(before=before, after=after)
 
     # --- Schnittstelle zur App ------------------------------------------------
     def on_function_key(self, key: str):

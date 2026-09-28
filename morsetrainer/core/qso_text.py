@@ -22,6 +22,7 @@ from datetime import datetime
 
 from morsetrainer.modes.callsign_mode import load_callsigns
 from morsetrainer.core.morse import BK, KN, MORSE_CODE, SK
+from morsetrainer.i18n import N_, tr
 
 # Kurz: nur Rapport/Name/QTH; Normal: + Rig, Leistung, Wetter;
 # Lang: + Antenne, Alter, lizenziert seit, QSL-Info.
@@ -36,13 +37,14 @@ PILEUP_PROBABILITY = 0.45  # Stufe „oft“; Standard sind keine Pile-ups
 PILEUP_EXTRA_CALLERS = (1, 2)
 
 RAGCHEW = "ragchew"
+# Beschriftungen deutsch (so auch gespeichert); übersetzt wird die Anzeige.
 QSO_TYPES = {
-    RAGCHEW: "Normales QSO",
-    "cqww": "Contest: CQ WW (Zone)",
-    "wpx": "Contest: CQ WPX (Nummer)",
-    "wag": "Contest: WAG (DOK)",
-    "arrldx": "Contest: ARRL DX (Staat/Leistung)",
-    "iaru": "Contest: IARU HF (ITU-Zone/HQ)",
+    RAGCHEW: N_("Normales QSO"),
+    "cqww": N_("Contest: CQ WW (Zone)"),
+    "wpx": N_("Contest: CQ WPX (Nummer)"),
+    "wag": N_("Contest: WAG (DOK)"),
+    "arrldx": N_("Contest: ARRL DX (Staat/Leistung)"),
+    "iaru": N_("Contest: IARU HF (ITU-Zone/HQ)"),
 }
 
 # Arten, wie ein Abfragefeld verglichen wird (siehe qso_mode.normalize).
@@ -384,36 +386,36 @@ def _generate_ragchew(length: int) -> Qso:
     # Fragen nach der Rolle, nicht nach dem Rufzeichen: sonst verriete
     # „Name von DL1ABC“ die Antwort auf „Rufzeichen der CQ-Station“.
     facts = []
-    stations = ((a, rst_a, "der CQ-Station", "die CQ-Station"), (b, rst_b, "der antwortenden Station",
-                                                                  "die antwortende Station"))
+    stations = ((a, rst_a, tr("der CQ-Station"), tr("die CQ-Station")),
+                (b, rst_b, tr("der antwortenden Station"), tr("die antwortende Station")))
     for st, rst, of, subject in stations:
         facts += [
-            (f"Rufzeichen {of}", (st.call, TEXT)),
-            (f"Name {of}", (st.name, TEXT)),
-            (f"QTH {of}", (st.qth, TEXT)),
-            (f"Rapport, den {subject} gab", (rst, RST)),
+            (tr("Rufzeichen {of}").format(of=of), (st.call, TEXT)),
+            (tr("Name {of}").format(of=of), (st.name, TEXT)),
+            (tr("QTH {of}").format(of=of), (st.qth, TEXT)),
+            (tr("Rapport, den {subject} gab").format(subject=subject), (rst, RST)),
         ]
     # Rig, Leistung, Wetter gibt es erst ab normaler Länge (dann von beiden).
     for st, _, of, subject in stations if length >= LENGTH_NORMAL else ():
         facts += [
-            (f"Rig {of}", (st.rig, TEXT)),
-            (f"Leistung {of}", (st.pwr, POWER)),
-            (f"Wetter {of}", (st.wx.split()[0], TEXT)),
+            (tr("Rig {of}").format(of=of), (st.rig, TEXT)),
+            (tr("Leistung {of}").format(of=of), (st.pwr, POWER)),
+            (tr("Wetter {of}").format(of=of), (st.wx.split()[0], TEXT)),
         ]
         if length >= LENGTH_LONG:
             facts += [
-                (f"Antenne {of}", (st.ant, TEXT)),
-                (f"Alter des OPs {of}", (str(st.age), NUMBER)),
-                (f"Lizenzjahr des OPs {of}", (str(st.licensed), NUMBER)),
+                (tr("Antenne {of}").format(of=of), (st.ant, TEXT)),
+                (tr("Alter des OPs {of}").format(of=of), (str(st.age), NUMBER)),
+                (tr("Lizenzjahr des OPs {of}").format(of=of), (str(st.licensed), NUMBER)),
             ]
     return Qso(
         kind=RAGCHEW, calls=(a.call, b.call), transmissions=tuple(txs), facts=tuple(facts),
-        quiz_columns=("Station 1 (CQ)", "Station 2"),
+        quiz_columns=(tr("Station 1 (CQ)"), tr("Station 2")),
         quiz_rows=(
-            ("Rufzeichen", ((a.call, TEXT), (b.call, TEXT))),
-            ("Name", ((a.name, TEXT), (b.name, TEXT))),
-            ("QTH", ((a.qth, TEXT), (b.qth, TEXT))),
-            ("Rapport (gibt)", ((rst_a, RST), (rst_b, RST))),
+            (tr("Rufzeichen"), ((a.call, TEXT), (b.call, TEXT))),
+            (tr("Name"), ((a.name, TEXT), (b.name, TEXT))),
+            (tr("QTH"), ((a.qth, TEXT), (b.qth, TEXT))),
+            (tr("Rapport (gibt)"), ((rst_a, RST), (rst_b, RST))),
         ),
     )
 
@@ -492,7 +494,7 @@ def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) ->
         else:
             txs.append((station, text))
     # Wechselt der Austausch der Run-Station (Seriennummer), wird er nicht abgefragt.
-    rows = [("Run-Station", ((run, TEXT), run_exchange.fixed))]
+    rows = [(tr("Run-Station"), ((run, TEXT), run_exchange.fixed))]
 
     extra_calls, pileups = [], []
     for i in range(count):
@@ -532,13 +534,13 @@ def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) ->
         rows.append((f"QSO {station}", ((call, TEXT), (exchange, exchange_kind))))
 
     _check(txs)
-    facts = [("Rufzeichen der Run-Station", (run, TEXT)), ("Wie viele QSOs hat die Run-Station geloggt?",
-                                                            (str(count), NUMBER))]
-    facts += [(f"Austausch von {cells[0][0]}", cells[1]) for _, cells in rows[1:]]
+    facts = [(tr("Rufzeichen der Run-Station"), (run, TEXT)),
+             (tr("Wie viele QSOs hat die Run-Station geloggt?"), (str(count), NUMBER))]
+    facts += [(tr("Austausch von {call}").format(call=cells[0][0]), cells[1]) for _, cells in rows[1:]]
     return Qso(
         kind=kind, calls=(run, *(cells[0][0] for _, cells in rows[1:]), *extra_calls), facts=tuple(facts),
         pileups=tuple(pileups),
-        transmissions=tuple(txs), quiz_columns=("Rufzeichen", "Austausch"), quiz_rows=tuple(rows),
+        transmissions=tuple(txs), quiz_columns=(tr("Rufzeichen"), tr("Austausch")), quiz_rows=tuple(rows),
     )
 
 

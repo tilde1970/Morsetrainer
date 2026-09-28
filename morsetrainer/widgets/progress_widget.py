@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import stats
+from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import theme
 
 MAX_POINTS = 100
@@ -62,7 +63,7 @@ class _LineChart:
         c.delete("all")
         self.points = []
         if not self.values:
-            c.create_text(c.winfo_width() / 2, CHART_HEIGHT / 2, text="Noch keine Daten für diesen Modus.",
+            c.create_text(c.winfo_width() / 2, CHART_HEIGHT / 2, text=tr("Noch keine Daten für diesen Modus."),
                           fill=TEXT_SECONDARY, font=FONT)
             return
         x0, y0, x1, y1 = self._plot_box()
@@ -90,7 +91,7 @@ class _LineChart:
         # x-Beschriftung: Datum des ersten, mittleren und letzten Durchgangs
         # (Uhrzeit, wenn alle am selben Tag liegen).
         same_day = self.entries[0]["time"].date() == self.entries[-1]["time"].date()
-        time_format = "%H:%M" if same_day else "%d.%m."
+        time_format = "%H:%M" if same_day else tr("%d.%m.")
         for i in sorted({0, n // 2, n - 1}):
             x = self.points[i][0]
             anchor = "w" if i == 0 and n > 1 else "e" if i == n - 1 and n > 1 else "center"
@@ -124,7 +125,7 @@ class _LineChart:
         x0, y0, x1, y1 = self._plot_box()
         c.create_line(x, y0, x, y1, fill=TEXT_SECONDARY, width=1, tags="hover")
         c.create_oval(x - 5, y - 5, x + 5, y + 5, fill=SERIES, outline=SURFACE, width=2, tags="hover")
-        label = f"{entry['time'].strftime('%d.%m. %H:%M')}  ·  {value:g}{self.unit}"
+        label = f"{entry['time'].strftime(tr('%d.%m. %H:%M'))}  ·  {value:g}{self.unit}"
         text = c.create_text(0, 0, text=label, anchor="nw", fill=TEXT_PRIMARY, font=FONT, tags="hover")
         bx0, by0, bx1, by1 = c.bbox(text)
         w, h = bx1 - bx0 + 10, by1 - by0 + 6
@@ -137,29 +138,29 @@ class _LineChart:
 
 class ProgressPanel:
     def __init__(self, parent):
-        box = theme.card(parent, "Fortschritt")
+        box = theme.card(parent, tr("Fortschritt"))
 
         top = ttk.Frame(box)
         top.pack(fill="x", pady=(0, 4))
-        ttk.Label(top, text="Modus:").pack(side="left")
+        ttk.Label(top, text=tr("Modus:")).pack(side="left")
         self.mode_var = tk.StringVar()
         self.mode_combo = ttk.Combobox(top, textvariable=self.mode_var, state="readonly", width=20)
         self.mode_combo.pack(side="left", padx=(4, 8))
         self.mode_combo.bind("<<ComboboxSelected>>", lambda e: self._show())
-        self.table_button = ttk.Button(top, text="Tabelle", command=self._toggle_table)
+        self.table_button = ttk.Button(top, text=tr("Tabelle"), command=self._toggle_table)
         self.table_button.pack(side="right")
         self.info_var = tk.StringVar(value="")
         theme.hint(box, textvariable=self.info_var, wrap=520).pack(anchor="w")
 
         self.charts = ttk.Frame(box)
         self.charts.pack(fill="x")
-        self.accuracy_chart = _LineChart(self.charts, "Trefferquote (%)", " %", fixed_range=(0, 100, 25),
+        self.accuracy_chart = _LineChart(self.charts, tr("Trefferquote (%)"), " %", fixed_range=(0, 100, 25),
                                          on_hover=self._hover)
-        self.wpm_chart = _LineChart(self.charts, "Tempo effektiv (WPM)", " WPM", on_hover=self._hover)
+        self.wpm_chart = _LineChart(self.charts, tr("Tempo effektiv (WPM)"), " WPM", on_hover=self._hover)
 
         self.table = ttk.Treeview(box, columns=("time", "accuracy", "wpm", "total"), show="headings", height=8)
-        for col, heading, width in (("time", "Zeitpunkt", 130), ("accuracy", "Trefferquote", 100),
-                                    ("wpm", "Tempo eff. (WPM)", 110), ("total", "Umfang", 80)):
+        for col, heading, width in (("time", tr("Zeitpunkt"), 130), ("accuracy", tr("Trefferquote"), 100),
+                                    ("wpm", tr("Tempo eff. (WPM)"), 110), ("total", tr("Umfang"), 80)):
             self.table.heading(col, text=heading)
             self.table.column(col, width=width, anchor="center")
         self.table_visible = False
@@ -168,16 +169,16 @@ class ProgressPanel:
     def refresh(self):
         self.history = stats.load_history()
         modes = [m for m in stats.HISTORY_MODES if any(e["mode"] == m for e in self.history)]
-        labels = [stats.HISTORY_MODES[m] for m in modes]
+        labels = [tr(stats.HISTORY_MODES[m]) for m in modes]
         self.mode_combo.config(values=labels)
         if self.mode_var.get() not in labels:
             # Standard: der zuletzt trainierte Modus.
             latest = self.history[-1]["mode"] if self.history else None
-            self.mode_var.set(stats.HISTORY_MODES.get(latest, labels[0] if labels else ""))
+            self.mode_var.set(tr(stats.HISTORY_MODES[latest]) if latest in stats.HISTORY_MODES else labels[0] if labels else "")
         self._show()
 
     def _mode_key(self):
-        return next((k for k, v in stats.HISTORY_MODES.items() if v == self.mode_var.get()), None)
+        return next((k for k, v in stats.HISTORY_MODES.items() if tr(v) == self.mode_var.get()), None)
 
     def _show(self):
         entries = [e for e in self.history if e["mode"] == self._mode_key()][-MAX_POINTS:]
@@ -185,20 +186,23 @@ class ProgressPanel:
         if entries:
             first = entries[0]["accuracy_pct"]
             last = entries[-1]["accuracy_pct"]
-            text = (f"{len(entries)} Durchgänge seit {entries[0]['time'].strftime('%d.%m.%Y')} · "
-                    f"Trefferquote {first:g} % → {last:g} %, Tempo {entries[0]['wpm']} → {entries[-1]['wpm']} WPM")
+            text = tr("{n} Durchgänge seit {date} · Trefferquote {first:g} % → {last:g} %, "
+                      "Tempo {wpm_first} → {wpm_last} WPM").format(
+                n=len(entries), date=entries[0]["time"].strftime(tr("%d.%m.%Y")), first=first, last=last,
+                wpm_first=entries[0]["wpm"], wpm_last=entries[-1]["wpm"])
             scores = [e["score"] for e in entries if "score" in e]
             if scores:
-                text += f" · Punkte zuletzt {scores[-1]:,}, bester {max(scores):,}".replace(",", ".")
+                text += tr(" · Punkte zuletzt {last}, bester {best}").format(
+                    last=number(scores[-1]), best=number(max(scores)))
             self.info_var.set(text)
         else:
-            self.info_var.set("Noch keine abgeschlossenen Durchgänge.")
+            self.info_var.set(tr("Noch keine abgeschlossenen Durchgänge."))
         self.accuracy_chart.set_data(entries, [e["accuracy_pct"] for e in entries])
         self.wpm_chart.set_data(entries, [e["wpm"] for e in entries])
         for item in self.table.get_children():
             self.table.delete(item)
         for e in reversed(entries):
-            self.table.insert("", "end", values=(e["time"].strftime("%d.%m.%Y %H:%M"), f"{e['accuracy_pct']:g} %",
+            self.table.insert("", "end", values=(e["time"].strftime(tr("%d.%m.%Y %H:%M")), f"{e['accuracy_pct']:g} %",
                                                  e["wpm"], e["total"]))
 
     def _hover(self, index):
@@ -210,8 +214,8 @@ class ProgressPanel:
         if self.table_visible:
             self.charts.pack_forget()
             self.table.pack(fill="x", pady=4)
-            self.table_button.config(text="Diagramm")
+            self.table_button.config(text=tr("Diagramm"))
         else:
             self.table.pack_forget()
             self.charts.pack(fill="x")
-            self.table_button.config(text="Tabelle")
+            self.table_button.config(text=tr("Tabelle"))

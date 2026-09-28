@@ -3,6 +3,7 @@ Programm lesen.
 
 Die beiden Dateien liegen neben main.py; in AppImage und exe packt
 PyInstaller sie mit ein (--add-data), dort liegen sie unter sys._MEIPASS.
+Auf Englisch gelten README.en.md und CHANGELOG.en.md, falls vorhanden.
 
 Dargestellt wird ein kleiner Teil von Markdown, genug für die beiden
 Dateien: Überschriften, Absätze, Listen, **fett**, *kursiv*, `Code`,
@@ -14,16 +15,26 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+from morsetrainer import i18n
+from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import theme
 
-DOCS = (("Änderungen", "CHANGELOG.md"), ("Anleitung", "README.md"))
+DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "README.md"))
 
 _INLINE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`|\*(.+?)\*|\[([^\]]+)\]\([^)]*\)")
 
 
-def doc_path(name: str) -> Path:
+def doc_path(name: str, lang: str = None) -> Path:
+    """Pfad von `name`, in einer anderen Sprache als Deutsch die Fassung
+    „<Name>.<Sprache>.md“, sofern es sie gibt."""
     base = getattr(sys, "_MEIPASS", None)
-    return Path(base) / name if base else Path(__file__).resolve().parents[2] / name
+    folder = Path(base) if base else Path(__file__).resolve().parents[2]
+    lang = lang or i18n.LANG
+    if lang != i18n.DEFAULT:
+        localized = folder / name.replace(".md", f".{lang}.md")
+        if localized.exists():
+            return localized
+    return folder / name
 
 
 def parse(text: str):
@@ -148,7 +159,7 @@ class HelpWindow:
 
     def __init__(self, root):
         self.top = tk.Toplevel(root)
-        self.top.title("Morsetrainer – Hilfe")
+        self.top.title(tr("Morsetrainer – Hilfe"))
         self.top.configure(background=theme.BG)
         self.top.geometry("760x640")
         notebook = ttk.Notebook(self.top)
@@ -156,7 +167,7 @@ class HelpWindow:
         self.texts = {}
         for title, name in DOCS:
             frame = ttk.Frame(notebook)
-            notebook.add(frame, text=title)
+            notebook.add(frame, text=tr(title))
             text = tk.Text(frame, wrap="word", padx=14, pady=10, cursor="arrow", font="TkDefaultFont")
             scroll = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
             text.configure(yscrollcommand=scroll.set)
@@ -166,8 +177,8 @@ class HelpWindow:
             try:
                 content = doc_path(name).read_text(encoding="utf-8")
             except OSError:
-                content = f"{name} wurde nicht gefunden."
+                content = tr("{name} wurde nicht gefunden.").format(name=name)
             render(text, content)
             self.texts[name] = text
-        ttk.Button(self.top, text="Schließen", command=self.top.destroy).pack(anchor="e", padx=8, pady=(0, 8))
+        ttk.Button(self.top, text=tr("Schließen"), command=self.top.destroy).pack(anchor="e", padx=8, pady=(0, 8))
         self.top.bind("<Escape>", lambda e: self.top.destroy())

@@ -14,6 +14,7 @@ from tkinter import ttk
 from morsetrainer.core import koch, words
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
+from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE, SequenceModeFrame
 from morsetrainer.widgets import theme
 
@@ -41,7 +42,7 @@ class WordModeFrame(SequenceModeFrame):
     # statt Buchstabe für Buchstabe.
     default_style = MEMORIZE
     send_prosigns = True
-    intro_text = (
+    intro_text = N_(
         "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs – nur solche, die "
         "aus den Zeichen oben bestehen. Mit jeder Koch-Lektion werden es mehr."
     )
@@ -54,7 +55,7 @@ class WordModeFrame(SequenceModeFrame):
         row.pack(fill="x", pady=(0, 4))
         self.count_var = tk.StringVar(value="")
         theme.hint(row, textvariable=self.count_var, wrap=360).pack(side="left")
-        ttk.Button(row, text="Eigene Wörter bearbeiten", command=self._edit_user_words).pack(side="right")
+        ttk.Button(row, text=tr("Eigene Wörter bearbeiten"), command=self._edit_user_words).pack(side="right")
         self.charset_var.trace_add("write", lambda *_: self._show_count())
         # Nach dem Bearbeiten im Editor: beim Zurückkehren ins Fenster neu zählen.
         self.root.bind("<FocusIn>", lambda e: self._show_count(), add="+")
@@ -78,20 +79,21 @@ class WordModeFrame(SequenceModeFrame):
         self._reload_words()
         user, skipped = self.user_words, self.skipped
         count = len(words.words_for_charset(self._charset(), self.all_words))
-        text = f"Mit dem aktuellen Zeichensatz: {count} von {len(self.all_words)} Wörtern"
+        text = tr("Mit dem aktuellen Zeichensatz: {count} von {total} Wörtern").format(
+            count=count, total=len(self.all_words))
         if user:
-            text += f" (davon {len(user)} eigene)"
+            text += tr(" (davon {n} eigene)").format(n=len(user))
         if skipped:
-            text += f"\nÜbersprungen in {words.USER_WORDS_FILE.name}: " + ", ".join(skipped[:3])
+            text += "\n" + tr("Übersprungen in {file}: ").format(file=words.USER_WORDS_FILE.name) + ", ".join(skipped[:3])
             if len(skipped) > 3:
-                text += f" und {len(skipped) - 3} weitere"
+                text += tr(" und {n} weitere").format(n=len(skipped) - 3)
         self.count_var.set(text)
 
     def _edit_user_words(self):
         try:
             open_in_editor(words.ensure_user_file())
         except OSError as exc:
-            self.status_var.set(f"{words.USER_WORDS_FILE} lässt sich nicht öffnen: {exc}")
+            self.status_var.set(tr("{file} lässt sich nicht öffnen: {error}").format(file=words.USER_WORDS_FILE, error=exc))
 
     def _validate_settings(self) -> bool:
         self._show_count()
@@ -101,9 +103,10 @@ class WordModeFrame(SequenceModeFrame):
             # Mit einer Handvoll Wörter stünde die Antwort fest (bei RR und UR
             # im Wechsel); dann lieber Gruppen üben.
             first = words.first_lesson_with_words(self.all_words)
-            when = f" – genug gibt es ab Koch-Lektion {first}" if first else ""
+            when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
             count = sum(1 for w in self.words if len(w) > 1)
-            self.status_var.set(f"Nur {count} Wörter mit diesen Zeichen{when}.\nÜbe bis dahin im Reiter Gruppen.")
+            self.status_var.set(tr("Nur {count} Wörter mit diesen Zeichen").format(count=count) + when + ".\n"
+                                + tr("Übe bis dahin im Reiter Gruppen."))
             return False
         self.charset = charset
         return True
@@ -118,7 +121,7 @@ class WordModeFrame(SequenceModeFrame):
         return self.picker.pick()
 
     def _explain(self, sequence: str) -> str:
-        return self.all_words.get(sequence, "")
+        return words.shown_meaning(sequence, self.all_words.get(sequence, ""))
 
     def _log_charset(self) -> str:
         return self.charset
@@ -134,5 +137,5 @@ class WordModeFrame(SequenceModeFrame):
         # umstellen; danach gilt wieder, was gespeichert ist.
         if data and not data.get("memorize_default") and self.style_var.get() == COPY:
             self.style_var.set(MEMORIZE)
-            self.status_var.set("Neu: Wörter jetzt mit „Erst merken“ – erst das ganze Wort hören, "
-                                "dann tippen. Umstellbar unter Eingabe.")
+            self.status_var.set(tr("Neu: Wörter jetzt mit „Erst merken“ – erst das ganze Wort hören, "
+                                   "dann tippen. Umstellbar unter Eingabe."))

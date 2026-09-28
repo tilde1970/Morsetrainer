@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import qso_text
+from morsetrainer.i18n import tr
 from morsetrainer.widgets import theme
 
 OK_BG, WRONG_BG = theme.OK_BG, theme.ERROR_BG
@@ -50,14 +51,14 @@ class QuizPanel:
         self.on_checked = on_checked
         self.qso = None
         self.checked = False
-        self.box = ttk.LabelFrame(parent, text="Abfrage – was hast du mitbekommen?", padding=(8, 4, 8, 8))
+        self.box = ttk.LabelFrame(parent, text=tr("Abfrage – was hast du mitbekommen?"), padding=(8, 4, 8, 8))
         self.grid = ttk.Frame(self.box)
         self.grid.pack(fill="x", pady=(0, 6))
         self.vars, self.entries, self.marks = {}, {}, {}
 
         bottom = ttk.Frame(self.box)
         bottom.pack(fill="x")
-        self.check_button = ttk.Button(bottom, text="Prüfen (F8)", command=self.check)
+        self.check_button = ttk.Button(bottom, text=tr("Prüfen (F8)"), command=self.check)
         self.check_button.pack(side="left")
         self.score_var = tk.StringVar(value="")
         ttk.Label(bottom, textvariable=self.score_var, style="Score.TLabel").pack(side="left", padx=12)
@@ -111,8 +112,8 @@ class QuizPanel:
             if not ok:
                 fixes.append(f"{label} ({self.qso.quiz_columns[col]}): {expected}")
         total = len(self.vars)
-        self.score_var.set(f"{correct} / {total} richtig")
-        self.fix_var.set("Richtig wäre: " + ", ".join(fixes) if fixes else "")
+        self.score_var.set(tr("{correct} / {total} richtig").format(correct=correct, total=total))
+        self.fix_var.set(tr("Richtig wäre: ") + ", ".join(fixes) if fixes else "")
         self.checked = True
         self.set_check_enabled(False)
         self.on_checked(correct, total)

@@ -6,6 +6,7 @@ eine Stunde sind rund 43 MB."""
 import numpy as np
 
 from morsetrainer.core.morse import SAMPLE_RATE
+from morsetrainer.i18n import tr
 
 BITRATE_KBPS = 96
 
@@ -19,7 +20,7 @@ def available():
     try:
         import lameenc  # noqa: F401
     except ImportError:
-        return "MP3-Export nicht verfügbar: lameenc ist nicht installiert (pip install lameenc)."
+        return tr("MP3-Export nicht verfügbar: lameenc ist nicht installiert (pip install lameenc).")
     return None
 
 
@@ -40,7 +41,7 @@ class Mp3Writer:
         try:
             self.file = open(path, "wb")
         except OSError as exc:
-            raise Mp3Error(f"{path} lässt sich nicht schreiben: {exc}") from exc
+            raise Mp3Error(tr("{path} lässt sich nicht schreiben: {error}").format(path=path, error=exc)) from exc
         self.seconds = 0.0
 
     def write(self, samples: np.ndarray) -> None:

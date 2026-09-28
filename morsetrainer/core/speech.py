@@ -21,6 +21,7 @@ import numpy as np
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core.morse import AMPLITUDE, PROSIGNS, SAMPLE_RATE
+from morsetrainer.i18n import tr
 
 VOICE_NAME = "de_DE-thorsten-medium"
 
@@ -112,10 +113,11 @@ class Speaker:
         try:
             import piper  # noqa: F401
         except ImportError:
-            return "Sprachausgabe nicht verfügbar: Piper ist nicht installiert (pip install piper-tts)."
+            return tr("Sprachausgabe nicht verfügbar: Piper ist nicht installiert (pip install piper-tts).")
         if voice_path() is None:
-            return (f"Sprachausgabe nicht verfügbar: Stimme {VOICE_NAME} fehlt "
-                    f"(packaging/get_voice.sh lädt sie nach {DATA_DIR / 'voices'}).")
+            return tr("Sprachausgabe nicht verfügbar: Stimme {voice} fehlt "
+                      "(packaging/get_voice.sh lädt sie nach {folder}).").format(
+                voice=VOICE_NAME, folder=DATA_DIR / "voices")
         return self.error
 
     def load(self) -> bool:
@@ -128,7 +130,7 @@ class Speaker:
                 from piper import PiperVoice
                 self.voice = PiperVoice.load(str(voice_path()))
             except Exception as exc:  # kaputtes Modell, fehlende Laufzeit …
-                self.error = f"Sprachausgabe nicht verfügbar: {exc}"
+                self.error = tr("Sprachausgabe nicht verfügbar: {error}").format(error=exc)
                 return False
             return True
 

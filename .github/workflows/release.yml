@@ -47,7 +47,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
       - run: bash packaging/get_voice.sh
-      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "README.md:." --add-data "CHANGELOG.md:." --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
+      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "README.md:." --add-data "CHANGELOG.md:." --add-data "README.en.md:." --add-data "CHANGELOG.en.md:." --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
       # Stimme und MP3 in der exe prüfen (ohne Fenster, ohne Ton).
       - shell: pwsh
         run: |

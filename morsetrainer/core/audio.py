@@ -13,6 +13,7 @@ unsichtbar in der Konsole zu landen und die Reiter gesperrt zu lassen.
 import sounddevice as sd
 
 from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
+from morsetrainer.i18n import tr
 
 ERRORS = (getattr(sd, "PortAudioError", OSError), OSError, ValueError)
 
@@ -22,7 +23,7 @@ class AudioError(Exception):
 
 
 def describe(exc: Exception) -> str:
-    return f"Keine Tonausgabe möglich: {exc}"
+    return tr("Keine Tonausgabe möglich: {error}").format(error=exc)
 
 
 def play(samples) -> None:

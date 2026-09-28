@@ -38,6 +38,7 @@ from morsetrainer.core.morse import (
     vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
+from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
@@ -132,31 +133,31 @@ class SingleModeFrame:
         self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
-        options = theme.card(parent, "Einstellungen")
+        options = theme.card(parent, tr("Einstellungen"))
         icr = ttk.Frame(options)
         icr.pack(fill="x")
         self.icr_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
-            icr, text="Zeitlimit (wird kürzer, solange du sicher bist)", variable=self.icr_var,
+            icr, text=tr("Zeitlimit (wird kürzer, solange du sicher bist)"), variable=self.icr_var,
             command=self._on_icr_toggle,
         ).pack(side="left")
         self.limit_var = tk.StringVar(value="")
         theme.hint(icr, textvariable=self.limit_var).pack(side="left", padx=(8, 0))
-        ttk.Button(icr, text="zurücksetzen", command=self._reset_limit).pack(side="right")
+        ttk.Button(icr, text=tr("zurücksetzen"), command=self._reset_limit).pack(side="right")
         self.sound_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(options, text="Quittungston", variable=self.sound_var).pack(anchor="w")
+        ttk.Checkbutton(options, text=tr("Quittungston"), variable=self.sound_var).pack(anchor="w")
         self._show_limit()
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(
-            controls, text="Wiederholen (Leertaste)", command=self.repeat_char, state="disabled"
+            controls, text=tr("Wiederholen (Leertaste)"), command=self.repeat_char, state="disabled"
         )
         self.repeat_button.pack(side="left", padx=8)
 
-        self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
+        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 4))
 
         self.feedback_var = tk.StringVar(value="")
@@ -165,7 +166,7 @@ class SingleModeFrame:
 
         self.stats_panel = StatsPanel(parent)
 
-        history = theme.card(parent, "Verlauf (letzte 40)")
+        history = theme.card(parent, tr("Verlauf (letzte 40)"))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=520).pack(anchor="w")
 
@@ -177,7 +178,7 @@ class SingleModeFrame:
         self._show_limit()
 
     def _show_limit(self):
-        self.limit_var.set(f"{self.limit:.2f} s".replace(".", ",") if self.icr_var.get() else "")
+        self.limit_var.set(f"{number(self.limit, 2)} s" if self.icr_var.get() else "")
 
     def _reset_limit(self):
         self.limit = ICR_START
@@ -203,14 +204,14 @@ class SingleModeFrame:
     def start(self):
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
-            self.status_var.set("Kein gültiges Zeichen im Zeichensatz!")
+            self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
             return
         self.charset = charset
         self.running = True
         self.retries = RetryQueue()
         self.correcting = False
         self.icr_whole_session = self.icr_var.get()
-        self.start_button.config(text="Stop")
+        self.start_button.config(text=tr("Stop"))
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
         self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get(),
@@ -226,11 +227,11 @@ class SingleModeFrame:
         self.running = False
         self.waiting_for_input = False
         self.timeout_token += 1
-        self.start_button.config(text="Start")
+        self.start_button.config(text=tr("Start"))
         self.repeat_button.config(state="disabled")
         audio.stop()
         self._finalize_session()
-        self.status_var.set("Gestoppt.")
+        self.status_var.set(tr("Gestoppt."))
         self.on_stop_cb()
 
     def _finalize_session(self):
@@ -270,7 +271,7 @@ class SingleModeFrame:
         # dazwischen lagen andere Zeichen.
         self.first_hearing = True
         self.feedback_var.set("")
-        self.status_var.set("Höre zu…")
+        self.status_var.set(tr("Höre zu…"))
         self.play_current()
 
     def _after_error(self, play_correction=True):
@@ -294,12 +295,13 @@ class SingleModeFrame:
         typed = self.last_typed
         if typed and typed != self.current_char:
             # Richtig und Getipptes direkt nacheinander: so hört man den Unterschied.
-            self.status_var.set(f"So klingt {display_text(self.current_char)} – und so {display_text(typed)} (dein Tipp):")
+            self.status_var.set(tr("So klingt {char} – und so {typed} (dein Tipp):").format(
+                char=display_text(self.current_char), typed=display_text(typed)))
             # Zum Schluss nochmal das richtige, damit dieses Klangbild bleibt.
             samples = np.concatenate([samples, silence(COMPARE_GAP_SECONDS), build_samples(typed, wpm, freq),
                                       silence(COMPARE_GAP_SECONDS), samples])
         else:
-            self.status_var.set(f"So klingt {display_text(self.current_char)}:")
+            self.status_var.set(tr("So klingt {char}:").format(char=display_text(self.current_char)))
         try:
             audio.play(samples)
         except audio.AudioError as exc:
@@ -351,7 +353,7 @@ class SingleModeFrame:
         if not self.running:
             return
         self.waiting_for_input = True
-        self.status_var.set("Deine Eingabe?")
+        self.status_var.set(tr("Deine Eingabe?"))
         if self.icr_var.get():
             # Das Limit zählt ab dem gleichen Zeitpunkt wie die Latenz, und
             # zwar ab dem ersten Hören: Wiederholen verschafft keine Zeit.
@@ -375,7 +377,7 @@ class SingleModeFrame:
         if self.sound_var.get():
             sfx.play_error()
         self.last_typed = None
-        self.feedback_var.set(f"Zu langsam: war {display_text(self.current_char)}")
+        self.feedback_var.set(tr("Zu langsam: war {char}").format(char=display_text(self.current_char)))
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
         self._after_error()
@@ -393,7 +395,7 @@ class SingleModeFrame:
             self.first_hearing = False
             self.replayed = True
             self.waiting_for_input = False
-            self.status_var.set("Höre zu… (Wiederholung)")
+            self.status_var.set(tr("Höre zu… (Wiederholung)"))
             self.play_current()
 
     def on_key(self, event):
@@ -426,20 +428,22 @@ class SingleModeFrame:
             self._show_limit()
 
         if helped:
-            self.feedback_var.set(f"{display_text(self.current_char)} – erst nach Wiederholung, kommt gleich noch mal")
+            self.feedback_var.set(tr("{char} – erst nach Wiederholung, kommt gleich noch mal").format(
+                char=display_text(self.current_char)))
             self.feedback_label.config(foreground=theme.MUTED)
         elif correct:
             if self.sound_var.get():
                 sfx.play_ok()
-            shown = f"{max(latency, 0):.2f} s"
+            shown = f"{number(max(latency, 0), 2)} s"
             if self.icr_var.get():
-                shown += f", Limit {self.limit:.2f} s"
-            self.feedback_var.set(f"Richtig: {display_text(self.current_char)}  ({shown.replace('.', ',')})")
+                shown += tr(", Limit {limit} s").format(limit=number(self.limit, 2))
+            self.feedback_var.set(tr("Richtig: {text}").format(text=display_text(self.current_char)) + f"  ({shown})")
             self.feedback_label.config(foreground=theme.OK)
         else:
             if self.sound_var.get():
                 sfx.play_error()
-            self.feedback_var.set(f"Falsch: war {display_text(self.current_char)}, du: {display_text(typed)}")
+            self.feedback_var.set(tr("Falsch: war {char}, du: {typed}").format(
+                char=display_text(self.current_char), typed=display_text(typed)))
             self.feedback_label.config(foreground=theme.ERROR)
 
         self._add_history(correct and not helped)

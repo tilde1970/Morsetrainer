@@ -5,6 +5,9 @@ Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
 Vom Lernen einzelner Zeichen nach der Koch-Methode bis zum eigenen
 Contest-Pile-up unter realistischen Kurzwellenbedingungen.
 
+**English:** The program can be switched to English under „▸ Weitere
+Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.en.md).
+
 ## Trainingsmodi
 
 | Reiter | Was du übst |
@@ -78,6 +81,9 @@ Außerdem hilfreich:
   Tage in Folge du es erreicht hast.
 - **Tonhöhe und Tempo leicht variieren** (gemeinsame Einstellung): Wer immer
   nur genau einen Klang hört, tut sich auf dem Band schwerer.
+- **Sprache:** Unter „▸ Weitere Optionen“ → „Sprache / Language“ lässt sich
+  die Oberfläche auf Englisch umstellen (wirkt nach Neustart). Die Stimme im
+  Reiter „Sprechen“ bleibt deutsch.
 
 ### Bandbedingungen (QSO und Contest)
 
@@ -137,6 +143,7 @@ python -m unittest discover tests
 main.py              Startdatei
 morsetrainer/
   app.py             Hauptfenster mit allen Reitern
+  i18n.py            Sprache (Deutsch/Englisch), Texte in i18n_en.py
   core/              Morsecode, Ton, Bandbedingungen, Texte, Statistik
   modes/             ein Modul je Trainingsreiter
   widgets/           wiederverwendbare Oberflächen-Bausteine
@@ -156,7 +163,7 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Lernkartei (`review.json`),
   Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`) und die
   Übungszeit pro Tag (`practice.json`).
-- `window_state.json`: Fenstergröße und alle Einstellungen.
+- `window_state.json`: Fenstergröße und alle Einstellungen, auch die Sprache.
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
   im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von
   [supercheckpartial.com](https://www.supercheckpartial.com) herunter und

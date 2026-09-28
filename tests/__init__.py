@@ -2,9 +2,13 @@
 sounddevice wird durch eine Attrappe ersetzt, bevor Module es importieren.
 
 Aufruf aus dem Projektverzeichnis: python -m unittest discover tests"""
+import os
 import sys
 import types
 from pathlib import Path
+
+# Die Tests prüfen deutsche Texte, unabhängig von der Spracheinstellung.
+os.environ["MORSETRAINER_LANG"] = "de"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

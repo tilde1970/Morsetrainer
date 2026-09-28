@@ -30,6 +30,7 @@ from morsetrainer.core.morse import SAMPLE_RATE, build_text
 from morsetrainer.modes.sequence_mode import HEAD, SequenceModeFrame, clean_input
 from morsetrainer.widgets import theme
 from morsetrainer.core.weighting import CharPicker
+from morsetrainer.i18n import N_, number, tr
 
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 DIGITS = "0123456789"
@@ -141,7 +142,7 @@ def generate_callsign(letters: CharPicker, digits: CharPicker) -> str:
 
 class CallsignModeFrame(SequenceModeFrame):
     session_mode = "callsign"
-    intro_text = (
+    intro_text = N_(
         "Es werden echte Rufzeichen aus der Super-Check-Partial-Liste gesendet "
         "(aktive Contest-Stationen weltweit). Mit dem Präfix-Filter kannst du dich "
         "auf bestimmte Länder beschränken, z. B. „DL DK DJ DO“ (Textanfang: „G“ "
@@ -154,19 +155,19 @@ class CallsignModeFrame(SequenceModeFrame):
 
         settings = ttk.Frame(parent)
         settings.pack(fill="x", pady=1)
-        ttk.Label(settings, text="Präfix-Filter:").pack(side="left", padx=(0, 4))
+        ttk.Label(settings, text=tr("Präfix-Filter:")).pack(side="left", padx=(0, 4))
         self.prefix_var = tk.StringVar(value="")
         ttk.Entry(settings, textvariable=self.prefix_var, width=24).pack(side="left")
-        theme.hint(settings, text="(leer = alle)").pack(side="left", padx=(6, 0))
+        theme.hint(settings, text=tr("(leer = alle)")).pack(side="left", padx=(6, 0))
 
         self.learned_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
-            parent, text="Nur gelernte Zeichen (Zeichensatz oben)", variable=self.learned_var,
+            parent, text=tr("Nur gelernte Zeichen (Zeichensatz oben)"), variable=self.learned_var,
         ).pack(anchor="w", pady=1)
 
         self.affix_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
-            parent, text="Anhänge und Gast-Präfixe (/P, /M, OE/…, gelegentlich)",
+            parent, text=tr("Anhänge und Gast-Präfixe (/P, /M, OE/…, gelegentlich)"),
             variable=self.affix_var,
         ).pack(anchor="w", pady=1)
 
@@ -174,13 +175,14 @@ class CallsignModeFrame(SequenceModeFrame):
         rufz = ttk.Frame(parent)
         rufz.pack(fill="x", pady=1)
         ttk.Checkbutton(
-            rufz, text=f"Rufz-Durchgang: {RUFZ_CALLS} Rufzeichen, je ein Versuch, Punkte", variable=self.rufz_var,
+            rufz, text=tr("Rufz-Durchgang: {n} Rufzeichen, je ein Versuch, Punkte").format(n=RUFZ_CALLS),
+            variable=self.rufz_var,
         ).pack(side="left")
         self.rufz_best = 0
         self.rufz_best_start = ""  # Starttempo des Bestwerts, z. B. "20/10 WPM"
         self.rufz_best_var = tk.StringVar(value="")
         theme.hint(rufz, textvariable=self.rufz_best_var).pack(side="left", padx=(8, 0))
-        self.review_button = ttk.Button(rufz, text="▶ Verpasste nachhören (F6)", command=self._review_missed)
+        self.review_button = ttk.Button(rufz, text=tr("▶ Verpasste nachhören (F6)"), command=self._review_missed)
         # [(Rufzeichen, getippt, WPM, Hz, Farnsworth, zu langsam)] des letzten Durchgangs
         self.rufz_missed = []
         self.rufz_band = False  # letzter Durchgang lief mit Bandbedingungen
@@ -193,11 +195,11 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_start_wpm = 0
 
         if self.all_calls:
-            self.list_text = f"Liste: {len(self.all_calls):,} Rufzeichen".replace(",", ".")
+            self.list_text = tr("Liste: {n} Rufzeichen").format(n=number(len(self.all_calls)))
             if release:
                 self.list_text += f" (SCP {release})"
         else:
-            self.list_text = "callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt."
+            self.list_text = tr("callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt.")
         self.list_info_var = tk.StringVar(value=self.list_text)
         theme.hint(parent, textvariable=self.list_info_var, wrap=540).pack(anchor="w", pady=(0, 4))
         for var in (self.prefix_var, self.learned_var, self.charset_var):
@@ -215,8 +217,10 @@ class CallsignModeFrame(SequenceModeFrame):
         if not self.rufz_best:
             self.rufz_best_var.set("")
             return
-        text = f"Bestwert {self.rufz_best:,} Punkte".replace(",", ".")
-        self.rufz_best_var.set(text + (f" (Start {self.rufz_best_start})" if self.rufz_best_start else ""))
+        text = tr("Bestwert {score} Punkte").format(score=number(self.rufz_best))
+        if self.rufz_best_start:
+            text += tr(" (Start {tempo})").format(tempo=self.rufz_best_start)
+        self.rufz_best_var.set(text)
 
     def _review_missed(self, start=0):
         """Die im letzten Rufz verpassten (auch die zu langsam erkannten)
@@ -251,12 +255,13 @@ class CallsignModeFrame(SequenceModeFrame):
             return
         if index >= len(self.rufz_missed):
             self.review_index = None
-            self.status_var.set("Nachhören beendet. F6 fängt von vorn an.")
+            self.status_var.set(tr("Nachhören beendet. F6 fängt von vorn an."))
             return
         self.review_index = index
         # Erst unvoreingenommen hören; Lösung und eigene Eingabe danach.
-        noise = " · ohne QRM/QRN" if self.rufz_band else ""
-        self.status_var.set(f"Verpasst {index + 1}/{len(self.rufz_missed)} – hör hin…{noise}")
+        noise = tr(" · ohne QRM/QRN") if self.rufz_band else ""
+        self.status_var.set(tr("Verpasst {n}/{total} – hör hin…").format(n=index + 1, total=len(self.rufz_missed))
+                            + noise)
         ms = self._review_play(index)
         if ms:
             self.root.after(ms + REVIEW_REPLAY_MS, self._review_reveal, index, token)
@@ -266,9 +271,13 @@ class CallsignModeFrame(SequenceModeFrame):
         if not self._review_alive(token):
             return
         call, typed, *_rest, slow = self.rufz_missed[index]
-        mine = " (zu langsam)" if slow else (f" (du: {typed})" if typed else " (nichts getippt)")
-        self.status_var.set(f"Verpasst {index + 1}/{len(self.rufz_missed)}: {call}{mine}"
-                            " · F6 nochmal, F7 von vorn, Esc Stopp")
+        if slow:
+            mine = tr(" (zu langsam)")
+        else:
+            mine = tr(" (du: {typed})").format(typed=typed) if typed else tr(" (nichts getippt)")
+        self.status_var.set(tr("Verpasst {n}/{total}: {call}").format(n=index + 1, total=len(self.rufz_missed),
+                                                                    call=call)
+                            + mine + tr(" · F6 nochmal, F7 von vorn, Esc Stopp"))
         ms = self._review_play(index)
         if ms:
             self.root.after(ms + REVIEW_GAP_MS, self._review_step, index + 1, token)
@@ -277,7 +286,7 @@ class CallsignModeFrame(SequenceModeFrame):
         if self.review_index is not None:
             self.review_token += 1
             self.review_index = None
-            self.status_var.set("Nachhören angehalten. F6 fängt von vorn an.")
+            self.status_var.set(tr("Nachhören angehalten. F6 fängt von vorn an."))
 
     def on_function_key(self, key: str):
         # Wie im QSO-Reiter: F6 = nochmal (das aktuelle, erst hören, dann
@@ -296,8 +305,8 @@ class CallsignModeFrame(SequenceModeFrame):
             super().on_key(event)
 
     def _show_rufz_progress(self):
-        score = f"{self.rufz_score:,}".replace(",", ".")
-        self.remaining_var.set(f"Rufzeichen {self.rufz_done}/{RUFZ_CALLS} · {score} Punkte")
+        self.remaining_var.set(tr("Rufzeichen {n}/{total} · {score} Punkte").format(
+            n=self.rufz_done, total=RUFZ_CALLS, score=number(self.rufz_score)))
 
     def start(self):
         self.rufz_active = self.rufz_var.get()
@@ -336,7 +345,7 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_used = set()
         self.rufz_start_wpm = 0
         if self.rufz_active and self.session_stats is not None:
-            score = f"{self.rufz_score:,}".replace(",", ".")
+            score = number(self.rufz_score)
             if self.rufz_done >= RUFZ_CALLS:
                 new_best = self.rufz_score > self.rufz_best
                 stats.log_result("rufz", self.rufz_correct, self.rufz_done,
@@ -346,12 +355,14 @@ class CallsignModeFrame(SequenceModeFrame):
                     self.rufz_best_start = getattr(self, "rufz_start_label", "")
                     self._show_rufz_best()
                 if self.rufz_missed:
-                    self.review_button.config(text=f"▶ Verpasste nachhören ({len(self.rufz_missed)}, F6)")
+                    self.review_button.config(text=tr("▶ Verpasste nachhören ({n}, F6)").format(n=len(self.rufz_missed)))
                     self.review_button.pack(side="left", padx=(8, 0))
-                self.rufz_summary = (f"Rufz: {score} Punkte, {self.rufz_correct} von {self.rufz_done} richtig"
-                                     + (" – neuer Bestwert!" if new_best else ""))
+                self.rufz_summary = (tr("Rufz: {score} Punkte, {correct} von {total} richtig").format(
+                    score=score, correct=self.rufz_correct, total=self.rufz_done)
+                    + (tr(" – neuer Bestwert!") if new_best else ""))
             else:
-                self.rufz_summary = f"Rufz abgebrochen nach {self.rufz_done} Rufzeichen ({score} Punkte, nicht gewertet)."
+                self.rufz_summary = tr("Rufz abgebrochen nach {n} Rufzeichen ({score} Punkte, nicht gewertet).").format(
+                    n=self.rufz_done, score=score)
         super()._finalize_session()
 
     def stop(self):
@@ -372,20 +383,19 @@ class CallsignModeFrame(SequenceModeFrame):
         if self.all_calls:
             self.pool = filter_calls(self.all_calls, parse_prefixes(self.prefix_var.get()), allowed)
             if allowed is not None or self.prefix_var.get().strip():
-                count = f"{len(self.pool):,}".replace(",", ".")
-                self.list_info_var.set(f"{self.list_text} · passend: {count}")
+                self.list_info_var.set(self.list_text + tr(" · passend: {n}").format(n=number(len(self.pool))))
             else:
                 self.list_info_var.set(self.list_text)
 
     def _validate_settings(self) -> bool:
         if self.rufz_var.get() and self.style_var.get() == HEAD:
-            self.status_var.set("Der Rufz-Durchgang braucht eine Eingabe – Mitschreiben oder Erst merken.")
+            self.status_var.set(tr("Der Rufz-Durchgang braucht eine Eingabe – Mitschreiben oder Erst merken."))
             return False
         allowed = self._allowed()
         if not self.all_calls:
             self.pool = []
             if allowed is not None and not (allowed & set(LETTERS) and allowed & set(DIGITS)):
-                self.status_var.set("Für Rufzeichen braucht der Zeichensatz Buchstaben und eine Ziffer.")
+                self.status_var.set(tr("Für Rufzeichen braucht der Zeichensatz Buchstaben und eine Ziffer."))
                 return False
             return True
         self._update_pool()
@@ -393,12 +403,12 @@ class CallsignModeFrame(SequenceModeFrame):
         if len(self.pool) < needed:
             if allowed is not None and not allowed & set(DIGITS):
                 first = next(n for n in range(1, koch.MAX_LESSON + 1) if koch.newest_char(n) in DIGITS)
-                hint = f"Die erste Ziffer kommt mit Koch-Lektion {first}."
+                hint = tr("Die erste Ziffer kommt mit Koch-Lektion {lesson}.").format(lesson=first)
             elif allowed is not None:
-                hint = "Weitere Lektionen lernen oder „Nur gelernte Zeichen“ ausschalten."
+                hint = tr("Weitere Lektionen lernen oder „Nur gelernte Zeichen“ ausschalten.")
             else:
-                hint = "Präfix-Filter erweitern."
-            self.status_var.set(f"Nur {len(self.pool)} passende Rufzeichen.\n{hint}")
+                hint = tr("Präfix-Filter erweitern.")
+            self.status_var.set(tr("Nur {n} passende Rufzeichen.").format(n=len(self.pool)) + "\n" + hint)
             return False
         return True
 

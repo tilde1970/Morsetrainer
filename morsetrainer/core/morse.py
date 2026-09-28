@@ -3,6 +3,8 @@ import random
 
 import numpy as np
 
+from morsetrainer.i18n import tr
+
 MORSE_CODE = {
     "A": ".-", "B": "-...", "C": "-.-.", "D": "-..", "E": ".",
     "F": "..-.", "G": "--.", "H": "....", "I": "..", "J": ".---",
@@ -40,7 +42,7 @@ def key_hint(ch: str) -> str:
     """Anzeige eines zu lernenden Zeichens samt Taste bei Betriebszeichen,
     z. B. "<SK> · Taste *"; sonst das Zeichen selbst."""
     if ch in PROSIGN_KEYS:
-        return f"<{PROSIGN_KEYS[ch]}> · Taste {ch}"
+        return tr("<{prosign}> · Taste {key}").format(prosign=PROSIGN_KEYS[ch], key=ch)
     return ch
 
 # 48 kHz ist die native Rate von PipeWire/PulseAudio und den meisten

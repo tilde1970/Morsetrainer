@@ -21,6 +21,7 @@ from morsetrainer import DATA_DIR
 from morsetrainer.core import storage
 from morsetrainer.core import tempo
 from morsetrainer.core.morse import display_text
+from morsetrainer.i18n import N_
 
 STATS_DIR = DATA_DIR / "stats"
 ALL_TIME_FILE = STATS_DIR / "all_time.json"
@@ -372,17 +373,18 @@ def top_confusions(all_time: dict, limit=10):
 # eine Zeile pro Durchgang.
 RESULTS_FILE = STATS_DIR / "results.jsonl"
 
+# Beschriftungen deutsch; übersetzt wird bei der Anzeige (progress_widget).
 HISTORY_MODES = {
-    "single": "Einzelzeichen",
-    "group": "Gruppen",
-    "word": "Wörter",
-    "callsign": "Rufzeichen",
-    "rufz": "Rufz-Durchgang",
-    "continuous": "Kontinuierlich",
-    "qso": "QSO mittippen",
-    "qso_quiz": "QSO-Abfrage",
-    "qso_head": "QSO-Kopfhören",
-    "contest": "Contest (aktiv)",
+    "single": N_("Einzelzeichen"),
+    "group": N_("Gruppen"),
+    "word": N_("Wörter"),
+    "callsign": N_("Rufzeichen"),
+    "rufz": N_("Rufz-Durchgang"),
+    "continuous": N_("Kontinuierlich"),
+    "qso": N_("QSO mittippen"),
+    "qso_quiz": N_("QSO-Abfrage"),
+    "qso_head": N_("QSO-Kopfhören"),
+    "contest": N_("Contest (aktiv)"),
 }
 
 

@@ -52,14 +52,15 @@ from morsetrainer.core.morse import (
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
+from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
-from morsetrainer.widgets.ui_widgets import ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 DEFAULT_GIVE_UP = 3
 
 COPY, MEMORIZE, HEAD = "copy", "memorize", "head"
-INPUT_STYLES = ((COPY, "Mitschreiben"), (MEMORIZE, "Erst merken"), (HEAD, "Kopfhören"))
+INPUT_STYLES = ((COPY, N_("Mitschreiben")), (MEMORIZE, N_("Erst merken")), (HEAD, N_("Kopfhören")))
 
 # Mitwachsendes Tempo: Schritt in WPM (Regel siehe core/tempo.py).
 TEMPO_STEP = 1
@@ -75,7 +76,7 @@ def answer_limit(length: int) -> float:
     return ANSWER_BASE_S + ANSWER_PER_CHAR_S * length
 
 # Bandbedingungen: Beschriftung -> Stufe aus band.PRESETS (None = aus).
-BAND_LABELS = {"aus": None, "leicht": "light", "mittel": "medium", "stark": "heavy"}
+BAND_LABELS = {N_("aus"): None, N_("leicht"): "light", N_("mittel"): "medium", N_("stark"): "heavy"}
 # Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
 BAND_GAIN_RANGE = (10, 150)
 
@@ -219,31 +220,31 @@ class SequenceModeFrame:
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
         if self.intro_text:
-            theme.hint(parent, text=self.intro_text, wrap=560).pack(anchor="w", padx=10, pady=(8, 2))
+            theme.hint(parent, text=tr(self.intro_text), wrap=560).pack(anchor="w", padx=10, pady=(8, 2))
 
-        options = theme.card(parent, "Einstellungen")
+        options = theme.card(parent, tr("Einstellungen"))
         self._build_extra_settings(options)
 
         style = ttk.Frame(options)
         style.pack(fill="x", pady=1)
-        ttk.Label(style, text="Eingabe:").pack(side="left", padx=(0, 6))
+        ttk.Label(style, text=tr("Eingabe:")).pack(side="left", padx=(0, 6))
         self.style_var = tk.StringVar(value=self.default_style)
         for value, label in INPUT_STYLES:
-            ttk.Radiobutton(style, text=label, value=value, variable=self.style_var).pack(side="left", padx=(0, 10))
+            ttk.Radiobutton(style, text=tr(label), value=value, variable=self.style_var).pack(side="left", padx=(0, 10))
 
         give_up = ttk.Frame(options)
         give_up.pack(fill="x", pady=1)
-        ttk.Label(give_up, text="Lösung zeigen nach").pack(side="left", padx=(0, 4))
+        ttk.Label(give_up, text=tr("Lösung zeigen nach")).pack(side="left", padx=(0, 4))
         self.give_up_var = tk.IntVar(value=DEFAULT_GIVE_UP)
         ttk.Spinbox(give_up, from_=0, to=9, textvariable=self.give_up_var, width=3).pack(side="left")
-        ttk.Label(give_up, text="Fehlversuchen").pack(side="left", padx=(4, 0))
-        theme.hint(give_up, text="(0 = nie)").pack(side="left", padx=(4, 0))
+        ttk.Label(give_up, text=tr("Fehlversuchen")).pack(side="left", padx=(4, 0))
+        theme.hint(give_up, text=tr("(0 = nie)")).pack(side="left", padx=(4, 0))
 
         tempo_row = ttk.Frame(options)
         tempo_row.pack(fill="x", pady=1)
         self.tempo_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            tempo_row, text=f"Tempo wächst mit (richtig +{TEMPO_STEP}, falsch −{TEMPO_STEP} WPM)",
+            tempo_row, text=tr("Tempo wächst mit (richtig +{step}, falsch −{step} WPM)").format(step=TEMPO_STEP),
             variable=self.tempo_var,
         ).pack(side="left")
         self.tempo_info_var = tk.StringVar(value="")
@@ -251,23 +252,22 @@ class SequenceModeFrame:
 
         band_row = ttk.Frame(options)
         band_row.pack(fill="x", pady=1)
-        ttk.Label(band_row, text="Bandbedingungen:").pack(side="left", padx=(0, 4))
+        ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
         self.band_var = tk.StringVar(value="aus")
-        ttk.Combobox(band_row, textvariable=self.band_var, values=list(BAND_LABELS), state="readonly",
-                     width=8).pack(side="left")
-        theme.hint(band_row, text="(Rauschen, QSB, Knacken, QRM)").pack(side="left", padx=(6, 0))
+        ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
+        theme.hint(band_row, text=tr("(Rauschen, QSB, Knacken, QRM)")).pack(side="left", padx=(6, 0))
 
         gain_row = ttk.Frame(options)
         gain_row.pack(fill="x", pady=1)
-        ttk.Label(gain_row, text="Störgeräusche:").pack(side="left", padx=(0, 4))
-        theme.hint(gain_row, text="leiser").pack(side="left")
+        ttk.Label(gain_row, text=tr("Störgeräusche:")).pack(side="left", padx=(0, 4))
+        theme.hint(gain_row, text=tr("leiser")).pack(side="left")
         self.band_gain_var = tk.DoubleVar(value=100)
         self.band_gain_scale = ttk.Scale(
             gain_row, from_=BAND_GAIN_RANGE[0], to=BAND_GAIN_RANGE[1], variable=self.band_gain_var, length=180,
             command=lambda _: self._show_band_gain(),
         )
         self.band_gain_scale.pack(side="left", padx=6)
-        theme.hint(gain_row, text="lauter").pack(side="left")
+        theme.hint(gain_row, text=tr("lauter")).pack(side="left")
         self.band_gain_text = tk.StringVar(value="")
         self.band_gain_label = ttk.Label(gain_row, textvariable=self.band_gain_text, width=6, anchor="e")
         self.band_gain_label.pack(side="left", padx=(6, 0))
@@ -276,26 +276,26 @@ class SequenceModeFrame:
 
         duration = ttk.Frame(options)
         duration.pack(fill="x", pady=1)
-        ttk.Label(duration, text="Dauer:").pack(side="left", padx=(0, 4))
+        ttk.Label(duration, text=tr("Dauer:")).pack(side="left", padx=(0, 4))
         self.duration_var = tk.IntVar(value=5)
         ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
-        ttk.Label(duration, text="Min.").pack(side="left", padx=(4, 0))
-        theme.hint(duration, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        ttk.Label(duration, text=tr("Min.")).pack(side="left", padx=(4, 0))
+        theme.hint(duration, text=tr("(0 = ohne Limit)")).pack(side="left", padx=(4, 0))
         self.sound_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(duration, text="Quittungston", variable=self.sound_var).pack(side="right")
+        ttk.Checkbutton(duration, text=tr("Quittungston"), variable=self.sound_var).pack(side="right")
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(
-            controls, text="Wiederholen (Leertaste)", command=self.repeat_sequence, state="disabled"
+            controls, text=tr("Wiederholen (Leertaste)"), command=self.repeat_sequence, state="disabled"
         )
         self.repeat_button.pack(side="left", padx=8)
         self.remaining_var = tk.StringVar(value="")
         theme.hint(controls, textvariable=self.remaining_var).pack(side="right")
 
-        self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
+        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel", wraplength=560,
                   justify="center").pack(pady=(14, 6))
 
@@ -313,16 +313,16 @@ class SequenceModeFrame:
         self.entry.bind("<Return>", self.on_submit)
         # Ein Leerzeichen gehört nie zur Antwort, die Leertaste wiederholt.
         self.entry.bind("<space>", lambda e: (self.repeat_sequence(), "break")[1])
-        theme.hint(self.entry_frame, text="Enter bestätigt").pack(pady=(2, 0))
+        theme.hint(self.entry_frame, text=tr("Enter bestätigt")).pack(pady=(2, 0))
 
         self.head_frame = ttk.Frame(self.answer_area)
-        self.reveal_button = ttk.Button(self.head_frame, text="Auflösen (Enter)", command=self.reveal,
+        self.reveal_button = ttk.Button(self.head_frame, text=tr("Auflösen (Enter)"), command=self.reveal,
                                         state="disabled")
         self.reveal_button.pack(side="left", padx=4)
-        self.known_button = ttk.Button(self.head_frame, text="Gewusst (J)", command=lambda: self.assess(True),
+        self.known_button = ttk.Button(self.head_frame, text=tr("Gewusst (J)"), command=lambda: self.assess(True),
                                        state="disabled")
         self.known_button.pack(side="left", padx=4)
-        self.unknown_button = ttk.Button(self.head_frame, text="Nicht gewusst (N)",
+        self.unknown_button = ttk.Button(self.head_frame, text=tr("Nicht gewusst (N)"),
                                          command=lambda: self.assess(False), state="disabled")
         self.unknown_button.pack(side="left", padx=4)
 
@@ -337,7 +337,7 @@ class SequenceModeFrame:
 
         self.stats_panel = StatsPanel(parent)
 
-        history = theme.card(parent, "Verlauf")
+        history = theme.card(parent, tr("Verlauf"))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
@@ -384,10 +384,10 @@ class SequenceModeFrame:
             minutes = self.duration_var.get()
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
-            self.status_var.set("Ungültige Dauer, Geschwindigkeit oder Tonhöhe!")
+            self.status_var.set(tr("Ungültige Dauer, Geschwindigkeit oder Tonhöhe!"))
             return
         if minutes < 0:
-            self.status_var.set("Ungültige Dauer!")
+            self.status_var.set(tr("Ungültige Dauer!"))
             return
         self.deadline = time.time() + minutes * 60 if minutes and not self._fixed_run() else None
         self.session_id += 1
@@ -405,7 +405,7 @@ class SequenceModeFrame:
         self._show_tempo()
         preset = BAND_LABELS.get(self.band_var.get())
         self.band = band.preset_conditions(preset, freq) if preset else None
-        self.start_button.config(text="Stop")
+        self.start_button.config(text=tr("Stop"))
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
         self.diff_var.set("")
@@ -435,7 +435,7 @@ class SequenceModeFrame:
         Wird nicht ausgewertet."""
         wpm, freq = self._audio_settings()
         samples = build_text(START_TEXT + " ", wpm, freq, self.farnsworth_wpm())
-        self.status_var.set(f"Achtung: {START_TEXT}")
+        self.status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
         if not self._play(samples):
             return
         dur_ms = int((len(samples) / SAMPLE_RATE + AUDIO_LATENCY) * 1000)
@@ -445,7 +445,7 @@ class SequenceModeFrame:
         self.running = False
         self.waiting_for_input = False
         self.submit_pending = False
-        self.start_button.config(text="Start")
+        self.start_button.config(text=tr("Start"))
         self.repeat_button.config(state="disabled")
         self._set_input_open(False)
         self._set_head_buttons()
@@ -454,11 +454,12 @@ class SequenceModeFrame:
             wpm, freq = self._audio_settings()
             audio.play_quietly(build_text(END_TEXT, wpm, freq))
         self._finalize_session()
-        self.status_var.set("Gestoppt.")
+        self.status_var.set(tr("Gestoppt."))
         self.remaining_var.set("")
         if self.tempo is not None:
-            best = f"{self.tempo_best} WPM effektiv" if self.tempo_best else "–"
-            self.tempo_info_var.set(f"Bestwert {best}, zuletzt {tempo.label(self.tempo, self.tempo_fw)}")
+            best = tr("{wpm} WPM effektiv").format(wpm=self.tempo_best) if self.tempo_best else "–"
+            self.tempo_info_var.set(tr("Bestwert {best}, zuletzt {tempo}").format(
+                best=best, tempo=tempo.label(self.tempo, self.tempo_fw)))
         self.on_stop_cb()
 
     def _time_up(self) -> bool:
@@ -469,9 +470,9 @@ class SequenceModeFrame:
             return
         remaining = max(int(self.deadline - time.time()), 0)
         if remaining:
-            self.remaining_var.set(f"Restzeit {remaining // 60}:{remaining % 60:02d}")
+            self.remaining_var.set(tr("Restzeit {time}").format(time=f"{remaining // 60}:{remaining % 60:02d}"))
         else:
-            self.remaining_var.set("Zeit abgelaufen – letzte Eingabe noch")
+            self.remaining_var.set(tr("Zeit abgelaufen – letzte Eingabe noch"))
         self.root.after(1000, self._update_remaining, session_id)
 
     def _finalize_session(self):
@@ -487,7 +488,7 @@ class SequenceModeFrame:
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         if self.session_stats.self_assessed and path is not None:
             self.stats_panel.save_var.set(
-                self.stats_panel.save_var.get() + " – selbst bewertet, zählt nicht für Gesamtstatistik und Lektion"
+                self.stats_panel.save_var.get() + tr(" – selbst bewertet, zählt nicht für Gesamtstatistik und Lektion")
             )
         self.session_stats = None
 
@@ -516,7 +517,7 @@ class SequenceModeFrame:
             return
         if self._time_up():
             self.stop()
-            self.status_var.set("Zeit abgelaufen – Durchgang ausgewertet.")
+            self.status_var.set(tr("Zeit abgelaufen – Durchgang ausgewertet."))
             return
         if self._run_complete():
             self.stop()
@@ -536,7 +537,7 @@ class SequenceModeFrame:
         self.replayed = False
         self.enter_time = None
         self.input_var.set("")
-        self.status_var.set("Höre zu… (Wiederholung)" if was_repeat else "Höre zu…")
+        self.status_var.set(tr("Höre zu… (Wiederholung)") if was_repeat else tr("Höre zu…"))
         self.play_current()
 
     def _audio_settings(self):
@@ -568,7 +569,7 @@ class SequenceModeFrame:
         if self.tempo is None:
             self.tempo_info_var.set("")
         else:
-            self.tempo_info_var.set(f"aktuell {tempo.label(self.tempo, self.tempo_fw)}")
+            self.tempo_info_var.set(tr("aktuell {tempo}").format(tempo=tempo.label(self.tempo, self.tempo_fw)))
 
     def _update_tempo(self, correct: bool, attempts: int):
         """Nur der erste Versuch zählt: ein Fehler bei der Wiederholung
@@ -643,7 +644,7 @@ class SequenceModeFrame:
         if self.style == HEAD:
             # Nach dem Auflösen noch einmal gehört: weiter mit der Bewertung.
             self._set_head_buttons(reveal=not self.revealed, assess=self.revealed)
-            self.status_var.set("Gewusst? J oder N" if self.revealed else "Erkannt? Enter löst auf.")
+            self.status_var.set(tr("Gewusst? J oder N") if self.revealed else tr("Erkannt? Enter löst auf."))
             return
         self._set_input_open(True)
         if self.submit_pending:
@@ -651,11 +652,13 @@ class SequenceModeFrame:
             self.on_submit()
         elif self.attempts == 0 and not self.replayed:
             # Gewertet wird nur eine zügige Antwort; das soll man wissen.
-            limit = f"{answer_limit(len(self.current_sequence)):.1f}".replace(".", ",")
-            purpose = "für die Lektion " if self.koch_progress else ""
-            self.status_var.set(f"Deine Eingabe? ({purpose}zügig: {limit} s)")
+            limit = number(answer_limit(len(self.current_sequence)), 1)
+            if self.koch_progress:
+                self.status_var.set(tr("Deine Eingabe? (für die Lektion zügig: {limit} s)").format(limit=limit))
+            else:
+                self.status_var.set(tr("Deine Eingabe? (zügig: {limit} s)").format(limit=limit))
         else:
-            self.status_var.set("Deine Eingabe?")
+            self.status_var.set(tr("Deine Eingabe?"))
 
     def repeat_sequence(self):
         # Während die Lösung vorgespielt wird oder die Rückmeldung steht, ist
@@ -668,7 +671,7 @@ class SequenceModeFrame:
             self.submit_pending = False
             self.enter_time = None
             self.replayed = True
-            self.status_var.set("Höre zu… (Wiederholung)")
+            self.status_var.set(tr("Höre zu… (Wiederholung)"))
             self.play_current()
 
     def _char_timing(self, index: int, typed_index):
@@ -694,7 +697,7 @@ class SequenceModeFrame:
                 # Beim Mitschreiben vorzeitig Enter gedrückt: nach dem Ton werten.
                 self.submit_pending = True
                 self.enter_time = time.time()
-                self.status_var.set("Wird nach dem Ton ausgewertet…")
+                self.status_var.set(tr("Wird nach dem Ton ausgewertet…"))
             return
         answer_time = self.enter_time or time.time()
         typed = clean_input(self.input_var.get())
@@ -732,7 +735,7 @@ class SequenceModeFrame:
         explanation = self._explain(self.current_sequence)
         self.feedback_var.set(display_text(self.current_sequence) + (f"\n{explanation}" if explanation else ""))
         self.feedback_label.config(foreground="")
-        self.status_var.set("Gewusst? J oder N")
+        self.status_var.set(tr("Gewusst? J oder N"))
         self._set_head_buttons(assess=True)
 
     def assess(self, known: bool):
@@ -786,17 +789,17 @@ class SequenceModeFrame:
             note = ""
             if self._fixed_run():
                 if slow:
-                    note = "\n(zu langsam – keine Punkte)"
+                    note = "\n" + tr("(zu langsam – keine Punkte)")
             elif not self.koch_progress:
                 # Zählt nicht für die Lektion, aber Tempo und Gewichtung merken es.
                 if slow and self.attempts == 1:
-                    note = "\n(zu langsam" + (" – Tempo steigt nicht)" if self.tempo is not None else ")")
+                    note = "\n" + (tr("(zu langsam – Tempo steigt nicht)") if self.tempo is not None else tr("(zu langsam)"))
             elif slow and self.attempts == 1:
-                note = "\n(zu langsam – zählt nicht für die Lektion)"
+                note = "\n" + tr("(zu langsam – zählt nicht für die Lektion)")
             elif self.replayed and self.attempts == 1:
-                note = "\n(mit Wiederholen – zählt nicht für die Lektion)"
+                note = "\n" + tr("(mit Wiederholen – zählt nicht für die Lektion)")
             self.feedback_var.set(
-                f"Richtig: {display_text(sent)}" + (f"\n{explanation}" if explanation else "") + note
+                tr("Richtig: {text}").format(text=display_text(sent)) + (f"\n{explanation}" if explanation else "") + note
             )
             self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
@@ -804,20 +807,21 @@ class SequenceModeFrame:
             if self.sound_var.get():
                 sfx.play_error()
             if give_up:
-                text = f"Lösung: {display_text(sent)}" + (f"\n{explanation}" if explanation else "")
+                text = tr("Lösung: {text}").format(text=display_text(sent)) + (f"\n{explanation}" if explanation else "")
             else:
-                text = "Leider falsch – hör noch einmal hin."
+                text = tr("Leider falsch – hör noch einmal hin.")
             self.feedback_var.set(text)
             self.feedback_label.config(foreground=theme.ERROR)
             if not head:
                 sent_row, typed_row, marks = align.diff_rows(sent, typed)
-                legend = "\n          – fehlt/zu viel, ^ falsch"
+                legend = "\n" + " " * 10 + tr("– fehlt/zu viel, ^ falsch")
+                typed_line = f"{tr('getippt'):<10}{typed_row}\n" + " " * 10 + f"{marks}{legend}"
                 if give_up:
-                    self.diff_var.set(f"gesendet  {sent_row}\ngetippt   {typed_row}\n          {marks}{legend}")
+                    self.diff_var.set(f"{tr('gesendet'):<10}{sent_row}\n{typed_line}")
                 else:
                     # Nur markieren, wo es hakt; die gesendete Sequenz zu
                     # zeigen hieße, beim nächsten Versuch abzuschreiben.
-                    self.diff_var.set(f"getippt   {typed_row}\n          {marks}{legend}")
+                    self.diff_var.set(typed_line)
 
         self.history.append(f"{sent}{'=' if all_correct else '≠'}{typed}")
         self.history = self.history[-10:]
@@ -829,7 +833,7 @@ class SequenceModeFrame:
             self._later(1500, self.next_sequence)  # Lösung lesen, weiter im Takt
         elif give_up:
             # Lösung sehen und dabei noch einmal hören, dann weiter.
-            self.status_var.set("Hör dir die Lösung noch einmal an…")
+            self.status_var.set(tr("Hör dir die Lösung noch einmal an…"))
             self._later(900, self.play_current, True, lambda: self._later(900, self.next_sequence))
         else:
             self._later(900 if all_correct else 1500, self.next_sequence)

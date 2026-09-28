@@ -39,9 +39,10 @@ from morsetrainer.core.morse import (
     char_gap_seconds, code_units, silence, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import SessionStats
+from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
-from morsetrainer.widgets.ui_widgets import ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 from morsetrainer.modes.content import ItemSource
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
@@ -58,8 +59,8 @@ GROUP_LEN_RANGE = (0, 10)
 
 # Inhalt: Zufallszeichen in Gruppen (zählt für die Koch-Lektion) oder
 # Klartext aus Wörtern, Wendungen, Rufzeichen, QSOs (siehe modes/content.py).
-CONTENTS = {"Zufallszeichen": "chars", "Wörter": "words", "Wendungen": "phrases", "Rufzeichen": "calls",
-            "QSO-Klartext": "qso"}
+CONTENTS = {N_("Zufallszeichen"): "chars", N_("Wörter"): "words", N_("Wendungen"): "phrases",
+            N_("Rufzeichen"): "calls", N_("QSO-Klartext"): "qso"}
 
 # Zeitliche Plausibilität einer Zuordnung Taste -> gesendetes Zeichen: so
 # viel früher als das Tonende (Messungenauigkeit) bzw. höchstens so viel
@@ -119,29 +120,28 @@ class ContinuousModeFrame:
     def _build_widgets(self, parent):
         theme.hint(
             parent, wrap=560,
-            text="Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
-                 "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen. "
-                 "F5 startet und stoppt, Esc stoppt.",
+            text=tr("Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
+                    "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen. "
+                    "F5 startet und stoppt, Esc stoppt."),
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
-        options = theme.card(parent, "Einstellungen")
+        options = theme.card(parent, tr("Einstellungen"))
         duration = ttk.Frame(options)
         duration.pack(fill="x")
-        ttk.Label(duration, text="Dauer:").pack(side="left", padx=(0, 4))
+        ttk.Label(duration, text=tr("Dauer:")).pack(side="left", padx=(0, 4))
         self.duration_var = tk.IntVar(value=5)
         ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
-        ttk.Label(duration, text="Min.").pack(side="left", padx=(4, 0))
-        theme.hint(duration, text="(0 = ohne Limit)").pack(side="left", padx=(4, 0))
+        ttk.Label(duration, text=tr("Min.")).pack(side="left", padx=(4, 0))
+        theme.hint(duration, text=tr("(0 = ohne Limit)")).pack(side="left", padx=(4, 0))
         content = ttk.Frame(options)
         content.pack(fill="x", pady=(2, 0))
-        ttk.Label(content, text="Inhalt:").pack(side="left", padx=(0, 4))
+        ttk.Label(content, text=tr("Inhalt:")).pack(side="left", padx=(0, 4))
         self.content_var = tk.StringVar(value="Zufallszeichen")
-        ttk.Combobox(content, textvariable=self.content_var, values=list(CONTENTS), state="readonly",
-                     width=14).pack(side="left")
-        theme.hint(content, text="(Klartext zählt nicht für die Lektion)").pack(side="left", padx=(6, 0))
+        ChoiceBox(content, self.content_var, CONTENTS, width=17).pack(side="left")
+        theme.hint(content, text=tr("(Klartext zählt nicht für die Lektion)")).pack(side="left", padx=(6, 0))
         grouping = ttk.Frame(options)
         grouping.pack(fill="x", pady=(2, 0))
-        ttk.Label(grouping, text="Gruppen zu").pack(side="left", padx=(0, 4))
+        ttk.Label(grouping, text=tr("Gruppen zu")).pack(side="left", padx=(0, 4))
         self.group_len_var = tk.IntVar(value=DEFAULT_GROUP_LEN)
         group_len_box = ttk.Spinbox(grouping, from_=GROUP_LEN_RANGE[0], to=GROUP_LEN_RANGE[1],
                                     textvariable=self.group_len_var, width=3)
@@ -149,25 +149,25 @@ class ContinuousModeFrame:
         # Gruppenlänge gilt nur für Zufallszeichen; Klartext hat seine Wörter.
         self.content_var.trace_add("write", lambda *_: group_len_box.state(
             ["!disabled"] if self.content_var.get() == "Zufallszeichen" else ["disabled"]))
-        ttk.Label(grouping, text="Zeichen").pack(side="left", padx=(4, 0))
-        theme.hint(grouping, text="(mit Wortpause dazwischen; 0 = durchgehend)").pack(side="left", padx=(4, 0))
+        ttk.Label(grouping, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
+        theme.hint(grouping, text=tr("(mit Wortpause dazwischen; 0 = durchgehend)")).pack(side="left", padx=(4, 0))
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
 
-        self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
+        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         self.live_var = tk.StringVar(value="")
         ttk.Label(parent, textvariable=self.live_var).pack(anchor="w", padx=10)
 
-        self.diff_box = theme.card(parent, "Auswertung (letzte Zeichen)")
-        self.diff_var = tk.StringVar(value="Erscheint nach dem Stoppen.")
+        self.diff_box = theme.card(parent, tr("Auswertung (letzte Zeichen)"))
+        self.diff_var = tk.StringVar(value=tr("Erscheint nach dem Stoppen."))
         ttk.Label(self.diff_box, textvariable=self.diff_var, font=theme.MONO, justify="left").pack(anchor="w")
 
-        typed = theme.card(parent, "Deine Eingabe (letzte Zeichen)")
+        typed = theme.card(parent, tr("Deine Eingabe (letzte Zeichen)"))
         self.typed_preview_var = tk.StringVar(value="")
         ttk.Label(typed, textvariable=self.typed_preview_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
@@ -201,14 +201,14 @@ class ContinuousModeFrame:
     def start(self):
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
-            self.status_var.set("Kein gültiges Zeichen im Zeichensatz!")
+            self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
             return
         try:
             minutes = self.duration_var.get()
         except tk.TclError:
             minutes = -1
         if minutes < 0:
-            self.status_var.set("Ungültige Dauer!")
+            self.status_var.set(tr("Ungültige Dauer!"))
             return
         self.deadline = time.time() + minutes * 60 if minutes else None
         self.finishing = False
@@ -240,13 +240,13 @@ class ContinuousModeFrame:
                                           review_promote=self.content == "chars",
                                           group_len=self.group_len or None)
         self.stats_panel.reset()
-        self.live_var.set("Gesendet: 0 Zeichen")
+        self.live_var.set(tr("Gesendet: {n} Zeichen").format(n=0))
         self.typed_preview_var.set("")
-        self.diff_var.set("Erscheint nach dem Stoppen.")
+        self.diff_var.set(tr("Erscheint nach dem Stoppen."))
 
         self.running = True
-        self.start_button.config(text="Stop")
-        self.status_var.set("Läuft – höre zu und tippe mit…")
+        self.start_button.config(text=tr("Stop"))
+        self.status_var.set(tr("Läuft – höre zu und tippe mit…"))
         self.on_start_cb()
 
         self.play_thread = threading.Thread(target=self._play_loop, daemon=True)
@@ -304,7 +304,7 @@ class ContinuousModeFrame:
     def _auto_stop(self, session_id):
         if self.running and session_id == self.session_id:
             self.stop()
-            self.status_var.set("Zeit abgelaufen – Durchgang ausgewertet.")
+            self.status_var.set(tr("Zeit abgelaufen – Durchgang ausgewertet."))
 
     def _write(self, stream, samples) -> bool:
         """Schreibt `samples` häppchenweise; False, wenn zwischendurch
@@ -325,7 +325,7 @@ class ContinuousModeFrame:
             return
         sent_log, typed_log = list(self.sent_log), list(self.typed_log)  # Audio-Thread hängt weiter an
         window = sent_log[-PREVIEW_CHARS:]
-        live = f"Gesendet: {len(sent_log)} Zeichen"
+        live = tr("Gesendet: {n} Zeichen").format(n=len(sent_log))
         if window:
             since = window[0]["end_time"] - PREVIEW_SLACK_SECONDS
             sent_str = "".join(e["char"] for e in window)
@@ -336,17 +336,19 @@ class ContinuousModeFrame:
                 1 for op in ops if op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE, align.OpKind.DELETE)
             )
             pct = (matches / expected_total * 100) if expected_total else 0.0
-            scope = f" (letzte {PREVIEW_CHARS})" if len(sent_log) > PREVIEW_CHARS else ""
-            live += f" · vorläufige Trefferquote{scope}: {pct:.0f}%"
+            if len(sent_log) > PREVIEW_CHARS:
+                live += tr(" · vorläufige Trefferquote (letzte {n}): {pct:.0f}%").format(n=PREVIEW_CHARS, pct=pct)
+            else:
+                live += tr(" · vorläufige Trefferquote: {pct:.0f}%").format(pct=pct)
         if self.deadline is not None:
             remaining = max(int(self.deadline - time.time()), 0)
-            live += f" · Restzeit {remaining // 60}:{remaining % 60:02d}"
+            live += " · " + tr("Restzeit {time}").format(time=f"{remaining // 60}:{remaining % 60:02d}")
         self.live_var.set(live)
         # Erst wenn auch das letzte Zeichen fertig gesendet ist (der Audio-Thread
         # hat sich beendet), läuft die Frist fürs Nachtippen.
         if self._time_up() and not self.play_thread.is_alive() and not self.finishing:
             self.finishing = True
-            self.status_var.set("Zeit abgelaufen – tippe die letzten Zeichen noch ein…")
+            self.status_var.set(tr("Zeit abgelaufen – tippe die letzten Zeichen noch ein…"))
             self.root.after(FINISH_GRACE_SECONDS * 1000, self._auto_stop, self.session_id)
         self.typed_preview_var.set("".join(e["char"] for e in typed_log[-60:]))
         self.root.after(1000, self._tick)
@@ -361,10 +363,10 @@ class ContinuousModeFrame:
             # der Sitzungs-Stream ist schon zu).
             self.end_sent = True
             audio.play_quietly(build_text(END_TEXT, self.wpm, self.freq))
-        self.start_button.config(text="Start")
-        self.status_var.set("Werte aus…")
+        self.start_button.config(text=tr("Start"))
+        self.status_var.set(tr("Werte aus…"))
         self._finalize_session(stopped_at=None if self.finishing else time.time())
-        self.status_var.set("Gestoppt.")
+        self.status_var.set(tr("Gestoppt."))
         self.on_stop_cb()
 
     def _finalize_session(self, stopped_at=None):
@@ -412,8 +414,10 @@ class ContinuousModeFrame:
         tail = rows[-DIFF_TAIL:]
         if tail:
             self.diff_var.set(
-                "gesendet  " + " ".join(r[0] for r in tail) + "\ngetippt   " + " ".join(r[1] for r in tail)
-                + "\n          " + " ".join(r[2] for r in tail).rstrip() + "\n          – fehlt/zu viel, ^ falsch oder nicht rechtzeitig"
+                f"{tr('gesendet'):<10}" + " ".join(r[0] for r in tail)
+                + f"\n{tr('getippt'):<10}" + " ".join(r[1] for r in tail)
+                + "\n" + " " * 10 + " ".join(r[2] for r in tail).rstrip()
+                + "\n" + " " * 10 + tr("– fehlt/zu viel, ^ falsch oder nicht rechtzeitig")
             )
         summary = self.session_stats.summary()
         if getattr(self, "content", "chars") == "chars":  # Klartext ist vorhersagbarer

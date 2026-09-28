@@ -29,13 +29,14 @@ from morsetrainer.core import audio, mp3, speech, words
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_text, display_text, silence, vary_voice,
 )
+from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import ItemSource
 from morsetrainer.widgets import theme
-from morsetrainer.widgets.ui_widgets import ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
-CONTENTS = {"Zeichen": "chars", "Gruppen": "groups", "Wörter": "words", "Wendungen": "phrases",
-            "Rufzeichen": "calls"}
-ALPHABET_LABELS = {"Buchstaben (A, Be, Ce)": "de", "Buchstabieralphabet (Alfa, Bravo)": "nato"}
+CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Wörter"): "words", N_("Wendungen"): "phrases",
+            N_("Rufzeichen"): "calls"}
+ALPHABET_LABELS = {N_("Buchstaben (A, Be, Ce)"): "de", N_("Buchstabieralphabet (Alfa, Bravo)"): "nato"}
 DEFAULT_COUNT = 50
 COUNT_RANGE = (5, 500)
 # Knapp: Wer länger hat, zählt Punkte und Striche, statt das Klangbild zu erkennen.
@@ -76,25 +77,24 @@ class ListenModeFrame:
     def _build_widgets(self, parent):
         theme.hint(
             parent, wrap=560,
-            text="Ohne Tastatur üben: Du hörst das Morsezeichen und sagst in der Pause laut, was du "
-                 "erkannt hast. Dann sagt eine Stimme die Lösung an. Sprechen statt tippen trainiert "
-                 "das Klangbild – und geht auch beim Spazierengehen. Als MP3 gespeichert läuft die "
-                 "Übung auf Handy oder im Auto. F5 startet und stoppt, Leertaste wiederholt.",
+            text=tr("Ohne Tastatur üben: Du hörst das Morsezeichen und sagst in der Pause laut, was du "
+                    "erkannt hast. Dann sagt eine Stimme die Lösung an. Sprechen statt tippen trainiert "
+                    "das Klangbild – und geht auch beim Spazierengehen. Als MP3 gespeichert läuft die "
+                    "Übung auf Handy oder im Auto. F5 startet und stoppt, Leertaste wiederholt."),
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
-        options = theme.card(parent, "Einstellungen")
+        options = theme.card(parent, tr("Einstellungen"))
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
-        ttk.Label(row, text="Inhalt:").pack(side="left", padx=(0, 4))
+        ttk.Label(row, text=tr("Inhalt:")).pack(side="left", padx=(0, 4))
         self.content_var = tk.StringVar(value="Zeichen")
-        ttk.Combobox(row, textvariable=self.content_var, values=list(CONTENTS), state="readonly",
-                     width=12).pack(side="left")
-        ttk.Label(row, text="Gruppen zu").pack(side="left", padx=(12, 4))
+        ChoiceBox(row, self.content_var, CONTENTS, width=12).pack(side="left")
+        ttk.Label(row, text=tr("Gruppen zu")).pack(side="left", padx=(12, 4))
         self.group_len_var = tk.IntVar(value=5)
         self.group_len_box = ttk.Spinbox(row, from_=GROUP_LEN_RANGE[0], to=GROUP_LEN_RANGE[1],
                                          textvariable=self.group_len_var, width=3)
         self.group_len_box.pack(side="left")
-        ttk.Label(row, text="Zeichen").pack(side="left", padx=(4, 0))
+        ttk.Label(row, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
         # Gruppenlänge gilt nur für den Inhalt Gruppen.
         self.content_var.trace_add("write", lambda *_: self.group_len_box.state(
             ["!disabled"] if self.content_var.get() == "Gruppen" else ["disabled"]))
@@ -102,46 +102,45 @@ class ListenModeFrame:
 
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
-        ttk.Label(row, text="Anzahl:").pack(side="left", padx=(0, 4))
+        ttk.Label(row, text=tr("Anzahl:")).pack(side="left", padx=(0, 4))
         self.count_var = tk.IntVar(value=DEFAULT_COUNT)
         ttk.Spinbox(row, from_=COUNT_RANGE[0], to=COUNT_RANGE[1], increment=5, textvariable=self.count_var,
                     width=5).pack(side="left")
-        ttk.Label(row, text="Denkpause:").pack(side="left", padx=(12, 4))
+        ttk.Label(row, text=tr("Denkpause:")).pack(side="left", padx=(12, 4))
         self.pause_var = tk.DoubleVar(value=DEFAULT_PAUSE)
         ttk.Spinbox(row, from_=PAUSE_RANGE[0], to=PAUSE_RANGE[1], increment=0.5, textvariable=self.pause_var,
                     width=5, format="%.1f").pack(side="left")
-        ttk.Label(row, text="s (+0,3 s je Zeichen)").pack(side="left", padx=(4, 0))
+        ttk.Label(row, text=tr("s (+0,3 s je Zeichen)")).pack(side="left", padx=(4, 0))
 
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
-        ttk.Label(row, text="Ansage:").pack(side="left", padx=(0, 4))
+        ttk.Label(row, text=tr("Ansage:")).pack(side="left", padx=(0, 4))
         self.alphabet_var = tk.StringVar(value=next(iter(ALPHABET_LABELS)))
-        ttk.Combobox(row, textvariable=self.alphabet_var, values=list(ALPHABET_LABELS), state="readonly",
-                     width=32).pack(side="left")
+        ChoiceBox(row, self.alphabet_var, ALPHABET_LABELS, width=32).pack(side="left")
 
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
         self.whole_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(row, text="Wörter und Wendungen als Ganzes ansagen", variable=self.whole_var).pack(
+        ttk.Checkbutton(row, text=tr("Wörter und Wendungen als Ganzes ansagen"), variable=self.whole_var).pack(
             side="left")
         self.meaning_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(row, text="Beim Buchstabieren mit Bedeutung", variable=self.meaning_var).pack(
+        ttk.Checkbutton(row, text=tr("Beim Buchstabieren mit Bedeutung"), variable=self.meaning_var).pack(
             side="left", padx=(12, 0))
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
         self.replay_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(row, text="Danach noch einmal morsen", variable=self.replay_var).pack(side="left")
+        ttk.Checkbutton(row, text=tr("Danach noch einmal morsen"), variable=self.replay_var).pack(side="left")
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text="Start", style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
-        self.export_button = ttk.Button(controls, text="Als MP3 speichern…", command=self.export)
+        self.export_button = ttk.Button(controls, text=tr("Als MP3 speichern…"), command=self.export)
         self.export_button.pack(side="left", padx=8)
         self.progress_var = tk.StringVar(value="")
         theme.hint(controls, textvariable=self.progress_var).pack(side="right")
 
-        self.status_var = tk.StringVar(value="Bereit. Drücke Start.")
+        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel", wraplength=560,
                   justify="center").pack(pady=(14, 6))
         self.solution_var = tk.StringVar(value="")
@@ -191,7 +190,7 @@ class ListenModeFrame:
             group_len = min(max(self.group_len_var.get(), GROUP_LEN_RANGE[0]), GROUP_LEN_RANGE[1])
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except (tk.TclError, ValueError):
-            self.status_var.set("Ungültige Anzahl, Pause, Geschwindigkeit oder Tonhöhe!")
+            self.status_var.set(tr("Ungültige Anzahl, Pause, Geschwindigkeit oder Tonhöhe!"))
             return None
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         source = ItemSource(CONTENTS.get(self.content_var.get(), "chars"), charset, group_len,
@@ -259,12 +258,12 @@ class ListenModeFrame:
         self.session_id += 1
         self.running = True
         self.done, self.total = 0, opts["count"]
-        self.start_button.config(text="Stop")
+        self.start_button.config(text=tr("Stop"))
         self.export_button.config(state="disabled")
         self.solution_var.set("")
         self.meaning_text.set("")
         self.on_start_cb()
-        self.status_var.set("Stimme wird geladen…")
+        self.status_var.set(tr("Stimme wird geladen…"))
         speech.speaker.preload()
         self._wait_for_voice(self.session_id)
 
@@ -291,7 +290,7 @@ class ListenModeFrame:
     def _next_item(self, _session_id=None):
         if self.done >= self.total:
             self.stop()
-            self.status_var.set(f"Fertig: {self.total} Einträge.")
+            self.status_var.set(tr("Fertig: {n} Einträge.").format(n=self.total))
             return
         text, meaning = self.source.next()
         wpm, freq = self._voice_for(self.opts)
@@ -305,19 +304,19 @@ class ListenModeFrame:
         self.progress_var.set(f"{self.done}/{self.total}")
         self.solution_var.set("")
         self.meaning_text.set("")
-        self.status_var.set("Hör zu …")
+        self.status_var.set(tr("Hör zu …"))
         if not self._play(np.concatenate([code, think])):
             return
         latency = int(AUDIO_LATENCY * 1000)
         self._later(int(len(code) / SAMPLE_RATE * 1000) + latency,
-                    lambda: self.status_var.set("Sag es laut …"))
+                    lambda: self.status_var.set(tr("Sag es laut …")))
         self._later(int((len(code) + len(think)) / SAMPLE_RATE * 1000) + latency, self._answer, voice, rest)
 
     def _answer(self, voice, rest):
         text, meaning, _, _ = self.current
-        self.status_var.set("Lösung:")
+        self.status_var.set(tr("Lösung:"))
         self.solution_var.set(display_text(text))
-        self.meaning_text.set(meaning)
+        self.meaning_text.set(words.shown_meaning(text, meaning))
         samples = np.concatenate([voice, rest])
         if self._play(samples):
             self._later(int(len(samples) / SAMPLE_RATE * 1000) + int(AUDIO_LATENCY * 1000), self._next_item)
@@ -344,10 +343,10 @@ class ListenModeFrame:
         self.running = False
         self.session_id += 1
         audio.stop()
-        self.start_button.config(text="Start")
+        self.start_button.config(text=tr("Start"))
         self.export_button.config(state="normal")
         self.progress_var.set("")
-        self.status_var.set("Gestoppt.")
+        self.status_var.set(tr("Gestoppt."))
         self.on_stop_cb()
 
     # --- MP3 -------------------------------------------------------------
@@ -364,7 +363,7 @@ class ListenModeFrame:
         content = CONTENTS.get(self.content_var.get(), "chars")
         name = f"morsetrainer-{content}-{opts['wpm']}wpm-{datetime.now():%Y%m%d-%H%M}.mp3"
         path = filedialog.asksaveasfilename(
-            parent=self.root, title="Übung als MP3 speichern", defaultextension=".mp3", initialfile=name,
+            parent=self.root, title=tr("Übung als MP3 speichern"), defaultextension=".mp3", initialfile=name,
             initialdir=str(Path.home()), filetypes=[("MP3", "*.mp3")],
         )
         if not path:
@@ -372,10 +371,10 @@ class ListenModeFrame:
         self.exporting = True
         self.cancel_export = False
         self.start_button.config(state="disabled")
-        self.export_button.config(text="Abbrechen", command=self._cancel_export)
+        self.export_button.config(text=tr("Abbrechen"), command=self._cancel_export)
         self.export_result = None
         self.export_done = 0
-        self.status_var.set("MP3 wird erstellt …")
+        self.status_var.set(tr("MP3 wird erstellt …"))
         threading.Thread(target=self._export_worker, args=(path, opts), daemon=True).start()
         self._watch_export(opts["count"])
 
@@ -403,9 +402,9 @@ class ListenModeFrame:
                 writer.write(build_text("+", opts["wpm"], opts["freq"]))
             if self.cancel_export:
                 Path(path).unlink(missing_ok=True)
-                self.export_result = "MP3 abgebrochen."
+                self.export_result = tr("MP3 abgebrochen.")
             else:
-                self.export_result = f"Gespeichert: {path} ({writer.seconds / 60:.0f} Min.)"
+                self.export_result = tr("Gespeichert: {path} ({minutes:.0f} Min.)").format(path=path, minutes=writer.seconds / 60)
         except (mp3.Mp3Error, OSError) as exc:
             self.export_result = str(exc)
 
@@ -416,7 +415,7 @@ class ListenModeFrame:
             return
         self.exporting = False
         self.start_button.config(state="normal")
-        self.export_button.config(text="Als MP3 speichern…", command=self.export)
+        self.export_button.config(text=tr("Als MP3 speichern…"), command=self.export)
         self.progress_var.set("")
         self.status_var.set(self.export_result)
 
