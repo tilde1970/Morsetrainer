@@ -1,5 +1,24 @@
 # Änderungen
 
+## 2.14
+
+- **Neuer Reiter „Netzwerk“: Üben in der Gruppe.** Ein Trainer öffnet im
+  lokalen Netz eine Sitzung (mit PIN), die Teilnehmer finden sie über
+  „Suchen“ und melden sich mit Name oder Rufzeichen an. Alle hören dieselbe
+  Sequenz – Einzelzeichen, Gruppen, Wörter, Rufzeichen oder eigenen Text –
+  über den eigenen Kopfhörer und tippen mit. Der Trainer sieht live, wer was
+  getippt hat, dazu Trefferquote, häufigste Fehler und schwächste Zeichen
+  der Gruppe, und kann alles als CSV speichern. Übertragen wird nur Text,
+  den Ton erzeugt jeder Rechner selbst.
+- Ehrlich gewertet wie in den übrigen Reitern: Als **flüssig** zählt eine
+  richtige Antwort nur beim ersten Hören und im üblichen Zeitfenster; nach
+  „Für alle wiederholen“ oder zu langsam ist sie richtig, aber unsicher.
+  Wer nicht flüssig richtig lag, hört die Lösung noch einmal. Auch
+  Wendungen und QSO-Klartext lassen sich senden; bei zu langsamem
+  Zeichentempo gibt es einen Hinweis aufs Koch-Tempo.
+- Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter
+  lesbar bleiben.
+
 ## 2.13
 
 - **Neuer Reiter „Sprechen“ (Hören & Sagen):** ohne Tastatur üben wie mit

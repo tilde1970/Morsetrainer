@@ -385,6 +385,7 @@ HISTORY_MODES = {
     "qso_quiz": N_("QSO-Abfrage"),
     "qso_head": N_("QSO-Kopfhören"),
     "contest": N_("Contest (aktiv)"),
+    "network": N_("Netzwerk"),
 }
 
 

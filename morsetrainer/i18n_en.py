@@ -656,3 +656,114 @@ EN.update({
     "Busted – richtig: {call}": "Busted – correct: {call}",
     "Austausch falsch – richtig: {exchange}": "Exchange wrong – correct: {exchange}",
 })
+
+# --- modes/network_mode.py ---
+EN.update({
+    "Netzwerk": "Network",
+    "Eigener Text": "Own text",
+    "Abgelehnt: Der Trainer nutzt eine andere Programmversion.":
+        "Rejected: the trainer is using a different program version.",
+    "Abgelehnt: PIN falsch.": "Rejected: wrong PIN.",
+    "Abgelehnt: Name fehlt oder ist schon vergeben.": "Rejected: name missing or already taken.",
+    "Üben in der Gruppe im lokalen Netz (Kursraum, Clubheim): Der Trainer gibt vor, alle hören "
+    "dieselbe Sequenz über den eigenen Kopfhörer und tippen mit. Übertragen wird nur Text, der "
+    "Ton entsteht auf jedem Rechner selbst.":
+        "Practise as a group on the local network (classroom, club station): the trainer sets the pace, "
+        "everyone hears the same sequence on their own headphones and copies it. Only text is sent; the "
+        "sound is generated on each computer.",
+    "Ich bin:": "I am:",
+    "Teilnehmer": "Participant",
+    "Trainer": "Trainer",
+    "Sitzung": "Session",
+    "Name der Sitzung:": "Session name:",
+    "Morsekurs": "Morse class",
+    "Port:": "Port:",
+    "Sitzung öffnen": "Open session",
+    "Sitzung schließen": "Close session",
+    "Die Teilnehmer finden die Sitzung über „Suchen“ oder geben die Adresse ein. Beim ersten "
+    "Öffnen fragt unter Windows eventuell die Firewall – für private Netzwerke zulassen.":
+        "Participants find the session with “Search” or enter the address. The first time, the Windows "
+        "firewall may ask – allow it for private networks.",
+    "Übung": "Exercise",
+    "(0 = bis Stop)": "(0 = until Stop)",
+    "Antwortzeit:": "Answer time:",
+    "s nach dem Ton": "s after the tone",
+    "Automatisch weiter, sobald alle geantwortet haben oder die Zeit um ist":
+        "Continue automatically once everyone has answered or time is up",
+    "Auch an diesem Rechner abspielen": "Also play on this computer",
+    "Eine Zeile je Sequenz, in dieser Reihenfolge; Leerzeichen werden als Wortabstand gesendet, "
+    "aber nicht gewertet. Betriebszeichen: + für AR, ( für KN, * für SK, # für BK – "
+    "so tippen es auch die Teilnehmer.":
+        "One line per sequence, in this order; spaces are sent as word gaps but not scored. Prosigns: "
+        "+ for AR, ( for KN, * for SK, # for BK – participants type them the same way.",
+    "Die Antwortzeit ist die harte Grenze. Als flüssig zählt eine richtige Antwort nur beim ersten "
+    "Hören und innerhalb von 1,5 s plus 0,6 s je Zeichen nach dem Ton – wer länger braucht, zählt "
+    "vermutlich mit.":
+        "The answer time is the hard limit. A correct answer only counts as fluent on the first hearing "
+        "and within 1.5 s plus 0.6 s per character after the tone – anyone taking longer is probably "
+        "counting dits and dahs.",
+    "Lösung vorspielen, wenn sie nicht flüssig richtig war": "Play the solution if it was not fluently correct",
+    "Zeichentempo {wpm} WPM: So langsame Zeichen lassen sich mitzählen. Besser schnelle Zeichen "
+    "mit längeren Pausen (Farnsworth).":
+        "Character speed {wpm} WPM: characters this slow can be counted. Better use fast characters "
+        "with longer gaps (Farnsworth).",
+    "Flüssig": "Fluent",
+    "(wiederholt)": "(repeated)",
+    "(langsam)": "(slow)",
+    "(mit Wiederholung – zählt nicht als flüssig)": "(after a repeat – does not count as fluent)",
+    "(zu langsam – zählt nicht als flüssig)": "(too slow – does not count as fluent)",
+    "Sequenzen flüssig": "Sequences fluent",
+    "Weiter": "Next",
+    "Für alle wiederholen": "Repeat for everyone",
+    "Öffne eine Sitzung, damit sich Teilnehmer anmelden können.": "Open a session so participants can join.",
+    "Status": "Status",
+    "Aktuelle Antwort": "Current answer",
+    "Zeit (s)": "Time (s)",
+    "Als CSV speichern": "Save as CSV",
+    "Verbinden": "Connect",
+    "Name/Rufzeichen:": "Name/callsign:",
+    "PIN:": "PIN:",
+    "Trainer:": "Trainer:",
+    "Suchen": "Search",
+    "Adresse wie beim Trainer angezeigt, z. B. 192.168.1.20 (anderer Port: 192.168.1.20:7400).":
+        "Address as shown on the trainer's screen, e.g. 192.168.1.20 (other port: 192.168.1.20:7400).",
+    "Suche den Trainer oder gib seine Adresse ein.": "Search for the trainer or enter their address.",
+    "Ungültiger Port (1024–65535).": "Invalid port (1024–65535).",
+    "Port {port} lässt sich nicht öffnen: {error}": "Cannot open port {port}: {error}",
+    "Adresse {address} · PIN {pin}": "Address {address} · PIN {pin}",
+    "Warte auf Teilnehmer…": "Waiting for participants…",
+    "Sitzung geschlossen.": "Session closed.",
+    "Ungültige Anzahl, Antwortzeit oder Gruppenlänge!": "Invalid count, answer time or group length!",
+    "Kein eigener Text – eine Zeile je Sequenz eintragen.": "No text of your own – enter one line per sequence.",
+    "Durchgang beendet: {n} Sequenzen.": "Run finished: {n} sequences.",
+    "{n} Teilnehmer verbunden. Start, wenn alle da sind.": "{n} participant(s) connected. Start when everyone is here.",
+    " von {total}": " of {total}",
+    "Nr. {n}{of}: {text}": "No. {n}{of}: {text}",
+    "{done} von {total} haben geantwortet": "{done} of {total} have answered",
+    "weiter mit „Weiter“": "continue with “Next”",
+    "verbunden": "connected",
+    "getrennt": "disconnected",
+    "keine Antwort": "no answer",
+    "Gruppe: {share:.0%} der Zeichen richtig, {fluent:.0%} der Sequenzen flüssig":
+        "Group: {share:.0%} of characters correct, {fluent:.0%} of sequences fluent",
+    "Häufigste Fehler: ": "Most common errors: ",
+    "Schwächste Zeichen: ": "Weakest characters: ",
+    "Zeichen richtig (%)": "Characters correct (%)",
+    "Sequenzen richtig": "Sequences correct",
+    "Median Zeit (s)": "Median time (s)",
+    "Nicht gespeichert: {error}": "Not saved: {error}",
+    "Suche Trainer im Netz…": "Searching the network for a trainer…",
+    "Kein Trainer gefunden. Adresse von Hand eingeben?": "No trainer found. Enter the address by hand?",
+    "Gefunden: {names}": "Found: {names}",
+    "Bitte Name oder Rufzeichen eingeben.": "Please enter a name or callsign.",
+    "Bitte die Adresse des Trainers eingeben oder suchen.": "Please enter the trainer's address or search for it.",
+    "Verbinde…": "Connecting…",
+    "Trennen": "Disconnect",
+    "Getrennt.": "Disconnected.",
+    "Verbunden mit „{session}“. Warte auf den Trainer…": "Connected to “{session}”. Waiting for the trainer…",
+    "Keine Verbindung zum Trainer: {error}": "No connection to the trainer: {error}",
+    "Verbindung zum Trainer beendet.": "Connection to the trainer closed.",
+    "Durchgang beendet.": "Run finished.",
+    "Durchgang beendet: {correct} von {total} Sequenzen richtig.": "Run finished: {correct} of {total} sequences correct.",
+    "Warte auf den Trainer…": "Waiting for the trainer…",
+})

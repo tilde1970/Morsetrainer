@@ -1,7 +1,8 @@
 """Morsetrainer von DL4YM.
 
 Trainingsmodi über Tabs (Einzelzeichen, Gruppen, Wörter, Rufzeichen,
-Kontinuierlich, QSO-Hörtraining, aktiver Contest-Betrieb) plus Statistik, mit
+Kontinuierlich, QSO-Hörtraining, aktiver Contest-Betrieb, Netzwerk für
+Gruppen) plus Statistik, mit
 gemeinsamen Einstellungen für Zeichensatz (frei oder als Koch-Lektion),
 Geschwindigkeit und Tonhöhe."""
 import re
@@ -19,6 +20,7 @@ from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
 from morsetrainer.modes.group_mode import GroupModeFrame
 from morsetrainer.modes.listen_mode import ListenModeFrame
+from morsetrainer.modes.network_mode import NetworkModeFrame
 from morsetrainer.modes.qso_mode import QsoModeFrame
 from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
@@ -34,7 +36,10 @@ __version__ = "2.13"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
-DEFAULT_GEOMETRY = "640x900"
+DEFAULT_GEOMETRY = "720x900"
+# Schmaler passen die Beschriftungen aller Reiter nicht nebeneinander; eine
+# gespeicherte kleinere Breite (von vor dem Reiter Netzwerk) wird angehoben.
+MIN_WIDTH = 720
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
@@ -88,7 +93,7 @@ class MorseTrainerApp:
     def _initial_geometry(self) -> str:
         geometry = self.saved_state.get("geometry")
         if isinstance(geometry, str) and self._geometry_fits_screen(geometry):
-            return geometry
+            return re.sub(r"^\d+", lambda m: str(max(int(m.group()), MIN_WIDTH)), geometry)
         return DEFAULT_GEOMETRY
 
     def _geometry_fits_screen(self, geometry: str) -> bool:
@@ -654,6 +659,7 @@ class MorseTrainerApp:
             (N_("Sprechen"), ListenModeFrame),
             (N_("QSO"), QsoModeFrame),
             (N_("Contest"), RunModeFrame),
+            (N_("Netzwerk"), NetworkModeFrame),
         ]
 
         self.modes = []
@@ -665,6 +671,9 @@ class MorseTrainerApp:
             extra = {"vary_var": self.vary_var} if getattr(frame_cls, "uses_vary", False) else {}
             if getattr(frame_cls, "uses_tempo_adjust", False):
                 extra["adjust_tempo"] = self.adjust_tempo
+            if getattr(frame_cls, "uses_network_hooks", False):
+                extra.update(set_koch_tempo=self._set_koch_tempo, practice_start=self._start_practice,
+                             practice_stop=self._pause_practice)
             mode = frame_cls(
                 tab, self.charset_var, self.wpm_var, self.freq_var, self.weighted_var, self.farnsworth_wpm,
                 on_start=self._lock_tabs, on_stop=self._handle_mode_stop, **extra,
@@ -688,9 +697,22 @@ class MorseTrainerApp:
         self.new_char_button.config(state="disabled")
         self.confusion_button.config(state="disabled")
         self.review_button.config(state="disabled")
+        # Der Netzwerk-Reiter zählt selbst nur die Durchgänge, nicht das
+        # Warten auf den Trainer.
+        if not getattr(self._active_mode(), "uses_network_hooks", False):
+            self._start_practice()
+
+    def _start_practice(self):
         if self.practice_started is None:
             self.practice_started = time.time()
             self.practice_tick_id = self.root.after(PRACTICE_TICK_MS, self._practice_tick)
+
+    def _pause_practice(self):
+        """Durchgang im Netzwerk zu Ende, verbunden bleibt man: Übungszeit
+        und Statistik nachtragen, die Reiter bleiben gesperrt."""
+        self._record_practice()
+        self._update_practice()
+        self._refresh_all_time()
 
     def _unlock_tabs(self):
         for tab_id in self.notebook.tabs():

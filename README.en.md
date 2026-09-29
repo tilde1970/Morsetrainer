@@ -21,6 +21,7 @@ restart.
 | **Speak** | Listen & say without a keyboard (like Morse Code Ninja): Morse code, a thinking pause in which you say out loud what you heard, then a voice announces the solution – characters, groups and callsigns spelled (German letter names or phonetic alphabet), words and phrases as a whole or with their meaning – and the code comes once more. The thinking pause is deliberately short (default 1 s plus 0.3 s per character). Content: characters, groups, words, phrases, callsigns. **Save as MP3** for on the go (phone, car). Counts only for practice time. *The voice is German.* |
 | **QSO** | Listen to complete QSOs: normal QSO or contest runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) with adjustable pile-ups (default off). Evaluation via log check, by typing along, as **head copy + questions** (no notes, afterwards content questions about name, QTH, rig, weather … or exchange) or listen only. Next to the length the estimated duration is shown; how often you used “Again” before checking is noted. |
 | **Contest** | You are the running station (similar to Morse Runner): call CQ, pick up callers, send the exchange, log. As in a real contest, callers sometimes answer to an almost correct call – if you notice the mistake, correct the call and confirm with Enter (“Call TU”), otherwise “Busted” appears in the log. “?” in the call field asks back (DL1?, DL?ABC). Speed and pitch spread of the callers are adjustable, at the end there is a summary by type of error; F10 starts and ends. |
+| **Network** | Practise as a group on the local network (class, club evening): a trainer sets the pace, everyone hears the same sequence on their own headphones and copies it; the trainer sees live who typed what. See below. |
 | **Statistics** | Overall statistics per character, **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal and progress history per mode. |
 
 In **Groups, Words and Callsigns** you can choose:
@@ -86,6 +87,50 @@ Also helpful:
 Each can be switched on and adjusted: noise, static crashes (QRN), QSB,
 chirp, SSB babble and CW QRM on the adjacent frequency.
 
+### Network: practising as a group
+
+For classes and club evenings: all computers are on the same network
+(Wi-Fi or LAN), one is the trainer, the others join as participants. Only
+text is sent; each computer generates the sound itself – no dropouts,
+with its own headphones and its own pitch.
+
+**Trainer:** in the *Network* tab choose “Trainer”, **Open session**. The
+address and a four-digit PIN for the participants are shown. Then choose
+content (characters, groups, words, callsigns, phrases, QSO plain text
+or **own text**, one line per sequence; prosigns as + for AR, ( for KN,
+* for SK, # for BK), count, answer time and band conditions; character
+set, speed and Farnsworth come from the header. At a slow character speed
+(below 18 WPM) the tab points out that the characters can be counted and
+offers Koch speed 20/10. After **Start** everyone gets
+the same sequence at the same time. The next one comes once everyone has
+answered or the answer time is up (or with **Next**); **Repeat for
+everyone** plays the current one again. The table shows each
+participant's current answer, share of correct characters, how many
+sequences were **fluently** correct and typical time from the end of the
+tone to Enter, and below it the group: accuracy, share of fluent
+sequences, most common errors, weakest characters. Fluent means correct
+on the first hearing and fast enough that nobody counted – within the
+same window as in the Groups, Words and Callsigns tabs (1.5 s plus 0.6 s
+per character after the tone). The answer time is only the hard limit. **Save as CSV** stores a table
+(one row per participant, one column per sequence) in `stats/`.
+
+**Participant:** choose “Participant”, enter name or callsign and the PIN,
+**Search** (or enter the trainer's address) and **Connect**. You type
+while the tone is still running, Enter confirms; there is one attempt per
+sequence, then the solution is shown. If it was not fluently correct,
+the sequence is played again with the solution (the trainer can switch
+this off). If you are not finished in time, what you have typed so far is
+scored. The results count for your own statistics like a normal run,
+with the time per character as when copying along; after “Repeat for
+everyone” or when too slow, a correct character counts as uncertain and
+comes up more often with “weak favoured”. Practice time only counts while
+a run is going, not while waiting for the trainer.
+
+The trainer needs port 7373 (TCP) and 7374 (UDP) for the search. On
+Windows the firewall asks the first time – allow it for private networks.
+If the search finds nothing (some Wi-Fi networks block broadcasts), enter
+the address shown by hand.
+
 ### Help in the program
 
 The **Help** button on the right of the footer shows the changes of the
@@ -141,6 +186,7 @@ morsetrainer/
   i18n.py            language (German/English), texts in i18n_en.py
   core/              Morse code, audio, band conditions, texts, statistics
   modes/             one module per training tab
+  net/               network mode (trainer, participants, scoring)
   widgets/           reusable interface building blocks
 tests/               automated tests
 packaging/           AppImage build (icon, desktop file)
@@ -155,7 +201,8 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
 
 - `stats/`: session logs, overall statistics (`all_time.json`), review box
   (`review.json`), results of QSO checks and contests (`results.jsonl`) and
-  practice time per day (`practice.json`).
+  practice time per day (`practice.json`); also the CSV tables from the
+  Network tab (`…-netzwerk.csv`).
 - `window_state.json`: window size and all settings, including the language.
 - `callsigns.scp`: callsign list (Super Check Partial). It is **not included
   in the repository**. Download the current `MASTER.SCP` from

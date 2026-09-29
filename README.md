@@ -20,6 +20,7 @@ Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.
 | **Sprechen** | Hören & Sagen ohne Tastatur (wie Morse Code Ninja): Morsezeichen, Denkpause, in der du laut sagst, was du gehört hast, dann sagt eine Stimme die Lösung an – Zeichen, Gruppen und Rufzeichen buchstabiert (deutsche Buchstabennamen oder Buchstabieralphabet), Wörter und Wendungen als Ganzes bzw. mit ihrer Bedeutung („TNX“ → „danke“) – und das Zeichen kommt noch einmal. Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen). Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen. **Als MP3 speichern** für unterwegs (Handy, Auto). Zählt nur für die Übungszeit. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
+| **Netzwerk** | Üben in der Gruppe im lokalen Netz (Kurs, Clubabend): Ein Trainer gibt vor, alle hören dieselbe Sequenz über den eigenen Kopfhörer und tippen mit; der Trainer sieht live, wer was getippt hat. Siehe unten. |
 | **Statistik** | Gesamtstatistik je Zeichen, **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel und Fortschrittsverlauf je Modus. |
 
 In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
@@ -90,6 +91,53 @@ Außerdem hilfreich:
 Einzeln zuschaltbar und regelbar: Rauschen, Knackstörungen (QRN), QSB,
 Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz.
 
+### Netzwerk: Üben in der Gruppe
+
+Für Kursabende und Clubheim: Alle Rechner sind im selben Netz (WLAN oder
+LAN), einer ist der Trainer, die anderen melden sich als Teilnehmer an.
+Übertragen wird nur Text; den Ton erzeugt jeder Rechner selbst – ohne
+Aussetzer, mit eigenem Kopfhörer und eigener Tonhöhe.
+
+**Trainer:** Im Reiter *Netzwerk* „Trainer“ wählen, **Sitzung öffnen**.
+Angezeigt werden Adresse und eine vierstellige PIN für die Teilnehmer.
+Dann Inhalt (Einzelzeichen, Gruppen, Wörter, Rufzeichen, Wendungen,
+QSO-Klartext oder **eigener Text**, eine Zeile je Sequenz; Betriebszeichen
+als + für AR, ( für KN, * für SK, # für BK), Anzahl, Antwortzeit und
+Bandbedingungen wählen; Zeichensatz, Tempo und Farnsworth kommen aus der
+Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist der Reiter
+darauf hin, dass man die Zeichen mitzählen kann, und bietet das Koch-Tempo
+20/10 an.
+Nach **Start** bekommen alle dieselbe Sequenz zur selben Zeit. Die
+nächste kommt, sobald alle geantwortet haben oder die Antwortzeit um ist
+(oder mit **Weiter**); **Für alle wiederholen** spielt die aktuelle noch
+einmal. Die Tabelle zeigt je Teilnehmer die aktuelle Antwort, den Anteil
+richtiger Zeichen, wie viele Sequenzen **flüssig** richtig waren und die
+typische Zeit vom Tonende bis Enter, darunter die Gruppe: Trefferquote,
+Anteil flüssiger Sequenzen, häufigste Fehler, schwächste Zeichen. Flüssig
+heißt: richtig beim ersten Hören und schnell genug, dass nicht gezählt
+wurde – im selben Zeitfenster wie in den Reitern Gruppen, Wörter und
+Rufzeichen (1,5 s plus 0,6 s je Zeichen nach dem Ton). Die Antwortzeit ist
+nur die harte Grenze. **Als CSV
+speichern** legt eine Tabelle (je Teilnehmer eine Zeile, je Sequenz eine
+Spalte) in `stats/` ab.
+
+**Teilnehmer:** „Teilnehmer“ wählen, Name oder Rufzeichen und die PIN
+eintragen, **Suchen** (oder die Adresse des Trainers eingeben) und
+**Verbinden**. Getippt wird schon während des Tons, Enter bestätigt; je
+Sequenz gibt es einen Versuch, danach steht die Lösung da. War sie nicht
+flüssig richtig, kommt die Sequenz zur Lösung noch einmal (abschaltbar
+beim Trainer). Wer nicht rechtzeitig fertig wird, dem wird das bis dahin
+Getippte gewertet. Die Ergebnisse zählen für die eigene Statistik wie ein
+normaler Durchgang, mit der Zeit je Zeichen wie beim Mitschreiben; nach
+„Für alle wiederholen“ oder zu langsam gilt ein richtiges Zeichen als
+unsicher und kommt mit „schwache bevorzugt“ öfter. Übungszeit zählt nur,
+solange ein Durchgang läuft, nicht beim Warten auf den Trainer.
+
+Der Trainer braucht den Port 7373 (TCP) und für die Suche 7374 (UDP).
+Unter Windows fragt beim ersten Öffnen die Firewall – für private
+Netzwerke zulassen. Findet die Suche nichts (manche WLANs blockieren
+Broadcasts), die angezeigte Adresse von Hand eingeben.
+
 ### Hilfe im Programm
 
 Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
@@ -146,6 +194,7 @@ morsetrainer/
   i18n.py            Sprache (Deutsch/Englisch), Texte in i18n_en.py
   core/              Morsecode, Ton, Bandbedingungen, Texte, Statistik
   modes/             ein Modul je Trainingsreiter
+  net/               Netzwerkmodus (Trainer, Teilnehmer, Auswertung)
   widgets/           wiederverwendbare Oberflächen-Bausteine
 tests/               automatische Tests
 packaging/           AppImage-Build (Icon, Desktop-Datei)
@@ -162,7 +211,8 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 - `stats/`: Sitzungsprotokolle, Gesamtstatistik (`all_time.json`),
   Lernkartei (`review.json`),
   Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`) und die
-  Übungszeit pro Tag (`practice.json`).
+  Übungszeit pro Tag (`practice.json`); dazu die CSV-Tabellen aus dem
+  Reiter Netzwerk (`…-netzwerk.csv`).
 - `window_state.json`: Fenstergröße und alle Einstellungen, auch die Sprache.
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
   im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von

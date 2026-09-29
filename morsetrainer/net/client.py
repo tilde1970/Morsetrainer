@@ -1,0 +1,151 @@
+"""Teilnehmerseite: Verbindung zum Trainer und Suche im lokalen Netz.
+
+Verbindungsaufbau, Lesen und Senden laufen in eigenen Threads; die
+Oberfläche holt die Ereignisse mit poll() ab:
+    ("welcome", session)   angenommen
+    ("reject", reason)     abgelehnt (protocol.REJECT_REASONS)
+    ("error", text)        Verbindung kam nicht zustande
+    ("message", message)   Nachricht vom Trainer (start, item, replay, close, end)
+    ("closed",)            Verbindung beendet (vom Trainer oder abgerissen)"""
+import json
+import queue
+import socket
+import threading
+import time
+
+from morsetrainer.net import protocol
+
+CONNECT_TIMEOUT_S = 5.0
+# So lange wird auf Antworten auf die Suche gewartet.
+DISCOVER_TIMEOUT_S = 1.0
+
+
+class TraineeClient:
+    def __init__(self):
+        self.events = queue.Queue()
+        self.outbox = queue.Queue()
+        self.sock = None
+        self.closing = False
+
+    def connect(self, host: str, port: int, name: str, pin: str) -> None:
+        """Baut die Verbindung im Hintergrund auf; das Ergebnis kommt als
+        Ereignis."""
+        threading.Thread(target=self._run, args=(host, port, name, pin), daemon=True).start()
+
+    def _run(self, host, port, name, pin) -> None:
+        try:
+            sock = socket.create_connection((host, port), timeout=CONNECT_TIMEOUT_S)
+        except OSError as exc:
+            self.events.put(("error", str(exc)))
+            return
+        if self.closing:
+            _close(sock)
+            return
+        self.sock = sock
+        reader = protocol.LineReader(sock)
+        welcomed = False
+        try:
+            sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION,
+                                          "name": name, "pin": pin}))
+            reply = reader.read()
+            if reply is None:
+                self.events.put(("error", "closed"))
+                return
+            if reply["type"] == "reject":
+                self.events.put(("reject", reply.get("reason")))
+                return
+            if reply["type"] != "welcome":
+                self.events.put(("error", reply["type"]))
+                return
+            sock.settimeout(None)
+            welcomed = True
+            self.events.put(("welcome", str(reply.get("session", ""))))
+            threading.Thread(target=self._write_loop, args=(sock,), daemon=True).start()
+            while True:
+                message = reader.read()
+                if message is None:
+                    break
+                self.events.put(("message", message))
+        except (OSError, protocol.ProtocolError) as exc:
+            if not welcomed:
+                self.events.put(("error", str(exc)))
+        finally:
+            self.outbox.put(None)
+            _close(sock)
+            if welcomed:
+                self.events.put(("closed",))
+
+    def _write_loop(self, sock) -> None:
+        while True:
+            data = self.outbox.get()
+            if data is None:
+                return
+            try:
+                sock.sendall(data)
+            except OSError:
+                _close(sock)
+                return
+
+    def send(self, message: dict) -> None:
+        self.outbox.put(protocol.encode(message))
+
+    def close(self) -> None:
+        self.closing = True
+        self.outbox.put(None)
+        if self.sock is not None:
+            _close(self.sock)
+
+    def poll(self):
+        events = []
+        while True:
+            try:
+                events.append(self.events.get_nowait())
+            except queue.Empty:
+                return events
+
+
+def discover(timeout: float = DISCOVER_TIMEOUT_S, port: int = protocol.DISCOVERY_PORT):
+    """Sucht Trainer im lokalen Netz: [(Sitzungsname, Host, Port)], jede
+    Adresse einmal. Blockiert `timeout` Sekunden (im Thread aufrufen)."""
+    found = {}
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # Broadcast erreicht den eigenen Rechner nicht überall; localhost
+        # zusätzlich, damit Trainer und Teilnehmer auf einem Rechner (zum
+        # Ausprobieren) sich finden.
+        for target in ("255.255.255.255", "127.0.0.1"):
+            try:
+                sock.sendto(protocol.DISCOVER_QUERY, (target, port))
+            except OSError:
+                pass
+        end = time.monotonic() + timeout
+        while (remaining := end - time.monotonic()) > 0:
+            sock.settimeout(remaining)
+            try:
+                data, (host, _) = sock.recvfrom(1024)
+                reply = json.loads(data.decode("utf-8"))
+                session, tcp_port = str(reply["session"]), int(reply["port"])
+            except socket.timeout:
+                break
+            except (OSError, ValueError, KeyError, TypeError, AttributeError):
+                continue
+            found.setdefault((host, tcp_port), session)
+    finally:
+        sock.close()
+    # Derselbe Rechner über localhost und seine Netzadresse: nur einmal.
+    local = protocol.local_address()
+    for host, tcp_port in list(found):
+        if host.startswith("127.") and (local, tcp_port) in found:
+            del found[(host, tcp_port)]
+    return sorted((session, host, tcp_port) for (host, tcp_port), session in found.items())
+
+def _close(sock) -> None:
+    try:
+        sock.shutdown(socket.SHUT_RDWR)
+    except OSError:
+        pass
+    try:
+        sock.close()
+    except OSError:
+        pass

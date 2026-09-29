@@ -1,0 +1,460 @@
+"""Tests für den Netzwerkmodus: Protokoll, Auswertung beim Trainer, echte
+Verbindungen über localhost und ein ganzer Durchgang Trainer ↔ Teilnehmer
+im Reiter (mit Tk-Fenster, ohne Ton; ohne Anzeige übersprungen)."""
+import socket
+import tempfile
+import time
+import tkinter as tk
+import unittest
+from pathlib import Path
+from unittest import mock
+
+import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
+from morsetrainer.core import stats
+from morsetrainer.net import client as net_client
+from morsetrainer.net import protocol
+from morsetrainer.net.scoreboard import Scoreboard, evaluate
+from morsetrainer.net.server import TrainerServer
+
+
+def wait_for(condition, timeout=3.0, pump=None):
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        if pump is not None:
+            pump()
+        if condition():
+            return True
+        time.sleep(0.02)
+    return False
+
+
+def free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("", 0))
+        return sock.getsockname()[1]
+
+
+class ProtocolTest(unittest.TestCase):
+    def test_parse_address(self):
+        self.assertEqual(protocol.parse_address(" 192.168.1.20 "), ("192.168.1.20", protocol.DEFAULT_PORT))
+        self.assertEqual(protocol.parse_address("pc:7400"), ("pc", 7400))
+        for bad in ("", "pc:", ":7400", "pc:x", "pc:70000"):
+            self.assertIsNone(protocol.parse_address(bad), bad)
+
+    def test_clean_name(self):
+        self.assertEqual(protocol.clean_name("  DL4YM\n"), "DL4YM")
+        self.assertEqual(protocol.clean_name("A" * 50), "A" * protocol.NAME_MAX)
+        self.assertEqual(protocol.clean_name(None), "")
+
+    def test_decode_rejects_garbage(self):
+        for line in (b"{", b"[]", b'{"n": 1}', b"\xff"):
+            with self.assertRaises(protocol.ProtocolError):
+                protocol.decode(line)
+        self.assertEqual(protocol.decode(protocol.encode({"type": "end"}).strip()), {"type": "end"})
+
+
+class ScoreboardTest(unittest.TestCase):
+    def test_evaluate_ignores_case_and_spaces(self):
+        result = evaluate("CQ DE DL4YM", "cq de dl4ym")
+        self.assertTrue(result.correct)
+        self.assertEqual((result.correct_chars, result.total), (9, 9))
+
+    def test_missing_and_extra_characters_count_once(self):
+        self.assertEqual(evaluate("KMRSU", "KRSU").correct_chars, 4)
+        self.assertEqual(evaluate("KMR", "KMRX").correct_chars, 2)
+
+    def test_record_only_first_answer_of_present_participants(self):
+        board = Scoreboard()
+        board.add_item(1, "KMR", {"A"})
+        self.assertIsNone(board.record("B", 1, "KMR"))   # beim Senden nicht dabei
+        self.assertIsNone(board.record("A", 2, "KMR"))   # unbekannte Nummer
+        self.assertIsNotNone(board.record("A", 1, "KMS", 0.8))
+        self.assertIsNone(board.record("A", 1, "KMR"))   # nur die erste Antwort zählt
+        self.assertFalse(board.answers["A"][1].correct)
+
+    def test_unanswered_counts_as_missed_but_not_as_confusion(self):
+        board = Scoreboard()
+        board.add_item(1, "KMR", {"A", "B"})
+        board.add_item(2, "UR", {"A", "B"})
+        board.record("A", 1, "KMS", 1.0)
+        board.record("A", 2, "UR", 0.5)
+        board.record("B", 2, "UR", "kaputt")
+        self.assertEqual(board.summary("A")["chars_correct"], 4)
+        self.assertEqual(board.summary("B"), {"items": 2, "answered": 1, "correct_items": 1, "fluent_items": 0, "chars_correct": 2,
+                                              "chars_total": 5, "latency": None})
+        self.assertAlmostEqual(board.accuracy(), 6 / 10)
+        self.assertEqual(board.confusions(), [("R", "S", 1)])
+
+    def test_weak_chars_need_enough_samples(self):
+        board = Scoreboard()
+        for n in range(1, 4):
+            board.add_item(n, "KM", {"A"})
+            board.record("A", n, "KS" if n < 3 else "KM")
+        self.assertEqual([ch for ch, _ in board.weak_chars()], ["M"])
+        board.add_item(4, "X", {"A"})
+        board.record("A", 4, "")
+        self.assertNotIn("X", [ch for ch, _ in board.weak_chars()])
+
+    def test_fluent_needs_first_hearing_and_answer_window(self):
+        board = Scoreboard()
+        board.add_item(1, "KMR", {"A", "B", "C", "D"})
+        board.record("A", 1, "KMR", 1.0)
+        board.record("B", 1, "KMR", 8.0)   # Zeitfenster für 3 Zeichen: 3,3 s
+        board.record("C", 1, "KMR")         # Zeit unbekannt
+        board.mark_replayed(1)
+        board.record("D", 1, "KMR", 0.5)    # erst nach der Wiederholung
+        answers = {name: board.answers[name][1] for name in "ABCD"}
+        self.assertEqual([r.fluent for r in answers.values()], [True, False, False, False])
+        self.assertTrue(answers["B"].slow)
+        self.assertTrue(answers["D"].replayed)
+        self.assertFalse(answers["A"].replayed)
+        self.assertEqual(board.fluency(), 1 / 4)
+        self.assertEqual(board.summary("D")["correct_items"], 1)
+        self.assertIn(";KMR ~", board.csv_text(("N", "%", "ok", "fl", "s")))
+
+    def test_csv_has_one_column_per_sequence(self):
+        board = Scoreboard()
+        board.add_item(1, "KMR", {"A"})
+        board.add_participant("B")
+        board.add_item(2, "UR", {"A", "B"})
+        board.record("A", 1, "KMR", 1.25)
+        board.record("B", 2, "US")
+        lines = board.csv_text(("Name", "%", "ok", "fl", "s")).splitlines()
+        self.assertEqual(lines[0], "Name;%;ok;fl;s;1: KMR;2: UR")
+        self.assertEqual(lines[1], "A;60;1/2;1/2;1,2;KMR;")
+        self.assertEqual(lines[2], "B;50;0/1;0/1;;–;US ✗")
+
+
+class ConnectionTest(unittest.TestCase):
+    def setUp(self):
+        self.server = TrainerServer("Kurs", "4711")
+        self.server.start(0)
+        self.clients = []
+
+    def tearDown(self):
+        for client in self.clients:
+            client.close()
+        self.server.stop()
+
+    def join(self, name, pin="4711"):
+        client = net_client.TraineeClient()
+        client.connect("127.0.0.1", self.server.port, name, pin)
+        self.clients.append(client)
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
+        return client, events[0]
+
+    def server_events(self, count):
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(self.server.poll()) or len(events) >= count))
+        return events
+
+    def test_admission(self):
+        _, event = self.join("DL4YM")
+        self.assertEqual(event, ("welcome", "Kurs"))
+        self.assertEqual(self.join("DK1AB", pin="0000")[1], ("reject", "pin"))
+        self.assertEqual(self.join("DL4YM")[1], ("reject", "name"))
+        self.assertEqual(self.join("  ")[1], ("reject", "name"))
+        self.assertEqual(self.server_events(1), [("join", "DL4YM")])
+        self.assertEqual(self.server.names(), ["DL4YM"])
+
+    def test_wrong_protocol_version_is_rejected(self):
+        with socket.create_connection(("127.0.0.1", self.server.port)) as sock:
+            sock.sendall(protocol.encode({"type": "hello", "proto": 99, "name": "DL4YM", "pin": "4711"}))
+            sock.settimeout(2)
+            self.assertEqual(protocol.LineReader(sock).read(), {"type": "reject", "reason": "proto"})
+
+    def test_broadcast_answer_and_reconnect(self):
+        first, _ = self.join("DL4YM")
+        second, _ = self.join("DK1AB")
+        self.server_events(2)
+        self.server.broadcast({"type": "item", "n": 1, "text": "KMR"})
+        for client in (first, second):
+            events = []
+            self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
+            self.assertEqual(events[0], ("message", {"type": "item", "n": 1, "text": "KMR"}))
+        first.send({"type": "answer", "n": 1, "typed": "KMR", "latency": 0.5})
+        self.assertEqual(self.server_events(1), [("answer", "DL4YM", {"type": "answer", "n": 1, "typed": "KMR",
+                                                                     "latency": 0.5})])
+        first.close()
+        self.assertEqual(self.server_events(1), [("leave", "DL4YM")])
+        # Nach dem Abriss darf derselbe Name wieder rein.
+        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs"))
+
+    def test_client_notices_when_trainer_stops(self):
+        client, _ = self.join("DL4YM")
+        self.server.stop()
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(client.poll()) or ("closed",) in events))
+
+    def test_unreachable_trainer_reports_error(self):
+        client = net_client.TraineeClient()
+        client.connect("127.0.0.1", free_port(), "DL4YM", "4711")
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
+        self.assertEqual(events[0][0], "error")
+
+    def test_garbage_does_not_crash_the_server(self):
+        with socket.create_connection(("127.0.0.1", self.server.port)) as sock:
+            sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
+            sock.settimeout(2)
+            self.assertEqual(sock.recv(100), b"")  # Verbindung zu
+        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs"))
+
+
+class NetworkTabTest(unittest.TestCase):
+    """Trainer und Teilnehmer als zwei Reiter in einem Fenster."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        directory = Path(self.tmp.name)
+        self.patches = [
+            mock.patch.object(stats, "STATS_DIR", directory),
+            mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
+            mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
+        ]
+        for patch in self.patches:
+            patch.start()
+        try:
+            self.root = tk.Tk()
+        except tk.TclError:
+            self.skipTest("keine Anzeige")
+        self.root.withdraw()
+        from morsetrainer.modes.network_mode import TRAINER, NetworkModeFrame
+        self.charset = tk.StringVar(value="KMRSU")
+        self.wpm, self.freq = tk.IntVar(value=20), tk.IntVar(value=600)
+        self.stops = []
+        self.practice = []
+
+        def make(role):
+            frame = NetworkModeFrame(ttk_frame(self.root), self.charset, self.wpm, self.freq, tk.BooleanVar(),
+                                     lambda: None, lambda: None, lambda: self.stops.append(role),
+                                     set_koch_tempo=lambda: self.wpm.set(20),
+                                     practice_start=lambda: self.practice.append((role, "start")),
+                                     practice_stop=lambda: self.practice.append((role, "stop")))
+            frame.role_var.set(role)
+            frame._show_role()
+            return frame
+        self.trainer = make(TRAINER)
+        self.trainee = make("trainee")
+
+    def tearDown(self):
+        if hasattr(self, "root"):
+            self.trainee.on_close()
+            self.trainer.on_close()
+            self.root.destroy()
+        for patch in self.patches:
+            patch.stop()
+        self.tmp.cleanup()
+
+    def pump(self):
+        self.root.update()
+
+    def connect(self):
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        self.assertIsNotNone(self.trainer.server)
+        self.trainee.name_var.set("DL4YM")
+        self.trainee.pin_var.set(self.trainer.server.pin)
+        self.trainee.address_var.set(f"127.0.0.1:{self.trainer.port_var.get()}")
+        self.trainee.connect()
+        self.assertTrue(wait_for(lambda: self.trainee.connected and "DL4YM" in self.trainer.board.names,
+                                 pump=self.pump))
+
+    def test_run_with_own_text(self):
+        self.connect()
+        self.assertTrue(self.trainee.running)
+        self.trainer.content_var.set("Eigener Text")
+        self.trainer.custom_text.insert("1.0", "cq de dl4ym\n\nKMR\n")
+        self.trainer.start_run()
+        self.assertEqual(self.trainer.planned, 2)
+        self.assertTrue(wait_for(lambda: self.trainee.current is not None, pump=self.pump))
+        self.assertEqual(self.trainee.current["text"], "CQ DE DL4YM")
+        self.assertEqual(self.trainee.current["wpm"], 20)
+
+        # Während des Tons Enter: gewertet wird erst danach.
+        self.trainee.input_var.set("CQ DE DL4YM")
+        self.trainee.playing = True
+        self.trainee.on_submit()
+        self.assertFalse(self.trainee.answered)
+        self.trainee._playback_done()
+        self.assertTrue(self.trainee.answered)
+        # Alle haben geantwortet: Sequenz zu, die Tabelle zeigt es.
+        self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+        self.assertTrue(self.trainer.board.answers["DL4YM"][1].correct)
+        self.assertIn("✓ CQDEDL4YM", self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"][2])
+
+        self.trainer.advance()
+        self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+        self.trainee.playing = False
+        self.trainee.input_var.set("KMS")
+        self.trainee.on_submit()
+        self.assertIn("gesendet", self.trainee.diff_var.get())
+        self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+        self.trainer.advance()  # zwei von zwei gesendet: Ende
+        self.assertFalse(self.trainer.run_active)
+        self.assertTrue(wait_for(lambda: self.trainee.session_stats is None, pump=self.pump))
+        self.assertIn("1 von 2", self.trainee.trainee_status_var.get())
+        self.assertEqual(self.trainer.board.confusions(), [("R", "S", 1)])
+        self.assertIn("Gruppe: 92", self.trainer.group_var.get())
+        self.assertTrue(list(Path(self.tmp.name).glob("20*-network.jsonl")))
+
+        self.trainer.export_csv()
+        exported = list(Path(self.tmp.name).glob("*-netzwerk.csv"))
+        self.assertEqual(len(exported), 1)
+        self.assertIn("DL4YM;92;1/2", exported[0].read_text(encoding="utf-8-sig"))
+
+    def start_custom(self, text):
+        self.trainer.content_var.set("Eigener Text")
+        self.trainer.custom_text.insert("1.0", text)
+        self.trainer.start_run()
+        self.assertTrue(wait_for(lambda: self.trainee.current is not None, pump=self.pump))
+        self.trainee.playing = False
+
+    def test_replay_for_all_is_not_fluent(self):
+        self.connect()
+        self.start_custom("KMR\n")
+        self.trainer.replay_for_all()
+        self.assertTrue(wait_for(lambda: self.trainee.replayed, pump=self.pump))
+        self.trainee.playing = False
+        self.trainee.input_var.set("KMR")
+        self.trainee.on_submit()
+        self.assertIn("mit Wiederholung", self.trainee.feedback_var.get())
+        self.assertTrue(wait_for(lambda: "DL4YM" in self.trainer.board.answered(1), pump=self.pump))
+        result = self.trainer.board.answers["DL4YM"][1]
+        self.assertTrue(result.correct and result.replayed and not result.fluent)
+        self.assertIn("(wiederholt)", self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"][2])
+        # Eigene Statistik: richtig, aber mit angenommener (doppelter) Latenz.
+        rounds = self.trainee.session_stats.rounds
+        self.assertTrue(all(r["correct"] and r.get("latency_assumed") for r in rounds))
+
+    def test_answer_sent_before_replay_counts_as_first_hearing(self):
+        self.connect()
+        self.start_custom("KMR\n")
+        self.trainee.input_var.set("KMR")
+        self.trainee.on_submit()
+        time.sleep(0.2)  # angekommen, aber noch nicht abgeholt
+        self.trainer.replay_for_all()
+        self.assertFalse(self.trainer.board.answers["DL4YM"][1].replayed)
+
+    def test_latency_per_character_from_keystrokes(self):
+        self.connect()
+        self.start_custom("KM\n")
+        now = time.time()
+        # Ton schon vorbei: K endete vor 1,0 s, M vor 0,5 s.
+        self.trainee.play_start = now - 2.0
+        self.trainee.tone_starts, self.trainee.tone_ends = [now - 2.0, now - 1.2], [now - 1.5, now - 0.5]
+        self.trainee.tone_end = now - 0.5
+        self.trainee.input_var.set("K")
+        self.trainee.key_times = [now - 1.3]
+        self.trainee.input_var.set("KM")
+        self.trainee.key_times[1] = now - 0.2
+        self.trainee.on_submit()
+        latencies = [r["latency_s"] for r in self.trainee.session_stats.rounds]
+        self.assertAlmostEqual(latencies[0], 0.2, places=1)
+        self.assertAlmostEqual(latencies[1], 0.3, places=1)
+        self.assertTrue(self.trainee.last_result.fluent)
+
+    def test_slow_answer_is_marked(self):
+        self.connect()
+        self.start_custom("KM\n")
+        self.trainee.tone_end = time.time() - 10
+        self.trainee.input_var.set("KM")
+        self.trainee.on_submit()
+        self.assertIn("zu langsam", self.trainee.feedback_var.get())
+        self.assertTrue(wait_for(lambda: "DL4YM" in self.trainer.board.answered(1), pump=self.pump))
+        self.assertTrue(self.trainer.board.answers["DL4YM"][1].slow)
+
+    def test_solution_is_played_after_a_mistake(self):
+        from morsetrainer.core import audio
+        self.connect()
+        self.trainer.auto_var.set(False)
+        self.start_custom("KM\nUR\n")
+        with mock.patch.object(audio, "play") as play:
+            self.trainee.input_var.set("KS")
+            self.trainee.on_submit()
+            self.assertTrue(wait_for(lambda: play.called, pump=self.pump))
+        self.assertIn("Lösung", self.trainee.trainee_status_var.get())
+        self.assertEqual(str(self.trainee.entry.cget("state")), "disabled")
+        # Richtig und flüssig: nichts vorspielen.
+        self.trainer.advance()
+        self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+        self.trainee.playing = False
+        with mock.patch.object(audio, "play") as play:
+            self.trainee.input_var.set("UR")
+            self.trainee.on_submit()
+            self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+            self.pump()
+            self.assertFalse(play.called)
+
+    def test_practice_time_counts_only_during_a_run(self):
+        self.connect()
+        self.assertEqual(self.practice, [])
+        self.start_custom("KM\n")
+        self.assertEqual(self.practice, [("trainee", "start")])
+        self.trainer.stop_run()
+        self.assertTrue(wait_for(lambda: ("trainee", "stop") in self.practice, pump=self.pump))
+        self.assertTrue(self.trainee.running)  # Reiter bleiben gesperrt, solange verbunden
+
+    def test_slow_character_speed_hint(self):
+        self.wpm.set(12)
+        self.assertIn("12 WPM", self.trainer.tempo_hint_var.get())
+        self.wpm.set(20)
+        self.assertEqual(self.trainer.tempo_hint.winfo_manager(), "")
+
+    def test_phrases_and_qso_text_are_offered(self):
+        from morsetrainer.modes.network_mode import CONTENTS
+        self.assertEqual(CONTENTS["Wendungen"], "phrases")
+        self.assertEqual(CONTENTS["QSO-Klartext"], "qso")
+
+    def test_time_up_submits_what_was_typed(self):
+        self.connect()
+        self.trainer.content_var.set("Gruppen")
+        self.trainer.start_run()
+        self.assertTrue(wait_for(lambda: self.trainee.current is not None, pump=self.pump))
+        text = self.trainee.current["text"]
+        self.trainee.input_var.set(text[:2])
+        self.trainer.deadline = time.time() - 1  # Antwortzeit um
+        self.assertTrue(wait_for(lambda: self.trainee.answered, pump=self.pump))
+        self.assertTrue(wait_for(lambda: "DL4YM" in self.trainer.board.answered(1), pump=self.pump))
+        self.assertEqual(self.trainer.board.answers["DL4YM"][1].typed, text[:2])
+
+    def test_trainer_leaving_disconnects_trainee(self):
+        self.connect()
+        self.trainer.close_session()
+        self.assertTrue(wait_for(lambda: self.trainee.client is None, pump=self.pump))
+        self.assertIn("beendet", self.trainee.trainee_status_var.get())
+        self.assertEqual(self.stops, ["trainee"])
+        self.assertFalse(self.trainee.running)
+
+    def test_wrong_pin_is_shown(self):
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        self.trainee.name_var.set("DL4YM")
+        self.trainee.pin_var.set("x")
+        self.trainee.address_var.set(f"127.0.0.1:{self.trainer.port_var.get()}")
+        self.trainee.connect()
+        self.assertTrue(wait_for(lambda: self.trainee.client is None, pump=self.pump))
+        self.assertEqual(self.trainee.trainee_status_var.get(), "Abgelehnt: PIN falsch.")
+        self.assertEqual(self.stops, [])
+
+    def test_settings_round_trip(self):
+        self.trainer.content_var.set("Rufzeichen")
+        self.trainer.count_var.set(30)
+        self.trainer.custom_text.insert("1.0", "CQ\nTEST")
+        data = self.trainer.settings()
+        self.trainee.restore_settings(data)
+        self.assertEqual(self.trainee.settings(), data)
+        self.trainee.restore_settings({"port": 80, "count": "x", "role": "boss"})
+        self.assertEqual(self.trainee.port_var.get(), data["port"])
+
+
+def ttk_frame(root):
+    from tkinter import ttk
+    frame = ttk.Frame(root)
+    frame.pack()
+    return frame
+
+
+if __name__ == "__main__":
+    unittest.main()

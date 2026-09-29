@@ -1,5 +1,24 @@
 # Changes
 
+## 2.14
+
+- **New “Network” tab: practising as a group.** A trainer opens a session
+  on the local network (with a PIN), participants find it with “Search” and
+  join with their name or callsign. Everyone hears the same sequence –
+  characters, groups, words, callsigns or your own text – on their own
+  headphones and copies it. The trainer sees live who typed what, plus the
+  group's accuracy, most common errors and weakest characters, and can save
+  everything as CSV. Only text is sent; each computer generates the sound
+  itself.
+- Scored honestly as in the other tabs: a correct answer only counts as
+  **fluent** on the first hearing and within the usual time window; after
+  “Repeat for everyone” or when too slow it is correct but uncertain.
+  Anyone who was not fluently correct hears the solution again. Phrases and
+  QSO plain text can be sent too; a slow character speed prompts a hint
+  towards Koch speed.
+- The window is now at least 720 pixels wide so that all tabs stay
+  readable.
+
 ## 2.13
 
 - **New “Speak” tab (listen & say):** practise without a keyboard, like
