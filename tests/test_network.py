@@ -476,6 +476,42 @@ class NetworkTabTest(unittest.TestCase):
         self.trainer._refresh_table()
         self.assertEqual(self.trainer.advice_button.winfo_manager(), "")
 
+    def test_table_can_be_detached_and_brought_back(self):
+        self.connect()
+        self.start_custom("SH\nKM\n")
+        self.trainee.input_var.set("HH")
+        self.trainee.on_submit()
+        self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+        self.trainer.tree.selection_set(self.trainer.tree.get_children()[0])
+        self.pump()
+        self.trainer.detach_table()
+        window = self.trainer.table_window
+        self.assertIsNotNone(window)
+        self.assertEqual(self.trainer.tree.winfo_toplevel(), window)
+        self.assertEqual(self.trainer._selected_name(), "DL4YM")  # Auswahl bleibt
+        self.assertIn("DL4YM", self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"])
+        # Tastenkürzel wirken auch im eigenen Fenster.
+        window.focus_force()
+        self.pump()
+        window.event_generate("<Key>", keysym="F7", when="now")
+        self.pump()
+        self.assertEqual(self.trainer.item["n"], 2)
+        self.trainer.attach_table()
+        self.assertIsNone(self.trainer.table_window)
+        self.assertFalse(window.winfo_exists())
+        self.assertEqual(self.trainer.tree.winfo_toplevel(), self.root)
+        self.assertEqual(self.trainer._selected_name(), "DL4YM")
+
+    def test_table_grows_with_participants(self):
+        from morsetrainer.modes.network_mode import TABLE_ROWS
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        for i in range(20):
+            self.trainer.board.add_participant(f"DL{i}ABC")
+            self.trainer._refresh_table()
+            expected = min(max(i + 1, TABLE_ROWS[0]), TABLE_ROWS[1])
+            self.assertEqual(int(self.trainer.tree.cget("height")), expected)
+
     def test_phrases_and_qso_text_are_offered(self):
         from morsetrainer.modes.network_mode import CONTENTS
         self.assertEqual(CONTENTS["Wendungen"], "phrases")

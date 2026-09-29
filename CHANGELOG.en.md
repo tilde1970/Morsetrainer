@@ -21,6 +21,8 @@
   below 75 %) can be applied with a button. The CSV contains speed, time to
   Enter and repeats per sequence plus errors and weak characters per
   participant. F5 start/stop, F6 repeat for everyone, F7 next.
+- The participant table grows (up to 12 rows, then a scroll bar) and can be
+  moved into a separate window.
 - The window is now at least 720 pixels wide so that all tabs stay
   readable.
 

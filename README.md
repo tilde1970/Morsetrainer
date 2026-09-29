@@ -102,7 +102,7 @@ Aussetzer, mit eigenem Kopfhörer und eigener Tonhöhe.
 Angezeigt werden Adresse und eine vierstellige PIN für die Teilnehmer.
 Dann Inhalt (Einzelzeichen, Gruppen, Wörter, Rufzeichen, Wendungen,
 QSO-Klartext oder **eigener Text**, eine Zeile je Sequenz; Betriebszeichen
-als + für AR, ( für KN, * für SK, # für BK), Anzahl, Antwortzeit und
+als + für AR, ( für KN, * für SK, # für BK), Anzahl Sequenzen, Antwortzeit und
 Bandbedingungen wählen; Zeichensatz, Tempo und Farnsworth kommen aus der
 Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist der Reiter
 darauf hin, dass man die Zeichen mitzählen kann, und bietet das Koch-Tempo
@@ -118,7 +118,9 @@ heißt: richtig beim ersten Hören und schnell genug, dass nicht gezählt
 wurde – im selben Zeitfenster wie in den Reitern Gruppen, Wörter und
 Rufzeichen (1,5 s plus 0,6 s je Zeichen nach dem Ton). Die Antwortzeit ist
 nur die harte Grenze. Ein Klick auf einen Teilnehmer zeigt seine Fehler und
-schwächsten Zeichen. Nach genug Sequenzen im selben Tempo (50 Zeichen über
+schwächsten Zeichen. Bei vielen Teilnehmern lässt sich die Tabelle **in ein
+eigenes Fenster** auskoppeln (etwa für einen zweiten Bildschirm oder den
+Beamer); dort wirken F5–F7 ebenso, Schließen holt sie zurück in den Reiter. Nach genug Sequenzen im selben Tempo (50 Zeichen über
 alle) gibt es eine **Tempo-Empfehlung**: ab 90 % flüssig schneller, unter
 75 % langsamer, per Knopf um 1 WPM effektiv übernehmbar. **Als CSV
 speichern** legt eine Tabelle in `stats/` ab: je Teilnehmer eine Zeile mit

@@ -66,6 +66,8 @@ ANSWER_RANGE = (2, 60)
 COUNT_RANGE = (0, 200)
 GROUP_LEN_RANGE = (1, 10)
 DEFAULT_ANSWER_S = 8
+# Zeilen der Teilnehmertabelle im Reiter: mindestens, höchstens (dann Scrollbalken).
+TABLE_ROWS = (6, 12)
 # Darunter lassen sich die Punkte und Striche eines Zeichens mitzählen; dann
 # lieber schnelle Zeichen mit Farnsworth-Pausen (koch.RECOMMENDED_WPM).
 SLOW_CHAR_WPM = koch.RECOMMENDED_WPM - 2
@@ -210,7 +212,7 @@ class NetworkModeFrame:
 
         count = ttk.Frame(options)
         count.pack(fill="x", pady=1)
-        ttk.Label(count, text=tr("Anzahl:")).pack(side="left", padx=(0, 4))
+        ttk.Label(count, text=tr("Anzahl Sequenzen:")).pack(side="left", padx=(0, 4))
         self.count_var = tk.IntVar(value=20)
         ttk.Spinbox(count, from_=COUNT_RANGE[0], to=COUNT_RANGE[1], textvariable=self.count_var, width=4).pack(
             side="left")
@@ -278,29 +280,23 @@ class NetworkModeFrame:
                   justify="center").pack(pady=(12, 6))
 
         table = theme.card(parent, tr("Teilnehmer"))
-        columns = ("name", "state", "last", "share", "fluent", "latency")
-        self.tree = ttk.Treeview(table, columns=columns, show="headings", height=6)
-        headings = {"name": tr("Name"), "state": tr("Status"), "last": tr("Aktuelle Antwort"),
-                    "share": tr("Richtig"), "fluent": tr("Flüssig"), "latency": tr("Zeit (s)")}
-        widths = {"name": 100, "state": 80, "last": 150, "share": 90, "fluent": 60, "latency": 60}
-        for col in columns:
-            self.tree.heading(col, text=headings[col])
-            self.tree.column(col, width=widths[col], anchor="w" if col in ("name", "last") else "center")
-        self.tree.tag_configure("ok", foreground=theme.OK)
-        self.tree.tag_configure("error", foreground=theme.ERROR)
-        self.tree.tag_configure("gone", foreground=theme.DISABLED)
-        self.tree.pack(fill="x")
-        self.tree.bind("<<TreeviewSelect>>", lambda e: self._show_details())
+        head = self.table_head = ttk.Frame(table)
+        head.pack(fill="x", pady=(0, 4))
+        self.detach_button = ttk.Button(head, text=tr("In eigenem Fenster"), style="Flat.TButton",
+                                        command=self.detach_table)
+        self.detach_button.pack(side="right")
+        # Gemeinsame Texte beider Ansichten (im Reiter oder im eigenen Fenster).
         self.group_var = tk.StringVar(value="")
-        ttk.Label(table, textvariable=self.group_var, justify="left", wraplength=540).pack(anchor="w", pady=(6, 0))
         self.detail_var = tk.StringVar(value="")
-        theme.hint(table, textvariable=self.detail_var, wrap=540).pack(anchor="w", pady=(4, 0))
-        advice = ttk.Frame(table)
-        advice.pack(fill="x", pady=(4, 0))
         self.advice_var = tk.StringVar(value="")
-        ttk.Label(advice, textvariable=self.advice_var, justify="left", wraplength=420).pack(side="left")
-        self.advice_button = ttk.Button(advice, command=self.apply_advice)
         self.advice_step = 0
+        self.table_holder = ttk.Frame(table)
+        self.table_holder.pack(fill="x")
+        self.detached_note = ttk.Frame(table)
+        theme.hint(self.detached_note, text=tr("Die Tabelle ist in einem eigenen Fenster.")).pack(side="left")
+        ttk.Button(self.detached_note, text=tr("Zurückholen"), command=self.attach_table).pack(side="left", padx=8)
+        self.table_window = None
+        self._build_table_view(self.table_holder, detached=False)
         export = ttk.Frame(table)
         export.pack(fill="x", pady=(4, 0))
         self.export_button = ttk.Button(export, text=tr("Als CSV speichern"), command=self.export_csv,
@@ -308,6 +304,78 @@ class NetworkModeFrame:
         self.export_button.pack(side="left")
         self.export_var = tk.StringVar(value="")
         theme.hint(export, textvariable=self.export_var).pack(side="left", padx=(8, 0))
+
+    def _build_table_view(self, parent, detached: bool):
+        """Teilnehmertabelle mit Gruppenauswertung, Detailzeile und Tempo-
+        Empfehlung. Tk kann Widgets nicht in ein anderes Fenster umhängen,
+        daher wird die Ansicht dort neu gebaut; self.tree und
+        self.advice_button zeigen immer auf die sichtbare."""
+        columns = ("name", "state", "last", "share", "fluent", "latency")
+        # Die Texte zuerst von unten: Wird das Fenster knapp, schrumpft die
+        # Tabelle (sie scrollt), nicht die Auswertung darunter.
+        wrap = 680 if detached else 540
+        advice = ttk.Frame(parent)
+        advice.pack(side="bottom", fill="x", pady=(4, 0))
+        ttk.Label(advice, textvariable=self.advice_var, justify="left", wraplength=wrap - 120).pack(side="left")
+        theme.hint(parent, textvariable=self.detail_var, wrap=wrap).pack(side="bottom", anchor="w", pady=(4, 0))
+        ttk.Label(parent, textvariable=self.group_var, justify="left", wraplength=wrap).pack(
+            side="bottom", anchor="w", pady=(6, 0))
+        rows = ttk.Frame(parent)
+        rows.pack(fill="both", expand=detached)
+        tree = ttk.Treeview(rows, columns=columns, show="headings", height=12 if detached else TABLE_ROWS[0])
+        scrollbar = ttk.Scrollbar(rows, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        headings = {"name": tr("Name"), "state": tr("Status"), "last": tr("Aktuelle Antwort"),
+                    "share": tr("Richtig"), "fluent": tr("Flüssig"), "latency": tr("Zeit (s)")}
+        widths = {"name": 100, "state": 80, "last": 150, "share": 90, "fluent": 60, "latency": 60}
+        for col in columns:
+            tree.heading(col, text=headings[col])
+            tree.column(col, width=widths[col], anchor="w" if col in ("name", "last") else "center")
+        tree.tag_configure("ok", foreground=theme.OK)
+        tree.tag_configure("error", foreground=theme.ERROR)
+        tree.tag_configure("gone", foreground=theme.DISABLED)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(side="left", fill="both", expand=True)
+        tree.bind("<<TreeviewSelect>>", lambda e: self._show_details())
+        self.tree = tree
+        self.advice_button = ttk.Button(advice, command=self.apply_advice)
+
+    def detach_table(self):
+        """Tabelle in ein eigenes Fenster (viele Teilnehmer, Beamer)."""
+        if self.table_window is not None:
+            self.table_window.lift()
+            return
+        selected = self._selected_name()
+        window = tk.Toplevel(self.root)
+        window.title(tr("Teilnehmer – {session}").format(session=self.session_var.get()))
+        window.geometry("720x600")
+        window.configure(background=theme.BG)
+        frame = ttk.Frame(window, padding=10)
+        frame.pack(fill="both", expand=True)
+        for child in self.table_holder.winfo_children():
+            child.destroy()
+        self.table_holder.pack_forget()
+        self.detached_note.pack(fill="x", pady=2, after=self.table_head)
+        self.detach_button.config(state="disabled")
+        self._build_table_view(frame, detached=True)
+        # Auch im eigenen Fenster steuern (z. B. am Beamer): F5–F7.
+        window.bind("<Key>", lambda e: self.on_function_key(e.keysym))
+        window.protocol("WM_DELETE_WINDOW", self.attach_table)
+        self.table_window = window
+        self._refresh_table(selected)
+
+    def attach_table(self):
+        """Tabelle zurück in den Reiter; schließt das eigene Fenster."""
+        if self.table_window is None:
+            return
+        selected = self._selected_name()
+        self.table_window.destroy()
+        self.table_window = None
+        self.detached_note.pack_forget()
+        self.table_holder.pack(fill="x", after=self.table_head)
+        self.detach_button.config(state="normal")
+        self._build_table_view(self.table_holder, detached=False)
+        self._refresh_table(selected)
 
     def _build_trainee(self, parent):
         box = theme.card(parent, tr("Verbinden"))
@@ -685,8 +753,8 @@ class NetworkModeFrame:
             text += " – " + tr("weiter mit „Weiter“")
         self.trainer_status_var.set(text)
 
-    def _refresh_table(self):
-        selected = self._selected_name()
+    def _refresh_table(self, selected=None):
+        selected = selected or self._selected_name()
         for row in self.tree.get_children():
             self.tree.delete(row)
         if self.board is None:
@@ -723,6 +791,9 @@ class NetworkModeFrame:
                                    tags=(tag,) if tag else ())
             if name == selected:
                 self.tree.selection_set(row)
+        if self.table_window is None:
+            # Im Reiter wächst die Tabelle mit, darüber hinaus scrollt sie.
+            self.tree.configure(height=min(max(len(self.board.names), TABLE_ROWS[0]), TABLE_ROWS[1]))
         self.group_var.set(self._group_text())
         self._show_details()
         self._show_advice()

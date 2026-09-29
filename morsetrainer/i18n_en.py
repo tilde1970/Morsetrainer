@@ -685,6 +685,7 @@ EN.update({
         "Participants find the session with “Search” or enter the address. The first time, the Windows "
         "firewall may ask – allow it for private networks.",
     "Übung": "Exercise",
+    "Anzahl Sequenzen:": "Number of sequences:",
     "(0 = bis Stop)": "(0 = until Stop)",
     "Antwortzeit:": "Answer time:",
     "s nach dem Ton": "s after the tone",
@@ -716,6 +717,10 @@ EN.update({
     "Weiter (F7)": "Next (F7)",
     "Für alle wiederholen (F6)": "Repeat for everyone (F6)",
     "Häufigste Fehler": "Most common errors",
+    "In eigenem Fenster": "In a separate window",
+    "Die Tabelle ist in einem eigenen Fenster.": "The table is in a separate window.",
+    "Zurückholen": "Bring back",
+    "Teilnehmer – {session}": "Participants – {session}",
     "Schwächste Zeichen": "Weakest characters",
     "Einen Teilnehmer anklicken, um seine Fehler zu sehen.": "Click a participant to see their errors.",
     "{name}: Fehler {confusions} · schwächste Zeichen {weak}": "{name}: errors {confusions} · weakest characters {weak}",

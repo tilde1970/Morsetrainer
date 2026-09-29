@@ -22,6 +22,8 @@
   Tempo, Zeit bis Enter und Wiederholungen je Sequenz sowie Fehler und
   schwache Zeichen je Teilnehmer. F5 Start/Stop, F6 für alle wiederholen,
   F7 weiter.
+- Die Teilnehmertabelle wächst mit (bis 12 Zeilen, dann Scrollbalken) und
+  lässt sich in ein eigenes Fenster auskoppeln.
 - Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter
   lesbar bleiben.
 

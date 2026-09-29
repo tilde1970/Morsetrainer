@@ -98,7 +98,7 @@ with its own headphones and its own pitch.
 address and a four-digit PIN for the participants are shown. Then choose
 content (characters, groups, words, callsigns, phrases, QSO plain text
 or **own text**, one line per sequence; prosigns as + for AR, ( for KN,
-* for SK, # for BK), count, answer time and band conditions; character
+* for SK, # for BK), number of sequences, answer time and band conditions; character
 set, speed and Farnsworth come from the header. At a slow character speed
 (below 18 WPM) the tab points out that the characters can be counted and
 offers Koch speed 20/10. After **Start** everyone gets
@@ -112,7 +112,10 @@ sequences, most common errors, weakest characters. Fluent means correct
 on the first hearing and fast enough that nobody counted – within the
 same window as in the Groups, Words and Callsigns tabs (1.5 s plus 0.6 s
 per character after the tone). The answer time is only the hard limit.
-Clicking a participant shows their errors and weakest characters. After
+Clicking a participant shows their errors and weakest characters. With
+many participants the table can be moved **into a separate window** (for a
+second screen or a projector); F5–F7 work there too, closing it brings the
+table back into the tab. After
 enough sequences at the same speed (50 characters across everyone) there
 is a **speed recommendation**: faster from 90 % fluent, slower below 75 %,
 applied with a button in steps of 1 WPM effective. **Save as CSV** stores
