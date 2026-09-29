@@ -16,6 +16,11 @@
   Anyone who was not fluently correct hears the solution again. Phrases and
   QSO plain text can be sent too; a slow character speed prompts a hint
   towards Koch speed.
+- For the trainer: clicking a participant shows their errors and weakest
+  characters; a speed recommendation (faster from 90 % fluent, slower
+  below 75 %) can be applied with a button. The CSV contains speed, time to
+  Enter and repeats per sequence plus errors and weak characters per
+  participant. F5 start/stop, F6 repeat for everyone, F7 next.
 - The window is now at least 720 pixels wide so that all tabs stay
   readable.
 

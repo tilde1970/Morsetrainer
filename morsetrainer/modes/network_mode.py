@@ -22,7 +22,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
-from morsetrainer.core import align, audio, band, koch, stats
+from morsetrainer.core import align, audio, band, koch, stats, tempo
 import numpy as np
 
 from morsetrainer.core.morse import (
@@ -36,7 +36,7 @@ from morsetrainer.modes.content import ItemSource
 from morsetrainer.modes.sequence_mode import BAND_LABELS, answer_limit
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
-from morsetrainer.net.scoreboard import Scoreboard, evaluate, normalize
+from morsetrainer.net.scoreboard import Scoreboard, evaluate, format_confusions, format_weak, normalize
 from morsetrainer.net.server import TrainerServer
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
@@ -86,16 +86,19 @@ def sequence_seconds(text: str, wpm: int, fw, band_preset) -> float:
 class NetworkModeFrame:
     session_mode = "network"
 
-    # Bekommt vom Hauptfenster set_koch_tempo, practice_start und practice_stop.
+    # Bekommt vom Hauptfenster set_koch_tempo, practice_start und practice_stop
+    # sowie adjust_tempo (für die Tempo-Empfehlung).
     uses_network_hooks = True
+    uses_tempo_adjust = True
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
-                 set_koch_tempo=None, practice_start=None, practice_stop=None):
+                 set_koch_tempo=None, practice_start=None, practice_stop=None, adjust_tempo=None):
         """Übungszeit zählt beim Teilnehmer nur, solange ein Durchgang läuft
         (practice_start/practice_stop), nicht beim Warten auf den Trainer;
         die Reiter bleiben gesperrt, solange er verbunden ist."""
         self.root = parent.winfo_toplevel()
         self.set_koch_tempo = set_koch_tempo
+        self.adjust_tempo = adjust_tempo
         self.practice_start = practice_start or (lambda: None)
         self.practice_stop = practice_stop or (lambda: None)
         self.charset_var = charset_var
@@ -253,9 +256,9 @@ class NetworkModeFrame:
         self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_run,
                                        state="disabled")
         self.start_button.pack(side="left")
-        self.next_button = ttk.Button(controls, text=tr("Weiter"), command=self.advance, state="disabled")
+        self.next_button = ttk.Button(controls, text=tr("Weiter (F7)"), command=self.advance, state="disabled")
         self.next_button.pack(side="left", padx=(8, 0))
-        self.replay_button = ttk.Button(controls, text=tr("Für alle wiederholen"), command=self.replay_for_all,
+        self.replay_button = ttk.Button(controls, text=tr("Für alle wiederholen (F6)"), command=self.replay_for_all,
                                         state="disabled")
         self.replay_button.pack(side="left", padx=(8, 0))
 
@@ -287,8 +290,17 @@ class NetworkModeFrame:
         self.tree.tag_configure("error", foreground=theme.ERROR)
         self.tree.tag_configure("gone", foreground=theme.DISABLED)
         self.tree.pack(fill="x")
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self._show_details())
         self.group_var = tk.StringVar(value="")
         ttk.Label(table, textvariable=self.group_var, justify="left", wraplength=540).pack(anchor="w", pady=(6, 0))
+        self.detail_var = tk.StringVar(value="")
+        theme.hint(table, textvariable=self.detail_var, wrap=540).pack(anchor="w", pady=(4, 0))
+        advice = ttk.Frame(table)
+        advice.pack(fill="x", pady=(4, 0))
+        self.advice_var = tk.StringVar(value="")
+        ttk.Label(advice, textvariable=self.advice_var, justify="left", wraplength=420).pack(side="left")
+        self.advice_button = ttk.Button(advice, command=self.apply_advice)
+        self.advice_step = 0
         export = ttk.Frame(table)
         export.pack(fill="x", pady=(4, 0))
         self.export_button = ttk.Button(export, text=tr("Als CSV speichern"), command=self.export_csv,
@@ -574,7 +586,7 @@ class NetworkModeFrame:
         self.item_n += 1
         self.item = {"type": "item", "n": self.item_n, "text": text, "wpm": wpm, "fw": self.farnsworth_wpm(),
                      "band": BAND_LABELS.get(self.band_var.get())}
-        self.board.add_item(self.item_n, text, self.server.names())
+        self.board.add_item(self.item_n, text, self.server.names(), wpm, self.item["fw"])
         self.server.broadcast(self.item)
         self._open_item(self.item)
         if self.listen_var.get():
@@ -674,10 +686,13 @@ class NetworkModeFrame:
         self.trainer_status_var.set(text)
 
     def _refresh_table(self):
+        selected = self._selected_name()
         for row in self.tree.get_children():
             self.tree.delete(row)
         if self.board is None:
             self.group_var.set("")
+            self.detail_var.set("")
+            self._show_advice()
             return
         online = set(self.server.names()) if self.server is not None else set()
         n = self.item["n"] if self.item is not None else None
@@ -704,9 +719,66 @@ class NetworkModeFrame:
                 share = f"{data['chars_correct'] / data['chars_total']:.0%} ({data['correct_items']}/{data['items']})"
             fluent = f"{data['fluent_items']}/{data['items']}" if data["items"] else ""
             latency = number(data["latency"], 1) if data["latency"] is not None else ""
-            self.tree.insert("", "end", values=(name, state, last, share, fluent, latency),
-                             tags=(tag,) if tag else ())
+            row = self.tree.insert("", "end", values=(name, state, last, share, fluent, latency),
+                                   tags=(tag,) if tag else ())
+            if name == selected:
+                self.tree.selection_set(row)
         self.group_var.set(self._group_text())
+        self._show_details()
+        self._show_advice()
+
+    def _selected_name(self):
+        selection = self.tree.selection()
+        return str(self.tree.item(selection[0])["values"][0]) if selection else None
+
+    def _show_details(self):
+        """Fehler und schwache Zeichen des ausgewählten Teilnehmers – im
+        Gruppenschnitt geht ein Einzelner mit S/H-Problem sonst unter."""
+        name = self._selected_name()
+        if name is None or self.board is None:
+            self.detail_var.set(tr("Einen Teilnehmer anklicken, um seine Fehler zu sehen.")
+                                if self.board is not None and self.board.names else "")
+            return
+        confusions = format_confusions(self.board.confusions(name=name)) or "–"
+        weak = format_weak(self.board.weak_chars(name=name)) or "–"
+        self.detail_var.set(tr("{name}: Fehler {confusions} · schwächste Zeichen {weak}").format(
+            name=name, confusions=confusions, weak=weak))
+
+    def _show_advice(self):
+        """Tempo-Empfehlung aus den letzten Sequenzen im aktuellen Tempo."""
+        advice = self.board.tempo_advice() if self.board is not None else None
+        self.advice_step = 0
+        self.advice_button.pack_forget()
+        if advice is None:
+            self.advice_var.set("")
+            return
+        (wpm, fw), share, step = advice
+        text = tr("{tempo}: {share:.0%} der Sequenzen flüssig").format(tempo=tempo.label(wpm, fw), share=share)
+        if step > 0:
+            text += " – " + tr("Tempo kann steigen.")
+        elif step < 0:
+            text += " – " + tr("Tempo lieber senken.")
+        else:
+            text += " – " + tr("Tempo passt.")
+        self.advice_var.set(text)
+        try:
+            current = (self.wpm_var.get(), self.farnsworth_wpm())
+        except tk.TclError:
+            current = None
+        # Nur anbieten, solange die Kopfleiste noch dieses Tempo zeigt.
+        if step and self.adjust_tempo is not None and current == (wpm, fw):
+            self.advice_step = step
+            self.advice_button.config(text=tr("+1 WPM effektiv") if step > 0 else tr("−1 WPM effektiv"))
+            self.advice_button.pack(side="right")
+
+    def apply_advice(self):
+        if not self.advice_step or self.adjust_tempo is None:
+            return
+        change = self.adjust_tempo(self.advice_step)
+        if change is not None:
+            self.trainer_status_var.set(tr("Tempo {before} → {after}, ab der nächsten Sequenz.").format(
+                before=change[0], after=change[1]))
+        self._show_advice()
 
     def _group_text(self) -> str:
         accuracy = self.board.accuracy()
@@ -716,19 +788,17 @@ class NetworkModeFrame:
             share=accuracy, fluent=self.board.fluency() or 0)]
         confusions = self.board.confusions()
         if confusions:
-            lines.append(tr("Häufigste Fehler: ") + ", ".join(
-                f"{display_text(sent)}→{display_text(typed) or '–'} {count}×" for sent, typed, count in confusions))
+            lines.append(tr("Häufigste Fehler: ") + format_confusions(confusions))
         weak = self.board.weak_chars()
         if weak:
-            lines.append(tr("Schwächste Zeichen: ") + ", ".join(
-                f"{display_text(ch)} {rate:.0%}" for ch, rate in weak))
+            lines.append(tr("Schwächste Zeichen: ") + format_weak(weak))
         return "\n".join(lines)
 
     def export_csv(self):
         if self.board is None or not self.board.items:
             return
         headers = (tr("Name"), tr("Zeichen richtig (%)"), tr("Sequenzen richtig"), tr("Sequenzen flüssig"),
-                   tr("Median Zeit (s)"))
+                   tr("Median Zeit (s)"), tr("Häufigste Fehler"), tr("Schwächste Zeichen"))
         path = stats.STATS_DIR / f"{datetime.now().strftime('%Y-%m-%d_%H%M%S')}-netzwerk.csv"
         try:
             stats.STATS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1073,17 +1143,30 @@ class NetworkModeFrame:
     def on_key(self, event):
         pass
 
+    def on_function_key(self, key: str):
+        """Nur beim Trainer: F5 Start/Stop, F6 für alle wiederholen, F7
+        weiter. Beim Teilnehmer bleibt es bei Enter."""
+        if self.role_var.get() != TRAINER or self.server is None:
+            return
+        if key == "F5":
+            self.toggle_run()
+        elif key == "F6":
+            self.replay_for_all()
+        elif key == "F7":
+            self.advance()
+
     def on_close(self):
-        for after_id in [self.poll_id, *self.after_ids]:
-            if after_id is not None:
-                self.root.after_cancel(after_id)
-        self.poll_id, self.after_ids = None, set()
         if self.server is not None:
             self.close_session()
         if self.client is not None:
             self.client.close()
             self.client = None
         self._end_client_run()
+        # Zuletzt: Das Schließen der Sitzung plant womöglich noch etwas ein.
+        for after_id in [self.poll_id, *self.after_ids]:
+            if after_id is not None:
+                self.root.after_cancel(after_id)
+        self.poll_id, self.after_ids = None, set()
 
     def settings(self) -> dict:
         data = {

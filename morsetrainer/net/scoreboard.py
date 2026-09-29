@@ -15,14 +15,21 @@ import io
 import statistics
 from dataclasses import dataclass
 
-from morsetrainer.core import align
+from morsetrainer.core import align, tempo
 from morsetrainer.core.morse import MORSE_CODE, display_text
 from morsetrainer.i18n import number
 from morsetrainer.modes.sequence_mode import answer_limit
 
-# Ab so vielen gesendeten Exemplaren taucht ein Zeichen unter den
-# schwächsten der Gruppe auf (bei einem Exemplar sagt die Quote nichts).
+# Ab so vielen gesendeten Exemplaren (je Teilnehmer im Schnitt) taucht ein
+# Zeichen unter den schwächsten auf; bei einem Exemplar sagt die Quote nichts.
 MIN_CHAR_COUNT = 3
+
+# Tempo-Empfehlung (Regel wie beim mitwachsenden Tempo, core/tempo.py): erst
+# ab so vielen gesendeten Zeichen im aktuellen Tempo über alle Teilnehmer,
+# schneller ab diesem Anteil flüssiger Sequenzen, langsamer darunter.
+ADVICE_MIN_CHARS = 50
+ADVICE_FASTER = 0.9
+ADVICE_SLOWER = 0.75
 
 
 def normalize(text: str) -> str:
@@ -67,6 +74,7 @@ class Scoreboard:
     def __init__(self):
         self.names = []     # Teilnehmer in der Reihenfolge der Anmeldung
         self.items = {}     # Nr. -> gesendeter Text
+        self.tempos = {}    # Nr. -> (Zeichentempo, effektiv oder None)
         self.expected = {}  # Nr. -> Namen, die beim Senden verbunden waren
         self.answers = {}   # Name -> {Nr.: Result}
         self.replayed = set()  # Nummern, die für alle wiederholt wurden
@@ -76,8 +84,9 @@ class Scoreboard:
             self.names.append(name)
             self.answers[name] = {}
 
-    def add_item(self, n: int, text: str, present) -> None:
+    def add_item(self, n: int, text: str, present, wpm=None, fw=None) -> None:
         self.items[n] = text
+        self.tempos[n] = (wpm, fw)
         self.expected[n] = set(present)
         for name in present:
             self.add_participant(name)
@@ -142,43 +151,85 @@ class Scoreboard:
             total += data["items"]
         return fluent / total if total else None
 
-    def confusions(self, limit: int = 5):
-        """Häufigste Verwechslungen der Gruppe: [(gesendet, getippt, Anzahl)],
-        getippt "" = ausgelassen."""
+    def _results(self, name=None):
+        """Alle Antworten, oder nur die von `name`."""
+        names = [name] if name is not None else self.names
+        return [result for each in names for result in self.answers.get(each, {}).values()]
+
+    def confusions(self, limit: int = 5, name=None):
+        """Häufigste Verwechslungen der Gruppe (oder eines Teilnehmers):
+        [(gesendet, getippt, Anzahl)], getippt "" = ausgelassen."""
         counts = {}
-        for answers in self.answers.values():
-            for result in answers.values():
-                for expected, got, _ in result.char_results:
-                    if got != expected:
-                        counts[(expected, got)] = counts.get((expected, got), 0) + 1
+        for result in self._results(name):
+            for expected, got, _ in result.char_results:
+                if got != expected:
+                    counts[(expected, got)] = counts.get((expected, got), 0) + 1
         ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
         return [(sent, typed, count) for (sent, typed), count in ranked[:limit]]
 
-    def weak_chars(self, limit: int = 5):
-        """Zeichen mit der höchsten Fehlerquote der Gruppe: [(Zeichen, Quote)],
-        nur beantwortete Sequenzen, ab MIN_CHAR_COUNT Exemplaren."""
+    def weak_chars(self, limit: int = 5, name=None):
+        """Zeichen mit der höchsten Fehlerquote: [(Zeichen, Quote, Anzahl)],
+        nur beantwortete Sequenzen. Für die Gruppe erst ab MIN_CHAR_COUNT
+        Exemplaren je Teilnehmer (bei acht Leuten sind drei Zufall)."""
         good, total = {}, {}
-        for answers in self.answers.values():
-            for result in answers.values():
-                for expected, got, _ in result.char_results:
-                    total[expected] = total.get(expected, 0) + 1
-                    good[expected] = good.get(expected, 0) + (got == expected)
-        rates = [(ch, 1 - good[ch] / count) for ch, count in total.items() if count >= MIN_CHAR_COUNT]
-        rates = [(ch, rate) for ch, rate in rates if rate > 0]
-        rates.sort(key=lambda item: (-item[1], item[0]))
+        for result in self._results(name):
+            for expected, got, _ in result.char_results:
+                total[expected] = total.get(expected, 0) + 1
+                good[expected] = good.get(expected, 0) + (got == expected)
+        minimum = MIN_CHAR_COUNT * (1 if name is not None else max(len(self.names), 1))
+        rates = [(ch, 1 - good[ch] / count, count) for ch, count in total.items() if count >= minimum]
+        rates = [entry for entry in rates if entry[1] > 0]
+        rates.sort(key=lambda entry: (-entry[1], entry[0]))
         return rates[:limit]
+
+    def tempo_advice(self):
+        """Empfehlung für das effektive Tempo aus den letzten Sequenzen im
+        aktuellen Tempo: (Tempo, Anteil flüssig, Schritt +1/0/−1) oder None,
+        solange zu wenig gehört wurde. Nicht beantwortet zählt als nicht
+        flüssig."""
+        numbers = sorted(self.items, reverse=True)
+        if not numbers:
+            return None
+        current = self.tempos.get(numbers[0])
+        if current is None or current[0] is None:
+            return None
+        chars = fluent = slots = 0
+        for n in numbers:
+            if self.tempos.get(n) != current:
+                break
+            for name in self.expected[n]:
+                slots += 1
+                chars += len(normalize(self.items[n]))
+                result = self.answers.get(name, {}).get(n)
+                fluent += bool(result is not None and result.fluent)
+        if chars < ADVICE_MIN_CHARS or not slots:
+            return None
+        share = fluent / slots
+        step = 1 if share >= ADVICE_FASTER else -1 if share < ADVICE_SLOWER else 0
+        return current, share, step
 
     def csv_text(self, headers) -> str:
         """Tabelle zum Export: je Teilnehmer eine Zeile, je Sequenz eine
-        Spalte mit dem Getippten (leer = keine Antwort, – = nicht dabei).
-        Richtig, aber nicht flüssig, steht mit „~“ dabei (zu langsam oder
-        erst nach der Wiederholung). `headers`: Beschriftungen für Name,
-        richtige Zeichen in %, richtige Sequenzen, flüssige Sequenzen,
-        Median Zeit bis Enter (s)."""
+        Spalte mit dem Getippten und der Zeit bis Enter (leer = keine
+        Antwort, – = nicht dabei). Der Spaltenkopf nennt das Tempo, ↻ heißt
+        „für alle wiederholt“. Richtig, aber nicht flüssig, steht mit „~“
+        dabei (zu langsam oder erst nach der Wiederholung). `headers`:
+        Beschriftungen für Name, richtige Zeichen in %, richtige Sequenzen,
+        flüssige Sequenzen, Median Zeit bis Enter (s), häufigste Fehler,
+        schwächste Zeichen."""
         numbers = sorted(self.items)
         out = io.StringIO()
         writer = csv.writer(out, delimiter=";")
-        writer.writerow(list(headers) + [f"{n}: {display_text(self.items[n])}" for n in numbers])
+        columns = []
+        for n in numbers:
+            column = f"{n}: {display_text(self.items[n])}"
+            wpm, fw = self.tempos.get(n, (None, None))
+            if wpm is not None:
+                column += f" ({tempo.label(wpm, fw)})"
+            if n in self.replayed:
+                column += " ↻"
+            columns.append(column)
+        writer.writerow(list(headers) + columns)
         for name in self.names:
             data = self.summary(name)
             share = data["chars_correct"] / data["chars_total"] * 100 if data["chars_total"] else 0
@@ -190,9 +241,25 @@ class Scoreboard:
                 elif n in self.answers[name]:
                     result = self.answers[name][n]
                     mark = " ✗" if not result.correct else "" if result.fluent else " ~"
-                    cells.append(display_text(result.typed) + mark)
+                    cell = display_text(result.typed) + mark
+                    if result.latency is not None:
+                        cell += f" ({number(result.latency, 1)} s)"
+                    cells.append(cell.strip())
                 else:
                     cells.append("")
             writer.writerow([name, f"{share:.0f}", f"{data['correct_items']}/{data['items']}",
-                             f"{data['fluent_items']}/{data['items']}", latency] + cells)
+                             f"{data['fluent_items']}/{data['items']}", latency,
+                             format_confusions(self.confusions(3, name)), format_weak(self.weak_chars(3, name))]
+                            + cells)
         return out.getvalue()
+
+
+def format_confusions(confusions) -> str:
+    """„R→S 2×, K→– 1×“ (– = ausgelassen)."""
+    return ", ".join(f"{display_text(sent)}→{display_text(typed) or '–'} {count}×"
+                     for sent, typed, count in confusions)
+
+
+def format_weak(weak) -> str:
+    """„H 40 % (10)“: Fehlerquote und wie oft gesendet."""
+    return ", ".join(f"{display_text(ch)} {rate:.0%} ({count})" for ch, rate, count in weak)

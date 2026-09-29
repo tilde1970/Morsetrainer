@@ -16,6 +16,12 @@
   Wer nicht flüssig richtig lag, hört die Lösung noch einmal. Auch
   Wendungen und QSO-Klartext lassen sich senden; bei zu langsamem
   Zeichentempo gibt es einen Hinweis aufs Koch-Tempo.
+- Für den Trainer: Ein Klick auf einen Teilnehmer zeigt seine Fehler und
+  schwächsten Zeichen; eine Tempo-Empfehlung (ab 90 % flüssig schneller,
+  unter 75 % langsamer) lässt sich per Knopf übernehmen. Die CSV enthält
+  Tempo, Zeit bis Enter und Wiederholungen je Sequenz sowie Fehler und
+  schwache Zeichen je Teilnehmer. F5 Start/Stop, F6 für alle wiederholen,
+  F7 weiter.
 - Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter
   lesbar bleiben.
 

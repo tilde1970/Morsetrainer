@@ -117,9 +117,14 @@ Anteil flüssiger Sequenzen, häufigste Fehler, schwächste Zeichen. Flüssig
 heißt: richtig beim ersten Hören und schnell genug, dass nicht gezählt
 wurde – im selben Zeitfenster wie in den Reitern Gruppen, Wörter und
 Rufzeichen (1,5 s plus 0,6 s je Zeichen nach dem Ton). Die Antwortzeit ist
-nur die harte Grenze. **Als CSV
-speichern** legt eine Tabelle (je Teilnehmer eine Zeile, je Sequenz eine
-Spalte) in `stats/` ab.
+nur die harte Grenze. Ein Klick auf einen Teilnehmer zeigt seine Fehler und
+schwächsten Zeichen. Nach genug Sequenzen im selben Tempo (50 Zeichen über
+alle) gibt es eine **Tempo-Empfehlung**: ab 90 % flüssig schneller, unter
+75 % langsamer, per Knopf um 1 WPM effektiv übernehmbar. **Als CSV
+speichern** legt eine Tabelle in `stats/` ab: je Teilnehmer eine Zeile mit
+Trefferquote, flüssigen Sequenzen, häufigsten Fehlern und schwächsten
+Zeichen, je Sequenz eine Spalte (mit Tempo; ↻ = für alle wiederholt) mit
+dem Getippten und der Zeit bis Enter.
 
 **Teilnehmer:** „Teilnehmer“ wählen, Name oder Rufzeichen und die PIN
 eintragen, **Suchen** (oder die Adresse des Trainers eingeben) und
@@ -150,6 +155,7 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - **Rufz (nach dem Durchgang):** F6 verpasste Rufzeichen nachhören bzw. das aktuelle nochmal, F7 von vorn, Esc anhalten.
 - **Sprechen:** F5 Start/Stop, Leertaste spielt den aktuellen Eintrag noch einmal, Esc stoppt.
 - **QSO:** F5 neues QSO/Stop, F6 nochmal hören, F7 Text zeigen, F8 prüfen.
+- **Netzwerk (Trainer):** F5 Start/Stop, F6 für alle wiederholen, F7 weiter.
 - **Contest:** F1 CQ, F2 Austausch, F3 TU/loggen, F4 eigenes Call,
   F5 sein Call, F7 „?“, F8 „AGN“. Enter sendet die passende nächste
   Nachricht (ESM), Esc bricht das Senden ab.

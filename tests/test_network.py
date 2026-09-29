@@ -90,10 +90,38 @@ class ScoreboardTest(unittest.TestCase):
         for n in range(1, 4):
             board.add_item(n, "KM", {"A"})
             board.record("A", n, "KS" if n < 3 else "KM")
-        self.assertEqual([ch for ch, _ in board.weak_chars()], ["M"])
+        self.assertEqual(board.weak_chars(), [("M", 1 - 1 / 3, 3)])
         board.add_item(4, "X", {"A"})
         board.record("A", 4, "")
-        self.assertNotIn("X", [ch for ch, _ in board.weak_chars()])
+        self.assertNotIn("X", [ch for ch, _, _ in board.weak_chars()])
+        # Mit zwei Teilnehmern braucht die Gruppe doppelt so viele Exemplare,
+        # der Einzelne nicht.
+        board.add_participant("B")
+        self.assertEqual(board.weak_chars(), [])
+        self.assertEqual(board.weak_chars(name="A"), [("M", 1 - 1 / 3, 3)])
+
+    def test_confusions_per_participant(self):
+        board = Scoreboard()
+        board.add_item(1, "SH", {"A", "B"})
+        board.record("A", 1, "HH")
+        board.record("B", 1, "SS")
+        self.assertEqual(board.confusions(name="A"), [("S", "H", 1)])
+        self.assertEqual(len(board.confusions()), 2)
+
+    def test_tempo_advice_uses_only_the_current_tempo(self):
+        board = Scoreboard()
+        for n in range(1, 11):  # 10 × 5 Zeichen bei 20/10, alle flüssig
+            board.add_item(n, "KMRSU", {"A"}, 20, 10)
+            board.record("A", n, "KMRSU", 0.5)
+        self.assertEqual(board.tempo_advice(), ((20, 10), 1.0, 1))
+        board.add_item(11, "KMRSU", {"A"}, 20, 11)
+        self.assertIsNone(board.tempo_advice())  # neues Tempo, noch zu wenig
+        for n in range(12, 22):
+            board.add_item(n, "KMRSU", {"A"}, 20, 11)
+            board.record("A", n, "KMRSU" if n % 3 else "KMRS", 0.5)
+        (_, share, step) = board.tempo_advice()
+        self.assertLess(share, 0.75)
+        self.assertEqual(step, -1)
 
     def test_fluent_needs_first_hearing_and_answer_window(self):
         board = Scoreboard()
@@ -110,19 +138,20 @@ class ScoreboardTest(unittest.TestCase):
         self.assertFalse(answers["A"].replayed)
         self.assertEqual(board.fluency(), 1 / 4)
         self.assertEqual(board.summary("D")["correct_items"], 1)
-        self.assertIn(";KMR ~", board.csv_text(("N", "%", "ok", "fl", "s")))
+        self.assertIn(";KMR ~ (8,0 s)", board.csv_text(("N", "%", "ok", "fl", "s", "e", "w")))
 
     def test_csv_has_one_column_per_sequence(self):
         board = Scoreboard()
-        board.add_item(1, "KMR", {"A"})
+        board.add_item(1, "KMR", {"A"}, 20, 10)
         board.add_participant("B")
-        board.add_item(2, "UR", {"A", "B"})
+        board.add_item(2, "UR", {"A", "B"}, 20, None)
+        board.mark_replayed(2)
         board.record("A", 1, "KMR", 1.25)
         board.record("B", 2, "US")
-        lines = board.csv_text(("Name", "%", "ok", "fl", "s")).splitlines()
-        self.assertEqual(lines[0], "Name;%;ok;fl;s;1: KMR;2: UR")
-        self.assertEqual(lines[1], "A;60;1/2;1/2;1,2;KMR;")
-        self.assertEqual(lines[2], "B;50;0/1;0/1;;–;US ✗")
+        lines = board.csv_text(("Name", "%", "ok", "fl", "s", "e", "w")).splitlines()
+        self.assertEqual(lines[0], "Name;%;ok;fl;s;e;w;1: KMR (20/10 WPM);2: UR (20 WPM) ↻")
+        self.assertEqual(lines[1], "A;60;1/2;1/2;1,2;;;KMR (1,2 s);")
+        self.assertEqual(lines[2], "B;50;0/1;0/1;;R→S 1×;;–;US ✗")
 
 
 class ConnectionTest(unittest.TestCase):
@@ -225,13 +254,15 @@ class NetworkTabTest(unittest.TestCase):
         self.wpm, self.freq = tk.IntVar(value=20), tk.IntVar(value=600)
         self.stops = []
         self.practice = []
+        self.tempo_steps = []
 
         def make(role):
             frame = NetworkModeFrame(ttk_frame(self.root), self.charset, self.wpm, self.freq, tk.BooleanVar(),
                                      lambda: None, lambda: None, lambda: self.stops.append(role),
                                      set_koch_tempo=lambda: self.wpm.set(20),
                                      practice_start=lambda: self.practice.append((role, "start")),
-                                     practice_stop=lambda: self.practice.append((role, "stop")))
+                                     practice_stop=lambda: self.practice.append((role, "stop")),
+                                     adjust_tempo=lambda d: self.tempo_steps.append(d) or ("20 WPM", "21 WPM"))
             frame.role_var.set(role)
             frame._show_role()
             return frame
@@ -401,6 +432,49 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("12 WPM", self.trainer.tempo_hint_var.get())
         self.wpm.set(20)
         self.assertEqual(self.trainer.tempo_hint.winfo_manager(), "")
+
+    def test_function_keys_only_for_the_trainer(self):
+        self.connect()
+        self.trainee.on_function_key("F5")  # Teilnehmer: nichts
+        self.assertFalse(self.trainer.run_active)
+        self.trainer.content_var.set("Eigener Text")
+        self.trainer.custom_text.insert("1.0", "KM\nUR\n")
+        self.trainer.on_function_key("F5")
+        self.assertTrue(self.trainer.run_active)
+        self.trainer.on_function_key("F6")
+        self.assertIn(1, self.trainer.board.replayed)
+        self.trainer.on_function_key("F7")
+        self.assertEqual(self.trainer.item["n"], 2)
+        self.trainer.on_function_key("F5")
+        self.assertFalse(self.trainer.run_active)
+
+    def test_details_of_the_selected_participant(self):
+        self.connect()
+        self.start_custom("SH\n")
+        self.trainee.input_var.set("HH")
+        self.trainee.on_submit()
+        self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+        self.assertIn("anklicken", self.trainer.detail_var.get())
+        self.trainer.tree.selection_set(self.trainer.tree.get_children()[0])
+        self.pump()
+        self.assertIn("DL4YM: Fehler S→H 1×", self.trainer.detail_var.get())
+
+    def test_tempo_advice_can_be_applied(self):
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        board = self.trainer.board
+        for n in range(1, 11):
+            board.add_item(n, "KMRSU", {"A"}, 20, None)
+            board.record("A", n, "KMRSU", 0.5)
+        self.trainer._refresh_table()
+        self.assertIn("Tempo kann steigen", self.trainer.advice_var.get())
+        self.assertEqual(self.trainer.advice_button.winfo_manager(), "pack")
+        self.trainer.apply_advice()
+        self.assertEqual(self.tempo_steps, [1])
+        # Zeigt die Kopfleiste schon ein anderes Tempo, gibt es keinen Knopf.
+        self.wpm.set(25)
+        self.trainer._refresh_table()
+        self.assertEqual(self.trainer.advice_button.winfo_manager(), "")
 
     def test_phrases_and_qso_text_are_offered(self):
         from morsetrainer.modes.network_mode import CONTENTS

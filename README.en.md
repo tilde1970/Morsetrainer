@@ -111,8 +111,15 @@ tone to Enter, and below it the group: accuracy, share of fluent
 sequences, most common errors, weakest characters. Fluent means correct
 on the first hearing and fast enough that nobody counted – within the
 same window as in the Groups, Words and Callsigns tabs (1.5 s plus 0.6 s
-per character after the tone). The answer time is only the hard limit. **Save as CSV** stores a table
-(one row per participant, one column per sequence) in `stats/`.
+per character after the tone). The answer time is only the hard limit.
+Clicking a participant shows their errors and weakest characters. After
+enough sequences at the same speed (50 characters across everyone) there
+is a **speed recommendation**: faster from 90 % fluent, slower below 75 %,
+applied with a button in steps of 1 WPM effective. **Save as CSV** stores
+a table
+in `stats/`: one row per participant with accuracy, fluent sequences, most
+common errors and weakest characters, one column per sequence (with speed;
+↻ = repeated for everyone) with what was typed and the time to Enter.
 
 **Participant:** choose “Participant”, enter name or callsign and the PIN,
 **Search** (or enter the trainer's address) and **Connect**. You type
@@ -143,6 +150,7 @@ versions (CHANGELOG) and this manual.
 - **RufZ (after the run):** F6 replay missed callsigns or the current one again, F7 from the start, Esc stop.
 - **Speak:** F5 start/stop, the space bar plays the current item again, Esc stops.
 - **QSO:** F5 new QSO/stop, F6 listen again, F7 show text, F8 check.
+- **Network (trainer):** F5 start/stop, F6 repeat for everyone, F7 next.
 - **Contest:** F1 CQ, F2 exchange, F3 TU/log, F4 my call, F5 their call,
   F7 “?”, F8 “AGN”. Enter sends the appropriate next message (ESM), Esc
   aborts sending.
