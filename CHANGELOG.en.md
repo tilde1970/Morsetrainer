@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.17
 
 - **Network:** no more Enter needed – as soon as you have typed as many
   characters as were sent, the answer is done (during the tone it is

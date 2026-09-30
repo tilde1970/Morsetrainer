@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.17
 
 - **Netzwerk:** Kein Enter mehr nötig – sobald so viele Zeichen getippt
   sind wie gesendet, ist die Antwort fertig (während des Tons wird wie
