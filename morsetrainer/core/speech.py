@@ -31,11 +31,15 @@ GERMAN = {
     "R": "Err", "S": "Ess", "T": "Te", "U": "U", "V": "Fau", "W": "We", "X": "Ix", "Y": "Üpsilon",
     "Z": "Zett",
 }
+# Die Stimme ist deutsch und spräche „Mike“ als „Micke“ aus: Die
+# Buchstabierwörter stehen daher so da, wie sie deutsch gelesen richtig
+# klingen (Charlie → Tschali, Juliett → Dschulijätt, Zulu → Suhlu …).
 NATO = {
-    "A": "Alfa", "B": "Bravo", "C": "Charlie", "D": "Delta", "E": "Echo", "F": "Foxtrott", "G": "Golf",
-    "H": "Hotel", "I": "India", "J": "Juliett", "K": "Kilo", "L": "Lima", "M": "Mike", "N": "November",
-    "O": "Oscar", "P": "Papa", "Q": "Quebec", "R": "Romeo", "S": "Sierra", "T": "Tango", "U": "Uniform",
-    "V": "Victor", "W": "Whiskey", "X": "X-Ray", "Y": "Yankee", "Z": "Zulu",
+    "A": "Alfa", "B": "Bravo", "C": "Tschali", "D": "Delta", "E": "Echo", "F": "Foxtrott", "G": "Golf",
+    "H": "Hotell", "I": "India", "J": "Dschulijätt", "K": "Kilo", "L": "Lima", "M": "Maik",
+    "N": "November", "O": "Oskar", "P": "Papa", "Q": "Que-beck", "R": "Romeo", "S": "Siärra",
+    "T": "Tango", "U": "Juni-form", "V": "Viktor", "W": "Wiski", "X": "Ex-Rehj", "Y": "Jäng-ki",
+    "Z": "Suhlu",
 }
 DIGITS = {"0": "Null", "1": "Eins", "2": "Zwei", "3": "Drei", "4": "Vier", "5": "Fünf", "6": "Sechs",
           "7": "Sieben", "8": "Acht", "9": "Neun"}

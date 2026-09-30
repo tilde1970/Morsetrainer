@@ -26,7 +26,7 @@ class SpeechTextTest(unittest.TestCase):
         self.assertEqual(speech.spoken("DL4YM/P"), "De, Ell, Vier, Üpsilon, Emm, Schrägstrich, Pe")
         self.assertEqual(speech.spoken("(", "nato"), "Kilo November")
         self.assertEqual(speech.spoken_words("TNX FER 599"), "tnx. fer. Fünf, Neun, Neun")
-        self.assertEqual(speech.spoken("TU 73", "nato"), "Tango, Uniform. Sieben, Drei")
+        self.assertEqual(speech.spoken("TU 73", "nato"), "Tango, Juni-form. Sieben, Drei")
         self.assertEqual(speech.spoken("*"), "Ess Ka")  # <SK>
         for ch in MORSE_CODE:
             self.assertTrue(speech.spoken(ch), ch)  # jedes Zeichen hat eine Ansage
