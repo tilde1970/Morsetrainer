@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.21
 
 - **Network, typing in paper copies:** after a fixed-pace run the trainer
   enters paper sheets of participants without a computer under “Enter

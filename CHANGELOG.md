@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.21
 
 - **Netzwerk, Papier abtippen:** Nach einem Durchgang im festen Takt trägt
   der Trainer Papierbögen von Teilnehmern ohne Rechner unter
