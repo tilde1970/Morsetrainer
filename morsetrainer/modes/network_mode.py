@@ -43,10 +43,11 @@ from morsetrainer.core.morse import (
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
-from morsetrainer.modes.content import ItemSource
+from morsetrainer.modes.content import ItemSource, qso_sections
 from morsetrainer.modes.sequence_mode import BAND_LABELS, answer_limit
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
+from morsetrainer.net import stream as net_stream
 from morsetrainer.net.scoreboard import (
     Scoreboard, evaluate, format_confusions, format_weak, normalize, solution_cells, solution_columns, solution_rows,
     solution_text,
@@ -57,8 +58,9 @@ from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 TRAINER, TRAINEE = "trainer", "trainee"
-# Ablauf: warten, bis alle geantwortet haben, oder fester Takt (Papier).
-WAIT, PACED = "wait", "paced"
+# Ablauf: warten, bis alle geantwortet haben, fester Takt (Papier) oder
+# kontinuierlich (Gruppen ohne Pause für eine feste Dauer, net/stream.py).
+WAIT, PACED, CONTINUOUS = "wait", "paced", "continuous"
 # Inhalt: Beschriftung -> Art für content.ItemSource ("custom" = eigener Text).
 CONTENTS = {
     N_("Einzelzeichen"): "chars",
@@ -87,6 +89,8 @@ PAUSE_DEFAULTS = {"chars": 2, "groups": 4, "words": 3, "calls": 4, "phrases": 5,
 # Schritt); die laufende Nummer ist dreimal so groß.
 SOLUTION_FONT = (28, 12, 96, 4)
 COUNT_RANGE = (0, 200)
+# Vorgabe der Anzahl: Sequenzen, bei QSO-Klartext ganze QSOs (je ≈ 35 Abschnitte).
+DEFAULT_COUNT, DEFAULT_QSO_COUNT = 20, 1
 GROUP_LEN_RANGE = (1, 10)
 DEFAULT_ANSWER_S = 8
 # Zeilen der Teilnehmertabelle im Reiter: mindestens, höchstens (dann Scrollbalken).
@@ -156,6 +160,10 @@ class NetworkModeFrame:
         self.item_open = False
         self.deadline = None
         self.run_paced = False  # Durchgang im festen Takt
+        self.run_continuous = False  # kontinuierlicher Durchgang
+        self.stream_player = None    # Wiedergabe des kontinuierlichen Texts hier
+        self.stream_timing = None    # (Zeitachse, Beginn) beim Trainer, zum Kürzen beim Abbruch
+        self.stream_end = None       # Ende des Tons beim Trainer (time.time())
         self.run_speaker = False  # Ton nur über den Lautsprecher des Trainers
         self.pause_s = PAUSE_DEFAULTS["groups"]
         self.solution_window = None
@@ -183,6 +191,8 @@ class NetworkModeFrame:
         self.run_correct = self.run_total = 0
         self.history = []
         self.paced_results = []  # fester Takt: (Sequenz, Result, wiederholt), gezeigt erst am Ende
+        self.stream = None       # laufender kontinuierlicher Text beim Teilnehmer
+        self.stream_token = 0
         self._band_cache = {}
 
         self._build_widgets(ScrollableFrame(parent).inner)
@@ -239,6 +249,7 @@ class NetworkModeFrame:
         content.pack(fill="x", pady=1)
         ttk.Label(content, text=tr("Inhalt:")).pack(side="left", padx=(0, 4))
         self.content_var = tk.StringVar(value="Gruppen")
+        self.count_kind = CONTENTS[self.content_var.get()]
         ChoiceBox(content, self.content_var, CONTENTS, width=14).pack(side="left")
         self.group_len_label = ttk.Label(content, text=tr("Länge:"))
         self.group_len_var = tk.IntVar(value=5)
@@ -247,10 +258,12 @@ class NetworkModeFrame:
 
         count = ttk.Frame(options)
         count.pack(fill="x", pady=1)
-        ttk.Label(count, text=tr("Anzahl Sequenzen:")).pack(side="left", padx=(0, 4))
-        self.count_var = tk.IntVar(value=20)
-        ttk.Spinbox(count, from_=COUNT_RANGE[0], to=COUNT_RANGE[1], textvariable=self.count_var, width=4).pack(
-            side="left")
+        self.count_label = ttk.Label(count, text=tr("Anzahl Sequenzen:"))
+        self.count_label.pack(side="left", padx=(0, 4))
+        self.count_var = tk.IntVar(value=DEFAULT_COUNT)
+        self.count_spin = ttk.Spinbox(count, from_=COUNT_RANGE[0], to=COUNT_RANGE[1], textvariable=self.count_var,
+                                      width=4)
+        self.count_spin.pack(side="left")
         theme.hint(count, text=tr("(0 = bis Stop)")).pack(side="left", padx=(4, 16))
         ttk.Label(count, text=tr("Antwortzeit:")).pack(side="left", padx=(0, 4))
         self.answer_var = tk.IntVar(value=DEFAULT_ANSWER_S)
@@ -267,18 +280,34 @@ class NetworkModeFrame:
         band_row.pack(fill="x", pady=1)
         ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
         self.band_var = tk.StringVar(value="aus")
-        ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
+        self.band_box = ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8)
+        self.band_box.pack(side="left")
         self.signs_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(options, text=tr("Anfangs- und Schlusszeichen senden (VVV = und +)"),
                         variable=self.signs_var).pack(anchor="w", pady=1)
 
         self.flow_row = ttk.Frame(options)
         self.flow_row.pack(fill="x", pady=1)
-        ttk.Label(self.flow_row, text=tr("Ablauf:")).pack(side="left", padx=(0, 4))
+        ttk.Label(self.flow_row, text=tr("Ablauf:")).grid(row=0, column=0, sticky="nw", padx=(0, 4))
         self.flow_var = tk.StringVar(value=WAIT)
-        for value, label in ((WAIT, tr("Warten auf Antworten")), (PACED, tr("Fester Takt (Mitschreiben auf Papier)"))):
+        for row, (value, label) in enumerate(((WAIT, tr("Warten auf Antworten")),
+                                              (PACED, tr("Fester Takt (Mitschreiben auf Papier)")),
+                                              (CONTINUOUS, tr("Kontinuierlich (ohne Pause, feste Dauer)")))):
             ttk.Radiobutton(self.flow_row, text=label, value=value, variable=self.flow_var,
-                            command=self._on_flow_change).pack(side="left", padx=(0, 10))
+                            command=self._on_flow_change).grid(row=row, column=1, sticky="w")
+        self.duration_frame = ttk.Frame(options)
+        duration = ttk.Frame(self.duration_frame)
+        duration.pack(fill="x")
+        ttk.Label(duration, text=tr("Dauer:")).pack(side="left", padx=(0, 4))
+        self.duration_var = tk.IntVar(value=net_stream.DEFAULT_DURATION)
+        ttk.Spinbox(duration, from_=net_stream.DURATION_RANGE[0], to=net_stream.DURATION_RANGE[1],
+                    textvariable=self.duration_var, width=4).pack(side="left")
+        ttk.Label(duration, text=tr("Min.")).pack(side="left", padx=(4, 0))
+        theme.hint(self.duration_frame, wrap=540, text=tr(
+            "Die Gruppen kommen ohne Pause wie im Reiter „Kontinuierlich“, alle tippen fortlaufend mit, ohne "
+            "Enter. Ausgewertet wird am Ende; eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Die "
+            "Lösungen stehen danach nummeriert unter „Auflösung“. Ohne Bandbedingungen.")).pack(
+            anchor="w", pady=(0, 2))
         self.pause_frame = ttk.Frame(options)
         pause = ttk.Frame(self.pause_frame)
         pause.pack(fill="x")
@@ -557,6 +586,10 @@ class NetworkModeFrame:
     def _on_content_change(self):
         kind = CONTENTS.get(self.content_var.get())
         self.pause_var.set(PAUSE_DEFAULTS.get(kind, PAUSE_DEFAULTS["groups"]))
+        # Zwischen Sequenzen und QSOs passt die Anzahl nicht: Vorgabe setzen.
+        if (kind == "qso") != (self.count_kind == "qso"):
+            self.count_var.set(DEFAULT_QSO_COUNT if kind == "qso" else DEFAULT_COUNT)
+        self.count_kind = kind
         self._show_content_options()
 
     def _on_flow_change(self):
@@ -577,20 +610,30 @@ class NetworkModeFrame:
         """Im festen Takt gelten Schreibpause statt Antwortzeit, und es gibt
         zwischendurch keine Lösung (also auch kein Vorspielen)."""
         paced = self.flow_var.get() == PACED
+        continuous = self.flow_var.get() == CONTINUOUS
         if paced:
             self.pause_frame.pack(fill="x", after=self.flow_row)
         else:
             self.pause_frame.pack_forget()
+        if continuous:
+            self.duration_frame.pack(fill="x", after=self.flow_row)
+        else:
+            self.duration_frame.pack_forget()
         for widget in (self.answer_spin, self.auto_check, self.solution_check):
-            widget.config(state="disabled" if paced else "normal")
+            widget.config(state="disabled" if paced or continuous else "normal")
+        self.count_spin.config(state="disabled" if continuous else "normal")
+        self.band_box.config(state="disabled" if continuous else "readonly")
 
     @property
     def hiding(self) -> bool:
-        """Durchgang im festen Takt: nichts zeigen, was Lösungen verrät."""
-        return self.run_active and self.run_paced
+        """Durchgang im festen Takt oder kontinuierlich: nichts zeigen, was
+        Lösungen verrät."""
+        return self.run_active and (self.run_paced or self.run_continuous)
 
     def _show_content_options(self):
         kind = CONTENTS.get(self.content_var.get())
+        # QSO-Klartext kommt in Abschnitten; gezählt werden ganze QSOs.
+        self.count_label.config(text=tr("Anzahl QSOs:") if kind == "qso" else tr("Anzahl Sequenzen:"))
         if kind == "groups":
             self.group_len_label.pack(side="left", padx=(12, 4))
             self.group_len_spin.pack(side="left")
@@ -623,6 +666,8 @@ class NetworkModeFrame:
         if self.server is not None:
             for event in self.server.poll():
                 self._on_server_event(event)
+            if self.run_active and self.run_continuous and self.item is not None:
+                self._show_progress()
             if self.item_open and self.deadline is not None and time.time() >= self.deadline:
                 self.close_item()
                 if self.run_paced:
@@ -737,15 +782,21 @@ class NetworkModeFrame:
             count, self.answer_s = self.count_var.get(), self.answer_var.get()
             group_len, pause_s = self.group_len_var.get(), self.pause_var.get()
             self.wpm_var.get()
+            duration = self.duration_var.get()
         except tk.TclError:
             self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         if not (COUNT_RANGE[0] <= count <= COUNT_RANGE[1] and ANSWER_RANGE[0] <= self.answer_s <= ANSWER_RANGE[1]
                 and GROUP_LEN_RANGE[0] <= group_len <= GROUP_LEN_RANGE[1]
-                and PAUSE_RANGE[0] <= pause_s <= PAUSE_RANGE[1]):
+                and PAUSE_RANGE[0] <= pause_s <= PAUSE_RANGE[1]
+                and net_stream.DURATION_RANGE[0] <= duration <= net_stream.DURATION_RANGE[1]):
             self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         charset = normalize(self.charset_var.get())
+        continuous = self.flow_var.get() == CONTINUOUS
+        if continuous and kind == "custom":
+            self.trainer_status_var.set(tr("Kontinuierlich geht nicht mit eigenem Text – Gruppen wählen."))
+            return
         if kind == "custom":
             lines = [" ".join(line.upper().split()) for line in self.custom_text.get("1.0", "end").splitlines()]
             self.custom_items = [line[:protocol.TEXT_MAX] for line in lines if normalize(line)]
@@ -763,11 +814,16 @@ class NetworkModeFrame:
                 return
             self.custom_items = []
             self.planned = count
+            if kind == "qso" and not continuous:
+                self.custom_items = [text for _ in range(count) for text in qso_sections(charset)]
+                self.planned = len(self.custom_items)
         self.board = Scoreboard()
         for name in self.server.names():
             self.board.add_participant(name)
         self.run_active = True
         self.run_paced = self.flow_var.get() == PACED
+        self.run_continuous = continuous
+        self.duration_s = duration * 60
         self.run_speaker = self.speaker_var.get()
         self.run_signs = self.signs_var.get()
         self.pause_s = pause_s
@@ -777,7 +833,7 @@ class NetworkModeFrame:
         self.solution_selected = None
         self._show_content_options()
         self.start_button.config(text=tr("Stop"))
-        self.next_button.config(state="normal")
+        self.next_button.config(state="disabled" if continuous else "normal")
         self.export_button.config(state="disabled")
         self.export_var.set("")
         wpm, fw, preset = self.wpm_var.get(), self.farnsworth_wpm(), BAND_LABELS.get(self.band_var.get())
@@ -798,9 +854,15 @@ class NetworkModeFrame:
     def next_item(self):
         if not self.run_active:
             return
+        if self.run_continuous:
+            if self.item is None:
+                self._start_stream()
+            return
         if self.planned and self.item_n >= self.planned:
             self.stop_run()
             return
+        if not self.custom_items and self.source is not None and self.source.kind == "qso":
+            self.custom_items = qso_sections(self.source.charset)  # bis Stop: nächstes QSO
         if self.custom_items:
             text = self.custom_items.pop(0)
         else:
@@ -818,6 +880,51 @@ class NetworkModeFrame:
         self._open_item(self.item)
         if self.listen_var.get() or self.run_speaker:
             self._play_here(self.item)
+
+    def _start_stream(self):
+        """Kontinuierlich: alle Gruppen auf einmal an alle, hier abspielen,
+        wenn gewünscht; nach Ton und Nachtippzeit ist der Durchgang zu Ende."""
+        wpm, fw = self.wpm_var.get(), self.farnsworth_wpm()
+        groups = [group[:protocol.TEXT_MAX]
+                  for group in net_stream.make_groups(self.source, self.duration_s, wpm, fw)]
+        names = self.server.names()
+        for n, group in enumerate(groups, start=1):
+            self.board.add_item(n, group, names, wpm, fw)
+        self.item_n = len(groups)
+        self.planned = len(groups)
+        self.item = {"type": "stream", "n": len(groups), "text": groups[-1], "wpm": wpm, "fw": fw, "band": None}
+        self.server.broadcast({"type": "stream", "groups": groups, "wpm": wpm, "fw": fw,
+                               "silent": self.run_speaker})
+        entries, seconds = net_stream.timeline(groups, wpm, fw)
+        start = time.time() + AUDIO_LATENCY
+        if self.listen_var.get() or self.run_speaker:
+            self.stream_player = net_stream.Player(groups, wpm, self._freq(), fw)
+            start = self.stream_player.start
+        self.stream_timing = (entries, start)
+        self.stream_end = start + seconds
+        token = self.run_token
+        self._after(int((AUDIO_LATENCY + seconds + net_stream.FINISH_GRACE_SECONDS) * 1000),
+                    lambda: self.run_active and token == self.run_token and self.stop_run())
+        self._refresh_table()
+        self._show_progress()
+        self._refresh_solution()
+
+    def _stop_stream(self):
+        """Wiedergabe beenden; bei vorzeitigem Stop die Gruppen, die noch
+        nicht angefangen hatten, aus der Wertung nehmen (wie die Teilnehmer)."""
+        if self.stream_player is not None:
+            self.stream_player.stop()
+            if self.stream_player.error:
+                self.trainer_status_var.set(self.stream_player.error)
+            self.stream_player = None
+        if self.stream_timing is not None and self.board is not None:
+            entries, start = self.stream_timing
+            if time.time() < self.stream_end:
+                kept = net_stream.kept_groups(entries, start, time.time())
+                self.board.drop_items([n for n in list(self.board.items) if n - 1 not in kept])
+                self.item_n = len(self.board.items)
+        self.stream_timing = None
+        self.stream_end = None
 
     def _open_item(self, item):
         self.item_open = True
@@ -867,7 +974,7 @@ class NetworkModeFrame:
 
     def advance(self):
         """Knopf „Weiter“: offene Sequenz schließen und gleich die nächste."""
-        if not self.run_active:
+        if not self.run_active or self.run_continuous:
             return
         self.run_token += 1  # eine schon geplante nächste Sequenz verfällt
         self.close_item()
@@ -890,6 +997,8 @@ class NetworkModeFrame:
 
     def stop_run(self):
         self.close_item()
+        if self.run_continuous:
+            self._stop_stream()
         self.run_active = False
         self.run_token += 1
         if self.server is not None:
@@ -903,7 +1012,7 @@ class NetworkModeFrame:
         self.next_button.config(state="disabled")
         self.export_button.config(state="normal" if self.board is not None and self.board.items else "disabled")
         status = tr("Durchgang beendet: {n} Sequenzen.").format(n=self.item_n)
-        if self.run_paced and self.item_n:
+        if (self.run_paced or self.run_continuous) and self.item_n:
             status += " " + tr("Die Lösungen stehen unter „Auflösung“.")
         self.trainer_status_var.set(status)
         self._show_content_options()
@@ -917,6 +1026,11 @@ class NetworkModeFrame:
                 self.trainer_status_var.set(
                     tr("Warte auf Teilnehmer…") if not count else
                     tr("{n} Teilnehmer verbunden. Start, wenn alle da sind.").format(n=count))
+            return
+        if self.run_continuous:
+            remaining = max(int(self.stream_end - time.time()), 0) if self.stream_end else 0
+            self.trainer_status_var.set(tr("Kontinuierlich – noch {time}").format(
+                time=f"{remaining // 60}:{remaining % 60:02d}") if remaining else tr("Nachtippen…"))
             return
         n = self.item["n"]
         of = tr(" von {total}").format(total=self.planned) if self.planned else ""
@@ -1113,7 +1227,8 @@ class NetworkModeFrame:
         if self.run_active:
             n = self.item["n"] if self.item is not None else 0
             of = tr(" von {total}").format(total=self.planned) if self.planned else ""
-            self.solution_number_var.set(tr("Nr. {n}{of}").format(n=n, of=of) if n else "")
+            self.solution_number_var.set(tr("Nr. {n}{of}").format(n=n, of=of) if n and not self.run_continuous
+                                         else "")
             self.solution_note_var.set("")
             self.solution_list.pack_forget()
             self.solution_number.pack(fill="both", expand=True)
@@ -1334,6 +1449,8 @@ class NetworkModeFrame:
                 self.trainee_status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
         elif kind == "item":
             self._on_item(message, received)
+        elif kind == "stream":
+            self._on_stream(message, received)
         elif kind == "replay":
             if self.current is not None and message.get("n") == self.current["n"] and not self.answered:
                 self.replayed = True
@@ -1375,6 +1492,8 @@ class NetworkModeFrame:
         self.stats_panel.reset()
 
     def _end_client_run(self):
+        if self.stream is not None:
+            self._finish_stream(stopped_at=time.time())
         if self.session_stats is None:
             return
         if self.current is not None and not self.answered:
@@ -1412,6 +1531,92 @@ class NetworkModeFrame:
         self.feedback_var.set("")
         self.diff_var.set("")
         self._play_current()
+
+    def _on_stream(self, message, received=None):
+        """Kontinuierlich: alle Gruppen ohne Pause abspielen (still, wenn
+        der Lautsprecher des Trainers spielt) und fortlaufend mitschreiben."""
+        groups, wpm, fw = message.get("groups"), message.get("wpm"), message.get("fw")
+        if not isinstance(groups, list) or not isinstance(wpm, int) or not 5 <= wpm <= 60:
+            return
+        groups = [" ".join(normalize(word) for word in group.split())[:protocol.TEXT_MAX]
+                  for group in groups if isinstance(group, str)]
+        groups = [group for group in groups if group]
+        if not groups:
+            return
+        if not (fw is None or isinstance(fw, int) and 1 <= fw < wpm):
+            fw = None
+        if self.current is not None and not self.answered:
+            self.submit(timed_out=True)
+        if self.stream is not None:
+            self._finish_stream(stopped_at=time.time())
+        if self.session_stats is None:
+            self._start_client_run("", wpm, fw)
+        self.current = None
+        entries, seconds = net_stream.timeline(groups, wpm, fw)
+        silent = message.get("silent") is True
+        player = None if silent else net_stream.Player(groups, wpm, self._freq(), fw)
+        self.stream = {"groups": groups, "wpm": wpm, "fw": fw, "entries": entries, "player": player,
+                       "start": (received or time.time()) + AUDIO_LATENCY}
+        self.input_var.set("")
+        self.key_times, self.typed_so_far = [], ""
+        self.feedback_var.set("")
+        self.diff_var.set("")
+        self.results_card.pack_forget()
+        self._set_input(True)
+        self.trainee_status_var.set(tr("Läuft – höre zu und tippe mit, ohne Enter…")
+                                    + (" " + tr("(Lautsprecher)") if silent else ""))
+        self.stream_token += 1
+        token = self.stream_token
+        self._after(int((AUDIO_LATENCY + seconds + net_stream.FINISH_GRACE_SECONDS) * 1000) + 300,
+                    lambda: token == self.stream_token and self._finish_stream())
+
+    def _finish_stream(self, stopped_at=None):
+        """Wertet das Mitgeschriebene aus, schickt je Gruppe eine Antwort
+        und zeigt die Auflösung wie nach dem festen Takt."""
+        stream, self.stream = self.stream, None
+        self.stream_token += 1
+        if stream is None:
+            return
+        player = stream["player"]
+        if player is not None:
+            player.stop()
+        start = player.start if player is not None else stream["start"]
+        self._set_input(False)
+        typed = normalize(self.input_var.get())
+        chars, groups = net_stream.evaluate(stream["entries"], start, typed, self.key_times[:len(typed)],
+                                            stopped_at)
+        if self.session_stats is not None:
+            for expected, got, correct, reaction in chars:
+                if reaction is None:
+                    self.session_stats.record_char(expected, "", False, 0.0, 0.0)
+                else:
+                    self.session_stats.record_char(expected, got, correct, reaction,
+                                                   net_stream.effective_wpm(expected, reaction), latency=reaction)
+        self.paced_results = []
+        for index, (typed_group, latency) in sorted(groups.items()):
+            item = {"n": index + 1, "text": stream["groups"][index], "wpm": stream["wpm"], "fw": stream["fw"],
+                    "band": None}
+            result = evaluate(item["text"], typed_group, latency)
+            self.paced_results.append((item, result, False))
+            self.run_total += 1
+            self.run_correct += result.correct
+            if self.client is not None:
+                self.client.send({"type": "answer", "n": item["n"], "typed": result.typed,
+                                  "latency": None if latency is None else round(latency, 3), "replayed": False})
+        sent = sum(len(normalize(item["text"])) for item, _, _ in self.paced_results)
+        hits = sum(result.correct_chars for _, result, _ in self.paced_results)
+        if sent:
+            self.feedback_var.set(tr("{correct} von {total} Gruppen richtig, {share:.0%} der Zeichen").format(
+                correct=sum(r.correct for _, r, _ in self.paced_results), total=len(self.paced_results),
+                share=hits / sent))
+            self.feedback_label.config(foreground=theme.TEXT)
+        if player is not None and player.error:
+            self.trainee_status_var.set(player.error)
+        else:
+            self.trainee_status_var.set(tr("Warte auf den Trainer…"))
+        if self.session_stats is not None:
+            self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
+        self._show_paced_results()
 
     def _client_signs(self, text, message):
         """Anfangs- oder Schlusszeichen beim Teilnehmer, mit Tempo und
@@ -1528,7 +1733,7 @@ class NetworkModeFrame:
         # Tons wie ein vorzeitiges Enter). Nach der Trace, nicht mittendrin.
         if (self.current is not None and not self.answered and len(typed) > keep
                 and len(typed) >= len(normalize(self.current["text"]))):
-            self.entry.after_idle(self.on_submit)
+            self._after(0, self.on_submit)
 
     def _set_input(self, is_open: bool):
         self.entry.config(state="normal" if is_open else "disabled")
@@ -1710,7 +1915,8 @@ class NetworkModeFrame:
             "custom_text": self.custom_text.get("1.0", "end").rstrip("\n"),
         }
         for key, var in (("port", self.port_var), ("count", self.count_var), ("answer_s", self.answer_var),
-                         ("group_len", self.group_len_var), ("pause_s", self.pause_var)):
+                         ("group_len", self.group_len_var), ("pause_s", self.pause_var),
+                         ("duration", self.duration_var)):
             try:
                 data[key] = var.get()
             except tk.TclError:
@@ -1723,7 +1929,7 @@ class NetworkModeFrame:
             self._show_role()
         if data.get("content") in CONTENTS:
             self.content_var.set(data["content"])
-        if data.get("flow") in (WAIT, PACED):
+        if data.get("flow") in (WAIT, PACED, CONTINUOUS):
             self.flow_var.set(data["flow"])
             self._show_flow_options()
         for label, preset in BAND_LABELS.items():
@@ -1742,7 +1948,8 @@ class NetworkModeFrame:
         for key, var, (low, high) in (("port", self.port_var, (1024, 65535)), ("count", self.count_var, COUNT_RANGE),
                                       ("answer_s", self.answer_var, ANSWER_RANGE),
                                       ("group_len", self.group_len_var, GROUP_LEN_RANGE),
-                                      ("pause_s", self.pause_var, PAUSE_RANGE)):
+                                      ("pause_s", self.pause_var, PAUSE_RANGE),
+                                      ("duration", self.duration_var, net_stream.DURATION_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and low <= value <= high:
                 var.set(value)

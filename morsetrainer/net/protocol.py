@@ -21,6 +21,11 @@ Protokoll: Ist die des Trainers neuer, bietet der Teilnehmer ein Update an
                                               fester Takt, Lösungen erst am Ende;
                                               "silent": Ton kommt vom Lautsprecher
                                               des Trainers, nicht selbst abspielen
+    stream  {"groups", "wpm", "fw", "silent"}
+                                              kontinuierlich: alle Gruppen (Nr. 1, 2, …)
+                                              ohne Pause abspielen, fortlaufend
+                                              mitschreiben; am Ende je Gruppe eine
+                                              answer (net/stream.py)
     replay  {"n"}                             dasselbe noch einmal abspielen
     close   {"n", "solution", "reveal"}       Zeit um, Eingabe schließen;
                                               "reveal": Lösung jetzt zeigen
@@ -32,12 +37,12 @@ DISCOVERY_PORT, die Antwort ist ein JSON-Objekt {"session", "port"}."""
 import json
 import socket
 
-PROTOCOL_VERSION = 2
+PROTOCOL_VERSION = 3
 DEFAULT_PORT = 7373
 DISCOVERY_PORT = 7374
 DISCOVER_QUERY = b"MORSETRAINER?"
 # Längere Zeilen sind kein Morsetrainer (oder kaputt): Verbindung trennen.
-MAX_LINE = 16384
+MAX_LINE = 65536
 NAME_MAX = 20
 TEXT_MAX = 200
 

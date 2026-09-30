@@ -13,6 +13,26 @@ MIN_ITEMS = 15
 MIN_CALLS = 30
 # So viele QSOs werden probehalber erzeugt, um die nötigen Zeichen zu finden.
 QSO_SAMPLES = 8
+# Mit diesen Wörtern endet ein Abschnitt eines QSOs: Trennung, Übergabe,
+# Ende (=, K, AR, KN, SK, BK).
+QSO_SECTION_ENDS = {"=", "K", "+", "(", "*", "#"}
+
+
+def qso_sections(charset: str) -> list:
+    """Ein normales QSO in Abschnitten bis zum nächsten =, K, AR, KN, SK
+    oder BK, etwa „UR RST 599 599 =“. Wörter mit noch nicht gelernten
+    Zeichen fallen weg (wie in ItemSource)."""
+    allowed = set(charset)
+    sections, current = [], []
+    for word in qso_text.generate_qso().text().split():
+        if set(word) <= allowed:
+            current.append(word)
+        if word in QSO_SECTION_ENDS and current:
+            sections.append(" ".join(current))
+            current = []
+    if current:
+        sections.append(" ".join(current))
+    return sections
 
 
 def first_lesson_with_phrases():

@@ -91,6 +91,16 @@ class Scoreboard:
         for name in present:
             self.add_participant(name)
 
+    def drop_items(self, numbers) -> None:
+        """Nummern aus der Wertung nehmen (kontinuierlich: beim Stop noch
+        nicht gesendete Gruppen)."""
+        for n in numbers:
+            self.items.pop(n, None)
+            self.tempos.pop(n, None)
+            self.expected.pop(n, None)
+            for answers in self.answers.values():
+                answers.pop(n, None)
+
     def mark_replayed(self, n: int) -> None:
         """Nr. `n` wurde für alle wiederholt: Wer danach antwortet, hat sie
         zweimal gehört. Das weiß der Trainer selbst, ohne dem Teilnehmer

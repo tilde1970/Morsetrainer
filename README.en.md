@@ -99,7 +99,9 @@ with its own headphones and its own pitch.
 address and a four-digit PIN for the participants are shown. Then choose
 content (characters, groups, words, callsigns, phrases, QSO plain text
 or **own text**, one line per sequence; prosigns as + for AR, ( for KN,
-* for SK, # for BK), number of sequences, answer time and band conditions; character
+* for SK, # for BK), number of sequences (for QSO plain text whole QSOs,
+sent in sections up to the next =, K or closing sign such as
+“UR RST 599 599 =”), answer time and band conditions; character
 set, speed and Farnsworth come from the header. At a slow character speed
 (below 18 WPM) the tab points out that the characters can be counted and
 offers Koch speed 20/10. After **Start** the start sign VVV = comes first
@@ -153,6 +155,17 @@ from when the sequence arrived. In this case the solution is played once
 for everyone over the speakers as soon as someone did not have it
 fluently correct. This works in both flows and suits the fixed pace when
 paper and computers are mixed.
+
+**Continuous:** under *Flow* choose “Continuous” and set the
+**duration** in minutes. Groups (or words, callsigns …) then come without
+pauses as in the *Continuous* tab until the time is up; everyone types
+along continuously, without Enter. Scoring happens at the end as there: a
+key only counts if it fits the character in time. Each participant
+reports their result per group, so the table, solutions (numbered groups)
+and CSV work as usual; during the run the trainer screen shows nothing
+that gives away solutions, as with the fixed pace, only the remaining
+time. Stopping early scores up to that point. There are no band
+conditions and no own text here.
 
 **Solutions:** the button next to “Save as CSV” opens a separate window
 for the projector, in both flows. During the run it shows the current

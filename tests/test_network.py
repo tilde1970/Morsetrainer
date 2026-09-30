@@ -174,6 +174,52 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(solution_cells(board)[0][1], " 1. KMR")
 
 
+class StreamTest(unittest.TestCase):
+    """Kontinuierlicher Durchgang: Zeitachse und Auswertung (net/stream.py)."""
+
+    def setUp(self):
+        from morsetrainer.net import stream
+        self.stream = stream
+        self.entries, self.seconds = stream.timeline(["KMR", "SU"], 20)
+
+    def keys(self, delays):
+        """Tastenzeiten: je gesendetes Zeichen Tonende + Verzögerung."""
+        return [100.0 + end + delay for (_, end, _), delay in zip(self.entries, delays)]
+
+    def test_timeline_has_word_gap_between_groups(self):
+        chars = [(char, group) for char, _, group in self.entries]
+        self.assertEqual(chars, [("K", 0), ("M", 0), ("R", 0), ("S", 1), ("U", 1)])
+        ends = [end for _, end, _ in self.entries]
+        self.assertEqual(ends, sorted(ends))
+        self.assertGreater(ends[3] - ends[2], ends[2] - ends[1])  # Wortpause
+        self.assertGreater(self.seconds, ends[-1])
+
+    def test_groups_fill_the_duration(self):
+        from morsetrainer.modes.content import ItemSource
+        groups = self.stream.make_groups(ItemSource("groups", "KMRSU", 5), 30, 20)
+        self.assertTrue(all(len(group) == 5 for group in groups))
+        self.assertGreaterEqual(self.stream.timeline(groups, 20)[1], 30)
+        self.assertLess(self.stream.timeline(groups[:-1], 20)[1], 30)
+
+    def test_evaluate_per_group_with_timing(self):
+        chars, groups = self.stream.evaluate(self.entries, 100.0, "KMRSU", self.keys([0.5] * 5))
+        self.assertEqual(groups, {0: ("KMR", 0.5), 1: ("SU", 0.5)})
+        self.assertTrue(all(correct for _, _, correct, _ in chars))
+
+    def test_guessed_or_missing_keys_do_not_count(self):
+        # S vor seinem Ton getippt (vorausgeraten), U fehlt.
+        chars, groups = self.stream.evaluate(self.entries, 100.0, "KMXS", self.keys([0.5, 0.5, 0.5, -1.0]))
+        self.assertEqual(groups[0], ("KMX", 0.5))
+        self.assertEqual(groups[1], ("", None))
+        self.assertEqual([correct for _, _, correct, _ in chars], [True, True, False, False, False])
+
+    def test_stop_drops_groups_not_yet_started(self):
+        stopped = 100.0 + self.entries[2][1] + 0.1  # nach R, vor S
+        _, groups = self.stream.evaluate(self.entries, 100.0, "KMR", self.keys([0.05] * 3), stopped_at=stopped)
+        self.assertEqual(list(groups), [0])
+        self.assertEqual(self.stream.kept_groups(self.entries, 100.0, stopped), {0})
+
+
 class ConnectionTest(unittest.TestCase):
     def setUp(self):
         self.server = TrainerServer("Kurs", "4711")
@@ -481,6 +527,75 @@ class NetworkTabTest(unittest.TestCase):
         self.trainer.tree.selection_set(self.trainer.tree.get_children()[0])
         self.pump()
         self.assertIn("DL4YM: Fehler S→H 1×", self.trainer.detail_var.get())
+
+    def test_qso_plain_text_comes_in_sections_per_qso(self):
+        from morsetrainer.core.morse import MORSE_CODE
+        from morsetrainer.modes.content import QSO_SECTION_ENDS
+        self.trainer.content_var.set("QSO-Klartext")
+        self.assertEqual(self.trainer.count_var.get(), 1)
+        self.assertEqual(self.trainer.count_label.cget("text"), "Anzahl QSOs:")
+        self.charset.set("".join(MORSE_CODE))
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        self.trainer.start_run()
+        self.assertTrue(self.trainer.run_active)
+        # Ein ganzes QSO, Abschnitt für Abschnitt bis =, K, AR, KN, SK oder BK.
+        sections = [self.trainer.item["text"]] + self.trainer.custom_items
+        self.assertEqual(self.trainer.planned, len(sections))
+        self.assertGreater(len(sections), 10)
+        self.assertTrue(sections[0].startswith("CQ "))
+        self.assertTrue(all(text.split()[-1] in QSO_SECTION_ENDS for text in sections[:-1]))
+        self.trainer.stop_run()
+        # Bis Stop: nach dem QSO kommt das nächste.
+        self.trainer.count_var.set(0)
+        self.trainer.start_run()
+        self.trainer.custom_items = []
+        self.trainer.next_item()
+        self.assertTrue(self.trainer.item["text"].startswith("CQ "))
+        self.trainer.stop_run()
+        # Zurück zu Gruppen: wieder Sequenzen.
+        self.trainer.content_var.set("Gruppen")
+        self.assertEqual(self.trainer.count_var.get(), 20)
+        self.assertEqual(self.trainer.count_label.cget("text"), "Anzahl Sequenzen:")
+
+    def test_continuous_run(self):
+        import contextlib
+        from morsetrainer.modes import network_mode
+
+        class FakeStream:
+            latency = 0.0
+
+            def write(self, block):
+                pass
+
+        self.connect()
+        self.trainer.flow_var.set(network_mode.CONTINUOUS)
+        self.trainer._show_flow_options()
+        self.assertEqual(str(self.trainer.count_spin.cget("state")), "disabled")
+        with mock.patch.object(network_mode.net_stream, "make_groups", lambda *args: ["KMR", "SU"]), \
+                mock.patch.object(network_mode.net_stream, "FINISH_GRACE_SECONDS", 0), \
+                mock.patch.object(network_mode.net_stream.audio, "output_stream",
+                                  lambda: contextlib.nullcontext(FakeStream())):
+            self.trainer.start_run()
+            self.assertTrue(self.trainer.hiding)
+            self.assertEqual(sorted(self.trainer.board.items.values()), ["KMR", "SU"])
+            self.assertTrue(wait_for(lambda: self.trainee.stream is not None, pump=self.pump))
+            self.assertIsNone(self.trainee.current)
+            # Mitschreiben, ohne Enter: jede Taste kurz nach ihrem Ton.
+            entries, start = self.trainee.stream["entries"], self.trainee.stream["player"].start
+            typed = ""
+            for char, end, _ in entries:
+                self.assertTrue(wait_for(lambda: time.time() >= start + end + 0.1, pump=self.pump))
+                typed += "X" if char == "U" else char
+                self.trainee.input_var.set(typed)
+            self.assertTrue(wait_for(lambda: not self.trainer.run_active, timeout=5, pump=self.pump))
+            self.assertTrue(wait_for(lambda: len(self.trainer.board.answers["DL4YM"]) == 2, pump=self.pump))
+        answers = self.trainer.board.answers["DL4YM"]
+        self.assertTrue(answers[1].correct)
+        self.assertEqual(answers[2].typed, "SX")
+        self.assertIn("1 von 2 Gruppen richtig", self.trainee.feedback_var.get())
+        self.assertEqual(len(self.trainee.results_tree.get_children()), 2)
+        self.assertEqual(self.trainer.board.confusions(), [("U", "X", 1)])
 
     def test_tempo_advice_can_be_applied(self):
         self.trainer.port_var.set(free_port())

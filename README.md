@@ -103,7 +103,9 @@ Aussetzer, mit eigenem Kopfhörer und eigener Tonhöhe.
 Angezeigt werden Adresse und eine vierstellige PIN für die Teilnehmer.
 Dann Inhalt (Einzelzeichen, Gruppen, Wörter, Rufzeichen, Wendungen,
 QSO-Klartext oder **eigener Text**, eine Zeile je Sequenz; Betriebszeichen
-als + für AR, ( für KN, * für SK, # für BK), Anzahl Sequenzen, Antwortzeit und
+als + für AR, ( für KN, * für SK, # für BK), Anzahl Sequenzen (bei
+QSO-Klartext ganze QSOs, gesendet in Abschnitten bis zum nächsten =, K
+oder Schlusszeichen wie „UR RST 599 599 =“), Antwortzeit und
 Bandbedingungen wählen; Zeichensatz, Tempo und Farnsworth kommen aus der
 Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist der Reiter
 darauf hin, dass man die Zeichen mitzählen kann, und bietet das Koch-Tempo
@@ -148,6 +150,17 @@ weder Rechner noch Anmeldung, hört aber über die Lautsprecher des Trainers:
 Beim Umschalten auf den festen Takt ist „Auch an diesem Rechner abspielen“
 daher gleich eingeschaltet. In Tabelle und Auswertung tauchen diese
 Teilnehmer nicht auf; sie vergleichen selbst mit der Auflösung.
+
+**Kontinuierlich:** Unter *Ablauf* „Kontinuierlich“ wählen und die
+**Dauer** in Minuten einstellen. Dann kommen Gruppen (oder Wörter,
+Rufzeichen …) ohne Pause wie im Reiter *Kontinuierlich*, bis die Zeit um
+ist; alle tippen fortlaufend mit, ohne Enter. Ausgewertet wird am Ende wie
+dort: Eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Jeder
+Teilnehmer meldet sein Ergebnis je Gruppe, damit gelten Tabelle,
+Auflösung (nummerierte Gruppen) und CSV wie gewohnt; während des
+Durchgangs zeigt der Trainerbildschirm wie im festen Takt nichts, was
+Lösungen verrät, nur die Restzeit. Stop vorzeitig wertet bis dahin.
+Bandbedingungen gibt es hier nicht, eigenen Text auch nicht.
 
 **Ton für alle über den Lautsprecher:** Mit „Ton für alle nur über diesen
 Rechner (Lautsprecher)“ spielt nur der Trainerrechner, die

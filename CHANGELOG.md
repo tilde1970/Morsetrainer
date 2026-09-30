@@ -1,5 +1,17 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Netzwerk:** Neuer Ablauf „Kontinuierlich“: Gruppen ohne Pause für eine
+  eingestellte Dauer, alle tippen fortlaufend mit, ohne Enter. Ausgewertet
+  wird am Ende wie im Reiter Kontinuierlich und je Gruppe an den Trainer
+  gemeldet (Tabelle, Auflösung, CSV). Neue Protokollversion: Teilnehmer
+  brauchen dieselbe Version wie der Trainer (das Update wird angeboten).
+- **Netzwerk:** QSO-Klartext kommt in Abschnitten bis zum nächsten =, K
+  oder Schlusszeichen (etwa „UR RST 599 599 =“) statt Wort für Wort, und
+  die Anzahl zählt ganze QSOs (Vorgabe 1). Bisher brach es nach so vielen
+  Wörtern ab, wie Sequenzen eingestellt waren.
+
 ## 2.17
 
 - **Netzwerk:** Kein Enter mehr nötig – sobald so viele Zeichen getippt

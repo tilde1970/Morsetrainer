@@ -529,6 +529,21 @@ EN.update({
     "Zufallszeichen": "Random characters",
     "Wendungen": "Phrases",
     "QSO-Klartext": "QSO plain text",
+    "Anzahl QSOs:": "Number of QSOs:",
+    "Kontinuierlich (ohne Pause, feste Dauer)": "Continuous (no pauses, fixed duration)",
+    "Die Gruppen kommen ohne Pause wie im Reiter „Kontinuierlich“, alle tippen fortlaufend mit, ohne "
+    "Enter. Ausgewertet wird am Ende; eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Die "
+    "Lösungen stehen danach nummeriert unter „Auflösung“. Ohne Bandbedingungen.":
+        "The groups come without pauses as in the “Continuous” tab, everyone types along continuously, "
+        "without Enter. Scoring happens at the end; a key only counts if it fits the character in time. "
+        "Afterwards the solutions are listed by number under “Solutions”. Without band conditions.",
+    "Kontinuierlich geht nicht mit eigenem Text – Gruppen wählen.":
+        "Continuous does not work with own text – choose groups.",
+    "Kontinuierlich – noch {time}": "Continuous – {time} left",
+    "Nachtippen…": "Finishing typing…",
+    "Läuft – höre zu und tippe mit, ohne Enter…": "Running – listen and type along, without Enter…",
+    "{correct} von {total} Gruppen richtig, {share:.0%} der Zeichen":
+        "{correct} of {total} groups correct, {share:.0%} of the characters",
     "Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
     "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen. "
     "F5 startet und stoppt, Esc stoppt.":

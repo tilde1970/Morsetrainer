@@ -1,5 +1,17 @@
 # Changes
 
+## Unreleased
+
+- **Network:** new flow “Continuous”: groups without pauses for a set
+  duration, everyone types along continuously, without Enter. Scored at
+  the end as in the Continuous tab and reported to the trainer per group
+  (table, solutions, CSV). New protocol version: participants need the
+  same version as the trainer (the update is offered).
+- **Network:** QSO plain text comes in sections up to the next =, K or
+  closing sign (e.g. “UR RST 599 599 =”) instead of word by word, and the
+  number counts whole QSOs (default 1). Before, it stopped after as many
+  words as sequences were set.
+
 ## 2.17
 
 - **Network:** no more Enter needed – as soon as you have typed as many
