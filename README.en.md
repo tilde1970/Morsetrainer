@@ -37,7 +37,8 @@ In **Groups, Words and Callsigns** you can choose:
   the gaps get longer, so you cannot count dits and dahs. The same rule
   applies to “Adjust speed automatically” in the QSO tab. The progress
   history shows the effective speed (e.g. 10 at 20/10 WPM).
-- **Band conditions** in three levels: light, medium, heavy.
+- **Band conditions** in three levels: light, medium, heavy. They also run
+  under the start sign (VVV =) and the end sign (+).
 
 ### Learning path for beginners
 

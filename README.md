@@ -36,7 +36,8 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
   darunter werden die Pausen länger, damit man nicht mitzählen kann. Dieselbe
   Regel gilt für „Tempo automatisch anpassen“ im QSO-Reiter. Der
   Fortschrittsverlauf zeigt das effektive Tempo (z. B. 10 bei 20/10 WPM).
-- **Bandbedingungen** in drei Stufen: leicht, mittel, stark.
+- **Bandbedingungen** in drei Stufen: leicht, mittel, stark. Sie liegen auch
+  unter dem Anfangszeichen (VVV =) und dem Schlusszeichen (+).
 
 ### Lernweg für Einsteiger
 

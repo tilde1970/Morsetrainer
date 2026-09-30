@@ -41,6 +41,8 @@
   einem eigenen Fenster zeigen, nach Gruppen gegliedert (ohne Gruppen in
   5er-Blöcken), Fehler rot, mit Schriftgröße, Kopieren und „Nur gesendeter
   Text“. Bisher waren nur die letzten 30 Zeichen zu sehen.
+- Bandbedingungen liegen jetzt auch unter Anfangs- und Schlusszeichen
+  (VVV =, +): Die Störungen sind von Anfang an da.
 - Das Netzwerkprotokoll hat jetzt Version 2: Trainer und Teilnehmer
   brauchen dieselbe Programmversion.
 - Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter

@@ -39,6 +39,8 @@
   separate window, split into groups (without groups in blocks of 5),
   errors in red, with font size, copy and “Sent text only”. Previously only
   the last 30 characters were visible.
+- Band conditions now also run under the start and end signs (VVV =, +):
+  the interference is there from the start.
 - The network protocol is now version 2: trainer and participants need the
   same program version.
 - The window is now at least 720 pixels wide so that all tabs stay

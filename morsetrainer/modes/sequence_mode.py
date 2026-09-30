@@ -430,11 +430,19 @@ class SequenceModeFrame:
         else:
             self.next_sequence()
 
+    def _with_band(self, samples):
+        """Bandbedingungen auch unter Anfangs- und Schlusszeichen, damit die
+        Störungen von Anfang an da sind und nicht erst mit der ersten Sequenz."""
+        if self.band is None:
+            return samples
+        self.band.background_gain = self.band_gain_var.get() / 100
+        return band.apply_preset(self.band, samples)[0]
+
     def _play_intro(self):
         """Sendet START_TEXT plus Wortpause, danach die erste Sequenz.
         Wird nicht ausgewertet."""
         wpm, freq = self._audio_settings()
-        samples = build_text(START_TEXT + " ", wpm, freq, self.farnsworth_wpm())
+        samples = self._with_band(build_text(START_TEXT + " ", wpm, freq, self.farnsworth_wpm()))
         self.status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
         if not self._play(samples):
             return
@@ -452,7 +460,7 @@ class SequenceModeFrame:
         audio.stop()
         if self.send_prosigns:
             wpm, freq = self._audio_settings()
-            audio.play_quietly(build_text(END_TEXT, wpm, freq))
+            audio.play_quietly(self._with_band(build_text(END_TEXT, wpm, freq)))
         self._finalize_session()
         self.status_var.set(tr("Gestoppt."))
         self.remaining_var.set("")

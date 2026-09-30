@@ -519,6 +519,24 @@ class ContinuousFullViewTest(AppTestCase):
         self.assertFalse(window.winfo_exists())
 
 
+class SequenceBandTest(AppTestCase):
+    def test_start_and_end_signs_carry_the_band_conditions(self):
+        from morsetrainer.core import band
+        s = self.mode("Gruppen")
+        s.band = band.preset_conditions("medium", 600)
+        with mock.patch.object(sq.audio, "play") as play, \
+                mock.patch.object(sq.audio, "play_quietly") as quietly:
+            s.send_prosigns = True
+            s._play_intro()
+            intro = play.call_args[0][0]
+            clean = sq.build_text(sq.START_TEXT + " ", *s._audio_settings(), s.farnsworth_wpm())
+            self.assertEqual(len(intro), len(clean) + int(sum(band.PRESET_LEAD_SECONDS) * sq.SAMPLE_RATE))
+            self.assertGreater(abs(intro[:100]).max(), 0)  # Rauschen gleich am Anfang
+            s.stop()
+            ending = quietly.call_args[0][0]
+            self.assertGreater(len(ending), len(sq.build_text(sq.END_TEXT, *s._audio_settings())))
+
+
 class QsoRevealTest(AppTestCase):
     def test_text_hidden_until_quiz_checked(self):
         q = self.mode("QSO")
