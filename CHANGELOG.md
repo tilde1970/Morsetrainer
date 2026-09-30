@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.19
 
 - **Netzwerk, kontinuierlich:** Die Bandbedingungen liegen jetzt unter dem
   ganzen Durchgang. Bisher waren nur VVV = und + verrauscht, die Gruppen

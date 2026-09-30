@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.19
 
 - **Network, continuous:** band conditions now lie under the whole run.
   Before, only VVV = and + were noisy, not the groups in between.
