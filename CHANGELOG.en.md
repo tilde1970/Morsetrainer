@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.18
 
 - **Network:** new flow “Continuous”: groups without pauses for a set
   duration, everyone types along continuously, without Enter. Scored at

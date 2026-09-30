@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.18
 
 - **Netzwerk:** Neuer Ablauf „Kontinuierlich“: Gruppen ohne Pause für eine
   eingestellte Dauer, alle tippen fortlaufend mit, ohne Enter. Ausgewertet
