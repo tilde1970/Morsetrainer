@@ -5,6 +5,8 @@ Teilnehmer -> Trainer:
     hello   {"proto", "name", "pin", "version"}
                                               erste Nachricht, sonst Abbruch
     answer  {"n", "typed", "latency", "replayed"}
+    paper   {"n", "typed"}                    nach dem Durchgang vom Papier
+                                              abgetippte Zeile (ohne Zeit)
 
 Trainer -> Teilnehmer:
     welcome {"session", "version"}            angenommen
@@ -37,7 +39,7 @@ DISCOVERY_PORT, die Antwort ist ein JSON-Objekt {"session", "port"}."""
 import json
 import socket
 
-PROTOCOL_VERSION = 3
+PROTOCOL_VERSION = 4
 DEFAULT_PORT = 7373
 DISCOVERY_PORT = 7374
 DISCOVER_QUERY = b"MORSETRAINER?"

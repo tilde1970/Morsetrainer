@@ -42,15 +42,20 @@ def format_confusions(confusions: dict) -> str:
 
 class SessionStats:
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
-                 self_assessed=False, in_history=True, review_promote=False):
+                 self_assessed=False, in_history=True, review_promote=False, char_stats=True):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
         J/N). Sie werden protokolliert, aber nicht in all_time.json und den
         Fortschrittsverlauf übernommen. `in_history=False`: Die Sitzung hat
         einen eigenen Eintrag im Verlauf (z. B. Rufz über log_result) und
         erscheint dort nicht zusätzlich; die Zeichenstatistik zählt normal.
         `review_promote`: Zufallszeichen, die Sitzung darf Zeichen in der
-        Lernkartei hochstufen (core/review.py); sonst nur zurückstufen."""
+        Lernkartei hochstufen (core/review.py); sonst nur zurückstufen.
+        `char_stats=False`: Klartext (Wörter, QSOs …), bei dem der
+        Zusammenhang viele Zeichen verrät. Die Sitzung erscheint im Verlauf,
+        fließt aber nicht in die Zeichenstatistik, die Gewichtung und die
+        Lernkartei ein; schwache Zeichen wirkten sonst sicherer, als sie sind."""
         self.review_promote = review_promote
+        self.char_stats = char_stats
         self.start_time = datetime.now()
         self.self_assessed = self_assessed
         self.mode = mode
@@ -82,6 +87,7 @@ class SessionStats:
             "start_time": self.start_time.isoformat(timespec="seconds"),
             **({"self_assessed": True} if self_assessed else {}),
             **({"in_history": False} if not in_history else {}),
+            **({"char_stats": False} if not char_stats else {}),
         })
 
     def _write_line(self, obj: dict) -> None:
@@ -211,7 +217,7 @@ class SessionStats:
             "type": "summary", **self.summary(), **(extra or {}), "per_char": self._per_char_summary(),
         })
         self._close()
-        if not self.self_assessed:
+        if not self.self_assessed and self.char_stats:
             _merge_all_time(self)
             from morsetrainer.core import review  # review importiert stats
             review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset))
@@ -285,7 +291,7 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     """Zeichenstatistik wie in all_time.json ({Zeichen: {"good", "wrong",
     "confusions"}}), aber nur aus den Sitzungsdateien der letzten `days`
     Tage und nach dem letzten Zurücksetzen. Längst behobene Verwechslungen
-    fallen so heraus. Selbst bewertete Sitzungen zählen nicht."""
+    fallen so heraus. Selbst bewertete Sitzungen und Klartext zählen nicht."""
     now = now or datetime.now()
     cutoff = now - timedelta(days=days)
     reset = storage.load_json(RESET_FILE, {}).get("time") if RESET_FILE.exists() else None
@@ -303,7 +309,7 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
             continue
         for obj in _read_jsonl(path):
             kind = obj.get("type")
-            if kind == "config" and obj.get("self_assessed"):
+            if kind == "config" and (obj.get("self_assessed") or obj.get("char_stats") is False):
                 break
             if kind != "char" or "char" not in obj:
                 continue

@@ -2,12 +2,43 @@
 
 ## Unreleased
 
+- **Network, typing in paper copies:** after a fixed-pace run the trainer
+  enters paper sheets of participants without a computer under “Enter
+  paper sheet”. Participants with a computer can choose “copy on paper”
+  when connecting and type in their sheet themselves at the end. Scored
+  as right/wrong without timing, so not as fluent and not for the speed
+  advice. New protocol version: trainer and participants need the same
+  program version.
+- **Print answer sheet:** with the fixed pace the trainer opens a
+  numbered sheet for printing in the browser, with one box per character
+  for groups.
 - **Error log:** unexpected program errors now go to `fehler.log` in the
   data folder, and the program says once where the file is. Before, the
   exe and AppImage simply did nothing on such an error.
 - **More robust:** a broken download no longer leaves the update hanging,
   an error during MP3 export no longer locks the Speak tab, and the window
   closes even if saving fails.
+- **Speak:** 2 is now said “Zwo” as on the air, and Echo sounds like
+  “Ekko” instead of with a German ch.
+- **More honest character statistics:** words, plain text in Continuous,
+  QSO copying and plain text on the network no longer count for the
+  character statistics, the weighting and the review box, because the
+  context gives many characters away. They still appear in the history.
+  When copying a QSO, characters guessed ahead (“DE”, “599”) no longer
+  count as correct.
+- **Groups, Words, Callsigns:** after an error the solution now comes
+  right away, shown and played, then the next sequence, as when copying on
+  the air. Up to 3 failed attempts can be set; “never” is gone. A
+  character recognised only after repeating counts as not recognised, as
+  with single characters.
+- **Character speed too slow:** below 18 WPM the header now points out in
+  every tab that the characters can be counted and offers Koch speed; so
+  does the next-lesson dialog. “Speed adapts” stretches the characters
+  only down to 18 WPM (before: 15), below that the gaps get longer.
+- **Continuous:** band conditions (light, medium, heavy) run under the
+  whole session.
+- **Practise due characters:** missing due characters are added for one
+  session only, then the lesson's character set applies again.
 
 ## 2.20
 

@@ -34,7 +34,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import align, audio
+from morsetrainer.core import align, audio, band
 from morsetrainer.core.morse import (
     END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
     char_gap_seconds, code_units, silence, word_gap_extra_seconds,
@@ -44,7 +44,8 @@ from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
-from morsetrainer.modes.content import ItemSource
+from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
+from morsetrainer.modes.sequence_mode import BAND_LABELS
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
 # damit ein Stop nicht erst das ganze (evtl. lange Farnsworth-)Zeichen
@@ -152,6 +153,7 @@ class ContinuousModeFrame:
         self.session_id = 0       # damit ein alter Auto-Stop keine neue Sitzung beendet
         self.koch_result = None   # (Zeichensatz, richtig, gesamt) für den Koch-Aufstieg
         self.audio_error = None   # Fehlermeldung aus dem Audio-Thread
+        self.band = None          # BandConditions des laufenden Durchgangs, None = ohne Störungen
         self.full_rows = []       # Gegenüberstellung der ganzen letzten Sitzung
         self.full_window = None
         self.full_width = None    # Spalten beim letzten Aufbau des Fensters
@@ -192,6 +194,12 @@ class ContinuousModeFrame:
             ["!disabled"] if self.content_var.get() == "Zufallszeichen" else ["disabled"]))
         ttk.Label(grouping, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
         theme.hint(grouping, text=tr("(mit Wortpause dazwischen; 0 = durchgehend)")).pack(side="left", padx=(4, 0))
+        band_row = ttk.Frame(options)
+        band_row.pack(fill="x", pady=(2, 0))
+        ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
+        self.band_var = tk.StringVar(value="aus")
+        ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
+        theme.hint(band_row, text=tr("(Rauschen, QSB, Knacken, QRM)")).pack(side="left", padx=(6, 0))
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
@@ -218,7 +226,7 @@ class ContinuousModeFrame:
         self.stats_panel = StatsPanel(parent)
 
     def settings(self) -> dict:
-        data = {"content": CONTENTS.get(self.content_var.get())}
+        data = {"content": CONTENTS.get(self.content_var.get()), "band": BAND_LABELS.get(self.band_var.get())}
         for key, var in (("duration", self.duration_var), ("group_len", self.group_len_var)):
             try:
                 data[key] = var.get()
@@ -230,6 +238,9 @@ class ContinuousModeFrame:
         for label, key in CONTENTS.items():
             if data.get("content") == key:
                 self.content_var.set(label)
+        for label, preset in BAND_LABELS.items():
+            if data.get("band") == preset:
+                self.band_var.set(label)
         for key, var, limits in (("duration", self.duration_var, (0, 120)),
                                  ("group_len", self.group_len_var, GROUP_LEN_RANGE)):
             value = data.get(key)
@@ -264,6 +275,10 @@ class ContinuousModeFrame:
         self.wpm = self.wpm_var.get()
         self.freq = self.freq_var.get()
         self.fw = self.farnsworth_wpm()
+        # Bandbedingungen laufen durchgehend unter dem ganzen Durchgang mit
+        # (Rauschen und QSB reißen nicht zwischen den Zeichen ab).
+        preset = BAND_LABELS.get(self.band_var.get())
+        self.band = band.preset_conditions(preset, self.freq) if preset else None
         self.sent_log = []
         self.typed_log = []
         try:
@@ -282,6 +297,7 @@ class ContinuousModeFrame:
             return
         self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw,
                                           review_promote=self.content == "chars",
+                                          char_stats=self.content not in PLAIN_TEXT,
                                           group_len=self.group_len or None)
         self.stats_panel.reset()
         self.live_var.set(tr("Gesendet: {n} Zeichen").format(n=0))
@@ -361,7 +377,8 @@ class ContinuousModeFrame:
         for start in range(0, len(samples), chunk):
             if not self.running:
                 return False
-            stream.write(samples[start:start + chunk])
+            block = samples[start:start + chunk]
+            stream.write(block if self.band is None else self.band.process(block, 0))
         return True
 
     def _tick(self):

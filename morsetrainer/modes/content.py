@@ -16,6 +16,9 @@ QSO_SAMPLES = 8
 # Mit diesen Wörtern endet ein Abschnitt eines QSOs: Trennung, Übergabe,
 # Ende (=, K, AR, KN, SK, BK).
 QSO_SECTION_ENDS = {"=", "K", "+", "(", "*", "#"}
+# Klartext: Der Zusammenhang verrät viele Zeichen, er zählt daher nicht für
+# die Zeichenstatistik (SessionStats, char_stats). Rufzeichen zählen.
+PLAIN_TEXT = {"words", "phrases", "qso", "custom"}
 
 
 def qso_sections(charset: str) -> list:

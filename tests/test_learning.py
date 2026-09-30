@@ -276,9 +276,9 @@ class TempoRuleTest(unittest.TestCase):
     def test_slower_never_stretches_characters_below_minimum(self):
         from morsetrainer.core import tempo
         self.assertEqual(tempo.step(20, 10, -1), (20, 9))      # nur die Pausen
-        self.assertEqual(tempo.step(18, None, -1), (17, None))
-        self.assertEqual(tempo.step(15, None, -1), (15, 14))   # ab hier Farnsworth
-        self.assertEqual(tempo.step(12, None, -1), (12, 11))   # Start unter 15: Zeichen bleiben
+        self.assertEqual(tempo.step(19, None, -1), (18, None))
+        self.assertEqual(tempo.step(18, None, -1), (18, 17))   # ab hier Farnsworth
+        self.assertEqual(tempo.step(12, None, -1), (12, 11))   # Start unter 18: Zeichen bleiben
         self.assertEqual(tempo.step(20, 5, -1), (20, 5))       # Untergrenze
         self.assertEqual(tempo.label(20, 12), "20/12 WPM")
         self.assertEqual(tempo.label(20, None), "20 WPM")

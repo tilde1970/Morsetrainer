@@ -20,6 +20,9 @@ ADVANCE_MIN_CHARS = 50
 # Punkte und Striche zu zählen, dafür längere Pausen dazwischen.
 RECOMMENDED_WPM = 20
 RECOMMENDED_EFFECTIVE_WPM = 10
+# Darunter lassen sich die Punkte und Striche eines Zeichens mitzählen; dann
+# lieber schnelle Zeichen mit Farnsworth-Pausen.
+SLOW_CHAR_WPM = RECOMMENDED_WPM - 2
 
 
 def lesson_charset(lesson: int) -> str:

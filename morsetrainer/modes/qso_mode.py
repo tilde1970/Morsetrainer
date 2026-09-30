@@ -37,6 +37,7 @@ import numpy as np
 
 from morsetrainer.core.band import BandConditions, soft_limit
 from morsetrainer.i18n import N_, tr
+from morsetrainer.modes.continuous_mode import plausible
 from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ChoiceBox, ScrollableFrame
@@ -400,7 +401,7 @@ class QsoModeFrame:
         if tracking:
             wpm, freq = self.voices[0]
             self.session_stats = SessionStats(
-                "qso", "QSO-Text", wpm, freq, farnsworth_wpm=self.fw,
+                "qso", "QSO-Text", wpm, freq, farnsworth_wpm=self.fw, char_stats=False,
                 group_len={"kind": self.qso.kind, "length": self.length_var.get(), "calls": list(self.qso.calls),
                            "voices": [list(v) for v in self.voices]},
             )
@@ -578,6 +579,11 @@ class QsoModeFrame:
                 correct = op.kind == align.OpKind.MATCH
                 play_end = self.sent_log[op.expected_index]["end_time"]
                 typed_time = self.typed_log[op.received_index]["time"]
+                if not plausible(typed_time, play_end):
+                    # Vorausgeahnt („DE“, „599“) oder viel zu spät: verpasst.
+                    self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
+                    missed.add(op.expected_index)
+                    continue
                 reaction_time = max(typed_time - play_end, 0.001)
                 effective_wpm = code_units(op.expected_char) * 1.2 / reaction_time
                 self.session_stats.record_char(

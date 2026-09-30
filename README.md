@@ -16,12 +16,12 @@ Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.
 | **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Standard ist „Erst merken“: erst das ganze Wort hören, dann tippen; eine zu langsame Antwort wird vermerkt. Auch R, K und die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden Wörtern. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
 | **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert (mit Starttempo) und Verlauf; danach lassen sich die verpassten und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören, dann mit Lösung noch einmal, im Originaltempo. |
-| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten Zeichen; **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
+| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Auf Wunsch mit **Bandbedingungen** (leicht, mittel, stark), die durchgehend unter dem ganzen Durchgang liegen. Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten Zeichen; **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
 | **Sprechen** | Hören & Sagen ohne Tastatur (wie Morse Code Ninja): Morsezeichen, Denkpause, in der du laut sagst, was du gehört hast, dann sagt eine Stimme die Lösung an – Zeichen, Gruppen und Rufzeichen buchstabiert (deutsche Buchstabennamen oder Buchstabieralphabet), Wörter und Wendungen als Ganzes bzw. mit ihrer Bedeutung („TNX“ → „danke“) – und das Zeichen kommt noch einmal. Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen). Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen. **Als MP3 speichern** für unterwegs (Handy, Auto). Zählt nur für die Übungszeit. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
 | **Netzwerk** | Üben in der Gruppe im lokalen Netz (Kurs, Clubabend): Ein Trainer gibt vor, alle hören dieselbe Sequenz über den eigenen Kopfhörer und tippen mit; der Trainer sieht live, wer was getippt hat. Siehe unten. |
-| **Statistik** | Gesamtstatistik je Zeichen, **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel und Fortschrittsverlauf je Modus. |
+| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen), **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel und Fortschrittsverlauf je Modus. |
 
 In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 
@@ -32,7 +32,7 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 - **Tempo wächst mit** (wie bei RufzXP): richtig beim ersten Versuch +1 WPM,
   falsch beim ersten Versuch −1 WPM – gemeint ist das effektive Tempo. Mit
   Farnsworth werden erst die Pausen kürzer; sind sie weg, wird das
-  Zeichentempo schneller. Langsamer werden die Zeichen höchstens bis 15 WPM,
+  Zeichentempo schneller. Langsamer werden die Zeichen höchstens bis 18 WPM,
   darunter werden die Pausen länger, damit man nicht mitzählen kann. Dieselbe
   Regel gilt für „Tempo automatisch anpassen“ im QSO-Reiter. Der
   Fortschrittsverlauf zeigt das effektive Tempo (z. B. 10 bei 20/10 WPM).
@@ -57,9 +57,11 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
    Zeitlimit von Anfang bis Ende, am Schluss höchstens 1,5 s – schlägt die
    App vor, bei den Gruppen weiterzumachen.
 3. Im Reiter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
-   Einzelzeichen. Nach einem Fehler werden nur die falschen Stellen markiert
-   und die Gruppe kommt noch einmal – hör sie dir an, statt sie abzulesen.
-   Nach 3 Fehlversuchen siehst und hörst du die Lösung.
+   Einzelzeichen. Nach einem Fehler siehst und hörst du die Lösung, dann
+   geht es weiter wie im Funkbetrieb; schwache Zeichen kommen über die
+   Gewichtung später wieder. Unter „Lösung zeigen nach“ lassen sich bis zu
+   3 Fehlversuche einstellen: Dann werden erst nur die falschen Stellen
+   markiert und die Gruppe kommt noch einmal.
 4. Wer in den Gruppen (oder im Modus Kontinuierlich) in einem Durchgang mit
    mindestens 50 Zeichen 90 % beim ersten Versuch schafft, bekommt die
    nächste Lektion angeboten. Für die Lektion zählt ein erster Versuch nur,
@@ -107,9 +109,9 @@ als + für AR, ( für KN, * für SK, # für BK), Anzahl Sequenzen (bei
 QSO-Klartext ganze QSOs, gesendet in Abschnitten bis zum nächsten =, K
 oder Schlusszeichen wie „UR RST 599 599 =“), Antwortzeit und
 Bandbedingungen wählen; Zeichensatz, Tempo und Farnsworth kommen aus der
-Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist der Reiter
-darauf hin, dass man die Zeichen mitzählen kann, und bietet das Koch-Tempo
-20/10 an.
+Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist die
+Kopfleiste in allen Reitern darauf hin, dass man die Zeichen mitzählen
+kann, und bietet das Koch-Tempo 20/10 an.
 Nach **Start** kommt zuerst das Anfangszeichen VVV = (abschaltbar), nach der
 letzten Sequenz das Schlusszeichen +. Dann bekommen alle dieselbe Sequenz
 zur selben Zeit. Die
@@ -148,8 +150,24 @@ sofort zur nächsten. Besser Blöcke von 20–25 Sequenzen mit Auflösung
 dazwischen als „bis Stop“. Wer nur mit Zettel und Stift dabei ist, braucht
 weder Rechner noch Anmeldung, hört aber über die Lautsprecher des Trainers:
 Beim Umschalten auf den festen Takt ist „Auch an diesem Rechner abspielen“
-daher gleich eingeschaltet. In Tabelle und Auswertung tauchen diese
-Teilnehmer nicht auf; sie vergleichen selbst mit der Auflösung.
+daher gleich eingeschaltet. Sie vergleichen selbst mit der Auflösung –
+oder geben ihren Zettel ab, und der Trainer tippt ihn nach dem Durchgang
+unter **Papierbogen eintragen** ein (Name, dann je Nummer die Zeile, leer =
+verpasst; derselbe Name ersetzt den Bogen). Wer einen Rechner hat und
+trotzdem mit dem Stift schreiben will, hakt beim Verbinden „Im festen Takt
+auf Papier mitschreiben und am Ende abtippen“ an: Während des Durchgangs
+bleibt das Eingabefeld zu, danach erscheint je Nummer ein Feld zum
+Abtippen, **Auswerten** schickt es an den Trainer. Abgetippte Antworten
+zählen für richtig/falsch, Fehler und schwache Zeichen, aber ohne Zeit:
+nicht als flüssig und nicht für die Tempo-Empfehlung, und in der eigenen
+Statistik nicht für Gewichtung und Lernkartei. In der Tabelle steht bei
+ihnen „Papier“.
+
+**Antwortbogen drucken** (bei den Optionen des festen Takts) öffnet einen
+Bogen im Browser zum Ausdrucken: Name, Datum, nummerierte Zeilen
+spaltenweise wie in der Auflösung – bei Gruppen und Einzelzeichen mit
+einem Kästchen je Zeichen, sonst mit freier Linie; so viele Zeilen wie
+eingestellt (bei „bis Stop“ und QSOs 25).
 
 **Kontinuierlich:** Unter *Ablauf* „Kontinuierlich“ wählen und die
 **Dauer** in Minuten einstellen. Dann kommen Gruppen (oder Wörter,

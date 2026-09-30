@@ -142,6 +142,48 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(board.summary("D")["correct_items"], 1)
         self.assertIn(";KMR ~ (8,0 s)", board.csv_text(("N", "%", "ok", "fl", "s", "e", "w")))
 
+    def test_paper_counts_without_timing(self):
+        board = Scoreboard()
+        for n in range(1, 11):
+            board.add_item(n, "KMRSU", {"A"}, 20, 10)
+            board.record("A", n, "KMRSU", 0.5)
+        board.mark_replayed(3)
+        # Bogen ohne Rechner: leere Zeile = verpasst, derselbe Name ersetzt.
+        self.assertTrue(board.add_paper("P", {1: "KMRSU", 2: "KMRSS", 3: "kmrsu"}))
+        self.assertTrue(board.add_paper("P", {1: "KMRSU", 2: "KMRSS", 3: "KMRSU", 4: ""}))
+        data = board.summary("P")
+        self.assertEqual((data["items"], data["correct_items"], data["fluent_items"]), (10, 2, 0))
+        self.assertIsNone(data["latency"])
+        self.assertTrue(board.answers["P"][3].replayed)
+        self.assertNotIn(4, board.answers["P"])
+        self.assertEqual(board.confusions(name="P"), [("U", "S", 1)])
+        # Flüssig und Tempo-Empfehlung nur aus den Antworten am Rechner.
+        self.assertEqual(board.fluency(), 1.0)
+        self.assertEqual(board.tempo_advice(), ((20, 10), 1.0, 1))
+        self.assertLess(board.accuracy(), 1.0)
+        # Wer am Rechner geantwortet hat, bekommt keinen Papierbogen.
+        self.assertFalse(board.add_paper("A", {1: "KMRSU"}))
+        self.assertIsNone(board.record_paper("A", 1, "KMRSU"))
+        self.assertIsNone(board.record_paper("P", 99, "KMRSU"))
+        line = board.csv_text(("N", "%", "ok", "fl", "s", "e", "w")).splitlines()[2]
+        self.assertTrue(line.startswith("P;28;2/10;–;;"), line)
+        self.assertIn(";KMRSU;KMRSS ✗;KMRSU;", line)
+
+    def test_answer_sheet(self):
+        from morsetrainer.core import answer_sheet
+        self.assertEqual(answer_sheet.pages(3, 2, rows=2), [[[1, 2], [3]]])
+        self.assertEqual(answer_sheet.pages(5, 1, rows=2), [[[1, 2]], [[3, 4]], [[5]]])
+        page = answer_sheet.answer_sheet_html(60, 5, title="Kurs <1>", details="Gruppen · 20 WPM",
+                                              labels={"hint": "Lücke lassen"})
+        self.assertIn("Kurs &lt;1&gt;", page)
+        self.assertEqual(page.count('class="page"'), 1)  # 3 Spalten × 25 Zeilen
+        self.assertEqual(page.count('class="row"'), 60)
+        self.assertEqual(page.count('class="box"'), 300)
+        self.assertEqual(page.count("<h1>"), 1)
+        page = answer_sheet.answer_sheet_html(60, None)
+        self.assertEqual(page.count('class="page"'), 2)  # freie Linien: 2 Spalten
+        self.assertEqual(page.count("<h1>"), 1)  # Kopf nur auf Seite 1
+
     def test_csv_has_one_column_per_sequence(self):
         board = Scoreboard()
         board.add_item(1, "KMR", {"A"}, 20, 10)
@@ -350,7 +392,6 @@ class NetworkTabTest(unittest.TestCase):
         def make(role):
             frame = NetworkModeFrame(ttk_frame(self.root), self.charset, self.wpm, self.freq, tk.BooleanVar(),
                                      lambda: None, lambda: None, lambda: self.stops.append(role),
-                                     set_koch_tempo=lambda: self.wpm.set(20),
                                      practice_start=lambda: self.practice.append((role, "start")),
                                      practice_stop=lambda: self.practice.append((role, "stop")),
                                      adjust_tempo=lambda d: self.tempo_steps.append(d) or ("20 WPM", "21 WPM"))
@@ -520,12 +561,6 @@ class NetworkTabTest(unittest.TestCase):
         self.trainer.stop_run()
         self.assertTrue(wait_for(lambda: ("trainee", "stop") in self.practice, pump=self.pump))
         self.assertTrue(self.trainee.running)  # Reiter bleiben gesperrt, solange verbunden
-
-    def test_slow_character_speed_hint(self):
-        self.wpm.set(12)
-        self.assertIn("12 WPM", self.trainer.tempo_hint_var.get())
-        self.wpm.set(20)
-        self.assertEqual(self.trainer.tempo_hint.winfo_manager(), "")
 
     def test_function_keys_only_for_the_trainer(self):
         self.connect()
@@ -754,6 +789,87 @@ class NetworkTabTest(unittest.TestCase):
         self.assertTrue(self.trainer.custom_frame.winfo_ismapped())
         self.assertIn("✓ UR", self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"][2])
         self.assertIn("Gruppe:", self.trainer.group_var.get())
+
+    def test_paper_trainee_types_in_the_copy_at_the_end(self):
+        from morsetrainer.core import audio
+        self.trainee.paper_var.set(True)
+        self.connect()
+        self.trainer.pause_var.set(1)
+        with mock.patch.object(audio, "play"):
+            self.start_paced("KM\nUR\n")
+            self.assertTrue(self.trainee.current["paper"])
+            self.assertEqual(str(self.trainee.entry.cget("state")), "disabled")
+            self.assertEqual(str(self.trainee.paper_check.cget("state")), "disabled")
+            self.trainer.replay_for_all()
+            self.assertTrue(wait_for(lambda: self.trainee.current["replayed"], pump=self.pump))
+            self.trainer.deadline = time.time()
+            self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+            self.trainer.deadline = time.time()
+            self.assertTrue(wait_for(lambda: not self.trainer.run_active, pump=self.pump))
+            self.assertTrue(wait_for(lambda: self.trainee.paper_card.winfo_ismapped(), pump=self.pump))
+        self.assertEqual(self.trainer.board.answers["DL4YM"], {})  # nichts während des Durchgangs
+        self.assertIn("Mitschrift ab", self.trainee.trainee_status_var.get())
+        self.assertEqual(sorted(self.trainee.trainee_sheet.entries), [1, 2])
+        self.trainee.trainee_sheet.entries[1].insert(0, "km")
+        self.trainee.submit_paper()
+        self.assertTrue(wait_for(lambda: 1 in self.trainer.board.answers["DL4YM"], pump=self.pump))
+        self.pump()
+        self.assertIn("DL4YM", self.trainer.board.paper)
+        self.assertNotIn(2, self.trainer.board.answers["DL4YM"])  # leer = verpasst
+        values = self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"]
+        self.assertEqual(str(values[4]), "Papier")
+        tree = self.trainee.results_tree
+        self.assertEqual([tree.item(row)["values"][1:] for row in tree.get_children()],
+                         [["KM", "KM", "✓ ↻"], ["UR", "–", "✗"]])
+        self.assertIn("1 von 2", self.trainee.trainee_status_var.get())
+        self.assertEqual(str(self.trainee.paper_check.cget("state")), "normal")
+        # Eigene Statistik: im Verlauf, aber nicht in der Zeichenstatistik.
+        logs = list(Path(self.tmp.name).glob("20*-network.jsonl"))
+        self.assertEqual(len(logs), 1)
+        self.assertIn('"char_stats": false', logs[0].read_text(encoding="utf-8"))
+        self.assertFalse((Path(self.tmp.name) / "all_time.json").exists())
+
+    def test_trainer_enters_paper_sheets(self):
+        self.connect()
+        self.trainer.pause_var.set(1)
+        self.start_paced("KM\nUR\n")
+        self.assertEqual(str(self.trainer.paper_button.cget("state")), "disabled")
+        self.trainee.input_var.set("KM")
+        self.pump()
+        self.trainer.deadline = time.time()
+        self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+        self.trainer.deadline = time.time()
+        self.assertTrue(wait_for(lambda: not self.trainer.run_active, pump=self.pump))
+        self.trainer.enter_paper()
+        self.assertIsNotNone(self.trainer.paper_window)
+        sheet = self.trainer.paper_sheet
+        self.trainer.paper_name_var.set("DL4YM")  # hat am Rechner geantwortet
+        self.trainer.apply_paper()
+        self.assertIn("schon am Rechner", self.trainer.paper_note_var.get())
+        self.trainer.paper_name_var.set("DK1AB")
+        sheet.entries[1].insert(0, "KM")
+        sheet.entries[2].insert(0, "UK")
+        self.trainer.apply_paper()
+        self.assertIn("1 von 2", self.trainer.paper_note_var.get())
+        self.assertEqual(sheet.values(), {1: "", 2: ""})
+        self.assertEqual(self.trainer.board.names, ["DL4YM", "DK1AB"])
+        values = self.trainer.tree.item(self.trainer.tree.get_children()[1])["values"]
+        self.assertEqual([str(v) for v in values[3:]], ["75% (1/2)", "Papier", ""])
+        self.trainer.close_paper()
+        self.assertIsNone(self.trainer.paper_window)
+
+    def test_answer_sheet_opens_in_the_browser(self):
+        from morsetrainer.modes import network_mode
+        self.trainer.content_var.set("Gruppen")
+        self.trainer.count_var.set(30)
+        with mock.patch.object(network_mode, "open_in_editor") as opened:
+            self.trainer.print_answer_sheet()
+        path = Path(self.tmp.name) / "antwortbogen.html"
+        opened.assert_called_once_with(path)
+        page = path.read_text(encoding="utf-8")
+        self.assertEqual(page.count('class="row"'), 30)
+        self.assertEqual(page.count('class="box"'), 150)
+        self.assertIn("Gruppen · 20 WPM", page)
 
     def test_speaker_mode_keeps_trainees_silent(self):
         from morsetrainer.core import audio

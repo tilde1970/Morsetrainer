@@ -2,6 +2,16 @@
 
 ## Unveröffentlicht
 
+- **Netzwerk, Papier abtippen:** Nach einem Durchgang im festen Takt trägt
+  der Trainer Papierbögen von Teilnehmern ohne Rechner unter
+  „Papierbogen eintragen“ ein. Teilnehmer mit Rechner können beim
+  Verbinden „auf Papier mitschreiben“ wählen und tippen ihren Zettel am
+  Ende selbst ab. Gewertet wird richtig/falsch ohne Zeit, also nicht als
+  flüssig und nicht für die Tempo-Empfehlung. Neue Protokollversion:
+  Trainer und Teilnehmer brauchen dieselbe Programmversion.
+- **Antwortbogen drucken:** Im festen Takt öffnet der Trainer einen
+  nummerierten Bogen zum Ausdrucken im Browser, bei Gruppen mit einem
+  Kästchen je Zeichen.
 - **Fehlerprotokoll:** Unerwartete Programmfehler landen jetzt in
   `fehler.log` im Datenverzeichnis, und das Programm sagt einmal, wo die
   Datei liegt. Bisher passierte in exe und AppImage bei so einem Fehler
@@ -9,6 +19,29 @@
 - **Robuster:** Ein abgerissener Download lässt das Update nicht mehr
   hängen, ein Fehler beim MP3-Export sperrt den Reiter Sprechen nicht mehr,
   und das Fenster schließt auch dann, wenn beim Speichern etwas schiefgeht.
+- **Sprechen:** Die 2 heißt jetzt „Zwo“ wie im Funk, Echo klingt wie
+  „Ekko“ statt mit deutschem ch.
+- **Ehrlichere Zeichenstatistik:** Wörter, Klartext in Kontinuierlich,
+  QSO-Mittippen und Klartext im Netzwerk zählen nicht mehr für die
+  Zeichenstatistik, die Gewichtung und die Lernkartei, weil der
+  Zusammenhang dort viele Zeichen verrät. Im Verlauf erscheinen sie
+  weiter. Beim QSO-Mittippen zählen vorausgeahnte Zeichen („DE“, „599“)
+  nicht mehr als richtig.
+- **Gruppen, Wörter, Rufzeichen:** Nach einem Fehler kommt jetzt gleich
+  die Lösung, gezeigt und vorgespielt, und dann die nächste Sequenz, wie
+  beim Weiterkopieren im Funkbetrieb. Einstellbar sind bis zu 3
+  Fehlversuche, „nie“ gibt es nicht mehr. Ein Zeichen, das erst nach dem
+  Wiederholen erkannt wurde, zählt wie bei den Einzelzeichen als nicht
+  erkannt.
+- **Zu langsames Zeichentempo:** Unter 18 WPM weist jetzt die Kopfleiste in
+  allen Reitern darauf hin, dass man die Zeichen mitzählen kann, und bietet
+  das Koch-Tempo an; ebenso der Dialog zur nächsten Lektion. „Tempo wächst
+  mit“ dehnt die Zeichen nur noch bis 18 WPM (bisher 15), darunter werden
+  die Pausen länger.
+- **Kontinuierlich:** Bandbedingungen (leicht, mittel, stark) laufen
+  durchgehend unter dem ganzen Durchgang.
+- **Fällige gezielt üben:** Fehlende fällige Zeichen kommen nur für einen
+  Durchgang dazu, danach gilt wieder der Zeichensatz der Lektion.
 
 ## 2.20
 

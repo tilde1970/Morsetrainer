@@ -57,7 +57,13 @@ from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
-DEFAULT_GIVE_UP = 3
+# Nach so vielen Fehlversuchen kommt die Lösung (gesehen und gehört), dann
+# die nächste Sequenz. Standard 1: Weiterkopieren wie im Funkbetrieb statt
+# an einer Gruppe zu hängen; schwache Zeichen kommen über die Gewichtung
+# ohnehin wieder. Mehr als GIVE_UP_RANGE[1] Anläufe hieße nur noch
+# bestätigen statt erkennen.
+DEFAULT_GIVE_UP = 1
+GIVE_UP_RANGE = (1, 3)
 
 COPY, MEMORIZE, HEAD = "copy", "memorize", "head"
 INPUT_STYLES = ((COPY, N_("Mitschreiben")), (MEMORIZE, N_("Erst merken")), (HEAD, N_("Kopfhören")))
@@ -95,6 +101,8 @@ class SequenceModeFrame:
     default_style = COPY  # Eingabeart, solange nichts gespeichert ist
     # Zufallszeichen: darf Zeichen in der Lernkartei hochstufen (core/review.py).
     review_promotes = False
+    # Klartext (Wörter): zählt nicht für die Zeichenstatistik (SessionStats).
+    char_stats = True
     # Bekommt die gemeinsame Einstellung "Tonhöhe und Tempo variieren".
     uses_vary = True
 
@@ -210,7 +218,7 @@ class SequenceModeFrame:
         for label, preset in BAND_LABELS.items():
             if data.get("band") == preset:
                 self.band_var.set(label)
-        for key, var, limits in (("duration", self.duration_var, (0, 120)), ("give_up", self.give_up_var, (0, 9)),
+        for key, var, limits in (("duration", self.duration_var, (0, 120)), ("give_up", self.give_up_var, GIVE_UP_RANGE),
                                  ("band_gain", self.band_gain_var, BAND_GAIN_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
@@ -236,9 +244,9 @@ class SequenceModeFrame:
         give_up.pack(fill="x", pady=1)
         ttk.Label(give_up, text=tr("Lösung zeigen nach")).pack(side="left", padx=(0, 4))
         self.give_up_var = tk.IntVar(value=DEFAULT_GIVE_UP)
-        ttk.Spinbox(give_up, from_=0, to=9, textvariable=self.give_up_var, width=3).pack(side="left")
+        ttk.Spinbox(give_up, from_=GIVE_UP_RANGE[0], to=GIVE_UP_RANGE[1], textvariable=self.give_up_var,
+                    width=3).pack(side="left")
         ttk.Label(give_up, text=tr("Fehlversuchen")).pack(side="left", padx=(4, 0))
-        theme.hint(give_up, text=tr("(0 = nie)")).pack(side="left", padx=(4, 0))
 
         tempo_row = ttk.Frame(options)
         tempo_row.pack(fill="x", pady=1)
@@ -413,7 +421,7 @@ class SequenceModeFrame:
             self.session_mode, self._log_charset(), wpm, freq,
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
             self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
-            review_promote=self.review_promotes,
+            review_promote=self.review_promotes, char_stats=self.char_stats,
         )
         self._setup_pickers(self.weighted_var.get())
         # Latenz für richtig, aber unsicher (siehe on_submit): doppelt so lang
@@ -716,18 +724,22 @@ class SequenceModeFrame:
         results = align.char_results(sent, typed)
         slow = answer_time - self.tone_ends[-1] > answer_limit(len(sent)) if self.tone_ends else False
         # Nur der erste Versuch geht in die Zeichenstatistik; bei der
-        # Wiederholung ist die Sequenz schon bekannt. Mit Wiederholen (Leertaste)
-        # oder, ohne Latenz je Zeichen, zu langsam ist ein richtiges Zeichen
-        # richtig, aber nicht flüssig: es bekommt die doppelte übliche Latenz,
-        # damit die Gewichtung es öfter bringt, ohne die Trefferquote zu drücken.
+        # Wiederholung ist die Sequenz schon bekannt. Erst nach dem Wiederholen
+        # (Leertaste) erkannt zählt wie bei Einzelzeichen als nicht erkannt.
+        # Ohne Latenz je Zeichen zu langsam ist ein richtiges Zeichen richtig,
+        # aber nicht flüssig: es bekommt die doppelte übliche Latenz, damit die
+        # Gewichtung es öfter bringt, ohne die Trefferquote zu drücken.
         if self.attempts == 0:
-            unsure = self.replayed or (slow and self.style != COPY)
+            unsure = slow and self.style != COPY
             for index, (expected, got, typed_index) in enumerate(results):
                 reaction_time, latency = self._char_timing(index, typed_index)
+                effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
+                if self.replayed and got == expected:
+                    self.session_stats.record_char(expected, "", False, reaction_time, effective_wpm)
+                    continue
                 assumed = unsure and got == expected
                 if assumed:
                     latency = self.unsure_latency
-                effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
                 self.session_stats.record_char(
                     expected, got, got == expected, reaction_time, effective_wpm, latency=latency, assumed=assumed
                 )
@@ -778,11 +790,11 @@ class SequenceModeFrame:
             if clean:
                 self.first_try_correct += correct_chars
         try:
-            give_up_after = self.give_up_var.get()
+            give_up_after = min(max(self.give_up_var.get(), GIVE_UP_RANGE[0]), GIVE_UP_RANGE[1])
         except tk.TclError:
             give_up_after = DEFAULT_GIVE_UP
         # Beim Kopfhören gibt es keinen zweiten Versuch: die Lösung ist schon zu sehen.
-        give_up = not all_correct and (head or self._fixed_run() or 0 < give_up_after <= self.attempts)
+        give_up = not all_correct and (head or self._fixed_run() or give_up_after <= self.attempts)
         self.repeat_pending = not all_correct and not give_up
         # Richtig, aber nur mit Wiederholen oder zu langsam, zählt für Länge und
         # Tempo wie richtig erst im zweiten Versuch (kein Aufstieg).

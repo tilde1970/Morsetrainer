@@ -14,7 +14,11 @@ nächste Sequenz nach Ton plus Schreibpause, egal wer geantwortet hat, und
 bis zum Ende steht nirgends eine Lösung – der Trainerbildschirm hängt
 womöglich am Beamer. Die Auflösung (eigenes Fenster) zeigt währenddessen
 nur die laufende Nummer, danach alle Lösungen zum Vergleichen und
-Anhören.
+Anhören. Wer auf Papier schreibt, tippt die Mitschrift danach ab, am
+eigenen Rechner oder der Trainer für ihn („Papierbogen eintragen“); diese
+Antworten zählen ohne Zeit, also nicht für „flüssig“ und die
+Tempo-Empfehlung. Einen Antwortbogen zum Ausdrucken gibt es auch
+(core/answer_sheet.py).
 
 Teilnehmer: sucht den Trainer im Netz (oder gibt die Adresse ein),
 meldet sich mit Name/Rufzeichen und PIN an. Der Ton entsteht auf dem
@@ -33,7 +37,7 @@ import tkinter.font as tkfont
 from datetime import datetime
 from tkinter import ttk
 
-from morsetrainer.core import align, audio, band, koch, stats, tempo
+from morsetrainer.core import align, answer_sheet, audio, band, stats, tempo
 import numpy as np
 
 from morsetrainer.core.morse import (
@@ -43,8 +47,9 @@ from morsetrainer.core.morse import (
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
-from morsetrainer.modes.content import ItemSource, qso_sections
+from morsetrainer.modes.content import PLAIN_TEXT, ItemSource, qso_sections
 from morsetrainer.modes.sequence_mode import BAND_LABELS, answer_limit
+from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
 from morsetrainer.net import stream as net_stream
@@ -95,9 +100,8 @@ GROUP_LEN_RANGE = (1, 10)
 DEFAULT_ANSWER_S = 8
 # Zeilen der Teilnehmertabelle im Reiter: mindestens, höchstens (dann Scrollbalken).
 TABLE_ROWS = (6, 12)
-# Darunter lassen sich die Punkte und Striche eines Zeichens mitzählen; dann
-# lieber schnelle Zeichen mit Farnsworth-Pausen (koch.RECOMMENDED_WPM).
-SLOW_CHAR_WPM = koch.RECOMMENDED_WPM - 2
+# Antwortbogen: so viele Zeilen, wenn die Anzahl nicht feststeht (bis Stop, QSOs).
+SHEET_DEFAULT_ROWS = 25
 
 
 def make_pin() -> str:
@@ -112,16 +116,48 @@ def sequence_seconds(text: str, wpm: int, fw, band_preset) -> float:
     return seconds
 
 
+class PaperSheet:
+    """Eingabe einer Papier-Mitschrift: je Nummer ein Feld, spaltenweise
+    von oben nach unten wie in der Auflösung. Enter springt weiter."""
+
+    def __init__(self, parent, numbers):
+        self.frame = ttk.Frame(parent)
+        self.entries = {}
+        height = -(-len(numbers) // solution_columns(len(numbers))) if numbers else 1
+        order = []
+        for i, n in enumerate(numbers):
+            column, row = divmod(i, height)
+            ttk.Label(self.frame, text=f"{n}.", font=theme.MONO).grid(
+                row=row, column=2 * column, sticky="e", padx=(12 if column else 0, 2))
+            entry = ttk.Entry(self.frame, width=12, font=theme.MONO)
+            entry.grid(row=row, column=2 * column + 1, sticky="w", pady=1)
+            entry.bind("<Return>", lambda e, i=i: self.focus(i + 1) or "break")
+            self.entries[n] = entry
+            order.append(entry)
+        self.order = order
+
+    def focus(self, index: int = 0):
+        if 0 <= index < len(self.order):
+            self.order[index].focus_set()
+
+    def values(self) -> dict:
+        return {n: entry.get() for n, entry in self.entries.items()}
+
+    def clear(self):
+        for entry in self.order:
+            entry.delete(0, "end")
+
+
 class NetworkModeFrame:
     session_mode = "network"
 
-    # Bekommt vom Hauptfenster set_koch_tempo, practice_start und practice_stop
+    # Bekommt vom Hauptfenster practice_start und practice_stop
     # sowie adjust_tempo (für die Tempo-Empfehlung).
     uses_network_hooks = True
     uses_tempo_adjust = True
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
-                 set_koch_tempo=None, practice_start=None, practice_stop=None, adjust_tempo=None, version=None,
+                 practice_start=None, practice_stop=None, adjust_tempo=None, version=None,
                  updater=None):
         """Übungszeit zählt beim Teilnehmer nur, solange ein Durchgang läuft
         (practice_start/practice_stop), nicht beim Warten auf den Trainer;
@@ -132,7 +168,6 @@ class NetworkModeFrame:
         self.root = parent.winfo_toplevel()
         self.version = version
         self.updater = updater
-        self.set_koch_tempo = set_koch_tempo
         self.adjust_tempo = adjust_tempo
         self.practice_start = practice_start or (lambda: None)
         self.practice_stop = practice_stop or (lambda: None)
@@ -168,6 +203,7 @@ class NetworkModeFrame:
         self.pause_s = PAUSE_DEFAULTS["groups"]
         self.solution_window = None
         self.solution_selected = None  # markierte Nr. in der Auflösung
+        self.paper_window = None       # Papierbogen eintragen
 
         # Teilnehmer
         self.client = None
@@ -192,6 +228,9 @@ class NetworkModeFrame:
         self.history = []
         self.paced_results = []  # fester Takt: (Sequenz, Result, wiederholt), gezeigt erst am Ende
         self.stream = None       # laufender kontinuierlicher Text beim Teilnehmer
+        self.paper_items = []    # auf Papier mitgeschriebene Sequenzen, abgetippt am Ende
+        self.paper_run = None    # (Zeichensatz, Tempo, Farnsworth) des Durchgangs, für die Statistik
+        self.trainee_sheet = None
         self.stream_token = 0
         self._band_cache = {}
 
@@ -320,7 +359,13 @@ class NetworkModeFrame:
             "Die nächste Sequenz kommt nach Ton und Schreibpause, egal wer geantwortet hat. Lösungen gibt es "
             "erst am Ende unter „Auflösung“ – dort lassen sie sich auch anhören. Besser Blöcke von 20–25 "
             "Sequenzen mit Auflösung dazwischen als „bis Stop“. Wer ohne Rechner mitschreibt, hört den Ton "
-            "über die Lautsprecher dieses Rechners.")).pack(anchor="w", pady=(0, 2))
+            "über die Lautsprecher dieses Rechners. Die Mitschrift lässt sich danach abtippen: am eigenen "
+            "Rechner oder hier unter „Papierbogen eintragen“ – gewertet ohne Zeit.")).pack(anchor="w", pady=(0, 2))
+        sheet = ttk.Frame(self.pause_frame)
+        sheet.pack(fill="x", pady=(0, 2))
+        ttk.Button(sheet, text=tr("Antwortbogen drucken"), command=self.print_answer_sheet).pack(side="left")
+        self.sheet_var = tk.StringVar(value="")
+        theme.hint(sheet, textvariable=self.sheet_var, wrap=400).pack(side="left", padx=(8, 0))
 
         self.auto_var = tk.BooleanVar(value=True)
         self.auto_check = ttk.Checkbutton(
@@ -366,17 +411,6 @@ class NetworkModeFrame:
                                         state="disabled")
         self.replay_button.pack(side="left", padx=(8, 0))
 
-        self.tempo_hint = ttk.Frame(parent)
-        self.tempo_hint_var = tk.StringVar(value="")
-        theme.hint(self.tempo_hint, textvariable=self.tempo_hint_var, wrap=440).pack(side="left")
-        if self.set_koch_tempo is not None:
-            ttk.Button(self.tempo_hint, text=tr("Koch-Tempo {wpm}/{effective}").format(
-                wpm=koch.RECOMMENDED_WPM, effective=koch.RECOMMENDED_EFFECTIVE_WPM),
-                command=self.set_koch_tempo).pack(side="right")
-        self.tempo_hint_anchor = controls
-        self.wpm_var.trace_add("write", lambda *_: self._show_tempo_hint())
-        self._show_tempo_hint()
-
         self.trainer_status_var = tk.StringVar(value=tr("Öffne eine Sitzung, damit sich Teilnehmer anmelden können."))
         ttk.Label(parent, textvariable=self.trainer_status_var, style="Status.TLabel", wraplength=560,
                   justify="center").pack(pady=(12, 6))
@@ -407,6 +441,9 @@ class NetworkModeFrame:
         self.solution_button = ttk.Button(export, text=tr("Auflösung"), command=self.show_solution,
                                           state="disabled")
         self.solution_button.pack(side="left", padx=(8, 0))
+        self.paper_button = ttk.Button(export, text=tr("Papierbogen eintragen"), command=self.enter_paper,
+                                       state="disabled")
+        self.paper_button.pack(side="left", padx=(8, 0))
         self.export_var = tk.StringVar(value="")
         theme.hint(export, textvariable=self.export_var).pack(side="left", padx=(8, 0))
 
@@ -509,6 +546,10 @@ class NetworkModeFrame:
         theme.hint(box, wrap=540, text=tr(
             "Adresse wie beim Trainer angezeigt, z. B. 192.168.1.20 (anderer Port: 192.168.1.20:7400).")).pack(
             anchor="w", pady=(2, 0))
+        self.paper_var = tk.BooleanVar(value=False)
+        self.paper_check = ttk.Checkbutton(
+            box, text=tr("Im festen Takt auf Papier mitschreiben und am Ende abtippen"), variable=self.paper_var)
+        self.paper_check.pack(anchor="w", pady=(4, 0))
 
         self.trainee_status_var = tk.StringVar(value=tr("Suche den Trainer oder gib seine Adresse ein."))
         ttk.Label(parent, textvariable=self.trainee_status_var, style="Status.TLabel", wraplength=560,
@@ -549,26 +590,21 @@ class NetworkModeFrame:
             self.results_tree.bind(sequence, lambda e: self.play_result() or "break")
         theme.hint(self.results_card, text=tr("Doppelklick oder Leertaste: noch einmal anhören")).pack(
             anchor="w", pady=(2, 0))
+        # Papier: Mitschrift nach dem Durchgang abtippen.
+        self.paper_card = theme.card(self.results_holder, tr("Mitschrift abtippen"))
+        self.paper_card.pack_forget()
+        theme.hint(self.paper_card, wrap=540, text=tr(
+            "Je Nummer die Zeile vom Zettel, leer = verpasst. Enter springt zur nächsten Nummer. Gewertet wird "
+            "ohne Zeit, also nicht als flüssig.")).pack(anchor="w", pady=(0, 4))
+        self.trainee_sheet_holder = ttk.Frame(self.paper_card)
+        self.trainee_sheet_holder.pack(anchor="w")
+        ttk.Button(self.paper_card, text=tr("Auswerten"), style="Accent.TButton", command=self.submit_paper).pack(
+            anchor="w", pady=(6, 0))
 
         self.stats_panel = StatsPanel(parent)
         history = theme.card(parent, tr("Verlauf"))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
-
-    def _show_tempo_hint(self):
-        """Hinweis bei langsamem Zeichentempo: Im Gleichtakt hören alle so,
-        wie der Trainer es einstellt."""
-        try:
-            wpm = self.wpm_var.get()
-        except tk.TclError:
-            return
-        if wpm < SLOW_CHAR_WPM:
-            self.tempo_hint_var.set(tr(
-                "Zeichentempo {wpm} WPM: So langsame Zeichen lassen sich mitzählen. Besser schnelle Zeichen "
-                "mit längeren Pausen (Farnsworth).").format(wpm=wpm))
-            self.tempo_hint.pack(fill="x", padx=10, pady=(6, 0), after=self.tempo_hint_anchor)
-        else:
-            self.tempo_hint.pack_forget()
 
     def _show_role(self):
         if self.role_var.get() == TRAINER:
@@ -743,6 +779,9 @@ class NetworkModeFrame:
         elif kind == "answer" and self.board is not None:
             message = event[2]
             self.board.record(name, message.get("n"), message.get("typed"), message.get("latency"))
+        elif kind == "paper" and self.board is not None and not self.run_active:
+            # Nach dem Durchgang abgetippt; währenddessen gehört es nicht hierher.
+            self.board.record_paper(name, event[2].get("n"), event[2].get("typed"))
         if self.item_open and not self.run_paced and self._all_answered():
             self.close_item()
         self._refresh_table()
@@ -834,6 +873,8 @@ class NetworkModeFrame:
         self.start_button.config(text=tr("Stop"))
         self.next_button.config(state="disabled" if continuous else "normal")
         self.export_button.config(state="disabled")
+        self.paper_button.config(state="disabled")
+        self.close_paper()
         self.export_var.set("")
         wpm, fw, preset = self.wpm_var.get(), self.farnsworth_wpm(), BAND_LABELS.get(self.band_var.get())
         self.server.broadcast({"type": "start", "kind": kind, "charset": charset, "wpm": wpm, "fw": fw,
@@ -1013,6 +1054,7 @@ class NetworkModeFrame:
         self.start_button.config(text=tr("Start"))
         self.next_button.config(state="disabled")
         self.export_button.config(state="normal" if self.board is not None and self.board.items else "disabled")
+        self.paper_button.config(state=self.export_button.cget("state"))
         status = tr("Durchgang beendet: {n} Sequenzen.").format(n=self.item_n)
         if (self.run_paced or self.run_continuous) and self.item_n:
             status += " " + tr("Die Lösungen stehen unter „Auflösung“.")
@@ -1087,6 +1129,8 @@ class NetworkModeFrame:
             if data["chars_total"] and not hiding:
                 share = f"{data['chars_correct'] / data['chars_total']:.0%} ({data['correct_items']}/{data['items']})"
             fluent = f"{data['fluent_items']}/{data['items']}" if data["items"] and not hiding else ""
+            if name in self.board.paper and not hiding:
+                fluent = tr("Papier")
             latency = number(data["latency"], 1) if data["latency"] is not None and not hiding else ""
             row = self.tree.insert("", "end", values=(name, state, last, share, fluent, latency),
                                    tags=(tag,) if tag else ())
@@ -1308,6 +1352,92 @@ class NetworkModeFrame:
         self.root.clipboard_append(solution_text(cells, solution_columns(len(cells))))
         self.solution_note_var.set(tr("In die Zwischenablage kopiert."))
 
+    def enter_paper(self):
+        """Papierbogen eines Teilnehmers ohne Rechner eintragen: Name und je
+        Nummer die Zeile vom Zettel. Gewertet ohne Zeit (nicht flüssig,
+        nicht in der Tempo-Empfehlung); derselbe Name ersetzt den Bogen."""
+        if self.board is None or not self.board.items or self.run_active:
+            return
+        if self.paper_window is not None:
+            self.paper_window.lift()
+            return
+        window = tk.Toplevel(self.root)
+        window.title(tr("Papierbogen eintragen – {session}").format(session=self.session_var.get()))
+        window.geometry("760x560")
+        window.configure(background=theme.BG)
+        frame = ScrollableFrame(window).inner
+        top = ttk.Frame(frame, padding=10)
+        top.pack(fill="x")
+        ttk.Label(top, text=tr("Name/Rufzeichen:")).pack(side="left", padx=(0, 4))
+        self.paper_name_var = tk.StringVar(value="")
+        name_entry = ttk.Entry(top, textvariable=self.paper_name_var, width=14)
+        name_entry.pack(side="left")
+        ttk.Button(top, text=tr("Übernehmen"), style="Accent.TButton", command=self.apply_paper).pack(
+            side="left", padx=(12, 0))
+        theme.hint(frame, wrap=560, text=tr(
+            "Je Nummer die Zeile vom Zettel, leer = verpasst. Enter springt zur nächsten Nummer. Gewertet wird "
+            "richtig oder falsch, ohne Zeit – nicht als flüssig und nicht für die Tempo-Empfehlung.")).pack(
+            anchor="w", padx=10)
+        self.paper_note_var = tk.StringVar(value="")
+        ttk.Label(frame, textvariable=self.paper_note_var, style="Status.TLabel").pack(anchor="w", padx=10, pady=4)
+        self.paper_sheet = PaperSheet(frame, sorted(self.board.items))
+        self.paper_sheet.frame.pack(anchor="w", padx=10, pady=(0, 10))
+        name_entry.bind("<Return>", lambda e: self.paper_sheet.focus(0) or "break")
+        window.protocol("WM_DELETE_WINDOW", self.close_paper)
+        self.paper_window = window
+        name_entry.focus_set()
+
+    def close_paper(self):
+        if self.paper_window is not None:
+            self.paper_window.destroy()
+        self.paper_window = None
+
+    def apply_paper(self):
+        name = protocol.clean_name(self.paper_name_var.get())
+        if not name:
+            self.paper_note_var.set(tr("Bitte Name oder Rufzeichen eingeben."))
+            return
+        if self.board is None or not self.board.add_paper(name, self.paper_sheet.values()):
+            self.paper_note_var.set(tr("„{name}“ hat schon am Rechner geantwortet – anderen Namen wählen.").format(
+                name=name))
+            return
+        data = self.board.summary(name)
+        self.paper_note_var.set(tr("Bogen von {name}: {correct} von {total} richtig. Nächster Bogen?").format(
+            name=name, correct=data["correct_items"], total=data["items"]))
+        self.paper_name_var.set("")
+        self.paper_sheet.clear()
+        self._refresh_table(name)
+
+    def print_answer_sheet(self):
+        """Antwortbogen für die eingestellte Übung als HTML-Seite im
+        Browser öffnen (von dort drucken)."""
+        kind = CONTENTS.get(self.content_var.get(), "groups")
+        try:
+            count, group_len = self.count_var.get(), self.group_len_var.get()
+            wpm = self.wpm_var.get()
+        except tk.TclError:
+            self.sheet_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
+            return
+        if kind == "custom":
+            count = sum(1 for line in self.custom_text.get("1.0", "end").splitlines() if normalize(line))
+        elif kind == "qso" or not count:
+            count = SHEET_DEFAULT_ROWS
+        boxes = group_len if kind == "groups" else 1 if kind == "chars" else None
+        page = answer_sheet.answer_sheet_html(
+            max(count, 1), boxes, title=self.session_var.get(),
+            details=f"{tr(self.content_var.get())} · {tempo.label(wpm, self.farnsworth_wpm())}",
+            labels={"name": tr("Name"), "date": tr("Datum"),
+                    "hint": tr("Verpasst? Lücke lassen und bei der nächsten Nummer weiterschreiben.")})
+        path = stats.STATS_DIR / "antwortbogen.html"
+        try:
+            stats.STATS_DIR.mkdir(parents=True, exist_ok=True)
+            path.write_text(page, encoding="utf-8")
+            open_in_editor(path)
+        except OSError as exc:
+            self.sheet_var.set(tr("Nicht gespeichert: {error}").format(error=exc))
+            return
+        self.sheet_var.set(tr("Im Browser geöffnet, dort drucken: {path}").format(path=path))
+
     def export_csv(self):
         if self.board is None or not self.board.items:
             return
@@ -1445,7 +1575,7 @@ class NetworkModeFrame:
         if kind == "start":
             wpm, fw = message.get("wpm"), message.get("fw")
             self._start_client_run(str(message.get("charset", ""))[:100], wpm if isinstance(wpm, int) else 0,
-                                   fw if isinstance(fw, int) else None)
+                                   fw if isinstance(fw, int) else None, kind=message.get("kind"))
             if message.get("signs") is True:
                 self._client_signs(START_TEXT + " ", message)
                 self.trainee_status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
@@ -1454,7 +1584,9 @@ class NetworkModeFrame:
         elif kind == "stream":
             self._on_stream(message, received)
         elif kind == "replay":
-            if self.current is not None and message.get("n") == self.current["n"] and not self.answered:
+            if (self.current is not None and message.get("n") == self.current["n"]
+                    and (not self.answered or self.current["paper"])):
+                self.current["replayed"] = True
                 self.replayed = True
                 self.current["received"] = received
                 self._play_current()
@@ -1474,14 +1606,20 @@ class NetworkModeFrame:
             self._end_client_run()
             if message.get("signs") is True:
                 self._client_signs(END_TEXT, message)
+            if self.paper_items:
+                self._show_paper_sheet()
+                return
             self._show_paced_results()
             self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
                 correct=self.run_correct, total=self.run_total) if self.run_total else tr("Durchgang beendet."))
 
-    def _start_client_run(self, charset, wpm, fw):
+    def _start_client_run(self, charset, wpm, fw, kind=None):
+        """`kind`: Inhaltsart des Trainers; Klartext zählt nicht für die
+        Zeichenstatistik (unbekannt, etwa beim Dazukommen: zählt)."""
         self._end_client_run()
         self.practice_start()
-        self.session_stats = SessionStats(self.session_mode, charset, wpm, self._freq(), farnsworth_wpm=fw)
+        self.session_stats = SessionStats(self.session_mode, charset, wpm, self._freq(), farnsworth_wpm=fw,
+                                          char_stats=not (isinstance(kind, str) and kind in PLAIN_TEXT))
         # Latenz für richtig, aber unsicher (Wiederholung, zu langsam): wie in
         # sequence_mode doppelt so lang wie üblich, höchstens LATENCY_CAP_S.
         median = CharPicker(charset, weighted=True).median_latency() if charset else None
@@ -1490,7 +1628,11 @@ class NetworkModeFrame:
         self.history = []
         self.history_var.set("")
         self.paced_results = []
+        self.paper_items = []
+        self.paper_run = (charset, wpm, fw)
+        self.paper_check.config(state="disabled")
         self.results_card.pack_forget()
+        self.paper_card.pack_forget()
         self.stats_panel.reset()
 
     def _end_client_run(self):
@@ -1504,8 +1646,10 @@ class NetworkModeFrame:
             # Im festen Takt stand die Statistik bis hierher still (sie verrät Fehler).
             self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
         path = self.session_stats.finalize()
-        self.stats_panel.show_saved(path, self.session_stats.log_error)
+        if not self.paper_items:  # sonst kommt die Statistik mit dem Abtippen
+            self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
+        self.paper_check.config(state="normal")
         self.practice_stop()
 
     def _on_item(self, item, received=None):
@@ -1521,10 +1665,15 @@ class NetworkModeFrame:
         if self.session_stats is None:
             self._start_client_run("", wpm, fw)  # mitten im Durchgang dazugekommen
         preset = item.get("band") if item.get("band") in band.PRESETS else None
+        paced = item.get("paced") is True
         self.current = {"n": item["n"], "text": str(item["text"])[:protocol.TEXT_MAX], "wpm": wpm, "fw": fw,
-                        "band": preset, "paced": item.get("paced") is True, "silent": item.get("silent") is True,
+                        "band": preset, "paced": paced, "silent": item.get("silent") is True,
+                        "paper": paced and self.paper_var.get(), "replayed": False,
                         "received": received or time.time()}
-        self.answered = False
+        # Papier: nichts eintippen, keine Antwort; abgetippt wird am Ende.
+        self.answered = self.current["paper"]
+        if self.current["paper"]:
+            self.paper_items.append(self.current)
         self.replayed = False
         self.last_result = None
         self.submit_pending = False
@@ -1707,8 +1856,11 @@ class NetworkModeFrame:
         self.tone_ends = [start + lead + t for t in ends]
         self.tone_end = self.tone_ends[-1] if self.tone_ends else start
         self.playing = True
-        self._set_input(True)
-        status = tr("Höre zu… (Wiederholung)") if self.replayed else tr("Höre zu…")
+        self._set_input(not item["paper"])
+        if item["paper"]:
+            status = tr("Nr. {n} – schreib mit…").format(n=item["n"])
+        else:
+            status = tr("Höre zu… (Wiederholung)") if self.replayed else tr("Höre zu…")
         if silent:
             status += " " + tr("(Lautsprecher)")
         self.trainee_status_var.set(status)
@@ -1721,6 +1873,9 @@ class NetworkModeFrame:
 
     def _playback_done(self):
         self.playing = False
+        if self.current is not None and self.current["paper"]:
+            self.trainee_status_var.set(tr("Nr. {n} – auf Papier").format(n=self.current["n"]))
+            return
         if self.current is None or self.answered:
             return
         if self.submit_pending:
@@ -1813,6 +1968,49 @@ class NetworkModeFrame:
         self.history = self.history[-10:]
         self.history_var.set("   ".join(self.history))
         self.trainee_status_var.set(tr("Warte auf den Trainer…"))
+
+    def _show_paper_sheet(self):
+        """Nach dem Durchgang: je mitgeschriebener Nummer ein Feld."""
+        for child in self.trainee_sheet_holder.winfo_children():
+            child.destroy()
+        self.trainee_sheet = PaperSheet(self.trainee_sheet_holder, [item["n"] for item in self.paper_items])
+        self.trainee_sheet.frame.pack(anchor="w")
+        self.results_card.pack_forget()
+        self.paper_card.pack(fill="x", padx=10, pady=5)
+        self.trainee_status_var.set(tr("Durchgang beendet. Tippe jetzt deine Mitschrift ab und dann „Auswerten“."))
+        self.trainee_sheet.focus(0)
+
+    def submit_paper(self):
+        """Abgetippte Mitschrift werten, dem Trainer schicken und in die
+        eigene Statistik: nur richtig/falsch je Zeichen, ohne Zeit, und
+        nicht für Gewichtung und Lernkartei (wie Klartext)."""
+        if not self.paper_items or self.trainee_sheet is None:
+            return
+        values = self.trainee_sheet.values()
+        charset, wpm, fw = self.paper_run or ("", self.paper_items[0]["wpm"], self.paper_items[0]["fw"])
+        session = SessionStats(self.session_mode, charset, wpm, self._freq(), farnsworth_wpm=fw, char_stats=False)
+        self.paced_results = []
+        self.run_correct = self.run_total = 0
+        for item in self.paper_items:
+            typed = values.get(item["n"], "")
+            result = evaluate(item["text"], typed, None, item["replayed"])
+            for expected, got, _ in result.char_results:
+                session.record_char(expected, got, got == expected, 0.0, 0.0)
+            session.record_group(result.sent, result.typed, wpm=item["wpm"])
+            self.paced_results.append((item, result, item["replayed"]))
+            self.run_total += 1
+            self.run_correct += result.correct
+            if self.client is not None and result.typed:
+                self.client.send({"type": "paper", "n": item["n"], "typed": result.typed})
+        self.stats_panel.refresh(session.summary(), session.char_rows())
+        path = session.finalize()
+        self.stats_panel.show_saved(path, session.log_error)
+        self.paper_items = []
+        self.paper_card.pack_forget()
+        self._show_paced_results()
+        self.feedback_var.set("")
+        self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
+            correct=self.run_correct, total=self.run_total))
 
     def _show_paced_results(self):
         """Nach einem Durchgang im festen Takt: alle Sequenzen mit Lösung,
@@ -1918,6 +2116,7 @@ class NetworkModeFrame:
             "listen": self.listen_var.get(),
             "speaker": self.speaker_var.get(),
             "signs": self.signs_var.get(),
+            "paper": self.paper_var.get(),
             "name": self.name_var.get(),
             "address": self.address_var.get(),
             "custom_text": self.custom_text.get("1.0", "end").rstrip("\n"),
@@ -1944,7 +2143,7 @@ class NetworkModeFrame:
             if data.get("band") == preset:
                 self.band_var.set(label)
         for key, var in (("auto", self.auto_var), ("solution", self.solution_var), ("listen", self.listen_var),
-                         ("speaker", self.speaker_var), ("signs", self.signs_var)):
+                         ("speaker", self.speaker_var), ("signs", self.signs_var), ("paper", self.paper_var)):
             if isinstance(data.get(key), bool):
                 var.set(data[key])
         self._show_speaker_options()

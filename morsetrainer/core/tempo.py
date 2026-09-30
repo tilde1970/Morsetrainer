@@ -11,8 +11,9 @@ Zeichentempo). Angepasst wird immer das effektive Tempo:
   Zeichentempo, aber nicht unter MIN_CHAR_WPM – darunter übernimmt
   Farnsworth, damit die Zeichen nicht so gedehnt werden, dass man
   Punkte und Striche zählen kann."""
+from morsetrainer.core.koch import SLOW_CHAR_WPM
 
-MIN_CHAR_WPM = 15
+MIN_CHAR_WPM = SLOW_CHAR_WPM
 LIMITS = (5, 60)
 CHARS_PER_WORD = 5  # Normwort PARIS: 1 WPM = 5 Zeichen pro Minute
 

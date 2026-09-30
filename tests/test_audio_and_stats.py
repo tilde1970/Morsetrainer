@@ -102,6 +102,16 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(top[0][:3], ("H", "5", 3))
         self.assertNotIn("", [typed for _, typed, _, _ in top])  # verpasst zählt nicht als Paar
 
+    def test_plain_text_stays_out_of_the_char_statistics(self):
+        # Im Klartext verrät der Zusammenhang Zeichen: nur in den Verlauf.
+        session = stats.SessionStats("word", "HS5", 20, 600, char_stats=False)
+        session.record_char("H", "5", False, 0.5, 20.0)
+        session.record_char("S", "S", True, 0.5, 20.0)
+        session.finalize()
+        self.assertEqual(stats.load_all_time(), {})
+        self.assertEqual(stats.recent_char_data(), {})
+        self.assertEqual([entry["mode"] for entry in stats.load_history()], ["word"])
+
     def test_confusion_drill_ignores_untrained_chars(self):
         from morsetrainer.app import MorseTrainerApp
         data = {

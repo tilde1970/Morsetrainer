@@ -42,6 +42,8 @@ class WordModeFrame(SequenceModeFrame):
     # statt Buchstabe für Buchstabe.
     default_style = MEMORIZE
     send_prosigns = True
+    # Im Wort verrät der Zusammenhang viele Buchstaben.
+    char_stats = False
     intro_text = N_(
         "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs – nur solche, die "
         "aus den Zeichen oben bestehen. Mit jeder Koch-Lektion werden es mehr."

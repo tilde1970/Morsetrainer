@@ -9,7 +9,12 @@ enthalten). „Flüssig“ ist eine richtige Antwort nur beim ersten Hören
 Sequenz-Reitern (sequence_mode.answer_limit): Wer länger braucht, hat
 womöglich gezählt statt gehört. Wer bei einer Sequenz verbunden war und nicht geantwortet hat,
 hat alle Zeichen verpasst; für die Verwechslungen der Gruppe zählt das
-nicht, dort geht es ums Verhören."""
+nicht, dort geht es ums Verhören.
+
+Wer auf Papier mitschreibt, tippt seine Mitschrift nach dem Durchgang ab
+(selbst oder der Trainer für ihn). Diese Antworten haben keine Zeit: Sie
+zählen für richtig/falsch, Fehler und schwache Zeichen, aber nicht für
+„flüssig“, die Zeit und die Tempo-Empfehlung."""
 import csv
 import io
 import statistics
@@ -78,6 +83,7 @@ class Scoreboard:
         self.expected = {}  # Nr. -> Namen, die beim Senden verbunden waren
         self.answers = {}   # Name -> {Nr.: Result}
         self.replayed = set()  # Nummern, die für alle wiederholt wurden
+        self.paper = set()  # Namen, deren Antworten vom Papier abgetippt sind
 
     def add_participant(self, name: str) -> None:
         if name not in self.answers:
@@ -120,6 +126,38 @@ class Scoreboard:
         self.answers[name][n] = result
         return result
 
+    def record_paper(self, name: str, n, typed):
+        """Eine abgetippte Zeile vom Papier; überschreibt eine frühere
+        derselben Nummer. None, wenn es die Nummer nicht gibt oder `name`
+        schon digital geantwortet hat (dann ist es jemand anderes)."""
+        if not isinstance(n, int) or n not in self.items or not self.paper_allowed(name):
+            return None
+        self.add_participant(name)
+        self.paper.add(name)
+        self.expected[n].add(name)
+        result = evaluate(self.items[n], typed if isinstance(typed, str) else "", None, n in self.replayed)
+        self.answers[name][n] = result
+        return result
+
+    def paper_allowed(self, name: str) -> bool:
+        return name in self.paper or not self.answers.get(name)
+
+    def add_paper(self, name: str, sheet: dict) -> bool:
+        """Ganzer Papierbogen {Nr.: Zeile}, vom Trainer eingetragen: `name`
+        war bei allen Nummern dabei, leere Zeilen sind verpasst. Ein
+        erneuter Bogen desselben Namens ersetzt den alten. False, wenn
+        `name` schon digital geantwortet hat."""
+        if not self.paper_allowed(name):
+            return False
+        self.add_participant(name)
+        self.paper.add(name)
+        self.answers[name] = {}
+        for n in self.items:
+            self.expected[n].add(name)
+            if normalize(sheet.get(n, "")):
+                self.record_paper(name, n, sheet[n])
+        return True
+
     def answered(self, n: int):
         """Namen, die zu Nr. `n` geantwortet haben."""
         return {name for name, answers in self.answers.items() if n in answers}
@@ -153,9 +191,12 @@ class Scoreboard:
 
     def fluency(self):
         """Anteil flüssig richtiger Sequenzen (0..1) über alle Teilnehmer und
-        Sequenzen, bei denen sie dabei waren; None ohne Sequenzen."""
+        Sequenzen, bei denen sie dabei waren, ohne Papier; None ohne
+        Sequenzen."""
         fluent = total = 0
         for name in self.names:
+            if name in self.paper:
+                continue
             data = self.summary(name)
             fluent += data["fluent_items"]
             total += data["items"]
@@ -196,7 +237,7 @@ class Scoreboard:
         """Empfehlung für das effektive Tempo aus den letzten Sequenzen im
         aktuellen Tempo: (Tempo, Anteil flüssig, Schritt +1/0/−1) oder None,
         solange zu wenig gehört wurde. Nicht beantwortet zählt als nicht
-        flüssig."""
+        flüssig. Papier zählt nicht mit (ohne Zeit nie flüssig)."""
         numbers = sorted(self.items, reverse=True)
         if not numbers:
             return None
@@ -207,7 +248,7 @@ class Scoreboard:
         for n in numbers:
             if self.tempos.get(n) != current:
                 break
-            for name in self.expected[n]:
+            for name in self.expected[n] - self.paper:
                 slots += 1
                 chars += len(normalize(self.items[n]))
                 result = self.answers.get(name, {}).get(n)
@@ -223,7 +264,8 @@ class Scoreboard:
         Spalte mit dem Getippten und der Zeit bis Enter (leer = keine
         Antwort, – = nicht dabei). Der Spaltenkopf nennt das Tempo, ↻ heißt
         „für alle wiederholt“. Richtig, aber nicht flüssig, steht mit „~“
-        dabei (zu langsam oder erst nach der Wiederholung). `headers`:
+        dabei (zu langsam oder erst nach der Wiederholung); bei Papier gibt
+        es kein „flüssig“ (–). `headers`:
         Beschriftungen für Name, richtige Zeichen in %, richtige Sequenzen,
         flüssige Sequenzen, Median Zeit bis Enter (s), häufigste Fehler,
         schwächste Zeichen."""
@@ -250,7 +292,7 @@ class Scoreboard:
                     cells.append("–")
                 elif n in self.answers[name]:
                     result = self.answers[name][n]
-                    mark = " ✗" if not result.correct else "" if result.fluent else " ~"
+                    mark = " ✗" if not result.correct else "" if result.fluent or name in self.paper else " ~"
                     cell = display_text(result.typed) + mark
                     if result.latency is not None:
                         cell += f" ({number(result.latency, 1)} s)"
@@ -258,7 +300,7 @@ class Scoreboard:
                 else:
                     cells.append("")
             writer.writerow([name, f"{share:.0f}", f"{data['correct_items']}/{data['items']}",
-                             f"{data['fluent_items']}/{data['items']}", latency,
+                             "–" if name in self.paper else f"{data['fluent_items']}/{data['items']}", latency,
                              format_confusions(self.confusions(3, name)), format_weak(self.weak_chars(3, name))]
                             + cells)
         return out.getvalue()

@@ -6,6 +6,7 @@ die Ereignisse mit poll() ab und ruft nie blockierend ins Netz:
     ("join", name)            angemeldet
     ("leave", name)           Verbindung weg
     ("answer", name, message) Antwort eines Teilnehmers
+    ("paper", name, message)  abgetippte Zeile vom Papier
 
 Ein Teilnehmer, dessen Verbindung abgerissen ist, kann sich unter
 demselben Namen wieder anmelden; solange die alte Verbindung steht, ist
@@ -168,8 +169,8 @@ class TrainerServer:
                 message = reader.read()
                 if message is None:
                     break
-                if message["type"] == "answer":
-                    self.events.put(("answer", name, message))
+                if message["type"] in ("answer", "paper"):
+                    self.events.put((message["type"], name, message))
         except (OSError, protocol.ProtocolError):
             pass
         finally:

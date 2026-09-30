@@ -67,6 +67,9 @@ class MorseTrainerApp:
     def __init__(self, root):
         self.root = root
         self.running_mode = False
+        # „Fällige gezielt üben“: (Zeichensatz davor, erweiterter Zeichensatz);
+        # nach dem Durchgang kommt der alte zurück, siehe _handle_mode_stop.
+        self.drill_restore = None
         self.restart_args = None  # nach einem Update: neu starten mit diesen Argumenten
         self.groups_offered = set()  # Lektionen, für die der Gruppen-Hinweis schon kam
         self.error_shown = False  # Hinweis auf fehler.log kommt einmal je Sitzung
@@ -187,6 +190,15 @@ class MorseTrainerApp:
         self.cpm_var = tk.StringVar(value="")
         theme.hint(toggle_row, textvariable=self.cpm_var).pack(side="right")
 
+        # Hinweis bei zu langsamem Zeichentempo (koch.SLOW_CHAR_WPM), sonst
+        # ausgeblendet; unter den aufklappbaren Optionen (Zeile 3).
+        self.slow_hint = ttk.Frame(header)
+        self.slow_hint_var = tk.StringVar(value="")
+        theme.hint(self.slow_hint, textvariable=self.slow_hint_var, wrap=520).pack(side="left")
+        ttk.Button(self.slow_hint, text=tr("Koch-Tempo {wpm}/{effective}").format(
+            wpm=koch.RECOMMENDED_WPM, effective=koch.RECOMMENDED_EFFECTIVE_WPM),
+            command=self._set_koch_tempo).pack(side="right")
+
         self.more_frame = ttk.Frame(header)
         farnsworth = ttk.Frame(self.more_frame)
         farnsworth.pack(fill="x", pady=2)
@@ -257,7 +269,15 @@ class MorseTrainerApp:
             wpm = self.wpm_var.get()
             self.cpm_var.set(tr("{wpm} WPM ≈ {cpm} ZpM").format(wpm=wpm, cpm=tempo.cpm(wpm)))
         except tk.TclError:
+            wpm = None
             self.cpm_var.set("")
+        if wpm is not None and wpm < koch.SLOW_CHAR_WPM:
+            self.slow_hint_var.set(tr(
+                "Zeichentempo {wpm} WPM: So langsame Zeichen lassen sich mitzählen. Besser schnelle Zeichen "
+                "mit längeren Pausen (Farnsworth).").format(wpm=wpm))
+            self.slow_hint.grid(row=4, column=0, columnspan=2, sticky="we", pady=(4, 0))
+        else:
+            self.slow_hint.grid_remove()
         try:
             fw = tr("WPM ≈ {cpm} ZpM").format(cpm=tempo.cpm(self.farnsworth_wpm_var.get()))
         except tk.TclError:
@@ -367,13 +387,21 @@ class MorseTrainerApp:
             return
         lesson = koch.lesson_of(charset)
         new_char = koch.newest_char(lesson + 1)
-        if messagebox.askyesno(
-            tr("Nächste Koch-Lektion"),
-            tr("Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).\n\n"
-               "Mit Lektion {next} weitermachen? Neu dazu kommt „{char}“.").format(
-                lesson=lesson, correct=correct, total=total, share=correct / total, next=lesson + 1,
-                char=key_hint(new_char)),
-        ):
+        text = tr("Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).\n\n"
+                  "Mit Lektion {next} weitermachen? Neu dazu kommt „{char}“.").format(
+            lesson=lesson, correct=correct, total=total, share=correct / total, next=lesson + 1,
+            char=key_hint(new_char))
+        try:
+            wpm = self.wpm_var.get()
+        except tk.TclError:
+            wpm = koch.RECOMMENDED_WPM
+        if wpm < koch.SLOW_CHAR_WPM:
+            # Geschafft mit gedehnten Zeichen heißt womöglich: mitgezählt.
+            text += "\n\n" + tr(
+                "Hinweis: Die Zeichen kamen mit {wpm} WPM, so langsam lassen sie sich mitzählen. Besser mit "
+                "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt.").format(
+                wpm=wpm, rec=koch.RECOMMENDED_WPM, eff=koch.RECOMMENDED_EFFECTIVE_WPM)
+        if messagebox.askyesno(tr("Nächste Koch-Lektion"), text):
             self.charset_var.set(koch.lesson_charset(lesson + 1))
             self._play_new_char()
 
@@ -604,13 +632,19 @@ class MorseTrainerApp:
     def _drill_due(self):
         """Fällige Zeichen gezielt: stark gewichtet unter dem ganzen
         Zeichensatz (bei nur zwei, drei Zeichen wäre Raten zu leicht), in
-        den Einzelzeichen. Die Gewichtung wird dafür eingeschaltet."""
+        den Einzelzeichen. Die Gewichtung wird dafür eingeschaltet. Fehlende
+        fällige Zeichen kommen nur für diesen Durchgang dazu; danach gilt
+        wieder der Zeichensatz der Lektion."""
         due = review.due_chars()
         if not due:
             self.review_var.set(self._review_text(review.load()))
             return
-        charset = self.charset_var.get().upper()
-        self.charset_var.set(charset + "".join(ch for ch in due if ch not in charset))
+        charset = self.charset_var.get()
+        if self.drill_restore is not None and charset == self.drill_restore[1]:
+            charset = self.drill_restore[0]  # zweimal gedrückt: vom ursprünglichen aus
+        extended = charset.upper() + "".join(ch for ch in due if ch not in charset.upper())
+        self.drill_restore = (charset, extended) if extended != charset else None
+        self.charset_var.set(extended)
         review.focus = set(due)
         self.weighted_var.set(True)
         self.notebook.select(self.tab_ids[self.mode_titles.index("Einzelzeichen")])
@@ -692,7 +726,7 @@ class MorseTrainerApp:
             if getattr(frame_cls, "uses_tempo_adjust", False):
                 extra["adjust_tempo"] = self.adjust_tempo
             if getattr(frame_cls, "uses_network_hooks", False):
-                extra.update(set_koch_tempo=self._set_koch_tempo, practice_start=self._start_practice,
+                extra.update(practice_start=self._start_practice,
                              practice_stop=self._pause_practice, version=__version__,
                              updater=self.updater)
             mode = frame_cls(
@@ -745,12 +779,22 @@ class MorseTrainerApp:
 
     def _handle_mode_stop(self):
         review.focus = set()  # gezieltes Üben der Fälligen endet mit dem Durchgang
+        self._restore_drill_charset()
         self._record_practice()
         self._update_practice()
         self._unlock_tabs()
         self._refresh_all_time()
         self._offer_next_lesson(self._active_mode())
         self._offer_groups(self._active_mode())
+
+    def _restore_drill_charset(self):
+        """Nach „Fällige gezielt üben“ wieder der Zeichensatz davor, sofern
+        er zwischendurch nicht von Hand geändert wurde."""
+        if self.drill_restore is not None:
+            before, extended = self.drill_restore
+            self.drill_restore = None
+            if self.charset_var.get() == extended:
+                self.charset_var.set(before)
 
     def _active_mode(self):
         current = self.notebook.select()

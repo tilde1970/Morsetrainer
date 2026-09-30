@@ -344,7 +344,6 @@ EN.update({
     "Kopfhören": "Head copy",
     "Lösung zeigen nach": "Show solution after",
     "Fehlversuchen": "failed attempts",
-    "(0 = nie)": "(0 = never)",
     "Tempo wächst mit (richtig +{step}, falsch −{step} WPM)": "Speed adapts (correct +{step}, wrong −{step} WPM)",
     "Bandbedingungen:": "Band conditions:",
     "leicht": "light",
@@ -738,6 +737,10 @@ EN.update({
         "Character speed {wpm} WPM: characters this slow can be counted. Better use fast characters "
         "with longer gaps (Farnsworth).",
     "Flüssig": "Fluent",
+    "Hinweis: Die Zeichen kamen mit {wpm} WPM, so langsam lassen sie sich mitzählen. Besser mit "
+    "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt.":
+        "Note: the characters were sent at {wpm} WPM – that slow, they can be counted. Better keep "
+        "practising at Koch speed {rec}/{eff} so the sound pattern sticks.",
     "(wiederholt)": "(repeated)",
     "(langsam)": "(slow)",
     "(mit Wiederholung – zählt nicht als flüssig)": "(after a repeat – does not count as fluent)",
@@ -788,11 +791,40 @@ EN.update({
     "Die nächste Sequenz kommt nach Ton und Schreibpause, egal wer geantwortet hat. Lösungen gibt es erst am "
     "Ende unter „Auflösung“ – dort lassen sie sich auch anhören. Besser Blöcke von 20–25 Sequenzen mit "
     "Auflösung dazwischen als „bis Stop“. Wer ohne Rechner mitschreibt, hört den Ton über die Lautsprecher "
-    "dieses Rechners.":
+    "dieses Rechners. Die Mitschrift lässt sich danach abtippen: am eigenen Rechner oder hier unter "
+    "„Papierbogen eintragen“ – gewertet ohne Zeit.":
         "The next sequence comes after the tone and the writing pause, whoever has answered. Solutions are "
         "shown only at the end under “Solutions” – you can listen to them there, too. Blocks of 20–25 "
         "sequences with solutions in between work better than “until Stop”. Anyone copying without a computer "
-        "hears the tone from this computer's speakers.",
+        "hears the tone from this computer's speakers. The copy can be typed in afterwards: on one's own "
+        "computer or here under “Enter paper sheet” – scored without timing.",
+    "Antwortbogen drucken": "Print answer sheet",
+    "Papierbogen eintragen": "Enter paper sheet",
+    "Papier": "Paper",
+    "Papierbogen eintragen – {session}": "Enter paper sheet – {session}",
+    "Übernehmen": "Apply",
+    "Je Nummer die Zeile vom Zettel, leer = verpasst. Enter springt zur nächsten Nummer. Gewertet wird "
+    "richtig oder falsch, ohne Zeit – nicht als flüssig und nicht für die Tempo-Empfehlung.":
+        "For each number the line from the sheet, empty = missed. Enter jumps to the next number. Scored as "
+        "right or wrong without timing – not as fluent and not for the speed advice.",
+    "„{name}“ hat schon am Rechner geantwortet – anderen Namen wählen.":
+        "“{name}” has already answered on a computer – choose another name.",
+    "Bogen von {name}: {correct} von {total} richtig. Nächster Bogen?":
+        "Sheet from {name}: {correct} of {total} right. Next sheet?",
+    "Datum": "Date",
+    "Im Browser geöffnet, dort drucken: {path}": "Opened in the browser, print from there: {path}",
+    "Im festen Takt auf Papier mitschreiben und am Ende abtippen":
+        "With fixed pace, copy on paper and type it in at the end",
+    "Mitschrift abtippen": "Type in your copy",
+    "Je Nummer die Zeile vom Zettel, leer = verpasst. Enter springt zur nächsten Nummer. Gewertet wird "
+    "ohne Zeit, also nicht als flüssig.":
+        "For each number the line from your sheet, empty = missed. Enter jumps to the next number. Scored "
+        "without timing, so not as fluent.",
+    "Auswerten": "Evaluate",
+    "Durchgang beendet. Tippe jetzt deine Mitschrift ab und dann „Auswerten“.":
+        "Run finished. Now type in your copy, then “Evaluate”.",
+    "Nr. {n} – schreib mit…": "No. {n} – write it down…",
+    "Nr. {n} – auf Papier": "No. {n} – on paper",
     "Auflösung": "Solutions",
     "Auflösung – {session}": "Solutions – {session}",
     "Kopieren": "Copy",

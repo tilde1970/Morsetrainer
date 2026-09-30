@@ -89,22 +89,29 @@ class GroupEvaluationTest(AppTestCase):
         self.assertEqual(self.group.first_try_correct, 0)
         self.assertEqual(self.group.first_try_total, 3 + 3 + 5)
 
-    def test_unsure_answers_count_as_slow(self):
+    def test_slow_answers_count_as_unsure(self):
         self._start(sq.MEMORIZE)
-        self._answer("KMU", "KMU", replayed=True)
         self._answer("KMU", "KMM", seconds_after_tone=sq.answer_limit(3) + 1)
         rounds = self.group.session_stats.rounds
-        self.assertEqual([r["correct"] for r in rounds], [True] * 5 + [False])  # Quote ehrlich
+        self.assertEqual([r["correct"] for r in rounds], [True, True, False])  # Quote ehrlich
         self.assertTrue(all(r["latency_s"] == stats.LATENCY_CAP_S for r in rounds if r["correct"]))
+
+    def test_recognized_only_after_replay_counts_as_missed(self):
+        # Wie bei Einzelzeichen: erst nach der Leertaste erkannt = nicht erkannt.
+        self._start()
+        self._answer("KMU", "KMM", replayed=True)
+        rounds = self.group.session_stats.rounds
+        self.assertEqual([(r["typed"], r["correct"]) for r in rounds], [("", False), ("", False), ("M", False)])
 
     def test_unsure_latency_is_twice_the_usual(self):
         with mock.patch.object(sq.CharPicker, "median_latency", lambda self: 0.8):
             self._start(sq.MEMORIZE)
-        self._answer("KMU", "KMU", replayed=True)
+        self._answer("KMU", "KMU", seconds_after_tone=sq.answer_limit(3) + 1)
         self.assertEqual({r["latency_s"] for r in self.group.session_stats.rounds}, {1.6})
 
     def test_second_attempt_hides_solution_and_is_not_recorded(self):
         self._start()
+        self.group.give_up_var.set(2)
         self._answer("KMU", "KKK")
         self.assertNotIn("gesendet", self.group.diff_var.get())
         self.assertEqual(len(self.group.session_stats.rounds), 3)
@@ -125,8 +132,7 @@ class GroupEvaluationTest(AppTestCase):
         self.assertIn("– fehlt/zu viel, ^ falsch", g.diff_var.get())
 
     def test_give_up_shows_solution(self):
-        self._start()
-        self.group.give_up_var.set(1)
+        self._start()  # Standard: Lösung nach dem ersten Fehlversuch
         self._answer("KMU", "KKK")
         self.assertIn("gesendet", self.group.diff_var.get())
         self.assertIn("Lösung: KMU", self.group.feedback_var.get())
@@ -535,6 +541,73 @@ class SequenceBandTest(AppTestCase):
             s.stop()
             ending = quietly.call_args[0][0]
             self.assertGreater(len(ending), len(sq.build_text(sq.END_TEXT, *s._audio_settings())))
+
+
+class ContinuousBandTest(AppTestCase):
+    def test_band_conditions_run_under_the_whole_session(self):
+        import numpy as np
+        from morsetrainer.core import band
+        c = self.mode("Kontinuierlich")
+        c.restore_settings({"band": "medium"})
+        self.assertEqual(c.settings()["band"], "medium")
+        c.band = band.preset_conditions("medium", 600)
+        written = []
+        stream = type("S", (), {"write": lambda self, block: written.append(block)})()
+        c.running = True
+        self.assertTrue(c._write(stream, np.zeros(4800, dtype=np.float32)))
+        c.running = False
+        self.assertEqual(sum(len(block) for block in written), 4800)
+        self.assertGreater(max(abs(block).max() for block in written), 0)  # Rauschen auch in Pausen
+
+
+class PlainTextStatsTest(AppTestCase):
+    def test_words_do_not_count_for_the_char_statistics(self):
+        self.assertFalse(self.mode("Wörter").char_stats)
+        self.assertTrue(self.mode("Gruppen").char_stats)
+        self.assertTrue(self.mode("Rufzeichen").char_stats)
+
+    def test_qso_copy_ignores_keys_typed_ahead(self):
+        q = self.mode("QSO")
+        q.qso = mock.Mock(text=lambda: "DE")
+        q.session_stats = stats.SessionStats("qso", "QSO-Text", 20, 600, char_stats=False)
+        now = 1000.0
+        q.sent_log = [{"char": "D", "end_time": now}, {"char": "E", "end_time": now + 1}]
+        # „D“ vorausgeahnt, bevor es zu hören war; „E“ gehört.
+        q.typed_log = [{"char": "D", "time": now - 2}, {"char": "E", "time": now + 1.3}]
+        self.assertEqual(q._finalize_session(), 0.5)
+        self.assertEqual(q.char_marks, (2, {0}))
+        self.assertEqual(stats.load_all_time(), {})
+
+
+class SlowTempoHintTest(AppTestCase):
+    def test_header_warns_about_slow_characters(self):
+        self.app.wpm_var.set(12)
+        self.assertIn("12 WPM", self.app.slow_hint_var.get())
+        self.assertEqual(self.app.slow_hint.winfo_manager(), "grid")
+        self.app.wpm_var.set(koch.SLOW_CHAR_WPM)
+        self.assertEqual(self.app.slow_hint.winfo_manager(), "")
+
+
+class DrillDueTest(AppTestCase):
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(setattr, app_module.review, "focus", set())
+
+    def test_due_chars_are_added_only_for_one_run(self):
+        with mock.patch.object(app_module.review, "due_chars", lambda: ["Q", "K"]):
+            self.app._drill_due()
+            self.assertEqual(self.app.charset_var.get(), "KMURQ")
+            self.app._drill_due()  # zweimal gedrückt: nicht doppelt
+            self.assertEqual(self.app.charset_var.get(), "KMURQ")
+        self.app._restore_drill_charset()
+        self.assertEqual(self.app.charset_var.get(), "KMUR")
+
+    def test_charset_changed_by_hand_stays(self):
+        with mock.patch.object(app_module.review, "due_chars", lambda: ["Q"]):
+            self.app._drill_due()
+        self.app.charset_var.set("KMURES")
+        self.app._restore_drill_charset()
+        self.assertEqual(self.app.charset_var.get(), "KMURES")
 
 
 class QsoRevealTest(AppTestCase):
