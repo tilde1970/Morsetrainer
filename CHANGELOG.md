@@ -1,5 +1,11 @@
 # Änderungen
 
+## 2.20
+
+- **Sprechen:** Das Buchstabieralphabet klingt jetzt richtig. Die deutsche
+  Stimme las die englischen Wörter deutsch, etwa „Mike“ als „Micke“ und
+  „Zulu“ als „Tsulu“; jetzt sagt sie „Maik“, „Suhlu“ usw.
+
 ## 2.19
 
 - **Netzwerk, kontinuierlich:** Die Bandbedingungen liegen jetzt unter dem

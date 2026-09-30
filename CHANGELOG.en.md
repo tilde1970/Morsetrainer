@@ -1,5 +1,11 @@
 # Changes
 
+## 2.20
+
+- **Speak:** the spelling alphabet now sounds right. The German voice read
+  the English words the German way, e.g. “Mike” as “Micke” and “Zulu” as
+  “Tsulu”; now it says them as intended.
+
 ## 2.19
 
 - **Network, continuous:** band conditions now lie under the whole run.
