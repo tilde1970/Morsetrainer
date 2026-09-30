@@ -213,6 +213,31 @@ class StreamTest(unittest.TestCase):
         self.assertEqual(groups[1], ("", None))
         self.assertEqual([correct for _, _, correct, _ in chars], [True, True, False, False, False])
 
+    def test_player_mixes_band_conditions_under_everything(self):
+        import contextlib
+        import numpy as np
+        from morsetrainer.core import band
+
+        written = []
+
+        class FakeStream:
+            latency = 0.0
+
+            def write(self, block):
+                written.append(np.array(block))
+
+        with mock.patch.object(self.stream.audio, "output_stream", lambda: contextlib.nullcontext(FakeStream())):
+            before = time.time()
+            player = self.stream.Player(["KMR", "SU"], 20, 600, None, band.preset_conditions("light", 600))
+            player.thread.join(timeout=5)
+        self.assertIsNone(player.error)
+        # Rauschen schon im Vorlauf und in der Wortpause, der Ton beginnt danach.
+        self.assertGreater(np.abs(written[0]).max(), 0)
+        self.assertGreaterEqual(player.start - before, band.PRESET_LEAD_SECONDS[0])
+        audio = np.concatenate(written)
+        gap_start = int((band.PRESET_LEAD_SECONDS[0] + self.entries[2][1] + 0.05) * 48000)
+        self.assertGreater(np.abs(audio[gap_start:gap_start + 2000]).max(), 0)
+
     def test_stop_drops_groups_not_yet_started(self):
         stopped = 100.0 + self.entries[2][1] + 0.1  # nach R, vor S
         _, groups = self.stream.evaluate(self.entries, 100.0, "KMR", self.keys([0.05] * 3), stopped_at=stopped)

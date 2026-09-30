@@ -6,13 +6,16 @@ ganzen Text, eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt.
 Das Ergebnis geht je Gruppe als gewöhnliche Antwort an den Trainer, so
 gelten Tabelle, Auflösung und CSV unverändert.
 
+Bandbedingungen werden blockweise daruntergemischt (wie im QSO-Modus),
+mit etwas Rauschen vor dem ersten und nach dem letzten Zeichen.
+
 Die Zeitachse (wann welches Zeichen endet) wird aus den Sample-Längen
 gerechnet, nicht beim Abspielen gemessen – so gilt sie genauso, wenn der
 Lautsprecher des Trainers spielt und dieser Rechner stumm bleibt."""
 import threading
 import time
 
-from morsetrainer.core import align, audio
+from morsetrainer.core import align, audio, band as band_mod
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence, word_gap_extra_seconds,
 )
@@ -116,14 +119,24 @@ def effective_wpm(char: str, reaction: float) -> float:
     return code_units(char) * 1.2 / max(reaction, 0.001)
 
 
+def lead_seconds(band) -> float:
+    """Rauschen vor dem ersten Zeichen (0 ohne Bandbedingungen)."""
+    return band_mod.PRESET_LEAD_SECONDS[0] if band else 0.0
+
+
+def tail_seconds(band) -> float:
+    return band_mod.PRESET_LEAD_SECONDS[1] if band else 0.0
+
+
 class Player:
     """Spielt die Gruppen in einem Hintergrund-Thread durchgehend ab (ein
     Stream, wie im Reiter Kontinuierlich). `start` ist danach der Zeitpunkt,
-    zu dem der Ton hörbar beginnt; `error` eine Fehlermeldung oder None."""
+    zu dem das erste Zeichen hörbar beginnt; `error` eine Fehlermeldung
+    oder None. `band`: band.BandConditions oder None."""
 
-    def __init__(self, groups, wpm: int, freq: int, fw=None):
-        self.groups, self.wpm, self.freq, self.fw = groups, wpm, freq, fw
-        self.start = time.time() + AUDIO_LATENCY  # genauer, sobald der Stream offen ist
+    def __init__(self, groups, wpm: int, freq: int, fw=None, band=None):
+        self.groups, self.wpm, self.freq, self.fw, self.band = groups, wpm, freq, fw, band
+        self.start = time.time() + AUDIO_LATENCY + lead_seconds(band)  # genauer, sobald der Stream offen ist
         self.error = None
         self.stopped = False
         self.thread = threading.Thread(target=self._run, daemon=True)
@@ -136,8 +149,12 @@ class Player:
 
     def _run(self):
         try:
+            if self.band is not None:
+                self.band.rewind()
             with audio.output_stream() as stream:
-                self.start = time.time() + stream.latency
+                self.start = time.time() + stream.latency + lead_seconds(self.band)
+                if not self._write(stream, silence(lead_seconds(self.band))):
+                    return
                 gap = silence(word_gap_extra_seconds(self.wpm, self.fw))
                 for index, group in enumerate(self.groups):
                     if index and not self._write(stream, gap):
@@ -146,6 +163,7 @@ class Player:
                         samples = gap if char == " " else build_samples(char, self.wpm, self.freq, self.fw)
                         if not self._write(stream, samples):
                             return
+                self._write(stream, silence(tail_seconds(self.band)))
         except audio.ERRORS as exc:
             self.error = audio.describe(exc)
 
@@ -154,5 +172,8 @@ class Player:
         for begin in range(0, len(samples), chunk):
             if self.stopped:
                 return False
-            stream.write(samples[begin:begin + chunk])
+            block = samples[begin:begin + chunk]
+            if self.band is not None:
+                block = self.band.mix([(block, 0)], len(block))
+            stream.write(block)
         return True

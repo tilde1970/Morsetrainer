@@ -533,10 +533,10 @@ EN.update({
     "Kontinuierlich (ohne Pause, feste Dauer)": "Continuous (no pauses, fixed duration)",
     "Die Gruppen kommen ohne Pause wie im Reiter „Kontinuierlich“, alle tippen fortlaufend mit, ohne "
     "Enter. Ausgewertet wird am Ende; eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Die "
-    "Lösungen stehen danach nummeriert unter „Auflösung“. Ohne Bandbedingungen.":
+    "Lösungen stehen danach nummeriert unter „Auflösung“.":
         "The groups come without pauses as in the “Continuous” tab, everyone types along continuously, "
         "without Enter. Scoring happens at the end; a key only counts if it fits the character in time. "
-        "Afterwards the solutions are listed by number under “Solutions”. Without band conditions.",
+        "Afterwards the solutions are listed by number under “Solutions”.",
     "Kontinuierlich geht nicht mit eigenem Text – Gruppen wählen.":
         "Continuous does not work with own text – choose groups.",
     "Kontinuierlich – noch {time}": "Continuous – {time} left",

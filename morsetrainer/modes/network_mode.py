@@ -306,7 +306,7 @@ class NetworkModeFrame:
         theme.hint(self.duration_frame, wrap=540, text=tr(
             "Die Gruppen kommen ohne Pause wie im Reiter „Kontinuierlich“, alle tippen fortlaufend mit, ohne "
             "Enter. Ausgewertet wird am Ende; eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Die "
-            "Lösungen stehen danach nummeriert unter „Auflösung“. Ohne Bandbedingungen.")).pack(
+            "Lösungen stehen danach nummeriert unter „Auflösung“.")).pack(
             anchor="w", pady=(0, 2))
         self.pause_frame = ttk.Frame(options)
         pause = ttk.Frame(self.pause_frame)
@@ -622,7 +622,6 @@ class NetworkModeFrame:
         for widget in (self.answer_spin, self.auto_check, self.solution_check):
             widget.config(state="disabled" if paced or continuous else "normal")
         self.count_spin.config(state="disabled" if continuous else "normal")
-        self.band_box.config(state="disabled" if continuous else "readonly")
 
     @property
     def hiding(self) -> bool:
@@ -893,17 +892,20 @@ class NetworkModeFrame:
         self.item_n = len(groups)
         self.planned = len(groups)
         self.item = {"type": "stream", "n": len(groups), "text": groups[-1], "wpm": wpm, "fw": fw, "band": None}
-        self.server.broadcast({"type": "stream", "groups": groups, "wpm": wpm, "fw": fw,
+        preset = BAND_LABELS.get(self.band_var.get())
+        conditions = self._band(preset, self._freq()) if preset else None  # vor dem Senden, dauert etwas
+        self.server.broadcast({"type": "stream", "groups": groups, "wpm": wpm, "fw": fw, "band": preset,
                                "silent": self.run_speaker})
         entries, seconds = net_stream.timeline(groups, wpm, fw)
-        start = time.time() + AUDIO_LATENCY
+        start = time.time() + AUDIO_LATENCY + net_stream.lead_seconds(preset)
         if self.listen_var.get() or self.run_speaker:
-            self.stream_player = net_stream.Player(groups, wpm, self._freq(), fw)
+            self.stream_player = net_stream.Player(groups, wpm, self._freq(), fw, conditions)
             start = self.stream_player.start
         self.stream_timing = (entries, start)
         self.stream_end = start + seconds
         token = self.run_token
-        self._after(int((AUDIO_LATENCY + seconds + net_stream.FINISH_GRACE_SECONDS) * 1000),
+        rest = seconds + net_stream.lead_seconds(preset) + net_stream.tail_seconds(preset)
+        self._after(int((AUDIO_LATENCY + rest + net_stream.FINISH_GRACE_SECONDS) * 1000),
                     lambda: self.run_active and token == self.run_token and self.stop_run())
         self._refresh_table()
         self._show_progress()
@@ -1554,9 +1556,13 @@ class NetworkModeFrame:
         self.current = None
         entries, seconds = net_stream.timeline(groups, wpm, fw)
         silent = message.get("silent") is True
-        player = None if silent else net_stream.Player(groups, wpm, self._freq(), fw)
+        preset = message.get("band") if message.get("band") in band.PRESETS else None
+        player = None
+        if not silent:
+            conditions = self._band(preset, self._freq()) if preset else None
+            player = net_stream.Player(groups, wpm, self._freq(), fw, conditions)
         self.stream = {"groups": groups, "wpm": wpm, "fw": fw, "entries": entries, "player": player,
-                       "start": (received or time.time()) + AUDIO_LATENCY}
+                       "start": (received or time.time()) + AUDIO_LATENCY + net_stream.lead_seconds(preset)}
         self.input_var.set("")
         self.key_times, self.typed_so_far = [], ""
         self.feedback_var.set("")
@@ -1567,7 +1573,8 @@ class NetworkModeFrame:
                                     + (" " + tr("(Lautsprecher)") if silent else ""))
         self.stream_token += 1
         token = self.stream_token
-        self._after(int((AUDIO_LATENCY + seconds + net_stream.FINISH_GRACE_SECONDS) * 1000) + 300,
+        rest = seconds + net_stream.lead_seconds(preset) + net_stream.tail_seconds(preset)
+        self._after(int((AUDIO_LATENCY + rest + net_stream.FINISH_GRACE_SECONDS) * 1000) + 300,
                     lambda: token == self.stream_token and self._finish_stream())
 
     def _finish_stream(self, stopped_at=None):

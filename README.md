@@ -160,7 +160,8 @@ Teilnehmer meldet sein Ergebnis je Gruppe, damit gelten Tabelle,
 Auflösung (nummerierte Gruppen) und CSV wie gewohnt; während des
 Durchgangs zeigt der Trainerbildschirm wie im festen Takt nichts, was
 Lösungen verrät, nur die Restzeit. Stop vorzeitig wertet bis dahin.
-Bandbedingungen gibt es hier nicht, eigenen Text auch nicht.
+Bandbedingungen liegen unter dem ganzen Durchgang; eigenen Text gibt es
+hier nicht.
 
 **Ton für alle über den Lautsprecher:** Mit „Ton für alle nur über diesen
 Rechner (Lautsprecher)“ spielt nur der Trainerrechner, die

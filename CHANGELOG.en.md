@@ -1,5 +1,10 @@
 # Changes
 
+## Unreleased
+
+- **Network, continuous:** band conditions now lie under the whole run.
+  Before, only VVV = and + were noisy, not the groups in between.
+
 ## 2.18
 
 - **Network:** new flow “Continuous”: groups without pauses for a set

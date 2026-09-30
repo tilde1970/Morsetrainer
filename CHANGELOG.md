@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Netzwerk, kontinuierlich:** Die Bandbedingungen liegen jetzt unter dem
+  ganzen Durchgang. Bisher waren nur VVV = und + verrauscht, die Gruppen
+  dazwischen nicht.
+
 ## 2.18
 
 - **Netzwerk:** Neuer Ablauf „Kontinuierlich“: Gruppen ohne Pause für eine

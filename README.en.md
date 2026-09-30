@@ -164,8 +164,8 @@ key only counts if it fits the character in time. Each participant
 reports their result per group, so the table, solutions (numbered groups)
 and CSV work as usual; during the run the trainer screen shows nothing
 that gives away solutions, as with the fixed pace, only the remaining
-time. Stopping early scores up to that point. There are no band
-conditions and no own text here.
+time. Stopping early scores up to that point. Band conditions lie under
+the whole run; own text is not available here.
 
 **Solutions:** the button next to “Save as CSV” opens a separate window
 for the projector, in both flows. During the run it shows the current

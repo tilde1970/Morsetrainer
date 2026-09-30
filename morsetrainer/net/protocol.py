@@ -21,7 +21,7 @@ Protokoll: Ist die des Trainers neuer, bietet der Teilnehmer ein Update an
                                               fester Takt, Lösungen erst am Ende;
                                               "silent": Ton kommt vom Lautsprecher
                                               des Trainers, nicht selbst abspielen
-    stream  {"groups", "wpm", "fw", "silent"}
+    stream  {"groups", "wpm", "fw", "band", "silent"}
                                               kontinuierlich: alle Gruppen (Nr. 1, 2, …)
                                               ohne Pause abspielen, fortlaufend
                                               mitschreiben; am Ende je Gruppe eine
