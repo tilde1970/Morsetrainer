@@ -2,12 +2,17 @@
 (UTF-8) mit dem Schlüssel "type".
 
 Teilnehmer -> Trainer:
-    hello   {"proto", "name", "pin"}          erste Nachricht, sonst Abbruch
+    hello   {"proto", "name", "pin", "version"}
+                                              erste Nachricht, sonst Abbruch
     answer  {"n", "typed", "latency", "replayed"}
 
 Trainer -> Teilnehmer:
-    welcome {"session"}                       angenommen
-    reject  {"reason"}                        abgelehnt (REJECT_REASONS), danach zu
+    welcome {"session", "version"}            angenommen
+    reject  {"reason", "version"}             abgelehnt (REJECT_REASONS), danach zu
+
+"version" ist die Programmversion (z. B. "2.16"), unabhängig vom
+Protokoll: Ist die des Trainers neuer, bietet der Teilnehmer ein Update an
+(net/update.py) – auch dann, wenn er wegen des Protokolls abgelehnt wird.
     start   {"kind", "charset", "wpm", "fw", "signs", "band", "silent"}
                                               ein Durchgang beginnt; "signs": VVV =
                                               spielen, die erste Sequenz kommt danach

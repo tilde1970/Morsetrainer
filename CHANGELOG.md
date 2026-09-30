@@ -1,5 +1,16 @@
 # Änderungen
 
+## 2.16
+
+- **Updates:** Beim Start schaut der Morsetrainer nach, ob es eine neuere
+  Version gibt, und bietet an, sie zu laden und neu zu starten (exe bzw.
+  AppImage, von GitHub). Ohne Internet bleibt es still; „Nein“ gilt für
+  diese Version, danach steht nur ein Hinweis in der Fußzeile.
+- **Netzwerk:** Hat der Trainer eine neuere Version, fragt der Teilnehmer
+  beim Verbinden, ob er sie laden soll; nach dem Neustart verbindet er sich
+  von selbst wieder. Wirkt ab dem nächsten Update – wer noch 2.15 oder
+  älter hat, lädt 2.16 einmal von Hand.
+
 ## 2.15
 
 - **Netzwerk:** Vor der ersten Sequenz kommt das Anfangszeichen VVV =,

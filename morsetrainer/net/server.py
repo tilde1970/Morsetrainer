@@ -54,9 +54,10 @@ class Connection:
 
 
 class TrainerServer:
-    def __init__(self, session: str, pin: str):
+    def __init__(self, session: str, pin: str, version=None):
         self.session = session
         self.pin = pin
+        self.version = version  # Programmversion, geht mit welcome/reject an die Teilnehmer
         self.events = queue.Queue()
         self.connections = {}  # Name -> Connection
         self.lock = threading.Lock()
@@ -159,9 +160,9 @@ class TrainerServer:
                     else:
                         conn = self.connections[name] = Connection(sock)
             if reason is not None:
-                sock.sendall(protocol.encode({"type": "reject", "reason": reason}))
+                sock.sendall(protocol.encode({"type": "reject", "reason": reason, "version": self.version}))
                 return
-            conn.send({"type": "welcome", "session": self.session})
+            conn.send({"type": "welcome", "session": self.session, "version": self.version})
             self.events.put(("join", name))
             while self.running:
                 message = reader.read()

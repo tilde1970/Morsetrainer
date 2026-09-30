@@ -2,8 +2,8 @@
 
 Verbindungsaufbau, Lesen und Senden laufen in eigenen Threads; die
 Oberfläche holt die Ereignisse mit poll() ab:
-    ("welcome", session)   angenommen
-    ("reject", reason)     abgelehnt (protocol.REJECT_REASONS)
+    ("welcome", session, version)  angenommen; version: die des Trainers (oder None)
+    ("reject", reason, version)    abgelehnt (protocol.REJECT_REASONS)
     ("error", text)        Verbindung kam nicht zustande
     ("message", message, t)  Nachricht vom Trainer (start, item, replay, close,
                            end); t = Eingang (time.time()), unabhängig davon,
@@ -29,12 +29,12 @@ class TraineeClient:
         self.sock = None
         self.closing = False
 
-    def connect(self, host: str, port: int, name: str, pin: str) -> None:
+    def connect(self, host: str, port: int, name: str, pin: str, version=None) -> None:
         """Baut die Verbindung im Hintergrund auf; das Ergebnis kommt als
-        Ereignis."""
-        threading.Thread(target=self._run, args=(host, port, name, pin), daemon=True).start()
+        Ereignis. `version`: eigene Programmversion (für den Trainer)."""
+        threading.Thread(target=self._run, args=(host, port, name, pin, version), daemon=True).start()
 
-    def _run(self, host, port, name, pin) -> None:
+    def _run(self, host, port, name, pin, version) -> None:
         try:
             sock = socket.create_connection((host, port), timeout=CONNECT_TIMEOUT_S)
         except OSError as exc:
@@ -48,20 +48,20 @@ class TraineeClient:
         welcomed = False
         try:
             sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION,
-                                          "name": name, "pin": pin}))
+                                          "name": name, "pin": pin, "version": version}))
             reply = reader.read()
             if reply is None:
                 self.events.put(("error", "closed"))
                 return
             if reply["type"] == "reject":
-                self.events.put(("reject", reply.get("reason")))
+                self.events.put(("reject", reply.get("reason"), _version(reply)))
                 return
             if reply["type"] != "welcome":
                 self.events.put(("error", reply["type"]))
                 return
             sock.settimeout(None)
             welcomed = True
-            self.events.put(("welcome", str(reply.get("session", ""))))
+            self.events.put(("welcome", str(reply.get("session", "")), _version(reply)))
             threading.Thread(target=self._write_loop, args=(sock,), daemon=True).start()
             while True:
                 message = reader.read()
@@ -141,6 +141,11 @@ def discover(timeout: float = DISCOVER_TIMEOUT_S, port: int = protocol.DISCOVERY
         if host.startswith("127.") and (local, tcp_port) in found:
             del found[(host, tcp_port)]
     return sorted((session, host, tcp_port) for (host, tcp_port), session in found.items())
+
+def _version(reply: dict):
+    version = reply.get("version")
+    return version[:20] if isinstance(version, str) else None
+
 
 def _close(sock) -> None:
     try:

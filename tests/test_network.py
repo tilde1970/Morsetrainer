@@ -200,10 +200,10 @@ class ConnectionTest(unittest.TestCase):
 
     def test_admission(self):
         _, event = self.join("DL4YM")
-        self.assertEqual(event, ("welcome", "Kurs"))
-        self.assertEqual(self.join("DK1AB", pin="0000")[1], ("reject", "pin"))
-        self.assertEqual(self.join("DL4YM")[1], ("reject", "name"))
-        self.assertEqual(self.join("  ")[1], ("reject", "name"))
+        self.assertEqual(event, ("welcome", "Kurs", None))
+        self.assertEqual(self.join("DK1AB", pin="0000")[1], ("reject", "pin", None))
+        self.assertEqual(self.join("DL4YM")[1], ("reject", "name", None))
+        self.assertEqual(self.join("  ")[1], ("reject", "name", None))
         self.assertEqual(self.server_events(1), [("join", "DL4YM")])
         self.assertEqual(self.server.names(), ["DL4YM"])
 
@@ -211,7 +211,7 @@ class ConnectionTest(unittest.TestCase):
         with socket.create_connection(("127.0.0.1", self.server.port)) as sock:
             sock.sendall(protocol.encode({"type": "hello", "proto": 99, "name": "DL4YM", "pin": "4711"}))
             sock.settimeout(2)
-            self.assertEqual(protocol.LineReader(sock).read(), {"type": "reject", "reason": "proto"})
+            self.assertEqual(protocol.LineReader(sock).read(), {"type": "reject", "reason": "proto", "version": None})
 
     def test_broadcast_answer_and_reconnect(self):
         first, _ = self.join("DL4YM")
@@ -228,7 +228,7 @@ class ConnectionTest(unittest.TestCase):
         first.close()
         self.assertEqual(self.server_events(1), [("leave", "DL4YM")])
         # Nach dem Abriss darf derselbe Name wieder rein.
-        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs"))
+        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
 
     def test_client_notices_when_trainer_stops(self):
         client, _ = self.join("DL4YM")
@@ -248,7 +248,7 @@ class ConnectionTest(unittest.TestCase):
             sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
             sock.settimeout(2)
             self.assertEqual(sock.recv(100), b"")  # Verbindung zu
-        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs"))
+        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
 
 
 class NetworkTabTest(unittest.TestCase):
@@ -775,6 +775,35 @@ class NetworkTabTest(unittest.TestCase):
         self.assertTrue(wait_for(lambda: self.trainee.client is None, pump=self.pump))
         self.assertEqual(self.trainee.trainee_status_var.get(), "Abgelehnt: PIN falsch.")
         self.assertEqual(self.stops, [])
+
+    def test_newer_trainer_offers_an_update(self):
+        self.trainer.version, self.trainee.version = "2.16", "2.15"
+        self.trainee.updater = mock.Mock()
+        self.connect()
+        offer = self.trainee.updater.offer
+        self.assertTrue(wait_for(lambda: offer.called, pump=self.pump))
+        version, intro, show, prepare, failed = offer.call_args[0]
+        self.assertEqual(version, "2.16")
+        self.assertIn("Der Trainer nutzt Version 2.16, du hast 2.15.", intro)
+        # Ja: erst trennen, nach dem Neustart mit derselben PIN wieder verbinden.
+        pin = self.trainee.pin_var.get()
+        self.assertEqual(prepare(), ["--join", pin])
+        self.assertIsNone(self.trainee.client)
+        self.assertEqual(str(self.trainee.connect_button.cget("state")), "disabled")
+        failed()
+        self.assertEqual(str(self.trainee.connect_button.cget("state")), "normal")
+        # Auch wer abgelehnt wird, erfährt die Version des Trainers.
+        offer.reset_mock()
+        self.trainee.pin_var.set("nope")
+        self.trainee.connect()
+        self.assertTrue(wait_for(lambda: offer.called, pump=self.pump))
+        self.assertIn("PIN", self.trainee.trainee_status_var.get())
+        # Nach dem Neustart: Reiter als Teilnehmer, gespeicherter Name und Adresse.
+        self.trainee.role_var.set("trainer")
+        self.trainee._show_role()
+        self.trainee.rejoin(pin)
+        self.assertTrue(wait_for(lambda: self.trainee.connected, pump=self.pump))
+        self.assertEqual(self.trainee.role_var.get(), "trainee")
 
     def test_settings_round_trip(self):
         self.trainer.content_var.set("Rufzeichen")

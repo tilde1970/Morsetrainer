@@ -189,6 +189,10 @@ Unter Windows fragt beim ersten Öffnen die Firewall – für private
 Netzwerke zulassen. Findet die Suche nichts (manche WLANs blockieren
 Broadcasts), die angezeigte Adresse von Hand eingeben.
 
+Hat der Trainer eine neuere Programmversion, fragt der Teilnehmer beim
+Verbinden, ob er sie laden soll (siehe *Updates*); danach startet der
+Morsetrainer neu und verbindet sich wieder mit dem Trainer.
+
 ### Hilfe im Programm
 
 Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
@@ -219,6 +223,17 @@ Fertige Programme gibt es unter
 
 Python wird dafür nicht benötigt.
 
+### Updates
+
+Beim Start schaut der Morsetrainer im Hintergrund nach, ob es ein neueres
+Release gibt, und fragt dann, ob er es laden soll. Mit „Ja“ lädt er die
+exe bzw. das AppImage von GitHub, tauscht die eigene Datei aus und startet
+neu; mit „Nein“ fragt er bei dieser Version nicht noch einmal, unten in
+der Fußzeile steht nur „Version … verfügbar“. Ohne Internet passiert
+nichts, das Programm läuft ganz normal. Aus dem Quelltext gestartet gibt es
+nur den Hinweis. Liegt die Datei in einem Ordner ohne Schreibrecht, bitte
+von Hand herunterladen.
+
 ## Aus dem Quelltext starten
 
 Voraussetzung ist Python 3.10 oder neuer mit Tk.
@@ -246,7 +261,7 @@ morsetrainer/
   i18n.py            Sprache (Deutsch/Englisch), Texte in i18n_en.py
   core/              Morsecode, Ton, Bandbedingungen, Texte, Statistik
   modes/             ein Modul je Trainingsreiter
-  net/               Netzwerkmodus (Trainer, Teilnehmer, Auswertung)
+  net/               Netzwerkmodus (Trainer, Teilnehmer, Auswertung), Updates
   widgets/           wiederverwendbare Oberflächen-Bausteine
 tests/               automatische Tests
 packaging/           AppImage-Build (Icon, Desktop-Datei)

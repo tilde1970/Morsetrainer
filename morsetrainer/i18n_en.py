@@ -824,4 +824,16 @@ EN.update({
     "Durchgang beendet.": "Run finished.",
     "Durchgang beendet: {correct} von {total} Sequenzen richtig.": "Run finished: {correct} of {total} sequences correct.",
     "Warte auf den Trainer…": "Waiting for the trainer…",
+
+    # Updates (widgets/updater.py, app.py, Netzwerk-Reiter)
+    "Update": "Update",
+    "Version {version} verfügbar": "Version {version} available",
+    "Version {theirs} ist erschienen, du hast {mine}.": "Version {theirs} has been released, you have {mine}.",
+    "Der Trainer nutzt Version {theirs}, du hast {mine}.": "The trainer uses version {theirs}, you have {mine}.",
+    "Jetzt aktualisieren und neu starten? Geladen wird von GitHub.":
+        "Update and restart now? It is downloaded from GitHub.",
+    "Lade Version {version}… {progress}": "Downloading version {version}… {progress}",
+    "Update fehlgeschlagen: {error}. Von Hand laden: {url}": "Update failed: {error}. Download manually: {url}",
+    "Version {version} installiert – starte neu…": "Version {version} installed – restarting…",
+    "Bitte aktualisieren: {url}": "Please update: {url}",
 })

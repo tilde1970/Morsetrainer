@@ -1,5 +1,16 @@
 # Changes
 
+## 2.16
+
+- **Updates:** on start the Morsetrainer checks whether there is a newer
+  version and offers to download it and restart (exe or AppImage, from
+  GitHub). Without internet it stays quiet; “No” applies to this version,
+  after that there is just a hint in the footer.
+- **Network:** if the trainer has a newer version, the participant is asked
+  on connecting whether to download it; after the restart it connects again
+  by itself. Works from the next update on – anyone still on 2.15 or older
+  downloads 2.16 by hand once.
+
 ## 2.15
 
 - **Network:** the start sign VVV = comes before the first sequence and the

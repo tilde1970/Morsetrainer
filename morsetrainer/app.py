@@ -6,6 +6,8 @@ Gruppen) plus Statistik, mit
 gemeinsamen Einstellungen für Zeichensatz (frei oder als Koch-Lektion),
 Geschwindigkeit und Tonhöhe."""
 import re
+import sys
+import threading
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -25,9 +27,11 @@ from morsetrainer.modes.qso_mode import QsoModeFrame
 from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
+from morsetrainer.net import update
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets.updater import DECLINED, Updater
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
@@ -51,16 +55,25 @@ PRACTICE_TICK_MS = 15000
 ICON_DIR = Path(__file__).resolve().parent / "assets"
 # Höchstens 128: ein 256er-Icon kommt unter X leer an (Tk 8.6).
 ICON_SIZES = (128, 64, 32)
+# Updateprüfung beim Start: so lange nach dem Öffnen, Abfrage alle
+# UPDATE_POLL_MS (die Anfrage selbst gibt ohne Internet nach 5 s auf).
+UPDATE_CHECK_DELAY_MS = 1500
+UPDATE_POLL_MS = 500
 
 
 class MorseTrainerApp:
     def __init__(self, root):
         self.root = root
         self.running_mode = False
+        self.restart_args = None  # nach einem Update: neu starten mit diesen Argumenten
         self.groups_offered = set()  # Lektionen, für die der Gruppen-Hinweis schon kam
         root.title(tr("Morsetrainer von {author}").format(author=__author__))
         self._set_icon()
         self.saved_state = self._load_state()
+        self.updater = Updater(root, __version__, self.restart_for_update)
+        declined = self.saved_state.get("update_declined")
+        self.update_declined = declined if isinstance(declined, str) else None  # „Nein“ zu dieser Version
+        self.update_checked = False  # Updateprüfung beim Start abgeschlossen
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
 
@@ -128,6 +141,7 @@ class MorseTrainerApp:
             "shared": self._shared_settings(),
             "modes": self._mode_settings(),
             i18n.SETTING_KEY: self.language_var.get(),
+            "update_declined": self.update_declined,
         }
         try:
             storage.write_json_atomic(WINDOW_STATE_FILE, state, indent=2)
@@ -391,6 +405,9 @@ class MorseTrainerApp:
         footer.pack(side="bottom", fill="x")
         self.practice_var = tk.StringVar(value="")
         ttk.Label(footer, textvariable=self.practice_var).pack(side="left")
+        self.update_var = tk.StringVar(value="")  # Updateprüfung beim Start
+        ttk.Label(footer, textvariable=self.update_var, style="Footer.TLabel", wraplength=420).pack(
+            side="left", padx=(12, 0))
         ttk.Button(footer, text=tr("Hilfe"), style="Flat.TButton",
                    command=lambda: HelpWindow.show(self.root)).pack(side="right", padx=(8, 0))
         ttk.Label(
@@ -673,7 +690,8 @@ class MorseTrainerApp:
                 extra["adjust_tempo"] = self.adjust_tempo
             if getattr(frame_cls, "uses_network_hooks", False):
                 extra.update(set_koch_tempo=self._set_koch_tempo, practice_start=self._start_practice,
-                             practice_stop=self._pause_practice)
+                             practice_stop=self._pause_practice, version=__version__,
+                             updater=self.updater)
             mode = frame_cls(
                 tab, self.charset_var, self.wpm_var, self.freq_var, self.weighted_var, self.farnsworth_wpm,
                 on_start=self._lock_tabs, on_stop=self._handle_mode_stop, **extra,
@@ -756,6 +774,53 @@ class MorseTrainerApp:
         if mode is not None:
             mode.on_key(event)
 
+    def check_for_update(self):
+        """Beim Start im Hintergrund: Gibt es auf GitHub ein neueres
+        Release? Ohne Internet (oder bei jedem anderen Fehler) bleibt es
+        still – das Programm läuft ganz normal weiter."""
+        result = {}
+
+        def run():
+            try:
+                result["version"] = update.latest_version()
+            except update.UpdateError:
+                result["version"] = None
+        threading.Thread(target=run, daemon=True).start()
+        self._await_update_check(result)
+
+    def _await_update_check(self, result):
+        if "version" not in result:
+            self.root.after(UPDATE_POLL_MS, lambda: self._await_update_check(result))
+            return
+        version = result["version"]
+        self.update_checked = True
+        if not update.is_newer(version, __version__):
+            return
+        available = tr("Version {version} verfügbar").format(version=version)
+        if version == self.update_declined or self.running_mode:
+            # Schon abgelehnt, oder es läuft gerade eine Übung: nicht dazwischenfragen.
+            self.update_var.set(available)
+            return
+        outcome = self.updater.offer(version, tr("Version {theirs} ist erschienen, du hast {mine}.").format(
+            theirs=version, mine=__version__), self.update_var.set)
+        if outcome == DECLINED:
+            self.update_declined = version
+            self.update_var.set(available)
+
+    def restart_for_update(self, args):
+        """Update ist installiert: wie beim Schließen alles speichern, nach
+        dem Ende der Hauptschleife startet main() das neue Programm."""
+        self.restart_args = list(args)
+        self.on_close()
+
+    def join_network(self, pin: str):
+        """Nach dem Neustart durch ein Update (--join PIN): Reiter Netzwerk,
+        wieder als Teilnehmer verbinden."""
+        for tab_id, mode in zip(self.tab_ids, self.modes):
+            if hasattr(mode, "rejoin"):
+                self.notebook.select(tab_id)
+                mode.rejoin(pin)
+
     def on_close(self):
         self._record_practice()
         self._save_state()
@@ -767,9 +832,17 @@ class MorseTrainerApp:
 def main():
     # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
     # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
+    update.cleanup()
     root = tk.Tk(className="Morsetrainer")
-    MorseTrainerApp(root)
+    app = MorseTrainerApp(root)
+    if len(sys.argv) == 3 and sys.argv[1] == "--join":
+        root.after(300, lambda: app.join_network(sys.argv[2]))
+    else:
+        root.after(UPDATE_CHECK_DELAY_MS, app.check_for_update)
     root.mainloop()
+    found = update.installed()
+    if app.restart_args is not None and found is not None:
+        update.relaunch(found[0], app.restart_args)
 
 
 if __name__ == "__main__":

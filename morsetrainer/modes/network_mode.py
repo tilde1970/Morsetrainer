@@ -22,7 +22,9 @@ eigenen Rechner mit der eigenen Tonhöhe; Tempo, Pausen und Störungen gibt
 der Trainer vor. Eingegeben wird wie beim Mitschreiben schon während des
 Tons, ein Versuch je Sequenz; danach steht die Lösung da (im festen Takt
 erst am Ende, als Liste zum Anhören). Die Ergebnisse landen in der eigenen
-Statistik wie ein normaler Durchgang."""
+Statistik wie ein normaler Durchgang. Hat der Trainer eine neuere
+Programmversion, bietet der Reiter an, sie zu laden und neu zu starten
+(net/update.py); danach verbindet er sich wieder."""
 import random
 import threading
 import time
@@ -115,11 +117,17 @@ class NetworkModeFrame:
     uses_tempo_adjust = True
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
-                 set_koch_tempo=None, practice_start=None, practice_stop=None, adjust_tempo=None):
+                 set_koch_tempo=None, practice_start=None, practice_stop=None, adjust_tempo=None, version=None,
+                 updater=None):
         """Übungszeit zählt beim Teilnehmer nur, solange ein Durchgang läuft
         (practice_start/practice_stop), nicht beim Warten auf den Trainer;
-        die Reiter bleiben gesperrt, solange er verbunden ist."""
+        die Reiter bleiben gesperrt, solange er verbunden ist.
+
+        `version`: eigene Programmversion; `updater` (widgets.updater)
+        bietet an, auf die des Trainers zu aktualisieren."""
         self.root = parent.winfo_toplevel()
+        self.version = version
+        self.updater = updater
         self.set_koch_tempo = set_koch_tempo
         self.adjust_tempo = adjust_tempo
         self.practice_start = practice_start or (lambda: None)
@@ -645,7 +653,7 @@ class NetworkModeFrame:
             self.trainer_status_var.set(tr("Ungültiger Port (1024–65535)."))
             return
         name = protocol.clean_name(self.session_var.get()) or tr("Morsekurs")
-        server = TrainerServer(name, make_pin())
+        server = TrainerServer(name, make_pin(), self.version)
         try:
             server.start(port)
         except OSError as exc:
@@ -1240,7 +1248,7 @@ class NetworkModeFrame:
             self.trainee_status_var.set(tr("Bitte die Adresse des Trainers eingeben oder suchen."))
             return
         self.client = net_client.TraineeClient()
-        self.client.connect(address[0], address[1], name, self.pin_var.get().strip())
+        self.client.connect(address[0], address[1], name, self.pin_var.get().strip(), self.version)
         self.connect_button.config(text=tr("Trennen"))
         for widget in (self.name_entry, self.pin_entry, self.address_box):
             widget.config(state="disabled")
@@ -1275,14 +1283,42 @@ class NetworkModeFrame:
             self.on_start_cb()  # sperrt die Reiter; Übungszeit erst ab dem Durchgang
             self.trainee_status_var.set(tr("Verbunden mit „{session}“. Warte auf den Trainer…").format(
                 session=event[1]))
+            self._check_version(event[2])
         elif kind == "reject":
             self.disconnect(tr(REJECTED.get(event[1], REJECTED["name"])))
+            self._check_version(event[2])
         elif kind == "error":
             self.disconnect(tr("Keine Verbindung zum Trainer: {error}").format(error=event[1]))
         elif kind == "closed":
             self.disconnect(tr("Verbindung zum Trainer beendet."))
         elif kind == "message":
             self._on_message(event[1], event[2])
+
+    # --- Update auf die Version des Trainers ----------------------------------------
+    def _check_version(self, version):
+        if self.updater is not None and version is not None:
+            # Erst den Abruf aus dem Netz beenden, dann fragen (modal).
+            self._after(0, lambda: self.updater.offer(
+                version, tr("Der Trainer nutzt Version {theirs}, du hast {mine}.").format(
+                    theirs=version, mine=self.version),
+                self.trainee_status_var.set, self._prepare_update,
+                lambda: self.connect_button.config(state="normal")))
+
+    def _prepare_update(self):
+        """Vor dem Laden trennen; nach dem Neustart wieder verbinden."""
+        pin = self.pin_var.get().strip()
+        if self.client is not None:
+            self.disconnect()
+        self.connect_button.config(state="disabled")
+        return ["--join", pin]
+
+    def rejoin(self, pin: str):
+        """Nach dem Neustart durch ein Update: wieder als Teilnehmer mit
+        demselben Trainer verbinden (Name und Adresse sind gespeichert)."""
+        self.role_var.set(TRAINEE)
+        self._show_role()
+        self.pin_var.set(pin)
+        self.connect()
 
     def _on_message(self, message, received=None):
         """`received`: Eingang der Nachricht; kommt der Ton vom Lautsprecher

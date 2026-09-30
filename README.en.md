@@ -184,6 +184,10 @@ Windows the firewall asks the first time – allow it for private networks.
 If the search finds nothing (some Wi-Fi networks block broadcasts), enter
 the address shown by hand.
 
+If the trainer has a newer program version, the participant is asked on
+connecting whether to download it (see *Updates*); the Morsetrainer then
+restarts and connects to the trainer again.
+
 ### Help in the program
 
 The **Help** button on the right of the footer shows the changes of the
@@ -213,6 +217,16 @@ Ready-to-run programs are on the
 
 No Python installation is needed.
 
+### Updates
+
+On start the Morsetrainer checks in the background whether there is a newer
+release and then asks whether to download it. With “Yes” it downloads the
+exe or AppImage from GitHub, replaces its own file and restarts; with “No”
+it does not ask again for this version, the footer just shows “Version …
+available”. Without internet nothing happens, the program runs as usual.
+Run from source, there is only the hint. If the file is in a folder without
+write permission, please download it by hand.
+
 ## Running from source
 
 Requires Python 3.10 or newer with Tk.
@@ -240,7 +254,7 @@ morsetrainer/
   i18n.py            language (German/English), texts in i18n_en.py
   core/              Morse code, audio, band conditions, texts, statistics
   modes/             one module per training tab
-  net/               network mode (trainer, participants, scoring)
+  net/               network mode (trainer, participants, scoring), updates
   widgets/           reusable interface building blocks
 tests/               automated tests
 packaging/           AppImage build (icon, desktop file)
