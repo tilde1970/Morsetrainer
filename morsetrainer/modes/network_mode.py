@@ -493,7 +493,7 @@ class NetworkModeFrame:
                                font=theme.MONO_LARGE, justify="center")
         self.entry.pack()
         self.entry.bind("<Return>", self.on_submit)
-        theme.hint(entry_frame, text=tr("Enter bestätigt")).pack(pady=(2, 0))
+        theme.hint(entry_frame, text=tr("Nach dem letzten Zeichen automatisch fertig, sonst Enter")).pack(pady=(2, 0))
 
         self.feedback_var = tk.StringVar(value="")
         self.feedback_label = ttk.Label(parent, textvariable=self.feedback_var, style="Feedback.TLabel",
@@ -1524,6 +1524,11 @@ class NetworkModeFrame:
             keep += 1
         self.key_times = self.key_times[:keep] + [time.time()] * (len(typed) - keep)
         self.typed_so_far = typed
+        # So viele Zeichen wie gesendet: fertig, ohne Enter (während des
+        # Tons wie ein vorzeitiges Enter). Nach der Trace, nicht mittendrin.
+        if (self.current is not None and not self.answered and len(typed) > keep
+                and len(typed) >= len(normalize(self.current["text"]))):
+            self.entry.after_idle(self.on_submit)
 
     def _set_input(self, is_open: bool):
         self.entry.config(state="normal" if is_open else "disabled")

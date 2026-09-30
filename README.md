@@ -129,7 +129,7 @@ alle) gibt es eine **Tempo-Empfehlung**: ab 90 % flüssig schneller, unter
 speichern** legt eine Tabelle in `stats/` ab: je Teilnehmer eine Zeile mit
 Trefferquote, flüssigen Sequenzen, häufigsten Fehlern und schwächsten
 Zeichen, je Sequenz eine Spalte (mit Tempo; ↻ = für alle wiederholt) mit
-dem Getippten und der Zeit bis Enter.
+dem Getippten und der Zeit bis zur Antwort.
 
 **Fester Takt (Mitschreiben auf Papier):** Unter *Ablauf* statt „Warten
 auf Antworten“ den festen Takt wählen – für Kurse, in denen nicht jeder
@@ -153,8 +153,8 @@ Teilnehmer nicht auf; sie vergleichen selbst mit der Auflösung.
 Rechner (Lautsprecher)“ spielt nur der Trainerrechner, die
 Teilnehmer-Rechner bleiben stumm und dienen nur zum Eintippen. So braucht
 niemand Kopfhörer, und alle hören gleichzeitig dasselbe – jeder Rechner
-spielt sonst etwas versetzt, je nach Netz und Soundkarte. Die Zeit bis
-Enter rechnen die Teilnehmer-Rechner ab dem Eingang der Sequenz. Die
+spielt sonst etwas versetzt, je nach Netz und Soundkarte. Die Zeit bis zur
+Antwort rechnen die Teilnehmer-Rechner ab dem Eingang der Sequenz. Die
 Lösung kommt in diesem Fall einmal für alle über den Lautsprecher, sobald
 jemand sie nicht flüssig richtig hatte. Das geht in beiden Abläufen und
 passt gut zum festen Takt, wenn Papier und Rechner gemischt sind.
@@ -171,11 +171,12 @@ noch einmal ab, ohne Störungen: So wird aus dem Nachlesen ein Nachhören.
 
 **Teilnehmer:** „Teilnehmer“ wählen, Name oder Rufzeichen und die PIN
 eintragen, **Suchen** (oder die Adresse des Trainers eingeben) und
-**Verbinden**. Getippt wird schon während des Tons, Enter bestätigt; je
-Sequenz gibt es einen Versuch, danach steht die Lösung da. War sie nicht
+**Verbinden**. Getippt wird schon während des Tons; mit dem letzten
+Zeichen ist die Antwort fertig, Enter braucht es nur, wenn man weniger
+Zeichen hat. Je Sequenz gibt es einen Versuch, danach steht die Lösung da. War sie nicht
 flüssig richtig, kommt die Sequenz zur Lösung noch einmal (abschaltbar
 beim Trainer). Wer nicht rechtzeitig fertig wird, dem wird das bis dahin
-Getippte gewertet. Im festen Takt steht nach Enter nur „Nr. 7 notiert“;
+Getippte gewertet. Im festen Takt steht danach nur „Nr. 7 notiert“;
 die Lösungen kommen am Ende als Liste mit gesendet, getippt und ✓/✗, und
 jede Sequenz lässt sich per Doppelklick oder Leertaste noch einmal hören.
 Die Ergebnisse zählen für die eigene Statistik wie ein

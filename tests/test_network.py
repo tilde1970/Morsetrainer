@@ -338,9 +338,11 @@ class NetworkTabTest(unittest.TestCase):
 
         self.trainer.advance()
         self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+        # So viele Zeichen wie gesendet: fertig ohne Enter.
         self.trainee.playing = False
         self.trainee.input_var.set("KMS")
-        self.trainee.on_submit()
+        self.pump()
+        self.assertTrue(self.trainee.answered)
         self.assertIn("gesendet", self.trainee.diff_var.get())
         self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
         self.trainer.advance()  # zwei von zwei gesendet: Ende

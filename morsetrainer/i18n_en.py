@@ -363,6 +363,8 @@ EN.update({
     "Wiederholen (Leertaste)": "Repeat (space bar)",
     "Bereit. Drücke Start.": "Ready. Press Start.",
     "Enter bestätigt": "Enter confirms",
+    "Nach dem letzten Zeichen automatisch fertig, sonst Enter":
+        "Done automatically after the last character, otherwise Enter",
     "Auflösen (Enter)": "Reveal (Enter)",
     "Gewusst (J)": "Knew it (J)",
     "Nicht gewusst (N)": "Didn't know (N)",

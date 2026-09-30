@@ -1,5 +1,12 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Netzwerk:** Kein Enter mehr nötig – sobald so viele Zeichen getippt
+  sind wie gesendet, ist die Antwort fertig (während des Tons wird wie
+  bisher erst danach gewertet). Enter nur noch, wenn man weniger hat; als
+  Antwortzeit zählt der letzte Tastendruck.
+
 ## 2.16
 
 - **Updates:** Beim Start schaut der Morsetrainer nach, ob es eine neuere

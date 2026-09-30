@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+- **Network:** no more Enter needed – as soon as you have typed as many
+  characters as were sent, the answer is done (during the tone it is
+  scored afterwards, as before). Enter only if you have fewer; the last
+  keystroke counts as the answer time.
+
 ## 2.16
 
 - **Updates:** on start the Morsetrainer checks whether there is a newer

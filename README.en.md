@@ -124,7 +124,7 @@ applied with a button in steps of 1 WPM effective. **Save as CSV** stores
 a table
 in `stats/`: one row per participant with accuracy, fluent sequences, most
 common errors and weakest characters, one column per sequence (with speed;
-↻ = repeated for everyone) with what was typed and the time to Enter.
+↻ = repeated for everyone) with what was typed and the time to answer.
 
 **Fixed pace (copying on paper):** under *Flow* choose the fixed pace
 instead of “Wait for answers” – for classes where not everyone has a
@@ -148,7 +148,7 @@ from this computer (speakers)” only the trainer's computer plays; the
 participants' computers stay silent and are only used for typing. Nobody
 needs headphones and everyone hears the same thing at the same time –
 otherwise each computer plays slightly offset, depending on the network
-and sound card. The participants' computers measure the time to Enter
+and sound card. The participants' computers measure the time to answer
 from when the sequence arrived. In this case the solution is played once
 for everyone over the speakers as soon as someone did not have it
 fluently correct. This works in both flows and suits the fixed pace when
@@ -166,11 +166,12 @@ reading the answers becomes hearing them again.
 
 **Participant:** choose “Participant”, enter name or callsign and the PIN,
 **Search** (or enter the trainer's address) and **Connect**. You type
-while the tone is still running, Enter confirms; there is one attempt per
-sequence, then the solution is shown. If it was not fluently correct,
+while the tone is still running; the answer is done with the last
+character, Enter is only needed if you have fewer characters. There is
+one attempt per sequence, then the solution is shown. If it was not fluently correct,
 the sequence is played again with the solution (the trainer can switch
 this off). If you are not finished in time, what you have typed so far is
-scored. At a fixed pace Enter only shows “No. 7 noted”; the solutions
+scored. At a fixed pace it then only shows “No. 7 noted”; the solutions
 come at the end as a list with sent, typed and ✓/✗, and each sequence can
 be heard again with a double-click or space. The results count for your
 own statistics like a normal run,
