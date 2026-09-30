@@ -758,10 +758,12 @@ EN.update({
     "s nach dem Ton, gleich für jede Sequenz": "s after the tone, the same for every sequence",
     "Die nächste Sequenz kommt nach Ton und Schreibpause, egal wer geantwortet hat. Lösungen gibt es erst am "
     "Ende unter „Auflösung“ – dort lassen sie sich auch anhören. Besser Blöcke von 20–25 Sequenzen mit "
-    "Auflösung dazwischen als „bis Stop“.":
+    "Auflösung dazwischen als „bis Stop“. Wer ohne Rechner mitschreibt, hört den Ton über die Lautsprecher "
+    "dieses Rechners.":
         "The next sequence comes after the tone and the writing pause, whoever has answered. Solutions are "
         "shown only at the end under “Solutions” – you can listen to them there, too. Blocks of 20–25 "
-        "sequences with solutions in between work better than “until Stop”.",
+        "sequences with solutions in between work better than “until Stop”. Anyone copying without a computer "
+        "hears the tone from this computer's speakers.",
     "Auflösung": "Solutions",
     "Auflösung – {session}": "Solutions – {session}",
     "Kopieren": "Copy",

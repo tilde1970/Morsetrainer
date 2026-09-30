@@ -135,7 +135,11 @@ it may be on the projector: the status only says “No. 7 of 20”, the table
 only whether an answer came in, results and own text are hidden. **Repeat
 for everyone** (F6) stays for emergencies and extends the deadline;
 **Next** (F7) moves on at once. Blocks of 20–25 sequences with solutions
-in between work better than “until Stop”.
+in between work better than “until Stop”. Anyone taking part with just
+pen and paper needs neither a computer nor a login but listens through the
+trainer's speakers, so switching to the fixed pace turns on “Also play on
+this computer”. These participants do not appear in the table or the
+results; they check their own copy against the solutions.
 
 **Solutions:** the button next to “Save as CSV” opens a separate window
 for the projector, in both flows. During the run it shows the current

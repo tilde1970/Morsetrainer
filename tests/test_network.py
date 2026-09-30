@@ -615,8 +615,11 @@ class NetworkTabTest(unittest.TestCase):
     def test_paced_options(self):
         from morsetrainer.modes.network_mode import PACED, WAIT
         self.assertEqual(str(self.trainer.answer_spin.cget("state")), "normal")
+        self.assertFalse(self.trainer.listen_var.get())
         self.trainer.flow_var.set(PACED)
-        self.trainer._show_flow_options()
+        self.trainer._on_flow_change()
+        # Papier-Teilnehmer hören über den Lautsprecher des Trainers.
+        self.assertTrue(self.trainer.listen_var.get())
         self.assertEqual(str(self.trainer.answer_spin.cget("state")), "disabled")
         self.assertEqual(str(self.trainer.solution_check.cget("state")), "disabled")
         # Die Schreibpause folgt dem Inhalt: Einzelzeichen sind schnell notiert.
@@ -630,6 +633,9 @@ class NetworkTabTest(unittest.TestCase):
         self.trainee.restore_settings(data)
         self.assertEqual(self.trainee.pause_var.get(), 7)
         self.assertEqual(str(self.trainee.auto_check.cget("state")), "disabled")
+        self.trainee.listen_var.set(False)
+        self.trainee.restore_settings({"flow": PACED})  # Wiederherstellen ändert nichts daran
+        self.assertFalse(self.trainee.listen_var.get())
         self.trainee.restore_settings({"flow": WAIT, "pause_s": 99})
         self.assertEqual(str(self.trainee.auto_check.cget("state")), "normal")
         self.assertEqual(self.trainee.pause_var.get(), 7)

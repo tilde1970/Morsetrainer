@@ -266,7 +266,7 @@ class NetworkModeFrame:
         self.flow_var = tk.StringVar(value=WAIT)
         for value, label in ((WAIT, tr("Warten auf Antworten")), (PACED, tr("Fester Takt (Mitschreiben auf Papier)"))):
             ttk.Radiobutton(self.flow_row, text=label, value=value, variable=self.flow_var,
-                            command=self._show_flow_options).pack(side="left", padx=(0, 10))
+                            command=self._on_flow_change).pack(side="left", padx=(0, 10))
         self.pause_frame = ttk.Frame(options)
         pause = ttk.Frame(self.pause_frame)
         pause.pack(fill="x")
@@ -278,7 +278,8 @@ class NetworkModeFrame:
         theme.hint(self.pause_frame, wrap=540, text=tr(
             "Die nächste Sequenz kommt nach Ton und Schreibpause, egal wer geantwortet hat. Lösungen gibt es "
             "erst am Ende unter „Auflösung“ – dort lassen sie sich auch anhören. Besser Blöcke von 20–25 "
-            "Sequenzen mit Auflösung dazwischen als „bis Stop“.")).pack(anchor="w", pady=(0, 2))
+            "Sequenzen mit Auflösung dazwischen als „bis Stop“. Wer ohne Rechner mitschreibt, hört den Ton "
+            "über die Lautsprecher dieses Rechners.")).pack(anchor="w", pady=(0, 2))
 
         self.auto_var = tk.BooleanVar(value=True)
         self.auto_check = ttk.Checkbutton(
@@ -536,6 +537,14 @@ class NetworkModeFrame:
         kind = CONTENTS.get(self.content_var.get())
         self.pause_var.set(PAUSE_DEFAULTS.get(kind, PAUSE_DEFAULTS["groups"]))
         self._show_content_options()
+
+    def _on_flow_change(self):
+        """Wer auf Papier schreibt, hat keinen eigenen Rechner und hört den
+        Ton nur über den Lautsprecher des Trainers: beim Umschalten auf den
+        festen Takt daher gleich mit abspielen (abwählbar)."""
+        if self.flow_var.get() == PACED:
+            self.listen_var.set(True)
+        self._show_flow_options()
 
     def _show_flow_options(self):
         """Im festen Takt gelten Schreibpause statt Antwortzeit, und es gibt

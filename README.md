@@ -140,7 +140,11 @@ nennt nur „Nr. 7 von 20“, die Tabelle nur, ob eine Antwort eingegangen ist,
 Auswertung und eigener Text sind ausgeblendet. **Für alle wiederholen**
 (F6) bleibt für Notfälle und verlängert die Frist; **Weiter** (F7) geht
 sofort zur nächsten. Besser Blöcke von 20–25 Sequenzen mit Auflösung
-dazwischen als „bis Stop“.
+dazwischen als „bis Stop“. Wer nur mit Zettel und Stift dabei ist, braucht
+weder Rechner noch Anmeldung, hört aber über die Lautsprecher des Trainers:
+Beim Umschalten auf den festen Takt ist „Auch an diesem Rechner abspielen“
+daher gleich eingeschaltet. In Tabelle und Auswertung tauchen diese
+Teilnehmer nicht auf; sie vergleichen selbst mit der Auflösung.
 
 **Auflösung:** Der Knopf neben „Als CSV speichern“ öffnet ein eigenes
 Fenster für den Beamer, in beiden Abläufen. Während des Durchgangs zeigt es
