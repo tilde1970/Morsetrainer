@@ -124,13 +124,39 @@ in `stats/`: one row per participant with accuracy, fluent sequences, most
 common errors and weakest characters, one column per sequence (with speed;
 ↻ = repeated for everyone) with what was typed and the time to Enter.
 
+**Fixed pace (copying on paper):** under *Flow* choose the fixed pace
+instead of “Wait for answers” – for classes where not everyone has a
+computer. The next sequence then comes after the tone plus a **writing
+pause**, whoever has answered. The pause is the same for every sequence;
+its default depends on the content (characters 2 s, words 3 s, groups,
+callsigns and own text 4 s, phrases and QSO 5 s), because too much time
+invites brooding. Until the end the trainer's screen shows no solution –
+it may be on the projector: the status only says “No. 7 of 20”, the table
+only whether an answer came in, results and own text are hidden. **Repeat
+for everyone** (F6) stays for emergencies and extends the deadline;
+**Next** (F7) moves on at once. Blocks of 20–25 sequences with solutions
+in between work better than “until Stop”.
+
+**Solutions:** the button next to “Save as CSV” opens a separate window
+for the projector, in both flows. During the run it shows the current
+number in large type (“Missed one? Leave a gap and carry on with the next
+number.”), afterwards all solutions numbered, column by column from top
+to bottom as on paper, in a monospaced font; ↻ marks what was repeated
+for everyone. A−/A+ (or +/−) change the font size, **Copy** puts the list
+on the clipboard. Clicking a solution – or the arrow keys and space –
+plays it again on the trainer's computer without interference, so
+reading the answers becomes hearing them again.
+
 **Participant:** choose “Participant”, enter name or callsign and the PIN,
 **Search** (or enter the trainer's address) and **Connect**. You type
 while the tone is still running, Enter confirms; there is one attempt per
 sequence, then the solution is shown. If it was not fluently correct,
 the sequence is played again with the solution (the trainer can switch
 this off). If you are not finished in time, what you have typed so far is
-scored. The results count for your own statistics like a normal run,
+scored. At a fixed pace Enter only shows “No. 7 noted”; the solutions
+come at the end as a list with sent, typed and ✓/✗, and each sequence can
+be heard again with a double-click or space. The results count for your
+own statistics like a normal run,
 with the time per character as when copying along; after “Repeat for
 everyone” or when too slow, a correct character counts as uncertain and
 comes up more often with “weak favoured”. Practice time only counts while

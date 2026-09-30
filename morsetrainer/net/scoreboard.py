@@ -263,3 +263,39 @@ def format_confusions(confusions) -> str:
 def format_weak(weak) -> str:
     """„H 40 % (10)“: Fehlerquote und wie oft gesendet."""
     return ", ".join(f"{display_text(ch)} {rate:.0%} ({count})" for ch, rate, count in weak)
+
+
+# Auflösung (Beamer, Papier): höchstens so viele Zeilen je Spalte, so viele Spalten.
+SOLUTION_ROWS = 10
+SOLUTION_MAX_COLUMNS = 5
+SOLUTION_GAP = "    "
+
+
+def solution_cells(board: Scoreboard):
+    """[(Nr., „ 7. KMRSU ↻“)] aller gesendeten Sequenzen; die Nummern
+    rechtsbündig, ↻ = für alle wiederholt (auf Papier sonst nicht zu sehen)."""
+    numbers = sorted(board.items)
+    width = len(str(numbers[-1])) if numbers else 1
+    return [(n, f"{n:>{width}}. {display_text(board.items[n])}" + (" ↻" if n in board.replayed else ""))
+            for n in numbers]
+
+
+def solution_columns(count: int) -> int:
+    return max(1, min(SOLUTION_MAX_COLUMNS, -(-count // SOLUTION_ROWS)))
+
+
+def solution_rows(cells, columns: int):
+    """Zeilen der mehrspaltigen Auflösung, spaltenweise nummeriert (wie auf
+    dem Zettel von oben nach unten): [[(Nr., Zelle aufgefüllt)], …]."""
+    if not cells:
+        return []
+    height = -(-len(cells) // columns)
+    blocks = [cells[i:i + height] for i in range(0, len(cells), height)]
+    widths = [max(len(cell) for _, cell in block) for block in blocks]
+    return [[(block[row][0], block[row][1].ljust(width)) for block, width in zip(blocks, widths) if row < len(block)]
+            for row in range(height)]
+
+
+def solution_text(cells, columns: int) -> str:
+    """Die Auflösung als Text zum Kopieren."""
+    return "\n".join(SOLUTION_GAP.join(cell for _, cell in row).rstrip() for row in solution_rows(cells, columns))

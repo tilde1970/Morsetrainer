@@ -9,9 +9,12 @@ Trainer -> Teilnehmer:
     welcome {"session"}                       angenommen
     reject  {"reason"}                        abgelehnt (REJECT_REASONS), danach zu
     start   {"kind"}                          ein Durchgang beginnt
-    item    {"n", "text", "wpm", "fw", "band"}  abspielen und abfragen
+    item    {"n", "text", "wpm", "fw", "band", "paced"}
+                                              abspielen und abfragen; "paced":
+                                              fester Takt, Lösungen erst am Ende
     replay  {"n"}                             dasselbe noch einmal abspielen
-    close   {"n"}                             Zeit um, Eingabe schließen
+    close   {"n", "solution", "reveal"}       Zeit um, Eingabe schließen;
+                                              "reveal": Lösung jetzt zeigen
     end     {}                                Durchgang zu Ende
 
 Gefunden wird ein Trainer per UDP-Broadcast: DISCOVER_QUERY an
@@ -19,7 +22,7 @@ DISCOVERY_PORT, die Antwort ist ein JSON-Objekt {"session", "port"}."""
 import json
 import socket
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 DEFAULT_PORT = 7373
 DISCOVERY_PORT = 7374
 DISCOVER_QUERY = b"MORSETRAINER?"

@@ -9,16 +9,25 @@ nächste kommt, sobald alle geantwortet haben oder die Antwortzeit um ist
 (oder auf Knopfdruck). Die Tabelle zeigt live, wer was getippt hat; am
 Ende gibt es die Auswertung der Gruppe und einen CSV-Export.
 
+Im festen Takt (für Teilnehmer, die auf Papier mitschreiben) kommt die
+nächste Sequenz nach Ton plus Schreibpause, egal wer geantwortet hat, und
+bis zum Ende steht nirgends eine Lösung – der Trainerbildschirm hängt
+womöglich am Beamer. Die Auflösung (eigenes Fenster) zeigt währenddessen
+nur die laufende Nummer, danach alle Lösungen zum Vergleichen und
+Anhören.
+
 Teilnehmer: sucht den Trainer im Netz (oder gibt die Adresse ein),
 meldet sich mit Name/Rufzeichen und PIN an. Der Ton entsteht auf dem
 eigenen Rechner mit der eigenen Tonhöhe; Tempo, Pausen und Störungen gibt
 der Trainer vor. Eingegeben wird wie beim Mitschreiben schon während des
-Tons, ein Versuch je Sequenz; danach steht die Lösung da. Die Ergebnisse
-landen in der eigenen Statistik wie ein normaler Durchgang."""
+Tons, ein Versuch je Sequenz; danach steht die Lösung da (im festen Takt
+erst am Ende, als Liste zum Anhören). Die Ergebnisse landen in der eigenen
+Statistik wie ein normaler Durchgang."""
 import random
 import threading
 import time
 import tkinter as tk
+import tkinter.font as tkfont
 from datetime import datetime
 from tkinter import ttk
 
@@ -36,13 +45,18 @@ from morsetrainer.modes.content import ItemSource
 from morsetrainer.modes.sequence_mode import BAND_LABELS, answer_limit
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
-from morsetrainer.net.scoreboard import Scoreboard, evaluate, format_confusions, format_weak, normalize
+from morsetrainer.net.scoreboard import (
+    Scoreboard, evaluate, format_confusions, format_weak, normalize, solution_cells, solution_columns, solution_rows,
+    solution_text,
+)
 from morsetrainer.net.server import TrainerServer
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 TRAINER, TRAINEE = "trainer", "trainee"
+# Ablauf: warten, bis alle geantwortet haben, oder fester Takt (Papier).
+WAIT, PACED = "wait", "paced"
 # Inhalt: Beschriftung -> Art für content.ItemSource ("custom" = eigener Text).
 CONTENTS = {
     N_("Einzelzeichen"): "chars",
@@ -63,6 +77,13 @@ POLL_MS = 100
 # Nach dem Schließen einer Sequenz bis zur nächsten (Lösung lesen).
 NEXT_DELAY_MS = 2500
 ANSWER_RANGE = (2, 60)
+# Schreibpause im festen Takt, fest je Sequenz. Vorgabe je Inhalt: Ein
+# Zeichen ist schnell notiert, längere Pausen laden zum Grübeln ein.
+PAUSE_RANGE = (1, 30)
+PAUSE_DEFAULTS = {"chars": 2, "groups": 4, "words": 3, "calls": 4, "phrases": 5, "qso": 5, "custom": 4}
+# Auflösungsfenster: Schriftgröße der Lösungen (Standard, kleinste, größte,
+# Schritt); die laufende Nummer ist dreimal so groß.
+SOLUTION_FONT = (28, 12, 96, 4)
 COUNT_RANGE = (0, 200)
 GROUP_LEN_RANGE = (1, 10)
 DEFAULT_ANSWER_S = 8
@@ -126,6 +147,10 @@ class NetworkModeFrame:
         self.item = None       # aktuelle Sequenz, wie verschickt
         self.item_open = False
         self.deadline = None
+        self.run_paced = False  # Durchgang im festen Takt
+        self.pause_s = PAUSE_DEFAULTS["groups"]
+        self.solution_window = None
+        self.solution_selected = None  # markierte Nr. in der Auflösung
 
         # Teilnehmer
         self.client = None
@@ -148,6 +173,7 @@ class NetworkModeFrame:
         self.session_stats = None
         self.run_correct = self.run_total = 0
         self.history = []
+        self.paced_results = []  # fester Takt: (Sequenz, Result, wiederholt), gezeigt erst am Ende
         self._band_cache = {}
 
         self._build_widgets(ScrollableFrame(parent).inner)
@@ -219,8 +245,9 @@ class NetworkModeFrame:
         theme.hint(count, text=tr("(0 = bis Stop)")).pack(side="left", padx=(4, 16))
         ttk.Label(count, text=tr("Antwortzeit:")).pack(side="left", padx=(0, 4))
         self.answer_var = tk.IntVar(value=DEFAULT_ANSWER_S)
-        ttk.Spinbox(count, from_=ANSWER_RANGE[0], to=ANSWER_RANGE[1], textvariable=self.answer_var, width=4).pack(
-            side="left")
+        self.answer_spin = ttk.Spinbox(count, from_=ANSWER_RANGE[0], to=ANSWER_RANGE[1],
+                                       textvariable=self.answer_var, width=4)
+        self.answer_spin.pack(side="left")
         ttk.Label(count, text=tr("s nach dem Ton")).pack(side="left", padx=(4, 0))
         theme.hint(options, wrap=540, text=tr(
             "Die Antwortzeit ist die harte Grenze. Als flüssig zählt eine richtige Antwort nur beim ersten "
@@ -233,12 +260,35 @@ class NetworkModeFrame:
         self.band_var = tk.StringVar(value="aus")
         ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
 
+        self.flow_row = ttk.Frame(options)
+        self.flow_row.pack(fill="x", pady=1)
+        ttk.Label(self.flow_row, text=tr("Ablauf:")).pack(side="left", padx=(0, 4))
+        self.flow_var = tk.StringVar(value=WAIT)
+        for value, label in ((WAIT, tr("Warten auf Antworten")), (PACED, tr("Fester Takt (Mitschreiben auf Papier)"))):
+            ttk.Radiobutton(self.flow_row, text=label, value=value, variable=self.flow_var,
+                            command=self._show_flow_options).pack(side="left", padx=(0, 10))
+        self.pause_frame = ttk.Frame(options)
+        pause = ttk.Frame(self.pause_frame)
+        pause.pack(fill="x")
+        ttk.Label(pause, text=tr("Schreibpause:")).pack(side="left", padx=(0, 4))
+        self.pause_var = tk.IntVar(value=PAUSE_DEFAULTS["groups"])
+        ttk.Spinbox(pause, from_=PAUSE_RANGE[0], to=PAUSE_RANGE[1], textvariable=self.pause_var, width=4).pack(
+            side="left")
+        ttk.Label(pause, text=tr("s nach dem Ton, gleich für jede Sequenz")).pack(side="left", padx=(4, 0))
+        theme.hint(self.pause_frame, wrap=540, text=tr(
+            "Die nächste Sequenz kommt nach Ton und Schreibpause, egal wer geantwortet hat. Lösungen gibt es "
+            "erst am Ende unter „Auflösung“ – dort lassen sie sich auch anhören. Besser Blöcke von 20–25 "
+            "Sequenzen mit Auflösung dazwischen als „bis Stop“.")).pack(anchor="w", pady=(0, 2))
+
         self.auto_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options, text=tr("Automatisch weiter, sobald alle geantwortet haben oder die Zeit um ist"),
-                        variable=self.auto_var).pack(anchor="w", pady=1)
+        self.auto_check = ttk.Checkbutton(
+            options, text=tr("Automatisch weiter, sobald alle geantwortet haben oder die Zeit um ist"),
+            variable=self.auto_var)
+        self.auto_check.pack(anchor="w", pady=1)
         self.solution_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options, text=tr("Lösung vorspielen, wenn sie nicht flüssig richtig war"),
-                        variable=self.solution_var).pack(anchor="w", pady=1)
+        self.solution_check = ttk.Checkbutton(options, text=tr("Lösung vorspielen, wenn sie nicht flüssig richtig war"),
+                                              variable=self.solution_var)
+        self.solution_check.pack(anchor="w", pady=1)
         self.listen_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(options, text=tr("Auch an diesem Rechner abspielen"), variable=self.listen_var).pack(
             anchor="w", pady=1)
@@ -250,8 +300,9 @@ class NetworkModeFrame:
             "so tippen es auch die Teilnehmer.")).pack(anchor="w", pady=(4, 2))
         self.custom_text = tk.Text(self.custom_frame, height=5, width=50, font=theme.MONO, wrap="none")
         self.custom_text.pack(fill="x")
-        self.content_var.trace_add("write", lambda *_: self._show_content_options())
-        self._show_content_options()
+        self.content_var.trace_add("write", lambda *_: self._on_content_change())
+        self._on_content_change()
+        self._show_flow_options()
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
@@ -302,6 +353,9 @@ class NetworkModeFrame:
         self.export_button = ttk.Button(export, text=tr("Als CSV speichern"), command=self.export_csv,
                                         state="disabled")
         self.export_button.pack(side="left")
+        self.solution_button = ttk.Button(export, text=tr("Auflösung"), command=self.show_solution,
+                                          state="disabled")
+        self.solution_button.pack(side="left", padx=(8, 0))
         self.export_var = tk.StringVar(value="")
         theme.hint(export, textvariable=self.export_var).pack(side="left", padx=(8, 0))
 
@@ -426,6 +480,25 @@ class NetworkModeFrame:
         self.diff_var = tk.StringVar(value="")
         ttk.Label(parent, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
 
+        # Fester Takt: alle Sequenzen mit Lösung erst am Ende, zum Anhören.
+        self.results_holder = ttk.Frame(parent)
+        self.results_holder.pack(fill="x")
+        self.results_card = theme.card(self.results_holder, tr("Auflösung"))
+        self.results_card.pack_forget()
+        columns = ("n", "sent", "typed", "mark")
+        self.results_tree = ttk.Treeview(self.results_card, columns=columns, show="headings", height=8)
+        for col, heading, width in (("n", tr("Nr."), 40), ("sent", tr("gesendet"), 170),
+                                    ("typed", tr("getippt"), 170), ("mark", "", 60)):
+            self.results_tree.heading(col, text=heading)
+            self.results_tree.column(col, width=width, anchor="w" if col in ("sent", "typed") else "center")
+        self.results_tree.tag_configure("ok", foreground=theme.OK)
+        self.results_tree.tag_configure("error", foreground=theme.ERROR)
+        self.results_tree.pack(fill="x")
+        for sequence in ("<Double-Button-1>", "<Return>", "<space>"):
+            self.results_tree.bind(sequence, lambda e: self.play_result() or "break")
+        theme.hint(self.results_card, text=tr("Doppelklick oder Leertaste: noch einmal anhören")).pack(
+            anchor="w", pady=(2, 0))
+
         self.stats_panel = StatsPanel(parent)
         history = theme.card(parent, tr("Verlauf"))
         self.history_var = tk.StringVar(value="")
@@ -459,6 +532,27 @@ class NetworkModeFrame:
         for button in self.role_buttons:
             button.config(state="disabled" if busy else "normal")
 
+    def _on_content_change(self):
+        kind = CONTENTS.get(self.content_var.get())
+        self.pause_var.set(PAUSE_DEFAULTS.get(kind, PAUSE_DEFAULTS["groups"]))
+        self._show_content_options()
+
+    def _show_flow_options(self):
+        """Im festen Takt gelten Schreibpause statt Antwortzeit, und es gibt
+        zwischendurch keine Lösung (also auch kein Vorspielen)."""
+        paced = self.flow_var.get() == PACED
+        if paced:
+            self.pause_frame.pack(fill="x", after=self.flow_row)
+        else:
+            self.pause_frame.pack_forget()
+        for widget in (self.answer_spin, self.auto_check, self.solution_check):
+            widget.config(state="disabled" if paced else "normal")
+
+    @property
+    def hiding(self) -> bool:
+        """Durchgang im festen Takt: nichts zeigen, was Lösungen verrät."""
+        return self.run_active and self.run_paced
+
     def _show_content_options(self):
         kind = CONTENTS.get(self.content_var.get())
         if kind == "groups":
@@ -467,7 +561,7 @@ class NetworkModeFrame:
         else:
             self.group_len_label.pack_forget()
             self.group_len_spin.pack_forget()
-        if kind == "custom":
+        if kind == "custom" and not self.hiding:
             self.custom_frame.pack(fill="x", pady=(2, 0))
         else:
             self.custom_frame.pack_forget()
@@ -495,6 +589,8 @@ class NetworkModeFrame:
                 self._on_server_event(event)
             if self.item_open and self.deadline is not None and time.time() >= self.deadline:
                 self.close_item()
+                if self.run_paced:
+                    self.next_item()
         if self.client is not None:
             for event in self.client.poll():
                 self._on_client_event(event)
@@ -535,6 +631,7 @@ class NetworkModeFrame:
         self.session_info_var.set(tr("Adresse {address} · PIN {pin}").format(address=address, pin=server.pin))
         self.open_button.config(text=tr("Sitzung schließen"))
         self.start_button.config(state="normal")
+        self.solution_button.config(state="normal")
         for widget in (self.session_entry, self.port_spin):
             widget.config(state="disabled")
         self.trainer_status_var.set(tr("Warte auf Teilnehmer…"))
@@ -566,7 +663,7 @@ class NetworkModeFrame:
         elif kind == "answer" and self.board is not None:
             message = event[2]
             self.board.record(name, message.get("n"), message.get("typed"), message.get("latency"))
-        if self.item_open and self._all_answered():
+        if self.item_open and not self.run_paced and self._all_answered():
             self.close_item()
         self._refresh_table()
         self._show_progress()
@@ -595,14 +692,15 @@ class NetworkModeFrame:
         kind = CONTENTS.get(self.content_var.get(), "groups")
         try:
             count, self.answer_s = self.count_var.get(), self.answer_var.get()
-            group_len = self.group_len_var.get()
+            group_len, pause_s = self.group_len_var.get(), self.pause_var.get()
             self.wpm_var.get()
         except tk.TclError:
-            self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit oder Gruppenlänge!"))
+            self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         if not (COUNT_RANGE[0] <= count <= COUNT_RANGE[1] and ANSWER_RANGE[0] <= self.answer_s <= ANSWER_RANGE[1]
-                and GROUP_LEN_RANGE[0] <= group_len <= GROUP_LEN_RANGE[1]):
-            self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit oder Gruppenlänge!"))
+                and GROUP_LEN_RANGE[0] <= group_len <= GROUP_LEN_RANGE[1]
+                and PAUSE_RANGE[0] <= pause_s <= PAUSE_RANGE[1]):
+            self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         charset = normalize(self.charset_var.get())
         if kind == "custom":
@@ -626,9 +724,13 @@ class NetworkModeFrame:
         for name in self.server.names():
             self.board.add_participant(name)
         self.run_active = True
+        self.run_paced = self.flow_var.get() == PACED
+        self.pause_s = pause_s
         self.run_token += 1
         self.item_n = 0
         self.item = None
+        self.solution_selected = None
+        self._show_content_options()
         self.start_button.config(text=tr("Stop"))
         self.next_button.config(state="normal")
         self.export_button.config(state="disabled")
@@ -653,7 +755,7 @@ class NetworkModeFrame:
             wpm = self.item["wpm"] if self.item else 20
         self.item_n += 1
         self.item = {"type": "item", "n": self.item_n, "text": text, "wpm": wpm, "fw": self.farnsworth_wpm(),
-                     "band": BAND_LABELS.get(self.band_var.get())}
+                     "band": BAND_LABELS.get(self.band_var.get()), "paced": self.run_paced}
         self.board.add_item(self.item_n, text, self.server.names(), wpm, self.item["fw"])
         self.server.broadcast(self.item)
         self._open_item(self.item)
@@ -664,11 +766,12 @@ class NetworkModeFrame:
         self.item_open = True
         self.replay_button.config(state="normal")
         seconds = sequence_seconds(item["text"], item["wpm"], item["fw"], item["band"])
-        self.deadline = time.time() + AUDIO_LATENCY + seconds + self.answer_s
+        self.deadline = time.time() + AUDIO_LATENCY + seconds + (self.pause_s if self.run_paced else self.answer_s)
         self._refresh_table()
         self._show_progress()
+        self._refresh_solution()
 
-    def _play_here(self, item):
+    def _play_here(self, item, solution=False):
         freq = self._freq()
         samples = build_text(item["text"], item["wpm"], freq, item["fw"])
         if item["band"]:
@@ -676,7 +779,8 @@ class NetworkModeFrame:
         try:
             audio.play(samples)
         except audio.AudioError as exc:
-            self.listen_var.set(False)
+            if not solution:
+                self.listen_var.set(False)
             self.trainer_status_var.set(str(exc))
 
     def close_item(self):
@@ -685,11 +789,13 @@ class NetworkModeFrame:
         self.item_open = False
         self.deadline = None
         self.replay_button.config(state="disabled")
-        solution = self.solution_var.get()
-        self.server.broadcast({"type": "close", "n": self.item["n"], "solution": solution})
+        # Im festen Takt keine Lösung bis zum Ende, und weiter geht es sofort.
+        reveal = not self.run_paced
+        solution = reveal and self.solution_var.get()
+        self.server.broadcast({"type": "close", "n": self.item["n"], "solution": solution, "reveal": reveal})
         self._refresh_table()
         self._show_progress()
-        if self.auto_var.get():
+        if reveal and self.auto_var.get():
             token = self.run_token
             delay = NEXT_DELAY_MS
             if solution:
@@ -731,8 +837,13 @@ class NetworkModeFrame:
         self.start_button.config(text=tr("Start"))
         self.next_button.config(state="disabled")
         self.export_button.config(state="normal" if self.board is not None and self.board.items else "disabled")
-        self.trainer_status_var.set(tr("Durchgang beendet: {n} Sequenzen.").format(n=self.item_n))
+        status = tr("Durchgang beendet: {n} Sequenzen.").format(n=self.item_n)
+        if self.run_paced and self.item_n:
+            status += " " + tr("Die Lösungen stehen unter „Auflösung“.")
+        self.trainer_status_var.set(status)
+        self._show_content_options()
         self._refresh_table()
+        self._refresh_solution()
 
     def _show_progress(self):
         if not self.run_active or self.item is None:
@@ -744,6 +855,10 @@ class NetworkModeFrame:
             return
         n = self.item["n"]
         of = tr(" von {total}").format(total=self.planned) if self.planned else ""
+        if self.run_paced:
+            # Kein Text und keine Zahl der Antworten: Am Beamer liest jeder mit.
+            self.trainer_status_var.set(tr("Nr. {n}{of}").format(n=n, of=of))
+            return
         text = tr("Nr. {n}{of}: {text}").format(n=n, of=of, text=display_text(self.item["text"]))
         if self.item_open:
             waiting = len(self._waiting_for())
@@ -764,11 +879,16 @@ class NetworkModeFrame:
             return
         online = set(self.server.names()) if self.server is not None else set()
         n = self.item["n"] if self.item is not None else None
+        hiding = self.hiding
         for name in self.board.names:
             data = self.board.summary(name)
             state = tr("verbunden") if name in online else tr("getrennt")
             last, tag = "", "gone" if name not in online else ""
-            if n is not None and name in self.board.expected.get(n, ()):
+            if hiding:
+                # Nur ob etwas eingegangen ist; richtig/falsch erst am Ende.
+                if n is not None and name in self.board.expected.get(n, ()):
+                    last = tr("eingegangen") if n in self.board.answers[name] else "…" if self.item_open else ""
+            elif n is not None and name in self.board.expected.get(n, ()):
                 result = self.board.answers[name].get(n)
                 if result is not None:
                     last = ("✓ " if result.correct else "✗ ") + (display_text(result.typed) or "–")
@@ -783,10 +903,10 @@ class NetworkModeFrame:
                     last = tr("keine Antwort")
                     tag = "error"
             share = ""
-            if data["chars_total"]:
+            if data["chars_total"] and not hiding:
                 share = f"{data['chars_correct'] / data['chars_total']:.0%} ({data['correct_items']}/{data['items']})"
-            fluent = f"{data['fluent_items']}/{data['items']}" if data["items"] else ""
-            latency = number(data["latency"], 1) if data["latency"] is not None else ""
+            fluent = f"{data['fluent_items']}/{data['items']}" if data["items"] and not hiding else ""
+            latency = number(data["latency"], 1) if data["latency"] is not None and not hiding else ""
             row = self.tree.insert("", "end", values=(name, state, last, share, fluent, latency),
                                    tags=(tag,) if tag else ())
             if name == selected:
@@ -794,7 +914,7 @@ class NetworkModeFrame:
         if self.table_window is None:
             # Im Reiter wächst die Tabelle mit, darüber hinaus scrollt sie.
             self.tree.configure(height=min(max(len(self.board.names), TABLE_ROWS[0]), TABLE_ROWS[1]))
-        self.group_var.set(self._group_text())
+        self.group_var.set("" if hiding else self._group_text())
         self._show_details()
         self._show_advice()
 
@@ -806,6 +926,9 @@ class NetworkModeFrame:
         """Fehler und schwache Zeichen des ausgewählten Teilnehmers – im
         Gruppenschnitt geht ein Einzelner mit S/H-Problem sonst unter."""
         name = self._selected_name()
+        if self.hiding:
+            self.detail_var.set(tr("Auswertung nach dem Durchgang (fester Takt)."))
+            return
         if name is None or self.board is None:
             self.detail_var.set(tr("Einen Teilnehmer anklicken, um seine Fehler zu sehen.")
                                 if self.board is not None and self.board.names else "")
@@ -817,7 +940,7 @@ class NetworkModeFrame:
 
     def _show_advice(self):
         """Tempo-Empfehlung aus den letzten Sequenzen im aktuellen Tempo."""
-        advice = self.board.tempo_advice() if self.board is not None else None
+        advice = self.board.tempo_advice() if self.board is not None and not self.hiding else None
         self.advice_step = 0
         self.advice_button.pack_forget()
         if advice is None:
@@ -864,6 +987,144 @@ class NetworkModeFrame:
         if weak:
             lines.append(tr("Schwächste Zeichen: ") + format_weak(weak))
         return "\n".join(lines)
+
+    def show_solution(self):
+        """Auflösung in einem eigenen Fenster (Beamer): während des
+        Durchgangs nur die laufende Nummer, danach alle Lösungen nummeriert
+        zum Vergleichen mit dem Zettel. Klick, Pfeiltasten und Leertaste
+        spielen eine Lösung hier noch einmal ab (ohne Störungen)."""
+        if self.solution_window is not None:
+            self.solution_window.lift()
+            return
+        window = tk.Toplevel(self.root)
+        window.title(tr("Auflösung – {session}").format(session=self.session_var.get()))
+        window.geometry("900x600")
+        window.configure(background=theme.BG)
+        family = tkfont.nametofont("TkFixedFont", root=window).actual("family")
+        self.solution_font = tkfont.Font(root=window, family=family, size=SOLUTION_FONT[0])
+        self.solution_big_font = tkfont.Font(root=window, family=family, size=3 * SOLUTION_FONT[0], weight="bold")
+        frame = ttk.Frame(window, padding=10)
+        frame.pack(fill="both", expand=True)
+        bar = ttk.Frame(frame)
+        bar.pack(fill="x", pady=(0, 6))
+        ttk.Button(bar, text="A−", width=3, command=lambda: self.zoom_solution(-1)).pack(side="left")
+        ttk.Button(bar, text="A+", width=3, command=lambda: self.zoom_solution(1)).pack(side="left", padx=(4, 0))
+        self.copy_button = ttk.Button(bar, text=tr("Kopieren"), command=self.copy_solution)
+        self.copy_button.pack(side="left", padx=(12, 0))
+        self.solution_note_var = tk.StringVar(value="")
+        theme.hint(bar, textvariable=self.solution_note_var).pack(side="left", padx=(12, 0))
+        self.solution_number_var = tk.StringVar(value="")
+        self.solution_number = ttk.Frame(frame)
+        tk.Label(self.solution_number, textvariable=self.solution_number_var, font=self.solution_big_font,
+                 background=theme.BG, foreground=theme.TEXT).pack(expand=True, pady=(40, 10))
+        tk.Label(self.solution_number, font=self.solution_font, background=theme.BG, foreground=theme.TEXT,
+                 wraplength=800, text=tr("Verpasst? Lücke lassen und bei der nächsten Nummer weiterschreiben.")).pack()
+        self.solution_list = ttk.Frame(frame)
+        text = tk.Text(self.solution_list, font=self.solution_font, wrap="none", cursor="arrow", padx=10, pady=10)
+        scrollbar = ttk.Scrollbar(self.solution_list, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        text.pack(side="left", fill="both", expand=True)
+        text.tag_configure("selected", background=theme.SELECT)
+        self.solution_text_widget = text
+        window.bind("<Key>", self._on_solution_key)
+        window.protocol("WM_DELETE_WINDOW", self.close_solution)
+        self.solution_window = window
+        self._refresh_solution()
+        window.focus_force()
+
+    def close_solution(self):
+        if self.solution_window is not None:
+            self.solution_window.destroy()
+        self.solution_window = None
+
+    def _solution_cells(self):
+        return solution_cells(self.board) if self.board is not None else []
+
+    def _refresh_solution(self):
+        if self.solution_window is None:
+            return
+        self.copy_button.config(state="disabled" if self.run_active else "normal")
+        if self.run_active:
+            n = self.item["n"] if self.item is not None else 0
+            of = tr(" von {total}").format(total=self.planned) if self.planned else ""
+            self.solution_number_var.set(tr("Nr. {n}{of}").format(n=n, of=of) if n else "")
+            self.solution_note_var.set("")
+            self.solution_list.pack_forget()
+            self.solution_number.pack(fill="both", expand=True)
+            return
+        self.solution_number.pack_forget()
+        self.solution_list.pack(fill="both", expand=True)
+        text = self.solution_text_widget
+        text.config(state="normal")
+        text.delete("1.0", "end")
+        cells = self._solution_cells()
+        if not cells:
+            text.insert("end", tr("Noch keine Sequenzen."))
+        for row in solution_rows(cells, solution_columns(len(cells))):
+            for i, (n, cell) in enumerate(row):
+                if i:
+                    text.insert("end", "    ")
+                tag = f"n{n}"
+                text.insert("end", cell, (tag,))
+                text.tag_bind(tag, "<Button-1>", lambda e, n=n: self.select_solution(n, play=True))
+            text.insert("end", "\n")
+        text.config(state="disabled")
+        self.solution_note_var.set(tr("Klick oder Leertaste: anhören · ↻ = für alle wiederholt") if cells else "")
+        if self.solution_selected is not None:
+            self.select_solution(self.solution_selected)
+
+    def select_solution(self, n, play=False):
+        """Markiert Lösung Nr. `n`; `play`: hier noch einmal abspielen."""
+        if self.solution_window is None or self.board is None or n not in self.board.items:
+            return
+        self.solution_selected = n
+        text = self.solution_text_widget
+        text.tag_remove("selected", "1.0", "end")
+        ranges = text.tag_ranges(f"n{n}")
+        if ranges:
+            text.tag_add("selected", ranges[0], ranges[1])
+            text.see(ranges[0])
+        if play:
+            wpm, fw = self.board.tempos.get(n, (None, None))
+            self._play_here({"text": self.board.items[n], "wpm": wpm or 20, "fw": fw, "band": None}, solution=True)
+
+    def _on_solution_key(self, event):
+        key = event.keysym
+        if key in ("F5", "F6", "F7"):
+            self.on_function_key(key)
+        elif key in ("plus", "KP_Add"):
+            self.zoom_solution(1)
+        elif key in ("minus", "KP_Subtract"):
+            self.zoom_solution(-1)
+        elif key in ("Up", "Down", "Left", "Right", "space", "Return") and not self.run_active:
+            numbers = sorted(self.board.items) if self.board is not None else []
+            if not numbers:
+                return
+            if key in ("space", "Return"):
+                self.select_solution(self.solution_selected or numbers[0], play=True)
+                return
+            height = -(-len(numbers) // solution_columns(len(numbers)))
+            step = {"Up": -1, "Down": 1, "Left": -height, "Right": height}[key]
+            if self.solution_selected in numbers:
+                index = min(max(numbers.index(self.solution_selected) + step, 0), len(numbers) - 1)
+            else:
+                index = 0
+            self.select_solution(numbers[index])
+
+    def zoom_solution(self, direction: int):
+        size, low, high, step = SOLUTION_FONT
+        size = min(max(self.solution_font.cget("size") + direction * step, low), high)
+        self.solution_font.configure(size=size)
+        self.solution_big_font.configure(size=3 * size)
+
+    def copy_solution(self):
+        cells = self._solution_cells()
+        if not cells or self.run_active:
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(solution_text(cells, solution_columns(len(cells))))
+        self.solution_note_var.set(tr("In die Zwischenablage kopiert."))
 
     def export_csv(self):
         if self.board is None or not self.board.items:
@@ -984,11 +1245,14 @@ class NetworkModeFrame:
             if not self.answered:
                 self.submit(timed_out=True)
             # Die Lösung steht da; wer sie nicht flüssig hatte, hört sie dazu.
-            if message.get("solution") and self.last_result is not None and not self.last_result.fluent:
+            # Im festen Takt ("reveal": false) erst am Ende.
+            if (message.get("reveal", True) and message.get("solution") and self.last_result is not None
+                    and not self.last_result.fluent):
                 self.trainee_status_var.set(tr("Hör dir die Lösung noch einmal an…"))
                 self._play_current(solution=True)
         elif kind == "end":
             self._end_client_run()
+            self._show_paced_results()
             self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
                 correct=self.run_correct, total=self.run_total) if self.run_total else tr("Durchgang beendet."))
 
@@ -1003,6 +1267,8 @@ class NetworkModeFrame:
         self.run_correct = self.run_total = 0
         self.history = []
         self.history_var.set("")
+        self.paced_results = []
+        self.results_card.pack_forget()
         self.stats_panel.reset()
 
     def _end_client_run(self):
@@ -1010,6 +1276,9 @@ class NetworkModeFrame:
             return
         if self.current is not None and not self.answered:
             self.submit(timed_out=True)
+        if self.paced_results:
+            # Im festen Takt stand die Statistik bis hierher still (sie verrät Fehler).
+            self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
@@ -1028,7 +1297,7 @@ class NetworkModeFrame:
             self._start_client_run("", wpm, fw)  # mitten im Durchgang dazugekommen
         preset = item.get("band") if item.get("band") in band.PRESETS else None
         self.current = {"n": item["n"], "text": str(item["text"])[:protocol.TEXT_MAX], "wpm": wpm, "fw": fw,
-                        "band": preset}
+                        "band": preset, "paced": item.get("paced") is True}
         self.answered = False
         self.replayed = False
         self.last_result = None
@@ -1053,12 +1322,13 @@ class NetworkModeFrame:
             self._band_cache[key] = band.preset_conditions(preset, freq)
         return self._band_cache[key]
 
-    def _play_current(self, solution=False):
+    def _play_current(self, solution=False, item=None):
         """Spielt die aktuelle Sequenz; beim Abfragen mit offener Eingabe
         (Mitschreiben). Merkt sich, wann jedes Zeichen hörbar beginnt und
         endet, für die Latenz je Zeichen. `solution`: Lösung zum Einprägen
-        vorspielen, ohne Störungen und ohne Eingabe."""
-        item = self.current
+        vorspielen, ohne Störungen und ohne Eingabe (auch eine frühere
+        Sequenz `item`)."""
+        item = item or self.current
         wpm, fw, freq = item["wpm"], item["fw"], self._freq()
         chars = [ch for ch in item["text"].upper() if ch == " " or ch in MORSE_CODE]
         last = max((i for i, ch in enumerate(chars) if ch != " "), default=-1)
@@ -1155,6 +1425,14 @@ class NetworkModeFrame:
         self._record(result, answer_time)
         self.run_total += 1
         self.run_correct += result.correct
+        if self.current["paced"]:
+            # Fester Takt: keine Lösung bis zum Ende, nur die Bestätigung.
+            self.paced_results.append((self.current, result, self.replayed))
+            self.feedback_var.set(tr("Nr. {n} notiert").format(n=self.current["n"]))
+            self.feedback_label.config(foreground=theme.TEXT)
+            self.diff_var.set("")
+            self.trainee_status_var.set(tr("Warte auf die nächste Sequenz…"))
+            return
         sent = display_text(self.current["text"])
         if result.correct:
             note = ""
@@ -1179,6 +1457,38 @@ class NetworkModeFrame:
         self.history = self.history[-10:]
         self.history_var.set("   ".join(self.history))
         self.trainee_status_var.set(tr("Warte auf den Trainer…"))
+
+    def _show_paced_results(self):
+        """Nach einem Durchgang im festen Takt: alle Sequenzen mit Lösung,
+        Eingabe und ✓/✗, zum Anhören; dazu der Verlauf."""
+        if not self.paced_results:
+            return
+        tree = self.results_tree
+        tree.delete(*tree.get_children())
+        for item, result, replayed in self.paced_results:
+            mark = ("✓" if result.correct else "✗") + (" ↻" if replayed else "")
+            tree.insert("", "end", iid=str(item["n"]), tags=("ok" if result.correct else "error",),
+                        values=(item["n"], display_text(item["text"]), display_text(result.typed) or "–", mark))
+        tree.configure(height=min(max(len(self.paced_results), 4), 15))
+        self.results_card.pack(fill="x", padx=10, pady=5)
+        wrong = next((str(item["n"]) for item, result, _ in self.paced_results if not result.correct), None)
+        first = wrong or tree.get_children()[0]
+        tree.selection_set(first)
+        tree.focus(first)
+        tree.see(first)
+        self.history = [f"{result.sent}{'=' if result.correct else '≠'}{result.typed}"
+                        for _, result, _ in self.paced_results][-10:]
+        self.history_var.set("   ".join(self.history))
+
+    def play_result(self):
+        """Markierte Sequenz aus der Auflösung noch einmal abspielen."""
+        selection = self.results_tree.selection()
+        if not selection:
+            return
+        for item, _, _ in self.paced_results:
+            if str(item["n"]) == selection[0]:
+                self._play_current(solution=True, item=item)
+                return
 
     def _char_timing(self, index: int, typed_index, answer_time):
         """(Reaktionszeit, Latenz oder None) für das gesendete Zeichen an
@@ -1208,7 +1518,8 @@ class NetworkModeFrame:
                                            code_units(expected) * 1.2 / max(reaction_time, 0.001),
                                            latency=latency, assumed=assumed)
         self.session_stats.record_group(result.sent, result.typed, wpm=self.current["wpm"])
-        self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
+        if not self.current["paced"]:
+            self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 
     # --- Schnittstelle zum Hauptfenster ---------------------------------------------
     def on_key(self, event):
@@ -1246,6 +1557,7 @@ class NetworkModeFrame:
             "content": self.content_var.get(),
             "band": BAND_LABELS.get(self.band_var.get()),
             "auto": self.auto_var.get(),
+            "flow": self.flow_var.get(),
             "solution": self.solution_var.get(),
             "listen": self.listen_var.get(),
             "name": self.name_var.get(),
@@ -1253,7 +1565,7 @@ class NetworkModeFrame:
             "custom_text": self.custom_text.get("1.0", "end").rstrip("\n"),
         }
         for key, var in (("port", self.port_var), ("count", self.count_var), ("answer_s", self.answer_var),
-                         ("group_len", self.group_len_var)):
+                         ("group_len", self.group_len_var), ("pause_s", self.pause_var)):
             try:
                 data[key] = var.get()
             except tk.TclError:
@@ -1266,6 +1578,9 @@ class NetworkModeFrame:
             self._show_role()
         if data.get("content") in CONTENTS:
             self.content_var.set(data["content"])
+        if data.get("flow") in (WAIT, PACED):
+            self.flow_var.set(data["flow"])
+            self._show_flow_options()
         for label, preset in BAND_LABELS.items():
             if data.get("band") == preset:
                 self.band_var.set(label)
@@ -1279,7 +1594,8 @@ class NetworkModeFrame:
             self.custom_text.insert("1.0", data["custom_text"][:10000])
         for key, var, (low, high) in (("port", self.port_var, (1024, 65535)), ("count", self.count_var, COUNT_RANGE),
                                       ("answer_s", self.answer_var, ANSWER_RANGE),
-                                      ("group_len", self.group_len_var, GROUP_LEN_RANGE)):
+                                      ("group_len", self.group_len_var, GROUP_LEN_RANGE),
+                                      ("pause_s", self.pause_var, PAUSE_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and low <= value <= high:
                 var.set(value)

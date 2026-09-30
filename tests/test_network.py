@@ -13,7 +13,9 @@ import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import stats
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
-from morsetrainer.net.scoreboard import Scoreboard, evaluate
+from morsetrainer.net.scoreboard import (
+    Scoreboard, evaluate, solution_cells, solution_columns, solution_rows, solution_text,
+)
 from morsetrainer.net.server import TrainerServer
 
 
@@ -152,6 +154,24 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(lines[0], "Name;%;ok;fl;s;e;w;1: KMR (20/10 WPM);2: UR (20 WPM) ↻")
         self.assertEqual(lines[1], "A;60;1/2;1/2;1,2;;;KMR (1,2 s);")
         self.assertEqual(lines[2], "B;50;0/1;0/1;;R→S 1×;;–;US ✗")
+
+    def test_solution_is_numbered_down_the_columns(self):
+        board = Scoreboard()
+        for n, text in enumerate(("KMR", "UR", "CQ DE DL4YM", "S", "H+"), start=1):
+            board.add_item(n, text, set())
+        board.mark_replayed(2)
+        cells = solution_cells(board)
+        self.assertEqual(cells[1], (2, "2. UR ↻"))
+        self.assertEqual(cells[4], (5, "5. H+"))
+        rows = solution_rows(cells, 2)
+        self.assertEqual([[n for n, _ in row] for row in rows], [[1, 4], [2, 5], [3]])
+        self.assertEqual(solution_text(cells, 2).splitlines(),
+                         ["1. KMR" + " " * 12 + "4. S", "2. UR ↻" + " " * 11 + "5. H+", "3. CQ DE DL4YM"])
+        self.assertEqual(solution_rows([], 3), [])
+        # Zehn Zeilen je Spalte, höchstens fünf Spalten; Nummern rechtsbündig.
+        self.assertEqual([solution_columns(count) for count in (0, 1, 10, 11, 25, 200)], [1, 1, 1, 2, 3, 5])
+        board.add_item(10, "K", set())
+        self.assertEqual(solution_cells(board)[0][1], " 1. KMR")
 
 
 class ConnectionTest(unittest.TestCase):
@@ -536,6 +556,113 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("beendet", self.trainee.trainee_status_var.get())
         self.assertEqual(self.stops, ["trainee"])
         self.assertFalse(self.trainee.running)
+
+    def start_paced(self, text):
+        from morsetrainer.modes.network_mode import PACED
+        self.trainer.flow_var.set(PACED)
+        self.trainer._show_flow_options()
+        self.start_custom(text)
+
+    def test_paced_run_reveals_nothing_until_the_end(self):
+        from morsetrainer.core import audio
+        self.connect()
+        self.trainer.pause_var.set(1)
+        self.start_paced("KM\nUR\n")
+        self.assertTrue(self.trainee.current["paced"])
+        self.assertEqual(self.trainer.trainer_status_var.get(), "Nr. 1 von 2")
+        self.assertFalse(self.trainer.custom_frame.winfo_ismapped())  # eigener Text verrät alles
+        self.trainee.input_var.set("KS")
+        self.trainee.on_submit()
+        self.assertEqual(self.trainee.feedback_var.get(), "Nr. 1 notiert")
+        self.assertEqual(self.trainee.diff_var.get(), "")
+        self.assertEqual(self.trainee.history_var.get(), "")
+        self.assertTrue(wait_for(lambda: "DL4YM" in self.trainer.board.answered(1), pump=self.pump))
+        # Alle digitalen haben geantwortet, aber auf Papier wird noch geschrieben.
+        self.assertTrue(self.trainer.item_open)
+        values = self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"]
+        self.assertEqual([str(v) for v in values[2:]], ["eingegangen", "", "", ""])
+        self.assertEqual(self.trainer.group_var.get(), "")
+        self.assertIn("nach dem Durchgang", self.trainer.detail_var.get())
+        # Frist um: gleich die nächste, ohne Lösung beim Teilnehmer.
+        with mock.patch.object(audio, "play") as play:
+            self.trainer.deadline = time.time()
+            self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+            self.assertEqual(play.call_count, 1)  # nur die neue Sequenz, keine Lösung
+        self.assertEqual(self.trainee.feedback_var.get(), "")
+        self.trainer.replay_for_all()  # F6 bleibt, wird in der Auflösung markiert
+        self.assertTrue(wait_for(lambda: self.trainee.replayed, pump=self.pump))
+        self.trainee.playing = False
+        self.trainee.input_var.set("UR")
+        self.trainee.on_submit()
+        self.trainer.deadline = time.time()
+        self.assertTrue(wait_for(lambda: not self.trainer.run_active, pump=self.pump))
+        self.assertTrue(wait_for(lambda: self.trainee.session_stats is None, pump=self.pump))
+        # Am Ende: Liste mit Lösungen, der erste Fehler ist markiert, anhörbar.
+        tree = self.trainee.results_tree
+        self.assertTrue(self.trainee.results_card.winfo_ismapped())
+        self.assertEqual([tree.item(row)["values"][1:] for row in tree.get_children()],
+                         [["KM", "KS", "✗"], ["UR", "UR", "✓ ↻"]])
+        self.assertEqual(tree.selection(), ("1",))
+        self.assertIn("KM≠KS", self.trainee.history_var.get())
+        with mock.patch.object(audio, "play") as play:
+            self.trainee.play_result()
+            self.assertEqual(play.call_count, 1)
+        self.assertIn("Auflösung", self.trainer.trainer_status_var.get())
+        self.assertTrue(self.trainer.custom_frame.winfo_ismapped())
+        self.assertIn("✓ UR", self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"][2])
+        self.assertIn("Gruppe:", self.trainer.group_var.get())
+
+    def test_paced_options(self):
+        from morsetrainer.modes.network_mode import PACED, WAIT
+        self.assertEqual(str(self.trainer.answer_spin.cget("state")), "normal")
+        self.trainer.flow_var.set(PACED)
+        self.trainer._show_flow_options()
+        self.assertEqual(str(self.trainer.answer_spin.cget("state")), "disabled")
+        self.assertEqual(str(self.trainer.solution_check.cget("state")), "disabled")
+        # Die Schreibpause folgt dem Inhalt: Einzelzeichen sind schnell notiert.
+        self.trainer.content_var.set("Einzelzeichen")
+        self.assertEqual(self.trainer.pause_var.get(), 2)
+        self.trainer.content_var.set("QSO-Klartext")
+        self.assertEqual(self.trainer.pause_var.get(), 5)
+        self.trainer.pause_var.set(7)
+        data = self.trainer.settings()
+        self.assertEqual((data["flow"], data["pause_s"]), (PACED, 7))
+        self.trainee.restore_settings(data)
+        self.assertEqual(self.trainee.pause_var.get(), 7)
+        self.assertEqual(str(self.trainee.auto_check.cget("state")), "disabled")
+        self.trainee.restore_settings({"flow": WAIT, "pause_s": 99})
+        self.assertEqual(str(self.trainee.auto_check.cget("state")), "normal")
+        self.assertEqual(self.trainee.pause_var.get(), 7)
+
+    def test_solution_window(self):
+        from morsetrainer.core import audio
+        self.connect()
+        self.trainer.pause_var.set(1)
+        self.start_paced("KM\nUR\nS\n")
+        self.trainer.show_solution()
+        window = self.trainer.solution_window
+        self.pump()
+        self.assertEqual(self.trainer.solution_number_var.get(), "Nr. 1 von 3")
+        self.assertFalse(self.trainer.solution_list.winfo_ismapped())
+        self.trainer.advance()
+        self.assertEqual(self.trainer.solution_number_var.get(), "Nr. 2 von 3")
+        self.trainer.stop_run()
+        self.pump()
+        self.assertTrue(self.trainer.solution_list.winfo_ismapped())
+        self.assertEqual(self.trainer.solution_text_widget.get("1.0", "end").splitlines()[:2], ["1. KM", "2. UR"])
+        self.trainer.copy_solution()
+        self.assertEqual(self.root.clipboard_get(), "1. KM\n2. UR")
+        with mock.patch.object(audio, "play") as play:
+            for key in ("Down", "Down", "space"):  # der erste Pfeil markiert Nr. 1
+                window.event_generate("<Key>", keysym=key, when="now")
+            self.assertEqual(self.trainer.solution_selected, 2)
+            self.assertEqual(play.call_count, 1)
+        size = self.trainer.solution_font.cget("size")
+        self.trainer.zoom_solution(1)
+        self.assertGreater(self.trainer.solution_font.cget("size"), size)
+        self.trainer.close_solution()
+        self.assertIsNone(self.trainer.solution_window)
+        self.assertFalse(window.winfo_exists())
 
     def test_wrong_pin_is_shown(self):
         self.trainer.port_var.set(free_port())

@@ -128,13 +128,40 @@ Trefferquote, flüssigen Sequenzen, häufigsten Fehlern und schwächsten
 Zeichen, je Sequenz eine Spalte (mit Tempo; ↻ = für alle wiederholt) mit
 dem Getippten und der Zeit bis Enter.
 
+**Fester Takt (Mitschreiben auf Papier):** Unter *Ablauf* statt „Warten
+auf Antworten“ den festen Takt wählen – für Kurse, in denen nicht jeder
+einen Rechner hat. Die nächste Sequenz kommt dann nach Ton plus
+**Schreibpause**, egal wer schon geantwortet hat. Die Pause gilt gleich für
+jede Sequenz; die Vorgabe richtet sich nach dem Inhalt (Einzelzeichen 2 s,
+Wörter 3 s, Gruppen, Rufzeichen und eigener Text 4 s, Wendungen und QSO 5 s),
+denn wer zu lange Zeit hat, fängt an zu grübeln. Bis zum Ende zeigt der
+Trainerbildschirm keine Lösung – er hängt womöglich am Beamer: Der Status
+nennt nur „Nr. 7 von 20“, die Tabelle nur, ob eine Antwort eingegangen ist,
+Auswertung und eigener Text sind ausgeblendet. **Für alle wiederholen**
+(F6) bleibt für Notfälle und verlängert die Frist; **Weiter** (F7) geht
+sofort zur nächsten. Besser Blöcke von 20–25 Sequenzen mit Auflösung
+dazwischen als „bis Stop“.
+
+**Auflösung:** Der Knopf neben „Als CSV speichern“ öffnet ein eigenes
+Fenster für den Beamer, in beiden Abläufen. Während des Durchgangs zeigt es
+groß die laufende Nummer („Verpasst? Lücke lassen und bei der nächsten
+Nummer weiterschreiben.“), danach alle Lösungen nummeriert, spaltenweise
+von oben nach unten wie auf dem Zettel, in Monoschrift; ↻ markiert, was
+für alle wiederholt wurde. A−/A+ (oder +/−) ändern die Schriftgröße,
+**Kopieren** legt die Liste in die Zwischenablage. Ein Klick auf eine
+Lösung – oder Pfeiltasten und Leertaste – spielt sie am Trainerrechner
+noch einmal ab, ohne Störungen: So wird aus dem Nachlesen ein Nachhören.
+
 **Teilnehmer:** „Teilnehmer“ wählen, Name oder Rufzeichen und die PIN
 eintragen, **Suchen** (oder die Adresse des Trainers eingeben) und
 **Verbinden**. Getippt wird schon während des Tons, Enter bestätigt; je
 Sequenz gibt es einen Versuch, danach steht die Lösung da. War sie nicht
 flüssig richtig, kommt die Sequenz zur Lösung noch einmal (abschaltbar
 beim Trainer). Wer nicht rechtzeitig fertig wird, dem wird das bis dahin
-Getippte gewertet. Die Ergebnisse zählen für die eigene Statistik wie ein
+Getippte gewertet. Im festen Takt steht nach Enter nur „Nr. 7 notiert“;
+die Lösungen kommen am Ende als Liste mit gesendet, getippt und ✓/✗, und
+jede Sequenz lässt sich per Doppelklick oder Leertaste noch einmal hören.
+Die Ergebnisse zählen für die eigene Statistik wie ein
 normaler Durchgang, mit der Zeit je Zeichen wie beim Mitschreiben; nach
 „Für alle wiederholen“ oder zu langsam gilt ein richtiges Zeichen als
 unsicher und kommt mit „schwache bevorzugt“ öfter. Übungszeit zählt nur,

@@ -23,6 +23,16 @@
   participant. F5 start/stop, F6 repeat for everyone, F7 next.
 - The participant table grows (up to 12 rows, then a scroll bar) and can be
   moved into a separate window.
+- **Fixed pace for copying on paper:** the next sequence comes after the
+  tone plus a writing pause (the same for every sequence, default by
+  content), whoever has answered. Until the end the trainer's screen gives
+  no solution away; participants at a computer only see “No. 7 noted” and
+  at the end the whole list to listen to.
+- **Solutions** in a separate window for the projector: the current number
+  during the run, afterwards all solutions numbered in several columns,
+  larger/smaller font, copy; a click plays a solution again.
+- The network protocol is now version 2: trainer and participants need the
+  same program version.
 - The window is now at least 720 pixels wide so that all tabs stay
   readable.
 

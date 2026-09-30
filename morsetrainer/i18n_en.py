@@ -749,7 +749,35 @@ EN.update({
     "Adresse {address} · PIN {pin}": "Address {address} · PIN {pin}",
     "Warte auf Teilnehmer…": "Waiting for participants…",
     "Sitzung geschlossen.": "Session closed.",
-    "Ungültige Anzahl, Antwortzeit oder Gruppenlänge!": "Invalid count, answer time or group length!",
+    "Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!":
+        "Invalid count, answer time, writing pause or group length!",
+    "Ablauf:": "Flow:",
+    "Warten auf Antworten": "Wait for answers",
+    "Fester Takt (Mitschreiben auf Papier)": "Fixed pace (copying on paper)",
+    "Schreibpause:": "Writing pause:",
+    "s nach dem Ton, gleich für jede Sequenz": "s after the tone, the same for every sequence",
+    "Die nächste Sequenz kommt nach Ton und Schreibpause, egal wer geantwortet hat. Lösungen gibt es erst am "
+    "Ende unter „Auflösung“ – dort lassen sie sich auch anhören. Besser Blöcke von 20–25 Sequenzen mit "
+    "Auflösung dazwischen als „bis Stop“.":
+        "The next sequence comes after the tone and the writing pause, whoever has answered. Solutions are "
+        "shown only at the end under “Solutions” – you can listen to them there, too. Blocks of 20–25 "
+        "sequences with solutions in between work better than “until Stop”.",
+    "Auflösung": "Solutions",
+    "Auflösung – {session}": "Solutions – {session}",
+    "Kopieren": "Copy",
+    "In die Zwischenablage kopiert.": "Copied to the clipboard.",
+    "Noch keine Sequenzen.": "No sequences yet.",
+    "Klick oder Leertaste: anhören · ↻ = für alle wiederholt": "Click or space: listen · ↻ = repeated for all",
+    "Verpasst? Lücke lassen und bei der nächsten Nummer weiterschreiben.":
+        "Missed one? Leave a gap and carry on with the next number.",
+    "Nr. {n}{of}": "No. {n}{of}",
+    "Die Lösungen stehen unter „Auflösung“.": "The solutions are under “Solutions”.",
+    "Auswertung nach dem Durchgang (fester Takt).": "Results after the run (fixed pace).",
+    "eingegangen": "received",
+    "Nr.": "No.",
+    "Nr. {n} notiert": "No. {n} noted",
+    "Warte auf die nächste Sequenz…": "Waiting for the next sequence…",
+    "Doppelklick oder Leertaste: noch einmal anhören": "Double-click or space: listen again",
     "Kein eigener Text – eine Zeile je Sequenz eintragen.": "No text of your own – enter one line per sequence.",
     "Durchgang beendet: {n} Sequenzen.": "Run finished: {n} sequences.",
     "{n} Teilnehmer verbunden. Start, wenn alle da sind.": "{n} participant(s) connected. Start when everyone is here.",

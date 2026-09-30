@@ -24,6 +24,17 @@
   F7 weiter.
 - Die Teilnehmertabelle wächst mit (bis 12 Zeilen, dann Scrollbalken) und
   lässt sich in ein eigenes Fenster auskoppeln.
+- **Fester Takt für Mitschreiben auf Papier:** Die nächste Sequenz kommt
+  nach Ton plus Schreibpause (fest je Sequenz, Vorgabe nach Inhalt), egal
+  wer geantwortet hat. Bis zum Ende verrät der Trainerbildschirm keine
+  Lösung; digitale Teilnehmer sehen nur „Nr. 7 notiert“ und am Ende die
+  ganze Liste zum Anhören.
+- **Auflösung** in eigenem Fenster für den Beamer: während des Durchgangs
+  die laufende Nummer, danach alle Lösungen nummeriert und mehrspaltig,
+  Schrift größer/kleiner, Kopieren; ein Klick spielt eine Lösung noch
+  einmal ab.
+- Das Netzwerkprotokoll hat jetzt Version 2: Trainer und Teilnehmer
+  brauchen dieselbe Programmversion.
 - Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter
   lesbar bleiben.
 
