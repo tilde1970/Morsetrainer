@@ -108,7 +108,9 @@ Bandbedingungen wählen; Zeichensatz, Tempo und Farnsworth kommen aus der
 Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist der Reiter
 darauf hin, dass man die Zeichen mitzählen kann, und bietet das Koch-Tempo
 20/10 an.
-Nach **Start** bekommen alle dieselbe Sequenz zur selben Zeit. Die
+Nach **Start** kommt zuerst das Anfangszeichen VVV = (abschaltbar), nach der
+letzten Sequenz das Schlusszeichen +. Dann bekommen alle dieselbe Sequenz
+zur selben Zeit. Die
 nächste kommt, sobald alle geantwortet haben oder die Antwortzeit um ist
 (oder mit **Weiter**); **Für alle wiederholen** spielt die aktuelle noch
 einmal. Die Tabelle zeigt je Teilnehmer die aktuelle Antwort, den Anteil

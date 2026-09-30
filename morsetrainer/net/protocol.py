@@ -8,7 +8,9 @@ Teilnehmer -> Trainer:
 Trainer -> Teilnehmer:
     welcome {"session"}                       angenommen
     reject  {"reason"}                        abgelehnt (REJECT_REASONS), danach zu
-    start   {"kind"}                          ein Durchgang beginnt
+    start   {"kind", "charset", "wpm", "fw", "signs", "band", "silent"}
+                                              ein Durchgang beginnt; "signs": VVV =
+                                              spielen, die erste Sequenz kommt danach
     item    {"n", "text", "wpm", "fw", "band", "paced", "silent"}
                                               abspielen und abfragen; "paced":
                                               fester Takt, Lösungen erst am Ende;
@@ -17,7 +19,8 @@ Trainer -> Teilnehmer:
     replay  {"n"}                             dasselbe noch einmal abspielen
     close   {"n", "solution", "reveal"}       Zeit um, Eingabe schließen;
                                               "reveal": Lösung jetzt zeigen
-    end     {}                                Durchgang zu Ende
+    end     {"signs", "wpm", "band", "silent"}
+                                              Durchgang zu Ende; "signs": + spielen
 
 Gefunden wird ein Trainer per UDP-Broadcast: DISCOVER_QUERY an
 DISCOVERY_PORT, die Antwort ist ein JSON-Objekt {"session", "port"}."""

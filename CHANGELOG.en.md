@@ -1,5 +1,12 @@
 # Changes
 
+## 2.15
+
+- **Network:** the start sign VVV = comes before the first sequence and the
+  end sign + after the last one – as in the other tabs, also under the band
+  conditions and over the trainer's speakers. Can be switched off under
+  “Send start and end signs”.
+
 ## 2.14
 
 - **New “Network” tab: practising as a group.** A trainer opens a session

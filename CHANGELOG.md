@@ -1,5 +1,12 @@
 # Änderungen
 
+## 2.15
+
+- **Netzwerk:** Vor der ersten Sequenz kommt das Anfangszeichen VVV =,
+  nach der letzten das Schlusszeichen + – wie in den übrigen Reitern, auch
+  unter den Bandbedingungen und über den Lautsprecher des Trainers.
+  Abschaltbar unter „Anfangs- und Schlusszeichen senden“.
+
 ## 2.14
 
 - **Neuer Reiter „Netzwerk“: Üben in der Gruppe.** Ein Trainer öffnet im

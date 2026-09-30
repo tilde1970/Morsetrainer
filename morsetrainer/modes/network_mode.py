@@ -35,8 +35,8 @@ from morsetrainer.core import align, audio, band, koch, stats, tempo
 import numpy as np
 
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_samples, build_text, char_gap_seconds, code_units, display_text,
-    silence, word_gap_extra_seconds,
+    AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
+    code_units, display_text, silence, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
@@ -260,6 +260,9 @@ class NetworkModeFrame:
         ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
         self.band_var = tk.StringVar(value="aus")
         ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
+        self.signs_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(options, text=tr("Anfangs- und Schlusszeichen senden (VVV = und +)"),
+                        variable=self.signs_var).pack(anchor="w", pady=1)
 
         self.flow_row = ttk.Frame(options)
         self.flow_row.pack(fill="x", pady=1)
@@ -758,6 +761,7 @@ class NetworkModeFrame:
         self.run_active = True
         self.run_paced = self.flow_var.get() == PACED
         self.run_speaker = self.speaker_var.get()
+        self.run_signs = self.signs_var.get()
         self.pause_s = pause_s
         self.run_token += 1
         self.item_n = 0
@@ -768,9 +772,20 @@ class NetworkModeFrame:
         self.next_button.config(state="normal")
         self.export_button.config(state="disabled")
         self.export_var.set("")
-        self.server.broadcast({"type": "start", "kind": kind, "charset": charset, "wpm": self.wpm_var.get(),
-                               "fw": self.farnsworth_wpm()})
-        self.next_item()
+        wpm, fw, preset = self.wpm_var.get(), self.farnsworth_wpm(), BAND_LABELS.get(self.band_var.get())
+        self.server.broadcast({"type": "start", "kind": kind, "charset": charset, "wpm": wpm, "fw": fw,
+                               "signs": self.run_signs, "band": preset, "silent": self.run_speaker})
+        if not self.run_signs:
+            self.next_item()
+            return
+        # Erst VVV = bei allen, dann die erste Sequenz.
+        if self.listen_var.get() or self.run_speaker:
+            self._play_signs(START_TEXT + " ", wpm, fw, preset)
+        self.trainer_status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
+        token = self.run_token
+        delay = AUDIO_LATENCY + sequence_seconds(START_TEXT + " ", wpm, fw, preset)
+        self._after(int(delay * 1000), lambda: self.run_active and token == self.run_token and self.item is None
+                    and self.next_item())
 
     def next_item(self):
         if not self.run_active:
@@ -870,7 +885,12 @@ class NetworkModeFrame:
         self.run_active = False
         self.run_token += 1
         if self.server is not None:
-            self.server.broadcast({"type": "end"})
+            wpm = self.item["wpm"] if self.item else self.wpm_var.get()
+            preset = BAND_LABELS.get(self.band_var.get())
+            self.server.broadcast({"type": "end", "signs": self.run_signs, "wpm": wpm, "band": preset,
+                                   "silent": self.run_speaker})
+            if self.run_signs and (self.listen_var.get() or self.run_speaker):
+                self._play_signs(END_TEXT, wpm, None, preset)
         self.start_button.config(text=tr("Start"))
         self.next_button.config(state="disabled")
         self.export_button.config(state="normal" if self.board is not None and self.board.items else "disabled")
@@ -1273,6 +1293,9 @@ class NetworkModeFrame:
             wpm, fw = message.get("wpm"), message.get("fw")
             self._start_client_run(str(message.get("charset", ""))[:100], wpm if isinstance(wpm, int) else 0,
                                    fw if isinstance(fw, int) else None)
+            if message.get("signs") is True:
+                self._client_signs(START_TEXT + " ", message)
+                self.trainee_status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
         elif kind == "item":
             self._on_item(message, received)
         elif kind == "replay":
@@ -1294,6 +1317,8 @@ class NetworkModeFrame:
                     self._play_current(solution=True)
         elif kind == "end":
             self._end_client_run()
+            if message.get("signs") is True:
+                self._client_signs(END_TEXT, message)
             self._show_paced_results()
             self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
                 correct=self.run_correct, total=self.run_total) if self.run_total else tr("Durchgang beendet."))
@@ -1351,6 +1376,26 @@ class NetworkModeFrame:
         self.feedback_var.set("")
         self.diff_var.set("")
         self._play_current()
+
+    def _client_signs(self, text, message):
+        """Anfangs- oder Schlusszeichen beim Teilnehmer, mit Tempo und
+        Störungen aus `message` (start/end); still, wenn der Lautsprecher
+        des Trainers spielt."""
+        wpm, fw = message.get("wpm"), message.get("fw")
+        if message.get("silent") is True or not isinstance(wpm, int) or not 5 <= wpm <= 60:
+            return
+        if not (isinstance(fw, int) and 1 <= fw < wpm):
+            fw = None
+        preset = message.get("band") if message.get("band") in band.PRESETS else None
+        self._play_signs(text, wpm, fw, preset)
+
+    def _play_signs(self, text, wpm, fw, preset):
+        """VVV = oder +, wie in den übrigen Reitern unter den Störungen."""
+        freq = self._freq()
+        samples = build_text(text, wpm, freq, fw)
+        if preset:
+            samples = band.apply_preset(self._band(preset, freq), samples)[0]
+        audio.play_quietly(samples)
 
     def _freq(self) -> int:
         try:
@@ -1618,6 +1663,7 @@ class NetworkModeFrame:
             "solution": self.solution_var.get(),
             "listen": self.listen_var.get(),
             "speaker": self.speaker_var.get(),
+            "signs": self.signs_var.get(),
             "name": self.name_var.get(),
             "address": self.address_var.get(),
             "custom_text": self.custom_text.get("1.0", "end").rstrip("\n"),
@@ -1643,7 +1689,7 @@ class NetworkModeFrame:
             if data.get("band") == preset:
                 self.band_var.set(label)
         for key, var in (("auto", self.auto_var), ("solution", self.solution_var), ("listen", self.listen_var),
-                         ("speaker", self.speaker_var)):
+                         ("speaker", self.speaker_var), ("signs", self.signs_var)):
             if isinstance(data.get(key), bool):
                 var.set(data[key])
         self._show_speaker_options()

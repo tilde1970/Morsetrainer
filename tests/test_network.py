@@ -285,6 +285,7 @@ class NetworkTabTest(unittest.TestCase):
                                      adjust_tempo=lambda d: self.tempo_steps.append(d) or ("20 WPM", "21 WPM"))
             frame.role_var.set(role)
             frame._show_role()
+            frame.signs_var.set(False)  # sonst kommt die erste Sequenz erst nach VVV =
             return frame
         self.trainer = make(TRAINER)
         self.trainee = make("trainee")
@@ -656,6 +657,55 @@ class NetworkTabTest(unittest.TestCase):
         self.assertTrue(data["speaker"])
         self.trainee.restore_settings(data)
         self.assertEqual(str(self.trainee.listen_check.cget("state")), "disabled")
+
+    def test_start_and_end_signs(self):
+        from morsetrainer.core import audio
+        from morsetrainer.core.morse import END_TEXT, START_TEXT
+        from morsetrainer.modes import network_mode
+        from morsetrainer.modes.sequence_mode import BAND_LABELS
+        self.connect()
+        self.wpm.set(40)
+        self.trainer.signs_var.set(True)
+        self.trainer.listen_var.set(True)
+        self.trainer.band_var.set(next(label for label, preset in BAND_LABELS.items() if preset))
+        self.trainer.content_var.set("Eigener Text")
+        self.trainer.custom_text.insert("1.0", "KM\n")
+        with mock.patch.object(audio, "play_quietly") as quietly, mock.patch.object(audio, "play"), \
+                mock.patch.object(network_mode, "build_text", wraps=network_mode.build_text) as built:
+            self.trainer.start_run()
+            self.assertIsNone(self.trainer.item)  # erst VVV =, dann die erste Sequenz
+            self.assertIn(START_TEXT, self.trainer.trainer_status_var.get())
+            self.assertTrue(wait_for(lambda: quietly.call_count == 2, pump=self.pump))  # Trainer und Teilnehmer
+            self.assertIn(START_TEXT, self.trainee.trainee_status_var.get())
+            self.assertTrue(all(call.args[0] == START_TEXT + " " for call in built.call_args_list))
+            self.assertIsNone(self.trainee.current)
+            self.assertTrue(wait_for(lambda: self.trainee.current is not None, pump=self.pump))
+            built.reset_mock()
+            self.trainer.stop_run()
+            self.assertTrue(wait_for(lambda: quietly.call_count == 4, pump=self.pump))
+            self.assertEqual([call.args[0] for call in built.call_args_list if call.args[0] == END_TEXT],
+                             [END_TEXT, END_TEXT])
+        # Ton nur über den Lautsprecher: Die Teilnehmer bleiben auch bei VVV = still.
+        self.trainer.speaker_var.set(True)
+        with mock.patch.object(audio, "play_quietly") as quietly, mock.patch.object(audio, "play"):
+            self.trainer.start_run()
+            self.assertTrue(wait_for(lambda: "Achtung" in self.trainee.trainee_status_var.get(), pump=self.pump))
+            self.assertTrue(wait_for(lambda: "Lautsprecher" in self.trainee.trainee_status_var.get(),
+                                     pump=self.pump))
+            self.assertEqual(quietly.call_count, 1)
+        # F7 während VVV =: die erste Sequenz kommt sofort, nicht doppelt.
+        self.trainer.stop_run()
+        self.trainer.speaker_var.set(False)
+        self.trainer.band_var.set("aus")
+        with mock.patch.object(audio, "play_quietly"), mock.patch.object(audio, "play"):
+            self.trainer.custom_text.insert("1.0", "UR\n")
+            self.trainer.start_run()
+            self.trainer.advance()
+            self.assertEqual(self.trainer.item_n, 1)
+            intro_over = time.time() + audio_latency() + network_mode.sequence_seconds(START_TEXT + " ", 40, None, None)
+            wait_for(lambda: time.time() > intro_over + 0.3, pump=self.pump)
+            self.assertEqual(self.trainer.item_n, 1)
+        self.assertTrue(self.trainer.settings()["signs"])
 
     def test_paced_options(self):
         from morsetrainer.modes.network_mode import PACED, WAIT

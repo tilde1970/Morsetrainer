@@ -696,6 +696,7 @@ EN.update({
         "Continue automatically once everyone has answered or time is up",
     "Auch an diesem Rechner abspielen": "Also play on this computer",
     "Ton für alle nur über diesen Rechner (Lautsprecher)": "Sound for everyone only from this computer (speakers)",
+    "Anfangs- und Schlusszeichen senden (VVV = und +)": "Send start and end signs (VVV = and +)",
     "Alle hören denselben Lautsprecher, die Teilnehmer-Rechner bleiben stumm und dienen nur zum Eintippen – "
     "ohne Kopfhörer und ohne Versatz zwischen den Rechnern. Die Lösung kommt dann einmal für alle, wenn jemand "
     "sie nicht flüssig hatte.":

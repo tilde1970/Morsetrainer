@@ -102,8 +102,9 @@ or **own text**, one line per sequence; prosigns as + for AR, ( for KN,
 * for SK, # for BK), number of sequences, answer time and band conditions; character
 set, speed and Farnsworth come from the header. At a slow character speed
 (below 18 WPM) the tab points out that the characters can be counted and
-offers Koch speed 20/10. After **Start** everyone gets
-the same sequence at the same time. The next one comes once everyone has
+offers Koch speed 20/10. After **Start** the start sign VVV = comes first
+(can be switched off), and the end sign + after the last sequence. Then
+everyone gets the same sequence at the same time. The next one comes once everyone has
 answered or the answer time is up (or with **Next**); **Repeat for
 everyone** plays the current one again. The table shows each
 participant's current answer, share of correct characters, how many
