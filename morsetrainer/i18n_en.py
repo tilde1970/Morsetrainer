@@ -692,6 +692,14 @@ EN.update({
     "Automatisch weiter, sobald alle geantwortet haben oder die Zeit um ist":
         "Continue automatically once everyone has answered or time is up",
     "Auch an diesem Rechner abspielen": "Also play on this computer",
+    "Ton für alle nur über diesen Rechner (Lautsprecher)": "Sound for everyone only from this computer (speakers)",
+    "Alle hören denselben Lautsprecher, die Teilnehmer-Rechner bleiben stumm und dienen nur zum Eintippen – "
+    "ohne Kopfhörer und ohne Versatz zwischen den Rechnern. Die Lösung kommt dann einmal für alle, wenn jemand "
+    "sie nicht flüssig hatte.":
+        "Everyone hears the same speakers; the participants' computers stay silent and are only used for "
+        "typing – no headphones and no offset between computers. The solution is then played once for "
+        "everyone if someone did not have it fluently.",
+    "(Lautsprecher)": "(speakers)",
     "Eine Zeile je Sequenz, in dieser Reihenfolge; Leerzeichen werden als Wortabstand gesendet, "
     "aber nicht gewertet. Betriebszeichen: + für AR, ( für KN, * für SK, # für BK – "
     "so tippen es auch die Teilnehmer.":

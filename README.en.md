@@ -141,6 +141,17 @@ trainer's speakers, so switching to the fixed pace turns on “Also play on
 this computer”. These participants do not appear in the table or the
 results; they check their own copy against the solutions.
 
+**Sound for everyone from the speakers:** with “Sound for everyone only
+from this computer (speakers)” only the trainer's computer plays; the
+participants' computers stay silent and are only used for typing. Nobody
+needs headphones and everyone hears the same thing at the same time –
+otherwise each computer plays slightly offset, depending on the network
+and sound card. The participants' computers measure the time to Enter
+from when the sequence arrived. In this case the solution is played once
+for everyone over the speakers as soon as someone did not have it
+fluently correct. This works in both flows and suits the fixed pace when
+paper and computers are mixed.
+
 **Solutions:** the button next to “Save as CSV” opens a separate window
 for the projector, in both flows. During the run it shows the current
 number in large type (“Missed one? Leave a gap and carry on with the next

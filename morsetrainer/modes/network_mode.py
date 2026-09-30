@@ -148,6 +148,7 @@ class NetworkModeFrame:
         self.item_open = False
         self.deadline = None
         self.run_paced = False  # Durchgang im festen Takt
+        self.run_speaker = False  # Ton nur über den Lautsprecher des Trainers
         self.pause_s = PAUSE_DEFAULTS["groups"]
         self.solution_window = None
         self.solution_selected = None  # markierte Nr. in der Auflösung
@@ -291,8 +292,16 @@ class NetworkModeFrame:
                                               variable=self.solution_var)
         self.solution_check.pack(anchor="w", pady=1)
         self.listen_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(options, text=tr("Auch an diesem Rechner abspielen"), variable=self.listen_var).pack(
-            anchor="w", pady=1)
+        self.listen_check = ttk.Checkbutton(options, text=tr("Auch an diesem Rechner abspielen"),
+                                            variable=self.listen_var)
+        self.listen_check.pack(anchor="w", pady=1)
+        self.speaker_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(options, text=tr("Ton für alle nur über diesen Rechner (Lautsprecher)"),
+                        variable=self.speaker_var, command=self._show_speaker_options).pack(anchor="w", pady=1)
+        theme.hint(options, wrap=540, text=tr(
+            "Alle hören denselben Lautsprecher, die Teilnehmer-Rechner bleiben stumm und dienen nur zum "
+            "Eintippen – ohne Kopfhörer und ohne Versatz zwischen den Rechnern. Die Lösung kommt dann einmal "
+            "für alle, wenn jemand sie nicht flüssig hatte.")).pack(anchor="w", pady=(0, 2))
 
         self.custom_frame = ttk.Frame(options)
         theme.hint(self.custom_frame, wrap=540, text=tr(
@@ -304,6 +313,7 @@ class NetworkModeFrame:
         self.content_var.trace_add("write", lambda *_: self._on_content_change())
         self._on_content_change()
         self._show_flow_options()
+        self._show_speaker_options()
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
@@ -546,6 +556,12 @@ class NetworkModeFrame:
             self.listen_var.set(True)
         self._show_flow_options()
 
+    def _show_speaker_options(self):
+        """Ton nur über den Lautsprecher: dann spielt dieser Rechner immer."""
+        if self.speaker_var.get():
+            self.listen_var.set(True)
+        self.listen_check.config(state="disabled" if self.speaker_var.get() else "normal")
+
     def _show_flow_options(self):
         """Im festen Takt gelten Schreibpause statt Antwortzeit, und es gibt
         zwischendurch keine Lösung (also auch kein Vorspielen)."""
@@ -689,6 +705,13 @@ class NetworkModeFrame:
         n = self.item["n"]
         return (self.board.expected[n] & set(self.server.names())) - self.board.answered(n)
 
+    def _someone_not_fluent(self) -> bool:
+        """Mindestens einer, der beim Senden dabei war, hatte die offene
+        Sequenz nicht flüssig richtig (oder gar nicht beantwortet)."""
+        n = self.item["n"]
+        return any(result is None or not result.fluent
+                   for result in (self.board.answers.get(name, {}).get(n) for name in self.board.expected[n]))
+
     def toggle_run(self):
         if self.run_active:
             self.stop_run()
@@ -734,6 +757,7 @@ class NetworkModeFrame:
             self.board.add_participant(name)
         self.run_active = True
         self.run_paced = self.flow_var.get() == PACED
+        self.run_speaker = self.speaker_var.get()
         self.pause_s = pause_s
         self.run_token += 1
         self.item_n = 0
@@ -764,11 +788,12 @@ class NetworkModeFrame:
             wpm = self.item["wpm"] if self.item else 20
         self.item_n += 1
         self.item = {"type": "item", "n": self.item_n, "text": text, "wpm": wpm, "fw": self.farnsworth_wpm(),
-                     "band": BAND_LABELS.get(self.band_var.get()), "paced": self.run_paced}
+                     "band": BAND_LABELS.get(self.band_var.get()), "paced": self.run_paced,
+                     "silent": self.run_speaker}
         self.board.add_item(self.item_n, text, self.server.names(), wpm, self.item["fw"])
         self.server.broadcast(self.item)
         self._open_item(self.item)
-        if self.listen_var.get():
+        if self.listen_var.get() or self.run_speaker:
             self._play_here(self.item)
 
     def _open_item(self, item):
@@ -788,7 +813,7 @@ class NetworkModeFrame:
         try:
             audio.play(samples)
         except audio.AudioError as exc:
-            if not solution:
+            if not solution and not self.run_speaker:
                 self.listen_var.set(False)
             self.trainer_status_var.set(str(exc))
 
@@ -802,6 +827,9 @@ class NetworkModeFrame:
         reveal = not self.run_paced
         solution = reveal and self.solution_var.get()
         self.server.broadcast({"type": "close", "n": self.item["n"], "solution": solution, "reveal": reveal})
+        if solution and self.run_speaker and self._someone_not_fluent():
+            # Über den Lautsprecher geht es nicht einzeln: einmal für alle.
+            self._play_here(dict(self.item, band=None), solution=True)
         self._refresh_table()
         self._show_progress()
         if reveal and self.auto_var.get():
@@ -834,7 +862,7 @@ class NetworkModeFrame:
         self.board.mark_replayed(self.item["n"])
         self.server.broadcast({"type": "replay", "n": self.item["n"]})
         self.deadline += sequence_seconds(self.item["text"], self.item["wpm"], self.item["fw"], self.item["band"])
-        if self.listen_var.get():
+        if self.listen_var.get() or self.run_speaker:
             self._play_here(self.item)
 
     def stop_run(self):
@@ -1234,19 +1262,23 @@ class NetworkModeFrame:
         elif kind == "closed":
             self.disconnect(tr("Verbindung zum Trainer beendet."))
         elif kind == "message":
-            self._on_message(event[1])
+            self._on_message(event[1], event[2])
 
-    def _on_message(self, message):
+    def _on_message(self, message, received=None):
+        """`received`: Eingang der Nachricht; kommt der Ton vom Lautsprecher
+        des Trainers, beginnt er ungefähr dann (nicht erst beim Abholen)."""
+        received = received or time.time()
         kind = message["type"]
         if kind == "start":
             wpm, fw = message.get("wpm"), message.get("fw")
             self._start_client_run(str(message.get("charset", ""))[:100], wpm if isinstance(wpm, int) else 0,
                                    fw if isinstance(fw, int) else None)
         elif kind == "item":
-            self._on_item(message)
+            self._on_item(message, received)
         elif kind == "replay":
             if self.current is not None and message.get("n") == self.current["n"] and not self.answered:
                 self.replayed = True
+                self.current["received"] = received
                 self._play_current()
         elif kind == "close":
             if self.current is None or message.get("n") != self.current["n"]:
@@ -1258,7 +1290,8 @@ class NetworkModeFrame:
             if (message.get("reveal", True) and message.get("solution") and self.last_result is not None
                     and not self.last_result.fluent):
                 self.trainee_status_var.set(tr("Hör dir die Lösung noch einmal an…"))
-                self._play_current(solution=True)
+                if not self.current["silent"]:  # sonst spielt sie der Lautsprecher
+                    self._play_current(solution=True)
         elif kind == "end":
             self._end_client_run()
             self._show_paced_results()
@@ -1293,7 +1326,7 @@ class NetworkModeFrame:
         self.session_stats = None
         self.practice_stop()
 
-    def _on_item(self, item):
+    def _on_item(self, item, received=None):
         text = normalize(item.get("text", ""))
         wpm, fw = item.get("wpm"), item.get("fw")
         if not text or not isinstance(item.get("n"), int) or not isinstance(wpm, int) or not 5 <= wpm <= 60:
@@ -1306,7 +1339,8 @@ class NetworkModeFrame:
             self._start_client_run("", wpm, fw)  # mitten im Durchgang dazugekommen
         preset = item.get("band") if item.get("band") in band.PRESETS else None
         self.current = {"n": item["n"], "text": str(item["text"])[:protocol.TEXT_MAX], "wpm": wpm, "fw": fw,
-                        "band": preset, "paced": item.get("paced") is True}
+                        "band": preset, "paced": item.get("paced") is True, "silent": item.get("silent") is True,
+                        "received": received or time.time()}
         self.answered = False
         self.replayed = False
         self.last_result = None
@@ -1356,15 +1390,22 @@ class NetworkModeFrame:
             offset += len(part) / SAMPLE_RATE
         samples = np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
         lead = 0.0
-        if item["band"] and not solution:
-            samples, lead = band.apply_preset(self._band(item["band"], freq), samples)
+        silent = item.get("silent") and not solution
         self.play_token += 1
         token = self.play_token
-        start = time.time() + AUDIO_LATENCY
-        try:
-            audio.play(samples)
-        except audio.AudioError as exc:
-            self.trainee_status_var.set(str(exc))
+        if silent:
+            # Der Lautsprecher des Trainers spielt, seit die Nachricht kam
+            # (plus dessen Latenz); hier nur mitrechnen, wann welches Zeichen klingt.
+            lead = band.PRESET_LEAD_SECONDS[0] if item["band"] else 0.0
+            start = item["received"] + AUDIO_LATENCY
+        else:
+            if item["band"] and not solution:
+                samples, lead = band.apply_preset(self._band(item["band"], freq), samples)
+            start = time.time() + AUDIO_LATENCY
+            try:
+                audio.play(samples)
+            except audio.AudioError as exc:
+                self.trainee_status_var.set(str(exc))
         if solution:
             return
         self.play_start = start
@@ -1373,8 +1414,15 @@ class NetworkModeFrame:
         self.tone_end = self.tone_ends[-1] if self.tone_ends else start
         self.playing = True
         self._set_input(True)
-        self.trainee_status_var.set(tr("Höre zu… (Wiederholung)") if self.replayed else tr("Höre zu…"))
-        dur_ms = int((len(samples) / SAMPLE_RATE + AUDIO_LATENCY) * 1000) + 150
+        status = tr("Höre zu… (Wiederholung)") if self.replayed else tr("Höre zu…")
+        if silent:
+            status += " " + tr("(Lautsprecher)")
+        self.trainee_status_var.set(status)
+        # Eigene Samples enthalten Vor- und Nachlauf der Störungen schon.
+        end = start + len(samples) / SAMPLE_RATE
+        if silent and item["band"]:
+            end += sum(band.PRESET_LEAD_SECONDS)
+        dur_ms = max(int((end - time.time()) * 1000), 0) + 150
         self._after(dur_ms, lambda: token == self.play_token and self._playback_done())
 
     def _playback_done(self):
@@ -1569,6 +1617,7 @@ class NetworkModeFrame:
             "flow": self.flow_var.get(),
             "solution": self.solution_var.get(),
             "listen": self.listen_var.get(),
+            "speaker": self.speaker_var.get(),
             "name": self.name_var.get(),
             "address": self.address_var.get(),
             "custom_text": self.custom_text.get("1.0", "end").rstrip("\n"),
@@ -1593,9 +1642,11 @@ class NetworkModeFrame:
         for label, preset in BAND_LABELS.items():
             if data.get("band") == preset:
                 self.band_var.set(label)
-        for key, var in (("auto", self.auto_var), ("solution", self.solution_var), ("listen", self.listen_var)):
+        for key, var in (("auto", self.auto_var), ("solution", self.solution_var), ("listen", self.listen_var),
+                         ("speaker", self.speaker_var)):
             if isinstance(data.get(key), bool):
                 var.set(data[key])
+        self._show_speaker_options()
         for key, var in (("session", self.session_var), ("name", self.name_var), ("address", self.address_var)):
             if isinstance(data.get(key), str):
                 var.set(data[key][:60])

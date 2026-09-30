@@ -5,7 +5,9 @@ Oberfläche holt die Ereignisse mit poll() ab:
     ("welcome", session)   angenommen
     ("reject", reason)     abgelehnt (protocol.REJECT_REASONS)
     ("error", text)        Verbindung kam nicht zustande
-    ("message", message)   Nachricht vom Trainer (start, item, replay, close, end)
+    ("message", message, t)  Nachricht vom Trainer (start, item, replay, close,
+                           end); t = Eingang (time.time()), unabhängig davon,
+                           wann die Oberfläche abholt
     ("closed",)            Verbindung beendet (vom Trainer oder abgerissen)"""
 import json
 import queue
@@ -65,7 +67,7 @@ class TraineeClient:
                 message = reader.read()
                 if message is None:
                     break
-                self.events.put(("message", message))
+                self.events.put(("message", message, time.time()))
         except (OSError, protocol.ProtocolError) as exc:
             if not welcomed:
                 self.events.put(("error", str(exc)))

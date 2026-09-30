@@ -31,6 +31,10 @@
 - **Solutions** in a separate window for the projector: the current number
   during the run, afterwards all solutions numbered in several columns,
   larger/smaller font, copy; a click plays a solution again.
+- **Sound for everyone from the speakers:** optionally only the trainer's
+  computer plays and participants type on a silent computer – no
+  headphones and no offset between computers. At a fixed pace the
+  trainer's computer plays along anyway, for everyone copying on paper.
 - The network protocol is now version 2: trainer and participants need the
   same program version.
 - The window is now at least 720 pixels wide so that all tabs stay

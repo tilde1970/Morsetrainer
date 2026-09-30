@@ -33,6 +33,10 @@
   die laufende Nummer, danach alle Lösungen nummeriert und mehrspaltig,
   Schrift größer/kleiner, Kopieren; ein Klick spielt eine Lösung noch
   einmal ab.
+- **Ton für alle über den Lautsprecher:** Auf Wunsch spielt nur der
+  Trainerrechner, die Teilnehmer tippen am stummen Rechner – ohne Kopfhörer
+  und ohne Versatz zwischen den Rechnern. Im festen Takt spielt der
+  Trainerrechner ohnehin gleich mit, für alle, die auf Papier schreiben.
 - Das Netzwerkprotokoll hat jetzt Version 2: Trainer und Teilnehmer
   brauchen dieselbe Programmversion.
 - Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter

@@ -146,6 +146,16 @@ Beim Umschalten auf den festen Takt ist „Auch an diesem Rechner abspielen“
 daher gleich eingeschaltet. In Tabelle und Auswertung tauchen diese
 Teilnehmer nicht auf; sie vergleichen selbst mit der Auflösung.
 
+**Ton für alle über den Lautsprecher:** Mit „Ton für alle nur über diesen
+Rechner (Lautsprecher)“ spielt nur der Trainerrechner, die
+Teilnehmer-Rechner bleiben stumm und dienen nur zum Eintippen. So braucht
+niemand Kopfhörer, und alle hören gleichzeitig dasselbe – jeder Rechner
+spielt sonst etwas versetzt, je nach Netz und Soundkarte. Die Zeit bis
+Enter rechnen die Teilnehmer-Rechner ab dem Eingang der Sequenz. Die
+Lösung kommt in diesem Fall einmal für alle über den Lautsprecher, sobald
+jemand sie nicht flüssig richtig hatte. Das geht in beiden Abläufen und
+passt gut zum festen Takt, wenn Papier und Rechner gemischt sind.
+
 **Auflösung:** Der Knopf neben „Als CSV speichern“ öffnet ein eigenes
 Fenster für den Beamer, in beiden Abläufen. Während des Durchgangs zeigt es
 groß die laufende Nummer („Verpasst? Lücke lassen und bei der nächsten

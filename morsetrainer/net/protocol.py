@@ -9,9 +9,11 @@ Trainer -> Teilnehmer:
     welcome {"session"}                       angenommen
     reject  {"reason"}                        abgelehnt (REJECT_REASONS), danach zu
     start   {"kind"}                          ein Durchgang beginnt
-    item    {"n", "text", "wpm", "fw", "band", "paced"}
+    item    {"n", "text", "wpm", "fw", "band", "paced", "silent"}
                                               abspielen und abfragen; "paced":
-                                              fester Takt, Lösungen erst am Ende
+                                              fester Takt, Lösungen erst am Ende;
+                                              "silent": Ton kommt vom Lautsprecher
+                                              des Trainers, nicht selbst abspielen
     replay  {"n"}                             dasselbe noch einmal abspielen
     close   {"n", "solution", "reveal"}       Zeit um, Eingabe schließen;
                                               "reveal": Lösung jetzt zeigen

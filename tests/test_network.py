@@ -221,7 +221,7 @@ class ConnectionTest(unittest.TestCase):
         for client in (first, second):
             events = []
             self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
-            self.assertEqual(events[0], ("message", {"type": "item", "n": 1, "text": "KMR"}))
+            self.assertEqual(events[0][:2], ("message", {"type": "item", "n": 1, "text": "KMR"}))
         first.send({"type": "answer", "n": 1, "typed": "KMR", "latency": 0.5})
         self.assertEqual(self.server_events(1), [("answer", "DL4YM", {"type": "answer", "n": 1, "typed": "KMR",
                                                                      "latency": 0.5})])
@@ -612,6 +612,51 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("✓ UR", self.trainer.tree.item(self.trainer.tree.get_children()[0])["values"][2])
         self.assertIn("Gruppe:", self.trainer.group_var.get())
 
+    def test_speaker_mode_keeps_trainees_silent(self):
+        from morsetrainer.core import audio
+        self.connect()
+        self.trainer.speaker_var.set(True)
+        self.trainer._show_speaker_options()
+        self.assertTrue(self.trainer.listen_var.get())
+        self.assertEqual(str(self.trainer.listen_check.cget("state")), "disabled")
+        self.trainer.auto_var.set(False)
+        self.trainer.content_var.set("Eigener Text")
+        self.trainer.custom_text.insert("1.0", "KM\nUR\n")
+        with mock.patch.object(audio, "play") as play:
+            self.trainer.start_run()
+            self.assertEqual(play.call_count, 1)  # nur der Lautsprecher des Trainers
+            self.assertTrue(wait_for(lambda: self.trainee.current is not None, pump=self.pump))
+            self.assertEqual(play.call_count, 1)
+        current = self.trainee.current
+        self.assertTrue(current["silent"])
+        self.assertIn("Lautsprecher", self.trainee.trainee_status_var.get())
+        # Zeitbasis ist der Eingang der Nachricht, nicht das Abholen.
+        self.assertAlmostEqual(self.trainee.play_start, current["received"] + audio_latency(), places=3)
+        self.assertLess(current["received"], time.time())
+        self.trainee.playing = False
+        # Falsch: Die Lösung kommt einmal für alle über den Lautsprecher.
+        with mock.patch.object(audio, "play") as play:
+            self.trainee.input_var.set("KS")
+            self.trainee.on_submit()
+            self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+            self.assertTrue(wait_for(lambda: "Lösung" in self.trainee.trainee_status_var.get(), pump=self.pump))
+            self.assertEqual(play.call_count, 1)
+        # Richtig und flüssig: keine Lösung, auch nicht am Lautsprecher.
+        with mock.patch.object(audio, "play") as play:
+            self.trainer.advance()
+            self.assertTrue(wait_for(lambda: self.trainee.current["n"] == 2, pump=self.pump))
+            self.trainee.playing = False
+            self.trainee.tone_end = time.time()
+            self.trainee.input_var.set("UR")
+            self.trainee.on_submit()
+            self.assertTrue(wait_for(lambda: not self.trainer.item_open, pump=self.pump))
+            self.pump()
+            self.assertEqual(play.call_count, 1)  # nur die Sequenz selbst
+        data = self.trainer.settings()
+        self.assertTrue(data["speaker"])
+        self.trainee.restore_settings(data)
+        self.assertEqual(str(self.trainee.listen_check.cget("state")), "disabled")
+
     def test_paced_options(self):
         from morsetrainer.modes.network_mode import PACED, WAIT
         self.assertEqual(str(self.trainer.answer_spin.cget("state")), "normal")
@@ -690,6 +735,11 @@ class NetworkTabTest(unittest.TestCase):
         self.assertEqual(self.trainee.settings(), data)
         self.trainee.restore_settings({"port": 80, "count": "x", "role": "boss"})
         self.assertEqual(self.trainee.port_var.get(), data["port"])
+
+
+def audio_latency():
+    from morsetrainer.core.morse import AUDIO_LATENCY
+    return AUDIO_LATENCY
 
 
 def ttk_frame(root):
