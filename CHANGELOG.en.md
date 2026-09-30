@@ -1,5 +1,14 @@
 # Changes
 
+## Unreleased
+
+- **Error log:** unexpected program errors now go to `fehler.log` in the
+  data folder, and the program says once where the file is. Before, the
+  exe and AppImage simply did nothing on such an error.
+- **More robust:** a broken download no longer leaves the update hanging,
+  an error during MP3 export no longer locks the Speak tab, and the window
+  closes even if saving fails.
+
 ## 2.20
 
 - **Speak:** the spelling alphabet now sounds right. The German voice read

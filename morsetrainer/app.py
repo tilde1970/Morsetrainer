@@ -15,7 +15,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, koch, practice, review, stats, storage, tempo
+from morsetrainer.core import audio, errorlog, koch, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
@@ -58,6 +58,8 @@ ICON_SIZES = (128, 64, 32)
 # Updateprüfung beim Start: so lange nach dem Öffnen, Abfrage alle
 # UPDATE_POLL_MS (die Anfrage selbst gibt ohne Internet nach 5 s auf).
 UPDATE_CHECK_DELAY_MS = 1500
+# So oft wird nachgesehen, ob ein Hintergrund-Thread einen Fehler protokolliert hat.
+ERROR_POLL_MS = 1000
 UPDATE_POLL_MS = 500
 
 
@@ -67,6 +69,7 @@ class MorseTrainerApp:
         self.running_mode = False
         self.restart_args = None  # nach einem Update: neu starten mit diesen Argumenten
         self.groups_offered = set()  # Lektionen, für die der Gruppen-Hinweis schon kam
+        self.error_shown = False  # Hinweis auf fehler.log kommt einmal je Sitzung
         root.title(tr("Morsetrainer von {author}").format(author=__author__))
         self._set_icon()
         self.saved_state = self._load_state()
@@ -785,6 +788,9 @@ class MorseTrainerApp:
                 result["version"] = update.latest_version()
             except update.UpdateError:
                 result["version"] = None
+            except Exception:
+                result["version"] = None
+                raise  # ins Fehlerprotokoll (threading.excepthook)
         threading.Thread(target=run, daemon=True).start()
         self._await_update_check(result)
 
@@ -822,19 +828,48 @@ class MorseTrainerApp:
                 mode.rejoin(pin)
 
     def on_close(self):
-        self._record_practice()
-        self._save_state()
-        for mode in self.modes:
-            mode.on_close()
+        # Jeder Schritt für sich: Ein Fehler beim Speichern oder in einem
+        # Reiter darf das Schließen nicht verhindern.
+        for step in (self._record_practice, self._save_state, *(mode.on_close for mode in self.modes)):
+            try:
+                step()
+            except Exception:
+                errorlog.record(*sys.exc_info(), version=__version__)
         self.root.destroy()
+
+    # --- Unerwartete Fehler -------------------------------------------------
+    def report_callback_exception(self, exc_type, exc, tb):
+        """Fehler in einem Tk-Callback (Knopf, Taste, after): protokollieren
+        und einmal melden, statt ihn ohne Konsole zu verschlucken."""
+        errorlog.record(exc_type, exc, tb, version=__version__)
+        self._check_errors(poll=False)
+
+    def thread_exception(self, args):
+        """Fehler in einem Hintergrund-Thread: nur protokollieren; gemeldet
+        wird im Tk-Thread (_check_errors)."""
+        errorlog.record(args.exc_type, args.exc_value, args.exc_traceback, version=__version__)
+
+    def _check_errors(self, poll=True):
+        if errorlog.take_unseen() and not self.error_shown:
+            self.error_shown = True
+            messagebox.showerror(tr("Unerwarteter Fehler"), tr(
+                "Im Programm ist ein unerwarteter Fehler aufgetreten. Einzelheiten stehen in\n{path}\n\n"
+                "Bitte schick diese Datei mit, wenn du den Fehler meldest.").format(path=errorlog.LOG_FILE),
+                parent=self.root)
+        if poll:
+            self.root.after(ERROR_POLL_MS, self._check_errors)
 
 
 def main():
     # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
     # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
+    sys.excepthook = lambda *exc: errorlog.record(*exc, version=__version__)
     update.cleanup()
     root = tk.Tk(className="Morsetrainer")
     app = MorseTrainerApp(root)
+    root.report_callback_exception = app.report_callback_exception
+    threading.excepthook = app.thread_exception
+    root.after(ERROR_POLL_MS, app._check_errors)
     if len(sys.argv) == 3 and sys.argv[1] == "--join":
         root.after(300, lambda: app.join_network(sys.argv[2]))
     else:

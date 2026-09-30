@@ -60,6 +60,9 @@ class Updater:
                 status["installed"] = True
             except update.UpdateError as exc:
                 status["error"] = str(exc)
+            except Exception as exc:
+                status["error"] = str(exc) or type(exc).__name__
+                raise  # ins Fehlerprotokoll (threading.excepthook)
         threading.Thread(target=run, daemon=True).start()
         self._watch(version, show, args, failed)
         return STARTED

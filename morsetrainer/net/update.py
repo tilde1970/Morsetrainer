@@ -11,6 +11,7 @@ Hinweis.
 Windows: Eine laufende exe lässt sich nicht überschreiben, aber
 umbenennen. Die alte wird zu Morsetrainer.old.exe und beim nächsten Start
 entfernt (cleanup)."""
+import http.client
 import json
 import os
 import re
@@ -35,6 +36,11 @@ MAGIC = {WINDOWS_ASSET: b"MZ", APPIMAGE_ASSET: b"\x7fELF"}
 
 class UpdateError(Exception):
     pass
+
+
+# Netzfehler: http.client meldet einen abgerissenen Download (IncompleteRead)
+# nicht als OSError.
+NET_ERRORS = (OSError, ValueError, http.client.HTTPException)
 
 
 def parse_version(text):
@@ -71,7 +77,7 @@ def latest_version(timeout: float = CHECK_TIMEOUT_S):
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             data = json.loads(response.read(MAX_API_BYTES).decode("utf-8"))
-    except (OSError, ValueError) as exc:
+    except NET_ERRORS as exc:
         raise UpdateError(str(exc)) from exc
     tag = data.get("tag_name") if isinstance(data, dict) else None
     version = tag[1:] if isinstance(tag, str) and tag.startswith("v") else None
@@ -113,7 +119,7 @@ def download(version: str, target: Path, asset: str, progress=None, cancelled=la
             head = check.read(4)
         if done < MIN_SIZE or not head.startswith(MAGIC.get(asset, b"")):
             raise UpdateError("Die geladene Datei ist kein Morsetrainer")
-    except (OSError, ValueError) as exc:
+    except NET_ERRORS as exc:
         _remove(part)
         raise UpdateError(str(exc)) from exc
     except UpdateError:

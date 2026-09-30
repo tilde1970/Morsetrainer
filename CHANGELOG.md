@@ -1,5 +1,15 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Fehlerprotokoll:** Unerwartete Programmfehler landen jetzt in
+  `fehler.log` im Datenverzeichnis, und das Programm sagt einmal, wo die
+  Datei liegt. Bisher passierte in exe und AppImage bei so einem Fehler
+  einfach nichts.
+- **Robuster:** Ein abgerissener Download lässt das Update nicht mehr
+  hängen, ein Fehler beim MP3-Export sperrt den Reiter Sprechen nicht mehr,
+  und das Fenster schließt auch dann, wenn beim Speichern etwas schiefgeht.
+
 ## 2.20
 
 - **Sprechen:** Das Buchstabieralphabet klingt jetzt richtig. Die deutsche

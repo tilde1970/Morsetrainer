@@ -25,8 +25,8 @@ def add(seconds: float, day: date = None) -> None:
     data = load()
     key = (day or date.today()).isoformat()
     data[key] = round(data.get(key, 0.0) + seconds, 1)
-    stats.STATS_DIR.mkdir(exist_ok=True)
     try:
+        stats.STATS_DIR.mkdir(exist_ok=True)
         storage.write_json_atomic(_path(), data, indent=1, sort_keys=True)
     except OSError:
         pass

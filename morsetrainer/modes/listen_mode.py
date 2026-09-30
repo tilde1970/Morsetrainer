@@ -407,6 +407,10 @@ class ListenModeFrame:
                 self.export_result = tr("Gespeichert: {path} ({minutes:.0f} Min.)").format(path=path, minutes=writer.seconds / 60)
         except (mp3.Mp3Error, OSError) as exc:
             self.export_result = str(exc)
+        except Exception as exc:
+            # Sonst bliebe „MP3 wird erstellt …“ stehen und Start gesperrt.
+            self.export_result = tr("MP3 nicht erstellt: {error}").format(error=str(exc) or type(exc).__name__)
+            raise  # ins Fehlerprotokoll (threading.excepthook)
 
     def _watch_export(self, total):
         if self.export_result is None:

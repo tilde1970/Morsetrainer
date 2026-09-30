@@ -853,4 +853,11 @@ EN.update({
     "Update fehlgeschlagen: {error}. Von Hand laden: {url}": "Update failed: {error}. Download manually: {url}",
     "Version {version} installiert – starte neu…": "Version {version} installed – restarting…",
     "Bitte aktualisieren: {url}": "Please update: {url}",
+    # Unerwartete Fehler (app.py, core/errorlog.py)
+    "Unerwarteter Fehler": "Unexpected error",
+    "Im Programm ist ein unerwarteter Fehler aufgetreten. Einzelheiten stehen in\n{path}\n\n"
+    "Bitte schick diese Datei mit, wenn du den Fehler meldest.":
+        "An unexpected error occurred in the program. Details are in\n{path}\n\n"
+        "Please include this file when you report the error.",
+    "MP3 nicht erstellt: {error}": "MP3 not created: {error}",
 })

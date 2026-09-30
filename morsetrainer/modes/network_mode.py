@@ -1509,7 +1509,8 @@ class NetworkModeFrame:
         self.practice_stop()
 
     def _on_item(self, item, received=None):
-        text = normalize(item.get("text", ""))
+        text = item.get("text")
+        text = normalize(text) if isinstance(text, str) else ""
         wpm, fw = item.get("wpm"), item.get("fw")
         if not text or not isinstance(item.get("n"), int) or not isinstance(wpm, int) or not 5 <= wpm <= 60:
             return
