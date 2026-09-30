@@ -35,6 +35,10 @@
   computer plays and participants type on a silent computer – no
   headphones and no offset between computers. At a fixed pace the
   trainer's computer plays along anyway, for everyone copying on paper.
+- **Continuous:** the whole evaluation of a session can be shown in a
+  separate window, split into groups (without groups in blocks of 5),
+  errors in red, with font size, copy and “Sent text only”. Previously only
+  the last 30 characters were visible.
 - The network protocol is now version 2: trainer and participants need the
   same program version.
 - The window is now at least 720 pixels wide so that all tabs stay

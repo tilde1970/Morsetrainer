@@ -472,6 +472,51 @@ class ContinuousGroupingTest(AppTestCase):
                 mock.patch.object(continuous_mode, "silence", counting_silence):
             c._play_session()
         self.assertEqual(len(c.sent_log), 12)  # 4 Wortpausen nach je 3 Zeichen
+        self.assertEqual([e["group"] for e in c.sent_log], [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+
+
+class ContinuousFullViewTest(AppTestCase):
+    def test_grouped_lines_keep_groups_together(self):
+        rows = [(ch, ch, " ", i // 5) for i, ch in enumerate("KMRSUKMRSUKM")]
+        rows[2] = ("R", "S", "^", 0)
+        rows.insert(5, ("–", "K", "^", 0))  # überzählige Taste am Ende der ersten Gruppe
+        lines = continuous_mode.grouped_lines(rows, 13)
+        self.assertEqual(lines[0], (1, "KMRSU–  KMRSU", "KMSSUK  KMRSU", "  ^  ^"))
+        self.assertEqual(lines[1], (3, "KM", "KM", ""))
+        # Zu schmal für zwei Gruppen: je Zeile eine, keine wird zerteilt.
+        self.assertEqual([line[0] for line in continuous_mode.grouped_lines(rows, 4)], [1, 2, 3])
+        self.assertEqual(continuous_mode.grouped_lines([], 20), [])
+
+    def test_whole_session_in_a_separate_window(self):
+        c = self.mode("Kontinuierlich")
+        now = 1000.0
+        c.charset = "KMRSU"
+        c.session_stats = stats.SessionStats("continuous", "KMRSU", 20, 600)
+        c.sent_log = [{"char": ch, "end_time": now + i, "group": i // 5} for i, ch in enumerate("KMRSU" * 10)]
+        c.typed_log = [{"char": ch, "time": now + i + 0.5} for i, ch in enumerate("KMRSU" * 10) if i != 7]
+        self.assertEqual(str(c.full_button.cget("state")), "disabled")
+        c._finalize_session()
+        self.assertEqual(len(c.full_rows), 50)  # alle, nicht nur die letzten DIFF_TAIL
+        self.assertEqual(str(c.full_button.cget("state")), "normal")
+        c.show_full()
+        self.root.update()
+        content = c.full_text.get("1.0", "end").splitlines()
+        self.assertTrue(content[0].strip().startswith("1  KMRSU  KMRSU"))
+        self.assertIn("KMRSU  KM–SU", content[1])  # das verpasste R
+        self.assertTrue(c.full_text.tag_ranges("error"))
+        c.sent_only_var.set(True)
+        c._render_full()
+        sent_only = c.full_text.get("1.0", "end")
+        self.assertNotIn("–", sent_only)
+        self.assertEqual(sent_only.replace(" ", "").replace("\n", "").lstrip("0123456789").count("KMRSU"), 10)
+        c.copy_full()
+        self.assertIn("KMRSU", self.root.clipboard_get())
+        size = c.full_font.cget("size")
+        c.zoom_full(1)
+        self.assertGreater(c.full_font.cget("size"), size)
+        window = c.full_window
+        c.close_full()
+        self.assertFalse(window.winfo_exists())
 
 
 class QsoRevealTest(AppTestCase):

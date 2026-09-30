@@ -37,6 +37,10 @@
   Trainerrechner, die Teilnehmer tippen am stummen Rechner – ohne Kopfhörer
   und ohne Versatz zwischen den Rechnern. Im festen Takt spielt der
   Trainerrechner ohnehin gleich mit, für alle, die auf Papier schreiben.
+- **Kontinuierlich:** Die ganze Auswertung einer Sitzung lässt sich in
+  einem eigenen Fenster zeigen, nach Gruppen gegliedert (ohne Gruppen in
+  5er-Blöcken), Fehler rot, mit Schriftgröße, Kopieren und „Nur gesendeter
+  Text“. Bisher waren nur die letzten 30 Zeichen zu sehen.
 - Das Netzwerkprotokoll hat jetzt Version 2: Trainer und Teilnehmer
   brauchen dieselbe Programmversion.
 - Das Fenster ist jetzt mindestens 720 Pixel breit, damit alle Reiter

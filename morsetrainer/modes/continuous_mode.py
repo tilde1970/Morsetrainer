@@ -29,6 +29,7 @@ stoppt, Esc stoppt."""
 import threading
 import time
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk
 
 import numpy as np
@@ -74,6 +75,43 @@ MAX_LAG_SECONDS = 5.0
 STOP_GRACE_SECONDS = 2.0
 # So viele der letzten Zeichen zeigt die Gegenüberstellung nach dem Stopp.
 DIFF_TAIL = 30
+# Die ganze Auswertung (eigenes Fenster) ist nach den gesendeten Gruppen
+# bzw. Wörtern gegliedert; ohne Gruppen (durchgehend) in Blöcken zu 5.
+FULL_GROUP_LEN = 5
+GROUP_GAP = "  "
+# Schriftgröße im Fenster (Standard, kleinste, größte, Schritt).
+FULL_FONT = (18, 10, 60, 2)
+
+
+def grouped_lines(rows, width: int):
+    """Gegenüberstellung der ganzen Sitzung, nach Gruppen gegliedert und
+    auf `width` Spalten umbrochen (eine Gruppe wird nicht zerteilt):
+    [(Nr. der ersten Gruppe, gesendet, getippt, Markierungen)]. `rows`:
+    [(gesendet, getippt, Markierung, Gruppe)] je Zeichen, "–" = Lücke."""
+    groups = []
+    for sent, typed, mark, group in rows:
+        if not groups or groups[-1][0] != group:
+            groups.append((group, []))
+        groups[-1][1].append((sent, typed, mark))
+    lines, current, used = [], [], 0
+
+    def flush():
+        cells = [[cell[i] for cell in group] for group in current for i in range(3)]
+        rows_out = [GROUP_GAP.join("".join(cells[g * 3 + i]) for g in range(len(current))) for i in range(3)]
+        lines.append((first, rows_out[0], rows_out[1], rows_out[2].rstrip()))
+
+    first = 1
+    for number, (_, cells) in enumerate(groups, start=1):
+        extra = len(cells) + (len(GROUP_GAP) if current else 0)
+        if current and used + extra > width:
+            flush()
+            current, used, first = [], 0, number
+            extra = len(cells)
+        current.append(cells)
+        used += extra
+    if current:
+        flush()
+    return lines
 
 
 def plausible(typed_time: float, tone_end: float) -> bool:
@@ -114,6 +152,9 @@ class ContinuousModeFrame:
         self.session_id = 0       # damit ein alter Auto-Stop keine neue Sitzung beendet
         self.koch_result = None   # (Zeichensatz, richtig, gesamt) für den Koch-Aufstieg
         self.audio_error = None   # Fehlermeldung aus dem Audio-Thread
+        self.full_rows = []       # Gegenüberstellung der ganzen letzten Sitzung
+        self.full_window = None
+        self.full_width = None    # Spalten beim letzten Aufbau des Fensters
 
         self._build_widgets(ScrollableFrame(parent).inner)
 
@@ -166,6 +207,9 @@ class ContinuousModeFrame:
         self.diff_box = theme.card(parent, tr("Auswertung (letzte Zeichen)"))
         self.diff_var = tk.StringVar(value=tr("Erscheint nach dem Stoppen."))
         ttk.Label(self.diff_box, textvariable=self.diff_var, font=theme.MONO, justify="left").pack(anchor="w")
+        self.full_button = ttk.Button(self.diff_box, text=tr("Alles in eigenem Fenster"), command=self.show_full,
+                                      state="disabled")
+        self.full_button.pack(anchor="w", pady=(6, 0))
 
         typed = theme.card(parent, tr("Deine Eingabe (letzte Zeichen)"))
         self.typed_preview_var = tk.StringVar(value="")
@@ -269,8 +313,11 @@ class ContinuousModeFrame:
                 return
             word_gaps = self.content != "chars" or self.group_len
             first = True
+            group = -1  # für die ganze Auswertung: gesendete Gruppe bzw. Wort
             while self.running and not self._time_up():
                 token, _ = self.source.next()
+                if word_gaps or len(self.sent_log) % FULL_GROUP_LEN == 0:
+                    group += 1
                 if word_gaps and not first:
                     # Wortpause zwischen Gruppen bzw. Wörtern (zusätzlich zur Zeichenpause).
                     if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
@@ -281,6 +328,7 @@ class ContinuousModeFrame:
                         # Wortabstand innerhalb einer Wendung („TNX FER CALL“).
                         if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
                             break
+                        group += 1
                         continue
                     samples = build_samples(char, self.wpm, self.freq, self.fw)
                     if not self._write(stream, samples):
@@ -289,7 +337,7 @@ class ContinuousModeFrame:
                     # hören ist ihr Ende erst nach stream.latency. Die Reaktionszeit
                     # zählt ab dem Ende des Tons, also vor der Pause dahinter.
                     tone_end = time.time() + stream.latency - char_gap_seconds(self.wpm, self.fw)
-                    self.sent_log.append({"char": char, "end_time": tone_end})
+                    self.sent_log.append({"char": char, "end_time": tone_end, "group": group})
             if self.running:
                 # Zeit abgelaufen: Wortpause und Schlusszeichen direkt hinterher.
                 ending = np.concatenate([
@@ -378,7 +426,8 @@ class ContinuousModeFrame:
         typed_str = "".join(e["char"] for e in self.typed_log)
         ops = align.align(sent_str, typed_str)
         extra = 0  # Tasten ohne passendes gesendetes Zeichen
-        rows = []  # (gesendet, getippt, Markierung) für die Gegenüberstellung
+        rows = []  # (gesendet, getippt, Markierung, Gruppe) für die Gegenüberstellung
+        group = 0  # überzählige Tasten gehören zur Gruppe davor
         for op in ops:
             if (op.kind == align.OpKind.DELETE and stopped_at is not None
                     and self.sent_log[op.expected_index]["end_time"] > stopped_at - STOP_GRACE_SECONDS):
@@ -386,8 +435,10 @@ class ContinuousModeFrame:
             late = (op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE)
                     and not plausible(self.typed_log[op.received_index]["time"],
                                       self.sent_log[op.expected_index]["end_time"]))
+            if op.expected_index is not None:
+                group = self.sent_log[op.expected_index].get("group", op.expected_index // FULL_GROUP_LEN)
             rows.append((op.expected_char or "–", op.received_char or "–",
-                         " " if op.kind == align.OpKind.MATCH and not late else "^"))
+                         " " if op.kind == align.OpKind.MATCH and not late else "^", group))
             if op.kind in (align.OpKind.MATCH, align.OpKind.SUBSTITUTE):
                 expected_char = op.expected_char
                 typed_char = op.received_char
@@ -411,6 +462,9 @@ class ContinuousModeFrame:
                 # zuzuordnen, zählt aber für den Aufstieg als Fehler.
                 extra += 1
 
+        self.full_rows = rows
+        self.full_button.config(state="normal" if rows else "disabled")
+        self._render_full()
         tail = rows[-DIFF_TAIL:]
         if tail:
             self.diff_var.set(
@@ -426,6 +480,108 @@ class ContinuousModeFrame:
         path = self.session_stats.finalize()
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
+
+    def show_full(self):
+        """Die ganze letzte Sitzung in einem eigenen Fenster (auch für den
+        Beamer): gesendet, getippt und Fehler, nach Gruppen gegliedert;
+        wahlweise nur der gesendete Text zum Vergleichen mit dem Zettel."""
+        if self.full_window is not None:
+            self.full_window.lift()
+            return
+        window = tk.Toplevel(self.root)
+        window.title(tr("Kontinuierlich – ganze Auswertung"))
+        window.geometry("900x600")
+        window.configure(background=theme.BG)
+        family = tkfont.nametofont("TkFixedFont", root=window).actual("family")
+        self.full_font = tkfont.Font(root=window, family=family, size=FULL_FONT[0])
+        frame = ttk.Frame(window, padding=10)
+        frame.pack(fill="both", expand=True)
+        bar = ttk.Frame(frame)
+        bar.pack(fill="x", pady=(0, 6))
+        ttk.Button(bar, text="A−", width=3, command=lambda: self.zoom_full(-1)).pack(side="left")
+        ttk.Button(bar, text="A+", width=3, command=lambda: self.zoom_full(1)).pack(side="left", padx=(4, 0))
+        ttk.Button(bar, text=tr("Kopieren"), command=self.copy_full).pack(side="left", padx=(12, 0))
+        self.sent_only_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text=tr("Nur gesendeter Text"), variable=self.sent_only_var,
+                        command=self._render_full).pack(side="left", padx=(12, 0))
+        self.full_note_var = tk.StringVar(value="")
+        theme.hint(bar, textvariable=self.full_note_var).pack(side="left", padx=(12, 0))
+        text = tk.Text(frame, font=self.full_font, wrap="none", padx=10, pady=10)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        text.pack(side="left", fill="both", expand=True)
+        text.tag_configure("error", foreground=theme.ERROR)
+        text.tag_configure("number", foreground=theme.DISABLED)
+        # Umbruch nach der Fensterbreite: bei geänderter Breite neu aufbauen.
+        text.bind("<Configure>", lambda e: self._render_full(only_if_resized=True))
+        window.bind("<Key>", self._on_full_key)
+        window.protocol("WM_DELETE_WINDOW", self.close_full)
+        self.full_text = text
+        self.full_window = window
+        self.full_width = None
+        self._render_full()
+
+    def close_full(self):
+        if self.full_window is not None:
+            self.full_window.destroy()
+        self.full_window = None
+
+    def _full_columns(self) -> int:
+        """So viele Zeichen passen neben die Gruppennummer in eine Zeile."""
+        width = self.full_text.winfo_width()
+        if width <= 1:  # noch nicht angezeigt
+            width = 880
+        return max((width - 40) // max(self.full_font.measure("0"), 1) - 6, 10)
+
+    def _render_full(self, only_if_resized=False):
+        if self.full_window is None:
+            return
+        columns = self._full_columns()
+        if only_if_resized and columns == self.full_width:
+            return
+        self.full_width = columns
+        text = self.full_text
+        text.config(state="normal")
+        text.delete("1.0", "end")
+        sent_only = self.sent_only_var.get()
+        rows = [row for row in self.full_rows if row[0] != "–"] if sent_only else self.full_rows
+        for number, sent, typed, marks in grouped_lines(rows, columns):
+            prefix = f"{number:>4}  "
+            text.insert("end", prefix, ("number",))
+            text.insert("end", sent + "\n")
+            if sent_only:
+                continue
+            line = int(text.index("end-1c").split(".")[0])
+            text.insert("end", " " * len(prefix) + typed + "\n")
+            text.insert("end", " " * len(prefix) + marks + "\n\n")
+            for column, mark in enumerate(marks):
+                if mark == "^":
+                    for row in (line, line + 1):
+                        text.tag_add("error", f"{row}.{len(prefix) + column}")
+        if not self.full_rows:
+            text.insert("end", tr("Erscheint nach dem Stoppen."))
+        text.config(state="disabled")
+        self.full_note_var.set("" if sent_only or not self.full_rows
+                               else tr("– fehlt/zu viel, ^ falsch oder nicht rechtzeitig"))
+
+    def _on_full_key(self, event):
+        if event.keysym in ("plus", "KP_Add"):
+            self.zoom_full(1)
+        elif event.keysym in ("minus", "KP_Subtract"):
+            self.zoom_full(-1)
+
+    def zoom_full(self, direction: int):
+        size, low, high, step = FULL_FONT
+        self.full_font.configure(size=min(max(self.full_font.cget("size") + direction * step, low), high))
+        self._render_full()
+
+    def copy_full(self):
+        if not self.full_rows:
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(self.full_text.get("1.0", "end").rstrip() + "\n")
+        self.full_note_var.set(tr("In die Zwischenablage kopiert."))
 
     def on_close(self):
         if self.running:
