@@ -13,6 +13,11 @@
   summary with a comparison to the week before and “5 more min”.
   Afterwards all settings are back as they were. See README, “Daily
   practice”.
+- **Week instead of streak:** next to the button you see the week's stars
+  per day (days of free practice with ✓) and where you stand on the weekly
+  goal of 12 stars; at the start of a week a look back at the last one.
+  The streak “X days in a row” in the footer is gone: it dropped to zero
+  after a single missed day.
 - **Daily goal** now defaults to 10 minutes (like the daily practice); a
   goal you already set is kept.
 - **Characters, time limit:** the limit now settles where nearly nine out

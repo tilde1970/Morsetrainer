@@ -203,3 +203,18 @@ class DailyRunnerTest(AppTestCase):
         self.runner.abort(quiet=True)
         self.assertEqual(daily.load()["tempo"], {"wpm": 20, "effective": 11})
         self.assertEqual(self.app.farnsworth_wpm_var.get(), 12)  # zurückgestellt
+
+    def test_idle_bar_shows_week_and_review(self):
+        from datetime import timedelta
+        today = date.today()
+        last_week = today - timedelta(days=today.weekday() + 3)
+        daily.save({"lesson": 12, "days": {last_week.isoformat(): {
+            "stars": [daily.DABEI], "blocks": [{"kind": daily.MAIN}], "progress": [], "minutes": 10.0,
+            "lesson": 12}}})
+        with mock.patch.object(daily, "plan", short_plan):
+            self.runner.refresh_idle()
+            self.assertIn("Letzte Woche: 1 Tag, 1 ★", self.app.daily_bar.note_var.get())
+            self.assertIn("0 von 12 ★", self.app.daily_bar.goal_var.get())
+            self.runner.start()
+            self.runner.abort(quiet=True)
+        self.assertIn("Tagesübung abgebrochen", self.app.daily_bar.note_var.get())

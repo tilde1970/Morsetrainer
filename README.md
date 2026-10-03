@@ -79,9 +79,17 @@ dran ist, und schaltet die Reiter selbst um:
   Tagesübung. Die Einstellungen der Reiter sind danach wieder wie vorher.
 - **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
   (Reaktionszeit je Zeichen bei Einzelzeichen, Gruppenquote; nur mit genug
-  Daten und bei gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion fehlt und, wenn der
-  Hauptteil gut lief, einmal am Tag **Noch 5 Min** mit etwas anderem:
-  deine Verwechslungen aus der Lektion, einen Rufz-Durchgang oder Wörter.
+  Daten und bei gleichem Tempo, nie „schlechter“), wie viel bis zur
+  nächsten Lektion fehlt, der Stand zum Wochenziel und, wenn der Hauptteil
+  gut lief, einmal am Tag **Noch 5 Min** mit etwas anderem: deine
+  Verwechslungen aus der Lektion, einen Rufz-Durchgang oder Wörter.
+- **Woche:** Neben dem Knopf steht der Wochenstreifen ab Montag, z. B.
+  „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ = ohne Tagesübung frei geübt, mit
+  erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum
+  **Wochenziel von 12 Sternen**. Das schaffst du mit vier bis fünf
+  Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Bis zur
+  ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.
+  „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“.
 
 ### Lernweg für Einsteiger
 
@@ -125,8 +133,8 @@ dran ist, und schaltet die Reiter selbst um:
 Außerdem hilfreich:
 
 - **Täglich kurz** üben schlägt selten lang: Die Fußzeile zeigt die heutige
-  Übungszeit, das Tagesziel (einstellbar im Reiter Statistik) und wie viele
-  Tage in Folge du es erreicht hast.
+  Übungszeit und das Tagesziel (einstellbar im Reiter Statistik), der
+  Wochenstreifen oben die Tage, an denen du geübt hast.
 - **Tonhöhe und Tempo leicht variieren** (gemeinsame Einstellung): Wer immer
   nur genau einen Klang hört, tut sich auf dem Band schwerer.
 - **Sprache:** Unter „▸ Weitere Optionen“ → „Sprache / Language“ lässt sich

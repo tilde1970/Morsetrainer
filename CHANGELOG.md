@@ -12,6 +12,11 @@
   (Dabei, Sauber, Weiter), Zwischenkarten zwischen den Blöcken und eine
   Abendbilanz mit Vergleich zur Vorwoche und „Noch 5 Min“. Danach sind
   alle Einstellungen wieder wie vorher. Siehe README, „Tagesübung“.
+- **Woche statt Serie:** Neben dem Knopf stehen die Sterne der Woche je Tag
+  (frei geübte Tage mit ✓) und der Stand zum Wochenziel von 12 Sternen; zu
+  Beginn einer Woche ein Rückblick auf die letzte. Die Serie „X Tage in
+  Folge“ in der Fußzeile entfällt: Sie fiel nach einem ausgelassenen Tag
+  auf null.
 - **Tagesziel** ist jetzt standardmäßig 10 Minuten (wie die Tagesübung);
   ein schon eingestelltes Ziel bleibt.
 - **Einzelzeichen, Zeitlimit:** Das Limit pendelt sich jetzt dort ein, wo

@@ -1,6 +1,8 @@
 """Leiste der Tagesübung über den Reitern.
 
-Ohne laufende Tagesübung: Knopf „▶ Tagesübung“ und die Sterne von heute.
+Ohne laufende Tagesübung: Knopf „▶ Tagesübung“, der Wochenstreifen mit
+den Sternen je Tag und dem Stand zum Wochenziel (core/week.py), daneben ein
+Hinweis (Wochenrückblick oder wie die letzte Tagesübung ausging).
 Während der Tagesübung: die drei Abschnitte, Zeitbalken mit
 „6:10 von 10 Min“ und die schon verdienten Sterne – ruhig, ohne
 Aufleuchten, damit nichts den Blick vom Hören wegzieht."""
@@ -8,7 +10,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-from morsetrainer.core import daily, stats
+from morsetrainer.core import daily, stats, week
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import theme
 
@@ -16,12 +18,41 @@ FULL_STAR, EMPTY_STAR = "★", "☆"
 BLOCK_LABELS = {daily.WARMUP: N_("Aufwärmen"), daily.MAIN: N_("Hauptteil"), daily.OUTRO: N_("Ausklang"),
                 daily.EXTRA: N_("Zugabe")}
 STAR_NAMES = {daily.DABEI: N_("Dabei"), daily.SAUBER: N_("Sauber"), daily.WEITER: N_("Weiter")}
+WEEKDAYS = (N_("Mo"), N_("Di"), N_("Mi"), N_("Do"), N_("Fr"), N_("Sa"), N_("So"))
 # Eine Serie wird erst ab dieser Länge erwähnt.
 STREAK_SHOWN_FROM = 5
 
 
 def star_text(stars) -> str:
     return " ".join(FULL_STAR if s in stars else EMPTY_STAR for s in daily.STAR_ORDER)
+
+
+def week_text(days: list) -> str:
+    """Wochenstreifen: „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ frei geübt,
+    – nicht geübt, · noch nicht dran)."""
+    parts = []
+    for item in days:
+        if item["stars"]:
+            mark = FULL_STAR * item["stars"]
+        else:
+            mark = {week.FUTURE: "·", week.PRACTICED: "✓"}.get(item["status"], "–")
+        parts.append(f"{tr(WEEKDAYS[item['day'].weekday()])} {mark}")
+    return "  ".join(parts)
+
+
+def week_goal_text(stars: int) -> str:
+    if stars >= week.WEEK_GOAL:
+        return tr("Wochenziel erreicht: {stars} {star}").format(stars=stars, star=FULL_STAR)
+    return tr("{stars} von {goal} {star} diese Woche").format(stars=stars, goal=week.WEEK_GOAL, star=FULL_STAR)
+
+
+def review_line(review: dict) -> str:
+    """Wochenrückblick in einem Satz."""
+    days = tr("1 Tag") if review["days"] == 1 else tr("{n} Tage").format(n=review["days"])
+    text = tr("Letzte Woche: {days}, {stars} {star}").format(days=days, stars=review["stars"], star=FULL_STAR)
+    if review["lesson_from"] is not None and review["lesson_to"] > review["lesson_from"]:
+        text += ", " + tr("Lektion {a} → {b}").format(a=review["lesson_from"], b=review["lesson_to"])
+    return text
 
 
 def minutes_text(minutes: float) -> str:
@@ -114,8 +145,10 @@ class DailyBar:
             self.idle, text=tr("▶ Tagesübung ({minutes} Min)").format(minutes=daily.TOTAL_MINUTES),
             style="Accent.TButton", command=on_start)
         self.start_button.pack(side="left")
-        self.today_var = tk.StringVar(value="")
-        ttk.Label(self.idle, textvariable=self.today_var).pack(side="left", padx=(10, 0))
+        self.week_var = tk.StringVar(value="")
+        ttk.Label(self.idle, textvariable=self.week_var).pack(side="left", padx=(12, 0))
+        self.goal_var = tk.StringVar(value="")
+        ttk.Label(self.idle, textvariable=self.goal_var, style="Score.TLabel").pack(side="left", padx=(12, 0))
         self.note_var = tk.StringVar(value="")
         theme.hint(self.idle, textvariable=self.note_var).pack(side="left", padx=(10, 0))
 
@@ -135,17 +168,20 @@ class DailyBar:
         self.card_lines = ttk.Frame(self.card)
         self.card_lines.pack(fill="x")
         theme.hint(self.card, text=tr("Weiter mit Enter, Esc beendet die Tagesübung")).pack(anchor="w", pady=(6, 0))
-        self.show_idle([])
+        self.show_idle()
 
     def pack(self, **options):
         self.frame.pack(fill="x", **options)
 
-    def show_idle(self, stars_today, note: str = "") -> None:
+    def show_idle(self, note: str = "") -> None:
         self.hide_card()
         self.active.pack_forget()
         self.idle.pack(fill="x")
-        self.today_var.set(tr("Heute: {stars}").format(stars=star_text(stars_today)))
         self.note_var.set(note)
+
+    def show_week(self, days: list, stars: int) -> None:
+        self.week_var.set(week_text(days))
+        self.goal_var.set(week_goal_text(stars))
 
     def show_active(self) -> None:
         self.idle.pack_forget()
@@ -192,7 +228,7 @@ class EveningSummary:
     und auf Wunsch einmal „Noch 5 Min“. Enter und Esc schließen."""
 
     def __init__(self, root, stars, comparison: dict, outlook=None, offer=None, on_extra=None,
-                 completed: bool = True):
+                 completed: bool = True, week_stars: int = None):
         self.on_extra = on_extra
         self.offer = offer
         self.window = window = tk.Toplevel(root)
@@ -207,6 +243,8 @@ class EveningSummary:
         ttk.Label(frame, text=star_text(stars), style="Score.TLabel").pack(anchor="w", pady=(8, 0))
         if stars:
             ttk.Label(frame, text=stars_named(stars)).pack(anchor="w")
+        if week_stars is not None:
+            ttk.Label(frame, text=week_goal_text(week_stars)).pack(anchor="w", pady=(4, 0))
 
         box = theme.card(frame, tr("Besser geworden (gegenüber der Vorwoche)"), padx=0, pady=(12, 0))
         lines = [better_line(item) for item in comparison.get("better", [])]

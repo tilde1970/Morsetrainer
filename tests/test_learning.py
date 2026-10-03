@@ -153,21 +153,6 @@ class AdaptiveLengthTest(unittest.TestCase):
 
 
 class PracticeTest(unittest.TestCase):
-    def test_streak_counts_days_with_goal(self):
-        from datetime import date
-        from morsetrainer.core import practice
-        today = date(2026, 9, 26)
-        data = {"2026-09-23": 900, "2026-09-24": 900, "2026-09-25": 1000, "2026-09-26": 300}
-        # Heute noch nicht erreicht: Serie bis gestern bleibt stehen.
-        self.assertEqual(practice.streak(data, 900, today), 3)
-        data["2026-09-26"] = 950
-        self.assertEqual(practice.streak(data, 900, today), 4)
-        data["2026-09-24"] = 100
-        self.assertEqual(practice.streak(data, 900, today), 2)
-        # Ohne Ziel zählt jeder Tag mit Übung.
-        self.assertEqual(practice.streak(data, 0, today), 4)
-        self.assertEqual(practice.streak({}, 900, today), 0)
-
     def test_add_accumulates(self):
         from datetime import date
         from unittest import mock

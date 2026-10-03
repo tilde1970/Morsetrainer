@@ -14,10 +14,10 @@ ein einzelner Block mit demselben Ablauf, danach ohne neue Bilanz."""
 import time
 from datetime import date
 
-from morsetrainer.core import daily, koch, review, stats
+from morsetrainer.core import daily, koch, practice, review, stats, week
 from morsetrainer.i18n import tr
 from morsetrainer.widgets.daily_panel import (
-    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, stars_named)
+    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, review_line, stars_named)
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 
 # Reiter je Modus der Blöcke (deutsche Titel = Schlüssel, siehe app.py).
@@ -68,7 +68,25 @@ class DailyRunner:
 
     # --- Anzeige ---------------------------------------------------------------
     def refresh_idle(self, note: str = "") -> None:
-        self.bar.show_idle(daily.stars_on(daily.load(), date.today()), note)
+        """Leiste ohne Tagesübung; ohne `note` steht dort der Wochenrückblick,
+        solange diese Woche noch keine Tagesübung lief."""
+        state = daily.load()
+        practice_data = practice.load()
+        if not note:
+            review_data = week.last_week_review(state, practice_data, self.app.daily_goal_minutes() * 60, date.today())
+            note = review_line(review_data) if review_data else ""
+        self.bar.show_idle(note)
+        self.refresh_week(practice_data, state)
+
+    def refresh_week(self, practice_data=None, state=None) -> None:
+        """Wochenstreifen und Stand zum Wochenziel."""
+        if self.active:
+            return  # die Leiste zeigt gerade den Ablauf
+        state = daily.load() if state is None else state
+        practice_data = practice.load() if practice_data is None else practice_data
+        today = date.today()
+        self.bar.show_week(week.strip(state, practice_data, self.app.daily_goal_minutes() * 60, today),
+                           week.stars_in_week(state, today))
 
     def _tick(self) -> None:
         elapsed = self.done_minutes
@@ -317,7 +335,8 @@ class DailyRunner:
             note = tr("Zugabe geschafft.") if completed else tr("Zugabe beendet.")
         else:
             note = tr("Tagesübung geschafft.") if completed else tr("Tagesübung abgebrochen – deine Sterne bleiben.")
-        self.bar.show_idle(stars, note)
+        self.bar.show_idle(note)
+        self.refresh_week(state=self.state)
         self.app.finish_daily()
         if not self.extra and not (self.aborting and self.quiet):
             self._show_summary(stars, completed)
@@ -333,4 +352,4 @@ class DailyRunner:
             offer = daily.extra_offer(self.state, self.today, lesson, confusions)
         self.summary = EveningSummary(
             self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
-            offer, self.start_extra, completed)
+            offer, self.start_extra, completed, week.stars_in_week(self.state, self.today))

@@ -26,7 +26,7 @@ Gesamtstatistik stehen):
  "tempo": {"wpm", "effective"}, "pending_tempo", "pending_tempo_since",
  "tempo_best" (höchstes effektives Tagestempo), "icr_limit" (Zeitlimit
  am Ende des letzten Aufwärmens),
- "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress"}}}"""
+ "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress", "lesson"}}}"""
 import math
 from dataclasses import dataclass, field
 from datetime import date
@@ -285,6 +285,7 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
     Hochstufungen der Lernkartei („review_events“). Gibt die dabei neu
     verdienten Sterne zurück (für die Zwischenkarte)."""
     entry = day_entry(state, today)
+    entry.setdefault("lesson", current_lesson(state, 1))  # für den Wochenrückblick
     entry["blocks"].append({"kind": block.kind, "mode": block.mode,
                             **{k: v for k, v in result.items() if k not in ("review_events", "chars")}})
     entry["minutes"] = round(entry["minutes"] + result.get("minutes", 0.0), 2)

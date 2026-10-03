@@ -462,28 +462,31 @@ class MorseTrainerApp:
         self.daily_goal_var.trace_add("write", lambda *_: self._update_practice())
         self._update_practice()
 
+    def daily_goal_minutes(self) -> int:
+        try:
+            return max(self.daily_goal_var.get(), 0)
+        except tk.TclError:
+            return 0
+
     def _update_practice(self):
-        """Fußzeile: heutige Übungszeit, Tagesziel und Serie. Ein laufender
-        Durchgang zählt schon mit."""
+        """Fußzeile: heutige Übungszeit und Tagesziel; dazu der
+        Wochenstreifen (frei geübte Tage). Ein laufender Durchgang zählt
+        schon mit."""
         data = practice.load()
         today = date.today()
         if self.practice_started is not None:
             data[today.isoformat()] = practice.seconds_on(data, today) + time.time() - self.practice_started
         minutes = int(practice.seconds_on(data, today) // 60)
-        try:
-            goal = max(self.daily_goal_var.get(), 0)
-        except tk.TclError:
-            goal = 0
+        goal = self.daily_goal_minutes()
         if goal:
             text = tr("Heute {minutes} von {goal} Min").format(minutes=minutes, goal=goal)
             if minutes >= goal:
                 text += " ✓"
         else:
             text = tr("Heute {minutes} Min").format(minutes=minutes)
-        days = practice.streak(data, goal * 60, today)
-        if days:
-            text += " · " + (tr("1 Tag in Folge") if days == 1 else tr("{days} Tage in Folge").format(days=days))
         self.practice_var.set(text)
+        if hasattr(self, "daily"):  # beim Aufbau der Fußzeile gibt es die Leiste noch nicht
+            self.daily.refresh_week(data)
 
     def _practice_tick(self):
         self._update_practice()

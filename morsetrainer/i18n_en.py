@@ -50,8 +50,6 @@ EN.update({
     "Morsetrainer {version} · entwickelt von {author} · 73!": "Morsetrainer {version} · developed by {author} · 73!",
     "Heute {minutes} von {goal} Min": "Today {minutes} of {goal} min",
     "Heute {minutes} Min": "Today {minutes} min",
-    "1 Tag in Folge": "1 day in a row",
-    "{days} Tage in Folge": "{days} days in a row",
     "Statistik": "Statistics",
     "Gesamtstatistik (alle Durchgänge)": "Overall statistics (all sessions)",
     "Tagesziel": "Daily goal",
@@ -153,7 +151,13 @@ EN.update({
 # --- daily_runner.py, widgets/daily_panel.py (Tagesübung) ---
 EN.update({
     "▶ Tagesübung ({minutes} Min)": "▶ Daily practice ({minutes} min)",
-    "Heute: {stars}": "Today: {stars}",
+    "Mo": "Mon", "Di": "Tue", "Mi": "Wed", "Do": "Thu", "Fr": "Fri", "Sa": "Sat", "So": "Sun",
+    "Wochenziel erreicht: {stars} {star}": "Weekly goal reached: {stars} {star}",
+    "{stars} von {goal} {star} diese Woche": "{stars} of {goal} {star} this week",
+    "1 Tag": "1 day",
+    "{n} Tage": "{n} days",
+    "Letzte Woche: {days}, {stars} {star}": "Last week: {days}, {stars} {star}",
+    "Lektion {a} → {b}": "lesson {a} → {b}",
     "Tagesübung": "Daily practice",
     "{elapsed} von {total} Min": "{elapsed} of {total} min",
     "Aufwärmen": "Warm-up",

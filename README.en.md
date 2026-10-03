@@ -79,9 +79,17 @@ due and switches the tabs by itself:
   Afterwards the tab settings are back as they were.
 - **Evening summary:** stars, what improved compared with the week before
   (reaction time per character in Characters, group score; only with
-  enough data and at the same speed, never “worse”), how much is missing for the next lesson and, if the main part
-  went well, once a day **5 more min** with something different: your
-  confusions within the lesson, a RufZ run or words.
+  enough data and at the same speed, never “worse”), how much is missing
+  for the next lesson, where you stand on the weekly goal and, if the main
+  part went well, once a day **5 more min** with something different:
+  your confusions within the lesson, a RufZ run or words.
+- **Week:** next to the button is the week strip from Monday, e.g.
+  “Mon ★★★  Tue ★★  Wed ✓  Thu –  Fri ·” (✓ = practised freely without the
+  daily practice, daily goal reached; – = no practice), and next to it
+  where you stand on the **weekly goal of 12 stars**. Four to five days of
+  practice get you there; a missed day doesn't cost you the week. Until
+  the first daily practice of a new week it shows a look back, e.g.
+  “Last week: 4 days, 11 ★, lesson 12 → 13”.
 
 ### Learning path for beginners
 
@@ -123,8 +131,8 @@ due and switches the tabs by itself:
 Also helpful:
 
 - **Short and daily** beats long and rare: the footer shows today's
-  practice time, the daily goal (adjustable in the Statistics tab) and how
-  many days in a row you have reached it.
+  practice time and the daily goal (adjustable in the Statistics tab), the
+  week strip at the top the days you practised.
 - **Vary pitch and speed slightly** (shared setting): if you only ever hear
   exactly one sound, you will find it harder on the band.
 
