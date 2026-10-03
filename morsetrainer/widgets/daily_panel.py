@@ -137,7 +137,7 @@ def extra_label(offer) -> str:
 
 
 class DailyBar:
-    def __init__(self, parent, on_start):
+    def __init__(self, parent, on_start, on_continue):
         self.frame = ttk.Frame(parent, padding=(10, 6, 10, 2))
         self.frame.columnconfigure(1, weight=1)
         self.idle = ttk.Frame(self.frame)
@@ -167,7 +167,10 @@ class DailyBar:
         self.card = ttk.LabelFrame(self.frame, padding=(10, 4, 10, 8))
         self.card_lines = ttk.Frame(self.card)
         self.card_lines.pack(fill="x")
-        theme.hint(self.card, text=tr("Weiter mit Enter, Esc beendet die Tagesübung")).pack(anchor="w", pady=(6, 0))
+        footer = ttk.Frame(self.card)
+        footer.pack(fill="x", pady=(6, 0))
+        ttk.Button(footer, text=tr("Weiter ▶"), style="Accent.TButton", command=on_continue).pack(side="left")
+        theme.hint(footer, text=tr("Enter geht weiter, Esc beendet die Tagesübung")).pack(side="left", padx=(10, 0))
         self.show_idle()
 
     def pack(self, **options):

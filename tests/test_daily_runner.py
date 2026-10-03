@@ -1,6 +1,7 @@
 """Tests für den Ablauf der Tagesübung im Hauptfenster (daily_runner.py)."""
 import time
 from datetime import date
+from tkinter import ttk
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
@@ -35,8 +36,7 @@ class DailyRunnerTest(AppTestCase):
             mode.next_char()
         else:
             mode.stop()
-        if self.runner.next_id is not None:
-            self.app.root.after_cancel(self.runner.next_id)
+        if self.runner.card_open:
             self.runner._next_block()
 
     def test_start_uses_lesson_and_daily_tempo(self):
@@ -128,6 +128,21 @@ class DailyRunnerTest(AppTestCase):
             self.assertFalse(self.runner.card_open)
             self.assertIs(self.runner.mode, self.mode("Gruppen"))
             self.assertEqual(self.app.daily_bar.card.winfo_manager(), "")
+            self.runner.abort()
+
+    def test_card_waits_for_continue_button(self):
+        with mock.patch.object(daily, "plan", short_plan):
+            self.runner.start()
+            self._end_block_only()
+            self.runner.card_shown -= 60  # auch nach einer Minute: kein Weiter von selbst
+            self.app.root.update()
+            self.assertTrue(self.runner.card_open)
+            self.assertIsNone(self.runner.mode)
+            button = next(w for w in self.app.daily_bar.card.winfo_children()[1].winfo_children()
+                          if isinstance(w, ttk.Button))
+            button.invoke()
+            self.assertFalse(self.runner.card_open)
+            self.assertIs(self.runner.mode, self.mode("Gruppen"))
             self.runner.abort()
 
     def test_escape_on_card_ends_daily(self):

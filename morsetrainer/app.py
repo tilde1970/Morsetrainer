@@ -93,7 +93,8 @@ class MorseTrainerApp:
         self._update_more()
         self._build_footer()
         # Vor dem Notizbuch gepackt: steht über den Reitern.
-        self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start())
+        self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start(),
+                                  on_continue=lambda: self.daily.continue_now())
         self.daily_bar.pack()
         self._build_notebook()
         self._build_all_time_tab()

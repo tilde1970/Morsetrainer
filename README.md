@@ -75,8 +75,8 @@ dran ist, und schaltet die Reiter selbst um:
   fehlende Sterne nachholen; verdiente Sterne gehen nie verloren, auch
   nicht beim Abbrechen.
 - **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue Sterne
-  und was als Nächstes kommt; Enter geht gleich weiter, Esc beendet die
-  Tagesübung. Die Einstellungen der Reiter sind danach wieder wie vorher.
+  und was als Nächstes kommt. Sie bleibt stehen, bis du mit Enter oder
+  „Weiter“ fortfährst; Esc beendet die Tagesübung. Die Einstellungen der Reiter sind danach wieder wie vorher.
 - **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
   (Reaktionszeit je Zeichen bei Einzelzeichen, Gruppenquote; nur mit genug
   Daten und bei gleichem Tempo, nie „schlechter“), wie viel bis zur

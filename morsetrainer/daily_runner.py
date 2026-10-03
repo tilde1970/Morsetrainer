@@ -8,8 +8,8 @@ ihrer eigenen Lektion und ihrem Tagestempo. Ein Block, der von Hand
 gestoppt wird (Stop, F5, Esc), beendet die ganze Tagesübung; bereits
 verdiente Sterne bleiben.
 
-Zwischen den Blöcken steht einige Sekunden die Zwischenkarte (Enter: gleich
-weiter), am Ende die Abendbilanz. Aus ihr startet „Noch 5 Min“ eine Zugabe:
+Zwischen den Blöcken steht die Zwischenkarte, bis man mit Enter (oder dem
+Knopf) weitergeht; am Ende die Abendbilanz. Aus ihr startet „Noch 5 Min“ eine Zugabe:
 ein einzelner Block mit demselben Ablauf, danach ohne neue Bilanz."""
 import time
 from datetime import date
@@ -37,10 +37,6 @@ MODE_SETTINGS = {
 # Ein Block, der kürzer lief, wurde von Hand gestoppt (die Reiter enden
 # sonst erst nach Ablauf der Zeit und der letzten Eingabe).
 STOPPED_EARLY_MIN = 0.1
-# So lange steht die Zwischenkarte, beim neuen Zeichen etwas länger (es
-# wird dreimal vorgespielt).
-CARD_MS = 4000
-INTRO_MS = 6000
 TICK_MS = 1000
 
 
@@ -59,7 +55,6 @@ class DailyRunner:
         self.done_minutes = 0.0
         self.saved_shared = None
         self.tick_id = None
-        self.next_id = None
         self.card_open = False
         self.card_shown = 0.0
         self.extra = False
@@ -123,7 +118,7 @@ class DailyRunner:
             # Neue Lektion: das neue Zeichen erst einmal anhören.
             char = koch.newest_char(lesson)
             self._show_card(tr("Neues Zeichen: {char}").format(char=char),
-                            [preview_line(self.blocks[0], lesson, self.state["tempo"])], INTRO_MS)
+                            [preview_line(self.blocks[0], lesson, self.state["tempo"])])
             app._play_new_char()
         else:
             self._next_block()
@@ -191,7 +186,6 @@ class DailyRunner:
 
     # --- Blöcke --------------------------------------------------------------------
     def _next_block(self) -> None:
-        self.next_id = None
         self.card_open = False
         self.bar.hide_card()
         if not self.active:
@@ -281,20 +275,18 @@ class DailyRunner:
         following = self.blocks[self.index + 1]
         lines.append(preview_line(following, daily.current_lesson(self.state, 1), self.state["tempo"]))
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
-        self._show_card(title, lines, CARD_MS, strong)
+        self._show_card(title, lines, strong)
 
-    def _show_card(self, title: str, lines, ms: int, strong=()) -> None:
+    def _show_card(self, title: str, lines, strong=()) -> None:
+        """Die Karte bleibt stehen, bis man weitergeht (continue_now)."""
         self.bar.show_card(title, lines, strong)
         self.card_open = True
         self.card_shown = time.time()
         self.app.root.focus_set()  # Enter und Esc sollen ankommen
-        self.next_id = self.app.root.after(ms, self._next_block)
 
     def continue_now(self) -> None:
-        """Enter auf der Zwischenkarte: nicht warten."""
-        if (self.active and self.card_open and self.next_id is not None
-                and time.time() - self.card_shown >= ENTER_GRACE_S):
-            self.app.root.after_cancel(self.next_id)
+        """Enter oder „Weiter“ auf der Zwischenkarte: nächster Block."""
+        if self.active and self.card_open and time.time() - self.card_shown >= ENTER_GRACE_S:
             self._next_block()
 
     # --- Ende ----------------------------------------------------------------------
@@ -315,10 +307,9 @@ class DailyRunner:
             return
         self.active = False
         self.card_open = False
-        for after_id in (self.tick_id, self.next_id):
-            if after_id is not None:
-                self.app.root.after_cancel(after_id)
-        self.tick_id = self.next_id = None
+        if self.tick_id is not None:
+            self.app.root.after_cancel(self.tick_id)
+        self.tick_id = None
         if self.mode is not None:
             self.mode.daily_release()
             self.mode = None

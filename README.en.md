@@ -75,7 +75,8 @@ due and switches the tabs by itself:
   daily speed you never had before. A second daily practice on the same day can add
   missing stars; earned stars are never lost, not even when you stop early.
 - **Between the blocks** a short card shows the result, new stars and
-  what comes next; Enter continues at once, Esc ends the daily practice.
+  what comes next. It stays until you continue with Enter or “Continue”;
+  Esc ends the daily practice.
   Afterwards the tab settings are back as they were.
 - **Evening summary:** stars, what improved compared with the week before
   (reaction time per character in Characters, group score; only with
