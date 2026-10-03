@@ -52,6 +52,14 @@ class AwardsTest(unittest.TestCase):
         few = session("group", 2, lesson=30, first_try_correct=40, first_try_total=40)
         self.assertEqual(dates("koch", data([ok, slow, few])), [day(0), None, None])
 
+    def test_koch_gold_with_final_lesson(self):
+        runs = [session("group", 0, lesson=25, first_try_correct=50, first_try_total=50),
+                session("group", 1, lesson=40, first_try_correct=50, first_try_total=50)]
+        self.assertEqual(dates("koch", data(runs)), [day(0), day(0), None])
+        runs.append(session("group", 2, lesson=koch.lesson_of(koch.FINAL_CHARSET), first_try_correct=50,
+                            first_try_total=50))
+        self.assertEqual(dates("koch", data(runs)), [day(0), day(0), day(2)])
+
     def test_worked_all_letters_counts_best_box(self):
         review = {ch: {"box": 0, "best_box": 2, "best_day": day(i).isoformat()} for i, ch in enumerate("ABCDEFGHIJ")}
         self.assertEqual(dates("wal", data(review=review)), [day(9), None, None])

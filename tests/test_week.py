@@ -62,6 +62,17 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(review, {"days": 1, "stars": 0, "lesson_from": None, "lesson_to": None})
         self.assertEqual(daily_panel.review_line(review), "Letzte Woche: 1 Tag, 0 ★")
 
+    def test_koch_completed_instead_of_lesson_number(self):
+        review = {"days": 3, "stars": 5, "lesson_from": 40, "lesson_to": daily.POST_KOCH}
+        self.assertEqual(daily_panel.review_line(review), "Letzte Woche: 3 Tage, 5 ★, Lektion 40 → Koch geschafft")
+        review.update(lesson_from=44, lesson_to=45)  # Stand von vor 2.23: schon nach Koch
+        self.assertEqual(daily_panel.review_line(review), "Letzte Woche: 3 Tage, 5 ★")
+        self.assertEqual(daily_panel.outlook_line({"lesson": 41, "missing": 3}),
+                         "Noch 3 % beim ersten Versuch bis Lektion 41")
+        self.assertEqual(daily_panel.outlook_line({"lesson": daily.POST_KOCH, "missing": 3}),
+                         "Noch 3 % beim ersten Versuch bis zum Koch-Abschluss")
+        self.assertIn("Koch geschafft", daily_panel.outlook_line({"lesson": daily.POST_KOCH, "pending": True}))
+
 
 class LessonPerDayTest(unittest.TestCase):
     def test_finish_block_records_lesson(self):

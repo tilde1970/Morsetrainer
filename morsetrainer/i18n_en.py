@@ -165,6 +165,7 @@ EN.update({
     "{n} Tage": "{n} days",
     "Letzte Woche: {days}, {stars} {star}": "Last week: {days}, {stars} {star}",
     "Lektion {a} → {b}": "lesson {a} → {b}",
+    "Lektion {a} → Koch geschafft": "lesson {a} → Koch completed",
     "Tagesübung": "Daily practice",
     "{elapsed} von {total} Min": "{elapsed} of {total} min",
     "Aufwärmen": "Warm-up",
@@ -190,6 +191,10 @@ EN.update({
         "Groups at {wpm} WPM: {before} % → {now} % on the first try",
     "{char} kommt schneller: {before} s → {now} s": "{char} comes faster: {before} s → {now} s",
     "Ab morgen Lektion {lesson} – geschafft!": "Lesson {lesson} from tomorrow – well done!",
+    "Koch geschafft – ab morgen übst du mit allen Zeichen weiter!":
+        "Koch completed – from tomorrow you go on practising with all characters!",
+    "Noch {missing} % beim ersten Versuch bis zum Koch-Abschluss":
+        "{missing} % more on the first try to complete Koch",
     "Noch {missing} % beim ersten Versuch bis Lektion {lesson}":
         "{missing} % more on the first try to reach lesson {lesson}",
     "Verwechslungen {chars}": "confusions {chars}",

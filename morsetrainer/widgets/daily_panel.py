@@ -50,8 +50,12 @@ def review_line(review: dict) -> str:
     """Wochenrückblick in einem Satz."""
     days = tr("1 Tag") if review["days"] == 1 else tr("{n} Tage").format(n=review["days"])
     text = tr("Letzte Woche: {days}, {stars} {star}").format(days=days, stars=review["stars"], star=FULL_STAR)
-    if review["lesson_from"] is not None and review["lesson_to"] > review["lesson_from"]:
-        text += ", " + tr("Lektion {a} → {b}").format(a=review["lesson_from"], b=review["lesson_to"])
+    a, b = review["lesson_from"], review["lesson_to"]
+    if a is not None and b > a and a < daily.POST_KOCH:
+        if b >= daily.POST_KOCH:
+            text += ", " + tr("Lektion {a} → Koch geschafft").format(a=a)
+        else:
+            text += ", " + tr("Lektion {a} → {b}").format(a=a, b=b)
     return text
 
 
@@ -119,8 +123,13 @@ def better_line(item: dict) -> str:
 def outlook_line(outlook) -> str:
     if not outlook:
         return ""
+    done = outlook["lesson"] >= daily.POST_KOCH  # nach der Abschlusslektion: Koch geschafft
     if outlook.get("pending"):
+        if done:
+            return tr("Koch geschafft – ab morgen übst du mit allen Zeichen weiter!")
         return tr("Ab morgen Lektion {lesson} – geschafft!").format(lesson=outlook["lesson"])
+    if done:
+        return tr("Noch {missing} % beim ersten Versuch bis zum Koch-Abschluss").format(missing=outlook["missing"])
     return tr("Noch {missing} % beim ersten Versuch bis Lektion {lesson}").format(
         missing=outlook["missing"], lesson=outlook["lesson"])
 
