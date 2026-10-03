@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.23
 
 - **Daten sichern und einlesen:** Unter „Weitere Optionen → Daten“
   lassen sich alle Einstellungen und Statistiken als ZIP-Datei an einen

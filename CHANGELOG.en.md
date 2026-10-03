@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.23
 
 - **Back up and restore data:** under “More options → Data”, all settings
   and statistics can be saved as a ZIP file to a place of your choice and
