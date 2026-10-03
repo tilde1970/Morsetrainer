@@ -29,6 +29,7 @@ from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.net import update
+from morsetrainer.widgets.awards_panel import AwardsPanel
 from morsetrainer.widgets.daily_panel import DailyBar
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.progress_widget import ProgressPanel
@@ -588,6 +589,7 @@ class MorseTrainerApp:
         ttk.Spinbox(row, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5).pack(side="left")
         ttk.Label(row, text=tr("Min. pro Tag")).pack(side="left", padx=(4, 0))
         theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(anchor="w", pady=(4, 0))
+        self.awards_panel = AwardsPanel(frame)
 
         review_box = theme.card(frame, tr("Wiederholung über Tage (Lernkartei)"))
         self.review_var = tk.StringVar(value="")
@@ -628,6 +630,7 @@ class MorseTrainerApp:
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
         self.review_var.set(self._review_text(review.load()))
         self.progress_panel.refresh()
+        self.awards_panel.refresh()
 
     @staticmethod
     def _review_text(data: dict, today=None) -> str:

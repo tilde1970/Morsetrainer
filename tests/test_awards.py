@@ -8,6 +8,7 @@ from unittest import mock
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import awards, koch, stats
 from morsetrainer.core.awards import Data, Session
+from morsetrainer.widgets import awards_panel as panel
 
 DAY = date(2026, 10, 1)
 
@@ -141,6 +142,31 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("q_groups", data(q)), [day(1)])
         review = {d: {"box": 2, "day": day(int(d)).isoformat()} for d in awards.DIGITS}
         self.assertEqual(dates("digits", data(review=review)), [day(9)])
+
+
+class OverviewTest(unittest.TestCase):
+    def test_progress_and_second_day(self):
+        koch_runs = [session("group", 0, lesson=18, first_try_correct=50, first_try_total=50)]
+        status = awards.evaluate(data(koch_runs), today=day(5))["koch"]
+        self.assertEqual((status.next_level, status.progress), (1, (18, 25)))
+        self.assertEqual(panel.next_text(awards.BY_KEY["koch"], status), "Silber: 18 / 25 Lektionen")
+        qrq = dict(content="chars", group_len=5, charset=koch.lesson_charset(40), completed=True,
+                   duration_s=200, total=300, correct=290, extra_keys=0)
+        status = awards.evaluate(data([session("continuous", 0, wpm=26, **qrq)]), today=day(5))["qrq"]
+        self.assertTrue(status.second_day)
+        self.assertEqual(panel.next_text(awards.BY_KEY["qrq"], status), "Silber: an einem zweiten Tag wiederholen")
+        status = awards.evaluate(data(), today=day(5))["first_qso"]
+        self.assertEqual((panel.seals_text(awards.BY_KEY["first_qso"], status),
+                          panel.next_text(awards.BY_KEY["first_qso"], status)), ("–", "–"))
+
+    def test_protocol_dates_win_and_stay(self):
+        state = {"seals": {"club": {"0": day(-3).isoformat()}, "endurance": {"0": day(-9).isoformat()}},
+                 "seeded": True}
+        rows = dict(awards.overview(state, awards.evaluate(data([session("network", 0)]), today=day(5))))
+        self.assertEqual(rows[awards.BY_KEY["club"]].dates, [day(-3)])
+        endurance = rows[awards.BY_KEY["endurance"]]
+        self.assertEqual((endurance.dates[0], endurance.next_level, endurance.progress), (day(-9), 1, (0, 50)))
+        self.assertIn("Bronze am", panel.detail_text(awards.BY_KEY["endurance"], endurance))
 
 
 class CheckTest(unittest.TestCase):

@@ -952,7 +952,7 @@ EN.update({
     "Koch": "Koch",
     "Bestandener Aufstiegslauf (≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM)":
         "Passed lesson run (≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM)",
-    "Lektion": "Lesson",
+    "Lektionen": "lessons",
     "Worked All Letters": "Worked All Letters",
     "Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, Gold: alle Buchstaben in Fach 6 und alle Ziffern "
     "in Fach 4":
@@ -1011,4 +1011,20 @@ EN.update({
     "Alle Ziffern": "All digits",
     "Alle 10 Ziffern mindestens in Fach 3": "All 10 digits at least in box 3",
     "Ziffern": "digits",
+    "Diplome": "Awards", "Diplom": "Award", "Siegel": "Seals", "Nächstes Ziel": "Next goal",
+    "ab Lektion": "from lesson", "erreicht": "achieved",
+    "an einem zweiten Tag wiederholen": "repeat on a second day",
+    "{have} / {need} {unit}": "{have} / {need} {unit}",
+    "{level}: {progress}": "{level}: {progress}",
+    "Stufen: {steps} {unit}": "Levels: {steps} {unit}",
+    "Silber und höher: an zwei verschiedenen Tagen.": "Silver and above: on two different days.",
+    "{level} am {date}": "{level} on {date}",
+    "Erreicht: {seals}": "Achieved: {seals}",
+    "Erreicht am {date}": "Achieved on {date}",
+    "{seals} Siegel in {awards} von {total} Diplomen": "{seals} seals in {awards} of {total} awards",
+    "Noch keine Siegel": "No seals yet",
+    "Eine Zeile wählen, um die Bedingung zu sehen. Erreichte Siegel bleiben, auch wenn die Gesamtstatistik "
+    "zurückgesetzt wird.":
+        "Select a row to see the condition. Seals you have achieved stay, even when the overall statistics "
+        "are reset.",
 })

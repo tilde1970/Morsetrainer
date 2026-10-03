@@ -59,10 +59,10 @@ class Award:
 
 AWARDS = (
     Award("koch", N_("Koch"), N_("Bestandener Aufstiegslauf (≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, "
-                                "Zeichen ≥ 18 WPM)"), (10, 25, 44), N_("Lektion"), 1),
+                                "Zeichen ≥ 18 WPM)"), (10, 25, 44), N_("Lektionen"), 1),
     Award("wal", N_("Worked All Letters"), N_("Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, "
                                              "Gold: alle Buchstaben in Fach 6 und alle Ziffern in Fach 4"),
-          (1, 2, 3), "", 1, stepped=True),
+          (1, 2, 3), N_("Zeichen"), 1, stepped=True),
     Award("flow", N_("Mitschreiben im Fluss"), N_("Kontinuierlich mit Klartext, voller 3-Min.-Lauf, ≥ 90 % "
                                                  "abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM"),
           (10, 15, 22), N_("WPM eff."), 15, two_days=True),
@@ -235,13 +235,28 @@ def level_dates(events, targets, two_days=False) -> list:
 
 @dataclass
 class Status:
-    dates: list   # Tag je Stufe oder None
-    value: float  # aktueller Stand (bester Wert bzw. Summe; bei `stepped` die erreichte Stufe)
+    dates: list           # Tag je Stufe oder None
+    value: float          # aktueller Stand (bester Wert bzw. Summe; bei `stepped` die erreichte Stufe)
+    progress: tuple = None  # (erreicht, nötig) zur nächsten Stufe, wenn sich das zählen lässt
+    second_day: bool = False  # Schwelle der nächsten Stufe erreicht, fehlt nur der zweite Tag
+
+    @property
+    def next_level(self):
+        """Nächste offene Stufe oder None, wenn alles erreicht ist."""
+        return next((level for level, day in enumerate(self.dates) if day is None), None)
 
 
-def _status(award: Award, events) -> Status:
-    value = max((v for _, v in events), default=0)
-    return Status(level_dates(events, award.targets, award.two_days), value)
+def _status(award: Award, dates: list, value: float) -> Status:
+    status = Status(dates, value)
+    level = status.next_level
+    if level is not None:
+        target = award.targets[level]
+        status.second_day = value >= target
+        # Stufen aus mehreren Bedingungen und Diplome mit nur einem Schritt
+        # haben keinen zählbaren Fortschritt.
+        if not award.stepped and target > 1:
+            status.progress = (min(value, target), target)
+    return status
 
 
 # --- Die einzelnen Diplome ---------------------------------------------------------
@@ -592,7 +607,14 @@ def evaluate(data: Data = None, today: date = None) -> dict:
         "heard": _heard(data), "first_qso": _first_qso(data), "all_contests": _all_contests(data),
         "club": _club(data), "q_groups": _q_groups(data), "digits": _digits(data, today),
     }
-    return {award.key: _status(award, events[award.key]) for award in AWARDS}
+    statuses = {}
+    for award in AWARDS:
+        found = events[award.key]
+        value = max((v for _, v in found), default=0)
+        statuses[award.key] = _status(award, level_dates(found, award.targets, award.two_days), value)
+    if statuses["wal"].next_level is not None:
+        statuses["wal"].progress = wal_progress(data)
+    return statuses
 
 
 # --- Protokoll ---------------------------------------------------------------------
@@ -650,6 +672,27 @@ def check(today: date = None, data: Data = None):
     if first_time:
         return [], len({key for key, _ in new})
     return new, None
+
+
+def overview(state: dict = None, statuses: dict = None) -> list:
+    """[(Diplom, Status)] für die Übersicht. Die Tage der Siegel kommen aus
+    dem Protokoll, wo es sie schon gibt; was noch nicht eingetragen ist,
+    zeigt den Tag aus der Auswertung."""
+    state = state if state is not None else load()
+    statuses = statuses if statuses is not None else evaluate()
+    out = []
+    for award in AWARDS:
+        status = statuses[award.key]
+        have = seals_of(state, award.key)
+        merged = [have.get(level, day) for level, day in enumerate(status.dates)]
+        if merged == status.dates:
+            out.append((award, status))
+            continue
+        shown = _status(award, merged, status.value)
+        if award.key == "wal" and shown.next_level == status.next_level:
+            shown.progress = status.progress
+        out.append((award, shown))
+    return out
 
 
 def level_name(award: Award, level: int) -> str:
