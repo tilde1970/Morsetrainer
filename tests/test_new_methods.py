@@ -1,6 +1,7 @@
 """Tests für Hören & Sagen (Sprache, MP3), Klartext/Wendungen und die
 Lernkartei. Laufen ohne Stimme und Soundkarte: die Sprachausgabe wird
 durch Stille ersetzt."""
+import json
 import random
 import tempfile
 import unittest
@@ -170,6 +171,41 @@ class ReviewTest(unittest.TestCase):
             self.assertIn("K", review.load())
             stats.reset_all_time()
             self.assertEqual(review.load(), {})
+
+    def test_best_box_and_promotion_events(self):
+        day = date(2026, 9, 27)
+        review._save({"K": {"box": 2, "due": day.isoformat()}, "M": {"box": 3, "due": day.isoformat()}})
+        events = []
+        data = review.update(self._chars(K=(10, 0), M=(10, 0, 0, 2)), promote=True, today=day, events=events)
+        # K steigt erstmals in Fach 3 (box 3); M fällt zurück, behält aber sein bestes Fach.
+        self.assertEqual(events, [{"char": "K", "box": 3, "first": True}])
+        self.assertEqual((data["K"]["best_box"], data["K"]["best_day"]), (3, day.isoformat()))
+        self.assertEqual((data["M"]["box"], data["M"]["best_box"]), (2, 3))
+        self.assertEqual(review.best_box(data["M"]), 3)
+        # Wieder hochgestuft auf ein schon erreichtes Fach: kein „erstmals“.
+        later = date.fromisoformat(data["M"]["due"])
+        events = []
+        data = review.update(self._chars(M=(10, 0)), promote=True, today=later, events=events)
+        self.assertEqual(events, [{"char": "M", "box": 3, "first": False}])
+        self.assertNotIn("best_day", data["M"])
+
+    def test_old_entries_without_best_box(self):
+        self.assertEqual(review.best_box({"box": 4}), 4)
+        self.assertEqual(review.best_box({}), 0)
+
+    def test_session_log_has_conditions_duration_and_events(self):
+        with mock.patch.object(stats, "ALL_TIME_FILE", Path(self.tmp.name) / "all_time.json"):
+            charset = koch.lesson_charset(8)
+            session = stats.SessionStats("group", charset, 20, 600, review_promote=True,
+                                         config_extra={"lesson": 8, "band": "light"})
+            for _ in range(6):
+                session.record_char("K", "K", True, 0.5, 20.0, latency=0.5)
+            path = session.finalize({"first_try_correct": 5, "first_try_total": 6})
+            lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual((lines[0]["lesson"], lines[0]["band"]), (8, "light"))
+            self.assertEqual(lines[-1]["first_try_correct"], 5)
+            self.assertIn("duration_s", lines[-1])
+            self.assertEqual(session.review_events, [])  # neues Zeichen: erst morgen hochstufbar
 
 
 class ListenModeTest(AppTestCase):

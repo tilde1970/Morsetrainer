@@ -42,7 +42,7 @@ def format_confusions(confusions: dict) -> str:
 
 class SessionStats:
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
-                 self_assessed=False, in_history=True, review_promote=False, char_stats=True):
+                 self_assessed=False, in_history=True, review_promote=False, char_stats=True, config_extra=None):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
         J/N). Sie werden protokolliert, aber nicht in all_time.json und den
         Fortschrittsverlauf übernommen. `in_history=False`: Die Sitzung hat
@@ -53,7 +53,10 @@ class SessionStats:
         `char_stats=False`: Klartext (Wörter, QSOs …), bei dem der
         Zusammenhang viele Zeichen verrät. Die Sitzung erscheint im Verlauf,
         fließt aber nicht in die Zeichenstatistik, die Gewichtung und die
-        Lernkartei ein; schwache Zeichen wirkten sonst sicherer, als sie sind."""
+        Lernkartei ein; schwache Zeichen wirkten sonst sicherer, als sie sind.
+        `config_extra`: weitere Felder für die config-Zeile (Lektion,
+        Bandbedingungen …), damit sich später nachvollziehen lässt, unter
+        welchen Bedingungen geübt wurde."""
         self.review_promote = review_promote
         self.char_stats = char_stats
         self.start_time = datetime.now()
@@ -88,7 +91,10 @@ class SessionStats:
             **({"self_assessed": True} if self_assessed else {}),
             **({"in_history": False} if not in_history else {}),
             **({"char_stats": False} if not char_stats else {}),
+            **(config_extra or {}),
         })
+        # Hochstufungen in der Lernkartei durch diese Sitzung (review.update).
+        self.review_events = []
 
     def _write_line(self, obj: dict) -> None:
         if self._fp is None:
@@ -213,14 +219,17 @@ class SessionStats:
             except OSError:
                 pass
             return None
+        duration = round((datetime.now() - self.start_time).total_seconds(), 1)
         self._write_line({
-            "type": "summary", **self.summary(), **(extra or {}), "per_char": self._per_char_summary(),
+            "type": "summary", **self.summary(), "duration_s": duration, **(extra or {}),
+            "per_char": self._per_char_summary(),
         })
         self._close()
         if not self.self_assessed and self.char_stats:
             _merge_all_time(self)
             from morsetrainer.core import review  # review importiert stats
-            review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset))
+            review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset),
+                          events=self.review_events)
         return self.log_path if self.log_error is None else None
 
 

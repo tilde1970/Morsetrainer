@@ -81,6 +81,17 @@ class GroupEvaluationTest(AppTestCase):
         self.assertEqual((self.group.first_try_correct, self.group.first_try_total), (3, 3))
         self.assertTrue(self.group.feedback_var.get().startswith("Richtig: KMU"))
 
+    def test_session_log_has_lesson_conditions_and_first_tries(self):
+        self._start()
+        self._answer("KMU", "KMU")
+        path = self.group.session_stats.log_path
+        self.group._finalize_session()
+        lines = list(stats._read_jsonl(path))
+        config, summary = lines[0], lines[-1]
+        self.assertEqual((config["lesson"], config["band"], config["adaptive_tempo"]), (3, None, False))
+        self.assertNotIn("band_gain", config)
+        self.assertEqual((summary["first_try_correct"], summary["first_try_total"]), (3, 3))
+
     def test_replayed_slow_or_overtyped_do_not_count(self):
         self._start()
         self._answer("KMU", "KMU", replayed=True)
@@ -433,7 +444,10 @@ class ContinuousStopTest(AppTestCase):
         # K und M gehört und getippt, das letzte K kam 0,5 s vor dem Stopp.
         self._session(c, [("K", now - 5), ("M", now - 4), ("K", now - 0.5)],
                       [("K", now - 4.6), ("M", now - 3.5)])
+        path = c.session_stats.log_path
         c._finalize_session(stopped_at=now)
+        summary = list(stats._read_jsonl(path))[-1]
+        self.assertEqual((summary["extra_keys"], summary["completed"]), (0, False))  # von Hand gestoppt
         self.assertEqual(c.koch_result[1:], (2, 2))  # das letzte K zählt nicht als verpasst
         self.assertIn("gesendet  K M", c.diff_var.get())
         self.assertIn("fehlt/zu viel", c.diff_var.get())

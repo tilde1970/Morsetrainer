@@ -34,7 +34,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import align, audio, band
+from morsetrainer.core import align, audio, band, koch
 from morsetrainer.core.morse import (
     END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
     char_gap_seconds, code_units, silence, word_gap_extra_seconds,
@@ -298,7 +298,9 @@ class ContinuousModeFrame:
         self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw,
                                           review_promote=self.content == "chars",
                                           char_stats=self.content not in PLAIN_TEXT,
-                                          group_len=self.group_len or None)
+                                          group_len=self.group_len or None,
+                                          config_extra={"lesson": koch.lesson_of(charset), "band": preset,
+                                                        "content": self.content})
         self.stats_panel.reset()
         self.live_var.set(tr("Gesendet: {n} Zeichen").format(n=0))
         self.typed_preview_var.set("")
@@ -494,7 +496,9 @@ class ContinuousModeFrame:
         if getattr(self, "content", "chars") == "chars":  # Klartext ist vorhersagbarer
             self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])
         self.stats_panel.refresh(summary, self.session_stats.char_rows())
-        path = self.session_stats.finalize()
+        # Überzählige Tasten zählen für Lektion und Diplome als Fehler;
+        # „completed“: bis zum Ende der eingestellten Dauer, nicht von Hand gestoppt.
+        path = self.session_stats.finalize({"extra_keys": extra, "completed": self.finishing})
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
 

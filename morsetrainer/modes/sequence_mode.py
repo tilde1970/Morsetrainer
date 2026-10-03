@@ -45,7 +45,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import align, audio, band, sfx, tempo
+from morsetrainer.core import align, audio, band, koch, sfx, tempo
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
     code_units, display_text, vary_voice,
@@ -422,6 +422,7 @@ class SequenceModeFrame:
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
             self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
             review_promote=self.review_promotes, char_stats=self.char_stats,
+            config_extra=self._config_extra(preset),
         )
         self._setup_pickers(self.weighted_var.get())
         # Latenz für richtig, aber unsicher (siehe on_submit): doppelt so lang
@@ -437,6 +438,14 @@ class SequenceModeFrame:
             self._play_intro()
         else:
             self.next_sequence()
+
+    def _config_extra(self, preset) -> dict:
+        """Bedingungen des Durchgangs für die config-Zeile der Sitzungsdatei."""
+        extra = {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
+                 "band": preset, "adaptive_tempo": self.tempo is not None and not self._fixed_run()}
+        if preset:
+            extra["band_gain"] = round(self.band_gain_var.get())
+        return extra
 
     def _with_band(self, samples):
         """Bandbedingungen auch unter Anfangs- und Schlusszeichen, damit die
@@ -500,6 +509,10 @@ class SequenceModeFrame:
         if self.tempo is not None:
             extra = {"wpm_effective_reached": self.tempo_best,
                      "wpm_effective_end": tempo.effective(self.tempo, self.tempo_fw)}
+        if not self.session_stats.self_assessed:
+            # Erster Versuch, flüssig (ohne Wiederholen, im Zeitfenster): Grundlage
+            # für Lektion, Tagesübung und Diplome.
+            extra.update(first_try_correct=self.first_try_correct, first_try_total=self.first_try_total)
         path = self.session_stats.finalize(extra)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         if self.session_stats.self_assessed and path is not None:

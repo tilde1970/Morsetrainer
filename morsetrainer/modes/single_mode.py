@@ -32,7 +32,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import audio, sfx
+from morsetrainer.core import audio, koch, sfx
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, code_units, duration_seconds, silence,
     vary_voice,
@@ -215,7 +215,7 @@ class SingleModeFrame:
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
         self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get(),
-                                          review_promote=True)
+                                          review_promote=True, config_extra={"lesson": koch.lesson_of(charset)})
         self.picker = CharPicker(charset, self.weighted_var.get(), self.session_stats)
         self.history = []
         self.history_var.set("")

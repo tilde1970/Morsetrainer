@@ -21,7 +21,10 @@ Ehrliche Grundlage:
 
 Fällige Zeichen bekommen in der Gewichtung den Faktor DUE_FACTOR, beim
 gezielten Üben FOCUS_FACTOR (core/weighting.py).
-Gespeichert in stats/review.json: {Zeichen: {"box", "due", "day", Zähler}}."""
+Gespeichert in stats/review.json: {Zeichen: {"box", "due", "day", Zähler,
+"best_box", "best_day"}}. "best_box" ist das höchste je erreichte Fach (für
+Fortschritt und Diplome: ein späteres Zurückstufen nimmt es nicht weg);
+ältere Einträge ohne das Feld gelten mit ihrem aktuellen Fach."""
 from datetime import date, timedelta
 
 from morsetrainer.core import stats, storage
@@ -84,9 +87,16 @@ def can_promote(charset: str) -> bool:
     return len({ch for ch in charset.upper() if ch in MORSE_CODE}) >= PROMOTE_MIN_CHARSET
 
 
-def update(per_char: dict, promote: bool = False, today=None) -> dict:
+def best_box(entry: dict) -> int:
+    """Höchstes je erreichtes Fach eines Eintrags (0 = erstes Fach)."""
+    return max(int(entry.get("best_box", 0)), int(entry.get("box", 0)))
+
+
+def update(per_char: dict, promote: bool = False, today=None, events=None) -> dict:
     """Übernimmt die Ergebnisse einer Sitzung (SessionStats.per_char).
-    `promote`: Die Sitzung darf Zeichen hochstufen (siehe Modultext)."""
+    `promote`: Die Sitzung darf Zeichen hochstufen (siehe Modultext).
+    `events`: Liste, an die jede Hochstufung als {"char", "box", "first"}
+    angehängt wird; "first": das Fach ist für dieses Zeichen neu."""
     today = today or date.today()
     day = today.isoformat()
     data = load()
@@ -103,17 +113,18 @@ def update(per_char: dict, promote: bool = False, today=None) -> dict:
         if promote:
             entry["pn"] += attempts
             entry["pfluent"] += fluent
-        _decide(entry, today)
+        _decide(char, entry, today, events)
     _save(data)
     return data
 
 
-def _decide(entry: dict, today: date) -> None:
+def _decide(char: str, entry: dict, today: date, events=None) -> None:
     """Höchstens eine Entscheidung je Zeichen und Tag."""
     if entry["decided"] or entry["n"] < MIN_ATTEMPTS:
         return
     share = entry["fluent"] / entry["n"]
-    box = int(entry.get("box", 0))
+    old_box = box = int(entry.get("box", 0))
+    old_best = best_box(entry)
     if share < SURE_SHARE:
         box = 0 if share < SHAKY_SHARE else max(box - 1, 0)
     elif "due" not in entry:
@@ -123,6 +134,12 @@ def _decide(entry: dict, today: date) -> None:
     else:
         return  # sicher, aber nicht fällig oder nur aus Klartext: Termin bleibt, später am Tag noch möglich
     entry.update(box=box, due=(today + timedelta(days=INTERVALS[box])).isoformat(), decided=True)
+    if box > old_best:
+        entry.update(best_box=box, best_day=today.isoformat())
+    elif "best_box" not in entry:
+        entry["best_box"] = old_best
+    if box > old_box and events is not None:
+        events.append({"char": char, "box": box, "first": box > old_best})
 
 
 def due_chars(data=None, today=None, known=None) -> str:
