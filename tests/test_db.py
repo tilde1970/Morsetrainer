@@ -120,6 +120,47 @@ class DbTest(unittest.TestCase):
 
     # --- Ergebnisse und Verwaltung -------------------------------------------
 
+    def test_finished_sessions_are_read_once(self):
+        # Abgeschlossene Durchgänge kommen beim zweiten Mal aus dem
+        # Zwischenspeicher; laufende werden jedes Mal neu gelesen.
+        done = db.start_session(_config("2026-10-01T19:00:00"))
+        db.finish_session(done, {"type": "summary", "total": 5})
+        running = db.start_session(_config("2026-10-02T19:00:00"))
+        self.assertEqual([s.summary for s in db.sessions()], [{"type": "summary", "total": 5}, None])
+        with mock.patch.object(db, "_load", side_effect=db._load) as load:
+            db.sessions()
+        self.assertEqual(load.call_count, 1)  # nur die config des laufenden
+        db.finish_session(running, {"type": "summary", "total": 7})
+        self.assertEqual([s.summary["total"] for s in db.sessions()], [5, 7])
+
+    def test_cache_follows_file_and_rollback(self):
+        first = db.start_session(_config("2026-10-01T19:00:00"))
+        db.finish_session(first, {"type": "summary", "total": 5})
+        db.sessions()
+        # Eine andere Datei (Import, Tests): dieselbe id meint dort etwas anderes.
+        db.use(self.dir / "andere.db")
+        other = db.start_session(_config("2026-10-01T20:00:00", mode="group"))
+        db.finish_session(other, {"type": "summary", "total": 9})
+        self.assertEqual(other, first)
+        self.assertEqual([(s.config["mode"], s.summary["total"]) for s in db.sessions()], [("group", 9)])
+        # Verworfener Abschluss bleibt verworfen, auch wenn er gelesen wurde.
+        running = db.start_session(_config("2026-10-02T19:00:00"))
+        with self.assertRaises(RuntimeError):
+            with db.transaction():
+                db.finish_session(running, {"type": "summary", "total": 1})
+                self.assertEqual(db.sessions()[-1].summary["total"], 1)
+                raise RuntimeError
+        self.assertIsNone(db.sessions()[-1].summary)
+
+    def test_deleted_id_reused_by_new_session(self):
+        first = db.start_session(_config("2026-10-01T19:00:00"))
+        db.add_event(first, {"type": "char", "char": "A"})
+        db.sessions()
+        db.delete_session(first)
+        again = db.start_session(_config("2026-10-02T19:00:00", mode="word"))
+        db.finish_session(again, {"type": "summary", "total": 3})
+        self.assertEqual([s.config["mode"] for s in db.sessions()], ["word"])
+
     def test_results_in_order(self):
         db.add_result({"time": "2026-10-03T10:00:00", "mode": "qso_quiz", "correct": 3})
         db.add_result({"time": "2026-10-02T10:00:00", "mode": "contest", "score": 7})

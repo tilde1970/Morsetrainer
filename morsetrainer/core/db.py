@@ -84,6 +84,11 @@ _conn_path = None
 # Sicherung), in der dieselbe id einen anderen Durchgang meint.
 generation = 0
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
+# Gelesene config/summary abgeschlossener Durchgänge, {id: (config, summary)}:
+# Die ändern sich nicht mehr, sessions() muss sie nicht jedes Mal neu aus
+# JSON lesen. Gilt nur für die Datei der Generation in _heads_generation.
+_heads = {}
+_heads_generation = [None]
 
 
 @dataclass
@@ -191,6 +196,7 @@ def transaction():
             _depth -= 1
             if _depth == 0 and conn.in_transaction:
                 conn.execute("ROLLBACK")
+                _heads.clear()  # könnte Verworfenes enthalten
             raise
         _depth -= 1
         if _depth == 0:
@@ -199,6 +205,7 @@ def transaction():
             except Error:
                 if conn.in_transaction:
                     conn.execute("ROLLBACK")
+                _heads.clear()
                 raise
 
 
@@ -276,11 +283,13 @@ def add_event(session_id: int, entry: dict) -> None:
 
 
 def finish_session(session_id: int, summary: dict) -> None:
+    _heads.pop(session_id, None)
     _write("UPDATE sessions SET summary = ? WHERE id = ?", (_dump(summary), session_id))
 
 
 def delete_session(session_id: int) -> None:
     """Durchgang samt Zeilen entfernen (z. B. ohne ein einziges Zeichen)."""
+    _heads.pop(session_id, None)  # SQLite kann die Nummer neu vergeben
     _write("DELETE FROM sessions WHERE id = ?", (session_id,))
 
 
@@ -292,7 +301,9 @@ def sessions(since=None, until=None, mode=None, events=False) -> list:
     """Durchgänge nach Startzeit, auch nicht abgeschlossene (summary None).
     `since`: Datum oder Zeitpunkt, ab dem (einschließlich); `until`: Tag,
     bis zu dem (einschließlich); `mode`: nur dieser Modus. `events=True`
-    liest die Zeilen dazwischen mit. Unlesbare Zeilen fallen weg."""
+    liest die Zeilen dazwischen mit. Unlesbare Zeilen fallen weg.
+    config und summary abgeschlossener Durchgänge kommen aus einem
+    Zwischenspeicher und werden von allen Aufrufern geteilt: nicht ändern."""
     where, params = [], []
     if since is not None:
         where.append("start_time >= ?")
@@ -303,16 +314,31 @@ def sessions(since=None, until=None, mode=None, events=False) -> list:
     if mode is not None:
         where.append("mode = ?")
         params.append(mode)
-    sql = "SELECT id, config, summary FROM sessions"
+    sql = "SELECT id, summary IS NOT NULL FROM sessions"
     if where:
         sql += " WHERE " + " AND ".join(where)
+    rows = _read(sql + " ORDER BY start_time, id", params)
+    gen = generation  # erst nach _read: das Öffnen kann sie hochzählen
+    if _heads_generation[0] != gen:
+        _heads.clear()
+        _heads_generation[0] = gen
+    missing = [session_id for session_id, finished in rows if not finished or session_id not in _heads]
+    fetched = {}
+    for start in range(0, len(missing), 500):
+        chunk = missing[start:start + 500]
+        for session_id, config_text, summary_text in _read(
+                f"SELECT id, config, summary FROM sessions WHERE id IN ({','.join('?' * len(chunk))})", chunk):
+            config = _load(config_text)
+            summary = _load(summary_text) if summary_text is not None else None
+            head = (config if isinstance(config, dict) else None, summary if isinstance(summary, dict) else None)
+            fetched[session_id] = head
+            if summary_text is not None:
+                _heads[session_id] = head
     out = []
-    for session_id, config_text, summary_text in _read(sql + " ORDER BY start_time, id", params):
-        config = _load(config_text)
-        if not isinstance(config, dict):
-            continue
-        summary = _load(summary_text) if summary_text is not None else None
-        out.append(Session(session_id, config, summary if isinstance(summary, dict) else None, None))
+    for session_id, finished in rows:
+        config, summary = fetched.get(session_id) or _heads.get(session_id, (None, None))
+        if config is not None:
+            out.append(Session(session_id, config, summary, None))
     if events and out:
         by_id = events_by_session([s.id for s in out])
         for s in out:
