@@ -157,6 +157,8 @@ class ReviewTest(unittest.TestCase):
         review._save(storage_data)
         self.assertEqual(review.due_chars(), "MK")  # unteres Fach zuerst
         self.assertEqual(review.next_due()[1], "R")
+        self.assertEqual(sorted(review.boxed_chars({**storage_data, "+": {"day": "2026-10-03", "n": 2}})),
+                         ["K", "M", "R"])  # noch ohne Fach: nicht gelernt
         with mock.patch.object(stats, "ALL_TIME_FILE", Path(self.tmp.name) / "all_time.json"):
             weights = dict(zip("KMR", CharPicker("KMR", weighted=True).weights()))
         self.assertAlmostEqual(weights["K"], weights["R"] * review.DUE_FACTOR)

@@ -121,9 +121,15 @@ def stage(lesson: int) -> str:
     return EARLY
 
 
-def lesson_charset(lesson: int) -> str:
-    """Zeichensatz einer Lektion; nach Koch alle Zeichen (ohne Betriebszeichen)."""
-    return koch.lesson_charset(min(lesson, koch.FINAL_LESSON))
+def lesson_charset(lesson: int, learned: str = "") -> str:
+    """Zeichensatz einer Lektion; nach Koch alle Zeichen. Betriebszeichen nur,
+    wenn sie schon gelernt sind (`learned`: Zeichen in der Lernkartei), damit
+    sie wiederholt werden – dann der Zeichensatz der Lektion bis zum letzten
+    davon (42–45), so bleibt die Lektion an den Sitzungen erkennbar."""
+    if lesson < POST_KOCH:
+        return koch.lesson_charset(min(lesson, koch.FINAL_LESSON))
+    count = max((koch.PROSIGN_ORDER.index(ch) + 1 for ch in learned if ch in koch.PROSIGN_ORDER), default=0)
+    return koch.lesson_charset(koch.FINAL_LESSON + count)
 
 
 def warmup_minutes(lesson: int, due_count: int) -> float:

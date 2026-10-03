@@ -142,6 +142,12 @@ def _decide(char: str, entry: dict, today: date, events=None) -> None:
         events.append({"char": char, "box": box, "first": box > old_best})
 
 
+def boxed_chars(data=None) -> str:
+    """Zeichen, die schon in einem Fach liegen (also wiederholt werden)."""
+    data = load() if data is None else data
+    return "".join(ch for ch, e in data.items() if "due" in e)
+
+
 def due_chars(data=None, today=None, known=None) -> str:
     """Heute fällige Zeichen, zuerst die aus den unteren Fächern.
     `known`: nur diese Zeichen (z. B. der aktuelle Zeichensatz)."""

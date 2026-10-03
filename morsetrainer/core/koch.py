@@ -61,8 +61,10 @@ def passed(correct: int, total: int) -> bool:
 
 
 def can_advance(charset: str, correct: int, total: int) -> bool:
-    """True, wenn `charset` eine Lektion vor der Abschlusslektion 41 ist und
-    der Durchgang das Kriterium erfüllt. Zu den Betriebszeichen geht es
-    nur von Hand."""
+    """True, wenn der Durchgang das Kriterium erfüllt und `charset` eine
+    Lektion mit Nachfolger ist: vor der Abschlusslektion 41 oder unter den
+    Betriebszeichen-Lektionen 42–44. Von 41 zu den Betriebszeichen geht es
+    nur von Hand; wer dort angefangen hat, bekommt sie danach einzeln."""
     lesson = lesson_of(charset)
-    return lesson is not None and lesson < FINAL_LESSON and passed(correct, total)
+    return (lesson is not None and lesson != FINAL_LESSON and lesson < MAX_LESSON
+            and passed(correct, total))

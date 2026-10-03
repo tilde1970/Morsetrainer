@@ -1,5 +1,13 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Betriebszeichen:** In den Lektionen 42–45 wird nach bestandenem
+  Durchgang wieder das nächste Betriebszeichen angeboten (AR → KN → SK →
+  BK), wie bei den Lektionen davor. Betriebszeichen, die schon in der
+  Lernkartei liegen, nimmt die Tagesübung nach Koch mit dazu, damit sie
+  wiederholt werden und nicht verblassen.
+
 ## 2.24
 
 - **Clubabend:** Netzwerk-Übungen aus Versionen vor 2.22 zählen wieder.

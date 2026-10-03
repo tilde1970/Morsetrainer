@@ -91,7 +91,9 @@ class KochPassedTest(unittest.TestCase):
         # Bis zur Abschlusslektion 41 von selbst, zu den Betriebszeichen nur von Hand.
         self.assertTrue(koch.can_advance(koch.lesson_charset(40), 50, 50))
         self.assertFalse(koch.can_advance(koch.lesson_charset(41), 50, 50))
-        self.assertFalse(koch.can_advance(koch.lesson_charset(42), 50, 50))
+        self.assertTrue(koch.can_advance(koch.lesson_charset(42), 50, 50))  # AR sitzt: weiter mit KN
+        self.assertTrue(koch.can_advance(koch.lesson_charset(44), 50, 50))
+        self.assertFalse(koch.can_advance(koch.lesson_charset(45), 50, 50))
 
     def test_final_lesson_has_all_chars_and_none_new(self):
         final = koch.lesson_charset(koch.FINAL_LESSON)

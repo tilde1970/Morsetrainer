@@ -112,7 +112,7 @@ class DailyRunner:
         self.state["tempo"] = daily.current_tempo(self.state, wpm, app.farnsworth_wpm())
         daily.save(self.state)
 
-        charset = daily.lesson_charset(lesson)
+        charset = daily.lesson_charset(lesson, review.boxed_chars())
         self.due = review.due_chars(known=charset)
         self._begin(charset, daily.plan(lesson, len(self.due), self.today))
         if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
@@ -143,10 +143,10 @@ class DailyRunner:
             charset = chars
         elif kind == daily.RUFZ:
             block = daily.Block(daily.EXTRA, "callsign", daily.EXTRA_MINUTES, {"rufz": True})
-            charset = daily.lesson_charset(lesson)
+            charset = daily.lesson_charset(lesson, review.boxed_chars())
         else:
             block = daily.Block(daily.EXTRA, "word", daily.EXTRA_MINUTES)
-            charset = daily.lesson_charset(lesson)
+            charset = daily.lesson_charset(lesson, review.boxed_chars())
         self._begin(charset, [block])
         self._next_block()
 
@@ -342,7 +342,7 @@ class DailyRunner:
         if completed:
             app = self.app
             lesson = daily.current_lesson(self.state, 1)
-            charset = daily.lesson_charset(lesson)
+            charset = daily.lesson_charset(lesson, review.boxed_chars())
             confusions = app._confusion_charset(stats.recent_char_data(), stats.load_all_time())
             confusions = "".join(ch for ch in confusions if ch in charset)
             offer = daily.extra_offer(self.state, self.today, lesson, confusions)

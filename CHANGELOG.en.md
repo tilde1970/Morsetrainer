@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+- **Prosigns:** in lessons 42–45, passing a run offers the next prosign
+  again (AR → KN → SK → BK), as in the lessons before. Prosigns already
+  in the review box are included in the daily practice after Koch, so
+  they are repeated and do not fade.
+
 ## 2.24
 
 - **Club night:** network sessions from versions before 2.22 count again.

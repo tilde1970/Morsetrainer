@@ -182,7 +182,9 @@ complete after “Reset overall statistics”.
    characters, none favoured as new any more (weak ones still come more
    often). If you like, lessons 42–45 then add the prosigns from QSOs:
    AR (key `+`), KN (`(`), SK (`*`) and BK (`#`). The trainer does not
-   move there by itself; set the lesson at the top.
+   move there by itself; set the lesson at the top. After that, the next
+   prosign is offered again. The daily practice also repeats prosigns you
+   have learned.
 5. From lesson 6 there are enough words for the **Words** tab (words with
    the newest character are favoured), then **Continuous** and **QSO**.
 6. In the **Statistics** tab (confusions of the last 30 days), “Practise the

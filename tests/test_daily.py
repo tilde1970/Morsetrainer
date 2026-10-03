@@ -27,8 +27,13 @@ class StageAndPlanTest(unittest.TestCase):
         self.assertEqual([daily.stage(n) for n in (1, 9, 10, 29, 30, 41, 42)],
                          [daily.EARLY, daily.EARLY, daily.WORDS, daily.WORDS, daily.MIXED, daily.MIXED,
                           daily.POST])
-        # Nach Koch alle Zeichen, die Betriebszeichen nur von Hand.
+        # Nach Koch alle Zeichen; Betriebszeichen nur, wenn schon gelernt.
         self.assertEqual(daily.lesson_charset(daily.POST_KOCH), koch.FINAL_CHARSET)
+        self.assertEqual(daily.lesson_charset(daily.POST_KOCH, "KMU"), koch.FINAL_CHARSET)
+        self.assertEqual(daily.lesson_charset(daily.POST_KOCH, "+K"), koch.lesson_charset(42))
+        self.assertEqual(daily.lesson_charset(daily.POST_KOCH, "*+("), koch.lesson_charset(44))
+        self.assertEqual(koch.lesson_of(daily.lesson_charset(daily.POST_KOCH, "#")), koch.MAX_LESSON)
+        self.assertEqual(daily.lesson_charset(41, "+"), koch.FINAL_CHARSET)  # Abschlusslektion selbst ohne
 
     def test_blocks_add_up_to_ten_minutes(self):
         for lesson in (3, 15, 35, 41, daily.POST_KOCH):

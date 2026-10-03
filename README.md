@@ -183,7 +183,8 @@ bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
    öfter). Wer möchte, nimmt danach in den Lektionen 42–45 die
    Betriebszeichen aus dem QSO dazu: AR (Taste `+`), KN (`(`), SK (`*`) und
    BK (`#`). Dorthin wird nicht von selbst weitergeschaltet, die Lektion
-   stellst du oben ein.
+   stellst du oben ein; danach wird dir das nächste Betriebszeichen wieder
+   angeboten. Gelernte Betriebszeichen wiederholt auch die Tagesübung.
 5. Ab Lektion 6 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
    dem neuesten Zeichen kommen bevorzugt), danach
    **Kontinuierlich** und **QSO**.
