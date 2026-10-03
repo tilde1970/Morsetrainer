@@ -26,7 +26,8 @@ Gesamtstatistik stehen):
  "tempo": {"wpm", "effective"}, "pending_tempo", "pending_tempo_since",
  "tempo_best" (höchstes effektives Tagestempo), "icr_limit" (Zeitlimit
  am Ende des letzten Aufwärmens),
- "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress", "lesson"}}}"""
+ "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress", "lesson",
+ "tempo" (effektives Tagestempo im Hauptteil, für die Lebenslinie)}}}"""
 import math
 from dataclasses import dataclass, field
 from datetime import date
@@ -308,6 +309,8 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
             state.update(pending_lesson=lesson + 1, pending_since=today.isoformat())
             progress |= _add_progress(entry, LESSON_UP)
         current = state.get("tempo") or {}
+        if current.get("effective"):
+            entry["tempo"] = current["effective"]
         # Einmal am Tag, wirksam ab morgen: eine zweite Tagesübung läuft im
         # selben Tempo und ändert es nicht noch einmal.
         if current and _first_try(result)[1] >= TEMPO_MIN_CHARS and state.get("pending_tempo_since") != today.isoformat():
