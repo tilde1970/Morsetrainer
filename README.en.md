@@ -22,7 +22,7 @@ restart.
 | **QSO** | Listen to complete QSOs: normal QSO or contest runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) with adjustable pile-ups (default off). Evaluation via log check, by typing along, as **head copy + questions** (no notes, afterwards content questions about name, QTH, rig, weather … or exchange) or listen only. Next to the length the estimated duration is shown; how often you used “Again” before checking is noted. |
 | **Contest** | You are the running station (similar to Morse Runner): call CQ, pick up callers, send the exchange, log. As in a real contest, callers sometimes answer to an almost correct call – if you notice the mistake, correct the call and confirm with Enter (“Call TU”), otherwise “Busted” appears in the log. “?” in the call field asks back (DL1?, DL?ABC). Speed and pitch spread of the callers are adjustable, at the end there is a summary by type of error; F10 starts and ends. |
 | **Network** | Practise as a group on the local network (class, club evening): a trainer sets the pace, everyone hears the same sequence on their own headphones and copies it; the trainer sees live who typed what. See below. |
-| **Statistics** | Overall statistics per character (only from random characters and callsigns; in words, phrases and QSOs the context gives away too many characters), **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal and progress history per mode. |
+| **Statistics** | Overall statistics per character (only from random characters and callsigns; in words, phrases and QSOs the context gives away too many characters), **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal, **awards** (see below) and progress history per mode. |
 
 In **Groups, Words and Callsigns** you can choose:
 
@@ -92,6 +92,52 @@ due and switches the tabs by itself:
   the first daily practice of a new week it shows a look back, e.g.
   “Last week: 4 days, 11 ★, lesson 12 → 13”.
 
+### Awards
+
+Like DXCC or WAC on the air: awards for what you can do for good, in the
+levels **Bronze, Silver, Gold** and some in **Platinum**. They are checked
+after every exercise; a new seal shows a window with the date and a
+**Print** button – the award opens as a certificate in the browser (A4
+landscape) with your callsign and name from “▸ More options” (which you
+can also change in the window). During the
+daily practice the window comes only after the evening summary, which
+also mentions a seal earned that day.
+
+The overview is in the **Statistics** tab under “Awards”: all awards with
+the seals achieved, the next goal (e.g. “Silver: 18 / 25 lessons”) and
+from which lesson it can be reached; open ones are grey. A selected row
+shows the condition and the days of the seals, “View and print award”
+the award of the highest level.
+
+| Award | Levels | From lesson | Condition |
+|---|---|---|---|
+| Koch | Lesson 10 / 25 / 44 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or continuous) |
+| Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts |
+| Copying in flow | 10 / 15 / 22 WPM effective | 15 | Continuous with plain text (words, phrases, QSO), full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM |
+| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Continuous with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
+| QRN-proof | band light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous, ≥ 200 characters, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM |
+| Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
+| Contest | see right | 44 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
+| WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest) |
+| Headphones | 15 / 20 / 25 WPM effective | 44 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again” |
+| Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
+| Endurance | 10 / 50 / 150 / 365 days | – | Days with ≥ 10 min practice, not in a row |
+| Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters |
+| First QSO understood | – | – | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective |
+| Worked All Contests | – | – | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
+| Club night | – | – | Took part in a network session |
+| Q-code expert | – | – | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
+| All digits | – | – | All 10 digits at least in box 3 |
+
+- For flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need two
+  different days** – one lucky run is not enough.
+- Only runs without self-assessment count.
+- Seals achieved are kept with their date in `stats/awards.json` and are
+  never lost, not even with “Reset overall statistics”.
+- On the first start with awards, whatever follows from your practice so
+  far is filled in quietly (with the day it was reached); one note says
+  how many awards that is.
+
 ### Learning path for beginners
 
 1. Set **Koch lesson** at the top to 1 (K and M). The default is **Koch
@@ -136,6 +182,13 @@ Also helpful:
   week strip at the top the days you practised.
 - **Vary pitch and speed slightly** (shared setting): if you only ever hear
   exactly one sound, you will find it harder on the band.
+- **Callsign and name:** enter them once under “▸ More options”. They
+  appear on the awards and are the default for “My callsign” in Contest and
+  “Name/callsign” in Network (there the callsign if there is no name).
+  Both fields follow along until you enter something else there, such as
+  a contest callsign. Without a callsign of your own the name is enough: it
+  then appears alone on the award; for the contest you enter a made-up
+  callsign there.
 
 ### Band conditions (QSO and Contest)
 
@@ -355,8 +408,9 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
 - `stats/`: session logs, overall statistics (`all_time.json`), review box
   (`review.json`), daily practice with stars, lesson and daily speed
   (`daily.json`), results of QSO checks and contests (`results.jsonl`) and
-  practice time per day (`practice.json`); also the CSV tables from the
-  Network tab (`…-netzwerk.csv`).
+  practice time per day (`practice.json`), the awards achieved
+  (`awards.json`, the award opened last as `diplom.html`); also the CSV tables from the Network tab
+  (`…-netzwerk.csv`).
 - `window_state.json`: window size and all settings, including the language.
 - `callsigns.scp`: callsign list (Super Check Partial). It is **not included
   in the repository**. Download the current `MASTER.SCP` from

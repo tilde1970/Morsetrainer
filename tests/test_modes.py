@@ -844,6 +844,7 @@ class QsoTempoTest(AppTestCase):
 class ContestBustedTest(AppTestCase):
     def _contest_with_caller(self):
         from morsetrainer.core import qso_text
+        self.app.station_call_var.set("DL0ABC")  # zieht ins Contest-Feld mit
         r = self.mode("Contest")
         patches = [mock.patch.object(run_mode.Mixer, "start"), mock.patch.object(run_mode.Mixer, "stop")]
         for patch in patches:
@@ -926,8 +927,38 @@ class ContestBustedTest(AppTestCase):
         r.stop()
 
 
+class StationTest(AppTestCase):
+    def test_contest_and_network_follow_until_changed(self):
+        contest, network = self.mode("Contest").my_call_var, self.mode("Netzwerk").name_var
+        self.assertEqual(contest.get(), "")  # kein fremdes Rufzeichen als Vorgabe
+        self.app.station_call_var.set("dl0abc")
+        self.assertEqual((contest.get(), network.get()), ("DL0ABC", "DL0ABC"))  # ohne Name: Rufzeichen
+        self.app.station_name_var.set("Erika")
+        self.assertEqual(network.get(), "Erika")
+        contest.set("DA0HQ")  # eigenes Contest-Rufzeichen bleibt
+        self.app.station_call_var.set("DL0XYZ")
+        self.assertEqual((contest.get(), network.get()), ("DA0HQ", "Erika"))
+
+    def test_contest_hints_without_own_call(self):
+        r = self.mode("Contest")
+        self.assertIn("ausgedacht", r.call_hint_var.get())
+        self.app.station_call_var.set("DL0ABC")
+        self.assertEqual(r.call_hint_var.get(), "")
+
+    def test_old_settings_are_taken_over_except_old_default(self):
+        for saved_call, central, contest in (("DL4YM", "", ""), ("DK1AB", "DK1AB", "DK1AB")):
+            self.app.saved_state = {"modes": {}}
+            self.mode("Contest").my_call_var.set(saved_call)
+            self.mode("Netzwerk").name_var.set("Erika")
+            self.app.station_call_var.set("")
+            self.app._follow_station()
+            self.assertEqual((self.app.station_call_var.get(), self.mode("Contest").my_call_var.get(),
+                              self.app.station_name_var.get()), (central, contest, "Erika"))
+
+
 class ContestLogTest(AppTestCase):
     def test_tu_without_call_or_exchange_does_not_log(self):
+        self.app.station_call_var.set("DL0ABC")
         r = self.mode("Contest")
         with mock.patch.object(run_mode.Mixer, "start"), mock.patch.object(run_mode.Mixer, "stop"):
             r.start()

@@ -83,12 +83,12 @@ def diploma_condition(award, level) -> str:
     return text
 
 
-def print_diploma(award, level, day, call: str) -> str:
+def print_diploma(award, level, day, call: str, holder: str = "") -> str:
     """Diplom als HTML-Seite im Browser öffnen; Rückgabe: Meldung."""
     page = diploma.diploma_html(
         tr(award.name), tr(awards.LEVEL_NAMES[level]) if award.levels else "",
         diploma.seal_colors(level, award.levels), diploma_condition(award, level),
-        day.strftime(tr("%d.%m.%Y")), call,
+        day.strftime(tr("%d.%m.%Y")), call, holder,
         labels={"title": tr("Diplom"), "awarded": tr("verliehen an"), "date": tr("Datum:"),
                 "footer": tr("Morsetrainer · entwickelt von DL4YM")})
     path = stats.STATS_DIR / DIPLOMA_FILE_NAME
@@ -112,10 +112,11 @@ def draw_seal(parent, award, level) -> tk.Canvas:
 
 
 class DiplomaWindow:
-    """Neue Siegel (oder ein gewähltes aus der Übersicht) mit Rufzeichen
-    und „Drucken“. `seals`: [(Schlüssel, Stufe, Tag)]."""
+    """Neue Siegel (oder ein gewähltes aus der Übersicht) mit „Drucken“.
+    `seals`: [(Schlüssel, Stufe, Tag)]; `call_var`, `name_var`: Rufzeichen
+    und Name aus den Einstellungen, hier änderbar."""
 
-    def __init__(self, root, seals, call: str = "", title=None, on_close=None):
+    def __init__(self, root, seals, call_var, name_var, title=None, on_close=None):
         self.seals = seals
         self.on_close = on_close
         self.window = window = tk.Toplevel(root)
@@ -140,9 +141,12 @@ class DiplomaWindow:
 
         line = ttk.Frame(frame)
         line.pack(fill="x", pady=(4, 0))
-        ttk.Label(line, text=tr("Rufzeichen auf dem Diplom:")).pack(side="left")
-        self.call_var = tk.StringVar(value=call)
-        ttk.Entry(line, textvariable=self.call_var, width=12).pack(side="left", padx=(6, 0))
+        self.call_var, self.name_var = call_var, name_var
+        ttk.Label(line, text=tr("Auf dem Diplom:")).pack(side="left")
+        ttk.Label(line, text=tr("Rufzeichen", context="eigenes")).pack(side="left", padx=(8, 0))
+        ttk.Entry(line, textvariable=call_var, width=12).pack(side="left", padx=(6, 12))
+        ttk.Label(line, text=tr("Name")).pack(side="left")
+        ttk.Entry(line, textvariable=name_var, width=14).pack(side="left", padx=(6, 0))
         self.note_var = tk.StringVar(value="")
         theme.hint(frame, textvariable=self.note_var, wrap=480).pack(anchor="w", pady=(6, 0))
 
@@ -154,17 +158,13 @@ class DiplomaWindow:
         window.protocol("WM_DELETE_WINDOW", self.close)
         done.focus_set()
 
-    def call(self) -> str:
-        return self.call_var.get().strip().upper()
-
     def _print(self, award, level, day):
-        awards.save_call(self.call())
-        self.note_var.set(print_diploma(award, level, day, self.call()))
+        call, name = self.call_var.get().strip().upper(), self.name_var.get().strip()
+        self.note_var.set(print_diploma(award, level, day, call, name))
 
     def close(self) -> None:
         if self.window is None:
             return
-        awards.save_call(self.call())
         self.window.destroy()
         self.window = None
         if self.on_close:

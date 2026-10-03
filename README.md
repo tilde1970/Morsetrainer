@@ -21,7 +21,7 @@ Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
 | **Netzwerk** | Üben in der Gruppe im lokalen Netz (Kurs, Clubabend): Ein Trainer gibt vor, alle hören dieselbe Sequenz über den eigenen Kopfhörer und tippen mit; der Trainer sieht live, wer was getippt hat. Siehe unten. |
-| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen), **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel und Fortschrittsverlauf je Modus. |
+| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen), **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel, **Diplome** (siehe unten) und Fortschrittsverlauf je Modus. |
 
 In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 
@@ -91,6 +91,52 @@ dran ist, und schaltet die Reiter selbst um:
   ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.
   „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“.
 
+### Diplome
+
+Wie DXCC oder WAC im Funkbetrieb: Diplome für das, was du dauerhaft
+kannst, in Stufen **Bronze, Silber, Gold** und teils **Platin**. Geprüft
+wird nach jeder Übung; ein neues Siegel zeigt ein Fenster mit Datum und
+Knopf **Drucken** – das Diplom öffnet sich als Urkunde im Browser (A4
+quer) mit deinem Rufzeichen und Namen aus „▸ Weitere Optionen“ (im
+Fenster auch änderbar). In der
+Tagesübung kommt das Fenster erst nach der Abendbilanz, die ein neues
+Siegel des Tages auch nennt.
+
+Die Übersicht steht im Reiter **Statistik** unter „Diplome“: alle
+Diplome mit erreichten Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25
+Lektionen“) und ab welcher Lektion es erreichbar ist; offene stehen grau.
+Eine gewählte Zeile zeigt Bedingung und Tage der Siegel, „Diplom ansehen
+und drucken“ das Diplom der höchsten Stufe.
+
+| Diplom | Stufen | ab Lektion | Bedingung |
+|---|---|---|---|
+| Koch | Lektion 10 / 25 / 44 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
+| Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach |
+| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO), voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM |
+| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
+| QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM |
+| Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
+| Contest | siehe rechts | 44 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
+| WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest) |
+| Kopfhörer | 15 / 20 / 25 WPM effektiv | 44 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“ |
+| Verwechslung überwunden | 1 / 3 / 6 Paare | 5 | Ein Paar, das zu deinen häufigsten Verwechslungen gehörte, 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt |
+| Ausdauer | 10 / 50 / 150 / 365 Tage | – | Tage mit ≥ 10 Min. Übung, nicht in Folge |
+| Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen |
+| Erstes QSO verstanden | – | – | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv |
+| Worked All Contests | – | – | Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern |
+| Clubabend | – | – | An einer Netzwerk-Übung teilgenommen |
+| Q-Gruppen-Kenner | – | – | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
+| Alle Ziffern | – | – | Alle 10 Ziffern mindestens in Fach 3 |
+
+- Bei Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher erst
+  an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht.
+- Gezählt werden nur Durchgänge ohne Selbstbewertung.
+- Erreichte Siegel stehen mit Datum in `stats/awards.json` und gehen nie
+  verloren, auch nicht mit „Gesamtstatistik zurücksetzen“.
+- Beim ersten Start mit Diplomen wird still nachgetragen, was sich aus dem
+  bisherigen Üben ergibt (mit dem Tag, an dem es erreicht wurde); ein
+  Hinweis sagt, wie viele Diplome es sind.
+
 ### Lernweg für Einsteiger
 
 1. **Koch-Lektion** oben auf 1 stellen (K und M). Voreingestellt ist das
@@ -140,6 +186,13 @@ Außerdem hilfreich:
 - **Sprache:** Unter „▸ Weitere Optionen“ → „Sprache / Language“ lässt sich
   die Oberfläche auf Englisch umstellen (wirkt nach Neustart). Die Stimme im
   Reiter „Sprechen“ bleibt deutsch.
+- **Rufzeichen und Name:** Unter „▸ Weitere Optionen“ einmal eintragen.
+  Sie stehen auf den Diplomen und sind die Vorgabe für „Mein
+  Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort ohne Name
+  das Rufzeichen). Beide Felder ziehen mit, bis du dort etwas anderes
+  einträgst, etwa ein Contest-Rufzeichen. Ohne eigenes Rufzeichen genügt
+  der Name: Er steht dann allein auf dem Diplom; für den Contest trägst du
+  dort ein ausgedachtes Rufzeichen ein.
 
 ### Bandbedingungen (QSO und Contest)
 
@@ -366,8 +419,9 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Lernkartei (`review.json`), Tagesübung mit Sternen, Lektion und
   Tagestempo (`daily.json`),
   Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`) und die
-  Übungszeit pro Tag (`practice.json`); dazu die CSV-Tabellen aus dem
-  Reiter Netzwerk (`…-netzwerk.csv`).
+  Übungszeit pro Tag (`practice.json`), die erreichten Diplome
+  (`awards.json`, das zuletzt geöffnete Diplom als `diplom.html`); dazu die CSV-Tabellen aus dem Reiter Netzwerk
+  (`…-netzwerk.csv`).
 - `window_state.json`: Fenstergröße und alle Einstellungen, auch die Sprache.
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
   im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von

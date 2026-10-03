@@ -18,6 +18,19 @@
   goal of 12 stars; at the start of a week a look back at the last one.
   The streak “X days in a row” in the footer is gone: it dropped to zero
   after a single missed day.
+- **Awards:** 17 awards as on the air (Koch, Worked All Letters, QRQ,
+  QRN-proof, Rufz, Contest, WPX, Headphones, Endurance …), mostly in the
+  levels Bronze, Silver, Gold and some in Platinum. A window shows new
+  seals after the exercise (in the daily practice after the evening
+  summary); the award can be printed as a certificate with your callsign.
+  Overview with progress in the Statistics tab; on the first start
+  whatever you have already achieved is filled in. Nothing achieved is
+  ever lost. See README, “Awards”.
+- **Callsign and name** are now set in one place under “More options”:
+  for the awards and as the default in Contest and Network, where they stay
+  separate fields (e.g. for a contest callsign). Existing entries are taken
+  over. The Contest tab no longer suggests DL4YM as your own call. Without
+  a callsign of your own, just enter your name.
 - **Daily goal** now defaults to 10 minutes (like the daily practice); a
   goal you already set is kept.
 - **Characters, time limit:** the limit now settles where nearly nine out

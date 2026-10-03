@@ -17,6 +17,20 @@
   Beginn einer Woche ein Rückblick auf die letzte. Die Serie „X Tage in
   Folge“ in der Fußzeile entfällt: Sie fiel nach einem ausgelassenen Tag
   auf null.
+- **Diplome:** 17 Diplome wie im Funkbetrieb (Koch, Worked All Letters,
+  QRQ, QRN-fest, Rufz, Contest, WPX, Kopfhörer, Ausdauer …), meist in den
+  Stufen Bronze, Silber, Gold und teils Platin. Neue Siegel zeigt ein
+  Fenster nach der Übung (in der Tagesübung nach der Abendbilanz), das
+  Diplom lässt sich mit Rufzeichen als Urkunde drucken. Übersicht mit
+  Fortschritt im Reiter Statistik; beim ersten Start wird nachgetragen,
+  was du schon erreicht hast. Erreichtes geht nie verloren. Siehe README,
+  „Diplome“.
+- **Rufzeichen und Name** stehen jetzt zentral unter „Weitere Optionen“:
+  für die Diplome und als Vorgabe im Contest und Netzwerk, die dort
+  eigenständig bleiben (z. B. für ein Contest-Rufzeichen). Vorhandene
+  Einträge werden übernommen. Der Contest-Reiter gibt nicht mehr DL4YM
+  als eigenes Rufzeichen vor. Wer noch kein Rufzeichen hat, trägt nur den
+  Namen ein.
 - **Tagesziel** ist jetzt standardmäßig 10 Minuten (wie die Tagesübung);
   ein schon eingestelltes Ziel bleibt.
 - **Einzelzeichen, Zeitlimit:** Das Limit pendelt sich jetzt dort ein, wo

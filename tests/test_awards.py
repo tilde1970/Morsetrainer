@@ -192,18 +192,14 @@ class CheckTest(unittest.TestCase):
         self.assertIn("club", awards.load()["seals"])
         self.assertEqual(awards.seals_on(awards.load(), day(7)), [("first_qso", 0)])
 
-    def test_call_is_kept_across_checks(self):
-        awards.save_call("DL4YM")
-        awards.check(today=day(5), data=data([session("network", 0)]))
-        self.assertEqual(awards.load()["call"], "DL4YM")
-
 
 class DiplomaTest(unittest.TestCase):
     def test_page_shows_award_level_call_and_date(self):
         award = awards.BY_KEY["koch"]
         page = diploma.diploma_html("Koch", "Silber", diploma.seal_colors(1), panel.diploma_condition(award, 1),
-                                    "03.10.2026", "DL4YM", labels={"title": "Diplom", "awarded": "verliehen an"})
-        for text in ("Koch", "Silber", "DL4YM", "03.10.2026", "Silber ab 25 Lektionen", "landscape"):
+                                    "03.10.2026", "DL0ABC", "Erika",
+                                    labels={"title": "Diplom", "awarded": "verliehen an"})
+        for text in ("Koch", "Silber", "DL0ABC", "Erika", "03.10.2026", "Silber ab 25 Lektionen", "landscape"):
             self.assertIn(text, page)
         plain = diploma.diploma_html("Clubabend", "", diploma.seal_colors(0, levels=False), "<b>", "1.1.", "")
         self.assertNotIn("verliehen", plain)

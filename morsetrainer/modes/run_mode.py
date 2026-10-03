@@ -44,7 +44,6 @@ from morsetrainer.modes.qso_quiz import is_correct
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ChoiceBox, ScrollableFrame
 
-DEFAULT_CALL = "DL4YM"
 TICK_MS = 30
 MIX_CHUNK_SECONDS = 0.02
 # Stationen je Sitzung (Stimmen für Chirp/QSB werden reihum vergeben).
@@ -224,9 +223,15 @@ class RunModeFrame:
         self.kind_combo.grid(row=0, column=1, columnspan=2, sticky="w", pady=2)
 
         ttk.Label(box, text=tr("Mein Rufzeichen:")).grid(row=1, column=0, sticky="w", **row_pad)
-        self.my_call_var = tk.StringVar(value=DEFAULT_CALL)
-        self.my_call_entry = ttk.Entry(box, textvariable=self.my_call_var, width=12)
-        self.my_call_entry.grid(row=1, column=1, sticky="w", pady=2)
+        self.my_call_var = tk.StringVar(value="")  # Vorgabe: Rufzeichen aus den Einstellungen
+        call_row = ttk.Frame(box)
+        call_row.grid(row=1, column=1, columnspan=2, sticky="w", pady=2)
+        self.my_call_entry = ttk.Entry(call_row, textvariable=self.my_call_var, width=12)
+        self.my_call_entry.pack(side="left")
+        # Nicht jeder, der übt, hat schon ein Rufzeichen; vorgegeben wird
+        # keins, weil ein erfundenes jemandem gehören könnte.
+        self.call_hint_var = tk.StringVar(value="")
+        theme.hint(call_row, textvariable=self.call_hint_var).pack(side="left", padx=6)
 
         ttk.Label(box, text=tr("Mein Austausch:")).grid(row=2, column=0, sticky="w", **row_pad)
         exchange_row = ttk.Frame(box)
@@ -352,6 +357,7 @@ class RunModeFrame:
     def _on_setup_change(self):
         """Neuer Contest oder neues Rufzeichen: eigenen Austausch vorschlagen."""
         kind, call = self._kind(), self._my_call()
+        self.call_hint_var.set("" if call else tr("ohne eigenes Rufzeichen: ein ausgedachtes eintragen"))
         if qso_text.uses_serial(kind, call):
             self.my_exchange_entry.config(state="disabled")
             self.exchange_hint_var.set(tr("laufende Nummer (automatisch)"))

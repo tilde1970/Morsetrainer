@@ -25,7 +25,7 @@ from morsetrainer.modes.group_mode import GroupModeFrame
 from morsetrainer.modes.listen_mode import ListenModeFrame
 from morsetrainer.modes.network_mode import NetworkModeFrame
 from morsetrainer.modes.qso_mode import QsoModeFrame
-from morsetrainer.modes.run_mode import DEFAULT_CALL, RunModeFrame
+from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.net import update
@@ -48,6 +48,8 @@ DEFAULT_GEOMETRY = "720x900"
 # gespeicherte kleinere Breite (von vor dem Reiter Netzwerk) wird angehoben.
 MIN_WIDTH = 720
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
+# Bis 2.21 Vorgabe im Contest-Reiter; wer es dort stehen ließ, hat es nicht selbst eingetragen.
+LEGACY_DEFAULT_CALL = "DL4YM"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # Startet die Tagesübung; von keinem Reiter belegt.
 DAILY_KEY = "F12"
@@ -98,6 +100,7 @@ class MorseTrainerApp:
                                   on_continue=lambda: self.daily.continue_now())
         self.daily_bar.pack()
         self._build_notebook()
+        self._follow_station()
         self._build_all_time_tab()
         self._refresh_all_time()
         self.daily = DailyRunner(self, self.daily_bar)
@@ -244,6 +247,18 @@ class MorseTrainerApp:
             self.more_frame, text=tr("Tonhöhe und Tempo leicht variieren (gegen Gewöhnung an einen Klang)"),
             variable=self.vary_var,
         ).pack(anchor="w", pady=2)
+
+        # Eigenes Rufzeichen und Name: für die Diplome und als Vorgabe in
+        # den Reitern Contest und Netzwerk (siehe _follow_station).
+        station = ttk.Frame(self.more_frame)
+        station.pack(fill="x", pady=2)
+        self.station_call_var = tk.StringVar(value="")
+        self.station_name_var = tk.StringVar(value="")
+        ttk.Label(station, text=tr("Rufzeichen", context="eigenes")).pack(side="left")
+        ttk.Entry(station, textvariable=self.station_call_var, width=12).pack(side="left", padx=(6, 12))
+        ttk.Label(station, text=tr("Name")).pack(side="left")
+        ttk.Entry(station, textvariable=self.station_name_var, width=14).pack(side="left", padx=(6, 8))
+        theme.hint(station, text=tr("falls vorhanden; für Diplome, Contest und Netzwerk")).pack(side="left")
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
@@ -518,6 +533,8 @@ class MorseTrainerApp:
             "vary": (self.vary_var, None),
             "daily_goal": (self.daily_goal_var, (0, 240)),
             "more_options": (self.more_var, None),
+            "station_call": (self.station_call_var, None),
+            "station_name": (self.station_name_var, None),
         }
 
     def _shared_settings(self) -> dict:
@@ -627,6 +644,54 @@ class MorseTrainerApp:
             anchor="e", padx=10, pady=(4, 10)
         )
 
+    # --- Rufzeichen und Name ---------------------------------------------------------
+    def _station_name(self) -> str:
+        """Vorgabe für den Netzwerk-Reiter: der Name, sonst das Rufzeichen."""
+        return self.station_name_var.get().strip() or self.station_call()
+
+    def station_call(self) -> str:
+        return self.station_call_var.get().strip().upper()
+
+    def _follow_station(self):
+        """Rufzeichen im Contest und Name im Netzwerk sind eigene Felder (ein
+        Contest-Rufzeichen kann anders lauten) mit den zentralen Werten als
+        Vorgabe: Sie ziehen mit, solange sie leer sind oder noch den
+        vorigen zentralen Wert zeigen.
+
+        Ältere Fassungen kannten nur die beiden Felder: Beim ersten Start
+        werden sie übernommen, das Rufzeichen aber nicht, wenn es noch der
+        frühere Vorgabewert des Contest-Reiters ist."""
+        contest = self.modes[self.mode_titles.index("Contest")].my_call_var
+        network = self.modes[self.mode_titles.index("Netzwerk")].name_var
+        shared = self.saved_state.get("shared")
+        shared = shared if isinstance(shared, dict) else {}
+        if "station_call" not in shared:
+            call = contest.get().strip().upper()
+            if call == LEGACY_DEFAULT_CALL:
+                contest.set("")
+            else:
+                self.station_call_var.set(call)
+        if "station_name" not in shared:
+            self.station_name_var.set(network.get().strip())
+
+        def follow(field, central):
+            last = [central()]
+
+            def update(*_):
+                value = central()
+                if field.get().strip().upper() in ("", last[0].upper()):
+                    field.set(value)
+                last[0] = value
+            if not field.get().strip():
+                field.set(last[0])
+            return update
+
+        contest_follow = follow(contest, self.station_call)
+        network_follow = follow(network, self._station_name)
+        self.station_call_var.trace_add("write", contest_follow)
+        self.station_call_var.trace_add("write", network_follow)
+        self.station_name_var.trace_add("write", network_follow)
+
     # --- Diplome ---------------------------------------------------------------------
     def _check_awards(self):
         """Neue Siegel eintragen und für das Diplom-Fenster vormerken;
@@ -650,15 +715,6 @@ class MorseTrainerApp:
         else:
             self.show_pending_seals()
 
-    def _diploma_call(self) -> str:
-        """Gemerktes Rufzeichen oder das aus dem Contest-Reiter, sofern es
-        nicht mehr der Vorgabewert ist."""
-        call = awards.load()["call"]
-        if call:
-            return call
-        contest = self.modes[self.mode_titles.index("Contest")].my_call_var.get().strip().upper()
-        return "" if contest == DEFAULT_CALL else contest
-
     def show_pending_seals(self):
         if self.pending_seals and not self.running_mode:
             seals, self.pending_seals = self.pending_seals, []
@@ -667,7 +723,8 @@ class MorseTrainerApp:
     def _show_diplomas(self, seals, title=None):
         if self.diploma_window is not None and self.diploma_window.window is not None:
             self.diploma_window.close()
-        self.diploma_window = DiplomaWindow(self.root, seals, self._diploma_call(), title)
+        self.diploma_window = DiplomaWindow(self.root, seals, self.station_call_var, self.station_name_var,
+                                            title)
 
     def _refresh_all_time(self):
         data = stats.load_all_time()

@@ -13,15 +13,21 @@ def seal_colors(level, levels: bool = True) -> tuple:
 
 
 def diploma_html(name: str, level_name: str, colors: tuple, condition: str, date_text: str,
-                 call: str = "", labels: dict = None) -> str:
+                 call: str = "", holder: str = "", labels: dict = None) -> str:
     """HTML-Seite eines Diploms. `level_name` leer bei Diplomen ohne Stufen;
-    `call` leer: ohne Empfängerzeile. `labels` liefert die (übersetzten)
-    Texte "title", "awarded", "date", "footer"."""
+    `call` (groß) und `holder` (Name, darunter) beide leer: ohne
+    Empfängerzeile. `labels` liefert die (übersetzten) Texte "title",
+    "awarded", "date", "footer"."""
     labels = labels or {}
     esc = html.escape
     fill, edge = colors
-    recipient = (f'<p class="awarded">{esc(labels.get("awarded", ""))}</p><p class="call">{esc(call)}</p>'
-                 if call else "")
+    recipient = ""
+    if call or holder:
+        recipient = f'<p class="awarded">{esc(labels.get("awarded", ""))}</p>'
+        if call:
+            recipient += f'<p class="call">{esc(call)}</p>'
+        if holder:
+            recipient += f'<p class="holder">{esc(holder)}</p>'
     seal_text = esc(level_name) if level_name else "★"
     title = f"{name} – {level_name}" if level_name else name
     return f"""<!doctype html>
@@ -40,6 +46,9 @@ h2 {{ font-size: 24pt; font-weight: normal; font-style: italic; margin: 0 0 6mm;
 .awarded {{ font-size: 12pt; margin: 0; }}
 .call {{ font-family: "DejaVu Sans Mono", monospace; font-size: 26pt; font-weight: bold; letter-spacing: 0.1em;
          margin: 1mm 0 4mm; }}
+.holder {{ font-size: 18pt; font-style: italic; margin: 0 0 4mm; }}
+.call + .holder {{ margin-top: -2mm; }}
+.awarded + .holder {{ font-size: 26pt; margin: 1mm 0 4mm; }}
 .condition {{ font-size: 12pt; max-width: 190mm; margin: 0 0 4mm; }}
 .seal {{ width: 34mm; height: 34mm; border-radius: 50%; display: flex; align-items: center;
          justify-content: center; background: {fill}; border: 1.6mm solid {edge};
