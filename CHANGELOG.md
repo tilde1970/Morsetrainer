@@ -2,6 +2,11 @@
 
 ## Unveröffentlicht
 
+- **Lebenslinie:** Im Reiter Statistik unter den Diplomen ein Diagramm
+  vom ersten Üben bis heute – Sterne gesamt, höchste geübte Koch-Lektion
+  und Tagestempo der Tagesübung auf einer gemeinsamen Zeitachse, darunter
+  die Siegel der Diplome. Das Tagestempo wird dafür ab jetzt je Tag
+  gespeichert. Siehe README, „Lebenslinie“.
 - **Koch-Lektion 41 schließt ab:** Nach den 40 Lektionen von lcwo.net
   bringt Lektion 41 kein neues Zeichen mehr, alle Zeichen kommen
   gleichmäßig (schwache weiter öfter); im Feld „Zeichen“ stehen sie

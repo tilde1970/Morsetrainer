@@ -32,6 +32,7 @@ from morsetrainer.net import update
 from morsetrainer.widgets.awards_panel import AwardsPanel, DiplomaWindow
 from morsetrainer.widgets.daily_panel import DailyBar
 from morsetrainer.widgets.help_window import HelpWindow
+from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.updater import DECLINED, Updater
@@ -626,6 +627,7 @@ class MorseTrainerApp:
         ttk.Label(row, text=tr("Min. pro Tag")).pack(side="left", padx=(4, 0))
         theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(anchor="w", pady=(4, 0))
         self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")))
+        self.lifeline_panel = LifelinePanel(frame)
 
         review_box = theme.card(frame, tr("Wiederholung über Tage (Lernkartei)"))
         self.review_var = tk.StringVar(value="")
@@ -717,6 +719,7 @@ class MorseTrainerApp:
         today = date.today()
         self.pending_seals += [(key, level, today) for key, level in new]
         self.awards_panel.refresh()
+        self.lifeline_panel.refresh()
         return seeded
 
     def _check_awards_at_start(self):
@@ -749,6 +752,7 @@ class MorseTrainerApp:
         self.review_var.set(self._review_text(review.load()))
         self.progress_panel.refresh()
         self.awards_panel.refresh()
+        self.lifeline_panel.refresh()
 
     @staticmethod
     def _review_text(data: dict, today=None) -> str:

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Lifeline:** on the Statistics tab below the awards, a chart from your
+  first practice until today – total stars, highest Koch lesson practised
+  and daily speed of the daily practice on a shared time axis, with the
+  award seals underneath. The daily speed is now stored for each day for
+  this. See README, “Lifeline”.
 - **Koch lesson 41 completes the course:** after the 40 lessons of
   lcwo.net, lesson 41 brings no new character, all characters come evenly
   (weak ones still more often); the “Characters” field lists them sorted.

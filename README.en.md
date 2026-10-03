@@ -22,7 +22,7 @@ restart.
 | **QSO** | Listen to complete QSOs: normal QSO or contest runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) with adjustable pile-ups (default off). Evaluation via log check, by typing along, as **head copy + questions** (no notes, afterwards content questions about name, QTH, rig, weather … or exchange) or listen only. Next to the length the estimated duration is shown; how often you used “Again” before checking is noted. |
 | **Contest** | You are the running station (similar to Morse Runner): call CQ, pick up callers, send the exchange, log. As in a real contest, callers sometimes answer to an almost correct call – if you notice the mistake, correct the call and confirm with Enter (“Call TU”), otherwise “Busted” appears in the log. “?” in the call field asks back (DL1?, DL?ABC). Speed and pitch spread of the callers are adjustable, at the end there is a summary by type of error; F10 starts and ends. |
 | **Network** | Practise as a group on the local network (class, club evening): a trainer sets the pace, everyone hears the same sequence on their own headphones and copies it; the trainer sees live who typed what. See below. |
-| **Statistics** | Overall statistics per character (only from random characters and callsigns; in words, phrases and QSOs the context gives away too many characters), **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal, **awards** (see below) and progress history per mode. |
+| **Statistics** | Overall statistics per character (only from random characters and callsigns; in words, phrases and QSOs the context gives away too many characters), **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal, **awards** and **lifeline** (see below) and progress history per mode. |
 
 In **Groups, Words and Callsigns** you can choose:
 
@@ -139,6 +139,16 @@ highest level.
 - On the first start with awards, whatever follows from your practice so
   far is filled in quietly (with the day it was reached); one note says
   how many awards that is.
+
+### Lifeline
+
+Below the awards on the **Statistics** tab, the **lifeline** shows the long
+road from your first practice until today: daily-practice stars added up,
+the highest Koch lesson practised (up to the final lesson 41) and the
+daily speed of the daily practice, with the award seals underneath as
+diamonds in their colour. All three lines only rise or stay level; hover
+with the mouse to see the values and seals of each day. The lifeline stays
+complete after “Reset overall statistics”.
 
 ### Learning path for beginners
 

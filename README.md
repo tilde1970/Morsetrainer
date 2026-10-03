@@ -21,7 +21,7 @@ Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
 | **Netzwerk** | Üben in der Gruppe im lokalen Netz (Kurs, Clubabend): Ein Trainer gibt vor, alle hören dieselbe Sequenz über den eigenen Kopfhörer und tippen mit; der Trainer sieht live, wer was getippt hat. Siehe unten. |
-| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen), **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel, **Diplome** (siehe unten) und Fortschrittsverlauf je Modus. |
+| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen), **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel, **Diplome** und **Lebenslinie** (siehe unten) und Fortschrittsverlauf je Modus. |
 
 In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 
@@ -138,6 +138,16 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
 - Beim ersten Start mit Diplomen wird still nachgetragen, was sich aus dem
   bisherigen Üben ergibt (mit dem Tag, an dem es erreicht wurde); ein
   Hinweis sagt, wie viele Diplome es sind.
+
+### Lebenslinie
+
+Unter den Diplomen im Reiter **Statistik** zeigt die **Lebenslinie** den
+langen Weg vom ersten Üben bis heute: Sterne der Tagesübung aufsummiert,
+die höchste geübte Koch-Lektion (bis zur Abschlusslektion 41) und das
+Tagestempo der Tagesübung, darunter die Siegel der Diplome als Rauten in
+ihrer Farbe. Alle drei Linien steigen nur oder bleiben stehen; mit der
+Maus siehst du für jeden Tag die Werte und die Siegel. Die Lebenslinie
+bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
 
 ### Lernweg für Einsteiger
 
