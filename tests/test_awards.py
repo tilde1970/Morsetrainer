@@ -253,6 +253,12 @@ class DiplomaTest(unittest.TestCase):
         self.assertNotIn("verliehen", plain)
         self.assertIn("&lt;b&gt;", plain)
 
+    def test_award_name_in_morse(self):
+        self.assertEqual(diploma.morse_of("Koch"), [["-.-", "---", "-.-.", "...."]])
+        self.assertEqual(diploma.morse_of("Hör-Test!")[0][:3], ["....", "---", "."])  # Ö als OE
+        self.assertEqual(diploma.morse_svg("", "#000"), "")
+        self.assertEqual(diploma.morse_svg("E", "#000").count("<rect"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
