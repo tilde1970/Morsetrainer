@@ -6,12 +6,18 @@ Vorher werden die gemeinsamen Einstellungen (Zeichensatz, Tempo,
 Gewichtung) gemerkt und danach zurückgestellt; die Tagesübung arbeitet mit
 ihrer eigenen Lektion und ihrem Tagestempo. Ein Block, der von Hand
 gestoppt wird (Stop, F5, Esc), beendet die ganze Tagesübung; bereits
-verdiente Sterne bleiben."""
+verdiente Sterne bleiben.
+
+Zwischen den Blöcken steht einige Sekunden die Zwischenkarte (Enter: gleich
+weiter), am Ende die Abendbilanz. Aus ihr startet „Noch 5 Min“ eine Zugabe:
+ein einzelner Block mit demselben Ablauf, danach ohne neue Bilanz."""
 import time
 from datetime import date
 
 from morsetrainer.core import daily, koch, review, stats
 from morsetrainer.i18n import tr
+from morsetrainer.widgets.daily_panel import (
+    BLOCK_LABELS, EveningSummary, block_lines, moment_line, preview_line, stars_named)
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 
 # Reiter je Modus der Blöcke (deutsche Titel = Schlüssel, siehe app.py).
@@ -20,7 +26,9 @@ MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter",
 # Feste Einstellungen je Modus (Schlüssel wie settings() des Reiters).
 _SEQUENCE = {"adaptive_tempo": False, "band": None, "give_up": 1}
 MODE_SETTINGS = {
-    "single": {"icr": True},
+    # Zeitlimit wie die Lernkartei für „flüssig“; ein knappes Limit aus dem
+    # Reiter soll nicht ins Aufwärmen nachwirken.
+    "single": {"icr": True, "icr_limit": review.FLUENT_LATENCY_S},
     "group": {**_SEQUENCE, "input_style": COPY, "adaptive": True, "min_len": 2, "max_len": 6},
     "word": {**_SEQUENCE, "input_style": MEMORIZE},
     "callsign": {**_SEQUENCE, "input_style": COPY, "prefixes": "", "learned_only": True, "rufz": False},
@@ -29,7 +37,10 @@ MODE_SETTINGS = {
 # Ein Block, der kürzer lief, wurde von Hand gestoppt (die Reiter enden
 # sonst erst nach Ablauf der Zeit und der letzten Eingabe).
 STOPPED_EARLY_MIN = 0.1
-PAUSE_BETWEEN_MS = 1500
+# So lange steht die Zwischenkarte, beim neuen Zeichen etwas länger (es
+# wird dreimal vorgespielt).
+CARD_MS = 4000
+INTRO_MS = 6000
 TICK_MS = 1000
 
 
@@ -39,6 +50,7 @@ class DailyRunner:
         self.bar = bar
         self.active = False
         self.aborting = False
+        self.quiet = False
         self.state = {}
         self.blocks = []
         self.index = -1
@@ -48,6 +60,9 @@ class DailyRunner:
         self.saved_shared = None
         self.tick_id = None
         self.next_id = None
+        self.card_open = False
+        self.extra = False
+        self.summary = None
         self.refresh_idle()
 
     # --- Anzeige ---------------------------------------------------------------
@@ -66,6 +81,7 @@ class DailyRunner:
         if self.active or self.app.running_mode:
             return
         app = self.app
+        self.extra = False
         self.today = date.today()
         self.state = daily.load()
         fallback = koch.lesson_of(app.charset_var.get().strip().upper()) or self._lesson_field()
@@ -80,20 +96,58 @@ class DailyRunner:
         self.state["tempo"] = daily.current_tempo(self.state, wpm, app.farnsworth_wpm())
         daily.save(self.state)
 
-        self.saved_shared = {key: var.get() for key, var in self._shared().items()}
         charset = daily.lesson_charset(lesson)
+        self.due = review.due_chars(known=charset)
+        self._begin(charset, daily.plan(lesson, len(self.due), self.today))
+        if daily.is_new_lesson(self.state, self.today) and 1 < lesson <= koch.MAX_LESSON:
+            # Neue Lektion: das neue Zeichen erst einmal anhören.
+            char = koch.newest_char(lesson)
+            self._show_card(tr("Neues Zeichen: {char}").format(char=char),
+                            [preview_line(self.blocks[0], lesson, self.state["tempo"])], INTRO_MS)
+            app._play_new_char()
+        else:
+            self._next_block()
+
+    def start_extra(self, offer) -> None:
+        """„Noch 5 Min“ aus der Abendbilanz: ein Block, einmal am Tag."""
+        if self.active or self.app.running_mode:
+            return
+        kind, chars = offer
+        self.extra = True
+        self.today = date.today()
+        self.state = daily.load()
+        daily.day_entry(self.state, self.today)[daily.EXTRA] = True
+        daily.save(self.state)
+        lesson = daily.current_lesson(self.state, self._lesson_field())
+        tempo = daily.current_tempo(self.state, self.app.wpm_var.get(), self.app.farnsworth_wpm())
+        self.state["tempo"] = tempo
+        self.due = ""
+        if kind == daily.CONFUSIONS:
+            block = daily.Block(daily.EXTRA, "single", daily.EXTRA_MINUTES)
+            charset = chars
+        elif kind == daily.RUFZ:
+            block = daily.Block(daily.EXTRA, "callsign", daily.EXTRA_MINUTES, {"rufz": True})
+            charset = daily.lesson_charset(lesson)
+        else:
+            block = daily.Block(daily.EXTRA, "word", daily.EXTRA_MINUTES)
+            charset = daily.lesson_charset(lesson)
+        self._begin(charset, [block])
+        self._next_block()
+
+    def _begin(self, charset: str, blocks: list) -> None:
+        """Gemeinsame Einstellungen sichern und für die Tagesübung setzen."""
+        app = self.app
+        self.saved_shared = {key: var.get() for key, var in self._shared().items()}
         app.charset_var.set(charset)
         self._apply_tempo(self.state["tempo"])
         app.weighted_var.set(True)
-        self.due = review.due_chars(known=charset)
-        self.blocks = daily.plan(lesson, len(self.due), self.today)
+        self.blocks = blocks
         self.index = -1
         self.done_minutes = 0.0
         self.active, self.aborting = True, False
         self.bar.set_enabled(False)
         self.bar.show_active()
         self._tick()
-        self._next_block()
 
     def _lesson_field(self) -> int:
         try:
@@ -118,6 +172,8 @@ class DailyRunner:
     # --- Blöcke --------------------------------------------------------------------
     def _next_block(self) -> None:
         self.next_id = None
+        self.card_open = False
+        self.bar.hide_card()
         if not self.active:
             return
         self.index += 1
@@ -142,7 +198,7 @@ class DailyRunner:
             app.notebook.tab(tab_id, state="normal")
         app.notebook.select(app.tab_ids[app.mode_titles.index(title)])
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
-        mode.daily_configure(block.minutes, **MODE_SETTINGS[block.mode], **block.params)
+        mode.daily_configure(block.minutes, **{**MODE_SETTINGS[block.mode], **block.params})
         self.mode = mode
         self.block_started = time.time()
         mode.start()
@@ -176,21 +232,52 @@ class DailyRunner:
         self.block_started = None
         minutes = result.get("minutes", 0.0)
         self.done_minutes += minutes
-        stopped_early = minutes < block.minutes - STOPPED_EARLY_MIN
-        daily.finish_block(self.state, self.today, block, result)
+        # Ein Rufz-Durchgang endet nach seinen Rufzeichen, nicht nach der Zeit.
+        stopped_early = minutes < block.minutes - STOPPED_EARLY_MIN and not block.params.get("rufz")
+        new_stars = daily.finish_block(self.state, self.today, block, result)
         daily.save(self.state)
         if self.aborting or stopped_early:
             self._finish(completed=False)
+        elif self.index + 1 >= len(self.blocks):
+            self._next_block()  # letzter Block: gleich zur Abendbilanz
         else:
-            self.next_id = self.app.root.after(PAUSE_BETWEEN_MS, self._next_block)
+            self._show_block_card(block, result, new_stars)
+
+    # --- Zwischenkarte -----------------------------------------------------------
+    def _show_block_card(self, block, result: dict, new_stars) -> None:
+        summary = daily.block_summary(block, result, self.due if block.kind == daily.WARMUP else "")
+        lines = block_lines(summary)
+        strong = []
+        if new_stars:
+            strong.append(tr("Neu: {stars}").format(stars=stars_named(new_stars)))
+            lines += strong
+        if block.mode == "single":
+            lines += [moment_line(m) for m in daily.char_moments(self.today)]
+        following = self.blocks[self.index + 1]
+        lines.append(preview_line(following, daily.current_lesson(self.state, 1), self.state["tempo"]))
+        title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
+        self._show_card(title, lines, CARD_MS, strong)
+
+    def _show_card(self, title: str, lines, ms: int, strong=()) -> None:
+        self.bar.show_card(title, lines, strong)
+        self.card_open = True
+        self.app.root.focus_set()  # Enter und Esc sollen ankommen
+        self.next_id = self.app.root.after(ms, self._next_block)
+
+    def continue_now(self) -> None:
+        """Enter auf der Zwischenkarte: nicht warten."""
+        if self.active and self.card_open and self.next_id is not None:
+            self.app.root.after_cancel(self.next_id)
+            self._next_block()
 
     # --- Ende ----------------------------------------------------------------------
-    def abort(self) -> None:
-        """Esc oder Programmende: laufenden Block regulär beenden (Statistik
-        wird gespeichert), dann die Tagesübung."""
+    def abort(self, quiet: bool = False) -> None:
+        """Esc oder Programmende (`quiet`: ohne Bilanz): laufenden Block
+        regulär beenden (Statistik wird gespeichert), dann die Tagesübung."""
         if not self.active:
             return
         self.aborting = True
+        self.quiet = quiet
         if self.mode is not None and self.mode.running:
             self.mode.stop()  # führt über on_block_end zu _finish
         else:
@@ -200,6 +287,7 @@ class DailyRunner:
         if not self.active:
             return
         self.active = False
+        self.card_open = False
         for after_id in (self.tick_id, self.next_id):
             if after_id is not None:
                 self.app.root.after_cancel(after_id)
@@ -216,6 +304,21 @@ class DailyRunner:
             self.saved_shared = None
         self.bar.set_enabled(True)
         stars = daily.stars_on(self.state, self.today)
-        note = tr("Tagesübung geschafft.") if completed else tr("Tagesübung abgebrochen – deine Sterne bleiben.")
+        if self.extra:
+            note = tr("Zugabe geschafft.") if completed else tr("Zugabe beendet.")
+        else:
+            note = tr("Tagesübung geschafft.") if completed else tr("Tagesübung abgebrochen – deine Sterne bleiben.")
         self.bar.show_idle(stars, note)
         self.app.finish_daily()
+        if not self.extra and not (self.aborting and self.quiet):
+            self._show_summary(stars, completed)
+
+    def _show_summary(self, stars, completed: bool) -> None:
+        offer = None
+        if completed:
+            app = self.app
+            confusions = app._confusion_charset(stats.recent_char_data(), stats.load_all_time())
+            offer = daily.extra_offer(self.state, self.today, daily.current_lesson(self.state, 1), confusions)
+        self.summary = EveningSummary(
+            self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
+            offer, self.start_extra, completed)

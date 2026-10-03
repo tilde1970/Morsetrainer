@@ -1,5 +1,6 @@
 """Tests für die Regeln der Tagesübung (core/daily.py): Stufen, Ablauf,
-Tagestempo, Aufstieg und Sterne."""
+Tagestempo, Aufstieg, Sterne, Rückblick und Vorwochenvergleich."""
+import json
 import tempfile
 import unittest
 from datetime import date, timedelta
@@ -173,3 +174,91 @@ class StorageTest(unittest.TestCase):
             (Path(tmp) / daily.DAILY_FILE_NAME).write_text("{kaputt", encoding="utf-8")
             self.assertEqual(daily.load(), {"days": {}})
             self.assertTrue(list(Path(tmp).glob("daily.json.defekt-*")))
+
+
+def write_session(directory: Path, day: date, mode: str, chars=(), config=None, summary=None, index=0):
+    """Sitzungsdatei wie von SessionStats: config, Zeichen, summary.
+    `chars`: (Zeichen, Latenz) – richtig erkannt."""
+    lines = [{"type": "config", "mode": mode, "wpm": 20, "farnsworth_wpm": 12, **(config or {})}]
+    lines += [{"type": "char", "char": ch, "correct": True, "latency_s": lat} for ch, lat in chars]
+    lines.append({"type": "summary", "total": len(chars), **(summary or {})})
+    path = directory / f"{day.isoformat()}_1200{index:02d}-{mode}.jsonl"
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8")
+
+
+class ReviewTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        patch = mock.patch.object(stats, "STATS_DIR", self.dir)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.addCleanup(self.tmp.cleanup)
+
+    def latency_week(self, day, char, latency, count=daily.LATENCY_WEEK_MIN, **kwargs):
+        write_session(self.dir, day, "single", [(char, latency)] * count, **kwargs)
+
+    def test_latency_better_needs_both_thresholds(self):
+        before = TODAY - timedelta(days=8)
+        self.latency_week(before, "R", 0.65)
+        self.latency_week(TODAY, "R", 0.41)
+        self.latency_week(before, "K", 0.50, index=1)
+        self.latency_week(TODAY, "K", 0.42, index=1)   # 16 %, aber unter 0,1 s
+        result = daily.week_comparison(TODAY)
+        self.assertEqual(result["status"], daily.BETTER)
+        self.assertEqual(result["better"], [{"kind": "latency", "char": "R", "before": 0.65, "now": 0.41}])
+
+    def test_held_and_too_few(self):
+        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.FEW, "better": []})
+        self.latency_week(TODAY - timedelta(days=8), "R", 0.5)
+        self.latency_week(TODAY, "R", 0.6)   # langsamer: nie „schlechter“, nur gehalten
+        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.HELD, "better": []})
+
+    def test_self_assessed_and_assumed_do_not_count(self):
+        self.latency_week(TODAY - timedelta(days=8), "R", 0.9)
+        self.latency_week(TODAY, "R", 0.3, config={"self_assessed": True})
+        self.assertEqual(daily.week_comparison(TODAY)["status"], daily.FEW)
+
+    def test_group_share_at_same_tempo(self):
+        summary = {"first_try_correct": 170, "first_try_total": 200}
+        write_session(self.dir, TODAY - timedelta(days=9), "group", summary=summary)
+        write_session(self.dir, TODAY, "group", summary={"first_try_correct": 188, "first_try_total": 200})
+        write_session(self.dir, TODAY, "group", config={"farnsworth_wpm": 15}, index=1,
+                      summary={"first_try_correct": 200, "first_try_total": 200})  # anderes Tempo
+        result = daily.week_comparison(TODAY)
+        self.assertEqual(result["better"], [{"kind": "groups", "wpm": 12, "before": 0.85, "now": 0.94}])
+
+    def test_char_moments_today_against_last_week(self):
+        self.latency_week(TODAY - timedelta(days=3), "R", 0.8)
+        self.latency_week(TODAY, "R", 0.4, count=daily.LATENCY_TODAY_MIN)
+        self.latency_week(TODAY, "K", 0.2, count=daily.LATENCY_TODAY_MIN - 1, index=1)
+        self.assertEqual(daily.char_moments(TODAY), [{"kind": "latency", "char": "R", "before": 0.8, "now": 0.4}])
+
+    def test_block_summary(self):
+        warmup = daily.Block(daily.WARMUP, "single", 3)
+        result = {"correct": 40, "total": 44, "best_streak": 12, "chars": {"R": [6, 6], "S": [6, 4], "K": [2, 2]}}
+        summary = daily.block_summary(warmup, result, due="RSKX")
+        self.assertEqual((summary["due_practiced"], summary["due_sure"], summary["streak"]), (3, 1, 12))
+        summary = daily.block_summary(main_block(), main_result(90, 100))
+        self.assertEqual((summary["correct"], summary["total"]), (90, 100))
+
+    def test_lesson_outlook(self):
+        state = {"lesson": 12, "days": {}}
+        self.assertIsNone(daily.lesson_outlook(state, TODAY))
+        daily.finish_block(state, TODAY, main_block(), main_result(84, 100, wpm=12))  # zu langsame Zeichen
+        self.assertEqual(daily.lesson_outlook(state, TODAY), {"lesson": 13, "missing": 6})
+        daily.finish_block(state, TODAY, main_block(), main_result(95, 100))
+        self.assertEqual(daily.lesson_outlook(state, TODAY), {"lesson": 13, "pending": True})
+
+    def test_extra_offer_once_and_only_after_good_main_part(self):
+        state = {"lesson": 30, "days": {}}
+        self.assertIsNone(daily.extra_offer(state, TODAY, 30, ""))
+        daily.finish_block(state, TODAY, main_block(), main_result(70, 100))
+        self.assertIsNone(daily.extra_offer(state, TODAY, 30, ""))
+        daily.finish_block(state, TODAY, main_block(), main_result(80, 100))
+        self.assertEqual(daily.extra_offer(state, TODAY, 30, "BD"), (daily.CONFUSIONS, "BD"))
+        self.assertEqual(daily.extra_offer(state, TODAY, 30, ""), (daily.RUFZ, ""))
+        self.assertEqual(daily.extra_offer(state, TODAY, 15, ""), (daily.WORD, ""))
+        self.assertIsNone(daily.extra_offer(state, TODAY, 5, ""))
+        state["days"][TODAY.isoformat()][daily.EXTRA] = True
+        self.assertIsNone(daily.extra_offer(state, TODAY, 30, "BD"))

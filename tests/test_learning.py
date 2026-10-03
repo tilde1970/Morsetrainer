@@ -235,6 +235,22 @@ class IcrLimitTest(unittest.TestCase):
             limit = next_limit(limit, False)
         self.assertEqual(limit, ICR_RANGE[1])
 
+    def test_limit_settles_near_nine_in_ten(self):
+        """Das Limit sinkt erst, wenn deutlich mehr als acht von zehn Zeichen
+        rechtzeitig kommen; bei vier von fünf wird es wieder länger."""
+        from morsetrainer.modes.single_mode import next_limit
+
+        def run(right, missed):
+            limit = 1.5
+            for _ in range(10):
+                for _ in range(right):
+                    limit = next_limit(limit, True)
+                for _ in range(missed):
+                    limit = next_limit(limit, False)
+            return limit
+        self.assertLess(run(19, 1), 1.5)
+        self.assertGreater(run(4, 1), 1.5)
+
 
 class TempoHistoryTest(unittest.TestCase):
     def test_reached_tempo_is_used_in_history(self):

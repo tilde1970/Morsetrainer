@@ -9,7 +9,12 @@ unsichtbar in der Konsole zu landen und die Reiter gesperrt zu lassen.
   nach dem Stop); Fehler werden ignoriert.
 - output_stream(): für die Modi mit eigenem Audio-Thread. Deren Fehler
   fängt der Thread mit ERRORS ab und übergibt describe(exc) an die
-  Oberfläche."""
+  Oberfläche.
+- keep_awake() / release(): ein stiller Ausgabestrom, solange das Programm
+  läuft. PipeWire und PulseAudio legen ein Ausgabegerät nach wenigen
+  Sekunden Stille schlafen; das Aufwecken dauert (bei Bluetooth-Kopfhörern
+  spürbar), und der Anfang des nächsten Tons fehlt dann – meist das erste
+  Zeichen nach Start, Blockwechsel oder Pause."""
 import sounddevice as sd
 
 from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
@@ -49,3 +54,35 @@ def stop() -> None:
 
 def output_stream():
     return sd.OutputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency=AUDIO_LATENCY)
+
+
+_keepalive = None
+
+
+def _silence(outdata, frames, time_info, status) -> None:
+    outdata.fill(0)
+
+
+def keep_awake() -> None:
+    """Stillen Strom öffnen (einmal); ohne Audiogerät ohne Wirkung."""
+    global _keepalive
+    if _keepalive is not None:
+        return
+    try:
+        stream = sd.OutputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency="high",
+                                 callback=_silence)
+        stream.start()
+    except (*ERRORS, TypeError, AttributeError):
+        return
+    _keepalive = stream
+
+
+def release() -> None:
+    global _keepalive
+    if _keepalive is None:
+        return
+    try:
+        _keepalive.close()
+    except ERRORS:
+        pass
+    _keepalive = None

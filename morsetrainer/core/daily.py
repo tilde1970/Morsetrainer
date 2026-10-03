@@ -259,7 +259,7 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
     verdienten Sterne zurück (für die Zwischenkarte)."""
     entry = day_entry(state, today)
     entry["blocks"].append({"kind": block.kind, "mode": block.mode,
-                            **{k: v for k, v in result.items() if k != "review_events"}})
+                            **{k: v for k, v in result.items() if k not in ("review_events", "chars")}})
     entry["minutes"] = round(entry["minutes"] + result.get("minutes", 0.0), 2)
     new_stars = []
     progress = False
@@ -300,3 +300,196 @@ def stars_on(state: dict, day: date) -> list:
     entry = state.get("days", {}).get(day.isoformat(), {})
     stars = entry.get("stars", []) if isinstance(entry, dict) else []
     return [s for s in STAR_ORDER if s in stars]
+
+
+# --- Rückblick: Zwischenkarte und Abendbilanz ---------------------------------
+# Verglichen wird nur, was sich fair vergleichen lässt; es gibt kein
+# „schlechter“, nur „besser“, „Stand gehalten“ oder „noch zu wenig Daten“.
+
+WEEK_DAYS = 7
+# Reaktionszeit je Zeichen: Median der gemessenen Zeit nach dem Zeichen
+# (richtig, nicht angenommen); „besser“ erst ab beiden Schwellen.
+LATENCY_WEEK_MIN = 20
+LATENCY_TODAY_MIN = 10
+BETTER_SHARE = 0.15
+BETTER_SECONDS = 0.1
+# Gruppen: Erstversuch-Anteil bei gleichem effektivem Tempo.
+GROUPS_WEEK_MIN_CHARS = 200
+GROUPS_BETTER_POINTS = 0.03
+MOMENTS_SHOWN = 2
+BETTER_SHOWN = 3
+BETTER, HELD, FEW = "better", "held", "few"
+
+# „Noch 5 Min“ in der Abendbilanz: einmal am Tag, nur nach einem guten
+# Hauptteil, mit anderem Inhalt als heute.
+EXTRA = "extra"
+EXTRA_MINUTES = 5
+EXTRA_MIN_SHARE = TEMPO_DOWN_SHARE
+RUFZ_FROM_LESSON = 27   # Rufzeichen brauchen die erste Ziffer (Lektion 23) und genug Zeichen
+CONFUSIONS, RUFZ, WORD = "confusions", "rufz", "word"
+
+
+def _session_files(first: date, last: date):
+    """Sitzungsdateien mit Startdatum von `first` bis `last` (einschließlich)."""
+    for path in stats.STATS_DIR.glob("20*.jsonl"):
+        try:
+            day = date.fromisoformat(path.name[:10])
+        except ValueError:
+            continue
+        if first <= day <= last:
+            yield path
+
+
+def latencies(first: date, last: date) -> dict:
+    """{Zeichen: [Sekunden]} der richtig erkannten Zeichen mit gemessener
+    Reaktion; selbst bewertete Sitzungen und Klartext zählen nicht."""
+    data = {}
+    for path in _session_files(first, last):
+        for obj in stats._read_jsonl(path):
+            kind = obj.get("type")
+            if kind == "config" and (obj.get("self_assessed") or obj.get("char_stats") is False):
+                break
+            if (kind == "char" and obj.get("correct") and isinstance(obj.get("latency_s"), (int, float))
+                    and not obj.get("latency_assumed")):
+                data.setdefault(obj.get("char"), []).append(max(obj["latency_s"], 0.0))
+    return data
+
+
+def group_shares(first: date, last: date) -> dict:
+    """{effektives Tempo: [richtig, gesamt]} beim ersten Versuch in Gruppen
+    mit festem Tempo (mitwachsendes Tempo ist nicht vergleichbar)."""
+    data = {}
+    for path in _session_files(first, last):
+        config, summary = stats._config_and_summary(path)
+        if (not config or not summary or config.get("mode") != "group" or config.get("self_assessed")
+                or config.get("adaptive_tempo") or summary.get("wpm_effective_reached")
+                or not summary.get("first_try_total")):
+            continue
+        try:
+            fw = config.get("farnsworth_wpm")
+            wpm = tempo.effective(int(config["wpm"]), int(fw) if fw else None)
+            counts = data.setdefault(wpm, [0, 0])
+            counts[0] += int(summary.get("first_try_correct", 0))
+            counts[1] += int(summary["first_try_total"])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return data
+
+
+def _median(values):
+    ordered = sorted(values)
+    middle = len(ordered) // 2
+    return ordered[middle] if len(ordered) % 2 else (ordered[middle - 1] + ordered[middle]) / 2
+
+
+def _faster(before: float, now: float) -> bool:
+    return before - now >= max(before * BETTER_SHARE, BETTER_SECONDS)
+
+
+def _latency_gains(now: dict, before: dict, now_min: int) -> list:
+    """Zeichen, die schneller kamen: [{"kind": "latency", "char", "before",
+    "now"}], größte Verbesserung zuerst."""
+    gains = []
+    for char, values in now.items():
+        earlier = before.get(char, [])
+        if len(values) < now_min or len(earlier) < LATENCY_WEEK_MIN:
+            continue
+        old, new = _median(earlier), _median(values)
+        if _faster(old, new):
+            gains.append({"kind": "latency", "char": char, "before": round(old, 2), "now": round(new, 2)})
+    gains.sort(key=lambda g: (g["now"] - g["before"], g["char"]))
+    return gains
+
+
+def char_moments(today: date) -> list:
+    """Für die Zwischenkarte: Zeichen, die heute deutlich schneller kommen
+    als in den sieben Tagen davor („R sitzt jetzt: 0,41 s“)."""
+    now = latencies(today, today)
+    before = latencies(date.fromordinal(today.toordinal() - WEEK_DAYS), date.fromordinal(today.toordinal() - 1))
+    return _latency_gains(now, before, LATENCY_TODAY_MIN)[:MOMENTS_SHOWN]
+
+
+def week_comparison(today: date) -> dict:
+    """Diese Woche (heute und sechs Tage davor) gegen die Woche davor:
+    {"status": BETTER/HELD/FEW, "better": [...]}; Einträge wie in
+    _latency_gains oder {"kind": "groups", "wpm", "before", "now"} (Anteile)."""
+    day = today.toordinal()
+    this_week = (date.fromordinal(day - WEEK_DAYS + 1), today)
+    last_week = (date.fromordinal(day - 2 * WEEK_DAYS + 1), date.fromordinal(day - WEEK_DAYS))
+    now, before = latencies(*this_week), latencies(*last_week)
+    compared = any(len(v) >= LATENCY_WEEK_MIN and len(before.get(c, [])) >= LATENCY_WEEK_MIN for c, v in now.items())
+    better = _latency_gains(now, before, LATENCY_WEEK_MIN)
+    groups_now, groups_before = group_shares(*this_week), group_shares(*last_week)
+    for wpm in sorted(groups_now, reverse=True):
+        (new_ok, new_total), (old_ok, old_total) = groups_now[wpm], groups_before.get(wpm, (0, 0))
+        if new_total < GROUPS_WEEK_MIN_CHARS or old_total < GROUPS_WEEK_MIN_CHARS:
+            continue
+        compared = True
+        old, new = old_ok / old_total, new_ok / new_total
+        if new - old >= GROUPS_BETTER_POINTS:
+            better.insert(0, {"kind": "groups", "wpm": wpm, "before": round(old, 3), "now": round(new, 3)})
+    status = BETTER if better else HELD if compared else FEW
+    return {"status": status, "better": better[:BETTER_SHOWN]}
+
+
+def block_summary(block: Block, result: dict, due: str = "") -> dict:
+    """Zahlen für die Zwischenkarte: richtig/gesamt (Hauptteil beim ersten
+    Versuch), beste Serie und beim Aufwärmen die geübten fälligen Zeichen
+    und wie viele davon heute sicher saßen (wie die Lernkartei: genug
+    Versuche, fast alle flüssig)."""
+    from morsetrainer.core import review  # review importiert stats
+    correct, total = _first_try(result) if block.kind == MAIN else (result.get("correct", 0), result.get("total", 0))
+    summary = {"kind": block.kind, "mode": block.mode, "correct": correct, "total": total,
+               "streak": result.get("best_streak", 0)}
+    if block.kind == WARMUP and due:
+        chars = result.get("chars", {})
+        practiced = [ch for ch in due if ch in chars]
+        sure = [ch for ch in practiced
+                if chars[ch][0] >= review.MIN_ATTEMPTS and chars[ch][1] / chars[ch][0] >= review.SURE_SHARE]
+        summary.update(due_practiced=len(practiced), due_sure=len(sure))
+    return summary
+
+
+def _main_result(entry: dict):
+    """Ergebnis des letzten Hauptteils des Tages, sonst None."""
+    mains = [b for b in entry.get("blocks", []) if isinstance(b, dict) and b.get("kind") == MAIN]
+    return mains[-1] if mains else None
+
+
+def lesson_outlook(state: dict, today: date):
+    """„Fast geschafft“: {"lesson", "pending": True} wenn der Aufstieg
+    vorgemerkt ist, sonst {"lesson", "missing": Prozentpunkte} bis zum
+    Koch-Kriterium im heutigen Hauptteil; None nach Koch oder ohne genug
+    Zeichen."""
+    lesson = current_lesson(state, 1)
+    if state.get("pending_lesson"):
+        return {"lesson": state["pending_lesson"], "pending": True}
+    main = _main_result(state.get("days", {}).get(today.isoformat(), {}))
+    if lesson >= POST_KOCH or main is None:
+        return None
+    correct, total = _first_try(main)
+    if total < CLEAN_MIN_CHARS:
+        return None
+    missing = max(round(koch.ADVANCE_ACCURACY_PCT - correct / total * 100), 1)
+    return {"lesson": lesson + 1, "missing": missing}
+
+
+def extra_offer(state: dict, today: date, lesson: int, confusion_chars: str):
+    """„Noch 5 Min“: (Art, Zeichensatz) oder None. Nur einmal am Tag und nur,
+    wenn der Hauptteil heute mindestens EXTRA_MIN_SHARE hatte; Inhalt
+    anders als heute: die häufigsten Verwechslungen, sonst ein
+    Rufz-Durchgang, sonst Wörter."""
+    entry = state.get("days", {}).get(today.isoformat(), {})
+    main = _main_result(entry)
+    if entry.get(EXTRA) or main is None:
+        return None
+    correct, total = _first_try(main)
+    if not total or correct / total < EXTRA_MIN_SHARE:
+        return None
+    if len(confusion_chars) >= 2:
+        return CONFUSIONS, confusion_chars
+    if lesson >= RUFZ_FROM_LESSON:
+        return RUFZ, ""
+    if lesson >= WORDS_FROM_LESSON:
+        return WORD, ""
+    return None

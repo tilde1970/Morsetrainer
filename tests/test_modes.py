@@ -360,6 +360,14 @@ class SingleCharTest(AppTestCase):
     def _key(self, ch):
         self.single.on_key(type("E", (), {"keysym": ch, "char": ch})())
 
+    def test_streak_of_first_hearing_answers(self):
+        s = self.single
+        for char, typed in (("K", "K"), ("M", "M"), ("U", "R"), ("R", "R")):
+            s.current_char, s.voice, s.waiting_for_input, s.replayed = char, (20, 600), True, False
+            s.play_start_time = time.time() - 0.5
+            self._key(typed)
+        self.assertEqual((s.best_streak, s.streak), (2, 1))
+
     def test_correct_after_repeat_counts_as_not_recognized(self):
         s = self.single
         s.current_char, s.voice, s.waiting_for_input = "K", (20, 600), True
@@ -451,7 +459,27 @@ class DailyInterfaceTest(AppTestCase):
         self.assertTrue(list(stats._read_jsonl(path))[0]["daily"])
         result = g.daily_result()
         self.assertEqual((result["first_try_correct"], result["first_try_total"], result["total"]), (2, 2, 2))
+        self.assertEqual(result["best_streak"], 1)
+        self.assertEqual(result["chars"]["K"][0], 1)
         self.assertEqual(result["wpm"], self.app.wpm_var.get())
+
+    def test_copy_submits_without_enter_at_full_length(self):
+        g = self.mode("Gruppen")
+        g.start()
+        g.current_sequence, g.attempts, g.replayed, g.repeat_pending = "KM", 0, False, False
+        g.voice = (20, 600)
+        g.tone_starts = [time.time() - 1.0] * 2
+        g.tone_ends = [time.time() - 0.1] * 2
+        g.enter_time = None
+        g.waiting_for_input = True
+        g._set_input_open(True)
+        g.input_var.set("K")
+        self.root.update()
+        self.assertEqual(g.attempts, 0)  # noch nicht vollständig
+        g.input_var.set("KM")
+        self.root.update()
+        self.assertEqual((g.attempts, g.first_try_correct), (1, 2))
+        g.stop()
 
     def test_single_block_ends_between_chars(self):
         s = self.mode("Einzelzeichen")

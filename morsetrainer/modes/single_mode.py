@@ -22,7 +22,14 @@ Zeitlimit (Instant Character Recognition): Wer nach dem Ton nicht innerhalb
 des Limits tippt, hat das Zeichen verpasst. So bleibt keine Zeit, Punkte
 und Striche zu zählen; das Zeichen muss als Reflex kommen. Das Limit passt
 sich an: jede schnelle richtige Antwort macht es etwas kürzer, jeder Fehler
-und jedes Verpassen etwas länger (nur beim ersten Hören eines Zeichens).
+und jedes Verpassen deutlich länger (nur beim ersten Hören eines Zeichens).
+Die Faktoren sind so gewählt, dass sich das Limit dort einpendelt, wo knapp
+neun von zehn Zeichen rechtzeitig kommen (ICR_FASTER, ICR_SLOWER); bei
+gleich großen Schritten wäre jedes dritte Zeichen „zu langsam“, egal wie
+gut man ist. Unter ICR_RANGE[0] sinkt es nie: Schon die einfache
+Reaktion auf einen Ton braucht etwa 0,15–0,2 s, dazu kommen das Erkennen
+unter mehreren Zeichen und der Griff zur Taste. Darunter würde
+Reaktionsschnelle geübt, nicht das Erkennen.
 Das Limit ist standardmäßig an; ohne kann man Punkte und Striche zählen,
 und genau diese Gewohnheit bremst später."""
 import random
@@ -47,9 +54,11 @@ from morsetrainer.core.weighting import CharPicker
 
 # Zeitlimit in Sekunden ab Tonende: Start, Grenzen und Faktoren pro Antwort.
 ICR_START = 2.0
-ICR_RANGE = (0.4, 3.0)
-ICR_FASTER = 0.93
-ICR_SLOWER = 1.15
+ICR_RANGE = (0.5, 3.0)
+# Gleichgewicht bei p · ln(FASTER) + (1 − p) · ln(SLOWER) = 0, also
+# p ≈ 0,88 rechtzeitig.
+ICR_FASTER = 0.97
+ICR_SLOWER = 1.25
 # Ein falsch erkanntes Zeichen kommt nach so vielen anderen wieder.
 RETRY_AFTER = (2, 4)
 # Pause nach der Rückmeldung bzw. nach dem Korrekturton, in ms.
@@ -97,7 +106,9 @@ class RetryQueue:
 
 class SingleModeFrame(DailyModeMixin):
     uses_vary = True
-    daily_keys = ("icr",)
+    # Das Limit gehört dazu: die Tagesübung beginnt mit eigenem Startwert
+    # (daily_runner.py), danach gilt wieder das Limit des Reiters.
+    daily_keys = ("icr", "icr_limit")
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
                  vary_var=None):
@@ -194,8 +205,9 @@ class SingleModeFrame(DailyModeMixin):
         if isinstance(data.get("icr"), bool):
             self.icr_var.set(data["icr"])
         limit = data.get("icr_limit")
-        if isinstance(limit, (int, float)) and not isinstance(limit, bool) and ICR_RANGE[0] <= limit <= ICR_RANGE[1]:
-            self.limit = float(limit)
+        if isinstance(limit, (int, float)) and not isinstance(limit, bool) and limit > 0:
+            # Ältere Stände durften kürzer sein als die heutige Untergrenze.
+            self.limit = min(max(float(limit), ICR_RANGE[0]), ICR_RANGE[1])
         self._show_limit()
 
     def toggle_running(self):
@@ -224,6 +236,7 @@ class SingleModeFrame(DailyModeMixin):
         self.picker = CharPicker(charset, self.weighted_var.get(), self.session_stats)
         self.history = []
         self.history_var.set("")
+        self._count_streak()
         self.stats_panel.reset()
         self.on_start_cb()
         self.next_char()
@@ -387,12 +400,16 @@ class SingleModeFrame(DailyModeMixin):
         if self.sound_var.get():
             sfx.play_error()
         self.last_typed = None
-        self.feedback_var.set(tr("Zu langsam: war {char}").format(char=display_text(self.current_char)))
+        text = tr("Zu langsam: war {char}").format(char=display_text(self.current_char))
+        if self.first_hearing:
+            text += "  " + tr("(Limit jetzt {limit} s)").format(limit=number(self.limit, 2))
+        self.feedback_var.set(text)
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
         self._after_error()
 
     def _add_history(self, correct: bool):
+        self._count_streak(correct)
         self.history.append(correct)
         self.history = self.history[-40:]
         self.history_var.set("".join("✓" if ok else "✗" for ok in self.history))

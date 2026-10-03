@@ -99,6 +99,8 @@ class MorseTrainerApp:
         self._build_all_time_tab()
         self._refresh_all_time()
         self.daily = DailyRunner(self, self.daily_bar)
+        # Ausgabegerät wach halten, damit kein Zeichenanfang verloren geht.
+        audio.keep_awake()
 
         root.bind("<Key>", self._dispatch_key)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -833,6 +835,9 @@ class MorseTrainerApp:
         if event.keysym == "Escape" and self.daily.active:
             self.daily.abort()
             return
+        if event.keysym == "Return" and self.daily.card_open:
+            self.daily.continue_now()
+            return
         if event.keysym == DAILY_KEY and not self.running_mode and not self.daily.active:
             self.daily.start()
             return
@@ -906,8 +911,8 @@ class MorseTrainerApp:
         # Reiter darf das Schließen nicht verhindern.
         # Zuerst die Tagesübung beenden: Sie stellt die gemeinsamen Einstellungen
         # zurück, bevor sie gespeichert werden.
-        for step in (self.daily.abort, self._record_practice, self._save_state,
-                     *(mode.on_close for mode in self.modes)):
+        for step in (lambda: self.daily.abort(quiet=True), self._record_practice, self._save_state,
+                     *(mode.on_close for mode in self.modes), audio.release):
             try:
                 step()
             except Exception:

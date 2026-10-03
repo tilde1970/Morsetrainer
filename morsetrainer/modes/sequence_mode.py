@@ -6,6 +6,8 @@ Drei Eingabearten:
 - Mitschreiben (Standard): das Eingabefeld ist schon offen, während der Ton
   läuft, so wie man es vom Einzelzeichen gewohnt ist. Die Latenz jedes
   Zeichens (Tonende bis Tastendruck) wird einzeln gemessen.
+  Mit so vielen Zeichen wie gesendet ist die Antwort fertig; Enter braucht
+  es nur, wenn man weniger hat (gilt auch für „Erst merken“).
 - Erst merken: getippt wird erst nach dem Ton.
 - Kopfhören: nichts tippen, nur im Kopf mitlesen, dann auflösen (Enter)
   und selbst bewerten (J = gewusst, N = nicht gewusst).
@@ -409,6 +411,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.repeat_pending = False
         self.revealed = False
         self.first_try_correct = self.first_try_total = 0
+        self._count_streak()
         self.koch_result = None
         self.tempo, self.tempo_fw = None, None
         if self.tempo_var.get() or self._fixed_run():
@@ -547,6 +550,17 @@ class SequenceModeFrame(DailyModeMixin):
         now = time.time()
         self.key_times = self.key_times[:keep] + [now] * (len(typed) - keep)
         self.typed_so_far = typed
+        # So viele Zeichen wie gesendet: fertig, ohne Enter (während des Tons
+        # wie ein vorzeitiges Enter), wie im Netzwerk-Reiter. Nach der Trace,
+        # nicht mittendrin.
+        if (self.running and self.input_open and self.style != HEAD and len(typed) > keep
+                and len(typed) >= len(self.current_sequence)):
+            self._later(0, self._auto_submit)
+
+    def _auto_submit(self):
+        if (self.running and self.input_open and not self.submit_pending
+                and len(clean_input(self.input_var.get())) >= len(self.current_sequence)):
+            self.on_submit()
 
     def next_sequence(self):
         if not self.running:
@@ -809,6 +823,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.first_try_total += len(sent)
             if clean:
                 self.first_try_correct += correct_chars
+            self._count_streak(clean and all_correct)
         try:
             give_up_after = min(max(self.give_up_var.get(), GIVE_UP_RANGE[0]), GIVE_UP_RANGE[1])
         except tk.TclError:
