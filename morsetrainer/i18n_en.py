@@ -16,6 +16,32 @@ EN.update({
     "Tonhöhe und Tempo leicht variieren (gegen Gewöhnung an einen Klang)":
         "Vary pitch and speed slightly (so you don't get used to one sound)",
     "wirkt nach Neustart des Programms": "takes effect after restarting the program",
+    "Daten": "Data",
+    "Sichern …": "Back up …",
+    "Einlesen …": "Restore …",
+    "alle Einstellungen und Statistiken, z. B. für einen neuen Rechner":
+        "all settings and statistics, e.g. for a new computer",
+    "Daten sichern": "Back up data",
+    "Morsetrainer-Sicherung-{date}.zip": "Morsetrainer-backup-{date}.zip",
+    "Die Sicherung konnte nicht geschrieben werden:\n{error}": "The backup could not be written:\n{error}",
+    "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Weitere Optionen → Daten → "
+    "Einlesen …“ wieder einlesen.":
+        "{count} files backed up to\n{path}\n\nOn the new computer, restore them under “More options → Data → "
+        "Restore …”.",
+    "Daten einlesen": "Restore data",
+    "Bitte zuerst die laufende Übung beenden.": "Please finish the running exercise first.",
+    "Alle Dateien": "All files",
+    "Das ist keine Sicherung des Morsetrainers.": "This is not a Morse trainer backup.",
+    "Sicherung vom {created} (Version {version}) einlesen?\n\nAlle bisherigen Einstellungen und "
+    "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher in {folder} "
+    "gesichert. Danach beendet sich das Programm, bitte neu starten.":
+        "Restore the backup from {created} (version {version})?\n\nAll current settings and statistics on "
+        "this computer will be replaced; the current state is backed up to {folder} first. The program "
+        "then quits, please start it again.",
+    "Einlesen fehlgeschlagen:\n{error}": "Restore failed:\n{error}",
+    "Daten eingelesen. Das Programm beendet sich jetzt; beim nächsten Start gelten die eingelesenen "
+    "Einstellungen.":
+        "Data restored. The program quits now; the restored settings apply from the next start.",
     "{wpm} WPM ≈ {cpm} ZpM": "{wpm} WPM ≈ {cpm} CPM",
     "WPM ≈ {cpm} ZpM": "WPM ≈ {cpm} CPM",
     "{wpm} (alle außer Einzelzeichen)": "{wpm} (all tabs except Characters)",

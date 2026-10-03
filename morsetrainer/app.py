@@ -12,10 +12,10 @@ import time
 from datetime import date, timedelta
 from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, awards, errorlog, koch, practice, review, stats, storage, tempo
+from morsetrainer.core import audio, awards, backup, errorlog, koch, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, tr
@@ -275,6 +275,16 @@ class MorseTrainerApp:
         self.language_hint_var = tk.StringVar(value="")
         theme.hint(language, textvariable=self.language_hint_var).pack(side="left")
 
+        # Sichern und Einlesen aller Einstellungen und Daten (core/backup.py),
+        # etwa für den Umzug auf einen neuen Rechner.
+        data = ttk.Frame(self.more_frame)
+        data.pack(fill="x", pady=2)
+        ttk.Label(data, text=tr("Daten")).pack(side="left")
+        ttk.Button(data, text=tr("Sichern …"), command=self._export_data).pack(side="left", padx=(6, 4))
+        ttk.Button(data, text=tr("Einlesen …"), command=self._import_data).pack(side="left", padx=(0, 8))
+        theme.hint(data, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner")).pack(
+            side="left")
+
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
                     self.weighted_var, self.vary_var):
             var.trace_add("write", lambda *_: self._update_more())
@@ -293,6 +303,63 @@ class MorseTrainerApp:
         chosen = next(k for k, v in i18n.LANGUAGES.items() if v == self.language_box.get())
         self.language_var.set(chosen)
         self.language_hint_var.set("" if chosen == i18n.LANG else tr("wirkt nach Neustart des Programms"))
+
+    def _export_data(self):
+        """Einstellungen und Daten als ZIP an einen frei gewählten Ort sichern."""
+        self._save_state()  # damit die aktuellen Einstellungen mit hineinkommen
+        path = filedialog.asksaveasfilename(
+            parent=self.root, title=tr("Daten sichern"), defaultextension=".zip",
+            initialfile=tr("Morsetrainer-Sicherung-{date}.zip").format(date=date.today().isoformat()),
+            initialdir=str(Path.home()), filetypes=[("ZIP", "*.zip")],
+        )
+        if not path:
+            return
+        try:
+            count = backup.export_data(Path(path), __version__)
+        except OSError as exc:
+            messagebox.showerror(tr("Daten sichern"), tr("Die Sicherung konnte nicht geschrieben werden:\n{error}")
+                                 .format(error=exc), parent=self.root)
+            return
+        messagebox.showinfo(tr("Daten sichern"), tr(
+            "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Weitere Optionen → Daten → "
+            "Einlesen …“ wieder einlesen.").format(count=count, path=path), parent=self.root)
+
+    def _import_data(self):
+        """Sicherung einlesen; ersetzt alle Daten, danach beendet sich das
+        Programm, ohne die alten Einstellungen zurückzuschreiben."""
+        if self.running_mode or self.daily.active:
+            messagebox.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
+                                parent=self.root)
+            return
+        path = filedialog.askopenfilename(
+            parent=self.root, title=tr("Daten einlesen"), initialdir=str(Path.home()),
+            filetypes=[("ZIP", "*.zip"), (tr("Alle Dateien"), "*")],
+        )
+        if not path:
+            return
+        try:
+            info = backup.read_info(Path(path))
+        except backup.BackupError:
+            messagebox.showerror(tr("Daten einlesen"), tr("Das ist keine Sicherung des Morsetrainers."),
+                                 parent=self.root)
+            return
+        if not messagebox.askyesno(tr("Daten einlesen"), tr(
+                "Sicherung vom {created} (Version {version}) einlesen?\n\nAlle bisherigen Einstellungen und "
+                "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher in {folder} "
+                "gesichert. Danach beendet sich das Programm, bitte neu starten.").format(
+                created=str(info.get("created", "?")).replace("T", " "), version=info.get("version", "?"),
+                folder=DATA_DIR), parent=self.root):
+            return
+        try:
+            backup.import_data(Path(path), __version__)
+        except (OSError, backup.BackupError) as exc:
+            messagebox.showerror(tr("Daten einlesen"), tr("Einlesen fehlgeschlagen:\n{error}").format(error=exc),
+                                 parent=self.root)
+            return
+        messagebox.showinfo(tr("Daten einlesen"), tr(
+            "Daten eingelesen. Das Programm beendet sich jetzt; beim nächsten Start gelten die eingelesenen "
+            "Einstellungen."), parent=self.root)
+        self.on_close(keep_files=True)
 
     def _update_cpm(self):
         """ZpM-Hinweise zu den WPM-Feldern (PARIS-Umrechnung, core/tempo.py);
@@ -1045,12 +1112,15 @@ class MorseTrainerApp:
                 self.notebook.select(tab_id)
                 mode.rejoin(pin)
 
-    def on_close(self):
+    def on_close(self, keep_files=False):
         # Jeder Schritt für sich: Ein Fehler beim Speichern oder in einem
         # Reiter darf das Schließen nicht verhindern.
         # Zuerst die Tagesübung beenden: Sie stellt die gemeinsamen Einstellungen
         # zurück, bevor sie gespeichert werden.
-        for step in (lambda: self.daily.abort(quiet=True), self._record_practice, self._save_state,
+        # keep_files: nach dem Einlesen einer Sicherung; Übungszeit und
+        # Einstellungen dieses Laufs würden die eingelesenen überschreiben.
+        saving = () if keep_files else (self._record_practice, self._save_state)
+        for step in (lambda: self.daily.abort(quiet=True), *saving,
                      *(mode.on_close for mode in self.modes), audio.release):
             try:
                 step()

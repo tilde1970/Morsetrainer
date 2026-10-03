@@ -448,6 +448,18 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   „Eigene Wörter bearbeiten“ legt die Datei mit Anleitung an und öffnet sie.
   Die Wörter kommen zu den eingebauten dazu.
 
+### Sichern und auf einen neuen Rechner umziehen
+
+Unter „Weitere Optionen → Daten“ sichert **Sichern …** alle Einstellungen
+und Daten (`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`)
+in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
+**Einlesen …** holt sie auf dem neuen Rechner zurück: `stats/` wird
+vollständig ersetzt, die anderen Dateien, soweit sie in der Sicherung
+sind. Der bisherige Stand landet vorher als `vor-import-<Zeit>.zip` im
+Datenverzeichnis. Danach beendet sich das Programm; beim nächsten Start
+gelten die eingelesenen Einstellungen. Die Stimme für die Sprachausgabe
+(`voices/`) ist nicht dabei, sie steckt im AppImage bzw. in der exe.
+
 ## Lizenz
 
 MIT, siehe [LICENSE](LICENSE). © 2026 DL4YM

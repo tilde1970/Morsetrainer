@@ -2,6 +2,11 @@
 
 ## Unveröffentlicht
 
+- **Daten sichern und einlesen:** Unter „Weitere Optionen → Daten“
+  lassen sich alle Einstellungen und Statistiken als ZIP-Datei an einen
+  frei gewählten Ort sichern und auf einem anderen Rechner wieder
+  einlesen. Der bisherige Stand wird vor dem Einlesen automatisch
+  gesichert. Siehe README, „Sichern und auf einen neuen Rechner umziehen“.
 - **Clubabend mit Stufen, auch für den Trainer:** Das Diplom Clubabend
   hat jetzt Bronze bis Platin (1 / 5 / 15 / 40 Abende). Ein Abend zählt
   ab zusammen 10 Minuten Netzwerk-Übung an einem Tag, mitgemacht oder als

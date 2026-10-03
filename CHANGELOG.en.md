@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Back up and restore data:** under “More options → Data”, all settings
+  and statistics can be saved as a ZIP file to a place of your choice and
+  restored on another computer. The current state is backed up
+  automatically before restoring. See README, “Backing up and moving to a
+  new computer”.
 - **Club night with levels, for the trainer too:** the Club night award
   now goes from bronze to platinum (1 / 5 / 15 / 40 evenings). An evening
   counts from 10 minutes of network sessions in total on one day, taken

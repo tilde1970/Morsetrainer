@@ -437,6 +437,17 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   creates the file with instructions and opens it. The words are added to
   the built-in ones.
 
+### Backing up and moving to a new computer
+
+Under “More options → Data”, **Back up …** saves all settings and data
+(`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`) to a ZIP
+file in a place of your choice, e.g. a USB stick. **Restore …** brings
+them back on the new computer: `stats/` is replaced completely, the other
+files if they are in the backup. The current state is saved first as
+`vor-import-<time>.zip` in the data directory. The program then quits;
+the restored settings apply from the next start. The voice for speech
+output (`voices/`) is not included, it ships with the AppImage or exe.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). © 2026 DL4YM
