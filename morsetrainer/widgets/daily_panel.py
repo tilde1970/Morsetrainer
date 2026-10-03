@@ -4,6 +4,7 @@ Ohne laufende Tagesübung: Knopf „▶ Tagesübung“ und die Sterne von heute.
 Während der Tagesübung: die drei Abschnitte, Zeitbalken mit
 „6:10 von 10 Min“ und die schon verdienten Sterne – ruhig, ohne
 Aufleuchten, damit nichts den Blick vom Hören wegzieht."""
+import time
 import tkinter as tk
 from tkinter import ttk
 
@@ -181,6 +182,11 @@ class DailyBar:
         self.stars_var.set(star_text(stars))
 
 
+# Enter direkt nach dem Erscheinen von Zwischenkarte oder Abendbilanz
+# gehört noch zur letzten Antwort und soll sie nicht gleich wegklicken.
+ENTER_GRACE_S = 0.8
+
+
 class EveningSummary:
     """Abendbilanz: Sterne, was besser geworden ist, was fast geschafft ist,
     und auf Wunsch einmal „Noch 5 Min“. Enter und Esc schließen."""
@@ -221,7 +227,9 @@ class EveningSummary:
         if offer and on_extra:
             self.extra_button = ttk.Button(buttons, text=extra_label(offer), command=self._extra)
             self.extra_button.pack(side="right", padx=(0, 8))
-        window.bind("<Return>", lambda e: self.close())
+        # Enter gleich nach dem Erscheinen gehört noch zur letzten Antwort.
+        self.opened = time.time()
+        window.bind("<Return>", lambda e: self.close() if time.time() - self.opened >= ENTER_GRACE_S else None)
         window.bind("<Escape>", lambda e: self.close())
         window.protocol("WM_DELETE_WINDOW", self.close)
         self.done_button.focus_set()

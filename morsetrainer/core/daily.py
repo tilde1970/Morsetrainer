@@ -8,8 +8,12 @@ Reitern; dieses Modul enthält nur die Regeln und den gespeicherten Stand.
 
 Regeln, die das Hören-Lernen schützen:
 - Im Hauptteil bleibt das Tempo fest; angepasst wird von Tag zu Tag
-  (next_tempo()). Mitwachsendes Tempo pendelt bei etwa der Hälfte richtig
-  ein, ★ Sauber wäre dann nie erreichbar.
+  (next_tempo(), wirksam ab dem nächsten Tag wie der Aufstieg).
+  Mitwachsendes Tempo pendelt bei etwa der Hälfte richtig ein, ★ Sauber
+  wäre dann nie erreichbar. Solange neue Lektionen kommen, wird es nur
+  langsamer, nie schneller: Ein guter Tag bringt schon das neue Zeichen,
+  beides zugleich wäre zu steil (wie bei Koch: Tempo fest, Zeichen
+  dazu). Schneller wird es erst nach Koch.
 - Die Lektion steigt automatisch auf, wirksam ab dem nächsten Tag
   (apply_pending_lesson()); so lohnt es sich nicht, für sichere Sterne in
   der alten Lektion zu bleiben. In den ersten Tagen einer neuen Lektion
@@ -19,12 +23,15 @@ Regeln, die das Hören-Lernen schützen:
 Gespeichert in stats/daily.json (bleibt beim Zurücksetzen der
 Gesamtstatistik stehen):
 {"lesson", "lesson_since", "pending_lesson", "pending_since",
- "tempo": {"wpm", "effective"},
+ "tempo": {"wpm", "effective"}, "pending_tempo", "pending_tempo_since",
+ "tempo_best" (höchstes effektives Tagestempo), "icr_limit" (Zeitlimit
+ am Ende des letzten Aufwärmens),
  "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress"}}}"""
+import math
 from dataclasses import dataclass, field
 from datetime import date
 
-from morsetrainer.core import koch, stats, storage, tempo
+from morsetrainer.core import koch, review, stats, storage, tempo
 
 DAILY_FILE_NAME = "daily.json"
 
@@ -169,6 +176,16 @@ def apply_pending_lesson(state: dict, today: date) -> bool:
     return True
 
 
+def apply_pending_tempo(state: dict, today: date) -> bool:
+    """Tagestempo vom Vortag übernehmen. True, wenn es sich ändert."""
+    pending, since = state.get("pending_tempo"), state.get("pending_tempo_since")
+    if not isinstance(pending, dict) or not isinstance(since, str) or since >= today.isoformat():
+        return False
+    changed = pending != state.get("tempo")
+    state.update(tempo=pending, pending_tempo=None, pending_tempo_since=None)
+    return changed
+
+
 def is_new_lesson(state: dict, today: date) -> bool:
     """In den ersten NEW_LESSON_DAYS Tagen seit dem Aufstieg."""
     try:
@@ -183,6 +200,16 @@ def passes_lesson(result: dict, char_wpm: int) -> bool:
     Versuch, Zeichen nicht so langsam, dass man mitzählen kann."""
     correct, total = _first_try(result)
     return char_wpm >= koch.SLOW_CHAR_WPM and koch.passed(correct, total)
+
+
+def warmup_limit(state: dict) -> float:
+    """Zeitlimit für das Aufwärmen: weiter, wo das letzte aufgehört hat
+    (sonst bräuchte ein Geübter jeden Tag die halbe Aufwärmzeit, bis es
+    wieder knapp ist), aber nicht länger als „flüssig“ in der Lernkartei."""
+    saved = state.get("icr_limit")
+    if isinstance(saved, (int, float)) and not isinstance(saved, bool) and saved > 0:
+        return min(float(saved), review.FLUENT_LATENCY_S)
+    return review.FLUENT_LATENCY_S
 
 
 # --- Tempo --------------------------------------------------------------------
@@ -202,16 +229,16 @@ def current_tempo(state: dict, wpm: int, fw) -> dict:
     return initial_tempo(wpm, fw)
 
 
-def next_tempo(current: dict, result: dict) -> dict:
+def next_tempo(current: dict, result: dict, allow_up: bool = True) -> dict:
     """Tempo für die nächste Tagesübung nach dem Hauptteil: ab
-    TEMPO_UP_SHARE beim ersten Versuch eins schneller, unter
-    TEMPO_DOWN_SHARE eins langsamer, sonst gleich; unter TEMPO_MIN_CHARS
-    Zeichen ist die Quote zu zufällig."""
+    TEMPO_UP_SHARE beim ersten Versuch eins schneller (nur mit `allow_up`),
+    unter TEMPO_DOWN_SHARE eins langsamer, sonst gleich; unter
+    TEMPO_MIN_CHARS Zeichen ist die Quote zu zufällig."""
     correct, total = _first_try(result)
     if total < TEMPO_MIN_CHARS:
         return dict(current)
     share = correct / total
-    delta = 1 if share >= TEMPO_UP_SHARE else -1 if share < TEMPO_DOWN_SHARE else 0
+    delta = 1 if share >= TEMPO_UP_SHARE and allow_up else -1 if share < TEMPO_DOWN_SHARE else 0
     if not delta:
         return dict(current)
     fw = current["effective"] if current["effective"] < current["wpm"] else None
@@ -277,11 +304,17 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
             state.update(pending_lesson=lesson + 1, pending_since=today.isoformat())
             progress |= _add_progress(entry, LESSON_UP)
         current = state.get("tempo") or {}
-        if current:
-            following = next_tempo(current, result)
-            if following["effective"] > current["effective"]:
+        # Einmal am Tag, wirksam ab morgen: eine zweite Tagesübung läuft im
+        # selben Tempo und ändert es nicht noch einmal.
+        if current and _first_try(result)[1] >= TEMPO_MIN_CHARS and state.get("pending_tempo_since") != today.isoformat():
+            following = next_tempo(current, result, allow_up=lesson >= POST_KOCH)
+            state.update(pending_tempo=following, pending_tempo_since=today.isoformat())
+            best = state.get("tempo_best")
+            best = best if isinstance(best, int) and not isinstance(best, bool) else current["effective"]
+            # ★ Weiter nur für ein nie erreichtes Tempo, nicht fürs Zurückkommen.
+            if following["effective"] > best:
                 progress |= _add_progress(entry, TEMPO_UP)
-            state["tempo"] = following
+            state["tempo_best"] = max(best, following["effective"])
     if progress and _add_star(entry, WEITER):
         new_stars.append(WEITER)
     return new_stars
@@ -307,9 +340,14 @@ def stars_on(state: dict, day: date) -> list:
 # „schlechter“, nur „besser“, „Stand gehalten“ oder „noch zu wenig Daten“.
 
 WEEK_DAYS = 7
-# Reaktionszeit je Zeichen: Median der gemessenen Zeit nach dem Zeichen
-# (richtig, nicht angenommen); „besser“ erst ab beiden Schwellen.
+# Reaktionszeit je Zeichen: Median der Zeit nach dem Zeichen, nur aus
+# Einzelzeichen bei etwa gleichem Zeichentempo (Mitschreiben in Gruppen
+# misst etwas anderes). Verpasste und falsche Antworten zählen als
+# unendlich langsam: Sonst sänke der Median schon, wenn ein kürzeres Limit
+# die langsamen Antworten zu verpassten macht. „Besser“ erst ab beiden
+# Schwellen.
 LATENCY_WEEK_MIN = 20
+LATENCY_WPM_SPREAD = 2
 LATENCY_TODAY_MIN = 10
 BETTER_SHARE = 0.15
 BETTER_SECONDS = 0.1
@@ -341,17 +379,28 @@ def _session_files(first: date, last: date):
 
 
 def latencies(first: date, last: date) -> dict:
-    """{Zeichen: [Sekunden]} der richtig erkannten Zeichen mit gemessener
-    Reaktion; selbst bewertete Sitzungen und Klartext zählen nicht."""
+    """{Zeichen: {Zeichentempo: [Sekunden]}} aus Einzelzeichen-Sitzungen;
+    verpasst oder falsch = math.inf. Angenommene Zeiten zählen nicht."""
     data = {}
     for path in _session_files(first, last):
+        wpm = None
         for obj in stats._read_jsonl(path):
             kind = obj.get("type")
-            if kind == "config" and (obj.get("self_assessed") or obj.get("char_stats") is False):
-                break
-            if (kind == "char" and obj.get("correct") and isinstance(obj.get("latency_s"), (int, float))
-                    and not obj.get("latency_assumed")):
-                data.setdefault(obj.get("char"), []).append(max(obj["latency_s"], 0.0))
+            if kind == "config":
+                if obj.get("mode") != "single" or obj.get("self_assessed") or obj.get("char_stats") is False:
+                    break
+                wpm = obj.get("wpm")
+                if not isinstance(wpm, int) or isinstance(wpm, bool):
+                    break
+            elif kind == "char" and wpm is not None:
+                value = obj.get("latency_s")
+                if obj.get("correct") and isinstance(value, (int, float)) and not isinstance(value, bool):
+                    if obj.get("latency_assumed"):
+                        continue
+                    value = max(value, 0.0)
+                else:
+                    value = math.inf
+                data.setdefault(obj.get("char"), {}).setdefault(wpm, []).append(value)
     return data
 
 
@@ -386,19 +435,28 @@ def _faster(before: float, now: float) -> bool:
     return before - now >= max(before * BETTER_SHARE, BETTER_SECONDS)
 
 
+def _latency_pairs(now: dict, before: dict, now_min: int):
+    """(Zeichen, jetzt, vorher) mit genug Werten bei vergleichbarem
+    Zeichentempo (± LATENCY_WPM_SPREAD)."""
+    for char, by_wpm in now.items():
+        for wpm, values in by_wpm.items():
+            earlier = [v for w, vs in before.get(char, {}).items() if abs(w - wpm) <= LATENCY_WPM_SPREAD for v in vs]
+            if len(values) >= now_min and len(earlier) >= LATENCY_WEEK_MIN:
+                yield char, values, earlier
+
+
 def _latency_gains(now: dict, before: dict, now_min: int) -> list:
     """Zeichen, die schneller kamen: [{"kind": "latency", "char", "before",
-    "now"}], größte Verbesserung zuerst."""
-    gains = []
-    for char, values in now.items():
-        earlier = before.get(char, [])
-        if len(values) < now_min or len(earlier) < LATENCY_WEEK_MIN:
-            continue
+    "now"}], je Zeichen einmal, größte Verbesserung zuerst. Ein Median von
+    unendlich (mehr als die Hälfte verpasst) wird nicht verglichen."""
+    gains = {}
+    for char, values, earlier in _latency_pairs(now, before, now_min):
         old, new = _median(earlier), _median(values)
-        if _faster(old, new):
-            gains.append({"kind": "latency", "char": char, "before": round(old, 2), "now": round(new, 2)})
-    gains.sort(key=lambda g: (g["now"] - g["before"], g["char"]))
-    return gains
+        if math.isfinite(old) and math.isfinite(new) and _faster(old, new):
+            gain = {"kind": "latency", "char": char, "before": round(old, 2), "now": round(new, 2)}
+            if char not in gains or new - old < gains[char]["now"] - gains[char]["before"]:
+                gains[char] = gain
+    return sorted(gains.values(), key=lambda g: (g["now"] - g["before"], g["char"]))
 
 
 def char_moments(today: date) -> list:
@@ -417,7 +475,7 @@ def week_comparison(today: date) -> dict:
     this_week = (date.fromordinal(day - WEEK_DAYS + 1), today)
     last_week = (date.fromordinal(day - 2 * WEEK_DAYS + 1), date.fromordinal(day - WEEK_DAYS))
     now, before = latencies(*this_week), latencies(*last_week)
-    compared = any(len(v) >= LATENCY_WEEK_MIN and len(before.get(c, [])) >= LATENCY_WEEK_MIN for c, v in now.items())
+    compared = any(True for _ in _latency_pairs(now, before, LATENCY_WEEK_MIN))
     better = _latency_gains(now, before, LATENCY_WEEK_MIN)
     groups_now, groups_before = group_shares(*this_week), group_shares(*last_week)
     for wpm in sorted(groups_now, reverse=True):
@@ -437,7 +495,6 @@ def block_summary(block: Block, result: dict, due: str = "") -> dict:
     Versuch), beste Serie und beim Aufwärmen die geübten fälligen Zeichen
     und wie viele davon heute sicher saßen (wie die Lernkartei: genug
     Versuche, fast alle flüssig)."""
-    from morsetrainer.core import review  # review importiert stats
     correct, total = _first_try(result) if block.kind == MAIN else (result.get("correct", 0), result.get("total", 0))
     summary = {"kind": block.kind, "mode": block.mode, "correct": correct, "total": total,
                "streak": result.get("best_streak", 0)}

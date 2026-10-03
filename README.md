@@ -12,7 +12,7 @@ Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.
 
 | Reiter | Was du übst |
 |---|---|
-| **Einzelzeichen** | Einzelne Zeichen erkennen; nach jeder Antwort steht deine Zeit und das aktuelle Limit, z. B. „0,38 s, Limit 1,20 s“. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist. Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen direkt nacheinander. |
+| **Einzelzeichen** | Einzelne Zeichen erkennen; nach jeder Antwort steht deine Zeit und das aktuelle Limit, z. B. „0,38 s, Limit 1,20 s“. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist, und länger, wenn du Zeichen verpasst; eine Verwechslung ändert es nicht. Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen direkt nacheinander. |
 | **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Standard ist „Erst merken“: erst das ganze Wort hören, dann tippen; eine zu langsame Antwort wird vermerkt. Auch R, K und die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden Wörtern. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
 | **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert (mit Starttempo) und Verlauf; danach lassen sich die verpassten und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören, dann mit Lösung noch einmal, im Originaltempo. |
@@ -50,33 +50,38 @@ dran ist, und schaltet die Reiter selbst um:
 | Lektion 1–9 | Einzelzeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Kontinuierlich, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
 | Lektion 30–44 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
-| nach Koch | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
+| nach Koch (Lektion 44 bestanden) | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
 
-- **Aufwärmen** mit den heute fälligen Zeichen der Lernkartei; ist nichts
-  fällig, mit deinen häufigsten Verwechslungen. Bei vielen fälligen Zeichen
-  wird es etwas länger, der Hauptteil entsprechend kürzer.
+- **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
+  der Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
+  Verwechslungen. Bei vielen fälligen Zeichen wird es etwas länger, der
+  Hauptteil entsprechend kürzer. Das Zeitlimit macht weiter, wo es beim
+  letzten Mal aufgehört hat, und wird hier nie länger als 1,5 s.
 - **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
-  18 WPM). Angepasst wird von Tag zu Tag: ab 90 % beim ersten Versuch
-  (mindestens 100 Zeichen) am nächsten Tag 1 WPM schneller, unter 75 %
-  1 WPM langsamer.
+  18 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: unter
+  75 % beim ersten Versuch (mindestens 100 Zeichen) 1 WPM langsamer. Nach
+  Koch wird es ab 90 % auch 1 WPM schneller; vorher nicht, denn ein guter
+  Tag bringt dann schon das nächste Zeichen.
 - **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
   beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion –
-  ohne Nachfrage.
+  ohne Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim
+  ersten Mal die aus der Kopfleiste; Lektion und Zeichensatz oben bleiben
+  für das freie Üben, wie du sie eingestellt hast.
 - **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
   für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen einer
   neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
   vorgemerkt, ein Zeichen erstmals in Fach 3 der Lernkartei oder ein
-  schnelleres Tagestempo. Eine zweite Tagesübung am selben Tag kann
+  Tagestempo, das du noch nie hattest. Eine zweite Tagesübung am selben Tag kann
   fehlende Sterne nachholen; verdiente Sterne gehen nie verloren, auch
   nicht beim Abbrechen.
 - **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue Sterne
   und was als Nächstes kommt; Enter geht gleich weiter, Esc beendet die
   Tagesübung. Die Einstellungen der Reiter sind danach wieder wie vorher.
 - **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
-  (Reaktionszeit je Zeichen, Gruppenquote; nur mit genug Daten, nie
-  „schlechter“), wie viel bis zur nächsten Lektion fehlt und, wenn der
+  (Reaktionszeit je Zeichen bei Einzelzeichen, Gruppenquote; nur mit genug
+  Daten und bei gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion fehlt und, wenn der
   Hauptteil gut lief, einmal am Tag **Noch 5 Min** mit etwas anderem:
-  deine Verwechslungen, einen Rufz-Durchgang oder Wörter.
+  deine Verwechslungen aus der Lektion, einen Rufz-Durchgang oder Wörter.
 
 ### Lernweg für Einsteiger
 

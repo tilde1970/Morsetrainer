@@ -17,7 +17,7 @@ from datetime import date
 from morsetrainer.core import daily, koch, review, stats
 from morsetrainer.i18n import tr
 from morsetrainer.widgets.daily_panel import (
-    BLOCK_LABELS, EveningSummary, block_lines, moment_line, preview_line, stars_named)
+    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, stars_named)
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 
 # Reiter je Modus der Blöcke (deutsche Titel = Schlüssel, siehe app.py).
@@ -26,9 +26,9 @@ MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter",
 # Feste Einstellungen je Modus (Schlüssel wie settings() des Reiters).
 _SEQUENCE = {"adaptive_tempo": False, "band": None, "give_up": 1}
 MODE_SETTINGS = {
-    # Zeitlimit wie die Lernkartei für „flüssig“; ein knappes Limit aus dem
-    # Reiter soll nicht ins Aufwärmen nachwirken.
-    "single": {"icr": True, "icr_limit": review.FLUENT_LATENCY_S},
+    # Das Zeitlimit kommt aus daily.warmup_limit(): ein Limit aus dem Reiter
+    # soll nicht ins Aufwärmen nachwirken.
+    "single": {"icr": True},
     "group": {**_SEQUENCE, "input_style": COPY, "adaptive": True, "min_len": 2, "max_len": 6},
     "word": {**_SEQUENCE, "input_style": MEMORIZE},
     "callsign": {**_SEQUENCE, "input_style": COPY, "prefixes": "", "learned_only": True, "rufz": False},
@@ -61,6 +61,7 @@ class DailyRunner:
         self.tick_id = None
         self.next_id = None
         self.card_open = False
+        self.card_shown = 0.0
         self.extra = False
         self.summary = None
         self.refresh_idle()
@@ -88,6 +89,7 @@ class DailyRunner:
         lesson = daily.current_lesson(self.state, fallback)
         self.state["lesson"] = lesson
         daily.apply_pending_lesson(self.state, self.today)
+        daily.apply_pending_tempo(self.state, self.today)
         lesson = self.state["lesson"]
         try:
             wpm = app.wpm_var.get()
@@ -198,7 +200,10 @@ class DailyRunner:
             app.notebook.tab(tab_id, state="normal")
         app.notebook.select(app.tab_ids[app.mode_titles.index(title)])
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
-        mode.daily_configure(block.minutes, **{**MODE_SETTINGS[block.mode], **block.params})
+        settings = {**MODE_SETTINGS[block.mode], **block.params}
+        if block.mode == "single":
+            settings["icr_limit"] = daily.warmup_limit(self.state)
+        mode.daily_configure(block.minutes, **settings)
         self.mode = mode
         self.block_started = time.time()
         mode.start()
@@ -223,6 +228,8 @@ class DailyRunner:
             return
         block = self.blocks[self.index]
         result = mode.daily_result() or {}
+        if block.mode == "single":
+            self.state["icr_limit"] = mode.limit  # vor daily_release(): das ist das Limit des Reiters
         mode.daily_release()
         for attr in ("koch_result", "groups_result"):  # keine Ja/Nein-Fragen danach
             if hasattr(mode, attr):
@@ -261,12 +268,14 @@ class DailyRunner:
     def _show_card(self, title: str, lines, ms: int, strong=()) -> None:
         self.bar.show_card(title, lines, strong)
         self.card_open = True
+        self.card_shown = time.time()
         self.app.root.focus_set()  # Enter und Esc sollen ankommen
         self.next_id = self.app.root.after(ms, self._next_block)
 
     def continue_now(self) -> None:
         """Enter auf der Zwischenkarte: nicht warten."""
-        if self.active and self.card_open and self.next_id is not None:
+        if (self.active and self.card_open and self.next_id is not None
+                and time.time() - self.card_shown >= ENTER_GRACE_S):
             self.app.root.after_cancel(self.next_id)
             self._next_block()
 
@@ -317,8 +326,11 @@ class DailyRunner:
         offer = None
         if completed:
             app = self.app
+            lesson = daily.current_lesson(self.state, 1)
+            charset = daily.lesson_charset(lesson)
             confusions = app._confusion_charset(stats.recent_char_data(), stats.load_all_time())
-            offer = daily.extra_offer(self.state, self.today, daily.current_lesson(self.state, 1), confusions)
+            confusions = "".join(ch for ch in confusions if ch in charset)
+            offer = daily.extra_offer(self.state, self.today, lesson, confusions)
         self.summary = EveningSummary(
             self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
             offer, self.start_extra, completed)

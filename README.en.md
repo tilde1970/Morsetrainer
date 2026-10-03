@@ -13,7 +13,7 @@ restart.
 
 | Tab | What you practise |
 |---|---|
-| **Characters** | Recognise single characters; after each answer you see your time and the current limit, e.g. “0.38 s, limit 1.20 s”. With time limit (Instant Character Recognition): the limit gets shorter while you answer reliably. After a confusion you hear the correct character and the one you typed back to back. |
+| **Characters** | Recognise single characters; after each answer you see your time and the current limit, e.g. “0.38 s, limit 1.20 s”. With time limit (Instant Character Recognition): the limit gets shorter while you answer reliably and longer when you miss characters; a confusion leaves it unchanged. After a confusion you hear the correct character and the one you typed back to back. |
 | **Groups** | Copy groups of characters. The group length can grow: start short, one longer after 5 correct groups, one shorter after 2 wrong groups (each on the first attempt). |
 | **Words** | CW abbreviations, Q codes and QSO words, only from characters you already know. The default is “Listen first”: hear the whole word, then type; a slow answer is noted. R, K and the prosigns KN and SK also appear (but do not count as words for the minimum). A weak character comes up more often, but in changing words. The meaning is shown after the answer. You can add your own words (see Data). |
 | **Callsigns** | Real callsigns from the Super Check Partial list, by default only from characters you have already learned (from Koch lesson 23 with the first digit). Occasionally with /P, /M, OE/… as in contests. Optionally as a **RufZ run** (modelled on RufzXP): 50 callsigns, one attempt each, the speed grows, score = length × effective speed, best score (with starting speed) and history; afterwards you can replay the missed and slowly recognised callsigns (F6): first just listen, then again with the solution, at the original speed. |
@@ -51,32 +51,37 @@ due and switches the tabs by itself:
 | Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Continuous, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
 | Lesson 30–44 | as above | as above | Words or callsigns on alternate days, 2 min |
-| after Koch | Characters, 2 min | Continuous, groups of 5, 4 min | Callsigns, 4 min |
+| after Koch (lesson 44 passed) | Characters, 2 min | Continuous, groups of 5, 4 min | Callsigns, 4 min |
 
-- **Warm-up** with the characters due today in the review box; if nothing
-  is due, with your most frequent confusions. With many due characters it
-  gets a little longer and the main part correspondingly shorter.
+- **Warm-up** with all characters of the lesson; those due today in the
+  review box come more often, or, if nothing is due, your most frequent
+  confusions. With many due characters it gets a little longer and the
+  main part correspondingly shorter. The time limit continues where it
+  ended last time and is never longer than 1.5 s here.
 - **Speed:** the main part keeps a fixed speed (characters at least
-  18 WPM). It changes from day to day: 90 % or more on the first try (at
-  least 100 characters) makes the next day 1 WPM faster, below 75 % 1 WPM
-  slower.
+  18 WPM). It changes once a day, effective from the next: below 75 % on
+  the first try (at least 100 characters) 1 WPM slower. After Koch, 90 % or
+  more also makes it 1 WPM faster; not before, because a good day then
+  already brings the next character.
 - **Lesson:** if the main part meets the Koch criterion (50 characters,
   90 % on the first try), the next lesson applies from the next day – no
-  question asked.
+  question asked. The daily practice keeps its own lesson for this (the
+  first time the one from the header); lesson and character set at the
+  top stay as you set them for free practice.
 - **Three stars a day:** ★ *Showed up* for the full 10 minutes, ★ *Clean*
   for 90 % on the first try in the main part (80 % in the first three days
   of a new lesson), ★ *Ahead* for real progress: next lesson earned, a
   character reaching box 3 of the review box for the first time, or a
-  faster daily speed. A second daily practice on the same day can add
+  daily speed you never had before. A second daily practice on the same day can add
   missing stars; earned stars are never lost, not even when you stop early.
 - **Between the blocks** a short card shows the result, new stars and
   what comes next; Enter continues at once, Esc ends the daily practice.
   Afterwards the tab settings are back as they were.
 - **Evening summary:** stars, what improved compared with the week before
-  (reaction time per character, group score; only with enough data, never
-  “worse”), how much is missing for the next lesson and, if the main part
+  (reaction time per character in Characters, group score; only with
+  enough data and at the same speed, never “worse”), how much is missing for the next lesson and, if the main part
   went well, once a day **5 more min** with something different: your
-  confusions, a RufZ run or words.
+  confusions within the lesson, a RufZ run or words.
 
 ### Learning path for beginners
 

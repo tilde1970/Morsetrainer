@@ -57,6 +57,18 @@ class StageAndPlanTest(unittest.TestCase):
 
 
 class TempoTest(unittest.TestCase):
+    def test_no_tempo_up_when_not_allowed(self):
+        start = {"wpm": 20, "effective": 12}
+        self.assertEqual(daily.next_tempo(start, main_result(95, 100), allow_up=False), start)
+        self.assertEqual(daily.next_tempo(start, main_result(70, 100), allow_up=False),
+                         {"wpm": 20, "effective": 11})
+
+    def test_warmup_limit(self):
+        self.assertEqual(daily.warmup_limit({}), 1.5)
+        self.assertEqual(daily.warmup_limit({"icr_limit": 0.7}), 0.7)
+        self.assertEqual(daily.warmup_limit({"icr_limit": 2.6}), 1.5)
+        self.assertEqual(daily.warmup_limit({"icr_limit": "x"}), 1.5)
+
     def test_initial_tempo_keeps_chars_fast(self):
         self.assertEqual(daily.initial_tempo(20, 10), {"wpm": 20, "effective": 10})
         self.assertEqual(daily.initial_tempo(15, None), {"wpm": 18, "effective": 15})
@@ -134,16 +146,37 @@ class StarsTest(unittest.TestCase):
                          [daily.WEITER])
         self.assertIn("box:G", daily.day_entry(self.state, TODAY)["progress"])
 
-    def test_tempo_up_is_progress(self):
-        stars = daily.finish_block(self.state, TODAY, main_block(), main_result(85, 100, wpm=20))
-        self.assertEqual(stars, [])  # 85 %: Tempo bleibt, kein Stern
-        stars = daily.finish_block(self.state, TODAY + timedelta(days=1), main_block(),
-                                   main_result(89, 100, wpm=koch.SLOW_CHAR_WPM - 1))
-        self.assertEqual(stars, [])
-        stars = daily.finish_block(self.state, TODAY + timedelta(days=2), main_block(),
-                                   main_result(92, 100, wpm=koch.SLOW_CHAR_WPM - 1))
-        self.assertEqual(stars, [daily.SAUBER, daily.WEITER])
+    def day(self, offset, correct, total=100):
+        """Tagesübung am Tag TODAY + offset: Tempo vom Vortag übernehmen, Hauptteil."""
+        today = TODAY + timedelta(days=offset)
+        daily.apply_pending_tempo(self.state, today)
+        return daily.finish_block(self.state, today, main_block(), main_result(correct, total))
+
+    def test_tempo_up_is_progress_only_at_a_new_best(self):
+        self.assertEqual(self.day(0, 85), [])  # 85 %: Tempo bleibt, kein Stern
+        self.assertEqual(self.day(1, 92), [daily.SAUBER, daily.WEITER])
+        self.assertEqual(self.state["tempo"]["effective"], 12)  # erst ab morgen
+        self.assertEqual(self.state["pending_tempo"]["effective"], 13)
+        self.assertEqual(self.day(2, 70), [])
         self.assertEqual(self.state["tempo"]["effective"], 13)
+        self.assertEqual(self.day(3, 92), [daily.SAUBER])  # zurück auf 13: kein neuer Höchstwert
+        self.assertEqual(self.day(4, 92), [daily.SAUBER, daily.WEITER])  # morgen 14: neu
+        self.assertEqual(self.state["tempo_best"], 14)
+
+    def test_tempo_changes_once_a_day(self):
+        self.day(0, 95)
+        self.assertEqual(self.state["pending_tempo"]["effective"], 13)
+        daily.finish_block(self.state, TODAY, main_block(), main_result(50, 100))  # zweite Tagesübung
+        self.assertEqual(self.state["pending_tempo"]["effective"], 13)
+        self.assertEqual(self.state["tempo"]["effective"], 12)
+
+    def test_no_faster_tempo_while_lessons_come(self):
+        self.state["lesson"] = 12
+        self.day(0, 95)
+        self.assertEqual(self.state["pending_tempo"]["effective"], 12)  # neues Zeichen reicht
+        self.assertEqual(self.state["pending_lesson"], 13)
+        self.day(1, 60)
+        self.assertEqual(self.state["pending_tempo"]["effective"], 11)  # langsamer schon
 
     def test_continuous_counts_extra_keys(self):
         self.state["lesson"] = daily.POST_KOCH
@@ -178,9 +211,10 @@ class StorageTest(unittest.TestCase):
 
 def write_session(directory: Path, day: date, mode: str, chars=(), config=None, summary=None, index=0):
     """Sitzungsdatei wie von SessionStats: config, Zeichen, summary.
-    `chars`: (Zeichen, Latenz) – richtig erkannt."""
+    `chars`: (Zeichen, Latenz) – richtig erkannt; Latenz None = verpasst."""
     lines = [{"type": "config", "mode": mode, "wpm": 20, "farnsworth_wpm": 12, **(config or {})}]
-    lines += [{"type": "char", "char": ch, "correct": True, "latency_s": lat} for ch, lat in chars]
+    lines += [{"type": "char", "char": ch, "correct": True, "latency_s": lat} if lat is not None
+              else {"type": "char", "char": ch, "correct": False} for ch, lat in chars]
     lines.append({"type": "summary", "total": len(chars), **(summary or {})})
     path = directory / f"{day.isoformat()}_1200{index:02d}-{mode}.jsonl"
     path.write_text("".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8")
@@ -218,6 +252,25 @@ class ReviewTest(unittest.TestCase):
         self.latency_week(TODAY - timedelta(days=8), "R", 0.9)
         self.latency_week(TODAY, "R", 0.3, config={"self_assessed": True})
         self.assertEqual(daily.week_comparison(TODAY)["status"], daily.FEW)
+
+    def test_latency_only_from_single_at_similar_char_speed(self):
+        before = TODAY - timedelta(days=8)
+        self.latency_week(before, "R", 0.8)
+        write_session(self.dir, TODAY, "group", [("R", 0.3)] * 30)  # Mitschreiben: anderes Maß
+        self.assertEqual(daily.week_comparison(TODAY)["status"], daily.FEW)
+        self.latency_week(TODAY, "R", 0.4, config={"wpm": 25}, index=1)  # Zeichen deutlich schneller
+        self.assertEqual(daily.week_comparison(TODAY)["status"], daily.FEW)
+        self.latency_week(TODAY, "R", 0.4, config={"wpm": 22}, index=2)
+        self.assertEqual(daily.week_comparison(TODAY)["better"],
+                         [{"kind": "latency", "char": "R", "before": 0.8, "now": 0.4}])
+
+    def test_missed_chars_count_as_slow(self):
+        """Ein kürzeres Limit macht langsame Antworten zu verpassten; das
+        darf nicht als schneller zählen."""
+        before = TODAY - timedelta(days=8)
+        write_session(self.dir, before, "single", [("R", 0.4)] * 10 + [("R", 0.9)] * 10)
+        write_session(self.dir, TODAY, "single", [("R", 0.4)] * 10 + [("R", None)] * 10)
+        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.HELD, "better": []})
 
     def test_group_share_at_same_tempo(self):
         summary = {"first_try_correct": 170, "first_try_total": 200}

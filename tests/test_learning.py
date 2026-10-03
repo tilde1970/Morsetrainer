@@ -235,9 +235,14 @@ class IcrLimitTest(unittest.TestCase):
             limit = next_limit(limit, False)
         self.assertEqual(limit, ICR_RANGE[1])
 
+    def test_upper_bound(self):
+        from morsetrainer.modes.single_mode import next_limit
+        self.assertEqual(next_limit(1.4, False, upper=1.5), 1.5)
+
     def test_limit_settles_near_nine_in_ten(self):
         """Das Limit sinkt erst, wenn deutlich mehr als acht von zehn Zeichen
-        rechtzeitig kommen; bei vier von fünf wird es wieder länger."""
+        rechtzeitig kommen (verpasst statt richtig); bei vier von fünf wird es
+        wieder länger."""
         from morsetrainer.modes.single_mode import next_limit
 
         def run(right, missed):

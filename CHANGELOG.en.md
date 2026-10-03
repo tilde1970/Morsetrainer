@@ -6,8 +6,9 @@
   minutes from whatever is due – warm-up with due characters, main part
   with groups at a fixed speed, wind-down with words, callsigns or
   continuous depending on the lesson – and switches the tabs by itself.
-  The speed adapts from day to day, and the next lesson follows without
-  asking on the day after the criterion is met. Three stars a day
+  The next lesson follows without asking on the day after the criterion
+  is met; meanwhile the speed only gets slower when needed and faster
+  only after Koch, once a day. Three stars a day
   (Showed up, Clean, Ahead), cards between the blocks and an evening
   summary with a comparison to the week before and “5 more min”.
   Afterwards all settings are back as they were. See README, “Daily
@@ -16,8 +17,10 @@
   goal you already set is kept.
 - **Characters, time limit:** the limit now settles where nearly nine out
   of ten characters come in time; before, about every third character was
-  “too slow” at any level. Lower bound 0.5 s instead of 0.4 s – below
-  that you would train reaction speed, not recognition.
+  “too slow” at any level. A confusion no longer makes the limit longer,
+  only a missed character – before, it grew with many confusions until
+  there was time to count again. Lower bound 0.5 s instead of 0.4 s –
+  below that you would train reaction speed, not recognition.
 - **First character no longer clipped:** on Linux the audio system put the
   output device to sleep after a short silence, and the start of the
   first character after starting or pausing was missing (especially with

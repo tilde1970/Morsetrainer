@@ -21,12 +21,16 @@ ein erst nach der Wiederholung erkanntes Zeichen gilt als nicht erkannt.
 Zeitlimit (Instant Character Recognition): Wer nach dem Ton nicht innerhalb
 des Limits tippt, hat das Zeichen verpasst. So bleibt keine Zeit, Punkte
 und Striche zu zählen; das Zeichen muss als Reflex kommen. Das Limit passt
-sich an: jede schnelle richtige Antwort macht es etwas kürzer, jeder Fehler
-und jedes Verpassen deutlich länger (nur beim ersten Hören eines Zeichens).
-Die Faktoren sind so gewählt, dass sich das Limit dort einpendelt, wo knapp
-neun von zehn Zeichen rechtzeitig kommen (ICR_FASTER, ICR_SLOWER); bei
-gleich großen Schritten wäre jedes dritte Zeichen „zu langsam“, egal wie
-gut man ist. Unter ICR_RANGE[0] sinkt es nie: Schon die einfache
+sich an: jede schnelle richtige Antwort macht es etwas kürzer, jedes
+Verpassen deutlich länger (nur beim ersten Hören eines Zeichens). Eine
+falsche Antwort in der Zeit lässt es, wie es ist: Wer verwechselt, braucht
+den Korrekturton, nicht mehr Zeit – sonst wüchse das Limit bei vielen
+Verwechslungen, bis wieder Zeit zum Zählen bleibt. Die Faktoren sind so
+gewählt, dass sich das Limit dort einpendelt, wo von den nicht
+verwechselten Zeichen knapp neun von zehn rechtzeitig kommen (ICR_FASTER, ICR_SLOWER); bei gleich
+großen Schritten wäre jedes dritte Zeichen „zu langsam“, egal wie gut man
+ist. In der Tagesübung wächst es höchstens bis review.FLUENT_LATENCY_S:
+Langsamer zählt in der Lernkartei ohnehin nicht als flüssig. Unter ICR_RANGE[0] sinkt es nie: Schon die einfache
 Reaktion auf einen Ton braucht etwa 0,15–0,2 s, dazu kommen das Erkennen
 unter mehreren Zeichen und der Griff zur Taste. Darunter würde
 Reaktionsschnelle geübt, nicht das Erkennen.
@@ -39,7 +43,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import audio, koch, sfx
+from morsetrainer.core import audio, koch, review, sfx
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, code_units, duration_seconds, silence,
     vary_voice,
@@ -56,7 +60,8 @@ from morsetrainer.core.weighting import CharPicker
 ICR_START = 2.0
 ICR_RANGE = (0.5, 3.0)
 # Gleichgewicht bei p · ln(FASTER) + (1 − p) · ln(SLOWER) = 0, also
-# p ≈ 0,88 rechtzeitig.
+# p ≈ 0,88 rechtzeitig richtig unter den richtigen und verpassten Zeichen
+# (Verwechslungen ändern das Limit nicht).
 ICR_FASTER = 0.97
 ICR_SLOWER = 1.25
 # Ein falsch erkanntes Zeichen kommt nach so vielen anderen wieder.
@@ -73,9 +78,11 @@ COMPARE_GAP_SECONDS = 0.6
 GROUPS_HINT_MAX_LIMIT = 1.5
 
 
-def next_limit(limit: float, in_time_and_correct: bool) -> float:
+def next_limit(limit: float, in_time_and_correct: bool, upper: float = ICR_RANGE[1]) -> float:
+    """Nach einer richtigen Antwort in der Zeit (True) bzw. einem verpassten
+    Zeichen (False)."""
     factor = ICR_FASTER if in_time_and_correct else ICR_SLOWER
-    return round(min(max(limit * factor, ICR_RANGE[0]), ICR_RANGE[1]), 2)
+    return round(min(max(limit * factor, ICR_RANGE[0]), max(upper, ICR_RANGE[0])), 2)
 
 
 class RetryQueue:
@@ -193,6 +200,9 @@ class SingleModeFrame(DailyModeMixin):
 
     def _show_limit(self):
         self.limit_var.set(f"{number(self.limit, 2)} s" if self.icr_var.get() else "")
+
+    def _limit_max(self) -> float:
+        return review.FLUENT_LATENCY_S if self.daily_minutes else ICR_RANGE[1]
 
     def _reset_limit(self):
         self.limit = ICR_START
@@ -395,13 +405,13 @@ class SingleModeFrame(DailyModeMixin):
             self.current_char, "", False, reaction_time, code_units(self.current_char) * 1.2 / reaction_time
         )
         if self.first_hearing:
-            self.limit = next_limit(self.limit, False)
+            self.limit = next_limit(self.limit, False, self._limit_max())
             self._show_limit()
         if self.sound_var.get():
             sfx.play_error()
         self.last_typed = None
         text = tr("Zu langsam: war {char}").format(char=display_text(self.current_char))
-        if self.first_hearing:
+        if self.first_hearing and not self.daily_minutes:
             text += "  " + tr("(Limit jetzt {limit} s)").format(limit=number(self.limit, 2))
         self.feedback_var.set(text)
         self.feedback_label.config(foreground=theme.ERROR)
@@ -450,8 +460,8 @@ class SingleModeFrame(DailyModeMixin):
             self.session_stats.record_char(
                 self.current_char, typed, correct, reaction_time, effective_wpm, latency=latency
             )
-        if self.icr_var.get() and self.first_hearing:
-            self.limit = next_limit(self.limit, correct)
+        if self.icr_var.get() and self.first_hearing and correct:
+            self.limit = next_limit(self.limit, True, self._limit_max())
             self._show_limit()
 
         if helped:
@@ -461,10 +471,15 @@ class SingleModeFrame(DailyModeMixin):
         elif correct:
             if self.sound_var.get():
                 sfx.play_ok()
-            shown = f"{number(max(latency, 0), 2)} s"
-            if self.icr_var.get():
-                shown += tr(", Limit {limit} s").format(limit=number(self.limit, 2))
-            self.feedback_var.set(tr("Richtig: {text}").format(text=display_text(self.current_char)) + f"  ({shown})")
+            text = tr("Richtig: {text}").format(text=display_text(self.current_char))
+            if not self.daily_minutes:
+                # In der Tagesübung ohne Zahlen: bis zum nächsten Zeichen
+                # bleibt keine Zeit zum Lesen.
+                shown = f"{number(max(latency, 0), 2)} s"
+                if self.icr_var.get():
+                    shown += tr(", Limit {limit} s").format(limit=number(self.limit, 2))
+                text += f"  ({shown})"
+            self.feedback_var.set(text)
             self.feedback_label.config(foreground=theme.OK)
         else:
             if self.sound_var.get():

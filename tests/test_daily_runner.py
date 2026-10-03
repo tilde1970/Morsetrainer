@@ -120,7 +120,11 @@ class DailyRunnerTest(AppTestCase):
             self.assertIsNone(self.runner.mode)
             self.assertEqual(self.app.daily_bar.card.winfo_manager(), "pack")
             self.assertIn("Aufwärmen", str(self.app.daily_bar.card.cget("text")))
-            self.app._dispatch_key(type("E", (), {"keysym": "Return", "widget": self.app.root})())
+            enter = type("E", (), {"keysym": "Return", "widget": self.app.root})()
+            self.app._dispatch_key(enter)
+            self.assertTrue(self.runner.card_open)  # Enter gleich danach gehört noch zur Antwort
+            self.runner.card_shown -= daily_runner.ENTER_GRACE_S
+            self.app._dispatch_key(enter)
             self.assertFalse(self.runner.card_open)
             self.assertIs(self.runner.mode, self.mode("Gruppen"))
             self.assertEqual(self.app.daily_bar.card.winfo_manager(), "")
@@ -176,6 +180,26 @@ class DailyRunnerTest(AppTestCase):
         play.assert_called_once()
         self.assertTrue(self.runner.card_open)
         self.assertIn("Neues Zeichen", str(self.app.daily_bar.card.cget("text")))
+        self.runner.card_shown -= daily_runner.ENTER_GRACE_S
         self.runner.continue_now()
         self.assertIs(self.runner.mode, self.mode("Einzelzeichen"))
         self.runner.abort(quiet=True)
+
+    def test_warmup_limit_continues_from_last_time(self):
+        daily.save({"lesson": 12, "days": {}, "icr_limit": 0.8})
+        self.runner.start()
+        single = self.mode("Einzelzeichen")
+        self.assertEqual(single.limit, 0.8)
+        single.limit = 0.7
+        self.runner.abort(quiet=True)
+        self.assertEqual(daily.load()["icr_limit"], 0.7)
+        self.assertNotEqual(single.limit, 0.7)  # der Reiter hat wieder sein eigenes Limit
+
+    def test_tempo_from_yesterday_applies_at_start(self):
+        daily.save({"lesson": 12, "days": {}, "tempo": {"wpm": 20, "effective": 12},
+                    "pending_tempo": {"wpm": 20, "effective": 11}, "pending_tempo_since": "2000-01-01"})
+        self.runner.start()
+        self.assertEqual(self.app.farnsworth_wpm_var.get(), 11)
+        self.runner.abort(quiet=True)
+        self.assertEqual(daily.load()["tempo"], {"wpm": 20, "effective": 11})
+        self.assertEqual(self.app.farnsworth_wpm_var.get(), 12)  # zurückgestellt

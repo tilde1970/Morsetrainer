@@ -410,6 +410,37 @@ class SingleCharTest(AppTestCase):
             seen.add(s.current_char)
         self.assertEqual(seen, {"K", "M"})  # K kann weiter zufällig kommen
 
+    def _answer(self, char, typed):
+        s = self.single
+        s.current_char, s.voice, s.waiting_for_input, s.replayed = char, (20, 600), True, False
+        s.first_hearing, s.correcting = True, False
+        s.play_start_time = time.time() - 0.5
+        self._key(typed)
+
+    def test_wrong_answer_in_time_keeps_limit(self):
+        s = self.single
+        s.limit = 1.0
+        self._answer("K", "R")
+        self.assertEqual(s.limit, 1.0)
+        self._answer("K", "K")
+        self.assertLess(s.limit, 1.0)
+        s.current_char, s.waiting_for_input, s.first_hearing = "M", True, True
+        limit = s.limit
+        s._on_timeout(s.timeout_token)
+        self.assertGreater(s.limit, limit)  # verpasst: länger
+
+    def test_daily_block_caps_limit_and_shows_no_numbers(self):
+        s = self.single
+        s.daily_minutes = 3
+        s.limit = 1.45
+        s.current_char, s.voice, s.waiting_for_input, s.first_hearing = "M", (20, 600), True, True
+        s._on_timeout(s.timeout_token)
+        self.assertEqual(s.limit, 1.5)
+        self.assertNotIn("Limit", s.feedback_var.get())
+        self._answer("K", "K")
+        self.assertEqual(s.feedback_var.get(), "Richtig: K")
+        s.daily_minutes = None
+
     def test_groups_hint_needs_limit_whole_session(self):
         s = self.single
         s.icr_var.set(False)

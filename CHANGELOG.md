@@ -6,8 +6,9 @@
   zusammen, was dran ist – Aufwärmen mit fälligen Zeichen, Hauptteil mit
   Gruppen in festem Tempo, Ausklang mit Wörtern, Rufzeichen oder
   Kontinuierlich, je nach Lektion – und schaltet die Reiter selbst um.
-  Das Tempo passt sich von Tag zu Tag an, die nächste Lektion kommt ohne
-  Nachfrage am Tag nach dem geschafften Kriterium. Drei Sterne am Tag
+  Die nächste Lektion kommt ohne Nachfrage am Tag nach dem geschafften
+  Kriterium; das Tempo wird währenddessen nur bei Bedarf langsamer und
+  erst nach Koch auch schneller, einmal am Tag. Drei Sterne am Tag
   (Dabei, Sauber, Weiter), Zwischenkarten zwischen den Blöcken und eine
   Abendbilanz mit Vergleich zur Vorwoche und „Noch 5 Min“. Danach sind
   alle Einstellungen wieder wie vorher. Siehe README, „Tagesübung“.
@@ -15,8 +16,11 @@
   ein schon eingestelltes Ziel bleibt.
 - **Einzelzeichen, Zeitlimit:** Das Limit pendelt sich jetzt dort ein, wo
   knapp neun von zehn Zeichen rechtzeitig kommen; bisher war bei jedem
-  Stand etwa jedes dritte Zeichen „zu langsam“. Untergrenze 0,5 s statt
-  0,4 s – darunter würde Reaktionsschnelle geübt, nicht das Erkennen.
+  Stand etwa jedes dritte Zeichen „zu langsam“. Eine Verwechslung macht
+  das Limit nicht mehr länger, nur ein verpasstes Zeichen – sonst wuchs es
+  bei vielen Verwechslungen, bis wieder Zeit zum Zählen blieb. Untergrenze
+  0,5 s statt 0,4 s – darunter würde Reaktionsschnelle geübt, nicht das
+  Erkennen.
 - **Erstes Zeichen fehlt nicht mehr:** Unter Linux legte das Audiosystem
   das Ausgabegerät nach kurzer Stille schlafen, und vom ersten Zeichen
   nach Start oder Pause fehlte der Anfang (besonders mit
