@@ -945,3 +945,70 @@ EN.update({
         "Please include this file when you report the error.",
     "MP3 nicht erstellt: {error}": "MP3 not created: {error}",
 })
+
+# Diplome (core/awards.py)
+EN.update({
+    "Bronze": "Bronze", "Silber": "Silver", "Gold": "Gold", "Platin": "Platinum",
+    "Koch": "Koch",
+    "Bestandener Aufstiegslauf (≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM)":
+        "Passed lesson run (≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM)",
+    "Lektion": "Lesson",
+    "Worked All Letters": "Worked All Letters",
+    "Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, Gold: alle Buchstaben in Fach 6 und alle Ziffern "
+    "in Fach 4":
+        "Bronze: 10 letters in box 3, Silver: all 26, Gold: all letters in box 6 and all digits in box 4",
+    "Mitschreiben im Fluss": "Copying in flow",
+    "Kontinuierlich mit Klartext, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen "
+    "≥ 18 WPM":
+        "Continuous with plain text, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM",
+    "WPM eff.": "WPM eff.",
+    "Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne Farnsworth, voller "
+    "3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten":
+        "Continuous with random groups (≥ 5 characters), full character set, no Farnsworth, full 3-min "
+        "run, ≥ 90 % minus extra keys",
+    "QRN-fest": "QRN-proof",
+    "Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv "
+    "≥ 12 WPM; Bronze: Band leicht 90 %, Silber: mittel 90 %, Gold: stark 85 %":
+        "Groups or continuous, ≥ 200 characters, noise volume ≥ 100 %, characters ≥ 20 WPM, effective "
+        "≥ 12 WPM; Bronze: band light 90 %, Silver: medium 90 %, Gold: heavy 85 %",
+    "Rufz": "Rufz",
+    "Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Zeichentempo beim Start ≥ 20 WPM":
+        "Full Rufz run with 50 calls, no prefix filter, character speed at the start ≥ 20 WPM",
+    "Punkte": "points",
+    "Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, "
+    "Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler":
+        "Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, "
+        "activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error",
+    "WPX": "WPX", "QRQ": "QRQ", "WPM": "WPM",
+    "Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest)":
+        "Different WPX prefixes, right at the first attempt (callsigns and contest)",
+    "Präfixe": "prefixes",
+    "Kopfhörer": "Headphones",
+    "3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“":
+        "3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”",
+    "Verwechslung überwunden": "Confusion overcome",
+    "Ein häufig verwechseltes Paar 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt":
+        "A frequently confused pair confused at most once in 28 days with ≥ 40 attempts each",
+    "Paare": "pairs",
+    "Ausdauer": "Endurance",
+    "Tage mit ≥ 10 Min. Übung, nicht in Folge": "Days with ≥ 10 min practice, not in a row",
+    "Tage": "days",
+    "Zeichen gehört": "Characters heard",
+    "Richtig erkannte Zufallszeichen": "Correctly recognised random characters",
+    "Erstes QSO verstanden": "First QSO understood",
+    "Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv":
+        "Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective",
+    "Worked All Contests": "Worked All Contests",
+    "Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern":
+        "All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors",
+    "Contests": "contests",
+    "Clubabend": "Club night",
+    "An einer Netzwerk-Übung teilgenommen": "Took part in a network session",
+    "Q-Gruppen-Kenner": "Q-code expert",
+    "Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM":
+        "Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM",
+    "Q-Gruppen": "Q codes",
+    "Alle Ziffern": "All digits",
+    "Alle 10 Ziffern mindestens in Fach 3": "All 10 digits at least in box 3",
+    "Ziffern": "digits",
+})
