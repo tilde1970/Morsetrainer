@@ -812,13 +812,14 @@ class SequenceModeFrame(DailyModeMixin):
         """Gemeinsamer Abschluss eines Versuchs: Statistik, Anpassungen,
         Rückmeldung und was als Nächstes kommt."""
         sent = self.current_sequence
-        self.session_stats.record_group(
-            sent, typed, wpm=self.tempo if self.tempo is None else tempo.effective(self.tempo, self.tempo_fw)
-        )
-        self.attempts += 1
         # Für den Koch-Aufstieg zählt nur ein flüssiger erster Versuch: ohne
         # Wiederholen, im Zeitfenster; Kopfhören (Selbstbewertung) gar nicht.
-        clean = self.attempts == 1 and not self.replayed and not slow
+        clean = self.attempts == 0 and not self.replayed and not slow
+        self.session_stats.record_group(
+            sent, typed, wpm=self.tempo if self.tempo is None else tempo.effective(self.tempo, self.tempo_fw),
+            first=None if head else clean and all_correct
+        )
+        self.attempts += 1
         if self.attempts == 1 and not head:
             self.first_try_total += len(sent)
             if clean:

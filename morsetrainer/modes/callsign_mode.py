@@ -194,6 +194,7 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_summary = ""
         self.rufz_used = set()
         self.rufz_start_wpm = 0
+        self.rufz_start_char_wpm = None
 
         if self.all_calls:
             self.list_text = tr("Liste: {n} Rufzeichen").format(n=number(len(self.all_calls)))
@@ -318,6 +319,7 @@ class CallsignModeFrame(SequenceModeFrame):
         super().start()
         if self.running and self.tempo is not None:
             self.rufz_start_wpm = tempo.effective(self.tempo, self.tempo_fw)
+            self.rufz_start_char_wpm = self.tempo
             self.rufz_start_label = tempo.label(self.tempo, self.tempo_fw)
         if self.running and self.rufz_active:
             self.rufz_missed = []
@@ -350,7 +352,11 @@ class CallsignModeFrame(SequenceModeFrame):
             if self.rufz_done >= RUFZ_CALLS:
                 new_best = self.rufz_score > self.rufz_best
                 stats.log_result("rufz", self.rufz_correct, self.rufz_done,
-                                 self.tempo_best or self.rufz_start_wpm, score=self.rufz_score)
+                                 self.tempo_best or self.rufz_start_wpm, score=self.rufz_score,
+                                 # Bedingungen des Durchgangs (Rufz-Diplom)
+                                 start_wpm=self.rufz_start_char_wpm,
+                                 prefixes=parse_prefixes(self.prefix_var.get()),
+                                 learned_only=self.learned_var.get())
                 if new_best:
                     self.rufz_best = self.rufz_score
                     self.rufz_best_start = getattr(self, "rufz_start_label", "")

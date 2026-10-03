@@ -92,6 +92,16 @@ class GroupEvaluationTest(AppTestCase):
         self.assertNotIn("band_gain", config)
         self.assertEqual((summary["first_try_correct"], summary["first_try_total"]), (3, 3))
 
+    def test_group_lines_mark_clean_first_try(self):
+        self._start()
+        self._answer("KMU", "KMU")
+        self._answer("KMU", "KMU", replayed=True)
+        self._answer("KMU", "KMM")
+        path = self.group.session_stats.log_path
+        self.group._finalize_session()
+        firsts = [line["first"] for line in stats._read_jsonl(path) if line["type"] == "group"]
+        self.assertEqual(firsts, [True, False, False])
+
     def test_replayed_slow_or_overtyped_do_not_count(self):
         self._start()
         self._answer("KMU", "KMU", replayed=True)
@@ -336,6 +346,8 @@ class RufzTest(AppTestCase):
         modes = [e["mode"] for e in stats.load_history()]
         self.assertEqual(modes, ["rufz"])  # nicht zusätzlich als „Rufzeichen“
         self.assertEqual(stats.load_history()[0]["score"], g.rufz_score)
+        result = list(stats._read_jsonl(stats.RESULTS_FILE))[-1]
+        self.assertEqual((result["start_wpm"], result["prefixes"], result["learned_only"]), (20, [], False))
 
     def test_rufz_needs_enough_calls(self):
         g = self.mode("Rufzeichen")
@@ -855,6 +867,7 @@ class ContestBustedTest(AppTestCase):
         self.assertEqual(r.log[-1]["ok"], True)
         self.assertIn("DL1ABC TU", r.status_var.get())
         r.stop()
+        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["calls"], ["DL1ABC"])
 
     def test_unnoticed_busted_call_is_marked(self):
         r, caller = self._contest_with_caller()

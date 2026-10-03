@@ -443,7 +443,8 @@ class RunModeFrame:
             minutes = (time.time() - self.started_at) / 60
             counts = {kind: sum(entry["category"] == kind for entry in self.log) for kind in ("busted", "nil", "exchange")}
             stats.log_result("contest", correct, total, self.wpm, contest=self.kind, activity=self.activity,
-                             minutes=round(minutes, 1), **counts)
+                             minutes=round(minutes, 1), **counts,
+                             calls=[entry["call"] for entry in self.log if entry["ok"]])  # WPX-Diplom
             details = [f"{n} {label}" for n, label in ((counts["busted"], "Busted"), (counts["nil"], "NIL"),
                                                        (counts["exchange"], tr("Austausch falsch"))) if n]
             self.status_var.set(tr("Beendet: {correct} von {total} QSOs richtig geloggt").format(

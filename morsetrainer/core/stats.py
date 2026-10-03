@@ -157,13 +157,17 @@ class SessionStats:
         agg["reaction_times"].append(reaction_time)
         agg["effective_wpms"].append(effective_wpm)
 
-    def record_group(self, sent: str, typed: str, wpm=None) -> None:
+    def record_group(self, sent: str, typed: str, wpm=None, first=None) -> None:
         """Log a group-mode commit at the group level (in addition to the
         per-character record_char calls the caller makes for it). `wpm` is
-        the speed it was sent at, if that differs from the session's."""
+        the speed it was sent at, if that differs from the session's.
+        `first`: beim ersten Versuch flüssig richtig (ohne Wiederholen, im
+        Zeitfenster) – für die Diplome WPX und Q-Gruppen-Kenner."""
         entry = {"type": "group", "sent": sent, "typed": typed}
         if wpm is not None:
             entry["wpm"] = wpm
+        if first is not None:
+            entry["first"] = first
         self._write_line(entry)
 
     def char_rows(self):
