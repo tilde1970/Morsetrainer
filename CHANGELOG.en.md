@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.28
 
 - **Database:** all practice data now lives in one file
   (`stats/morsetrainer.db`, SQLite) instead of many separate JSON files.

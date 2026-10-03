@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.28
 
 - **Datenbank:** Alle Übungsdaten liegen jetzt in einer Datei
   (`stats/morsetrainer.db`, SQLite) statt in vielen einzelnen JSON-Dateien.
