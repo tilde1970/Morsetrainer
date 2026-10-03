@@ -30,8 +30,8 @@ BOX_3, BOX_4, BOX_6 = 2, 3, 5
 
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 DIGITS = "0123456789"
-# Voller Koch-Zeichensatz ohne die Betriebszeichen (Lektion 40, wie lcwo.net).
-FULL_CHARSET = koch.lesson_charset(40)
+# Voller Koch-Zeichensatz ohne die Betriebszeichen (wie lcwo.net).
+FULL_CHARSET = koch.LCWO_ORDER
 
 MIN_CHAR_WPM = koch.SLOW_CHAR_WPM  # 18: darunter lassen sich Punkte und Striche zählen
 FULL_RUN_S = 180                   # „voller 3-Min.-Lauf“
@@ -60,7 +60,7 @@ class Award:
 
 AWARDS = (
     Award("koch", N_("Koch"), N_("Bestandener Aufstiegslauf (≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, "
-                                "Zeichen ≥ 18 WPM)"), (10, 25, 44), N_("Lektionen"), 1),
+                                "Zeichen ≥ 18 WPM)"), (10, 25, koch.FINAL_LESSON), N_("Lektionen"), 1),
     Award("wal", N_("Worked All Letters"), N_("Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, "
                                              "Gold: alle Buchstaben in Fach 6 und alle Ziffern in Fach 4"),
           (1, 2, 3), N_("Zeichen"), 1, stepped=True),
@@ -83,13 +83,13 @@ AWARDS = (
     Award("contest", N_("Contest"), N_("Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % "
                                        "Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; "
                                        "Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler"),
-          (1, 2, 3), "", 44, two_days=True, stepped=True),
+          (1, 2, 3), "", koch.FINAL_LESSON, two_days=True, stepped=True),
     Award("wpx", N_("WPX"), N_("Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und "
                                "Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM"),
           (100, 400, 1200, 2000), N_("Präfixe"), 25),
     Award("headphones", N_("Kopfhörer"), N_("3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen "
                                             "richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal "
-                                            "oder Lang"), (15, 20, 25), N_("WPM eff."), 44),
+                                            "oder Lang"), (15, 20, 25), N_("WPM eff."), koch.FINAL_LESSON),
     Award("confusion", N_("Verwechslung überwunden"), N_("Ein häufig verwechseltes Paar 28 Tage lang mit je "
                                                          "≥ 40 Versuchen höchstens einmal verwechselt"),
           (1, 3, 6), N_("Paare"), 5),
@@ -100,7 +100,8 @@ AWARDS = (
     Award("first_qso", N_("Erstes QSO verstanden"), N_("Normales QSO mit Abfrage, alles richtig, ohne "
                                                        "„Nochmal“, ≥ 15 WPM effektiv"), (1,), from_lesson=40, levels=False),
     Award("all_contests", N_("Worked All Contests"), N_("Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % "
-                                                        "Fehlern"), (5,), N_("Contests"), 44, levels=False),
+                                                        "Fehlern"), (5,), N_("Contests"), koch.FINAL_LESSON,
+          levels=False),
     Award("club", N_("Clubabend"), N_("An einer Netzwerk-Übung teilgenommen"), (1,), levels=False),
     Award("q_groups", N_("Q-Gruppen-Kenner"), N_("Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an "
                                                  "mindestens 2 Tagen, Zeichen ≥ 18 WPM"),

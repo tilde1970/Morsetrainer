@@ -50,8 +50,8 @@ due and switches the tabs by itself:
 |---|---|---|---|
 | Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Continuous, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
-| Lesson 30–44 | as above | as above | Words or callsigns on alternate days, 2 min |
-| after Koch (lesson 44 passed) | Characters, 2 min | Continuous, groups of 5, 4 min | Callsigns, 4 min |
+| Lesson 30–41 | as above | as above | Words or callsigns on alternate days, 2 min |
+| after Koch (lesson 41 passed) | Characters, 2 min | Continuous, groups of 5, 4 min | Callsigns, 4 min |
 
 - **Warm-up** with all characters of the lesson; those due today in the
   review box come more often, or, if nothing is due, your most frequent
@@ -113,20 +113,20 @@ highest level.
 
 | Award | Levels | From lesson | Condition |
 |---|---|---|---|
-| Koch | Lesson 10 / 25 / 44 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or continuous) |
+| Koch | Lesson 10 / 25 / 41 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or continuous) |
 | Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts |
 | Copying in flow | 10 / 15 / 22 WPM effective | 15 | Continuous with plain text (words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “words” does not count |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Continuous with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
 | QRN-proof | band light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
-| Contest | see right | 44 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
+| Contest | see right | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
 | WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for the call again), characters ≥ 18 WPM |
-| Headphones | 15 / 20 / 25 WPM effective | 44 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
+| Headphones | 15 / 20 / 25 WPM effective | 41 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
 | Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
 | Endurance | 10 / 50 / 150 / 365 days | – | Days with ≥ 10 min practice, not in a row |
 | Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters |
 | First QSO understood | – | 40 | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective |
-| Worked All Contests | – | 44 | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
+| Worked All Contests | – | 41 | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
 | Club night | – | – | Took part in a network session |
 | Q-code expert | – | 40 | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
 | All digits | – | 39 | All 10 digits at least in box 3 |
@@ -168,8 +168,11 @@ highest level.
    the group with the space bar and answered quickly (1.5 s plus 0.6 s per
    character after the end of the tone); typing too much counts as an
    error. Weak and new characters automatically come up more often. After
-   the 40 lessons of lcwo.net, lessons 41–44 add the prosigns from QSOs:
-   AR (key `+`), KN (`(`), SK (`*`) and BK (`#`).
+   the 40 lessons of lcwo.net, lesson 41 completes the course: all
+   characters, none favoured as new any more (weak ones still come more
+   often). If you like, lessons 42–45 then add the prosigns from QSOs:
+   AR (key `+`), KN (`(`), SK (`*`) and BK (`#`). The trainer does not
+   move there by itself; set the lesson at the top.
 5. From lesson 6 there are enough words for the **Words** tab (words with
    the newest character are favoured), then **Continuous** and **QSO**.
 6. In the **Statistics** tab (confusions of the last 30 days), “Practise the

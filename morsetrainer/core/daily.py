@@ -40,8 +40,9 @@ TOTAL_MINUTES = 10
 # auf Sekunden gerundete Blockenden.
 DABEI_TOLERANCE_MIN = 0.25
 
-# Nach Lektion 44 (alle Zeichen samt Betriebszeichen): „nach Koch“.
-POST_KOCH = koch.MAX_LESSON + 1
+# Nach der Abschlusslektion 41 (alle Zeichen): „nach Koch“. Die
+# Betriebszeichen-Lektionen 42–45 gibt es nur von Hand, nicht hier.
+POST_KOCH = koch.FINAL_LESSON + 1
 EARLY, WORDS, MIXED, POST = "early", "words", "mixed", "post"
 WORDS_FROM_LESSON = 10   # vorher zu wenige Wörter (core/words.py)
 CALLS_FROM_LESSON = 30   # vorher zu wenige Rufzeichen aus gelernten Zeichen
@@ -120,8 +121,8 @@ def stage(lesson: int) -> str:
 
 
 def lesson_charset(lesson: int) -> str:
-    """Zeichensatz einer Lektion; nach Koch alle Zeichen."""
-    return koch.lesson_charset(min(lesson, koch.MAX_LESSON))
+    """Zeichensatz einer Lektion; nach Koch alle Zeichen (ohne Betriebszeichen)."""
+    return koch.lesson_charset(min(lesson, koch.FINAL_LESSON))
 
 
 def warmup_minutes(lesson: int, due_count: int) -> float:
@@ -160,10 +161,11 @@ def plan(lesson: int, due_count: int, today: date) -> list:
 
 def current_lesson(state: dict, fallback: int) -> int:
     """Gespeicherte Lektion, beim ersten Mal `fallback` (Lektion aus der
-    Kopfleiste)."""
+    Kopfleiste). Vor 2.23 ging es bis Lektion 45 (nach 44); alles über
+    POST_KOCH ist jetzt „nach Koch“."""
     lesson = state.get("lesson")
-    if isinstance(lesson, int) and not isinstance(lesson, bool) and 1 <= lesson <= POST_KOCH:
-        return lesson
+    if isinstance(lesson, int) and not isinstance(lesson, bool) and lesson >= 1:
+        return min(lesson, POST_KOCH)
     return min(max(fallback, 1), POST_KOCH)
 
 
@@ -172,7 +174,8 @@ def apply_pending_lesson(state: dict, today: date) -> bool:
     pending, since = state.get("pending_lesson"), state.get("pending_since")
     if not isinstance(pending, int) or not isinstance(since, str) or since >= today.isoformat():
         return False
-    state.update(lesson=pending, lesson_since=today.isoformat(), pending_lesson=None, pending_since=None)
+    state.update(lesson=min(pending, POST_KOCH), lesson_since=today.isoformat(), pending_lesson=None,
+                 pending_since=None)
     return True
 
 

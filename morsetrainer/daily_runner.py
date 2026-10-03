@@ -115,8 +115,8 @@ class DailyRunner:
         charset = daily.lesson_charset(lesson)
         self.due = review.due_chars(known=charset)
         self._begin(charset, daily.plan(lesson, len(self.due), self.today))
-        if daily.is_new_lesson(self.state, self.today) and 1 < lesson <= koch.MAX_LESSON:
-            # Neue Lektion: das neue Zeichen erst einmal anhören.
+        if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
+            # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
             char = koch.newest_char(lesson)
             self._show_card(tr("Neues Zeichen: {char}").format(char=char),
                             [preview_line(self.blocks[0], lesson, self.state["tempo"])])

@@ -74,10 +74,10 @@ class WordsTest(unittest.TestCase):
 class ProsignLessonTest(unittest.TestCase):
     def test_last_lessons_are_prosigns_with_key_hint(self):
         from morsetrainer.core.morse import PROSIGN_KEYS, display_text, key_hint
-        self.assertEqual(koch.MAX_LESSON, 44)
-        self.assertEqual("".join(koch.newest_char(n) for n in range(41, 45)), "+(*#")
+        self.assertEqual(koch.MAX_LESSON, 45)
+        self.assertEqual("".join(koch.newest_char(n) for n in range(42, 46)), "+(*#")
         self.assertTrue(all(ch in PROSIGN_KEYS for ch in "+(*#"))
-        self.assertEqual(key_hint(koch.newest_char(43)), "<SK> · Taste *")
+        self.assertEqual(key_hint(koch.newest_char(44)), "<SK> · Taste *")
         self.assertEqual(key_hint("K"), "K")
         self.assertEqual(display_text("K*#"), "K<SK><BK>")
 
@@ -88,6 +88,20 @@ class KochPassedTest(unittest.TestCase):
         self.assertFalse(koch.passed(44, 50))   # 88 %
         self.assertFalse(koch.passed(40, 40))   # zu wenige Zeichen
         self.assertFalse(koch.can_advance(koch.lesson_charset(koch.MAX_LESSON), 50, 50))
+        # Bis zur Abschlusslektion 41 von selbst, zu den Betriebszeichen nur von Hand.
+        self.assertTrue(koch.can_advance(koch.lesson_charset(40), 50, 50))
+        self.assertFalse(koch.can_advance(koch.lesson_charset(41), 50, 50))
+        self.assertFalse(koch.can_advance(koch.lesson_charset(42), 50, 50))
+
+    def test_final_lesson_has_all_chars_and_none_new(self):
+        final = koch.lesson_charset(koch.FINAL_LESSON)
+        self.assertEqual(koch.FINAL_LESSON, 41)
+        self.assertEqual(set(final), set(koch.lesson_charset(40)))
+        self.assertTrue(final.startswith("ABC"))
+        self.assertEqual(koch.lesson_of(final), 41)
+        self.assertEqual(koch.lesson_of(koch.lesson_charset(40)), 40)
+        self.assertEqual(koch.newest_char(41), "")
+        self.assertEqual(koch.lesson_charset(42), koch.LCWO_ORDER + "+")
 
 
 class GroupScoringTest(unittest.TestCase):

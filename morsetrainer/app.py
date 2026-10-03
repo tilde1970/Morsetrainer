@@ -376,8 +376,15 @@ class MorseTrainerApp:
             self.new_char_button.config(text=tr("↩ Lektion {lesson}").format(lesson=back))
         else:
             self.lesson_var.set(lesson)
-            self.lesson_info_var.set(tr("neu: {char}").format(char=key_hint(koch.newest_char(lesson))))
+            new_char = koch.newest_char(lesson)
+            if new_char:
+                self.lesson_info_var.set(tr("neu: {char}").format(char=key_hint(new_char)))
+            else:
+                self.lesson_info_var.set(tr("alle Zeichen, keins bevorzugt"))
             self.new_char_button.config(text=tr("▶ anhören"))
+            if not new_char:
+                self.new_char_button.config(state="disabled")
+                return
         self.new_char_button.config(state="disabled" if self.running_mode else "normal")
 
     def _lesson_button(self):
@@ -392,6 +399,8 @@ class MorseTrainerApp:
         if lesson is None:
             return
         ch = koch.newest_char(lesson)
+        if not ch:
+            return
         try:
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
@@ -418,10 +427,16 @@ class MorseTrainerApp:
             return
         lesson = koch.lesson_of(charset)
         new_char = koch.newest_char(lesson + 1)
-        text = tr("Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).\n\n"
-                  "Mit Lektion {next} weitermachen? Neu dazu kommt „{char}“.").format(
-            lesson=lesson, correct=correct, total=total, share=correct / total, next=lesson + 1,
-            char=key_hint(new_char))
+        text = tr("Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).").format(
+            lesson=lesson, correct=correct, total=total, share=correct / total) + "\n\n"
+        if new_char:
+            text += tr("Mit Lektion {next} weitermachen? Neu dazu kommt „{char}“.").format(
+                next=lesson + 1, char=key_hint(new_char))
+        else:
+            text += tr("Du kennst jetzt alle Zeichen. Mit der Abschlusslektion {next} weitermachen? Dort ist "
+                       "kein Zeichen mehr neu, alle kommen gleichmäßig (schwache weiter öfter). Die "
+                       "Betriebszeichen AR, KN, SK und BK kannst du danach in den Lektionen {first}–{last} "
+                       "dazunehmen.").format(next=lesson + 1, first=koch.FINAL_LESSON + 1, last=koch.MAX_LESSON)
         try:
             wpm = self.wpm_var.get()
         except tk.TclError:

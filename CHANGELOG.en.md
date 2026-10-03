@@ -1,5 +1,18 @@
 # Changes
 
+## Unreleased
+
+- **Koch lesson 41 completes the course:** after the 40 lessons of
+  lcwo.net, lesson 41 brings no new character, all characters come evenly
+  (weak ones still more often); the “Characters” field lists them sorted.
+  The prosigns AR, KN, SK and BK are now optional in lessons 42–45; the
+  trainer does not move there by itself, neither after a run nor in the
+  daily practice. Daily practice counts as “after Koch” after lesson 41
+  and then practises without prosigns; a state from the former lessons
+  42–45 counts as “after Koch”. Koch Gold is awarded for lesson 41;
+  Contest, Headphones and Worked All Contests can be reached from lesson
+  41.
+
 ## 2.22
 
 - **Daily practice:** a button at the top (or F12) puts together ten

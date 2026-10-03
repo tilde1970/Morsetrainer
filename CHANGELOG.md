@@ -1,5 +1,18 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Koch-Lektion 41 schließt ab:** Nach den 40 Lektionen von lcwo.net
+  bringt Lektion 41 kein neues Zeichen mehr, alle Zeichen kommen
+  gleichmäßig (schwache weiter öfter); im Feld „Zeichen“ stehen sie
+  sortiert. Die Betriebszeichen AR, KN, SK und BK sind jetzt optional in
+  den Lektionen 42–45; dorthin wird weder nach einem Durchgang noch in der
+  Tagesübung von selbst weitergeschaltet. Die Tagesübung gilt nach
+  Lektion 41 als „nach Koch“ und übt dann ohne Betriebszeichen; ein Stand
+  aus den bisherigen Lektionen 42–45 zählt als „nach Koch“. Koch-Gold gibt
+  es für Lektion 41, Contest, Kopfhörer und Worked All Contests sind ab
+  Lektion 41 erreichbar.
+
 ## 2.22
 
 - **Tagesübung:** Ein Knopf oben (oder F12) stellt zehn Minuten aus dem

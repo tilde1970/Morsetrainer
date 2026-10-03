@@ -24,13 +24,14 @@ def main_block():
 
 class StageAndPlanTest(unittest.TestCase):
     def test_stage_boundaries(self):
-        self.assertEqual([daily.stage(n) for n in (1, 9, 10, 29, 30, 44, 45)],
+        self.assertEqual([daily.stage(n) for n in (1, 9, 10, 29, 30, 41, 42)],
                          [daily.EARLY, daily.EARLY, daily.WORDS, daily.WORDS, daily.MIXED, daily.MIXED,
                           daily.POST])
-        self.assertEqual(daily.lesson_charset(daily.POST_KOCH), koch.KOCH_ORDER)
+        # Nach Koch alle Zeichen, die Betriebszeichen nur von Hand.
+        self.assertEqual(daily.lesson_charset(daily.POST_KOCH), koch.FINAL_CHARSET)
 
     def test_blocks_add_up_to_ten_minutes(self):
-        for lesson in (3, 15, 35, 44, daily.POST_KOCH):
+        for lesson in (3, 15, 35, 41, daily.POST_KOCH):
             for due in (0, 3, 8, 20):
                 blocks = daily.plan(lesson, due, TODAY)
                 self.assertEqual([b.kind for b in blocks], [daily.WARMUP, daily.MAIN, daily.OUTRO])
@@ -117,6 +118,11 @@ class LessonTest(unittest.TestCase):
         self.assertEqual(daily.current_lesson({}, 7), 7)
         self.assertEqual(daily.current_lesson({"lesson": 20}, 7), 20)
         self.assertEqual(daily.current_lesson({"lesson": "x"}, 99), daily.POST_KOCH)
+        # Stand von vor 2.23 (nach Koch = 45) gilt weiter als „nach Koch“.
+        self.assertEqual(daily.current_lesson({"lesson": 45}, 7), daily.POST_KOCH)
+        state = {"lesson": 41, "pending_lesson": 45, "pending_since": "2026-01-01"}
+        daily.apply_pending_lesson(state, TODAY)
+        self.assertEqual(state["lesson"], daily.POST_KOCH)
 
 
 class StarsTest(unittest.TestCase):

@@ -1,15 +1,24 @@
 """Koch-Methode: Zeichen werden in fester Reihenfolge einzeln dazugenommen,
 immer im vollen Zeichentempo. Lektion 1 sind die ersten beiden Zeichen,
-jede weitere Lektion bringt ein neues dazu (Reihenfolge wie bei lcwo.net,
-danach die Betriebszeichen AR, KN, SK und BK, die im QSO ständig vorkommen).
+jede weitere Lektion bis 40 bringt ein neues dazu (Reihenfolge wie bei
+lcwo.net). Lektion 41 schließt ab: alle Zeichen, keins mehr bevorzugt.
+Die Betriebszeichen AR, KN, SK und BK folgen auf Wunsch in den Lektionen
+42–45; dorthin wird nicht von selbst weitergeschaltet.
 
 Weiter geht es, sobald ein Durchgang mit genug Zeichen zu mindestens
 ADVANCE_ACCURACY_PCT richtig mitgeschrieben wurde."""
 
-# Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net), ergänzt um
-# die Betriebszeichen (Lektionen 41–44; Platzhalter siehe morse.PROSIGN_KEYS).
-KOCH_ORDER = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X" + "+(*#"
-MAX_LESSON = len(KOCH_ORDER) - 1
+# Kompletter Koch-Zeichensatz in LCWO-Reihenfolge (lcwo.net).
+LCWO_ORDER = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X"
+# Betriebszeichen der Lektionen 42–45 (Platzhalter siehe morse.PROSIGN_KEYS).
+PROSIGN_ORDER = "+(*#"
+KOCH_ORDER = LCWO_ORDER + PROSIGN_ORDER
+LCWO_LESSONS = len(LCWO_ORDER) - 1          # 40
+FINAL_LESSON = LCWO_LESSONS + 1             # 41: Abschluss, letzte Lektion mit Aufstieg
+MAX_LESSON = FINAL_LESSON + len(PROSIGN_ORDER)
+# Lektion 41 hat dieselben Zeichen wie 40, nur sortiert: So bleibt sie am
+# Zeichensatz erkennbar, und im Feld „Zeichen“ steht alles übersichtlich.
+FINAL_CHARSET = "".join(sorted(LCWO_ORDER, key=lambda ch: (not ch.isalpha(), not ch.isdigit(), ch)))
 
 ADVANCE_ACCURACY_PCT = 90.0
 # Unter so vielen gewerteten Zeichen ist die Trefferquote zu zufällig.
@@ -27,18 +36,22 @@ SLOW_CHAR_WPM = RECOMMENDED_WPM - 2
 
 def lesson_charset(lesson: int) -> str:
     lesson = min(max(lesson, 1), MAX_LESSON)
+    if lesson == FINAL_LESSON:
+        return FINAL_CHARSET
+    if lesson > FINAL_LESSON:
+        return KOCH_ORDER[:lesson]
     return KOCH_ORDER[:lesson + 1]
 
 
 def lesson_of(charset: str):
     """Lektion, deren Zeichensatz genau `charset` ist, sonst None."""
-    lesson = len(charset) - 1
-    if 1 <= lesson <= MAX_LESSON and charset == lesson_charset(lesson):
-        return lesson
-    return None
+    return next((n for n in range(1, MAX_LESSON + 1) if charset == lesson_charset(n)), None)
 
 
 def newest_char(lesson: int) -> str:
+    """Das Zeichen, das die Lektion neu bringt; in Lektion 41 keins ("")."""
+    if lesson == FINAL_LESSON:
+        return ""
     return lesson_charset(lesson)[-1]
 
 
@@ -48,7 +61,8 @@ def passed(correct: int, total: int) -> bool:
 
 
 def can_advance(charset: str, correct: int, total: int) -> bool:
-    """True, wenn `charset` eine Lektion (nicht die letzte) ist und der
-    Durchgang das Kriterium erfüllt."""
+    """True, wenn `charset` eine Lektion vor der Abschlusslektion 41 ist und
+    der Durchgang das Kriterium erfüllt. Zu den Betriebszeichen geht es
+    nur von Hand."""
     lesson = lesson_of(charset)
-    return lesson is not None and lesson < MAX_LESSON and passed(correct, total)
+    return lesson is not None and lesson < FINAL_LESSON and passed(correct, total)

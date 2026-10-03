@@ -31,10 +31,17 @@ EN.update({
     "neu: {char}": "new: {char}",
     "Tonausgabe": "Audio output",
     "Nächste Koch-Lektion": "Next Koch lesson",
-    "Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).\n\n"
+    "Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).":
+        "Lesson {lesson} passed: {correct} of {total} characters correct ({share:.0%}).",
     "Mit Lektion {next} weitermachen? Neu dazu kommt „{char}“.":
-        "Lesson {lesson} passed: {correct} of {total} characters correct ({share:.0%}).\n\n"
         "Continue with lesson {next}? New character: “{char}”.",
+    "Du kennst jetzt alle Zeichen. Mit der Abschlusslektion {next} weitermachen? Dort ist kein Zeichen mehr "
+    "neu, alle kommen gleichmäßig (schwache weiter öfter). Die Betriebszeichen AR, KN, SK und BK kannst du "
+    "danach in den Lektionen {first}–{last} dazunehmen.":
+        "You now know all characters. Continue with the final lesson {next}? No character is new there, all "
+        "come evenly (weak ones still more often). You can add the prosigns AR, KN, SK and BK afterwards in "
+        "lessons {first}–{last}.",
+    "alle Zeichen, keins bevorzugt": "all characters, none favoured",
     "Weiter mit Gruppen": "Continue with groups",
     "Die Zeichen von Lektion {lesson} sitzen: {correct} von {total} richtig ({share:.0%}), "
     "mit Zeitlimit.\n\n"

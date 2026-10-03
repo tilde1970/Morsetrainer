@@ -49,8 +49,8 @@ dran ist, und schaltet die Reiter selbst um:
 |---|---|---|---|
 | Lektion 1–9 | Einzelzeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Kontinuierlich, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
-| Lektion 30–44 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
-| nach Koch (Lektion 44 bestanden) | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
+| Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
+| nach Koch (Lektion 41 bestanden) | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
 
 - **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
   der Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
@@ -112,20 +112,20 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
 
 | Diplom | Stufen | ab Lektion | Bedingung |
 |---|---|---|---|
-| Koch | Lektion 10 / 25 / 44 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
+| Koch | Lektion 10 / 25 / 41 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
 | Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach |
 | Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
 | QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
-| Contest | siehe rechts | 44 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
+| Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
 | WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM |
-| Kopfhörer | 15 / 20 / 25 WPM effektiv | 44 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
+| Kopfhörer | 15 / 20 / 25 WPM effektiv | 41 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
 | Verwechslung überwunden | 1 / 3 / 6 Paare | 5 | Ein Paar, das zu deinen häufigsten Verwechslungen gehörte, 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt |
 | Ausdauer | 10 / 50 / 150 / 365 Tage | – | Tage mit ≥ 10 Min. Übung, nicht in Folge |
 | Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen |
 | Erstes QSO verstanden | – | 40 | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv |
-| Worked All Contests | – | 44 | Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern |
+| Worked All Contests | – | 41 | Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern |
 | Clubabend | – | – | An einer Netzwerk-Übung teilgenommen |
 | Q-Gruppen-Kenner | – | 40 | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
 | Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3 |
@@ -168,9 +168,12 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
    wenn du die Gruppe nicht mit der Leertaste wiederholt hast und zügig
    geantwortet hast (1,5 s plus 0,6 s je Zeichen nach Tonende); zu viel
    Getipptes zählt als Fehler. Schwache und neue Zeichen kommen automatisch
-   öfter dran. Nach den 40 Lektionen von lcwo.net folgen in den Lektionen
-   41–44 die Betriebszeichen aus dem QSO: AR (Taste `+`), KN (`(`),
-   SK (`*`) und BK (`#`).
+   öfter dran. Nach den 40 Lektionen von lcwo.net schließt Lektion 41 ab:
+   alle Zeichen, keins mehr als neu bevorzugt (schwache kommen weiter
+   öfter). Wer möchte, nimmt danach in den Lektionen 42–45 die
+   Betriebszeichen aus dem QSO dazu: AR (Taste `+`), KN (`(`), SK (`*`) und
+   BK (`#`). Dorthin wird nicht von selbst weitergeschaltet, die Lektion
+   stellst du oben ein.
 5. Ab Lektion 6 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
    dem neuesten Zeichen kommen bevorzugt), danach
    **Kontinuierlich** und **QSO**.
