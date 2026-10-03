@@ -69,9 +69,10 @@ AWARDS = (
     Award("qrq", N_("QRQ"), N_("Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne "
                                "Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten"),
           (20, 25, 30, 35), N_("WPM"), 40, two_days=True),
-    Award("qrn", N_("QRN-fest"), N_("Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke ≥ 100 %, "
-                                    "Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; Bronze: Band leicht 90 %, "
-                                    "Silber: mittel 90 %, Gold: stark 85 %"),
+    Award("qrn", N_("QRN-fest"), N_("Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen "
+                                    "Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen der "
+                                    "rechtzeitige erste Versuch; Bronze: Band leicht 90 %, Silber: mittel "
+                                    "90 %, Gold: stark 85 %"),
           (1, 2, 3), "", 25, two_days=True, stepped=True),
     Award("rufz", N_("Rufz"), N_("Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, "
                                  "Zeichentempo beim Start ≥ 20 WPM"),
@@ -81,9 +82,11 @@ AWARDS = (
                                        "Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler"),
           (1, 2, 3), "", 44, two_days=True, stepped=True),
     Award("wpx", N_("WPX"), N_("Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und "
-                               "Contest)"), (100, 400, 1200, 2000), N_("Präfixe"), 25),
+                               "Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM"),
+          (100, 400, 1200, 2000), N_("Präfixe"), 25),
     Award("headphones", N_("Kopfhörer"), N_("3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen "
-                                            "richtig, ohne „Nochmal“"), (15, 20, 25), N_("WPM eff."), 44),
+                                            "richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal "
+                                            "oder Lang"), (15, 20, 25), N_("WPM eff."), 44),
     Award("confusion", N_("Verwechslung überwunden"), N_("Ein häufig verwechseltes Paar 28 Tage lang mit je "
                                                          "≥ 40 Versuchen höchstens einmal verwechselt"),
           (1, 3, 6), N_("Paare"), 5),
@@ -92,15 +95,15 @@ AWARDS = (
     Award("heard", N_("Zeichen gehört"), N_("Richtig erkannte Zufallszeichen"),
           (5000, 25000, 100000, 250000), N_("Zeichen")),
     Award("first_qso", N_("Erstes QSO verstanden"), N_("Normales QSO mit Abfrage, alles richtig, ohne "
-                                                       "„Nochmal“, ≥ 15 WPM effektiv"), (1,), levels=False),
+                                                       "„Nochmal“, ≥ 15 WPM effektiv"), (1,), from_lesson=40, levels=False),
     Award("all_contests", N_("Worked All Contests"), N_("Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % "
-                                                        "Fehlern"), (5,), N_("Contests"), levels=False),
+                                                        "Fehlern"), (5,), N_("Contests"), 44, levels=False),
     Award("club", N_("Clubabend"), N_("An einer Netzwerk-Übung teilgenommen"), (1,), levels=False),
     Award("q_groups", N_("Q-Gruppen-Kenner"), N_("Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an "
                                                  "mindestens 2 Tagen, Zeichen ≥ 18 WPM"),
-          (len(Q_GROUPS),), N_("Q-Gruppen"), levels=False),
+          (len(Q_GROUPS),), N_("Q-Gruppen"), 40, levels=False),
     Award("digits", N_("Alle Ziffern"), N_("Alle 10 Ziffern mindestens in Fach 3"), (10,), N_("Ziffern"),
-          levels=False),
+          39, levels=False),
 )
 BY_KEY = {award.key: award for award in AWARDS}
 
@@ -344,11 +347,20 @@ def _qrn(data: Data) -> list:
         if mode not in ("group", "continuous") or rank is None:
             continue
         # Kontinuierlich hat keinen Regler für die Störlautstärke: immer 100 %.
-        gain = _num(c.get("band_gain"), 100) if mode == "group" else 100
+        # Gruppen: der kleinste Wert im Durchgang (ältere Sitzungen: der beim Start).
+        gain = (min(_num(c.get("band_gain"), 100), _num(summary.get("band_gain_min"), 100))
+                if mode == "group" else 100)
         if (gain < 100 or _num(summary.get("total")) < 200 or _char_wpm(c) < 20 or _effective_wpm(s) < 12
                 or not _contains(c.get("charset"), koch.lesson_charset(25))):
             continue
-        share = _clean_share(summary) if mode == "continuous" else _num(summary.get("accuracy_pct")) / 100
+        if mode == "continuous":
+            share = _clean_share(summary)
+        elif "first_try_total" in summary:
+            # Wie beim Koch-Aufstieg nur der flüssige erste Versuch: kein
+            # langes Überlegen, kein Wiederholen.
+            share = _num(summary.get("first_try_correct")) / max(_num(summary.get("first_try_total")), 1)
+        else:
+            share = _num(summary.get("accuracy_pct")) / 100
         level = rank if share >= 0.9 else 3 if rank == 3 and share >= 0.85 else 0
         if level:
             events.append((s.day, level))
@@ -429,13 +441,14 @@ def _wpx(data: Data) -> list:
             first_day[prefix] = day
 
     for s in data.sessions:
-        if s.config.get("mode") == "callsign":
+        if s.config.get("mode") == "callsign" and _char_wpm(s.config) >= MIN_CHAR_WPM:
             for sent, typed, first in s.groups:
                 # Ältere Dateien kennen den ersten Versuch nicht: richtig getippt zählt.
                 if first or (first is None and sent == typed):
                     add(sent, s.day)
     for r in data.results:
-        if r.get("mode") == "contest":
+        if r.get("mode") == "contest" and _num(r.get("wpm")) >= MIN_CHAR_WPM:
+            # Nur Calls ohne Rückfrage; ältere Einträge kennen das nicht.
             for call in r.get("calls") or ():
                 add(call, r["day"])
     return _cumulative((day, 1) for day in first_day.values())
@@ -447,9 +460,14 @@ def _headphones(data: Data) -> list:
         if r.get("mode") != "qso_head" or r.get("kind") != RAGCHEW:
             continue
         if _num(r.get("total")) and r.get("correct") == r.get("total") and not r.get("replays"):
-            run.append(_num(r.get("wpm")))
+            run.append((_num(r.get("wpm")), r.get("length") == "Kurz"))
             if len(run) >= 3:
-                events.append((r["day"], min(run[-3:])))
+                wpm = min(w for w, _ in run[-3:])
+                # Silber und Gold nur mit normaler oder langer Länge: Ein kurzes
+                # QSO ist eher Merken als Kopfhören über längere Zeit.
+                if any(short for _, short in run[-3:]):
+                    wpm = min(wpm, BY_KEY["headphones"].targets[0])
+                events.append((r["day"], wpm))
         else:
             run = []
     return events

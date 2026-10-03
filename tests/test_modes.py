@@ -800,6 +800,18 @@ class QsoHeadCopyTest(AppTestCase):
         self.assertEqual(self.app.wpm_var.get(), 20)
         self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["mode"], "qso_head")
 
+    def test_skipped_head_copy_counts_as_failed_but_not_in_history(self):
+        q, _ = self._qso("head")
+        q.qso_eval, q.quiz_ready = "head", True
+        with mock.patch.object(q, "_play"):
+            q.start_new()  # ohne „Prüfen“ weiter
+        last = list(stats._read_jsonl(stats.RESULTS_FILE))[-1]
+        self.assertEqual((last["mode"], last["correct"], last.get("skipped")), ("qso_head", 0, True))
+        self.assertFalse(any(e["mode"] == "qso_head" for e in stats.load_history()))
+        with mock.patch.object(q, "_play"):
+            q.start_new()  # das neue QSO lief noch nicht zu Ende: nichts eintragen
+        self.assertEqual(len(list(stats._read_jsonl(stats.RESULTS_FILE))), 1)
+
     def test_mode_is_fixed_at_start(self):
         q, qso_mode = self._qso("quiz")
         q.qso_eval = "quiz"
@@ -867,6 +879,23 @@ class ContestBustedTest(AppTestCase):
         r._on_enter()
         self.assertEqual(r.log[-1]["ok"], True)
         self.assertIn("DL1ABC TU", r.status_var.get())
+        r.stop()
+        # Erst nach der Korrektur richtig: zählt nicht fürs WPX-Diplom.
+        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["calls"], [])
+
+    def test_wpx_calls_only_without_query(self):
+        r, caller = self._contest_with_caller()
+        second = run_mode.Caller(call="OK1XY", exchange="15", exchange_kind=caller.exchange_kind, station=2,
+                                 wpm=20, freq=650.0, strength=1.0, patience=3)
+        for qso, query in ((caller, False), (second, True)):
+            r.callers = [qso]
+            if query:
+                r._react("hiscall", "OK?XY", r.msg_id)  # nachgefragt
+            r._react("exchange", qso.call, r.msg_id)
+            r.call_var.set(qso.call)
+            r.exch_var.set(qso.exchange)
+            r._log_qso()
+        self.assertEqual([e["ok"] for e in r.log], [True, True])
         r.stop()
         self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["calls"], ["DL1ABC"])
 

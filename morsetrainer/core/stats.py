@@ -495,6 +495,8 @@ def load_history():
         except (KeyError, TypeError, ValueError):
             continue
     for obj in _read_jsonl(RESULTS_FILE):
+        if obj.get("skipped"):  # übersprungenes Kopfhör-QSO (nur für die Diplome)
+            continue
         try:
             history.append({
                 "time": datetime.fromisoformat(obj["time"]),

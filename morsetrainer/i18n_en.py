@@ -790,9 +790,11 @@ EN.update({
         "with longer gaps (Farnsworth).",
     "Flüssig": "Fluent",
     "Hinweis: Die Zeichen kamen mit {wpm} WPM, so langsam lassen sie sich mitzählen. Besser mit "
-    "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt.":
+    "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt. Für das Koch-Diplom "
+    "zählen Läufe erst ab {min} WPM Zeichentempo.":
         "Note: the characters were sent at {wpm} WPM – that slow, they can be counted. Better keep "
-        "practising at Koch speed {rec}/{eff} so the sound pattern sticks.",
+        "practising at Koch speed {rec}/{eff} so the sound pattern sticks. For the Koch award, runs "
+        "count only from {min} WPM character speed.",
     "(wiederholt)": "(repeated)",
     "(langsam)": "(slow)",
     "(mit Wiederholung – zählt nicht als flüssig)": "(after a repeat – does not count as fluent)",
@@ -967,10 +969,12 @@ EN.update({
         "Continuous with random groups (≥ 5 characters), full character set, no Farnsworth, full 3-min "
         "run, ≥ 90 % minus extra keys",
     "QRN-fest": "QRN-proof",
-    "Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv "
-    "≥ 12 WPM; Bronze: Band leicht 90 %, Silber: mittel 90 %, Gold: stark 85 %":
-        "Groups or continuous, ≥ 200 characters, noise volume ≥ 100 %, characters ≥ 20 WPM, effective "
-        "≥ 12 WPM; Bronze: band light 90 %, Silver: medium 90 %, Gold: heavy 85 %",
+    "Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, "
+    "effektiv ≥ 12 WPM, bei Gruppen der rechtzeitige erste Versuch; Bronze: Band leicht 90 %, Silber: mittel "
+    "90 %, Gold: stark 85 %":
+        "Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, "
+        "effective ≥ 12 WPM, in groups the first attempt in time; Bronze: band light 90 %, Silver: medium "
+        "90 %, Gold: heavy 85 %",
     "Rufz": "Rufz",
     "Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Zeichentempo beim Start ≥ 20 WPM":
         "Full Rufz run with 50 calls, no prefix filter, character speed at the start ≥ 20 WPM",
@@ -980,12 +984,16 @@ EN.update({
         "Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, "
         "activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error",
     "WPX": "WPX", "QRQ": "QRQ", "WPM": "WPM",
-    "Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest)":
-        "Different WPX prefixes, right at the first attempt (callsigns and contest)",
+    "Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach "
+    "dem Call), Zeichen ≥ 18 WPM":
+        "Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for "
+        "the call again), characters ≥ 18 WPM",
     "Präfixe": "prefixes",
     "Kopfhörer": "Headphones",
-    "3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“":
-        "3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”",
+    "3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“; Silber und Gold "
+    "mit der Länge Normal oder Lang":
+        "3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and "
+        "Gold with the length Normal or Long",
     "Verwechslung überwunden": "Confusion overcome",
     "Ein häufig verwechseltes Paar 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt":
         "A frequently confused pair confused at most once in 28 days with ≥ 40 attempts each",

@@ -411,6 +411,9 @@ class SequenceModeFrame(DailyModeMixin):
         self.repeat_pending = False
         self.revealed = False
         self.first_try_correct = self.first_try_total = 0
+        # Kleinste Störlautstärke im Durchgang (der Regler bleibt bedienbar),
+        # damit das Diplom QRN-fest nicht mit heruntergezogenem Regler geht.
+        self.band_gain_min = round(self.band_gain_var.get())
         self._count_streak()
         self.koch_result = None
         self.tempo, self.tempo_fw = None, None
@@ -517,6 +520,8 @@ class SequenceModeFrame(DailyModeMixin):
         if self.tempo is not None:
             extra = {"wpm_effective_reached": self.tempo_best,
                      "wpm_effective_end": tempo.effective(self.tempo, self.tempo_fw)}
+        if self.band is not None:
+            extra["band_gain_min"] = self.band_gain_min
         if not self.session_stats.self_assessed:
             # Erster Versuch, flüssig (ohne Wiederholen, im Zeitfenster): Grundlage
             # für Lektion, Tagesübung und Diplome.
@@ -658,6 +663,7 @@ class SequenceModeFrame(DailyModeMixin):
         if self.band is not None:
             # Der Regler gilt auch mitten im Durchgang ab der nächsten Sequenz.
             self.band.background_gain = self.band_gain_var.get() / 100
+            self.band_gain_min = min(self.band_gain_min, round(self.band_gain_var.get()))
             samples, lead = band.apply_preset(self.band, samples)
         # Hörbar wird der Ton erst nach der Ausgabelatenz; ab dann zählt die
         # Reaktionszeit, und erst danach ist er zu Ende.

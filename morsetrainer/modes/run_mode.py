@@ -94,6 +94,7 @@ class Caller:
     busy_until: int = 0      # Sample, bis zu dem die Station sendet
     last_end: int = 0
     retry_token: int = 0     # nur die Wiederholungs-Prüfung zum letzten Ruf zählt
+    asked: bool = False      # Call auf Rückfrage oder Korrektur wiederholt (zählt nicht fürs WPX-Diplom)
 
 
 class Mixer:
@@ -450,7 +451,8 @@ class RunModeFrame:
             counts = {kind: sum(entry["category"] == kind for entry in self.log) for kind in ("busted", "nil", "exchange")}
             stats.log_result("contest", correct, total, self.wpm, contest=self.kind, activity=self.activity,
                              minutes=round(minutes, 1), **counts,
-                             calls=[entry["call"] for entry in self.log if entry["ok"]])  # WPX-Diplom
+                             # WPX-Diplom: richtig geloggt, ohne Rückfrage nach dem Call
+                             calls=[entry["call"] for entry in self.log if entry["ok"] and entry["first"]])
             details = [f"{n} {label}" for n, label in ((counts["busted"], "Busted"), (counts["nil"], "NIL"),
                                                        (counts["exchange"], tr("Austausch falsch"))) if n]
             self.status_var.set(tr("Beendet: {correct} von {total} QSOs richtig geloggt").format(
@@ -603,7 +605,8 @@ class RunModeFrame:
             ok, category, result = True, "ok", "✓"
         if worked is not None:
             worked.state = "done"
-        self.log.append({"call": call, "exch": exch, "ok": ok, "category": category})
+        self.log.append({"call": call, "exch": exch, "ok": ok, "category": category,
+                         "first": worked is not None and not worked.asked})
         self.log_tree.insert("", 0, values=(len(self.log), call, exch, result), tags=("ok" if ok else "wrong",))
         self.my_serial += 1
         self.call_var.set("")
@@ -708,6 +711,7 @@ class RunModeFrame:
                 near = [c for c in active if _distance(sent_call, c.call) == 1]
                 if near and random.random() < BUSTED_ANSWER_PROBABILITY:
                     busted = random.choice(near)
+                    busted.asked = True
                     for caller in active:
                         if caller is not busted and caller.state in ("calling", "worked"):
                             caller.state = "waiting"
@@ -719,6 +723,7 @@ class RunModeFrame:
                 if caller.state == "worked":
                     caller.state = "waiting"  # du arbeitest jetzt jemand anderen
                 if exact is None and matches[caller.call] == "similar":
+                    caller.asked = True
                     self._call(caller, twice=True)  # korrigiert sein Rufzeichen
                 elif caller.state == "calling":
                     caller.state = "waiting"
@@ -728,6 +733,7 @@ class RunModeFrame:
                 elif exact.state == "worked":
                     self._send_exchange(exact, repeat=True)  # Call bestätigt: Austausch nochmal
                 else:
+                    exact.asked = True
                     self._call(exact)
             return
 
@@ -736,6 +742,7 @@ class RunModeFrame:
                 self._send_exchange(worked, repeat=True)
             else:
                 for caller in active:
+                    caller.asked = True
                     self._call(caller)
 
     # --- Schnittstelle zur App ------------------------------------------------

@@ -430,8 +430,9 @@ class MorseTrainerApp:
             # Geschafft mit gedehnten Zeichen heißt womöglich: mitgezählt.
             text += "\n\n" + tr(
                 "Hinweis: Die Zeichen kamen mit {wpm} WPM, so langsam lassen sie sich mitzählen. Besser mit "
-                "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt.").format(
-                wpm=wpm, rec=koch.RECOMMENDED_WPM, eff=koch.RECOMMENDED_EFFECTIVE_WPM)
+                "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt. Für das Koch-Diplom "
+                "zählen Läufe erst ab {min} WPM Zeichentempo.").format(
+                wpm=wpm, rec=koch.RECOMMENDED_WPM, eff=koch.RECOMMENDED_EFFECTIVE_WPM, min=koch.SLOW_CHAR_WPM)
         if messagebox.askyesno(tr("Nächste Koch-Lektion"), text):
             self.charset_var.set(koch.lesson_charset(lesson + 1))
             self._play_new_char()

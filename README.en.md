@@ -115,19 +115,19 @@ the award of the highest level.
 | Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts |
 | Copying in flow | 10 / 15 / 22 WPM effective | 15 | Continuous with plain text (words, phrases, QSO), full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Continuous with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
-| QRN-proof | band light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous, ≥ 200 characters, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM |
+| QRN-proof | band light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
 | Contest | see right | 44 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
-| WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest) |
-| Headphones | 15 / 20 / 25 WPM effective | 44 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again” |
+| WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for the call again), characters ≥ 18 WPM |
+| Headphones | 15 / 20 / 25 WPM effective | 44 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
 | Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
 | Endurance | 10 / 50 / 150 / 365 days | – | Days with ≥ 10 min practice, not in a row |
 | Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters |
-| First QSO understood | – | – | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective |
-| Worked All Contests | – | – | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
+| First QSO understood | – | 40 | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective |
+| Worked All Contests | – | 44 | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
 | Club night | – | – | Took part in a network session |
-| Q-code expert | – | – | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
-| All digits | – | – | All 10 digits at least in box 3 |
+| Q-code expert | – | 40 | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
+| All digits | – | 39 | All 10 digits at least in box 3 |
 
 - For flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need two
   different days** – one lucky run is not enough.

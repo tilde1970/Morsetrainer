@@ -345,6 +345,7 @@ class QsoModeFrame:
         except tk.TclError:
             self.status_var.set(tr("Ungültige Geschwindigkeit oder Tonhöhe!"))
             return
+        self._log_skipped_head()
         self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()),
                                          PILEUP_LEVELS.get(self.pileup_var.get(), 0.0))
         if self.qso.is_contest:
@@ -368,6 +369,15 @@ class QsoModeFrame:
         self.quiz.reset(self._quiz_view())
         self.notes.delete("1.0", "end")
         self._play(tracking=self._eval_mode() == EVAL_TYPING)
+
+    def _log_skipped_head(self):
+        """Ein Kopfhör-QSO, das ohne „Prüfen“ übersprungen wird, zählt als
+        nicht verstanden: Sonst ließe sich die Serie fürs Diplom Kopfhörer
+        aus den gelungenen QSOs zusammensuchen. Im Verlauf erscheint es nicht."""
+        if (self.qso is not None and self.quiz_ready and not self.quiz_checked
+                and self.qso_eval == EVAL_HEAD):
+            stats.log_result("qso_head", 0, HEAD_QUESTIONS, tempo.effective(self.voices[0][0], self.fw),
+                             kind=self.qso.kind, length=self.length_var.get(), replays=self.replays, skipped=True)
 
     def _quiz_view(self):
         """Was die Abfrage-Tabelle zeigt: beim Kopfhören einige zufällige

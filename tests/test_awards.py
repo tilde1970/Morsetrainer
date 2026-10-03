@@ -22,7 +22,7 @@ def session(mode, offset=0, chars=(), groups=(), **config_and_summary):
     summary = {}
     for key, value in config_and_summary.items():
         (summary if key in ("total", "correct", "accuracy_pct", "extra_keys", "completed", "duration_s",
-                            "first_try_correct", "first_try_total") else config)[key] = value
+                            "first_try_correct", "first_try_total", "band_gain_min") else config)[key] = value
     return Session(day(offset), config, summary, list(chars), list(groups))
 
 
@@ -79,6 +79,14 @@ class AwardsTest(unittest.TestCase):
                 session("group", 3, band="light", **{**base, "charset": "KMURES"})]
         self.assertEqual(dates("qrn", data(runs)), [day(0), day(1), None])
 
+    def test_qrn_counts_lowest_gain_and_fluent_first_tries(self):
+        base = dict(charset=koch.lesson_charset(30), band="light", total=200, correct=200, accuracy_pct=100.0,
+                    band_gain=100)
+        runs = [session("group", 0, **base, band_gain_min=0),  # Regler im Lauf heruntergezogen
+                session("group", 1, **base, first_try_correct=170, first_try_total=200),  # zu viel überlegt
+                session("group", 2, **base, first_try_correct=185, first_try_total=200, band_gain_min=100)]
+        self.assertEqual(dates("qrn", data(runs))[0], day(2))
+
     def test_rufz_full_runs_without_prefix_filter(self):
         runs = [result("rufz", 0, total=50, score=3600, start_wpm=20, prefixes=[]),
                 result("rufz", 1, total=50, score=3700, start_wpm=20, prefixes=["DL"]),
@@ -100,9 +108,11 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(awards.wpx_prefix("W1AW/4"), "W4")
         calls = [(f"DL{i}ABC", f"DL{i}ABC", True) for i in range(10)] + [("K1ABC", "K1ABC", False)]
         groups = [(f"W{i}XX", f"W{i}XX", True) for i in range(10)] * 2  # doppelt zählt einmal
-        contest = result("contest", 1, calls=[f"{p}{i}A" for p in ("F", "G", "I", "N", "R", "S", "VE", "JA")
-                                              for i in range(10)])
-        d = data([session("callsign", 0, groups=calls + groups)], [contest])
+        contest = result("contest", 1, wpm=22, calls=[f"{p}{i}A" for p in ("F", "G", "I", "N", "R", "S", "VE", "JA")
+                                                       for i in range(10)])
+        slow = [session("callsign", 2, wpm=15, groups=[(f"SP{i}X", f"SP{i}X", True) for i in range(10)]),
+                result("contest", 2, wpm=16, calls=["OK1A", "HA1A"])]  # unter 18 WPM zählt nicht
+        d = data([session("callsign", 0, groups=calls + groups), slow[0]], [contest, slow[1]])
         status = awards.evaluate(d, today=day(5))["wpx"]
         self.assertEqual((status.value, status.dates[0]), (100, day(1)))
 
@@ -113,6 +123,19 @@ class AwardsTest(unittest.TestCase):
                 result("qso_head", 2, wpm=21, **good), result("qso_head", 2, wpm=20, **good),
                 result("qso_head", 3, wpm=25, **good)]
         self.assertEqual(dates("headphones", data(results=runs)), [day(3), day(3), None])
+
+    def test_headphones_silver_needs_normal_length(self):
+        good = dict(kind="ragchew", correct=3, total=3, replays=0, wpm=26)
+        short = [result("qso_head", 0, length="Kurz", **good)] * 3
+        self.assertEqual(dates("headphones", data(results=short)), [day(0), None, None])
+        long = [result("qso_head", 1, length="Normal", **good)] * 3
+        self.assertEqual(dates("headphones", data(results=short + long)), [day(0), day(1), day(1)])
+
+    def test_skipped_head_copy_breaks_the_run(self):
+        good = dict(kind="ragchew", correct=3, total=3, replays=0, wpm=16)
+        runs = [result("qso_head", 0, **good)] * 2 + [result("qso_head", 0, kind="ragchew", correct=0, total=3,
+                                                              wpm=16, skipped=True)] + [result("qso_head", 0, **good)]
+        self.assertEqual(dates("headphones", data(results=runs))[0], None)
 
     def test_confusion_overcome_after_28_clean_days(self):
         bad = [("B", "D", False)] * 6 + [("B", "B", True)] * 50 + [("D", "D", True)] * 50
