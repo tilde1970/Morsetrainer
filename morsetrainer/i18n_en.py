@@ -1023,6 +1023,19 @@ EN.update({
     "Erreicht am {date}": "Achieved on {date}",
     "{seals} Siegel in {awards} von {total} Diplomen": "{seals} seals in {awards} of {total} awards",
     "Noch keine Siegel": "No seals yet",
+    "{award} – {level}": "{award} – {level}",
+    "{level} ab {target} {unit}": "{level} from {target} {unit}",
+    "verliehen an": "awarded to",
+    "Datum:": "Date:",
+    "Morsetrainer · entwickelt von DL4YM": "Morsetrainer · developed by DL4YM",
+    "Neues Siegel": "New seal", "Neue Siegel": "New seals",
+    "Drucken": "Print",
+    "Rufzeichen auf dem Diplom:": "Callsign on the award:",
+    "Diplom ansehen und drucken": "View and print award",
+    "Aus deinem bisherigen Üben wurden {n} Diplome nachgetragen. Du findest sie im Reiter Statistik unter "
+    "„Diplome“ und kannst sie dort ansehen und drucken.":
+        "{n} awards were filled in from your practice so far. You will find them in the Statistics tab under "
+        "“Awards”, where you can view and print them.",
     "Eine Zeile wählen, um die Bedingung zu sehen. Erreichte Siegel bleiben, auch wenn die Gesamtstatistik "
     "zurückgesetzt wird.":
         "Select a row to see the condition. Seals you have achieved stay, even when the overall statistics "

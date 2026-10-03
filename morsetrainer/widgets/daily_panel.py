@@ -228,11 +228,13 @@ ENTER_GRACE_S = 0.8
 
 class EveningSummary:
     """Abendbilanz: Sterne, was besser geworden ist, was fast geschafft ist,
-    und auf Wunsch einmal „Noch 5 Min“. Enter und Esc schließen."""
+    heute erreichte Siegel und auf Wunsch einmal „Noch 5 Min“. Enter und
+    Esc schließen; danach `on_close` (zeigt die neuen Siegel)."""
 
     def __init__(self, root, stars, comparison: dict, outlook=None, offer=None, on_extra=None,
-                 completed: bool = True, week_stars: int = None):
+                 completed: bool = True, week_stars: int = None, seals=(), on_close=None):
         self.on_extra = on_extra
+        self.on_close = on_close
         self.offer = offer
         self.window = window = tk.Toplevel(root)
         window.title(tr("Tagesübung"))
@@ -259,6 +261,10 @@ class EveningSummary:
         if outlook:
             box = theme.card(frame, tr("Fast geschafft"), padx=0, pady=(8, 0))
             ttk.Label(box, text=outlook_line(outlook)).pack(anchor="w")
+        if seals:
+            box = theme.card(frame, tr("Neues Siegel") if len(seals) == 1 else tr("Neue Siegel"), padx=0, pady=(8, 0))
+            for line in seals:
+                ttk.Label(box, text=line).pack(anchor="w")
 
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(14, 0))
@@ -276,10 +282,12 @@ class EveningSummary:
         self.done_button.focus_set()
 
     def _extra(self) -> None:
-        self.close()
+        self.close(follow=False)  # neue Siegel erst nach der Zugabe zeigen
         self.on_extra(self.offer)
 
-    def close(self) -> None:
+    def close(self, follow: bool = True) -> None:
         if self.window is not None:
             self.window.destroy()
             self.window = None
+            if follow and self.on_close:
+                self.on_close()

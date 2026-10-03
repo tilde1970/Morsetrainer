@@ -15,7 +15,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, errorlog, koch, practice, review, stats, storage, tempo
+from morsetrainer.core import audio, awards, errorlog, koch, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, tr
@@ -25,11 +25,11 @@ from morsetrainer.modes.group_mode import GroupModeFrame
 from morsetrainer.modes.listen_mode import ListenModeFrame
 from morsetrainer.modes.network_mode import NetworkModeFrame
 from morsetrainer.modes.qso_mode import QsoModeFrame
-from morsetrainer.modes.run_mode import RunModeFrame
+from morsetrainer.modes.run_mode import DEFAULT_CALL, RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.net import update
-from morsetrainer.widgets.awards_panel import AwardsPanel
+from morsetrainer.widgets.awards_panel import AwardsPanel, DiplomaWindow
 from morsetrainer.widgets.daily_panel import DailyBar
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.progress_widget import ProgressPanel
@@ -101,6 +101,9 @@ class MorseTrainerApp:
         self._build_all_time_tab()
         self._refresh_all_time()
         self.daily = DailyRunner(self, self.daily_bar)
+        self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
+        self.diploma_window = None
+        self.root.after(500, self._check_awards_at_start)
         # Ausgabegerät wach halten, damit kein Zeichenanfang verloren geht.
         audio.keep_awake()
 
@@ -589,7 +592,7 @@ class MorseTrainerApp:
         ttk.Spinbox(row, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5).pack(side="left")
         ttk.Label(row, text=tr("Min. pro Tag")).pack(side="left", padx=(4, 0))
         theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(anchor="w", pady=(4, 0))
-        self.awards_panel = AwardsPanel(frame)
+        self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")))
 
         review_box = theme.card(frame, tr("Wiederholung über Tage (Lernkartei)"))
         self.review_var = tk.StringVar(value="")
@@ -623,6 +626,48 @@ class MorseTrainerApp:
         ttk.Button(frame, text=tr("Gesamtstatistik zurücksetzen"), command=self._reset_all_time).pack(
             anchor="e", padx=10, pady=(4, 10)
         )
+
+    # --- Diplome ---------------------------------------------------------------------
+    def _check_awards(self):
+        """Neue Siegel eintragen und für das Diplom-Fenster vormerken;
+        Rückgabe wie awards.check(): Zahl der nachgetragenen Diplome beim
+        allerersten Mal, sonst None."""
+        new, seeded = awards.check()
+        today = date.today()
+        self.pending_seals += [(key, level, today) for key, level in new]
+        self.awards_panel.refresh()
+        return seeded
+
+    def _check_awards_at_start(self):
+        """Beim allerersten Start still nachtragen, mit einem Hinweis."""
+        if self.running_mode:
+            return  # Prüfung folgt nach der Übung
+        seeded = self._check_awards()
+        if seeded:
+            messagebox.showinfo(tr("Diplome"), tr(
+                "Aus deinem bisherigen Üben wurden {n} Diplome nachgetragen. Du findest sie im Reiter "
+                "Statistik unter „Diplome“ und kannst sie dort ansehen und drucken.").format(n=seeded))
+        else:
+            self.show_pending_seals()
+
+    def _diploma_call(self) -> str:
+        """Gemerktes Rufzeichen oder das aus dem Contest-Reiter, sofern es
+        nicht mehr der Vorgabewert ist."""
+        call = awards.load()["call"]
+        if call:
+            return call
+        contest = self.modes[self.mode_titles.index("Contest")].my_call_var.get().strip().upper()
+        return "" if contest == DEFAULT_CALL else contest
+
+    def show_pending_seals(self):
+        if self.pending_seals and not self.running_mode:
+            seals, self.pending_seals = self.pending_seals, []
+            self._show_diplomas(seals)
+
+    def _show_diplomas(self, seals, title=None):
+        if self.diploma_window is not None and self.diploma_window.window is not None:
+            self.diploma_window.close()
+        self.diploma_window = DiplomaWindow(self.root, seals, self._diploma_call(), title)
 
     def _refresh_all_time(self):
         data = stats.load_all_time()
@@ -787,6 +832,7 @@ class MorseTrainerApp:
         self._record_practice()
         self._update_practice()
         self._refresh_all_time()
+        self._check_awards()  # angezeigt erst nach dem Trennen
 
     def _unlock_tabs(self):
         for tab_id in self.notebook.tabs():
@@ -812,6 +858,8 @@ class MorseTrainerApp:
         self._refresh_all_time()
         self._offer_next_lesson(self._active_mode())
         self._offer_groups(self._active_mode())
+        self._check_awards()
+        self.show_pending_seals()
 
     def finish_daily(self):
         """Tagesübung zu Ende (DailyRunner): Reiter wieder frei."""
@@ -819,6 +867,7 @@ class MorseTrainerApp:
         self._unlock_tabs()
         self._refresh_all_time()
         self._update_practice()
+        self._check_awards()  # angezeigt nach der Abendbilanz
 
     def _restore_drill_charset(self):
         """Nach „Fällige gezielt üben“ wieder der Zeichensatz davor, sofern

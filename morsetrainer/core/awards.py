@@ -627,7 +627,9 @@ def load() -> dict:
     if not isinstance(data, dict):
         data = {}
     seals = data.get("seals") if isinstance(data.get("seals"), dict) else {}
-    return {"seals": {k: v for k, v in seals.items() if isinstance(v, dict)}, "seeded": bool(data.get("seeded"))}
+    call = data.get("call") if isinstance(data.get("call"), str) else ""
+    return {"seals": {k: v for k, v in seals.items() if isinstance(v, dict)}, "seeded": bool(data.get("seeded")),
+            "call": call}
 
 
 def save(state: dict) -> None:
@@ -647,6 +649,20 @@ def seals_of(state: dict, key: str) -> dict:
         except (TypeError, ValueError):
             continue
     return out
+
+
+def seals_on(state: dict, day: date) -> list:
+    """[(Schlüssel, Stufe)] der Siegel, die an `day` dazukamen."""
+    return [(award.key, level) for award in AWARDS
+            for level, seal_day in sorted(seals_of(state, award.key).items()) if seal_day == day]
+
+
+def save_call(call: str) -> None:
+    """Rufzeichen für die Diplome merken."""
+    state = load()
+    if state["call"] != call:
+        state["call"] = call
+        save(state)
 
 
 def check(today: date = None, data: Data = None):

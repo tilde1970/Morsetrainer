@@ -14,11 +14,12 @@ ein einzelner Block mit demselben Ablauf, danach ohne neue Bilanz."""
 import time
 from datetime import date
 
-from morsetrainer.core import daily, koch, practice, review, stats, week
+from morsetrainer.core import awards, daily, koch, practice, review, stats, week
 from morsetrainer.i18n import tr
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, review_line, stars_named)
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
+from morsetrainer.widgets.awards_panel import seal_name
 
 # Reiter je Modus der Blöcke (deutsche Titel = Schlüssel, siehe app.py).
 MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter", "callsign": "Rufzeichen",
@@ -329,7 +330,11 @@ class DailyRunner:
         self.bar.show_idle(note)
         self.refresh_week(state=self.state)
         self.app.finish_daily()
-        if not self.extra and not (self.aborting and self.quiet):
+        if self.aborting and self.quiet:
+            return
+        if self.extra:
+            self.app.show_pending_seals()
+        else:
             self._show_summary(stars, completed)
 
     def _show_summary(self, stars, completed: bool) -> None:
@@ -343,4 +348,6 @@ class DailyRunner:
             offer = daily.extra_offer(self.state, self.today, lesson, confusions)
         self.summary = EveningSummary(
             self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
-            offer, self.start_extra, completed, week.stars_in_week(self.state, self.today))
+            offer, self.start_extra, completed, week.stars_in_week(self.state, self.today),
+            seals=[seal_name(awards.BY_KEY[key], level) for key, level in awards.seals_on(awards.load(), self.today)],
+            on_close=self.app.show_pending_seals)

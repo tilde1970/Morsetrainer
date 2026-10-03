@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import awards, koch, stats
+from morsetrainer.core import awards, diploma, koch, stats
 from morsetrainer.core.awards import Data, Session
 from morsetrainer.widgets import awards_panel as panel
 
@@ -190,6 +190,24 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(awards.seals_of(awards.load(), "first_qso"), {0: day(7)})
         self.assertEqual(awards.check(today=day(8), data=data()), ([], None))  # nichts geht verloren
         self.assertIn("club", awards.load()["seals"])
+        self.assertEqual(awards.seals_on(awards.load(), day(7)), [("first_qso", 0)])
+
+    def test_call_is_kept_across_checks(self):
+        awards.save_call("DL4YM")
+        awards.check(today=day(5), data=data([session("network", 0)]))
+        self.assertEqual(awards.load()["call"], "DL4YM")
+
+
+class DiplomaTest(unittest.TestCase):
+    def test_page_shows_award_level_call_and_date(self):
+        award = awards.BY_KEY["koch"]
+        page = diploma.diploma_html("Koch", "Silber", diploma.seal_colors(1), panel.diploma_condition(award, 1),
+                                    "03.10.2026", "DL4YM", labels={"title": "Diplom", "awarded": "verliehen an"})
+        for text in ("Koch", "Silber", "DL4YM", "03.10.2026", "Silber ab 25 Lektionen", "landscape"):
+            self.assertIn(text, page)
+        plain = diploma.diploma_html("Clubabend", "", diploma.seal_colors(0, levels=False), "<b>", "1.1.", "")
+        self.assertNotIn("verliehen", plain)
+        self.assertIn("&lt;b&gt;", plain)
 
 
 if __name__ == "__main__":
