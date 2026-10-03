@@ -374,6 +374,7 @@ class NetworkTabTest(unittest.TestCase):
             mock.patch.object(stats, "STATS_DIR", directory),
             mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
             mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
+            mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
         ]
         for patch in self.patches:
             patch.start()
@@ -561,6 +562,32 @@ class NetworkTabTest(unittest.TestCase):
         self.trainer.stop_run()
         self.assertTrue(wait_for(lambda: ("trainee", "stop") in self.practice, pump=self.pump))
         self.assertTrue(self.trainee.running)  # Reiter bleiben gesperrt, solange verbunden
+
+    def test_trainer_led_run_counts_for_club_award_only(self):
+        from morsetrainer.core import awards
+        closed = []
+        self.trainer.session_closed = lambda: closed.append(True)
+        self.connect()
+        self.start_custom("KM\n")
+        self.trainer.stop_run()
+        led = list(stats._read_jsonl(stats.RESULTS_FILE))
+        self.assertEqual([(r["mode"], r["role"], r["participants"]) for r in led], [("network", "trainer", 1)])
+        self.assertNotIn(("trainer", "start"), self.practice)  # keine Übungszeit
+        self.assertFalse(any(e.get("mode") == "network" and e["total"] == 0 for e in stats.load_history()))
+        trainer_only = awards.load_data()
+        trainer_only.sessions = []  # ohne die Sitzungsdatei des Teilnehmers
+        self.assertTrue(awards.level_dates(awards._club(trainer_only), (1,))[0])
+        self.trainer.close_session()
+        self.assertEqual(closed, [True])
+
+    def test_trainer_alone_is_no_club_night(self):
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        self.trainer.content_var.set("Eigener Text")
+        self.trainer.custom_text.insert("1.0", "KM\n")
+        self.trainer.start_run()
+        self.trainer.stop_run()
+        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE)), [])
 
     def test_function_keys_only_for_the_trainer(self):
         self.connect()

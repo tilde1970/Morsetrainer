@@ -868,7 +868,7 @@ class MorseTrainerApp:
             if getattr(frame_cls, "uses_network_hooks", False):
                 extra.update(practice_start=self._start_practice,
                              practice_stop=self._pause_practice, version=__version__,
-                             updater=self.updater)
+                             updater=self.updater, session_closed=self._network_session_closed)
             mode = frame_cls(
                 tab, self.charset_var, self.wpm_var, self.freq_var, self.weighted_var, self.farnsworth_wpm,
                 on_start=self._lock_tabs, on_stop=self._handle_mode_stop, **extra,
@@ -910,6 +910,12 @@ class MorseTrainerApp:
         self._update_practice()
         self._refresh_all_time()
         self._check_awards()  # angezeigt erst nach dem Trennen
+
+    def _network_session_closed(self):
+        """Trainer hat seine Sitzung geschlossen: Clubabend gilt auch fürs
+        Leiten; das Diplom-Fenster erst jetzt, nicht vor der Gruppe."""
+        self._check_awards()
+        self.show_pending_seals()
 
     def _unlock_tabs(self):
         for tab_id in self.notebook.tabs():

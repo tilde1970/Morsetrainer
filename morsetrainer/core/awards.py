@@ -102,7 +102,7 @@ AWARDS = (
     Award("all_contests", N_("Worked All Contests"), N_("Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % "
                                                         "Fehlern"), (5,), N_("Contests"), koch.FINAL_LESSON,
           levels=False),
-    Award("club", N_("Clubabend"), N_("An einer Netzwerk-Übung teilgenommen"), (1,), levels=False),
+    Award("club", N_("Clubabend"), N_("An einer Netzwerk-Übung teilgenommen oder sie geleitet"), (1,), levels=False),
     Award("q_groups", N_("Q-Gruppen-Kenner"), N_("Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an "
                                                  "mindestens 2 Tagen, Zeichen ≥ 18 WPM"),
           (len(Q_GROUPS),), N_("Q-Gruppen"), 40, levels=False),

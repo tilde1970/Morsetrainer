@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Club night for the trainer too:** whoever leads a network session gets
+  the Club night award once a run with participants has ended; the award
+  window only appears after “Close session”, not in front of the group.
+  The trainer's statistics and practice time stay untouched.
 - **Lifeline:** on the Statistics tab below the awards, a chart from your
   first practice until today – total stars, highest Koch lesson practised
   and daily speed of the daily practice on a shared time axis, with the

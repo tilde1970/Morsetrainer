@@ -126,7 +126,7 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
 | Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen |
 | Erstes QSO verstanden | – | 40 | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv |
 | Worked All Contests | – | 41 | Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern |
-| Clubabend | – | – | An einer Netzwerk-Übung teilgenommen |
+| Clubabend | – | – | An einer Netzwerk-Übung teilgenommen oder sie als Trainer geleitet (mindestens ein Durchgang mit Teilnehmern) |
 | Q-Gruppen-Kenner | – | 40 | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
 | Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3 |
 

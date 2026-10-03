@@ -158,19 +158,22 @@ class NetworkModeFrame:
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
                  practice_start=None, practice_stop=None, adjust_tempo=None, version=None,
-                 updater=None):
+                 updater=None, session_closed=None):
         """Übungszeit zählt beim Teilnehmer nur, solange ein Durchgang läuft
         (practice_start/practice_stop), nicht beim Warten auf den Trainer;
         die Reiter bleiben gesperrt, solange er verbunden ist.
 
         `version`: eigene Programmversion; `updater` (widgets.updater)
-        bietet an, auf die des Trainers zu aktualisieren."""
+        bietet an, auf die des Trainers zu aktualisieren.
+        `session_closed`: Der Trainer hat seine Sitzung geschlossen (dann
+        die Diplome prüfen: Clubabend gilt auch fürs Leiten)."""
         self.root = parent.winfo_toplevel()
         self.version = version
         self.updater = updater
         self.adjust_tempo = adjust_tempo
         self.practice_start = practice_start or (lambda: None)
         self.practice_stop = practice_stop or (lambda: None)
+        self.session_closed = session_closed or (lambda: None)
         self.charset_var = charset_var
         self.wpm_var = wpm_var
         self.freq_var = freq_var
@@ -771,6 +774,7 @@ class NetworkModeFrame:
         self.trainer_status_var.set(tr("Sitzung geschlossen."))
         self._lock_role()
         self._refresh_table()
+        self.session_closed()
 
     def _on_server_event(self, event):
         kind, name = event[0], event[1]
@@ -1051,6 +1055,7 @@ class NetworkModeFrame:
                                    "silent": self.run_speaker})
             if self.run_signs and (self.listen_var.get() or self.run_speaker):
                 self._play_signs(END_TEXT, wpm, None, preset)
+            self._log_led_run(wpm)
         self.start_button.config(text=tr("Start"))
         self.next_button.config(state="disabled")
         self.export_button.config(state="normal" if self.board is not None and self.board.items else "disabled")
@@ -1062,6 +1067,17 @@ class NetworkModeFrame:
         self._show_content_options()
         self._refresh_table()
         self._refresh_solution()
+
+    def _log_led_run(self, wpm):
+        """Geleiteten Durchgang vermerken, wenn jemand mitgemacht hat – nur
+        für das Diplom Clubabend. Der Trainer tippt nicht mit: keine
+        Statistik, keine Übungszeit, nicht im Fortschrittsverlauf."""
+        if not self.item_n or self.board is None or not any(self.board.expected.values()):
+            return
+        try:
+            stats.log_result(self.session_mode, 0, 0, wpm, role=TRAINER, participants=len(self.board.names))
+        except OSError:
+            pass
 
     def _show_progress(self):
         if not self.run_active or self.item is None:
