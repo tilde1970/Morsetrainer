@@ -7,9 +7,13 @@
   in the review box are included in the daily practice after Koch, so
   they are repeated and do not fade.
 - **Network:** a dropped connection (Wi-Fi gone, computer asleep) is now
-  noticed after about half a minute, so the name is free again and the
-  participant can rejoin right away. Before, it stayed taken for up to a
-  quarter of an hour. Overlong answers from the network are cut so the
+  noticed after about 15 seconds, even in the middle of a run: trainer and
+  participants send each other a regular sign of life. The name is free
+  again and the participant can rejoin right away; before, it stayed taken
+  for up to a quarter of an hour. From the same computer, rejoining works
+  at once, even before the drop has been noticed. With an older version on the other side
+  it takes a little longer (about half a minute, while nothing is being
+  sent). Overlong answers from the network are cut so the
   trainer window does not freeze.
 - **Stability:** if a result cannot be saved (disk full), Rufz, contest and
   QSO still finish their evaluation. Statistics files that were edited by

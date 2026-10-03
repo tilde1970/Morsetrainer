@@ -8,9 +8,13 @@
   Lernkartei liegen, nimmt die Tagesübung nach Koch mit dazu, damit sie
   wiederholt werden und nicht verblassen.
 - **Netzwerk:** Eine abgerissene Verbindung (WLAN weg, Rechner im
-  Ruhezustand) fällt jetzt nach etwa einer halben Minute auf. Der Name ist
-  dann wieder frei, und der Teilnehmer kann sich gleich neu anmelden.
-  Bisher blieb er bis zu einer Viertelstunde belegt. Überlange Antworten
+  Ruhezustand) fällt jetzt nach etwa 15 Sekunden auf, auch mitten im
+  Durchgang: Trainer und Teilnehmer schicken sich dafür regelmäßig ein
+  Lebenszeichen. Der Name ist dann wieder frei, und der Teilnehmer kann
+  sich gleich neu anmelden; bisher blieb er bis zu einer Viertelstunde
+  belegt. Vom selben Rechner geht das Wiederverbinden sofort, auch bevor
+  die Trennung aufgefallen ist. Mit älteren Versionen auf der anderen Seite dauert es etwas
+  länger (etwa eine halbe Minute, solange gerade nichts gesendet wird). Überlange Antworten
   aus dem Netz werden gekürzt, damit das Trainer-Fenster nicht hängt.
 - **Stabilität:** Lässt sich ein Ergebnis nicht speichern (Platte voll),
   läuft die Auswertung bei Rufz, Contest und QSO trotzdem zu Ende. Von Hand

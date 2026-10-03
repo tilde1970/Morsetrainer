@@ -28,6 +28,7 @@ class TraineeClient:
         self.outbox = queue.Queue()
         self.sock = None
         self.closing = False
+        self.stopped = threading.Event()
 
     def connect(self, host: str, port: int, name: str, pin: str, version=None) -> None:
         """Baut die Verbindung im Hintergrund auf; das Ergebnis kommt als
@@ -49,7 +50,7 @@ class TraineeClient:
         welcomed = False
         try:
             sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION,
-                                          "name": name, "pin": pin, "version": version}))
+                                          "name": name, "pin": pin, "version": version, "heartbeat": True}))
             reply = reader.read()
             if reply is None:
                 self.events.put(("error", "closed"))
@@ -60,19 +61,25 @@ class TraineeClient:
             if reply["type"] != "welcome":
                 self.events.put(("error", reply["type"]))
                 return
-            sock.settimeout(None)
+            # Trainer mit Lebenszeichen: kommt so lange gar nichts, ist er weg.
+            heartbeat = reply.get("heartbeat") is True
+            sock.settimeout(protocol.HEARTBEAT_TIMEOUT_S if heartbeat else None)
             welcomed = True
             self.events.put(("welcome", str(reply.get("session", "")), _version(reply)))
             threading.Thread(target=self._write_loop, args=(sock,), daemon=True).start()
+            if heartbeat:
+                threading.Thread(target=self._heartbeat_loop, daemon=True).start()
             while True:
                 message = reader.read()
                 if message is None:
                     break
-                self.events.put(("message", message, time.time()))
+                if message["type"] != "ping":
+                    self.events.put(("message", message, time.time()))
         except (OSError, protocol.ProtocolError) as exc:
             if not welcomed:
                 self.events.put(("error", str(exc)))
         finally:
+            self.stopped.set()
             self.outbox.put(None)
             _close(sock)
             if welcomed:
@@ -89,11 +96,16 @@ class TraineeClient:
                 _close(sock)
                 return
 
+    def _heartbeat_loop(self) -> None:
+        while not self.stopped.wait(protocol.HEARTBEAT_INTERVAL_S):
+            self.send(protocol.PING)
+
     def send(self, message: dict) -> None:
         self.outbox.put(protocol.encode(message))
 
     def close(self) -> None:
         self.closing = True
+        self.stopped.set()
         self.outbox.put(None)
         if self.sock is not None:
             _close(self.sock)

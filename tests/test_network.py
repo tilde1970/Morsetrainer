@@ -322,10 +322,39 @@ class ConnectionTest(unittest.TestCase):
         _, event = self.join("DL4YM")
         self.assertEqual(event, ("welcome", "Kurs", None))
         self.assertEqual(self.join("DK1AB", pin="0000")[1], ("reject", "pin", None))
-        self.assertEqual(self.join("DL4YM")[1], ("reject", "name", None))
         self.assertEqual(self.join("  ")[1], ("reject", "name", None))
         self.assertEqual(self.server_events(1), [("join", "DL4YM")])
         self.assertEqual(self.server.names(), ["DL4YM"])
+
+    def test_same_name_from_another_computer_is_rejected(self):
+        self.join("DL4YM")
+        with socket.socket() as sock:
+            try:
+                sock.bind(("127.0.0.2", 0))  # anderer „Rechner“ (unter Linux geht ganz 127.x)
+            except OSError:
+                self.skipTest("keine zweite Loopback-Adresse")
+            sock.connect(("127.0.0.1", self.server.port))
+            sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION, "name": "DL4YM",
+                                          "pin": "4711"}))
+            sock.settimeout(2)
+            self.assertEqual(protocol.LineReader(sock).read()["reason"], "name")
+        self.assertEqual(self.server.names(), ["DL4YM"])
+
+    def test_same_name_from_same_computer_replaces_stale_connection(self):
+        # WLAN kurz weg: Der Teilnehmer ist schon wieder da, bevor der Trainer
+        # die alte Verbindung als abgerissen erkannt hat.
+        old, _ = self.join("DL4YM")
+        self.server_events(1)
+        new, event = self.join("DL4YM")
+        self.assertEqual(event, ("welcome", "Kurs", None))
+        self.assertEqual(self.server.names(), ["DL4YM"])
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(old.poll()) or ("closed",) in events))
+        self.assertEqual(self.server_events(1), [("join", "DL4YM")])  # kein "leave" dazwischen
+        self.server.broadcast({"type": "item", "n": 1, "text": "KMR"})
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(new.poll()) or events))
+        self.assertEqual(events[0][1]["text"], "KMR")
 
     def test_wrong_protocol_version_is_rejected(self):
         with socket.create_connection(("127.0.0.1", self.server.port)) as sock:
@@ -380,6 +409,72 @@ class ConnectionTest(unittest.TestCase):
             self.assertEqual(sock.recv(100), b"")  # Verbindung zu
         self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
 
+
+
+class HeartbeatTest(unittest.TestCase):
+    """Lebenszeichen: Wer verschwindet, ohne die Verbindung zu schließen
+    (WLAN weg), fällt nach HEARTBEAT_TIMEOUT_S auf. Zeiten hier verkürzt."""
+
+    def setUp(self):
+        for name, value in (("HEARTBEAT_INTERVAL_S", 0.1), ("HEARTBEAT_TIMEOUT_S", 0.6)):
+            patch = mock.patch.object(protocol, name, value)
+            patch.start()
+            self.addCleanup(patch.stop)
+        self.server = TrainerServer("Kurs", "4711")
+        self.server.start(0)
+        self.addCleanup(self.server.stop)
+
+    def hello(self, sock, **extra):
+        sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION, "name": "DL4YM",
+                                      "pin": "4711", **extra}))
+        sock.settimeout(2)
+        return protocol.LineReader(sock)
+
+    def test_silent_participant_is_dropped(self):
+        with socket.create_connection(("127.0.0.1", self.server.port)) as sock:
+            reader = self.hello(sock, heartbeat=True)
+            self.assertEqual(reader.read()["heartbeat"], True)
+            self.assertEqual(reader.read(), protocol.PING)  # der Trainer schickt selbst welche
+            events = []
+            self.assertTrue(wait_for(lambda: events.extend(self.server.poll()) or ("leave", "DL4YM") in events))
+        self.assertEqual(self.server.names(), [])
+
+    def test_older_participant_without_heartbeat_stays(self):
+        with socket.create_connection(("127.0.0.1", self.server.port)) as sock:
+            reader = self.hello(sock)
+            self.assertNotEqual(reader.read().get("heartbeat"), True)
+            time.sleep(1.0)
+            self.assertEqual(self.server.names(), ["DL4YM"])
+            sock.settimeout(0.3)
+            with self.assertRaises(socket.timeout):
+                reader.read()  # bekommt keine Lebenszeichen, die er nicht kennt
+
+    def test_client_keeps_connection_alive_and_hides_pings(self):
+        client = net_client.TraineeClient()
+        self.addCleanup(client.close)
+        client.connect("127.0.0.1", self.server.port, "DL4YM", "4711")
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
+        self.assertEqual(events[0][0], "welcome")
+        time.sleep(1.5)  # mehr als zwei Wartezeiten ohne eigene Nachricht
+        self.assertEqual(self.server.names(), ["DL4YM"])
+        self.assertEqual(client.poll(), [])  # Lebenszeichen gehen nicht an die Oberfläche
+
+    def test_client_notices_silent_trainer(self):
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            client = net_client.TraineeClient()
+            self.addCleanup(client.close)
+            client.connect("127.0.0.1", listener.getsockname()[1], "DL4YM", "4711")
+            conn, _ = listener.accept()
+            with conn:
+                conn.settimeout(2)
+                self.assertTrue(protocol.LineReader(conn).read()["heartbeat"])
+                conn.sendall(protocol.encode({"type": "welcome", "session": "Kurs", "heartbeat": True}))
+                events = []
+                self.assertTrue(wait_for(lambda: events.extend(client.poll()) or ("closed",) in events))
+                self.assertEqual(events[0][0], "welcome")
 
 class NetworkTabTest(unittest.TestCase):
     """Trainer und Teilnehmer als zwei Reiter in einem Fenster."""

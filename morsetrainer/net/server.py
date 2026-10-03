@@ -9,10 +9,12 @@ die Ereignisse mit poll() ab und ruft nie blockierend ins Netz:
     ("paper", name, message)  abgetippte Zeile vom Papier
 
 Ein Teilnehmer, dessen Verbindung abgerissen ist, kann sich unter
-demselben Namen wieder anmelden; solange die alte Verbindung steht, ist
-der Name vergeben. Eine stillschweigend abgerissene (WLAN weg) erkennt
-das Betriebssystem per Keepalive nach etwa einer halben Minute
-(protocol.enable_keepalive)."""
+demselben Namen wieder anmelden. Solange die alte Verbindung steht, ist
+der Name für andere Rechner vergeben; vom selben Rechner (gleiche
+Adresse) ersetzt die neue Anmeldung die alte sofort. Eine stillschweigend
+abgerissene Verbindung (WLAN weg) fällt nach protocol.HEARTBEAT_TIMEOUT_S
+ohne Lebenszeichen auf, bei älteren Teilnehmer-Versionen über das
+TCP-Keepalive (protocol.enable_keepalive)."""
 import json
 import queue
 import socket
@@ -32,8 +34,10 @@ class Connection:
     """Ein Teilnehmer. Gesendet wird aus einem eigenen Thread, damit ein
     hängender Rechner weder die Oberfläche noch die anderen aufhält."""
 
-    def __init__(self, sock):
+    def __init__(self, sock, heartbeat=False):
         self.sock = sock
+        self.host = _peer_host(sock)
+        self.heartbeat = heartbeat  # Teilnehmer schickt Lebenszeichen (protocol.PING)
         self.outbox = queue.Queue()
         threading.Thread(target=self._write_loop, daemon=True).start()
 
@@ -67,6 +71,7 @@ class TrainerServer:
         self.listener = None
         self.discovery = None
         self.running = False
+        self.stopped = threading.Event()
         self.port = None
 
     # --- Starten und Beenden ----------------------------------------------------
@@ -85,6 +90,7 @@ class TrainerServer:
         self.port = listener.getsockname()[1]
         self.running = True
         threading.Thread(target=self._accept_loop, daemon=True).start()
+        threading.Thread(target=self._heartbeat_loop, daemon=True).start()
         self._start_discovery()
 
     def _start_discovery(self) -> None:
@@ -103,6 +109,7 @@ class TrainerServer:
 
     def stop(self) -> None:
         self.running = False
+        self.stopped.set()
         for sock in (self.listener, self.discovery):
             if sock is not None:
                 try:
@@ -131,6 +138,14 @@ class TrainerServer:
             protocol.enable_keepalive(sock)
             threading.Thread(target=self._serve, args=(sock,), daemon=True).start()
 
+    def _heartbeat_loop(self) -> None:
+        """Lebenszeichen an alle, die selbst welche schicken."""
+        while not self.stopped.wait(protocol.HEARTBEAT_INTERVAL_S):
+            with self.lock:
+                connections = [conn for conn in self.connections.values() if conn.heartbeat]
+            for conn in connections:
+                conn.send(protocol.PING)
+
     def _discovery_loop(self, sock) -> None:
         reply = json.dumps({"session": self.session, "port": self.port}).encode("utf-8")
         sock.settimeout(IDLE_TIMEOUT_S)
@@ -155,18 +170,28 @@ class TrainerServer:
             hello = reader.read()
             if hello is None or hello.get("type") != "hello":
                 return
-            sock.settimeout(None)
+            # Mit Lebenszeichen: kommt so lange gar nichts, ist der Teilnehmer weg.
+            heartbeat = hello.get("heartbeat") is True
+            sock.settimeout(protocol.HEARTBEAT_TIMEOUT_S if heartbeat else None)
             reason, name = self._check(hello)
+            replaced = None
             if reason is None:
                 with self.lock:
-                    if name in self.connections or not self.running:
+                    old = self.connections.get(name)
+                    if not self.running or old is not None and (old.host is None or old.host != _peer_host(sock)):
                         reason = "name"
                     else:
-                        conn = self.connections[name] = Connection(sock)
+                        # Derselbe Name vom selben Rechner: Die alte Verbindung ist
+                        # abgerissen, ohne dass es schon auffiel (WLAN kurz weg).
+                        replaced = old
+                        conn = self.connections[name] = Connection(sock, heartbeat)
+            if replaced is not None:
+                replaced.close()  # ihr Lese-Thread meldet kein "leave", der Name ist ja wieder da
             if reason is not None:
                 sock.sendall(protocol.encode({"type": "reject", "reason": reason, "version": self.version}))
                 return
-            conn.send({"type": "welcome", "session": self.session, "version": self.version})
+            conn.send({"type": "welcome", "session": self.session, "version": self.version,
+                       "heartbeat": heartbeat})
             self.events.put(("join", name))
             while self.running:
                 message = reader.read()
@@ -220,6 +245,13 @@ class TrainerServer:
             except queue.Empty:
                 return events
 
+
+
+def _peer_host(sock):
+    try:
+        return sock.getpeername()[0]
+    except OSError:
+        return None
 
 
 def _close(sock) -> None:

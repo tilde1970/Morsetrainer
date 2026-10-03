@@ -2,14 +2,15 @@
 (UTF-8) mit dem Schlüssel "type".
 
 Teilnehmer -> Trainer:
-    hello   {"proto", "name", "pin", "version"}
+    hello   {"proto", "name", "pin", "version", "heartbeat"}
                                               erste Nachricht, sonst Abbruch
     answer  {"n", "typed", "latency", "replayed"}
     paper   {"n", "typed"}                    nach dem Durchgang vom Papier
                                               abgetippte Zeile (ohne Zeit)
 
 Trainer -> Teilnehmer:
-    welcome {"session", "version"}            angenommen
+    welcome {"session", "version", "heartbeat"}
+                                              angenommen
     reject  {"reason", "version"}             abgelehnt (REJECT_REASONS), danach zu
 
 "version" ist die Programmversion (z. B. "2.16"), unabhängig vom
@@ -34,6 +35,14 @@ Protokoll: Ist die des Trainers neuer, bietet der Teilnehmer ein Update an
     end     {"signs", "wpm", "band", "silent"}
                                               Durchgang zu Ende; "signs": + spielen
 
+Beide Richtungen:
+    ping    {}                                Lebenszeichen, sonst ohne Bedeutung
+
+"heartbeat": true in hello und welcome heißt, dass beide Seiten alle
+HEARTBEAT_INTERVAL_S ein ping schicken; kommt HEARTBEAT_TIMEOUT_S lang gar
+nichts, gilt die Verbindung als abgerissen. Ältere Versionen kennen das
+nicht, mit ihnen bleibt es beim TCP-Keepalive.
+
 Gefunden wird ein Trainer per UDP-Broadcast: DISCOVER_QUERY an
 DISCOVERY_PORT, die Antwort ist ein JSON-Objekt {"session", "port"}."""
 import json
@@ -49,11 +58,16 @@ NAME_MAX = 20
 TEXT_MAX = 200
 
 REJECT_REASONS = ("proto", "pin", "name")
-# Abgerissene Verbindungen (WLAN weg, Rechner im Ruhezustand) erkennen:
+# Abgerissene Verbindungen (WLAN weg, Rechner im Ruhezustand) erkennen.
+# Ohne das blieben der Name eines verschwundenen Teilnehmers bis zu einer
+# Viertelstunde belegt und ein Teilnehmer ohne Trainer hängen.
+# Lebenszeichen (ping): erkennt es in jeder Lage nach HEARTBEAT_TIMEOUT_S.
+HEARTBEAT_INTERVAL_S = 5.0
+HEARTBEAT_TIMEOUT_S = 15.0
+# TCP-Keepalive für Gegenstellen ohne Lebenszeichen (ältere Versionen):
 # Nach so vielen Sekunden Stille fragt das Betriebssystem nach, dann alle
 # KEEPALIVE_INTERVAL_S, und gibt nach KEEPALIVE_COUNT Fehlversuchen auf
-# (etwa 25 s). Ohne das blieben der Name eines verschwundenen Teilnehmers
-# bis zu einer Viertelstunde belegt und ein Teilnehmer ohne Trainer hängen.
+# (etwa 25 s). Greift nur, solange keine gesendeten Daten unbestätigt sind.
 KEEPALIVE_IDLE_S = 10
 KEEPALIVE_INTERVAL_S = 5
 KEEPALIVE_COUNT = 3
@@ -104,11 +118,16 @@ def enable_keepalive(sock: socket.socket) -> None:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     except OSError:
         return
-    if hasattr(socket, "SIO_KEEPALIVE_VALS"):  # Windows
+    if hasattr(socket, "SIO_KEEPALIVE_VALS"):  # Windows; Anzahl der Versuche ab Windows 10 1709
         try:
             sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, KEEPALIVE_IDLE_S * 1000, KEEPALIVE_INTERVAL_S * 1000))
         except (OSError, ValueError):
             pass
+        if hasattr(socket, "TCP_KEEPCNT"):
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, KEEPALIVE_COUNT)
+            except OSError:
+                pass
         return
     # TCP_KEEPIDLE unter Linux, TCP_KEEPALIVE unter macOS
     idle = getattr(socket, "TCP_KEEPIDLE", None) or getattr(socket, "TCP_KEEPALIVE", None)
@@ -120,6 +139,9 @@ def enable_keepalive(sock: socket.socket) -> None:
                 sock.setsockopt(socket.IPPROTO_TCP, option, value)
             except OSError:
                 pass
+
+
+PING = {"type": "ping"}
 
 
 def clean_name(name) -> str:
