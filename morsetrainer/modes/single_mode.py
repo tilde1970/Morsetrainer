@@ -38,6 +38,7 @@ from morsetrainer.core.morse import (
     vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
+from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
@@ -94,8 +95,9 @@ class RetryQueue:
         self.waiting.pop(ch, None)
 
 
-class SingleModeFrame:
+class SingleModeFrame(DailyModeMixin):
     uses_vary = True
+    daily_keys = ("icr",)
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
                  vary_var=None):
@@ -129,11 +131,12 @@ class SingleModeFrame:
         self.deadline = None        # Frist für das aktuelle Zeichen (time.time()), ab erstem Hören
         self.replayed = False       # aktuelles Zeichen mit der Leertaste wiederholt
         self.last_typed = None      # falsche Antwort, zum Vergleich mit vorgespielt
+        self.block_end = None       # Ende eines Tagesübungs-Blocks (time.time())
 
         self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
-        options = theme.card(parent, tr("Einstellungen"))
+        options = self.options_card = theme.card(parent, tr("Einstellungen"))
         icr = ttk.Frame(options)
         icr.pack(fill="x")
         self.icr_var = tk.BooleanVar(value=True)
@@ -211,11 +214,13 @@ class SingleModeFrame:
         self.retries = RetryQueue()
         self.correcting = False
         self.icr_whole_session = self.icr_var.get()
+        self.block_end = self._daily_deadline()
         self.start_button.config(text=tr("Stop"))
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
         self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get(),
-                                          review_promote=True, config_extra={"lesson": koch.lesson_of(charset)})
+                                          review_promote=True,
+                                          config_extra={"lesson": koch.lesson_of(charset), **self._daily_config()})
         self.picker = CharPicker(charset, self.weighted_var.get(), self.session_stats)
         self.history = []
         self.history_var.set("")
@@ -241,6 +246,7 @@ class SingleModeFrame:
         if self.icr_whole_session and self.limit <= GROUPS_HINT_MAX_LIMIT:
             self.groups_result = (self.charset, summary["correct"], summary["total"])
         path = self.session_stats.finalize()
+        self._remember_result(self.session_stats, summary)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
 
@@ -249,6 +255,10 @@ class SingleModeFrame:
 
     def next_char(self):
         if not self.running:
+            return
+        if self.block_end is not None and time.time() >= self.block_end:
+            # Tagesübung: der Block endet zwischen zwei Zeichen, nie mitten in einer Antwort.
+            self.stop()
             return
         self.waiting_for_input = False
         self.correcting = False

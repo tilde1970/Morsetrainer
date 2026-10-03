@@ -212,6 +212,7 @@ class SessionStats:
         close the log file. Returns the log file path, or None if nothing
         was ever recorded (in which case the empty file is removed).
         `extra` adds fields to the summary line (e.g. "wpm_effective_reached")."""
+        self.duration_s = round((datetime.now() - self.start_time).total_seconds(), 1)
         if not self.rounds:
             self._close()
             try:
@@ -219,9 +220,8 @@ class SessionStats:
             except OSError:
                 pass
             return None
-        duration = round((datetime.now() - self.start_time).total_seconds(), 1)
         self._write_line({
-            "type": "summary", **self.summary(), "duration_s": duration, **(extra or {}),
+            "type": "summary", **self.summary(), "duration_s": self.duration_s, **(extra or {}),
             "per_char": self._per_char_summary(),
         })
         self._close()

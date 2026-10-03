@@ -410,6 +410,64 @@ class SingleCharTest(AppTestCase):
         self.assertIsNone(s.groups_result)
 
 
+class DailyInterfaceTest(AppTestCase):
+    """Schnittstelle der Reiter für die Tagesübung (modes/daily_support.py)."""
+
+    def test_configure_hides_options_and_release_restores_only_daily_keys(self):
+        g = self.mode("Gruppen")
+        g.restore_settings({"input_style": sq.MEMORIZE, "adaptive_tempo": True, "band": "light",
+                            "give_up": 3, "adaptive": False, "min_len": 3, "max_len": 4})
+        position = g.options_card.master.pack_slaves().index(g.options_card)
+        g.daily_configure(4.5, input_style=sq.COPY, adaptive_tempo=False, band=None, give_up=1,
+                          adaptive=True, min_len=2, max_len=6)
+        self.assertEqual((g.style_var.get(), g.tempo_var.get(), g.band_var.get(), g.max_len_var.get()),
+                         (sq.COPY, False, "aus", 6))
+        self.assertEqual(g.options_card.winfo_manager(), "")
+        g.saved_length = 5  # beim Üben erreicht: bleibt
+        g.daily_release()
+        self.assertEqual((g.style_var.get(), g.tempo_var.get(), g.band_var.get(), g.give_up_var.get(),
+                          g.adaptive_var.get(), g.min_len_var.get(), g.max_len_var.get()),
+                         (sq.MEMORIZE, True, "leicht", 3, False, 3, 4))
+        self.assertEqual(g.options_card.master.pack_slaves().index(g.options_card), position)
+        self.assertEqual(g.saved_length, 5)
+        self.assertIsNone(g.daily_minutes)
+
+    def test_daily_block_sets_deadline_flag_and_result(self):
+        g = self.mode("Gruppen")
+        g.daily_configure(0.5, input_style=sq.COPY, adaptive_tempo=False, band=None, give_up=1)
+        g.start()
+        self.assertAlmostEqual(g.deadline - time.time(), 30, delta=2)
+        path = g.session_stats.log_path
+        g.running = True
+        g.current_sequence, g.attempts, g.replayed, g.repeat_pending = "KM", 0, False, False
+        g.voice = (20, 600)
+        g.tone_starts = [time.time() - 1.0] * 2
+        g.tone_ends = [time.time() - 0.1] * 2
+        g.enter_time = None
+        g.waiting_for_input = True
+        g.input_var.set("KM")
+        g.on_submit()
+        g.stop()
+        self.assertTrue(list(stats._read_jsonl(path))[0]["daily"])
+        result = g.daily_result()
+        self.assertEqual((result["first_try_correct"], result["first_try_total"], result["total"]), (2, 2, 2))
+        self.assertEqual(result["wpm"], self.app.wpm_var.get())
+
+    def test_single_block_ends_between_chars(self):
+        s = self.mode("Einzelzeichen")
+        s.daily_configure(1, icr=True)
+        s.start()
+        self.assertIsNotNone(s.block_end)
+        s.block_end = time.time() - 1
+        s.next_char()
+        self.assertFalse(s.running)
+        self.assertIsNotNone(s.daily_result())
+        s.daily_release()
+        s.start()
+        self.assertIsNone(s.block_end)  # ohne Tagesübung kein Blockende
+        s.stop()
+
+
 class ContinuousTest(AppTestCase):
     def test_guessing_ahead_and_overtyping_do_not_count(self):
         c = self.mode("Kontinuierlich")
@@ -448,6 +506,7 @@ class ContinuousStopTest(AppTestCase):
         c._finalize_session(stopped_at=now)
         summary = list(stats._read_jsonl(path))[-1]
         self.assertEqual((summary["extra_keys"], summary["completed"]), (0, False))  # von Hand gestoppt
+        self.assertEqual((c.daily_result()["extra_keys"], c.daily_result()["completed"]), (0, False))
         self.assertEqual(c.koch_result[1:], (2, 2))  # das letzte K zählt nicht als verpasst
         self.assertIn("gesendet  K M", c.diff_var.get())
         self.assertIn("fehlt/zu viel", c.diff_var.get())

@@ -142,6 +142,7 @@ def generate_callsign(letters: CharPicker, digits: CharPicker) -> str:
 
 class CallsignModeFrame(SequenceModeFrame):
     session_mode = "callsign"
+    daily_keys = SequenceModeFrame.daily_keys + ("prefixes", "learned_only", "rufz")
     intro_text = N_(
         "Es werden echte Rufzeichen aus der Super-Check-Partial-Liste gesendet "
         "(aktive Contest-Stationen weltweit). Mit dem Präfix-Filter kannst du dich "

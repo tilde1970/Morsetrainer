@@ -56,6 +56,7 @@ class AdaptiveLength:
 
 class GroupModeFrame(SequenceModeFrame):
     session_mode = "group"
+    daily_keys = SequenceModeFrame.daily_keys + ("adaptive", "min_len", "max_len")
     send_prosigns = True
     koch_progress = True
     review_promotes = True

@@ -52,6 +52,7 @@ from morsetrainer.core.morse import (
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
+from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
@@ -91,7 +92,8 @@ def clean_input(text: str) -> str:
     return "".join(ch for ch in text.upper() if ch in MORSE_CODE)
 
 
-class SequenceModeFrame:
+class SequenceModeFrame(DailyModeMixin):
+    daily_keys = ("input_style", "adaptive_tempo", "band", "give_up")
     session_mode = "group"
     intro_text = ""
     # "VVV =" vor der ersten und "+" nach der letzten Sequenz senden.
@@ -230,7 +232,7 @@ class SequenceModeFrame:
         if self.intro_text:
             theme.hint(parent, text=tr(self.intro_text), wrap=560).pack(anchor="w", padx=10, pady=(8, 2))
 
-        options = theme.card(parent, tr("Einstellungen"))
+        options = self.options_card = theme.card(parent, tr("Einstellungen"))
         self._build_extra_settings(options)
 
         style = ttk.Frame(options)
@@ -398,6 +400,8 @@ class SequenceModeFrame:
             self.status_var.set(tr("Ungültige Dauer!"))
             return
         self.deadline = time.time() + minutes * 60 if minutes and not self._fixed_run() else None
+        if self.daily_minutes and not self._fixed_run():
+            self.deadline = self._daily_deadline()
         self.session_id += 1
         self.running = True
         self.style = self.style_var.get()
@@ -442,7 +446,8 @@ class SequenceModeFrame:
     def _config_extra(self, preset) -> dict:
         """Bedingungen des Durchgangs für die config-Zeile der Sitzungsdatei."""
         extra = {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
-                 "band": preset, "adaptive_tempo": self.tempo is not None and not self._fixed_run()}
+                 "band": preset, "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
+                 **self._daily_config()}
         if preset:
             extra["band_gain"] = round(self.band_gain_var.get())
         return extra
@@ -514,6 +519,8 @@ class SequenceModeFrame:
             # für Lektion, Tagesübung und Diplome.
             extra.update(first_try_correct=self.first_try_correct, first_try_total=self.first_try_total)
         path = self.session_stats.finalize(extra)
+        self._remember_result(self.session_stats, self.session_stats.summary(),
+                              **{k: v for k, v in extra.items() if k.startswith("first_try")})
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         if self.session_stats.self_assessed and path is not None:
             self.stats_panel.save_var.set(

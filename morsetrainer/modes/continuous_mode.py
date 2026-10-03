@@ -45,6 +45,7 @@ from morsetrainer.widgets import theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
+from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.modes.sequence_mode import BAND_LABELS
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
@@ -127,7 +128,8 @@ PREVIEW_CHARS = 200
 PREVIEW_SLACK_SECONDS = 1.0
 
 
-class ContinuousModeFrame:
+class ContinuousModeFrame(DailyModeMixin):
+    daily_keys = ("content", "group_len", "band")
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop):
         self.root = parent.winfo_toplevel()
         self.charset_var = charset_var
@@ -168,7 +170,7 @@ class ContinuousModeFrame:
                     "F5 startet und stoppt, Esc stoppt."),
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
-        options = theme.card(parent, tr("Einstellungen"))
+        options = self.options_card = theme.card(parent, tr("Einstellungen"))
         duration = ttk.Frame(options)
         duration.pack(fill="x")
         ttk.Label(duration, text=tr("Dauer:")).pack(side="left", padx=(0, 4))
@@ -266,6 +268,8 @@ class ContinuousModeFrame:
             self.status_var.set(tr("Ungültige Dauer!"))
             return
         self.deadline = time.time() + minutes * 60 if minutes else None
+        if self.daily_minutes:
+            self.deadline = self._daily_deadline()
         self.finishing = False
         self.end_sent = False
         self.koch_result = None
@@ -300,7 +304,7 @@ class ContinuousModeFrame:
                                           char_stats=self.content not in PLAIN_TEXT,
                                           group_len=self.group_len or None,
                                           config_extra={"lesson": koch.lesson_of(charset), "band": preset,
-                                                        "content": self.content})
+                                                        "content": self.content, **self._daily_config()})
         self.stats_panel.reset()
         self.live_var.set(tr("Gesendet: {n} Zeichen").format(n=0))
         self.typed_preview_var.set("")
@@ -499,6 +503,7 @@ class ContinuousModeFrame:
         # Überzählige Tasten zählen für Lektion und Diplome als Fehler;
         # „completed“: bis zum Ende der eingestellten Dauer, nicht von Hand gestoppt.
         path = self.session_stats.finalize({"extra_keys": extra, "completed": self.finishing})
+        self._remember_result(self.session_stats, summary, extra_keys=extra, completed=self.finishing)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
 
