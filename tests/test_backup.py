@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 import tests  # noqa: F401  (Pfad und Sprache)
-from morsetrainer.core import backup
+from morsetrainer.core import backup, db
 
 
 def make_data(root: Path, tag: str) -> None:
@@ -116,6 +116,58 @@ class BackupTest(unittest.TestCase):
                 with self.assertRaises(backup.BackupError):
                     backup.import_data(self.zip, "9.9", self.new)
                 self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
+
+
+class DatabaseBackupTest(unittest.TestCase):
+    """Die Datenbank kommt als stimmiger Schnappschuss in die Sicherung,
+    auch während sie offen ist und Änderungen noch im Journal stehen."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.old, self.new = self.root / "alt", self.root / "neu"
+        make_data(self.old, "alt")
+        make_data(self.new, "neu")
+        self.zip = self.root / "sicherung.zip"
+        self.addCleanup(db.use, None)
+        db.use(self.old / "stats" / db.DB_FILE_NAME)
+        db.save_state("all_time", {"tag": "alt"})  # Verbindung bleibt offen, Änderung steht im -wal
+
+    def test_export_snapshots_open_database(self):
+        self.assertTrue((self.old / "stats" / (db.DB_FILE_NAME + "-wal")).exists())
+        count = backup.export_data(self.zip, "9.9", self.old)
+        with zipfile.ZipFile(self.zip) as archive:
+            names = set(archive.namelist())
+            raw = archive.read(f"stats/{db.DB_FILE_NAME}")
+        self.assertIn(f"stats/{db.DB_FILE_NAME}", names)
+        self.assertFalse(any(n.endswith(("-wal", "-shm")) for n in names))
+        self.assertEqual(count, 5)
+        copy = self.root / "kopie.db"
+        copy.write_bytes(raw)
+        db.use(copy)
+        self.assertEqual(db.load_state("all_time", {}), {"tag": "alt"})
+
+    def test_import_brings_database_and_reopens(self):
+        backup.export_data(self.zip, "9.9", self.old)
+        db.use(self.new / "stats" / db.DB_FILE_NAME)
+        db.save_state("all_time", {"tag": "neu"})
+        backup.import_data(self.zip, "9.9", self.new)
+        # Die offene Verbindung zur ersetzten Datei ist zu; der nächste
+        # Zugriff liest die eingelesene.
+        self.assertEqual(db.load_state("all_time", {}), {"tag": "alt"})
+
+    def test_rejects_damaged_database(self):
+        backup.export_data(self.zip, "9.9", self.old)
+        with zipfile.ZipFile(self.zip) as archive:
+            members = {n: archive.read(n) for n in archive.namelist()}
+        members[f"stats/{db.DB_FILE_NAME}"] = b"keine Datenbank" * 100
+        with zipfile.ZipFile(self.zip, "w") as archive:
+            for name, data in members.items():
+                archive.writestr(name, data)
+        with self.assertRaises(backup.BackupError):
+            backup.import_data(self.zip, "9.9", self.new)
+        self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
 
 
 if __name__ == "__main__":

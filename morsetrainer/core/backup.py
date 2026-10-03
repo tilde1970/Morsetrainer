@@ -8,19 +8,27 @@ Nicht dabei sind die Stimme für die Sprachausgabe (groß, lässt sich neu
 laden), das Fehlerprotokoll sowie halb geschriebene (*.tmp) und
 beiseitegelegte (*.defekt-*) Dateien.
 
+Die Datenbank (core/db.py) wird nicht als Datei kopiert, sondern über die
+Sicherungsfunktion von SQLite: Das ergibt einen stimmigen Stand, auch wenn
+gerade geschrieben wird oder Änderungen noch im Journal (-wal) stehen.
+
 Beim Einlesen wird stats/ vollständig ersetzt; die übrigen Dateien nur,
 wenn die Sicherung sie enthält. Vorher landet der bisherige Stand als
 "vor-import-<Zeitstempel>.zip" in DATA_DIR, damit sich ein versehentlicher
-Import rückgängig machen lässt."""
+Import rückgängig machen lässt. Vor dem Ersetzen wird die mitgelieferte
+Datenbank geprüft und die eigene Verbindung geschlossen."""
 import json
 import os
 import shutil
+import sqlite3
+import tempfile
 import zipfile
 import zlib
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 
 from morsetrainer import DATA_DIR
+from morsetrainer.core import db
 
 MARKER = "morsetrainer-sicherung.json"
 FORMAT = 1
@@ -32,21 +40,45 @@ class BackupError(Exception):
     """Die Datei ist keine (lesbare) Sicherung des Morsetrainers."""
 
 
+# Gehören zur Datenbankdatei und stecken im Schnappschuss mit drin.
+DB_COMPANIONS = ("-wal", "-shm", "-journal")
+
+
 def _wanted(path: Path) -> bool:
-    return path.is_file() and not path.name.endswith(".tmp") and ".defekt-" not in path.name
+    return (path.is_file() and not path.name.endswith(".tmp") and ".defekt-" not in path.name
+            and not path.name.endswith(DB_COMPANIONS))
 
 
 def _members(data_dir: Path):
-    """(Datei, Name im Archiv) aller zu sichernden Dateien."""
+    """(Datei, Name im Archiv) aller zu sichernden Dateien außer der
+    Datenbank (die schreibt export_data als Schnappschuss)."""
     for name in TOP_FILES:
         path = data_dir / name
         if _wanted(path):
             yield path, name
     stats_dir = data_dir / STATS
+    database = stats_dir / db.DB_FILE_NAME
     if stats_dir.is_dir():
         for path in sorted(stats_dir.rglob("*")):
-            if _wanted(path):
+            if _wanted(path) and path != database:
                 yield path, path.relative_to(data_dir).as_posix()
+
+
+def _snapshot(database: Path, target: Path) -> None:
+    """Stimmiger Stand der Datenbank nach `target`; wirft OSError, wenn sie
+    sich nicht lesen lässt (gesperrt, beschädigt)."""
+    try:
+        source = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=db.BUSY_TIMEOUT_MS / 1000)
+        try:
+            dest = sqlite3.connect(target)
+            try:
+                source.backup(dest)
+            finally:
+                dest.close()
+        finally:
+            source.close()
+    except sqlite3.Error as exc:
+        raise OSError(f"{database.name}: {exc}") from exc
 
 
 def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
@@ -64,6 +96,13 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
             }, indent=2))
             for path, name in _members(data_dir):
                 archive.write(path, name)
+                count += 1
+            database = data_dir / STATS / db.DB_FILE_NAME
+            if database.is_file():
+                with tempfile.TemporaryDirectory() as folder:
+                    copy = Path(folder) / db.DB_FILE_NAME
+                    _snapshot(database, copy)
+                    archive.write(copy, f"{STATS}/{db.DB_FILE_NAME}")
                 count += 1
         os.replace(tmp, target)
     except OSError:
@@ -109,6 +148,23 @@ def read_info(source: Path) -> dict:
     return info
 
 
+def _check_database(database: Path) -> None:
+    """Wirft BackupError, wenn die mitgelieferte Datenbank keine ist oder
+    beschädigt ist (sonst würde sie beim nächsten Start beiseitegelegt)."""
+    if not database.is_file():
+        return
+    try:
+        conn = sqlite3.connect(database)
+        try:
+            ok = conn.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+        finally:
+            conn.close()
+    except sqlite3.Error as exc:
+        raise BackupError(str(exc)) from exc
+    if not ok:
+        raise BackupError("database")
+
+
 def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
     """Ersetzt die Daten in `data_dir` durch die Sicherung `source` und gibt
     den Pfad der vorher angelegten Sicherung des bisherigen Stands zurück.
@@ -132,7 +188,11 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
                 with archive.open(name) as src, open(dest, "wb") as out:
                     shutil.copyfileobj(src, out)
         (staging / STATS).mkdir(parents=True, exist_ok=True)
+        _check_database(staging / STATS / db.DB_FILE_NAME)
 
+        # Unter Windows ist eine offene Datei gesperrt; der nächste Zugriff
+        # öffnet die eingelesene Datenbank.
+        db.close()
         stats_dir = data_dir / STATS
         if stats_dir.exists():
             os.replace(stats_dir, old_stats)
