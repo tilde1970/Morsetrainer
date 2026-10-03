@@ -1,5 +1,10 @@
 # Changes
 
+## Unreleased
+
+- **Faster:** statistics, the lifeline and awards are evaluated faster
+  after a run; this shows once many runs have piled up over the years.
+
 ## 2.28
 
 - **Database:** all practice data now lives in one file

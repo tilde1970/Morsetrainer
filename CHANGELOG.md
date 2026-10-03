@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Schneller:** Statistik, Lebenslinie und Diplome werden nach einem
+  Durchgang schneller ausgewertet; das macht sich bemerkbar, wenn sich
+  über die Jahre viele Durchgänge angesammelt haben.
+
 ## 2.28
 
 - **Datenbank:** Alle Übungsdaten liegen jetzt in einer Datei
