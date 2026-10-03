@@ -42,6 +42,7 @@ CONTEST_KINDS = ("cqww", "wpx", "wag", "arrldx", "iaru")
 RAGCHEW = "ragchew"
 # Klartext im Reiter Kontinuierlich (ohne eigene Texte, siehe modes/content.py).
 PLAIN_CONTENT = {"words", "phrases", "qso"}
+FLOW_WORDS_MAX = 21.9  # mit Wörtern höchstens Silber (Gold: 22 WPM)
 
 
 @dataclass(frozen=True)
@@ -63,8 +64,10 @@ AWARDS = (
     Award("wal", N_("Worked All Letters"), N_("Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, "
                                              "Gold: alle Buchstaben in Fach 6 und alle Ziffern in Fach 4"),
           (1, 2, 3), N_("Zeichen"), 1, stepped=True),
-    Award("flow", N_("Mitschreiben im Fluss"), N_("Kontinuierlich mit Klartext, voller 3-Min.-Lauf, ≥ 90 % "
-                                                 "abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM"),
+    Award("flow", N_("Mitschreiben im Fluss"), N_("Kontinuierlich mit Klartext ohne eigene Wörter, Zeichensatz "
+                                                 "mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich "
+                                                 "überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen "
+                                                 "oder QSO"),
           (10, 15, 22), N_("WPM eff."), 15, two_days=True),
     Award("qrq", N_("QRQ"), N_("Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne "
                                "Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten"),
@@ -242,6 +245,7 @@ class Status:
     value: float          # aktueller Stand (bester Wert bzw. Summe; bei `stepped` die erreichte Stufe)
     progress: tuple = None  # (erreicht, nötig) zur nächsten Stufe, wenn sich das zählen lässt
     second_day: bool = False  # Schwelle der nächsten Stufe erreicht, fehlt nur der zweite Tag
+    hint: tuple = None      # (Text mit Platzhaltern, Werte): wie nah man der nächsten Stufe ist
 
     @property
     def next_level(self):
@@ -320,8 +324,14 @@ def _flow(data: Data) -> list:
     for s in data.sessions:
         c = s.config
         if (c.get("mode") == "continuous" and c.get("content") in PLAIN_CONTENT and _full_run(s)
+                and not c.get("user_words") and _contains(c.get("charset"), koch.lesson_charset(15))
                 and _char_wpm(c) >= MIN_CHAR_WPM and _clean_share(s.summary) >= 0.9):
-            events.append((s.day, _effective_wpm(s)))
+            wpm = _effective_wpm(s)
+            # Gold nur mit Wendungen oder QSO-Text: Die eingebauten Wörter sind
+            # wenige und werden bei hohem Tempo eher wiedererkannt.
+            if c.get("content") == "words":
+                wpm = min(wpm, FLOW_WORDS_MAX)
+            events.append((s.day, wpm))
     return events
 
 
@@ -339,8 +349,9 @@ def _qrq(data: Data) -> list:
 BAND_RANK = {"light": 1, "medium": 2, "heavy": 3}
 
 
-def _qrn(data: Data) -> list:
-    events = []
+def _qrn_runs(data: Data) -> list:
+    """[(Tag, Band-Rang, Anteil)] der Läufe, die alle übrigen Bedingungen erfüllen."""
+    runs = []
     for s in data.sessions:
         c, summary = s.config, s.summary
         mode, rank = c.get("mode"), BAND_RANK.get(c.get("band"))
@@ -361,10 +372,28 @@ def _qrn(data: Data) -> list:
             share = _num(summary.get("first_try_correct")) / max(_num(summary.get("first_try_total")), 1)
         else:
             share = _num(summary.get("accuracy_pct")) / 100
-        level = rank if share >= 0.9 else 3 if rank == 3 and share >= 0.85 else 0
-        if level:
-            events.append((s.day, level))
-    return events
+        runs.append((s.day, rank, share))
+    return runs
+
+
+def _qrn_need(rank: int) -> float:
+    return 0.85 if rank == 3 else 0.9
+
+
+def _qrn(runs: list) -> list:
+    return [(day, rank) for day, rank, share in runs if share >= _qrn_need(rank)]
+
+
+BAND_NAMES = {1: N_("leicht"), 2: N_("mittel"), 3: N_("stark")}
+
+
+def _qrn_hint(runs: list, level: int):
+    rank = level + 1
+    best = max(((share, r) for _, r, share in runs if r >= rank), default=None)
+    if best is None:
+        return (N_("Noch kein Lauf ab Band {band}, der die übrigen Bedingungen erfüllt"), {"band": BAND_NAMES[rank]})
+    return (N_("Bester Lauf ab Band {band}: {share} % (nötig {need} %)"),
+            {"band": BAND_NAMES[rank], "share": int(best[0] * 100), "need": round(_qrn_need(rank) * 100)})
 
 
 def _rufz(data: Data) -> list:
@@ -382,8 +411,12 @@ def contest_errors(r: dict) -> int:
     return int(sum(_num(r.get(kind)) for kind in ("busted", "nil", "exchange")))
 
 
-def _contest(data: Data) -> list:
-    events = []
+CONTEST_LEVELS = ((20, 1, 10), (25, 2, 20), (30, 3, 25))  # (WPM, Aktivität, QSOs in 10 Min.) je Stufe
+
+
+def _contest_runs(data: Data) -> list:
+    """[(Tag, WPM, Aktivität, QSOs in 10 Min., Fehler, Fehleranteil)] der Durchgänge ≥ 10 Min."""
+    runs = []
     for r in data.results:
         minutes = _num(r.get("minutes"))
         if r.get("mode") != "contest" or minutes < 10 or not _num(r.get("total")):
@@ -391,17 +424,37 @@ def _contest(data: Data) -> list:
         wpm, activity = _num(r.get("wpm")), _num(r.get("activity"), 1)
         rate = _num(r.get("correct")) / minutes * 10  # richtige QSOs in 10 Minuten
         errors = contest_errors(r)
-        share = errors / _num(r["total"])
+        runs.append((r["day"], wpm, activity, rate, errors, errors / _num(r["total"])))
+    return runs
+
+
+def _contest_ok(level: int, errors: int, share: float) -> bool:
+    return (share <= 0.10, share <= 0.05, errors <= 1)[level]
+
+
+def _contest(runs: list) -> list:
+    events = []
+    for day, wpm, activity, rate, errors, share in runs:
         level = 0
-        if wpm >= 20 and rate >= 10 and share <= 0.10:
-            level = 1
-        if wpm >= 25 and activity >= 2 and rate >= 20 and share <= 0.05:
-            level = 2
-        if wpm >= 30 and activity >= 3 and rate >= 25 and errors <= 1:
-            level = 3
+        for i, (min_wpm, min_activity, min_rate) in enumerate(CONTEST_LEVELS):
+            if wpm >= min_wpm and activity >= min_activity and rate >= min_rate and _contest_ok(i, errors, share):
+                level = i + 1
         if level:
-            events.append((r["day"], level))
+            events.append((day, level))
     return events
+
+
+def _contest_hint(runs: list, level: int):
+    min_wpm, min_activity, min_rate = CONTEST_LEVELS[level]
+    fitting = [run for run in runs if run[1] >= min_wpm and run[2] >= min_activity]
+    if not fitting:
+        return (N_("Noch kein Durchgang mit ≥ {wpm} WPM und Aktivität ≥ {activity}"),
+                {"wpm": min_wpm, "activity": min_activity})
+    # Am nächsten: erst ohne zu viele Fehler, dann die höchste Rate.
+    _, _, _, rate, errors, share = max(fitting, key=lambda run: (_contest_ok(level, run[4], run[5]), run[3]))
+    return (N_("Bester Durchgang mit ≥ {wpm} WPM: {rate} QSOs in 10 Min. (nötig {need}), {errors} Fehler "
+               "({share} %)"),
+            {"wpm": min_wpm, "rate": int(rate), "need": min_rate, "errors": errors, "share": round(share * 100)})
 
 
 _PORTABLE = {"P", "M", "MM", "AM", "QRP", "A"}
@@ -516,10 +569,12 @@ def _window_sum(per_day: dict, first: date, last: date) -> dict:
     return out
 
 
-def _confusion(data: Data) -> list:
+def _confusion_state(data: Data):
+    """(überwunden [(Tag, 1)], offene Paare {Paar: letzter Problemtag},
+    Versuche je Tag, Verwechslungen je Tag)."""
     attempts, confusions = _daily_char_counts(data)
     if not attempts:
-        return []
+        return [], {}, attempts, confusions
     days = sorted(attempts)
     # Tage, an denen ein Paar verwechselt wurde und (im Fenster bis dahin)
     # zu den häufigsten gehörte.
@@ -537,9 +592,10 @@ def _confusion(data: Data) -> list:
             pair_tries = sum(tries.get(ch, 0) for ch in pair)
             if n >= CONFUSION_MIN and pair_tries and n / pair_tries >= CONFUSION_SHARE:
                 problem_days.setdefault(pair, []).append(day)
-    overcome = []
+    overcome, open_pairs = [], {}
     for pair, marked in problem_days.items():
         last_problem = max(marked)
+        open_pairs[pair] = last_problem
         # Frühestens 28 Tage nach dem letzten Tag als Problem, Fenster danach.
         for day in days:
             start = day - timedelta(days=CLEAN_DAYS - 1)
@@ -549,8 +605,27 @@ def _confusion(data: Data) -> list:
             conf = _window_sum(confusions, start, day).get(pair, 0)
             if all(tries.get(ch, 0) >= CLEAN_ATTEMPTS for ch in pair) and conf <= 1:
                 overcome.append((day, 1))
+                del open_pairs[pair]
                 break
-    return _cumulative(overcome)
+    return overcome, open_pairs, attempts, confusions
+
+
+def _confusion_hint(state, today: date):
+    _, open_pairs, attempts, confusions = state
+    if not open_pairs:
+        return (N_("Noch kein Paar unter deinen häufigsten Verwechslungen"), {})
+    best = None
+    for pair, last_problem in open_pairs.items():
+        start = max(last_problem + timedelta(days=1), today - timedelta(days=CLEAN_DAYS - 1))
+        tries = _window_sum(attempts, start, today)
+        days_left = max(0, (last_problem + timedelta(days=CLEAN_DAYS) - today).days)
+        fewest = min(tries.get(ch, 0) for ch in pair)
+        candidate = (days_left, -min(fewest, CLEAN_ATTEMPTS), pair, fewest)
+        if best is None or candidate[:2] < best[:2]:
+            best = candidate
+    days_left, _, pair, fewest = best
+    return (N_("Nächstes Paar {pair}: noch {days} Tage ohne Verwechslung, {tries} / {need} Versuche je Zeichen"),
+            {"pair": "/".join(sorted(pair)), "days": days_left, "tries": fewest, "need": CLEAN_ATTEMPTS})
 
 
 def _endurance(data: Data) -> list:
@@ -618,10 +693,11 @@ def evaluate(data: Data = None, today: date = None) -> dict:
     """Stand aller Diplome aus den gespeicherten Daten: {Schlüssel: Status}."""
     data = data or load_data()
     today = today or date.today()
+    qrn_runs, contest_runs, confusion = _qrn_runs(data), _contest_runs(data), _confusion_state(data)
     events = {
         "koch": _koch(data), "wal": _wal(data, today), "flow": _flow(data), "qrq": _qrq(data),
-        "qrn": _qrn(data), "rufz": _rufz(data), "contest": _contest(data), "wpx": _wpx(data),
-        "headphones": _headphones(data), "confusion": _confusion(data), "endurance": _endurance(data),
+        "qrn": _qrn(qrn_runs), "rufz": _rufz(data), "contest": _contest(contest_runs), "wpx": _wpx(data),
+        "headphones": _headphones(data), "confusion": _cumulative(confusion[0]), "endurance": _endurance(data),
         "heard": _heard(data), "first_qso": _first_qso(data), "all_contests": _all_contests(data),
         "club": _club(data), "q_groups": _q_groups(data), "digits": _digits(data, today),
     }
@@ -632,6 +708,13 @@ def evaluate(data: Data = None, today: date = None) -> dict:
         statuses[award.key] = _status(award, level_dates(found, award.targets, award.two_days), value)
     if statuses["wal"].next_level is not None:
         statuses["wal"].progress = wal_progress(data)
+    hints = {"qrn": lambda level: _qrn_hint(qrn_runs, level),
+             "contest": lambda level: _contest_hint(contest_runs, level),
+             "confusion": lambda level: _confusion_hint(confusion, today)}
+    for key, hint in hints.items():
+        status = statuses[key]
+        if status.next_level is not None and not status.second_day:
+            status.hint = hint(status.next_level)
     return statuses
 
 
@@ -713,8 +796,10 @@ def overview(state: dict = None, statuses: dict = None) -> list:
             out.append((award, status))
             continue
         shown = _status(award, merged, status.value)
-        if award.key == "wal" and shown.next_level == status.next_level:
-            shown.progress = status.progress
+        if shown.next_level == status.next_level:
+            shown.hint = status.hint
+            if award.key == "wal":
+                shown.progress = status.progress
         out.append((award, shown))
     return out
 

@@ -960,9 +960,10 @@ EN.update({
     "in Fach 4":
         "Bronze: 10 letters in box 3, Silver: all 26, Gold: all letters in box 6 and all digits in box 4",
     "Mitschreiben im Fluss": "Copying in flow",
-    "Kontinuierlich mit Klartext, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen "
-    "≥ 18 WPM":
-        "Continuous with plain text, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM",
+    "Kontinuierlich mit Klartext ohne eigene Wörter, Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, "
+    "≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen oder QSO":
+        "Continuous with plain text without your own words, character set at least lesson 15, full 3-min run, "
+        "≥ 90 % minus extra keys, characters ≥ 18 WPM; Gold only with phrases or QSO",
     "WPM eff.": "WPM eff.",
     "Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne Farnsworth, voller "
     "3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten":
@@ -990,6 +991,16 @@ EN.update({
         "the call again), characters ≥ 18 WPM",
     "Präfixe": "prefixes",
     "Kopfhörer": "Headphones",
+    "Noch kein Lauf ab Band {band}, der die übrigen Bedingungen erfüllt":
+        "No run yet from band {band} that meets the other conditions",
+    "Bester Lauf ab Band {band}: {share} % (nötig {need} %)": "Best run from band {band}: {share} % (needed {need} %)",
+    "Noch kein Durchgang mit ≥ {wpm} WPM und Aktivität ≥ {activity}":
+        "No run yet with ≥ {wpm} WPM and activity ≥ {activity}",
+    "Bester Durchgang mit ≥ {wpm} WPM: {rate} QSOs in 10 Min. (nötig {need}), {errors} Fehler ({share} %)":
+        "Best run with ≥ {wpm} WPM: {rate} QSOs in 10 min (needed {need}), {errors} errors ({share} %)",
+    "Noch kein Paar unter deinen häufigsten Verwechslungen": "No pair among your most frequent confusions yet",
+    "Nächstes Paar {pair}: noch {days} Tage ohne Verwechslung, {tries} / {need} Versuche je Zeichen":
+        "Next pair {pair}: {days} more days without confusion, {tries} / {need} attempts per character",
     "3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“; Silber und Gold "
     "mit der Länge Normal oder Lang":
         "3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and "

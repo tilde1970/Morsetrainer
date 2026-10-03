@@ -59,10 +59,19 @@ class AwardsTest(unittest.TestCase):
 
     def test_flow_and_qrq_need_full_clean_runs(self):
         flow = dict(content="words", completed=True, duration_s=180, total=100, correct=95, extra_keys=3,
-                    farnsworth_wpm=15)
+                    farnsworth_wpm=15, charset=koch.lesson_charset(20))
         runs = [session("continuous", 0, **flow), session("continuous", 1, **{**flow, "extra_keys": 10}),
                 session("continuous", 2, **{**flow, "completed": False})]
         self.assertEqual(dates("flow", data(runs)), [day(0), None, None])
+        runs = [session("continuous", 0, **{**flow, "user_words": True}),
+                session("continuous", 1, **{**flow, "charset": koch.lesson_charset(10)}),
+                session("continuous", 2, wpm=25, **{**flow, "farnsworth_wpm": None}),
+                session("continuous", 3, wpm=25, **{**flow, "farnsworth_wpm": None})]
+        # Eigene Wörter und kleiner Zeichensatz zählen nicht; mit Wörtern höchstens Silber.
+        self.assertEqual(dates("flow", data(runs)), [day(2), day(3), None])
+        for run in runs[2:]:
+            run.config["content"] = "phrases"  # Gold an zwei Tagen
+        self.assertEqual(dates("flow", data(runs)), [day(2), day(3), day(3)])
         qrq = dict(content="chars", group_len=5, charset=koch.lesson_charset(40), completed=True,
                    duration_s=200, total=300, correct=290, extra_keys=0)
         runs = [session("continuous", 0, wpm=26, **qrq), session("continuous", 1, wpm=25, **qrq),
@@ -86,6 +95,22 @@ class AwardsTest(unittest.TestCase):
                 session("group", 1, **base, first_try_correct=170, first_try_total=200),  # zu viel überlegt
                 session("group", 2, **base, first_try_correct=185, first_try_total=200, band_gain_min=100)]
         self.assertEqual(dates("qrn", data(runs))[0], day(2))
+
+    def test_hints_show_how_close_the_next_level_is(self):
+        base = dict(charset=koch.lesson_charset(30), total=200, correct=170, accuracy_pct=85.0, band_gain=100)
+        status = awards.evaluate(data([session("group", 0, band="medium", **base)]), today=day(1))["qrn"]
+        self.assertEqual(status.hint[1], {"band": "leicht", "share": 85, "need": 90})
+        self.assertIn("leicht: 85 % (nötig 90 %)", panel.detail_text(awards.BY_KEY["qrn"], status))
+        run = result("contest", 0, wpm=22, activity=1, minutes=10, correct=8, total=9, busted=1)
+        hint = awards.evaluate(data(results=[run]), today=day(1))["contest"].hint
+        self.assertEqual(hint[1], {"wpm": 20, "rate": 8, "need": 10, "errors": 1, "share": 11})
+        hint = awards.evaluate(data(), today=day(1))["confusion"].hint
+        self.assertIn("Noch kein Paar", hint[0])
+        bad = [("B", "D", False)] * 6 + [("B", "B", True)] * 50 + [("D", "D", True)] * 50
+        clean = [("B", "B", True)] * 2 + [("D", "D", True)] * 2
+        sessions = [session("single", 0, chars=bad)] + [session("single", i, chars=clean) for i in range(1, 11)]
+        hint = awards.evaluate(data(sessions), today=day(10))["confusion"].hint
+        self.assertEqual(hint[1], {"pair": "B/D", "days": 18, "tries": 20, "need": 40})
 
     def test_rufz_full_runs_without_prefix_filter(self):
         runs = [result("rufz", 0, total=50, score=3600, start_wpm=20, prefixes=[]),

@@ -105,14 +105,16 @@ Siegel des Tages auch nennt.
 Die Übersicht steht im Reiter **Statistik** unter „Diplome“: alle
 Diplome mit erreichten Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25
 Lektionen“) und ab welcher Lektion es erreichbar ist; offene stehen grau.
-Eine gewählte Zeile zeigt Bedingung und Tage der Siegel, „Diplom ansehen
-und drucken“ das Diplom der höchsten Stufe.
+Eine gewählte Zeile zeigt Bedingung und Tage der Siegel, bei QRN-fest,
+Contest und Verwechslung auch, wie nah du der nächsten Stufe bist (bester
+Lauf bzw. das nächste Paar mit verbleibenden Tagen); „Diplom ansehen
+und drucken“ zeigt das Diplom der höchsten Stufe.
 
 | Diplom | Stufen | ab Lektion | Bedingung |
 |---|---|---|---|
 | Koch | Lektion 10 / 25 / 44 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
 | Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach |
-| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO), voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM |
+| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
 | QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |

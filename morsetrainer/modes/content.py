@@ -76,6 +76,11 @@ class ItemSource:
         elif kind == "qso":
             self.qso_words = []
 
+    def has_user_words(self) -> bool:
+        """Eigene Wörter dabei (zählen nicht fürs Diplom Fluss: eine kurze
+        eigene Liste wird wiedererkannt statt mitgeschrieben)."""
+        return self.kind == "words" and any(item not in words.WORDS for item in self.items)
+
     def problem(self):
         """Grund, warum mit diesem Zeichensatz nichts Sinnvolles kommt, sonst None."""
         if not self.charset:

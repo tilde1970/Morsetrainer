@@ -304,7 +304,9 @@ class ContinuousModeFrame(DailyModeMixin):
                                           char_stats=self.content not in PLAIN_TEXT,
                                           group_len=self.group_len or None,
                                           config_extra={"lesson": koch.lesson_of(charset), "band": preset,
-                                                        "content": self.content, **self._daily_config()})
+                                                        "content": self.content,
+                                                        "user_words": self.source.has_user_words(),
+                                                        **self._daily_config()})
         self.stats_panel.reset()
         self.live_var.set(tr("Gesendet: {n} Zeichen").format(n=0))
         self.typed_preview_var.set("")

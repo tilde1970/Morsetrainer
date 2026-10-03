@@ -56,6 +56,9 @@ def detail_text(award, status) -> str:
         lines.append(tr("Stufen: {steps} {unit}").format(steps=steps, unit=tr(award.unit)).strip())
     if award.two_days:
         lines.append(tr("Silber und höher: an zwei verschiedenen Tagen."))
+    if status.hint:
+        text, values = status.hint
+        lines.append(tr(text).format(**{k: tr(v) if isinstance(v, str) else v for k, v in values.items()}))
     reached = [(level, day) for level, day in enumerate(status.dates) if day is not None]
     if reached and award.levels:
         seals = ", ".join(tr("{level} am {date}").format(level=tr(awards.LEVEL_NAMES[level]),
