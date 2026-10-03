@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.29
 
 - **Faster:** statistics, the lifeline and awards are evaluated faster
   after a run; this shows once many runs have piled up over the years.

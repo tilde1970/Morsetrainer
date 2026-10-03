@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.29
 
 - **Schneller:** Statistik, Lebenslinie und Diplome werden nach einem
   Durchgang schneller ausgewertet; das macht sich bemerkbar, wenn sich
