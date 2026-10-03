@@ -134,6 +134,7 @@ EN.update({
 # --- core/ ---
 EN.update({
     "Keine Tonausgabe möglich: {error}": "No audio output possible: {error}",
+    "Durchgang abgebrochen, unerwarteter Fehler: {error}": "Run stopped, unexpected error: {error}",
     "<{prosign}> · Taste {key}": "<{prosign}> · key {key}",
     "MP3-Export nicht verfügbar: lameenc ist nicht installiert (pip install lameenc).":
         "MP3 export not available: lameenc is not installed (pip install lameenc).",

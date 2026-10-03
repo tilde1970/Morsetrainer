@@ -137,6 +137,9 @@ class Mixer:
             self._mix()
         except audio.ERRORS as exc:
             self.error = audio.describe(exc)  # RunModeFrame._tick beendet den Contest
+        except Exception as exc:
+            self.error = audio.unexpected(exc)
+            raise  # ins Fehlerprotokoll (threading.excepthook)
 
     def _mix(self):
         n = int(SAMPLE_RATE * MIX_CHUNK_SECONDS)

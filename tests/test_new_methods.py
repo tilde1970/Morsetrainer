@@ -4,6 +4,7 @@ durch Stille ersetzt."""
 import json
 import random
 import tempfile
+import threading
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
@@ -330,6 +331,7 @@ class ContinuousContentTest(AppTestCase):
         c.source = ItemSource("words", koch.lesson_charset(30))
         c.wpm, c.freq, c.fw, c.group_len = 20, 600, None, 5
         c.sent_log, c.running, c.deadline = [], True, None
+        c.play_thread = threading.current_thread()  # Wiedergabe hier im Test-Thread
         gaps = []
         real_silence = continuous_mode.silence
 
@@ -365,6 +367,7 @@ class ContinuousPhraseGapTest(AppTestCase):
         c.content, c.source = "phrases", OnePhrase()
         c.wpm, c.freq, c.fw, c.group_len = 20, 600, None, 5
         c.sent_log, c.running, c.deadline = [], True, None
+        c.play_thread = threading.current_thread()  # Wiedergabe hier im Test-Thread
         word_gap = continuous_mode.word_gap_extra_seconds(20, None)
         gaps = []
         real_silence = continuous_mode.silence

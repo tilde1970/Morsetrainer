@@ -3,6 +3,7 @@ aber ohne Ton; ohne Anzeige (kein $DISPLAY) werden sie übersprungen. Die
 Wiedergabe wird übersprungen: die Tests setzen den Zustand nach dem Ton
 direkt und rufen die Auswertung auf."""
 import tempfile
+import threading
 import time
 import tkinter as tk
 import unittest
@@ -607,6 +608,7 @@ class ContinuousGroupingTest(AppTestCase):
         c.content, c.source = "chars", ItemSource("groups", "KM", 3)
         c.wpm, c.freq, c.fw, c.group_len = 20, 600, None, 3
         c.sent_log, c.running, c.deadline = [], True, None
+        c.play_thread = threading.current_thread()  # Wiedergabe hier im Test-Thread
         word_gap = continuous_mode.word_gap_extra_seconds(20, None)
         gaps = []
         real_silence = continuous_mode.silence
@@ -697,11 +699,47 @@ class ContinuousBandTest(AppTestCase):
         c.band = band.preset_conditions("medium", 600)
         written = []
         stream = type("S", (), {"write": lambda self, block: written.append(block)})()
-        c.running = True
+        c.running, c.play_thread = True, threading.current_thread()
         self.assertTrue(c._write(stream, np.zeros(4800, dtype=np.float32)))
         c.running = False
         self.assertEqual(sum(len(block) for block in written), 4800)
         self.assertGreater(max(abs(block).max() for block in written), 0)  # Rauschen auch in Pausen
+
+
+class AudioThreadTest(AppTestCase):
+    """Der Audio-Thread gehört zu seiner Sitzung und beendet sie auch bei
+    unerwarteten Fehlern."""
+
+    def test_old_thread_does_not_write_into_a_new_session(self):
+        import numpy as np
+        c = self.mode("Kontinuierlich")
+        written = []
+        stream = type("S", (), {"write": lambda self, block: written.append(block)})()
+        c.running, c.play_thread = True, threading.Thread(target=lambda: None)  # neue Sitzung, anderer Thread
+        self.assertFalse(c._write(stream, np.zeros(4800, dtype=np.float32)))
+        self.assertEqual(written, [])
+        c.running = False
+
+    def test_unexpected_error_ends_the_session(self):
+        for name, play in (("Kontinuierlich", "_play_session"), ("QSO", "_play_qso")):
+            frame = self.mode(name)
+            frame.audio_error, frame.play_thread = None, threading.current_thread()
+            with mock.patch.object(frame, play, side_effect=RuntimeError("kaputt")):
+                with self.assertRaises(RuntimeError):  # weiter ins Fehlerprotokoll
+                    frame._play_loop()
+            self.assertIn("kaputt", frame.audio_error)
+            frame.audio_error, frame.play_thread = None, threading.Thread(target=lambda: None)
+            with mock.patch.object(frame, play, side_effect=RuntimeError("alt")):
+                with self.assertRaises(RuntimeError):
+                    frame._play_loop()
+            self.assertIsNone(frame.audio_error)  # alter Thread beendet die neue Sitzung nicht
+
+    def test_contest_mixer_reports_unexpected_error(self):
+        mixer = run_mode.Mixer(None)
+        with mock.patch.object(mixer, "_mix", side_effect=RuntimeError("kaputt")):
+            with self.assertRaises(RuntimeError):
+                mixer._run()
+        self.assertIn("kaputt", mixer.error)
 
 
 class PlainTextStatsTest(AppTestCase):

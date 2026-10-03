@@ -1,5 +1,16 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Stabilität:** Bricht die Tonausgabe in Kontinuierlich, QSO oder Contest
+  mit einem unerwarteten Fehler ab, endet die Übung mit einer Meldung,
+  statt auf „läuft“ stehen zu bleiben. Hängt das Audiogerät nach Stop
+  (Bluetooth), stört der alte Durchgang einen sofort neu gestarteten nicht
+  mehr. Zwei Programmfenster auf einem Rechner schreiben ihre Dateien
+  nicht mehr über dieselbe Zwischendatei. Wird der Verbindungsaufbau
+  im Netzwerk genau im falschen Moment abgebrochen, bleibt die Verbindung
+  nicht mehr offen.
+
 ## 2.26
 
 - **Diplome nur mit schnellen Zeichen:** Worked All Letters und Alle

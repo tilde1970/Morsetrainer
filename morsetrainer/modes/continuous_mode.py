@@ -321,11 +321,25 @@ class ContinuousModeFrame(DailyModeMixin):
         self.play_thread.start()
         self.root.after(1000, self._tick)
 
+    def _own_thread(self) -> bool:
+        """Gehört der aufrufende Audio-Thread zur laufenden Sitzung? Ein
+        alter Thread, der nach Stop an einem hängenden Gerät festhing, darf
+        eine neue Sitzung weder beschreiben noch beenden."""
+        return threading.current_thread() is self.play_thread
+
+    def _live(self) -> bool:
+        return self.running and self._own_thread()
+
     def _play_loop(self):
         try:
             self._play_session()
         except audio.ERRORS as exc:
-            self.audio_error = audio.describe(exc)  # _tick beendet die Sitzung
+            if self._own_thread():
+                self.audio_error = audio.describe(exc)  # _tick beendet die Sitzung
+        except Exception as exc:
+            if self._own_thread():
+                self.audio_error = audio.unexpected(exc)
+            raise  # ins Fehlerprotokoll (threading.excepthook)
 
     def _play_session(self):
         # Ein durchgehender Stream für die ganze Sitzung: Zeichen werden
@@ -338,7 +352,7 @@ class ContinuousModeFrame(DailyModeMixin):
             word_gaps = self.content != "chars" or self.group_len
             first = True
             group = -1  # für die ganze Auswertung: gesendete Gruppe bzw. Wort
-            while self.running and not self._time_up():
+            while self._live() and not self._time_up():
                 token, _ = self.source.next()
                 if word_gaps or len(self.sent_log) % FULL_GROUP_LEN == 0:
                     group += 1
@@ -362,7 +376,7 @@ class ContinuousModeFrame(DailyModeMixin):
                     # zählt ab dem Ende des Tons, also vor der Pause dahinter.
                     tone_end = time.time() + stream.latency - char_gap_seconds(self.wpm, self.fw)
                     self.sent_log.append({"char": char, "end_time": tone_end, "group": group})
-            if self.running:
+            if self._live():
                 # Zeit abgelaufen: Wortpause und Schlusszeichen direkt hinterher.
                 ending = np.concatenate([
                     silence(word_gap_extra_seconds(self.wpm, self.fw)),
@@ -383,7 +397,7 @@ class ContinuousModeFrame(DailyModeMixin):
         gestoppt wurde."""
         chunk = int(SAMPLE_RATE * WRITE_CHUNK_SECONDS)
         for start in range(0, len(samples), chunk):
-            if not self.running:
+            if not self._live():
                 return False
             block = samples[start:start + chunk]
             stream.write(block if self.band is None else self.band.process(block, 0))

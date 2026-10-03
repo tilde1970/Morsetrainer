@@ -1,5 +1,15 @@
 # Changes
 
+## Unreleased
+
+- **Stability:** if audio output in continuous, QSO or contest stops with
+  an unexpected error, the session ends with a message instead of staying
+  on “running”. If the audio device hangs after Stop (Bluetooth), the old
+  run no longer disturbs one started right away. Two program windows on
+  one computer no longer write their files through the same temporary
+  file. If connecting in the network is cancelled at exactly the wrong
+  moment, the connection no longer stays open.
+
 ## 2.26
 
 - **Awards only with fast characters:** Worked All Letters and All digits

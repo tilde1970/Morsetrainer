@@ -10,16 +10,20 @@ zu hindern oder beim nächsten Speichern stillschweigend überschrieben zu
 werden."""
 import json
 import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
 
 def write_text_atomic(path: Path, text: str) -> None:
     """Wirft OSError, wenn das Schreiben scheitert; `path` bleibt dann
-    unverändert."""
-    tmp = path.with_name(path.name + ".tmp")
+    unverändert. Die Nachbardatei hat einen eigenen Namen je Aufruf: Laufen
+    zwei Programmfenster (Trainer und Teilnehmer zum Ausprobieren auf einem
+    Rechner), schreiben sie sonst gleichzeitig in dieselbe .tmp-Datei."""
+    fd, name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+    tmp = Path(name)
     try:
-        with open(tmp, "w", encoding="utf-8") as fp:
+        with open(fd, "w", encoding="utf-8") as fp:
             fp.write(text)
             fp.flush()
             os.fsync(fp.fileno())

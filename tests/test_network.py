@@ -460,6 +460,25 @@ class HeartbeatTest(unittest.TestCase):
         self.assertEqual(self.server.names(), ["DL4YM"])
         self.assertEqual(client.poll(), [])  # Lebenszeichen gehen nicht an die Oberfläche
 
+    def test_close_while_connecting_closes_the_socket(self):
+        class CloseOnAssign(net_client.TraineeClient):
+            """Ruft close() genau dann auf, wenn der Verbindungsaufbau den
+            Socket gerade übernimmt (vor dem Speichern)."""
+            def __setattr__(self, name, value):
+                if name == "sock" and value is not None:
+                    self.close()
+                super().__setattr__(name, value)
+
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            client = CloseOnAssign()
+            client.connect("127.0.0.1", listener.getsockname()[1], "DL4YM", "4711")
+            conn, _ = listener.accept()
+            with conn:
+                conn.settimeout(2)
+                self.assertEqual(conn.recv(100), b"")  # geschlossen, ohne „hello“
+
     def test_client_notices_silent_trainer(self):
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))

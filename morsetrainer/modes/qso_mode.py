@@ -435,11 +435,22 @@ class QsoModeFrame:
         self.play_thread.start()
         self.root.after(TICK_MS, self._tick, self.session_id)
 
+    def _own_thread(self) -> bool:
+        """Gehört der aufrufende Audio-Thread zum laufenden QSO? Ein alter
+        Thread, der nach Stop an einem hängenden Gerät festhing, darf ein
+        neues QSO weder beschreiben noch beenden."""
+        return threading.current_thread() is self.play_thread
+
     def _play_loop(self):
         try:
             self._play_qso()
         except audio.ERRORS as exc:
-            self.audio_error = audio.describe(exc)  # _tick beendet das QSO
+            if self._own_thread():
+                self.audio_error = audio.describe(exc)  # _tick beendet das QSO
+        except Exception as exc:
+            if self._own_thread():
+                self.audio_error = audio.unexpected(exc)
+            raise  # ins Fehlerprotokoll (threading.excepthook)
 
     def _play_qso(self):
         with audio.output_stream() as stream:
@@ -502,7 +513,7 @@ class QsoModeFrame:
         gestoppt wurde."""
         chunk = int(SAMPLE_RATE * WRITE_CHUNK_SECONDS)
         for start in range(0, len(samples), chunk):
-            if not self.running:
+            if not (self.running and self._own_thread()):
                 return False
             block = samples[start:start + chunk]
             if self.overlays or self.band.active:

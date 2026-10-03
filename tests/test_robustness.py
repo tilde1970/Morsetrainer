@@ -34,7 +34,15 @@ class StorageTest(unittest.TestCase):
             with self.assertRaises(OSError):
                 storage.write_json_atomic(path, {"a": 2})
         self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"a": 1})
-        self.assertFalse((self.dir / "data.json.tmp").exists())
+        self.assertEqual(list(self.dir.glob("*.tmp")), [])
+
+    def test_temp_file_of_another_window_is_not_touched(self):
+        path = self.dir / "awards.json"
+        other = self.dir / "awards.json.tmp"  # zweites Programmfenster schreibt gerade
+        other.write_text("halb", encoding="utf-8")
+        storage.write_json_atomic(path, {"a": 1})
+        self.assertEqual(other.read_text(encoding="utf-8"), "halb")
+        self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"a": 1})
 
     def test_broken_file_is_set_aside(self):
         path = self.dir / "all_time.json"

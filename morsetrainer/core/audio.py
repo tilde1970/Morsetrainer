@@ -9,7 +9,9 @@ unsichtbar in der Konsole zu landen und die Reiter gesperrt zu lassen.
   nach dem Stop); Fehler werden ignoriert.
 - output_stream(): für die Modi mit eigenem Audio-Thread. Deren Fehler
   fängt der Thread mit ERRORS ab und übergibt describe(exc) an die
-  Oberfläche.
+  Oberfläche; jeden anderen Fehler meldet er mit unexpected(exc) und gibt
+  ihn weiter ans Fehlerprotokoll, damit die Übung nicht auf „läuft“
+  stehen bleibt.
 - keep_awake() / release(): ein stiller Ausgabestrom, solange das Programm
   läuft. PipeWire und PulseAudio legen ein Ausgabegerät nach wenigen
   Sekunden Stille schlafen; das Aufwecken dauert (bei Bluetooth-Kopfhörern
@@ -29,6 +31,10 @@ class AudioError(Exception):
 
 def describe(exc: Exception) -> str:
     return tr("Keine Tonausgabe möglich: {error}").format(error=exc)
+
+
+def unexpected(exc: Exception) -> str:
+    return tr("Durchgang abgebrochen, unerwarteter Fehler: {error}").format(error=str(exc) or type(exc).__name__)
 
 
 def play(samples) -> None:

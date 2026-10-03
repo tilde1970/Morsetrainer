@@ -41,10 +41,12 @@ class TraineeClient:
         except OSError as exc:
             self.events.put(("error", str(exc)))
             return
+        # Erst merken, dann prüfen: close() setzt `closing` vor dem Blick auf
+        # `sock`, so sieht mindestens eine Seite die andere und schließt.
+        self.sock = sock
         if self.closing:
             _close(sock)
             return
-        self.sock = sock
         protocol.enable_keepalive(sock)
         reader = protocol.LineReader(sock)
         welcomed = False
