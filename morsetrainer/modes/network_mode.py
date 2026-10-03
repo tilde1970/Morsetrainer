@@ -1077,11 +1077,8 @@ class NetworkModeFrame:
         if not self.item_n or self.board is None or not any(self.board.expected.values()):
             return
         duration_s = round(time.monotonic() - self.run_started, 1)
-        try:
-            stats.log_result(self.session_mode, 0, 0, wpm, role=TRAINER, participants=len(self.board.names),
-                             duration_s=duration_s)
-        except OSError:
-            pass
+        stats.log_result(self.session_mode, 0, 0, wpm, role=TRAINER, participants=len(self.board.names),
+                         duration_s=duration_s)
 
     def _show_progress(self):
         if not self.run_active or self.item is None:

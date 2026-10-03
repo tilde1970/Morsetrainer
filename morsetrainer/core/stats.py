@@ -409,8 +409,9 @@ HISTORY_MODES = {
 
 
 def log_result(mode: str, correct: int, total: int, wpm: int, **extra) -> None:
-    """Hängt ein Ergebnis an stats/results.jsonl an (für den Verlauf)."""
-    STATS_DIR.mkdir(exist_ok=True)
+    """Hängt ein Ergebnis an stats/results.jsonl an (für den Verlauf).
+    Lässt sich nicht schreiben (Platte voll, keine Schreibrechte), fehlt
+    das Ergebnis im Verlauf; die Auswertung auf dem Schirm geht weiter."""
     entry = {
         "time": datetime.now().isoformat(timespec="seconds"),
         "mode": mode,
@@ -420,8 +421,12 @@ def log_result(mode: str, correct: int, total: int, wpm: int, **extra) -> None:
         "wpm": wpm,
         **extra,
     }
-    with open(RESULTS_FILE, "a", encoding="utf-8") as fp:
-        fp.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    try:
+        STATS_DIR.mkdir(exist_ok=True)
+        with open(RESULTS_FILE, "a", encoding="utf-8") as fp:
+            fp.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
 
 
 def _read_jsonl(path: Path):

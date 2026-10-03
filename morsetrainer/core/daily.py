@@ -345,7 +345,7 @@ def finish_day(state: dict, today: date, completed: bool) -> list:
 def stars_on(state: dict, day: date) -> list:
     entry = state.get("days", {}).get(day.isoformat(), {})
     stars = entry.get("stars", []) if isinstance(entry, dict) else []
-    return [s for s in STAR_ORDER if s in stars]
+    return [s for s in STAR_ORDER if isinstance(stars, list) and s in stars]
 
 
 # --- Rückblick: Zwischenkarte und Abendbilanz ---------------------------------

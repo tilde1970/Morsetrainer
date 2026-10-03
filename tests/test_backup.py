@@ -22,6 +22,24 @@ def make_data(root: Path, tag: str) -> None:
     (root / "voices" / "stimme.onnx").write_text("gross", encoding="utf-8")
 
 
+def damaged(raw: bytes, name: str, damage: str) -> bytes:
+    """ZIP mit einem beschädigten Eintrag `name`: "data" (Inhalt), "encrypted"
+    (als verschlüsselt markiert) oder "method" (unbekanntes Verfahren)."""
+    raw = bytearray(raw)
+    central = raw.index(b"PK\x01\x02")  # Einträge im zentralen Verzeichnis
+    while raw[central + 46:central + 46 + len(name)] != name.encode():
+        central = raw.index(b"PK\x01\x02", central + 4)
+    if damage == "data":
+        local = int.from_bytes(raw[central + 42:central + 46], "little")
+        size = 30 + int.from_bytes(raw[local + 26:local + 28], "little") + int.from_bytes(raw[local + 28:local + 30], "little")
+        raw[local + size] ^= 0xFF
+    elif damage == "encrypted":
+        raw[central + 8] |= 0x01
+    else:
+        raw[central + 10] = 99
+    return bytes(raw)
+
+
 class BackupTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -86,6 +104,18 @@ class BackupTest(unittest.TestCase):
             archive.writestr(backup.MARKER, json.dumps({"format": backup.FORMAT + 1}))
         with self.assertRaises(backup.BackupError):
             backup.read_info(self.zip)
+
+    def test_rejects_damaged_or_encrypted_member(self):
+        # Was sich nicht entpacken lässt, fällt vor dem Ersetzen auf.
+        for damage in ("data", "encrypted", "method"):
+            with self.subTest(damage):
+                backup.export_data(self.zip, "9.9", self.old)
+                self.zip.write_bytes(damaged(self.zip.read_bytes(), "stats/all_time.json", damage))
+                with self.assertRaises(backup.BackupError):
+                    backup.read_info(self.zip)
+                with self.assertRaises(backup.BackupError):
+                    backup.import_data(self.zip, "9.9", self.new)
+                self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
 
 
 if __name__ == "__main__":

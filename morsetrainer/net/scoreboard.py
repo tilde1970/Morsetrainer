@@ -23,11 +23,17 @@ from dataclasses import dataclass
 from morsetrainer.core import align, tempo
 from morsetrainer.core.morse import MORSE_CODE, display_text
 from morsetrainer.i18n import number
+from morsetrainer.net import protocol
 from morsetrainer.modes.sequence_mode import answer_limit
 
 # Ab so vielen gesendeten Exemplaren (je Teilnehmer im Schnitt) taucht ein
 # Zeichen unter den schwächsten auf; bei einem Exemplar sagt die Quote nichts.
 MIN_CHAR_COUNT = 3
+# Längere Antworten werden gekürzt: Der Vergleich mit dem Gesendeten wächst
+# mit der Länge und läuft in der Oberfläche (ein Fehler oder ein fremdes
+# Programm im Netz soll das Fenster nicht einfrieren). Etwas Spielraum über
+# TEXT_MAX, damit zu viel Getipptes noch als Fehler zählt.
+TYPED_MAX = 2 * protocol.TEXT_MAX
 
 # Tempo-Empfehlung (Regel wie beim mitwachsenden Tempo, core/tempo.py): erst
 # ab so vielen gesendeten Zeichen im aktuellen Tempo über alle Teilnehmer,
@@ -73,6 +79,11 @@ def evaluate(sent: str, typed: str, latency=None, replayed=False) -> Result:
     hits = sum(1 for expected, got, _ in align.char_results(sent, typed) if got == expected)
     correct_chars = max(hits - align.extra_count(sent, typed), 0)
     return Result(sent, typed, typed == sent, correct_chars, len(sent), latency, replayed)
+
+
+def _typed(typed) -> str:
+    """Antwort aus dem Netz: Text, höchstens TYPED_MAX Zeichen."""
+    return typed[:TYPED_MAX] if isinstance(typed, str) else ""
 
 
 class Scoreboard:
@@ -122,7 +133,7 @@ class Scoreboard:
             return None
         if not isinstance(latency, (int, float)) or isinstance(latency, bool) or not 0 <= latency < 3600:
             latency = None
-        result = evaluate(self.items[n], typed if isinstance(typed, str) else "", latency, n in self.replayed)
+        result = evaluate(self.items[n], _typed(typed), latency, n in self.replayed)
         self.answers[name][n] = result
         return result
 
@@ -135,7 +146,7 @@ class Scoreboard:
         self.add_participant(name)
         self.paper.add(name)
         self.expected[n].add(name)
-        result = evaluate(self.items[n], typed if isinstance(typed, str) else "", None, n in self.replayed)
+        result = evaluate(self.items[n], _typed(typed), None, n in self.replayed)
         self.answers[name][n] = result
         return result
 

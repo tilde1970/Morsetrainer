@@ -14,11 +14,12 @@ Siegel ab dem Tag, an dem es auffällt.
 
 Fächer der Lernkartei heißen hier wie in der Oberfläche 1–6 (`box` 0–5)."""
 import re
+import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 from morsetrainer.i18n import N_
-from morsetrainer.core import koch, practice, review, stats, storage, words
+from morsetrainer.core import errorlog, koch, practice, review, stats, storage, words
 
 AWARDS_FILE_NAME = "awards.json"
 
@@ -158,15 +159,18 @@ def _read_session(path):
     config = summary = None
     chars, groups = [], []
     for obj in stats._read_jsonl(path):
+        if not isinstance(obj, dict):
+            continue
         kind = obj.get("type")
         if kind == "config":
             config = obj
         elif kind == "summary":
             summary = obj
         elif kind == "char":
-            chars.append((obj.get("char", ""), obj.get("typed", ""), bool(obj.get("correct"))))
+            chars.append((_text(obj.get("char")), _text(obj.get("typed")), bool(obj.get("correct"))))
         elif kind == "group":
-            groups.append((obj.get("sent", ""), obj.get("typed", ""), obj.get("first")))
+            first = obj.get("first")
+            groups.append((_text(obj.get("sent")), _text(obj.get("typed")), first if isinstance(first, bool) else None))
     session = None
     if config and summary and not config.get("self_assessed"):
         try:
@@ -192,6 +196,12 @@ def load_data() -> Data:
 
 
 # --- Hilfen ------------------------------------------------------------------------
+def _text(value) -> str:
+    """Text aus einer Protokollzeile; alles andere (von Hand verändert,
+    beschädigt) zählt als leer."""
+    return value if isinstance(value, str) else ""
+
+
 def _num(value, default=0.0) -> float:
     try:
         return float(value)
@@ -367,7 +377,7 @@ def _qrn_runs(data: Data) -> list:
     runs = []
     for s in data.sessions:
         c, summary = s.config, s.summary
-        mode, rank = c.get("mode"), BAND_RANK.get(c.get("band"))
+        mode, rank = c.get("mode"), BAND_RANK.get(_text(c.get("band")))
         if mode not in ("group", "continuous") or rank is None:
             continue
         # Kontinuierlich hat keinen Regler für die Störlautstärke: immer 100 %.
@@ -715,29 +725,53 @@ def evaluate(data: Data = None, today: date = None) -> dict:
     """Stand aller Diplome aus den gespeicherten Daten: {Schlüssel: Status}."""
     data = data or load_data()
     today = today or date.today()
-    qrn_runs, contest_runs, confusion = _qrn_runs(data), _contest_runs(data), _confusion_state(data)
-    events = {
-        "koch": _koch(data), "wal": _wal(data, today), "flow": _flow(data), "qrq": _qrq(data),
-        "qrn": _qrn(qrn_runs), "rufz": _rufz(data), "contest": _contest(contest_runs), "wpx": _wpx(data),
-        "headphones": _headphones(data), "confusion": _cumulative(confusion[0]), "endurance": _endurance(data),
-        "heard": _heard(data), "first_qso": _first_qso(data), "all_contests": _all_contests(data),
-        "club": _club(data), "q_groups": _q_groups(data), "digits": _digits(data, today),
+    qrn_runs = _guarded("qrn", lambda: _qrn_runs(data), [])
+    contest_runs = _guarded("contest", lambda: _contest_runs(data), [])
+    confusion = _guarded("confusion", lambda: _confusion_state(data), None)
+    checks = {
+        "koch": lambda: _koch(data), "wal": lambda: _wal(data, today), "flow": lambda: _flow(data),
+        "qrq": lambda: _qrq(data), "qrn": lambda: _qrn(qrn_runs), "rufz": lambda: _rufz(data),
+        "contest": lambda: _contest(contest_runs), "wpx": lambda: _wpx(data),
+        "headphones": lambda: _headphones(data),
+        "confusion": lambda: _cumulative(confusion[0]) if confusion else [],
+        "endurance": lambda: _endurance(data), "heard": lambda: _heard(data),
+        "first_qso": lambda: _first_qso(data), "all_contests": lambda: _all_contests(data),
+        "club": lambda: _club(data), "q_groups": lambda: _q_groups(data), "digits": lambda: _digits(data, today),
     }
     statuses = {}
     for award in AWARDS:
-        found = events[award.key]
+        found = _guarded(award.key, checks[award.key], [])
         value = max((v for _, v in found), default=0)
         statuses[award.key] = _status(award, level_dates(found, award.targets, award.two_days), value)
     if statuses["wal"].next_level is not None:
-        statuses["wal"].progress = wal_progress(data)
+        statuses["wal"].progress = _guarded("wal", lambda: wal_progress(data), None)
     hints = {"qrn": lambda level: _qrn_hint(qrn_runs, level),
              "contest": lambda level: _contest_hint(contest_runs, level),
-             "confusion": lambda level: _confusion_hint(confusion, today)}
+             "confusion": lambda level: _confusion_hint(confusion, today) if confusion else None}
     for key, hint in hints.items():
         status = statuses[key]
         if status.next_level is not None and not status.second_day:
-            status.hint = hint(status.next_level)
+            status.hint = _guarded(key, lambda: hint(status.next_level), None)
     return statuses
+
+
+# Diplome, deren Auswertung schon einmal gescheitert ist (nur einmal ins
+# Fehlerprotokoll je Programmlauf).
+_failed = set()
+
+
+def _guarded(key: str, compute, default):
+    """`compute()`, oder `default`, wenn es an unerwarteten Daten scheitert
+    (von Hand veränderte oder beschädigte Dateien): Dann fehlt nur dieses
+    eine Diplom, die anderen und der Rest nach der Übung laufen weiter.
+    Der Fehler kommt ins Fehlerprotokoll, damit er sich finden lässt."""
+    try:
+        return compute()
+    except (TypeError, ValueError, KeyError, AttributeError, IndexError):
+        if key not in _failed:
+            _failed.add(key)
+            errorlog.record(*sys.exc_info())
+        return default
 
 
 # --- Protokoll ---------------------------------------------------------------------

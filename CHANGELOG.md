@@ -7,6 +7,17 @@
   BK), wie bei den Lektionen davor. Betriebszeichen, die schon in der
   Lernkartei liegen, nimmt die Tagesübung nach Koch mit dazu, damit sie
   wiederholt werden und nicht verblassen.
+- **Netzwerk:** Eine abgerissene Verbindung (WLAN weg, Rechner im
+  Ruhezustand) fällt jetzt nach etwa einer halben Minute auf. Der Name ist
+  dann wieder frei, und der Teilnehmer kann sich gleich neu anmelden.
+  Bisher blieb er bis zu einer Viertelstunde belegt. Überlange Antworten
+  aus dem Netz werden gekürzt, damit das Trainer-Fenster nicht hängt.
+- **Stabilität:** Lässt sich ein Ergebnis nicht speichern (Platte voll),
+  läuft die Auswertung bei Rufz, Contest und QSO trotzdem zu Ende. Von Hand
+  veränderte oder beschädigte Statistikdateien bringen die Diplome nicht
+  mehr nach jeder Übung zum Scheitern. Beim Daten einlesen werden auch
+  beschädigte oder verschlüsselte ZIP-Dateien sauber abgelehnt, bevor
+  etwas ersetzt wird.
 
 ## 2.24
 

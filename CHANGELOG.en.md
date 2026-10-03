@@ -6,6 +6,16 @@
   again (AR → KN → SK → BK), as in the lessons before. Prosigns already
   in the review box are included in the daily practice after Koch, so
   they are repeated and do not fade.
+- **Network:** a dropped connection (Wi-Fi gone, computer asleep) is now
+  noticed after about half a minute, so the name is free again and the
+  participant can rejoin right away. Before, it stayed taken for up to a
+  quarter of an hour. Overlong answers from the network are cut so the
+  trainer window does not freeze.
+- **Stability:** if a result cannot be saved (disk full), Rufz, contest and
+  QSO still finish their evaluation. Statistics files that were edited by
+  hand or damaged no longer make the awards fail after every session.
+  Restoring data now also rejects damaged or encrypted ZIP files cleanly,
+  before anything is replaced.
 
 ## 2.24
 

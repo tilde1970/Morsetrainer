@@ -44,6 +44,7 @@ class TraineeClient:
             _close(sock)
             return
         self.sock = sock
+        protocol.enable_keepalive(sock)
         reader = protocol.LineReader(sock)
         welcomed = False
         try:

@@ -209,6 +209,21 @@ class ReviewTest(unittest.TestCase):
             self.assertIn("duration_s", lines[-1])
             self.assertEqual(session.review_events, [])  # neues Zeichen: erst morgen hochstufbar
 
+    def test_damaged_entries_are_usable(self):
+        review._save({
+            "K": {"box": "drei", "best_box": None, "due": "2026-10-01", "day": "2026-10-03", "n": "x",
+                  "fluent": 1, "pn": 0, "pfluent": 0, "decided": False},
+            "M": {"box": 2, "day": "2026-10-03", "n": 3, "fluent": 3, "pn": 0, "pfluent": 0},  # ohne "decided"
+            "R": "kaputt",
+        })
+        data = review.load()
+        self.assertEqual(sorted(data), ["K", "M"])
+        self.assertEqual((data["K"]["box"], review.best_box(data["K"])), (0, 0))
+        self.assertNotIn("day", data["K"])  # Tageszähler beginnen neu
+        self.assertNotIn("day", data["M"])
+        per_char = {"K": {"good": 1, "wrong": 0, "latencies": [0.3]}, "M": {"good": 1, "wrong": 0, "latencies": [0.3]}}
+        review.update(per_char, today=date(2026, 10, 3))  # kein Fehler
+
 
 class ListenModeTest(AppTestCase):
     def setUp(self):

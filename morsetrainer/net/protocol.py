@@ -49,6 +49,14 @@ NAME_MAX = 20
 TEXT_MAX = 200
 
 REJECT_REASONS = ("proto", "pin", "name")
+# Abgerissene Verbindungen (WLAN weg, Rechner im Ruhezustand) erkennen:
+# Nach so vielen Sekunden Stille fragt das Betriebssystem nach, dann alle
+# KEEPALIVE_INTERVAL_S, und gibt nach KEEPALIVE_COUNT Fehlversuchen auf
+# (etwa 25 s). Ohne das blieben der Name eines verschwundenen Teilnehmers
+# bis zu einer Viertelstunde belegt und ein Teilnehmer ohne Trainer hängen.
+KEEPALIVE_IDLE_S = 10
+KEEPALIVE_INTERVAL_S = 5
+KEEPALIVE_COUNT = 3
 
 
 class ProtocolError(Exception):
@@ -87,6 +95,31 @@ class LineReader:
             self.buffer += chunk
         line, self.buffer = self.buffer.split(b"\n", 1)
         return decode(line)
+
+
+def enable_keepalive(sock: socket.socket) -> None:
+    """TCP-Keepalive mit kurzen Abständen; was das System nicht kennt, bleibt
+    beim Standard."""
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+    except OSError:
+        return
+    if hasattr(socket, "SIO_KEEPALIVE_VALS"):  # Windows
+        try:
+            sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, KEEPALIVE_IDLE_S * 1000, KEEPALIVE_INTERVAL_S * 1000))
+        except (OSError, ValueError):
+            pass
+        return
+    # TCP_KEEPIDLE unter Linux, TCP_KEEPALIVE unter macOS
+    idle = getattr(socket, "TCP_KEEPIDLE", None) or getattr(socket, "TCP_KEEPALIVE", None)
+    for option, value in ((idle, KEEPALIVE_IDLE_S),
+                          (getattr(socket, "TCP_KEEPINTVL", None), KEEPALIVE_INTERVAL_S),
+                          (getattr(socket, "TCP_KEEPCNT", None), KEEPALIVE_COUNT)):
+        if option is not None:
+            try:
+                sock.setsockopt(socket.IPPROTO_TCP, option, value)
+            except OSError:
+                pass
 
 
 def clean_name(name) -> str:

@@ -12,7 +12,7 @@ from unittest import mock
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import stats
 from morsetrainer.net import client as net_client
-from morsetrainer.net import protocol
+from morsetrainer.net import protocol, scoreboard
 from morsetrainer.net.scoreboard import (
     Scoreboard, evaluate, solution_cells, solution_columns, solution_rows, solution_text,
 )
@@ -73,6 +73,13 @@ class ScoreboardTest(unittest.TestCase):
         self.assertIsNotNone(board.record("A", 1, "KMS", 0.8))
         self.assertIsNone(board.record("A", 1, "KMR"))   # nur die erste Antwort zählt
         self.assertFalse(board.answers["A"][1].correct)
+
+    def test_oversized_answer_is_cut(self):
+        # Ein fremdes Programm im Netz soll die Oberfläche nicht einfrieren.
+        board = Scoreboard()
+        board.add_item(1, "KMR", {"A", "B"})
+        self.assertEqual(len(board.record("A", 1, "X" * 60000).typed), scoreboard.TYPED_MAX)
+        self.assertEqual(board.record_paper("B", 1, ["KMR"]).typed, "")
 
     def test_unanswered_counts_as_missed_but_not_as_confusion(self):
         board = Scoreboard()
@@ -355,6 +362,16 @@ class ConnectionTest(unittest.TestCase):
         events = []
         self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
         self.assertEqual(events[0][0], "error")
+
+    def test_connections_use_keepalive(self):
+        # Abgerissene Verbindungen (WLAN weg) fallen so nach etwa einer halben Minute auf.
+        client, _ = self.join("DL4YM")
+        self.assertTrue(wait_for(lambda: client.sock is not None))
+        conn = self.server.connections["DL4YM"]
+        for sock in (client.sock, conn.sock):
+            self.assertTrue(sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE))
+            if hasattr(socket, "TCP_KEEPIDLE"):
+                self.assertEqual(sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE), protocol.KEEPALIVE_IDLE_S)
 
     def test_garbage_does_not_crash_the_server(self):
         with socket.create_connection(("127.0.0.1", self.server.port)) as sock:

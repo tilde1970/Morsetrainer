@@ -16,6 +16,7 @@ import json
 import os
 import shutil
 import zipfile
+import zlib
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 
@@ -71,6 +72,12 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
     return count
 
 
+# Was zipfile bei kaputten oder ungewöhnlichen Archiven wirft: verschlüsselt
+# (RuntimeError), unbekanntes Kompressionsverfahren (NotImplementedError),
+# abgeschnitten (EOFError), beschädigte Daten (zlib.error).
+ZIP_ERRORS = (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError, EOFError, zlib.error)
+
+
 def _safe_name(name: str) -> bool:
     """Nur bekannte Dateien und stats/…, nichts außerhalb (absolute Pfade, ..)."""
     if name in TOP_FILES or name == MARKER:
@@ -89,7 +96,11 @@ def read_info(source: Path) -> dict:
             if MARKER not in names:
                 raise BackupError("marker")
             info = json.loads(archive.read(MARKER).decode("utf-8"))
-    except (OSError, zipfile.BadZipFile, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            # Alle Dateien einmal lesen (Prüfsumme): Was sich nicht entpacken
+            # lässt, fällt hier auf und nicht erst mitten im Ersetzen.
+            if archive.testzip() is not None:
+                raise BackupError("crc")
+    except (OSError, *ZIP_ERRORS, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise BackupError(str(exc)) from exc
     if not isinstance(info, dict) or not isinstance(info.get("format"), int) or info["format"] > FORMAT:
         raise BackupError("format")
@@ -135,7 +146,7 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
             if (staging / name).is_file():
                 os.replace(staging / name, data_dir / name)
         shutil.rmtree(old_stats, ignore_errors=True)
-    except zipfile.BadZipFile as exc:
+    except ZIP_ERRORS as exc:
         raise BackupError(str(exc)) from exc
     finally:
         shutil.rmtree(staging, ignore_errors=True)

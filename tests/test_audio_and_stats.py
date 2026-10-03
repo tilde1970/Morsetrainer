@@ -191,6 +191,11 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(history[0]["wpm"], 18)
         self.assertEqual(history[1]["accuracy_pct"], 75.0)
 
+    def test_result_that_cannot_be_written_is_skipped(self):
+        stats.RESULTS_FILE.mkdir()  # statt einer Datei: nicht schreibbar
+        stats.log_result("contest", 9, 10, 25, contest="wpx")  # kein Fehler
+        self.assertEqual(stats.load_history(), [])
+
     def test_empty_session_leaves_no_file(self):
         session = stats.SessionStats("single", "K", 20, 600)
         self.assertIsNone(session.finalize())

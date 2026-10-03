@@ -10,7 +10,9 @@ die Ereignisse mit poll() ab und ruft nie blockierend ins Netz:
 
 Ein Teilnehmer, dessen Verbindung abgerissen ist, kann sich unter
 demselben Namen wieder anmelden; solange die alte Verbindung steht, ist
-der Name vergeben."""
+der Name vergeben. Eine stillschweigend abgerissene (WLAN weg) erkennt
+das Betriebssystem per Keepalive nach etwa einer halben Minute
+(protocol.enable_keepalive)."""
 import json
 import queue
 import socket
@@ -126,6 +128,7 @@ class TrainerServer:
             except OSError:
                 return
             sock.settimeout(None)
+            protocol.enable_keepalive(sock)
             threading.Thread(target=self._serve, args=(sock,), daemon=True).start()
 
     def _discovery_loop(self, sock) -> None:

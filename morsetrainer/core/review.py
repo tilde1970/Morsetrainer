@@ -48,11 +48,33 @@ def _path():
     return stats.STATS_DIR / "review.json"
 
 
+# Zahlenfelder eines Eintrags: Fächer und die Zähler des Tages ("day").
+BOX_FIELDS = ("box", "best_box")
+DAY_FIELDS = ("n", "fluent", "pn", "pfluent")
+
+
 def load() -> dict:
     data = storage.load_json(_path(), {})
     if not isinstance(data, dict):
         return {}
-    return {ch: e for ch, e in data.items() if isinstance(e, dict)}
+    return {ch: _clean(e) for ch, e in data.items() if isinstance(e, dict)}
+
+
+def _clean(entry: dict) -> dict:
+    """Eintrag mit falsch typisierten Feldern (von Hand verändert,
+    beschädigt) brauchbar machen: ein unlesbares Fach gilt als erstes Fach,
+    unlesbare Tageszähler beginnen neu."""
+    for key in BOX_FIELDS:
+        if key in entry and not _is_int(entry[key]):
+            entry[key] = 0
+    if "day" in entry and not (all(_is_int(entry.get(key)) for key in DAY_FIELDS)
+                               and isinstance(entry.get("decided"), bool)):
+        del entry["day"]
+    return entry
+
+
+def _is_int(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _save(data: dict) -> None:

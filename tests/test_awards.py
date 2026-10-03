@@ -263,6 +263,42 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(awards.seals_on(awards.load(), day(7)), [("first_qso", 0)])
 
 
+class DamagedDataTest(unittest.TestCase):
+    """Von Hand veränderte oder beschädigte Dateien dürfen die Prüfung nach
+    der Übung nicht jedes Mal scheitern lassen."""
+
+    def test_session_lines_with_wrong_types(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2026-10-01_200000-single.jsonl"
+            path.write_text("\n".join([
+                '{"type": "config", "mode": "single", "start_time": "2026-10-01T20:00:00"}',
+                '[1, 2]',
+                '{"type": "char", "char": "K", "typed": null, "correct": false}',
+                '{"type": "char", "char": ["K"], "typed": "K", "correct": true}',
+                '{"type": "group", "sent": "KM", "typed": 5, "first": "ja"}',
+                '{"type": "summary", "total": 2}',
+            ]) + "\n", encoding="utf-8")
+            loaded = awards._read_session(path)
+        self.assertEqual(loaded.chars, [("K", "", False), ("", "K", True)])
+        self.assertEqual(loaded.groups, [("KM", "", None)])
+
+    def test_failing_award_leaves_the_others(self):
+        club = data([session("network", 0, duration_s=600)])
+        awards._failed.clear()
+        with mock.patch.object(awards, "_koch", side_effect=TypeError("kaputt")), \
+                mock.patch.object(awards.errorlog, "record") as record:
+            statuses = awards.evaluate(club, today=day(1))
+            awards.evaluate(club, today=day(1))
+        self.assertEqual(statuses["koch"].dates, [None] * len(awards.BY_KEY["koch"].targets))
+        self.assertEqual(statuses["club"].dates[0], day(0))
+        record.assert_called_once()  # je Diplom und Programmlauf einmal ins Fehlerprotokoll
+        awards._failed.clear()
+
+    def test_band_of_wrong_type(self):
+        broken = session("group", 0, band=["heavy"], lesson=20, total=50, correct=50)
+        self.assertEqual(awards._qrn_runs(data([broken])), [])
+
+
 class DiplomaTest(unittest.TestCase):
     def test_page_shows_award_level_call_and_date(self):
         award = awards.BY_KEY["koch"]
