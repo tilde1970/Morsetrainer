@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.25
 
 - **Prosigns:** in lessons 42–45, passing a run offers the next prosign
   again (AR → KN → SK → BK), as in the lessons before. Prosigns already
@@ -11,10 +11,10 @@
   participants send each other a regular sign of life. The name is free
   again and the participant can rejoin right away; before, it stayed taken
   for up to a quarter of an hour. From the same computer, rejoining works
-  at once, even before the drop has been noticed. With an older version on the other side
-  it takes a little longer (about half a minute, while nothing is being
-  sent). Overlong answers from the network are cut so the
-  trainer window does not freeze.
+  at once, even before the drop has been noticed. With an older version
+  on the other side it takes a little longer (about half a minute, while
+  nothing is being sent). Overlong answers from the network are cut so
+  the trainer window does not freeze.
 - **Stability:** if a result cannot be saved (disk full), Rufz, contest and
   QSO still finish their evaluation. Statistics files that were edited by
   hand or damaged no longer make the awards fail after every session.
