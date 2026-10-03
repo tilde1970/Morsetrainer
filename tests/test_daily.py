@@ -1,6 +1,5 @@
 """Tests für die Regeln der Tagesübung (core/daily.py): Stufen, Ablauf,
 Tagestempo, Aufstieg, Sterne, Rückblick und Vorwochenvergleich."""
-import json
 import tempfile
 import unittest
 from datetime import date, timedelta
@@ -221,14 +220,14 @@ class StorageTest(unittest.TestCase):
 
 
 def write_session(directory: Path, day: date, mode: str, chars=(), config=None, summary=None, index=0):
-    """Sitzungsdatei wie von SessionStats: config, Zeichen, summary.
+    """Durchgang wie von SessionStats: config, Zeichen, summary.
     `chars`: (Zeichen, Latenz) – richtig erkannt; Latenz None = verpasst."""
-    lines = [{"type": "config", "mode": mode, "wpm": 20, "farnsworth_wpm": 12, **(config or {})}]
+    lines = [{"type": "config", "mode": mode, "wpm": 20, "farnsworth_wpm": 12,
+              "start_time": f"{day.isoformat()}T12:00:{index:02d}", **(config or {})}]
     lines += [{"type": "char", "char": ch, "correct": True, "latency_s": lat} if lat is not None
               else {"type": "char", "char": ch, "correct": False} for ch, lat in chars]
     lines.append({"type": "summary", "total": len(chars), **(summary or {})})
-    path = directory / f"{day.isoformat()}_1200{index:02d}-{mode}.jsonl"
-    path.write_text("".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8")
+    tests.write_session(lines)
 
 
 class ReviewTest(unittest.TestCase):

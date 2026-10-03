@@ -1,6 +1,5 @@
 """Bandbedingungen/Mischer, Alignment und Statistik (in einem temporären
 Verzeichnis, die echten Daten in stats/ bleiben unberührt)."""
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -72,7 +71,6 @@ class StatsTest(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
         ]
         for patch in self.patches:
             patch.start()
@@ -128,10 +126,9 @@ class StatsTest(unittest.TestCase):
         from datetime import datetime, timedelta
         def write(days_ago, pairs):
             start = datetime.now() - timedelta(days=days_ago)
-            path = stats.STATS_DIR / f"{start.strftime('%Y-%m-%d_%H%M%S')}-single.jsonl"
-            lines = [{"type": "config", "mode": "single"}]
+            lines = [{"type": "config", "mode": "single", "start_time": start.isoformat(timespec="seconds")}]
             lines += [{"type": "char", "char": c, "typed": t, "correct": c == t} for c, t in pairs]
-            path.write_text("\n".join(json.dumps(line) for line in lines), encoding="utf-8")
+            tests.write_session(lines)
         write(60, [("B", "6")] * 5)   # zu alt
         write(2, [("8", "9"), ("8", "8")])
         data = stats.recent_char_data()
@@ -182,8 +179,7 @@ class StatsTest(unittest.TestCase):
         self._session([("H", "H"), ("S", "5")], wpm=18).finalize()
         stats.log_result("qso_quiz", 6, 8, 22, kind="cqww")
         stats.log_result("contest", 9, 10, 25, contest="wpx")
-        with open(stats.RESULTS_FILE, "a", encoding="utf-8") as fp:
-            fp.write("{kaputte Zeile\n")
+        db._write("INSERT INTO results (time, mode, data) VALUES ('2026-01-01T00:00:00', 'x', '{kaputte Zeile')")
         history = stats.load_history()
         self.assertEqual([e["mode"] for e in history], ["single", "qso_quiz", "contest"])
         self.assertEqual(history[0]["accuracy_pct"], 50.0)
@@ -191,14 +187,15 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(history[1]["accuracy_pct"], 75.0)
 
     def test_result_that_cannot_be_written_is_skipped(self):
-        stats.RESULTS_FILE.mkdir()  # statt einer Datei: nicht schreibbar
-        stats.log_result("contest", 9, 10, 25, contest="wpx")  # kein Fehler
+        with mock.patch.object(db, "add_result", side_effect=db.Error("disk I/O error")):
+            stats.log_result("contest", 9, 10, 25, contest="wpx")  # kein Fehler
         self.assertEqual(stats.load_history(), [])
 
-    def test_empty_session_leaves_no_file(self):
+    def test_empty_session_is_removed(self):
         session = stats.SessionStats("single", "K", 20, 600)
         self.assertIsNone(session.finalize())
         self.assertEqual(stats.load_history(), [])
+        self.assertEqual(db.sessions(), [])
 
 
 if __name__ == "__main__":

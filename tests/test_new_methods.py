@@ -1,7 +1,6 @@
 """Tests für Hören & Sagen (Sprache, MP3), Klartext/Wendungen und die
 Lernkartei. Laufen ohne Stimme und Soundkarte: die Sprachausgabe wird
 durch Stille ersetzt."""
-import json
 import random
 import tempfile
 import threading
@@ -211,8 +210,8 @@ class ReviewTest(unittest.TestCase):
                                      config_extra={"lesson": 8, "band": "light"})
         for _ in range(6):
             session.record_char("K", "K", True, 0.5, 20.0, latency=0.5)
-        path = session.finalize({"first_try_correct": 5, "first_try_total": 6})
-        lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        session_id = session.finalize({"first_try_correct": 5, "first_try_total": 6})
+        lines = tests.session_lines(session_id)
         self.assertEqual((lines[0]["lesson"], lines[0]["band"]), (8, "light"))
         self.assertEqual(lines[-1]["first_try_correct"], 5)
         self.assertIn("duration_s", lines[-1])

@@ -15,7 +15,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, awards, backup, errorlog, koch, practice, review, stats, storage, tempo
+from morsetrainer.core import audio, awards, backup, errorlog, koch, migration, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, tr
@@ -1156,6 +1156,13 @@ def main():
     # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
     sys.excepthook = lambda *exc: errorlog.record(*exc, version=__version__)
     update.cleanup()
+    # Bis 2.27 lagen die Übungsdaten als JSON-Dateien in stats/. Scheitert
+    # die Übernahme, bleiben die Dateien liegen (neuer Versuch beim nächsten
+    # Start); das Fehlerprotokoll meldet es.
+    try:
+        migration.run()
+    except Exception:
+        errorlog.record(*sys.exc_info(), version=__version__)
     root = tk.Tk(className="Morsetrainer")
     app = MorseTrainerApp(root)
     root.report_callback_exception = app.report_callback_exception

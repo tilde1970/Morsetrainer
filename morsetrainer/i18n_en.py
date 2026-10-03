@@ -302,6 +302,7 @@ EN.update({
     "Verwechselt mit": "Confused with",
     "Protokoll nicht gespeichert: {error}": "Log not saved: {error}",
     "Gespeichert: {path}": "Saved: {path}",
+    "Gespeichert (Durchgang {number})": "Saved (session {number})",
     "Bandbedingungen": "Band conditions",
     "Rauschen": "Noise",
     "Knackstörungen (QRN)": "Static crashes (QRN)",

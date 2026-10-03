@@ -1,12 +1,12 @@
 """Diplome: dauerhafte Erfolge wie bei DXCC oder WAC, in Stufen Bronze,
 Silber, Gold und teils Platin (Konzept-Motivation.md, „Dauerhaft: Diplome“).
 
-Ausgewertet wird immer alles, was schon gespeichert ist: Sitzungsdateien,
-stats/results.jsonl, Lernkartei (höchstes je erreichtes Fach) und
+Ausgewertet wird immer alles, was schon gespeichert ist: Durchgänge,
+Ergebnisse (stats.log_result), Lernkartei (höchstes je erreichtes Fach) und
 Übungszeit je Tag. Vergeben wird nur aus Durchgängen ohne Selbstbewertung.
 Was einmal erreicht ist, steht mit Datum in der Datenbank ("awards") und geht nie
 verloren, auch nicht durch „Gesamtstatistik zurücksetzen“ (die
-Sitzungsdateien bleiben dabei ohnehin stehen).
+Durchgänge bleiben dabei ohnehin stehen).
 
 Beim ersten Mal wird still nachgetragen, was sich aus dem bisherigen Üben
 ergibt (mit dem Tag, an dem es erreicht wurde); danach gilt ein neues
@@ -143,55 +143,49 @@ class Session:
 @dataclass
 class Data:
     sessions: list
-    results: list   # Einträge aus results.jsonl mit "day"
+    results: list   # Ergebnisse (stats.log_result) mit "day"
     review: dict
     practice: dict
 
 
-# Sitzungsdateien ändern sich nach dem Schreiben nicht mehr: einmal gelesen,
-# bleiben sie im Speicher (Schlüssel: Pfad, Größe, Änderungszeit).
+# Abgeschlossene Durchgänge ändern sich nicht mehr: einmal gelesen, bleiben
+# sie im Speicher (Schlüssel: db.generation und id des Durchgangs).
 _session_cache = {}
 
 
-def _read_session(path):
-    try:
-        info = path.stat()
-    except OSError:
-        return None
-    key = (str(path), info.st_size, info.st_mtime)
-    if key in _session_cache:
-        return _session_cache[key]
-    config = summary = None
+def _make_session(config: dict, summary: dict, events: list):
     chars, groups = [], []
-    for obj in stats._read_jsonl(path):
-        if not isinstance(obj, dict):
-            continue
+    for obj in events:
         kind = obj.get("type")
-        if kind == "config":
-            config = obj
-        elif kind == "summary":
-            summary = obj
-        elif kind == "char":
+        if kind == "char":
             chars.append((_text(obj.get("char")), _text(obj.get("typed")), bool(obj.get("correct"))))
         elif kind == "group":
             first = obj.get("first")
             groups.append((_text(obj.get("sent")), _text(obj.get("typed")), first if isinstance(first, bool) else None))
-    session = None
-    if config and summary and not config.get("self_assessed"):
-        try:
-            day = datetime.fromisoformat(config["start_time"]).date()
-            session = Session(day, config, summary, chars, groups)
-        except (KeyError, TypeError, ValueError):
-            pass
-    _session_cache[key] = session
-    return session
+    try:
+        day = datetime.fromisoformat(config["start_time"]).date()
+    except (KeyError, TypeError, ValueError):
+        return None
+    return Session(day, config, summary, chars, groups)
+
+
+def _load_sessions() -> list:
+    """Abgeschlossene Durchgänge ohne Selbstbewertung, nach Startzeit; die
+    Zeilen werden nur für noch nicht gelesene Durchgänge geholt."""
+    wanted = [s for s in db.sessions() if s.summary is not None and not s.config.get("self_assessed")]
+    generation = db.generation
+    missing = [s.id for s in wanted if (generation, s.id) not in _session_cache]
+    events = db.events_by_session(missing) if missing else {}
+    for s in wanted:
+        if s.id in events:
+            _session_cache[(generation, s.id)] = _make_session(s.config, s.summary, events[s.id])
+    return [session for session in (_session_cache[(generation, s.id)] for s in wanted) if session]
 
 
 def load_data() -> Data:
-    sessions = [s for s in (_read_session(p) for p in sorted(stats.STATS_DIR.glob("20*.jsonl"))) if s]
-    sessions.sort(key=lambda s: s.config.get("start_time", ""))
+    sessions = _load_sessions()
     results = []
-    for obj in stats._read_jsonl(stats.RESULTS_FILE):
+    for obj in db.results():
         try:
             results.append({**obj, "day": datetime.fromisoformat(obj["time"]).date()})
         except (KeyError, TypeError, ValueError):

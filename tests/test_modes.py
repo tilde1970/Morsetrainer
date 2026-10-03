@@ -12,7 +12,7 @@ from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import app as app_module
-from morsetrainer.core import koch, stats
+from morsetrainer.core import db, koch, stats
 from morsetrainer.modes import continuous_mode, run_mode, single_mode
 from morsetrainer.modes import sequence_mode as sq
 
@@ -25,7 +25,6 @@ class AppTestCase(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
             mock.patch.object(app_module, "WINDOW_STATE_FILE", directory / "window_state.json"),
         ]
         for patch in self.patches:
@@ -83,9 +82,9 @@ class GroupEvaluationTest(AppTestCase):
     def test_session_log_has_lesson_conditions_and_first_tries(self):
         self._start()
         self._answer("KMU", "KMU")
-        path = self.group.session_stats.log_path
+        session_id = self.group.session_stats.session_id
         self.group._finalize_session()
-        lines = list(stats._read_jsonl(path))
+        lines = list(tests.session_lines(session_id))
         config, summary = lines[0], lines[-1]
         self.assertEqual((config["lesson"], config["band"], config["adaptive_tempo"]), (3, None, False))
         self.assertNotIn("band_gain", config)
@@ -96,9 +95,9 @@ class GroupEvaluationTest(AppTestCase):
         self._answer("KMU", "KMU")
         self._answer("KMU", "KMU", replayed=True)
         self._answer("KMU", "KMM")
-        path = self.group.session_stats.log_path
+        session_id = self.group.session_stats.session_id
         self.group._finalize_session()
-        firsts = [line["first"] for line in stats._read_jsonl(path) if line["type"] == "group"]
+        firsts = [line["first"] for line in tests.session_lines(session_id) if line["type"] == "group"]
         self.assertEqual(firsts, [True, False, False])
 
     def test_replayed_slow_or_overtyped_do_not_count(self):
@@ -345,7 +344,7 @@ class RufzTest(AppTestCase):
         modes = [e["mode"] for e in stats.load_history()]
         self.assertEqual(modes, ["rufz"])  # nicht zusätzlich als „Rufzeichen“
         self.assertEqual(stats.load_history()[0]["score"], g.rufz_score)
-        result = list(stats._read_jsonl(stats.RESULTS_FILE))[-1]
+        result = db.results()[-1]
         self.assertEqual((result["start_wpm"], result["prefixes"], result["learned_only"]), (20, [], False))
 
     def test_rufz_needs_enough_calls(self):
@@ -487,7 +486,7 @@ class DailyInterfaceTest(AppTestCase):
         g.daily_configure(0.5, input_style=sq.COPY, adaptive_tempo=False, band=None, give_up=1)
         g.start()
         self.assertAlmostEqual(g.deadline - time.time(), 30, delta=2)
-        path = g.session_stats.log_path
+        session_id = g.session_stats.session_id
         g.running = True
         g.current_sequence, g.attempts, g.replayed, g.repeat_pending = "KM", 0, False, False
         g.voice = (20, 600)
@@ -498,7 +497,7 @@ class DailyInterfaceTest(AppTestCase):
         g.input_var.set("KM")
         g.on_submit()
         g.stop()
-        self.assertTrue(list(stats._read_jsonl(path))[0]["daily"])
+        self.assertTrue(list(tests.session_lines(session_id))[0]["daily"])
         result = g.daily_result()
         self.assertEqual((result["first_try_correct"], result["first_try_total"], result["total"]), (2, 2, 2))
         self.assertEqual(result["best_streak"], 1)
@@ -572,9 +571,9 @@ class ContinuousStopTest(AppTestCase):
         # K und M gehört und getippt, das letzte K kam 0,5 s vor dem Stopp.
         self._session(c, [("K", now - 5), ("M", now - 4), ("K", now - 0.5)],
                       [("K", now - 4.6), ("M", now - 3.5)])
-        path = c.session_stats.log_path
+        session_id = c.session_stats.session_id
         c._finalize_session(stopped_at=now)
-        summary = list(stats._read_jsonl(path))[-1]
+        summary = list(tests.session_lines(session_id))[-1]
         self.assertEqual((summary["extra_keys"], summary["completed"]), (0, False))  # von Hand gestoppt
         self.assertEqual((c.daily_result()["extra_keys"], c.daily_result()["completed"]), (0, False))
         self.assertEqual(c.koch_result[1:], (2, 2))  # das letzte K zählt nicht als verpasst
@@ -834,26 +833,26 @@ class QsoHeadCopyTest(AppTestCase):
         self.assertFalse(q.running)
         q._on_quiz_checked(3, 3)
         self.assertEqual(self.app.wpm_var.get(), 20)
-        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["mode"], "qso_head")
+        self.assertEqual(db.results()[-1]["mode"], "qso_head")
 
     def test_skipped_head_copy_counts_as_failed_but_not_in_history(self):
         q, _ = self._qso("head")
         q.qso_eval, q.quiz_ready = "head", True
         with mock.patch.object(q, "_play"):
             q.start_new()  # ohne „Prüfen“ weiter
-        last = list(stats._read_jsonl(stats.RESULTS_FILE))[-1]
+        last = db.results()[-1]
         self.assertEqual((last["mode"], last["correct"], last.get("skipped")), ("qso_head", 0, True))
         self.assertFalse(any(e["mode"] == "qso_head" for e in stats.load_history()))
         with mock.patch.object(q, "_play"):
             q.start_new()  # das neue QSO lief noch nicht zu Ende: nichts eintragen
-        self.assertEqual(len(list(stats._read_jsonl(stats.RESULTS_FILE))), 1)
+        self.assertEqual(len(db.results()), 1)
 
     def test_mode_is_fixed_at_start(self):
         q, qso_mode = self._qso("quiz")
         q.qso_eval = "quiz"
         q.eval_var.set(qso_mode.EVAL_LABELS["head"])  # nach dem Hören umgeschaltet
         q._on_quiz_checked(5, 8)
-        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["mode"], "qso_quiz")
+        self.assertEqual(db.results()[-1]["mode"], "qso_quiz")
 
     def test_replays_before_check_are_logged_and_freeze_tempo(self):
         q, _ = self._qso("quiz")
@@ -864,7 +863,7 @@ class QsoHeadCopyTest(AppTestCase):
         q._on_quiz_checked(8, 8)
         self.assertIn("2× „Nochmal“", q.status_var.get())
         self.assertEqual(self.app.wpm_var.get(), 20)
-        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["replays"], 2)
+        self.assertEqual(db.results()[-1]["replays"], 2)
 
     def test_pileups_only_for_contests_and_short_default(self):
         from morsetrainer.core import qso_text
@@ -917,7 +916,7 @@ class ContestBustedTest(AppTestCase):
         self.assertIn("DL1ABC TU", r.status_var.get())
         r.stop()
         # Erst nach der Korrektur richtig: zählt nicht fürs WPX-Diplom.
-        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["calls"], [])
+        self.assertEqual(db.results()[-1]["calls"], [])
 
     def test_wpx_calls_only_without_query(self):
         r, caller = self._contest_with_caller()
@@ -933,7 +932,7 @@ class ContestBustedTest(AppTestCase):
             r._log_qso()
         self.assertEqual([e["ok"] for e in r.log], [True, True])
         r.stop()
-        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE))[-1]["calls"], ["DL1ABC"])
+        self.assertEqual(db.results()[-1]["calls"], ["DL1ABC"])
 
     def test_unnoticed_busted_call_is_marked(self):
         r, caller = self._contest_with_caller()

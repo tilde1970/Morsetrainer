@@ -2,7 +2,6 @@
 Gruppen per Alignment und die mitwachsende Gruppenlänge."""
 import random
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
@@ -264,8 +263,7 @@ class TempoHistoryTest(unittest.TestCase):
         from morsetrainer.core import stats
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
-            with mock.patch.object(stats, "STATS_DIR", directory), \
-                    mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"):
+            with mock.patch.object(stats, "STATS_DIR", directory):
                 session = stats.SessionStats("group", "KM", 20, 600)
                 session.record_char("K", "K", True, 0.5, 20.0)
                 session.finalize({"wpm_reached": 27, "wpm_end": 25})  # ältere Dateien
@@ -276,13 +274,11 @@ class TempoHistoryTest(unittest.TestCase):
         from morsetrainer.core import stats
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
-            with mock.patch.object(stats, "STATS_DIR", directory), \
-                    mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"):
+            with mock.patch.object(stats, "STATS_DIR", directory):
                 for extra in (None, {"wpm_effective_reached": 13}):
                     session = stats.SessionStats("group", "KM", 20, 600, farnsworth_wpm=10)
                     session.record_char("K", "K", True, 0.5, 20.0)
                     session.finalize(extra)
-                    time.sleep(1.1)  # eigener Dateiname je Sekunde
                 self.assertEqual([e["wpm"] for e in stats.load_history()], [10, 13])
 
 

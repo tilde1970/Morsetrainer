@@ -64,7 +64,6 @@ class StatsRobustnessTest(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
         ]
         for patch in self.patches:
             patch.start()
@@ -83,7 +82,7 @@ class StatsRobustnessTest(unittest.TestCase):
         self.assertEqual(stats.load_all_time()["K"]["good"], 1)
 
     def test_unwritable_log_keeps_training(self):
-        with mock.patch("builtins.open", side_effect=PermissionError("keine Schreibrechte")):
+        with mock.patch.object(db, "start_session", side_effect=db.Error("keine Schreibrechte")):
             session = stats.SessionStats("single", "K", 20, 600)
         self.assertIn("Schreibrechte", session.log_error)
         session.record_char("K", "K", True, 0.5, 20.0)
@@ -94,9 +93,8 @@ class StatsRobustnessTest(unittest.TestCase):
         done = stats.SessionStats("group", "KM", 20, 600)
         done.record_char("K", "K", True, 0.5, 20.0)
         done.finalize()
-        crashed = stats.STATS_DIR / "2026-01-01_120000-group.jsonl"
-        crashed.write_text('{"type": "config", "mode": "group", "wpm": 20, "start_time": "2026-01-01T12:00:00"}\n'
-                           '{"type": "char", "char": "K"}\n{"type": "summ', encoding="utf-8")
+        tests.write_session([{"type": "config", "mode": "group", "wpm": 20, "start_time": "2026-01-01T12:00:00"},
+                             {"type": "char", "char": "K"}])  # abgestürzt: ohne summary
         self.assertEqual(len(stats.load_history()), 1)
 
 

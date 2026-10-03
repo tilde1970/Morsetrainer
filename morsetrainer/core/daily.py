@@ -32,7 +32,7 @@ import math
 from dataclasses import dataclass, field
 from datetime import date
 
-from morsetrainer.core import db, koch, review, stats, tempo
+from morsetrainer.core import db, koch, review, tempo
 
 STATE_KEY = "daily"
 
@@ -373,32 +373,18 @@ RUFZ_FROM_LESSON = 27   # Rufzeichen brauchen die erste Ziffer (Lektion 23) und 
 CONFUSIONS, RUFZ, WORD = "confusions", "rufz", "word"
 
 
-def _session_files(first: date, last: date):
-    """Sitzungsdateien mit Startdatum von `first` bis `last` (einschließlich)."""
-    for path in stats.STATS_DIR.glob("20*.jsonl"):
-        try:
-            day = date.fromisoformat(path.name[:10])
-        except ValueError:
-            continue
-        if first <= day <= last:
-            yield path
-
-
 def latencies(first: date, last: date) -> dict:
     """{Zeichen: {Zeichentempo: [Sekunden]}} aus Einzelzeichen-Sitzungen;
     verpasst oder falsch = math.inf. Angenommene Zeiten zählen nicht."""
     data = {}
-    for path in _session_files(first, last):
-        wpm = None
-        for obj in stats._read_jsonl(path):
-            kind = obj.get("type")
-            if kind == "config":
-                if obj.get("mode") != "single" or obj.get("self_assessed") or obj.get("char_stats") is False:
-                    break
-                wpm = obj.get("wpm")
-                if not isinstance(wpm, int) or isinstance(wpm, bool):
-                    break
-            elif kind == "char" and wpm is not None:
+    for session in db.sessions(since=first, until=last, mode="single", events=True):
+        config = session.config
+        wpm = config.get("wpm")
+        if (config.get("self_assessed") or config.get("char_stats") is False
+                or not isinstance(wpm, int) or isinstance(wpm, bool)):
+            continue
+        for obj in session.events:
+            if obj.get("type") == "char":
                 value = obj.get("latency_s")
                 if obj.get("correct") and isinstance(value, (int, float)) and not isinstance(value, bool):
                     if obj.get("latency_assumed"):
@@ -414,9 +400,9 @@ def group_shares(first: date, last: date) -> dict:
     """{effektives Tempo: [richtig, gesamt]} beim ersten Versuch in Gruppen
     mit festem Tempo (mitwachsendes Tempo ist nicht vergleichbar)."""
     data = {}
-    for path in _session_files(first, last):
-        config, summary = stats._config_and_summary(path)
-        if (not config or not summary or config.get("mode") != "group" or config.get("self_assessed")
+    for session in db.sessions(since=first, until=last, mode="group"):
+        config, summary = session.config, session.summary
+        if (not summary or config.get("self_assessed")
                 or config.get("adaptive_tempo") or summary.get("wpm_effective_reached")
                 or not summary.get("first_try_total")):
             continue

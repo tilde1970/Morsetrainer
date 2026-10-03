@@ -79,6 +79,10 @@ _lock = threading.RLock()
 _path = None
 _conn = None
 _conn_path = None
+# Zählt jedes Öffnen einer Datenbank mit. Wer Durchgänge nach ihrer id
+# zwischenspeichert, erkennt daran eine andere Datei (Tests, Import einer
+# Sicherung), in der dieselbe id einen anderen Durchgang meint.
+generation = 0
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
 
 
@@ -152,7 +156,7 @@ def _set_aside(file: Path) -> None:
 
 
 def _connection() -> sqlite3.Connection:
-    global _conn, _conn_path
+    global _conn, _conn_path, generation
     file = path()
     if _conn is not None and file != _conn_path:
         close()
@@ -166,6 +170,7 @@ def _connection() -> sqlite3.Connection:
             _set_aside(file)
             _conn = _open(file)
         _conn_path = file
+        generation += 1
     return _conn
 
 
@@ -309,20 +314,26 @@ def sessions(since=None, until=None, mode=None, events=False) -> list:
         summary = _load(summary_text) if summary_text is not None else None
         out.append(Session(session_id, config, summary if isinstance(summary, dict) else None, None))
     if events and out:
-        by_id = {s.id: s for s in out}
+        by_id = events_by_session([s.id for s in out])
         for s in out:
-            s.events = []
-        # In Stücken, damit die Zahl der Platzhalter die Grenze von SQLite nicht reißt.
-        ids = list(by_id)
-        for start in range(0, len(ids), 500):
-            chunk = ids[start:start + 500]
-            rows = _read(f"SELECT session_id, data FROM events WHERE session_id IN "
-                         f"({','.join('?' * len(chunk))}) ORDER BY session_id, id", chunk)
-            for session_id, text in rows:
-                entry = _load(text)
-                if isinstance(entry, dict):
-                    by_id[session_id].events.append(entry)
+            s.events = by_id[s.id]
     return out
+
+
+def events_by_session(ids) -> dict:
+    """{id: [Zeilen in der Reihenfolge des Schreibens]} der Durchgänge `ids`."""
+    by_id = {session_id: [] for session_id in ids}
+    ids = list(by_id)
+    # In Stücken, damit die Zahl der Platzhalter die Grenze von SQLite nicht reißt.
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start + 500]
+        rows = _read(f"SELECT session_id, data FROM events WHERE session_id IN "
+                     f"({','.join('?' * len(chunk))}) ORDER BY session_id, id", chunk)
+        for session_id, text in rows:
+            entry = _load(text)
+            if isinstance(entry, dict):
+                by_id[session_id].append(entry)
+    return by_id
 
 
 def session_events(session_id: int) -> list:

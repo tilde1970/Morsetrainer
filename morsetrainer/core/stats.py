@@ -1,9 +1,9 @@
 """Session statistics for the Morsetrainer: per-character results and
-effective copying speed, persisted as JSON Lines (one JSON object per
-line, flushed immediately so a crash doesn't lose the session — inspired
-by the JsonlLogger in WZab/morse_trainer's morse_trainer_cont.py).
+effective copying speed, persisted in the database (core/db.py), each line
+committed immediately so a crash doesn't lose the session — inspired by
+the JsonlLogger in WZab/morse_trainer's morse_trainer_cont.py).
 
-A session file looks like:
+A session consists of (as JSON, one database row each):
     {"type": "config", ...}
     {"type": "char", "char": "A", "typed": "A", "correct": true, ...}
     {"type": "group", "sent": "KMU", "typed": "KMU", ...}   (group mode only)
@@ -13,10 +13,8 @@ The state "all_time" in the database (core/db.py) accumulates per-character
 totals across all sessions, including which characters were typed instead
 ("confusions"; "" = missed).
 """
-import json
 import statistics
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core import db
@@ -70,17 +68,11 @@ class SessionStats:
         self.rounds = []  # flat list of per-character results, across the whole session
         self.per_char = {}
 
-        self.log_path = STATS_DIR / f"{self.start_time.strftime('%Y-%m-%d_%H%M%S')}-{mode}.jsonl"
         # Lässt sich das Protokoll nicht schreiben (Platte voll, keine
         # Schreibrechte), geht die Übung ohne Protokoll weiter.
         self.log_error = None
-        try:
-            STATS_DIR.mkdir(exist_ok=True)
-            self._fp = open(self.log_path, "a", encoding="utf-8")
-        except OSError as exc:
-            self._fp = None
-            self.log_error = str(exc)
-        self._write_line({
+        self.session_id = None
+        config = {
             "type": "config",
             "mode": mode,
             "charset": charset,
@@ -93,27 +85,23 @@ class SessionStats:
             **({"in_history": False} if not in_history else {}),
             **({"char_stats": False} if not char_stats else {}),
             **(config_extra or {}),
-        })
+        }
+        try:
+            self.session_id = db.start_session(config)
+        except (db.Error, OSError) as exc:
+            self.log_error = str(exc)
         # Hochstufungen in der Lernkartei durch diese Sitzung (review.update).
         self.review_events = []
 
     def _write_line(self, obj: dict) -> None:
-        if self._fp is None:
+        """Nach dem ersten Fehler schreibt der Durchgang nichts mehr; er
+        bleibt ohne Zusammenfassung wie nach einem Absturz."""
+        if self.session_id is None or self.log_error is not None:
             return
         try:
-            self._fp.write(json.dumps(obj, ensure_ascii=False) + "\n")
-            self._fp.flush()
-        except OSError as exc:
+            db.add_event(self.session_id, obj)
+        except (db.Error, OSError) as exc:
             self.log_error = str(exc)
-            self._close()
-
-    def _close(self) -> None:
-        if self._fp is not None:
-            try:
-                self._fp.close()
-            except OSError:
-                pass
-            self._fp = None
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
                     latency=None, assumed=False) -> None:
@@ -213,29 +201,36 @@ class SessionStats:
         return out
 
     def finalize(self, extra=None):
-        """Write the closing summary line, merge into the all-time totals, and
-        close the log file. Returns the log file path, or None if nothing
-        was ever recorded (in which case the empty file is removed).
-        `extra` adds fields to the summary line (e.g. "wpm_effective_reached")."""
+        """Write the closing summary, merge into the all-time totals and the
+        review boxes — all in one transaction, so a crash can't leave them
+        out of step. Returns the session's number (database id), or None if
+        it wasn't saved or nothing was ever recorded (in which case the
+        empty session is removed). `extra` adds fields to the summary
+        (e.g. "wpm_effective_reached")."""
         self.duration_s = round((datetime.now() - self.start_time).total_seconds(), 1)
         if not self.rounds:
-            self._close()
-            try:
-                self.log_path.unlink(missing_ok=True)
-            except OSError:
-                pass
+            if self.session_id is not None:
+                try:
+                    db.delete_session(self.session_id)
+                except (db.Error, OSError):
+                    pass
             return None
-        self._write_line({
+        summary = {
             "type": "summary", **self.summary(), "duration_s": self.duration_s, **(extra or {}),
             "per_char": self._per_char_summary(),
-        })
-        self._close()
-        if not self.self_assessed and self.char_stats:
-            _merge_all_time(self)
-            from morsetrainer.core import review  # review importiert stats
-            review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset),
-                          events=self.review_events, fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
-        return self.log_path if self.log_error is None else None
+        }
+        try:
+            with db.transaction():
+                if self.session_id is not None and self.log_error is None:
+                    db.finish_session(self.session_id, summary)
+                if not self.self_assessed and self.char_stats:
+                    _merge_all_time(self)
+                    from morsetrainer.core import review  # review importiert stats
+                    review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset),
+                                  events=self.review_events, fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
+        except (db.Error, OSError) as exc:
+            self.log_error = self.log_error or str(exc)
+        return self.session_id if self.log_error is None else None
 
 
 def _merge_all_time(session: "SessionStats") -> None:
@@ -269,10 +264,7 @@ def _merge_all_time(session: "SessionStats") -> None:
         confusions = x.setdefault("confusions", {})
         for typed, count in e["confusions"].items():
             confusions[typed] = confusions.get(typed, 0) + count
-    try:
-        db.save_state(ALL_TIME_KEY, all_time)
-    except (db.Error, OSError):
-        pass  # Gesamtstatistik bleibt auf dem alten Stand; das Sitzungsprotokoll ist geschrieben
+    db.save_state(ALL_TIME_KEY, all_time)
 
 
 ALL_TIME_KEY = "all_time"
@@ -305,7 +297,7 @@ RECENT_DAYS = 30
 
 def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     """Zeichenstatistik wie die Gesamtstatistik ({Zeichen: {"good", "wrong",
-    "confusions"}}), aber nur aus den Sitzungsdateien der letzten `days`
+    "confusions"}}), aber nur aus den Durchgängen der letzten `days`
     Tage und nach dem letzten Zurücksetzen. Längst behobene Verwechslungen
     fallen so heraus. Selbst bewertete Sitzungen und Klartext zählen nicht."""
     now = now or datetime.now()
@@ -316,18 +308,11 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     except (TypeError, ValueError):
         pass
     data = {}
-    for path in STATS_DIR.glob("20*.jsonl"):
-        try:
-            started = datetime.strptime(path.name[:17], "%Y-%m-%d_%H%M%S")
-        except ValueError:
+    for session in db.sessions(since=cutoff.replace(microsecond=0), events=True):
+        if session.config.get("self_assessed") or session.config.get("char_stats") is False:
             continue
-        if started < cutoff:
-            continue
-        for obj in _read_jsonl(path):
-            kind = obj.get("type")
-            if kind == "config" and (obj.get("self_assessed") or obj.get("char_stats") is False):
-                break
-            if kind != "char" or "char" not in obj:
+        for obj in session.events:
+            if obj.get("type") != "char" or "char" not in obj:
                 continue
             e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}})
             if obj.get("correct"):
@@ -391,10 +376,6 @@ def top_confusions(all_time: dict, limit=10):
 
 
 # --- Verlauf -------------------------------------------------------------------
-# Ergebnisse, die keine Zeichenstatistik haben (QSO-Abfrage, Contest-Runs),
-# eine Zeile pro Durchgang.
-RESULTS_FILE = STATS_DIR / "results.jsonl"
-
 # Beschriftungen deutsch; übersetzt wird bei der Anzeige (progress_widget).
 HISTORY_MODES = {
     "single": N_("Einzelzeichen"),
@@ -412,8 +393,8 @@ HISTORY_MODES = {
 
 
 def log_result(mode: str, correct: int, total: int, wpm: int, **extra) -> None:
-    """Hängt ein Ergebnis an stats/results.jsonl an (für den Verlauf).
-    Lässt sich nicht schreiben (Platte voll, keine Schreibrechte), fehlt
+    """Speichert ein Ergebnis ohne Zeichenstatistik (QSO-Abfrage, Contest …),
+    eins je Durchgang, für den Verlauf und die Diplome. Lässt sich nicht schreiben (Platte voll, keine Schreibrechte), fehlt
     das Ergebnis im Verlauf; die Auswertung auf dem Schirm geht weiter."""
     entry = {
         "time": datetime.now().isoformat(timespec="seconds"),
@@ -425,56 +406,15 @@ def log_result(mode: str, correct: int, total: int, wpm: int, **extra) -> None:
         **extra,
     }
     try:
-        STATS_DIR.mkdir(exist_ok=True)
-        with open(RESULTS_FILE, "a", encoding="utf-8") as fp:
-            fp.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    except OSError:
+        db.add_result(entry)
+    except (db.Error, OSError):
         pass
-
-
-def _read_jsonl(path: Path):
-    try:
-        with open(path, "rt", encoding="utf-8") as fp:
-            for line in fp:
-                try:
-                    yield json.loads(line)
-                except json.JSONDecodeError:
-                    continue  # z. B. halb geschriebene Zeile nach einem Absturz
-    except OSError:
-        return
-
-
-# So viel vom Dateiende wird gelesen, um die Zeile "summary" zu finden
-# (enthält die Werte je Zeichen, daher etwas Reserve).
-SUMMARY_TAIL_BYTES = 65536
-
-
-def _config_and_summary(path: Path):
-    """Erste Zeile (config) und letzte Zeile (summary) einer Sitzungsdatei,
-    ohne die Zeilen dazwischen zu lesen; fehlt eine, steht dort None."""
-    try:
-        with open(path, "rb") as fp:
-            first = fp.readline()
-            size = fp.seek(0, 2)
-            fp.seek(max(size - SUMMARY_TAIL_BYTES, 0))
-            tail = fp.read()
-    except OSError:
-        return None, None
-    lines = tail.rstrip(b"\n").rsplit(b"\n", 1)
-    parsed = []
-    for raw, kind in ((first, "config"), (lines[-1], "summary")):
-        try:
-            obj = json.loads(raw.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            obj = None
-        parsed.append(obj if isinstance(obj, dict) and obj.get("type") == kind else None)
-    return parsed[0], parsed[1]
 
 
 def _session_effective_wpm(config: dict, summary: dict) -> int:
     """Effektives Tempo eines Durchgangs für den Verlauf, damit Durchgänge
     mit und ohne Farnsworth vergleichbar sind. Bei mitwachsendem Tempo das
-    erreichte; ältere Dateien kennen nur das erreichte Zeichentempo."""
+    erreichte; ältere Durchgänge kennen nur das erreichte Zeichentempo."""
     if summary.get("wpm_effective_reached"):
         return int(summary["wpm_effective_reached"])
     wpm = int(summary.get("wpm_reached") or config["wpm"])
@@ -484,11 +424,11 @@ def _session_effective_wpm(config: dict, summary: dict) -> int:
 
 def load_history():
     """Alle abgeschlossenen Durchgänge, chronologisch: [{"time": datetime,
-    "mode", "accuracy_pct", "wpm", "total"}]. Quelle sind die Sitzungsdateien
-    (Zeile "config" + "summary") und results.jsonl."""
+    "mode", "accuracy_pct", "wpm", "total"}]. Quelle sind die Durchgänge
+    (config + summary) und die Ergebnisse (log_result)."""
     history = []
-    for path in STATS_DIR.glob("20*.jsonl"):
-        config, summary = _config_and_summary(path)
+    for session in db.sessions():
+        config, summary = session.config, session.summary
         if (not config or not summary or not summary.get("total") or config.get("self_assessed")
                 or config.get("in_history") is False):
             continue
@@ -502,7 +442,7 @@ def load_history():
             })
         except (KeyError, TypeError, ValueError):
             continue
-    for obj in _read_jsonl(RESULTS_FILE):
+    for obj in db.results():
         # Übersprungenes Kopfhör-QSO, geleitete Netzwerk-Sitzung: nur für die Diplome.
         if obj.get("skipped") or obj.get("role") == "trainer":
             continue

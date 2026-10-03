@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import stats
+from morsetrainer.core import db, stats
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol, scoreboard
 from morsetrainer.net.scoreboard import (
@@ -503,7 +503,6 @@ class NetworkTabTest(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
         ]
         for patch in self.patches:
             patch.start()
@@ -593,7 +592,7 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("1 von 2", self.trainee.trainee_status_var.get())
         self.assertEqual(self.trainer.board.confusions(), [("R", "S", 1)])
         self.assertIn("Gruppe: 92", self.trainer.group_var.get())
-        self.assertTrue(list(Path(self.tmp.name).glob("20*-network.jsonl")))
+        self.assertTrue(db.sessions(mode="network"))
 
         self.trainer.export_csv()
         exported = list(Path(self.tmp.name).glob("*-netzwerk.csv"))
@@ -699,7 +698,7 @@ class NetworkTabTest(unittest.TestCase):
         self.connect()
         self.start_custom("KM\n")
         self.trainer.stop_run()
-        led = list(stats._read_jsonl(stats.RESULTS_FILE))
+        led = db.results()
         self.assertEqual([(r["mode"], r["role"], r["participants"]) for r in led], [("network", "trainer", 1)])
         self.assertNotIn(("trainer", "start"), self.practice)  # keine Übungszeit
         self.assertFalse(any(e.get("mode") == "network" and e["total"] == 0 for e in stats.load_history()))
@@ -719,7 +718,7 @@ class NetworkTabTest(unittest.TestCase):
         self.trainer.custom_text.insert("1.0", "KM\n")
         self.trainer.start_run()
         self.trainer.stop_run()
-        self.assertEqual(list(stats._read_jsonl(stats.RESULTS_FILE)), [])
+        self.assertEqual(db.results(), [])
 
     def test_function_keys_only_for_the_trainer(self):
         self.connect()
@@ -983,9 +982,9 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("1 von 2", self.trainee.trainee_status_var.get())
         self.assertEqual(str(self.trainee.paper_check.cget("state")), "normal")
         # Eigene Statistik: im Verlauf, aber nicht in der Zeichenstatistik.
-        logs = list(Path(self.tmp.name).glob("20*-network.jsonl"))
+        logs = db.sessions(mode="network")
         self.assertEqual(len(logs), 1)
-        self.assertIn('"char_stats": false', logs[0].read_text(encoding="utf-8"))
+        self.assertIs(logs[0].config["char_stats"], False)
         self.assertEqual(stats.load_all_time(), {})
 
     def test_trainer_enters_paper_sheets(self):

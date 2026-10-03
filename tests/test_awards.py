@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import awards, diploma, koch, stats
+from morsetrainer.core import awards, db, diploma, koch, stats
 from morsetrainer.core.awards import Data, Session
 from morsetrainer.widgets import awards_panel as panel
 
@@ -300,17 +300,16 @@ class DamagedDataTest(unittest.TestCase):
     der Übung nicht jedes Mal scheitern lassen."""
 
     def test_session_lines_with_wrong_types(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "2026-10-01_200000-single.jsonl"
-            path.write_text("\n".join([
-                '{"type": "config", "mode": "single", "start_time": "2026-10-01T20:00:00"}',
-                '[1, 2]',
-                '{"type": "char", "char": "K", "typed": null, "correct": false}',
-                '{"type": "char", "char": ["K"], "typed": "K", "correct": true}',
-                '{"type": "group", "sent": "KM", "typed": 5, "first": "ja"}',
-                '{"type": "summary", "total": 2}',
-            ]) + "\n", encoding="utf-8")
-            loaded = awards._read_session(path)
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
+            session_id = tests.write_session([
+                {"type": "config", "mode": "single", "start_time": "2026-10-01T20:00:00"},
+                {"type": "char", "char": "K", "typed": None, "correct": False},
+                {"type": "char", "char": ["K"], "typed": "K", "correct": True},
+                {"type": "group", "sent": "KM", "typed": 5, "first": "ja"},
+                {"type": "summary", "total": 2},
+            ])
+            db._write("INSERT INTO events (session_id, type, data) VALUES (?, '', '[1, 2]')", (session_id,))
+            [loaded] = awards._load_sessions()
         self.assertEqual(loaded.chars, [("K", "", False), ("", "K", True)])
         self.assertEqual(loaded.groups, [("KM", "", None)])
 

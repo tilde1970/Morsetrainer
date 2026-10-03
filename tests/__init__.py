@@ -28,5 +28,28 @@ from morsetrainer.core import stats as _stats  # noqa: E402
 
 _guard_dir = Path(tempfile.mkdtemp(prefix="morsetrainer-tests-"))
 _stats.STATS_DIR = _guard_dir / "stats"
-_stats.RESULTS_FILE = _stats.STATS_DIR / "results.jsonl"
 atexit.register(shutil.rmtree, _guard_dir, True)
+
+
+def session_lines(session_id: int) -> list:
+    """Ein Durchgang aus der Datenbank als Zeilen wie früher in der
+    Sitzungsdatei: config, die Zeilen dazwischen, summary (falls vorhanden)."""
+    from morsetrainer.core import db
+    [session] = [s for s in db.sessions() if s.id == session_id]
+    return [session.config, *db.session_events(session_id), *([session.summary] if session.summary else [])]
+
+
+def write_session(lines) -> int:
+    """Legt einen Durchgang aus Zeilen wie in einer Sitzungsdatei an
+    (erste Zeile config mit "start_time" und "mode", eine Zeile "summary"
+    schließt ihn ab) und gibt seine id zurück."""
+    from morsetrainer.core import db
+    config, *rest = lines
+    with db.transaction():
+        session_id = db.start_session(config)
+        for line in rest:
+            if line.get("type") == "summary":
+                db.finish_session(session_id, line)
+            else:
+                db.add_event(session_id, line)
+    return session_id
