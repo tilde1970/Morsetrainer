@@ -39,6 +39,45 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 - **Bandbedingungen** in drei Stufen: leicht, mittel, stark. Sie liegen auch
   unter dem Anfangszeichen (VVV =) und dem Schlusszeichen (+).
 
+### Tagesübung
+
+Keine Lust zu entscheiden, was du heute übst? **▶ Tagesübung (10 Min)**
+oben in der Kopfleiste (oder F12) stellt zehn Minuten aus dem zusammen, was
+dran ist, und schaltet die Reiter selbst um:
+
+| Stand | Aufwärmen | Hauptteil | Ausklang |
+|---|---|---|---|
+| Lektion 1–9 | Einzelzeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Kontinuierlich, Gruppen von 3, 2 Min |
+| Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
+| Lektion 30–44 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
+| nach Koch | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
+
+- **Aufwärmen** mit den heute fälligen Zeichen der Lernkartei; ist nichts
+  fällig, mit deinen häufigsten Verwechslungen. Bei vielen fälligen Zeichen
+  wird es etwas länger, der Hauptteil entsprechend kürzer.
+- **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
+  18 WPM). Angepasst wird von Tag zu Tag: ab 90 % beim ersten Versuch
+  (mindestens 100 Zeichen) am nächsten Tag 1 WPM schneller, unter 75 %
+  1 WPM langsamer.
+- **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
+  beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion –
+  ohne Nachfrage.
+- **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
+  für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen einer
+  neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
+  vorgemerkt, ein Zeichen erstmals in Fach 3 der Lernkartei oder ein
+  schnelleres Tagestempo. Eine zweite Tagesübung am selben Tag kann
+  fehlende Sterne nachholen; verdiente Sterne gehen nie verloren, auch
+  nicht beim Abbrechen.
+- **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue Sterne
+  und was als Nächstes kommt; Enter geht gleich weiter, Esc beendet die
+  Tagesübung. Die Einstellungen der Reiter sind danach wieder wie vorher.
+- **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
+  (Reaktionszeit je Zeichen, Gruppenquote; nur mit genug Daten, nie
+  „schlechter“), wie viel bis zur nächsten Lektion fehlt und, wenn der
+  Hauptteil gut lief, einmal am Tag **Noch 5 Min** mit etwas anderem:
+  deine Verwechslungen, einen Rufz-Durchgang oder Wörter.
+
 ### Lernweg für Einsteiger
 
 1. **Koch-Lektion** oben auf 1 stellen (K und M). Voreingestellt ist das
@@ -233,6 +272,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 
 ### Tastenkürzel
 
+- **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
+  beendet.
 - **Einzelzeichen, Gruppen, Wörter, Rufzeichen:** Leertaste wiederholt.
   Beim Kopfhören: Enter löst auf, J = gewusst, N = nicht gewusst.
 - **Rufz (nach dem Durchgang):** F6 verpasste Rufzeichen nachhören bzw. das aktuelle nochmal, F7 von vorn, Esc anhalten.
@@ -309,7 +350,8 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 
 
 - `stats/`: Sitzungsprotokolle, Gesamtstatistik (`all_time.json`),
-  Lernkartei (`review.json`),
+  Lernkartei (`review.json`), Tagesübung mit Sternen, Lektion und
+  Tagestempo (`daily.json`),
   Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`) und die
   Übungszeit pro Tag (`practice.json`); dazu die CSV-Tabellen aus dem
   Reiter Netzwerk (`…-netzwerk.csv`).

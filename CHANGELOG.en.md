@@ -1,5 +1,28 @@
 # Changes
 
+## 2.22
+
+- **Daily practice:** a button at the top (or F12) puts together ten
+  minutes from whatever is due – warm-up with due characters, main part
+  with groups at a fixed speed, wind-down with words, callsigns or
+  continuous depending on the lesson – and switches the tabs by itself.
+  The speed adapts from day to day, and the next lesson follows without
+  asking on the day after the criterion is met. Three stars a day
+  (Showed up, Clean, Ahead), cards between the blocks and an evening
+  summary with a comparison to the week before and “5 more min”.
+  Afterwards all settings are back as they were. See README, “Daily
+  practice”.
+- **Daily goal** now defaults to 10 minutes (like the daily practice); a
+  goal you already set is kept.
+- **Characters, time limit:** the limit now settles where nearly nine out
+  of ten characters come in time; before, about every third character was
+  “too slow” at any level. Lower bound 0.5 s instead of 0.4 s – below
+  that you would train reaction speed, not recognition.
+- **First character no longer clipped:** on Linux the audio system put the
+  output device to sleep after a short silence, and the start of the
+  first character after starting or pausing was missing (especially with
+  Bluetooth headphones). The Morsetrainer now keeps the device awake.
+
 ## 2.21
 
 - **Network, typing in paper copies:** after a fixed-pace run the trainer

@@ -40,6 +40,44 @@ In **Groups, Words and Callsigns** you can choose:
 - **Band conditions** in three levels: light, medium, heavy. They also run
   under the start sign (VVV =) and the end sign (+).
 
+### Daily practice
+
+Can't be bothered to decide what to practise today? **▶ Daily practice
+(10 min)** at the top (or F12) puts together ten minutes from whatever is
+due and switches the tabs by itself:
+
+| Level | Warm-up | Main part | Wind-down |
+|---|---|---|---|
+| Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Continuous, groups of 3, 2 min |
+| Lesson 10–29 | as above | as above | Words, 2 min |
+| Lesson 30–44 | as above | as above | Words or callsigns on alternate days, 2 min |
+| after Koch | Characters, 2 min | Continuous, groups of 5, 4 min | Callsigns, 4 min |
+
+- **Warm-up** with the characters due today in the review box; if nothing
+  is due, with your most frequent confusions. With many due characters it
+  gets a little longer and the main part correspondingly shorter.
+- **Speed:** the main part keeps a fixed speed (characters at least
+  18 WPM). It changes from day to day: 90 % or more on the first try (at
+  least 100 characters) makes the next day 1 WPM faster, below 75 % 1 WPM
+  slower.
+- **Lesson:** if the main part meets the Koch criterion (50 characters,
+  90 % on the first try), the next lesson applies from the next day – no
+  question asked.
+- **Three stars a day:** ★ *Showed up* for the full 10 minutes, ★ *Clean*
+  for 90 % on the first try in the main part (80 % in the first three days
+  of a new lesson), ★ *Ahead* for real progress: next lesson earned, a
+  character reaching box 3 of the review box for the first time, or a
+  faster daily speed. A second daily practice on the same day can add
+  missing stars; earned stars are never lost, not even when you stop early.
+- **Between the blocks** a short card shows the result, new stars and
+  what comes next; Enter continues at once, Esc ends the daily practice.
+  Afterwards the tab settings are back as they were.
+- **Evening summary:** stars, what improved compared with the week before
+  (reaction time per character, group score; only with enough data, never
+  “worse”), how much is missing for the next lesson and, if the main part
+  went well, once a day **5 more min** with something different: your
+  confusions, a RufZ run or words.
+
 ### Learning path for beginners
 
 1. Set **Koch lesson** at the top to 1 (K and M). The default is **Koch
@@ -226,6 +264,8 @@ versions (CHANGELOG) and this manual.
 
 ### Keyboard shortcuts
 
+- **Daily practice:** F12 starts, Enter skips the card between blocks, Esc
+  stops.
 - **Characters, Groups, Words, Callsigns:** the space bar repeats.
   Head copy: Enter reveals, J = knew it, N = didn't.
 - **RufZ (after the run):** F6 replay missed callsigns or the current one again, F7 from the start, Esc stop.
@@ -299,7 +339,8 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
 `%APPDATA%\Morsetrainer\`.
 
 - `stats/`: session logs, overall statistics (`all_time.json`), review box
-  (`review.json`), results of QSO checks and contests (`results.jsonl`) and
+  (`review.json`), daily practice with stars, lesson and daily speed
+  (`daily.json`), results of QSO checks and contests (`results.jsonl`) and
   practice time per day (`practice.json`); also the CSV tables from the
   Network tab (`…-netzwerk.csv`).
 - `window_state.json`: window size and all settings, including the language.

@@ -1,5 +1,27 @@
 # Änderungen
 
+## 2.22
+
+- **Tagesübung:** Ein Knopf oben (oder F12) stellt zehn Minuten aus dem
+  zusammen, was dran ist – Aufwärmen mit fälligen Zeichen, Hauptteil mit
+  Gruppen in festem Tempo, Ausklang mit Wörtern, Rufzeichen oder
+  Kontinuierlich, je nach Lektion – und schaltet die Reiter selbst um.
+  Das Tempo passt sich von Tag zu Tag an, die nächste Lektion kommt ohne
+  Nachfrage am Tag nach dem geschafften Kriterium. Drei Sterne am Tag
+  (Dabei, Sauber, Weiter), Zwischenkarten zwischen den Blöcken und eine
+  Abendbilanz mit Vergleich zur Vorwoche und „Noch 5 Min“. Danach sind
+  alle Einstellungen wieder wie vorher. Siehe README, „Tagesübung“.
+- **Tagesziel** ist jetzt standardmäßig 10 Minuten (wie die Tagesübung);
+  ein schon eingestelltes Ziel bleibt.
+- **Einzelzeichen, Zeitlimit:** Das Limit pendelt sich jetzt dort ein, wo
+  knapp neun von zehn Zeichen rechtzeitig kommen; bisher war bei jedem
+  Stand etwa jedes dritte Zeichen „zu langsam“. Untergrenze 0,5 s statt
+  0,4 s – darunter würde Reaktionsschnelle geübt, nicht das Erkennen.
+- **Erstes Zeichen fehlt nicht mehr:** Unter Linux legte das Audiosystem
+  das Ausgabegerät nach kurzer Stille schlafen, und vom ersten Zeichen
+  nach Start oder Pause fehlte der Anfang (besonders mit
+  Bluetooth-Kopfhörern). Der Morsetrainer hält das Gerät jetzt wach.
+
 ## 2.21
 
 - **Netzwerk, Papier abtippen:** Nach einem Durchgang im festen Takt trägt
