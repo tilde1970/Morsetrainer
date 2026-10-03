@@ -42,7 +42,7 @@ def next_text(award, status) -> str:
     elif status.progress:
         have, need = status.progress
         progress = tr("{have} / {need} {unit}").format(have=_amount(have), need=_amount(need),
-                                                       unit=tr(award.unit)).strip()
+                                                       unit=tr(award.unit_for(need))).strip()
     if not award.levels:
         return progress or "–"
     name = tr(awards.LEVEL_NAMES[level])
@@ -82,7 +82,8 @@ def diploma_condition(award, level) -> str:
     text = tr(award.condition)
     if award.levels and not award.stepped:
         text += " – " + tr("{level} ab {target} {unit}").format(
-            level=tr(awards.LEVEL_NAMES[level]), target=_amount(award.targets[level]), unit=tr(award.unit)).strip()
+            level=tr(awards.LEVEL_NAMES[level]), target=_amount(award.targets[level]),
+            unit=tr(award.unit_for(award.targets[level], dative=True))).strip()
     return text
 
 

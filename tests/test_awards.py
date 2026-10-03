@@ -269,6 +269,10 @@ class DiplomaTest(unittest.TestCase):
                                     labels={"title": "Diplom", "awarded": "verliehen an"})
         for text in ("Koch", "Silber", "DL0ABC", "Erika", "03.10.2026", "Silber ab 25 Lektionen", "landscape"):
             self.assertIn(text, page)
+        club = awards.BY_KEY["club"]
+        self.assertTrue(panel.diploma_condition(club, 0).endswith("Bronze ab 1 Abend"))
+        self.assertTrue(panel.diploma_condition(club, 1).endswith("Silber ab 5 Abenden"))
+        self.assertTrue(panel.diploma_condition(awards.BY_KEY["confusion"], 0).endswith("Bronze ab 1 Paar"))
         plain = diploma.diploma_html("Clubabend", "", diploma.seal_colors(0, levels=False), "<b>", "1.1.", "")
         self.assertNotIn("verliehen", plain)
         self.assertIn("&lt;b&gt;", plain)

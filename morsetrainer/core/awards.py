@@ -57,6 +57,15 @@ class Award:
     levels: bool = True
     two_days: bool = False  # Silber und höher erst an zwei verschiedenen Tagen
     stepped: bool = False   # Stufen aus mehreren Bedingungen: Fortschritt ist die Stufe selbst
+    unit_one: str = ""      # Einzahl der Einheit, wo eine Schwelle 1 ist („ab 1 Abend“)
+    unit_dative: str = ""   # Dativ Mehrzahl, wo er abweicht („ab 5 Abenden“)
+
+    def unit_for(self, amount, dative=False) -> str:
+        """Einheit passend zur Menge, mit `dative` für „ab …“; noch
+        unübersetzt (für tr())."""
+        if amount == 1 and self.unit_one:
+            return self.unit_one
+        return self.unit_dative if dative and self.unit_dative else self.unit
 
 
 AWARDS = (
@@ -80,22 +89,22 @@ AWARDS = (
           (1, 2, 3), "", 25, two_days=True, stepped=True),
     Award("rufz", N_("Rufz"), N_("Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, "
                                  "Zeichentempo beim Start ≥ 20 WPM"),
-          (2000, 3500, 5500, 7500), N_("Punkte"), 27, two_days=True),
+          (2000, 3500, 5500, 7500), N_("Punkte"), 27, unit_dative=N_("Punkten"), two_days=True),
     Award("contest", N_("Contest"), N_("Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % "
                                        "Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; "
                                        "Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler"),
           (1, 2, 3), "", koch.FINAL_LESSON, two_days=True, stepped=True),
     Award("wpx", N_("WPX"), N_("Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und "
                                "Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM"),
-          (100, 400, 1200, 2000), N_("Präfixe"), 25),
+          (100, 400, 1200, 2000), N_("Präfixe"), 25, unit_dative=N_("Präfixen")),
     Award("headphones", N_("Kopfhörer"), N_("3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen "
                                             "richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal "
                                             "oder Lang"), (15, 20, 25), N_("WPM eff."), koch.FINAL_LESSON),
     Award("confusion", N_("Verwechslung überwunden"), N_("Ein häufig verwechseltes Paar 28 Tage lang mit je "
                                                          "≥ 40 Versuchen höchstens einmal verwechselt"),
-          (1, 3, 6), N_("Paare"), 5),
+          (1, 3, 6), N_("Paare"), 5, unit_one=N_("Paar"), unit_dative=N_("Paaren")),
     Award("endurance", N_("Ausdauer"), N_("Tage mit ≥ 10 Min. Übung, nicht in Folge"),
-          (10, 50, 150, 365), N_("Tage")),
+          (10, 50, 150, 365), N_("Tage"), unit_dative=N_("Tagen")),
     Award("heard", N_("Zeichen gehört"), N_("Richtig erkannte Zufallszeichen"),
           (5000, 25000, 100000, 250000), N_("Zeichen")),
     Award("first_qso", N_("Erstes QSO verstanden"), N_("Normales QSO mit Abfrage, alles richtig, ohne "
@@ -104,7 +113,8 @@ AWARDS = (
                                                         "Fehlern"), (5,), N_("Contests"), koch.FINAL_LESSON,
           levels=False),
     Award("club", N_("Clubabend"), N_("Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als "
-                                      "Trainer geleitet"), (1, 5, 15, 40), N_("Abende")),
+                                      "Trainer geleitet"), (1, 5, 15, 40), N_("Abende"),
+          unit_one=N_("Abend"), unit_dative=N_("Abenden")),
     Award("q_groups", N_("Q-Gruppen-Kenner"), N_("Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an "
                                                  "mindestens 2 Tagen, Zeichen ≥ 18 WPM"),
           (len(Q_GROUPS),), N_("Q-Gruppen"), 40, levels=False),

@@ -1042,6 +1042,7 @@ EN.update({
     "Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Zeichentempo beim Start ≥ 20 WPM":
         "Full Rufz run with 50 calls, no prefix filter, character speed at the start ≥ 20 WPM",
     "Punkte": "points",
+    "Punkten": "points",
     "Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, "
     "Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler":
         "Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, "
@@ -1052,6 +1053,7 @@ EN.update({
         "Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for "
         "the call again), characters ≥ 18 WPM",
     "Präfixe": "prefixes",
+    "Präfixen": "prefixes",
     "Kopfhörer": "Headphones",
     "Noch kein Lauf ab Band {band}, der die übrigen Bedingungen erfüllt":
         "No run yet from band {band} that meets the other conditions",
@@ -1071,9 +1073,12 @@ EN.update({
     "Ein häufig verwechseltes Paar 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt":
         "A frequently confused pair confused at most once in 28 days with ≥ 40 attempts each",
     "Paare": "pairs",
+    "Paaren": "pairs",
+    "Paar": "pair",
     "Ausdauer": "Endurance",
     "Tage mit ≥ 10 Min. Übung, nicht in Folge": "Days with ≥ 10 min practice, not in a row",
     "Tage": "days",
+    "Tagen": "days",
     "Zeichen gehört": "Characters heard",
     "Richtig erkannte Zufallszeichen": "Correctly recognised random characters",
     "Erstes QSO verstanden": "First QSO understood",
@@ -1087,6 +1092,8 @@ EN.update({
     "Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als Trainer geleitet":
         "Days with ≥ 10 min of network sessions in total, taken part in or led as trainer",
     "Abende": "evenings",
+    "Abenden": "evenings",
+    "Abend": "evening",
     "Q-Gruppen-Kenner": "Q-code expert",
     "Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM":
         "Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM",
