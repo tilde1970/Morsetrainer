@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.26
 
 - **Diplome nur mit schnellen Zeichen:** Worked All Letters und Alle
   Ziffern zählen ein Fach der Lernkartei nur, wenn es mit Zeichen ab 18 WPM

@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.26
 
 - **Awards only with fast characters:** Worked All Letters and All digits
   count a review box only if it was reached with characters at 18 WPM or
