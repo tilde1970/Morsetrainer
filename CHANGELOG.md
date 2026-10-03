@@ -1,5 +1,18 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Datenbank:** Alle Übungsdaten liegen jetzt in einer Datei
+  (`stats/morsetrainer.db`, SQLite) statt in vielen einzelnen JSON-Dateien.
+  Der Abschluss eines Durchgangs, die Gesamtstatistik und die Lernkartei
+  werden gemeinsam gespeichert, ein Absturz kann sie nicht mehr
+  auseinanderbringen. Beim ersten Start werden die bisherigen Dateien
+  übernommen und nach `stats/alt-json/` verschoben; gelöscht wird nichts.
+- **Daten sichern:** Die Datenbank kommt als stimmiger Stand in die
+  Sicherung, auch wenn gerade geübt wird. Beim Einlesen wird sie vorher
+  geprüft; eine beschädigte Sicherung ersetzt nichts. Ältere Sicherungen
+  lassen sich weiter einlesen.
+
 ## 2.27
 
 - **Stabilität:** Bricht die Tonausgabe in Kontinuierlich, QSO oder Contest

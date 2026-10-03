@@ -135,7 +135,7 @@ highest level.
 - For flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need two
   different days** – one lucky run is not enough.
 - Only runs without self-assessment count.
-- Seals achieved are kept with their date in `stats/awards.json` and are
+- Seals achieved are kept with their date in the database and are
   never lost, not even with “Reset overall statistics”.
 - On the first start with awards, whatever follows from your practice so
   far is filled in quietly (with the day it was reached); one note says
@@ -423,12 +423,20 @@ When started from source, the data lives in the program directory; for the
 AppImage in `~/.local/share/morsetrainer/`, for the exe in
 `%APPDATA%\Morsetrainer\`.
 
-- `stats/`: session logs, overall statistics (`all_time.json`), review box
-  (`review.json`), daily practice with stars, lesson and daily speed
-  (`daily.json`), results of QSO checks and contests (`results.jsonl`) and
-  practice time per day (`practice.json`), the awards achieved
-  (`awards.json`, the award opened last as `diplom.html`); also the CSV tables from the Network tab
-  (`…-netzwerk.csv`).
+- `stats/morsetrainer.db`: all practice data in an SQLite database – every
+  run with its characters, results of QSO checks and contests, overall
+  statistics, review box, daily practice with stars, lesson and daily
+  speed, practice time per day and the awards achieved. Every line is
+  saved immediately; a crash costs at most the current one. If the file is
+  damaged, it is set aside as `morsetrainer.db.defekt-<time>` and a new
+  one is started.
+- Also in `stats/`: the award opened last (`diplom.html`) and the CSV
+  tables from the Network tab (`…-netzwerk.csv`).
+- Up to version 2.27 the practice data lived as separate files in `stats/`
+  (`*.jsonl`, `all_time.json`, `review.json`, `daily.json`, `awards.json`,
+  `practice.json`, `results.jsonl`). The first start of a newer version
+  takes them over into the database and then moves them to
+  `stats/alt-json/`; nothing is deleted.
 - `window_state.json`: window size and all settings, including the language.
 - `callsigns.scp`: callsign list (Super Check Partial). It is **not included
   in the repository**. Download the current `MASTER.SCP` from
@@ -448,7 +456,10 @@ file in a place of your choice, e.g. a USB stick. **Restore …** brings
 them back on the new computer: `stats/` is replaced completely, the other
 files if they are in the backup. The current state is saved first as
 `vor-import-<time>.zip` in the data directory. The program then quits;
-the restored settings apply from the next start. The voice for speech
+the restored settings apply from the next start. The database goes into
+the backup as a consistent state, even during practice; when restoring,
+it is checked first. Backups from version 2.27 and older can still be
+restored; the next start takes over their files. The voice for speech
 output (`voices/`) is not included, it ships with the AppImage or exe.
 
 ## License

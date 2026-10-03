@@ -134,7 +134,7 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
 - Bei Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher erst
   an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht.
 - Gezählt werden nur Durchgänge ohne Selbstbewertung.
-- Erreichte Siegel stehen mit Datum in `stats/awards.json` und gehen nie
+- Erreichte Siegel stehen mit Datum in der Datenbank und gehen nie
   verloren, auch nicht mit „Gesamtstatistik zurücksetzen“.
 - Beim ersten Start mit Diplomen wird still nachgetragen, was sich aus dem
   bisherigen Üben ergibt (mit dem Tag, an dem es erreicht wurde); ein
@@ -432,13 +432,20 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 `%APPDATA%\Morsetrainer\`.
 
 
-- `stats/`: Sitzungsprotokolle, Gesamtstatistik (`all_time.json`),
-  Lernkartei (`review.json`), Tagesübung mit Sternen, Lektion und
-  Tagestempo (`daily.json`),
-  Ergebnisse von QSO-Abfragen und Contests (`results.jsonl`) und die
-  Übungszeit pro Tag (`practice.json`), die erreichten Diplome
-  (`awards.json`, das zuletzt geöffnete Diplom als `diplom.html`); dazu die CSV-Tabellen aus dem Reiter Netzwerk
-  (`…-netzwerk.csv`).
+- `stats/morsetrainer.db`: alle Übungsdaten in einer SQLite-Datenbank –
+  jeder Durchgang mit seinen Zeichen, Ergebnisse von QSO-Abfragen und
+  Contests, Gesamtstatistik, Lernkartei, Tagesübung mit Sternen, Lektion
+  und Tagestempo, Übungszeit pro Tag und die erreichten Diplome. Jede
+  Zeile wird sofort gespeichert; ein Absturz kostet höchstens die
+  laufende. Ist die Datei beschädigt, wird sie als
+  `morsetrainer.db.defekt-<Zeit>` beiseitegelegt und eine neue begonnen.
+- Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
+  die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`).
+- Bis Version 2.27 lagen die Übungsdaten als einzelne Dateien in `stats/`
+  (`*.jsonl`, `all_time.json`, `review.json`, `daily.json`, `awards.json`,
+  `practice.json`, `results.jsonl`). Der erste Start einer neueren Version
+  übernimmt sie in die Datenbank und verschiebt sie danach nach
+  `stats/alt-json/`; gelöscht wird nichts.
 - `window_state.json`: Fenstergröße und alle Einstellungen, auch die Sprache.
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
   im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von
@@ -459,7 +466,10 @@ in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
 vollständig ersetzt, die anderen Dateien, soweit sie in der Sicherung
 sind. Der bisherige Stand landet vorher als `vor-import-<Zeit>.zip` im
 Datenverzeichnis. Danach beendet sich das Programm; beim nächsten Start
-gelten die eingelesenen Einstellungen. Die Stimme für die Sprachausgabe
+gelten die eingelesenen Einstellungen. Die Datenbank kommt als stimmiger
+Stand in die Sicherung, auch wenn gerade geübt wird; beim Einlesen wird
+sie vorher geprüft. Sicherungen von Version 2.27 und älter lassen sich
+weiter einlesen, ihre Dateien übernimmt der nächste Start. Die Stimme für die Sprachausgabe
 (`voices/`) ist nicht dabei, sie steckt im AppImage bzw. in der exe.
 
 ## Lizenz

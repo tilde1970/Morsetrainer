@@ -1,5 +1,17 @@
 # Changes
 
+## Unreleased
+
+- **Database:** all practice data now lives in one file
+  (`stats/morsetrainer.db`, SQLite) instead of many separate JSON files.
+  The end of a run, the overall statistics and the review box are saved
+  together, so a crash can no longer leave them out of step. On the first
+  start the existing files are taken over and moved to `stats/alt-json/`;
+  nothing is deleted.
+- **Backing up data:** the database goes into the backup as a consistent
+  state, even during practice. When restoring, it is checked first; a
+  damaged backup replaces nothing. Older backups can still be restored.
+
 ## 2.27
 
 - **Stability:** if audio output in continuous, QSO or contest stops with
