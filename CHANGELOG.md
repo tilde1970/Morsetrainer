@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.24
 
 - **Clubabend:** Netzwerk-Übungen aus Versionen vor 2.22 zählen wieder.
   Ihre Protokolle enthalten keine Dauer, deshalb galten sie seit 2.23 als

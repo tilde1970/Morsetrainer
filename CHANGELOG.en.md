@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.24
 
 - **Club night:** network sessions from versions before 2.22 count again.
   Their logs contain no duration, so since 2.23 they counted as 0 minutes
