@@ -99,12 +99,13 @@ wird nach jeder Übung; ein neues Siegel zeigt ein Fenster mit Datum und
 Knopf **Drucken** – das Diplom öffnet sich als Urkunde im Browser (A4
 quer) mit deinem Rufzeichen und Namen aus „▸ Weitere Optionen“ (im
 Fenster auch änderbar). In der
-Tagesübung kommt das Fenster erst nach der Abendbilanz, die ein neues
-Siegel des Tages auch nennt.
+Tagesübung kommt das Fenster erst nach der Abendbilanz, die die neuen
+Siegel aus der Tagesübung auch nennt.
 
 Die Übersicht steht im Reiter **Statistik** unter „Diplome“: alle
 Diplome mit erreichten Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25
 Lektionen“) und ab welcher Lektion es erreichbar ist; offene stehen grau.
+Clubabend geht nur gemeinsam im Netzwerk und steht ohne Siegel am Ende.
 Eine gewählte Zeile zeigt Bedingung und Tage der Siegel, bei QRN-fest,
 Contest und Verwechslung auch, wie nah du der nächsten Stufe bist (bester
 Lauf bzw. das nächste Paar mit verbleibenden Tagen); „Diplom ansehen
@@ -113,22 +114,22 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
 | Diplom | Stufen | ab Lektion | Bedingung |
 |---|---|---|---|
 | Koch | Lektion 10 / 25 / 41 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
-| Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach |
+| Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach, erreicht mit Zeichen ≥ 18 WPM |
 | Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
 | QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
-| Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
+| Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
 | WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM |
-| Kopfhörer | 15 / 20 / 25 WPM effektiv | 41 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
+| Kopfhörer | 15 / 20 / 25 WPM effektiv | 41 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“, Zeichen ≥ 18 WPM; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
 | Verwechslung überwunden | 1 / 3 / 6 Paare | 5 | Ein Paar, das zu deinen häufigsten Verwechslungen gehörte, 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt |
 | Ausdauer | 10 / 50 / 150 / 365 Tage | – | Tage mit ≥ 10 Min. Übung, nicht in Folge |
-| Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen |
+| Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM |
 | Clubabend | 1 / 5 / 15 / 40 Abende | – | Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als Trainer geleitet (nur Durchgänge mit Teilnehmern) |
-| Erstes QSO verstanden | – | 40 | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv |
+| Erstes QSO verstanden | – | 40 | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv, Zeichen ≥ 18 WPM |
 | Worked All Contests | – | 41 | Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern |
 | Q-Gruppen-Kenner | – | 40 | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
-| Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3 |
+| Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3, erreicht mit Zeichen ≥ 18 WPM |
 
 - Bei Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher erst
   an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht.

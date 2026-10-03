@@ -191,6 +191,18 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(events, [{"char": "M", "box": 3, "first": False}])
         self.assertNotIn("best_day", data["M"])
 
+    def test_award_box_only_from_fast_sessions(self):
+        day = date(2026, 9, 27)
+        review._save({"K": {"box": 2, "best_box": 2, "best_day": "2026-09-01", "due": day.isoformat()},
+                      "M": {"box": 2, "due": day.isoformat()}})
+        data = review.update(self._chars(K=(10, 0), M=(10, 0)), promote=True, today=day, fast=False)
+        # Langsam: das Fach steigt, für die Diplome bleibt das bisherige (alter Eintrag: best_box).
+        self.assertEqual((data["K"]["box"], review.award_box(data["K"]), data["K"]["award_day"]),
+                         (3, 2, "2026-09-01"))
+        later = date.fromisoformat(data["M"]["due"])
+        data = review.update(self._chars(M=(10, 0)), promote=True, today=later)
+        self.assertEqual((review.award_box(data["M"]), data["M"]["award_day"]), (4, later.isoformat()))
+
     def test_old_entries_without_best_box(self):
         self.assertEqual(review.best_box({"box": 4}), 4)
         self.assertEqual(review.best_box({}), 0)

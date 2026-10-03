@@ -377,7 +377,8 @@ class QsoModeFrame:
         if (self.qso is not None and self.quiz_ready and not self.quiz_checked
                 and self.qso_eval == EVAL_HEAD):
             stats.log_result("qso_head", 0, HEAD_QUESTIONS, tempo.effective(self.voices[0][0], self.fw),
-                             kind=self.qso.kind, length=self.length_var.get(), replays=self.replays, skipped=True)
+                             kind=self.qso.kind, length=self.length_var.get(), replays=self.replays, skipped=True,
+                             char_wpm=self.voices[0][0])
 
     def _quiz_view(self):
         """Was die Abfrage-Tabelle zeigt: beim Kopfhören einige zufällige
@@ -660,7 +661,7 @@ class QsoModeFrame:
         head = self.qso_eval == EVAL_HEAD
         mode = "qso_head" if head else "qso_quiz"
         stats.log_result(mode, correct, total, tempo.effective(self.voices[0][0], self.fw), kind=self.qso.kind,
-                         length=self.length_var.get(), replays=self.replays)
+                         length=self.length_var.get(), replays=self.replays, char_wpm=self.voices[0][0])
         self.on_stop_cb()  # Statistik-Reiter (Verlauf) aktualisieren
         self.quiz_checked = True
         self.revealed = True

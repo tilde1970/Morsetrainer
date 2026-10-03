@@ -58,6 +58,8 @@ class Award:
     levels: bool = True
     two_days: bool = False  # Silber und höher erst an zwei verschiedenen Tagen
     stepped: bool = False   # Stufen aus mehreren Bedingungen: Fortschritt ist die Stufe selbst
+    steps: tuple = ()       # bei `stepped`: Bedingung je Stufe, zusätzlich zu `condition`
+    together: bool = False  # nur gemeinsam mit anderen erreichbar: ohne Siegel am Ende der Übersicht
     unit_one: str = ""      # Einzahl der Einheit, wo eine Schwelle 1 ist („ab 1 Abend“)
     unit_dative: str = ""   # Dativ Mehrzahl, wo er abweicht („ab 5 Abenden“)
 
@@ -72,9 +74,10 @@ class Award:
 AWARDS = (
     Award("koch", N_("Koch"), N_("Bestandener Aufstiegslauf (≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, "
                                 "Zeichen ≥ 18 WPM)"), (10, 25, koch.FINAL_LESSON), N_("Lektionen"), 1),
-    Award("wal", N_("Worked All Letters"), N_("Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, "
-                                             "Gold: alle Buchstaben in Fach 6 und alle Ziffern in Fach 4"),
-          (1, 2, 3), N_("Zeichen"), 1, stepped=True),
+    Award("wal", N_("Worked All Letters"), N_("Fächer der Lernkartei, erreicht mit Zeichen ≥ 18 WPM"),
+          (1, 2, 3), N_("Zeichen"), 1, stepped=True,
+          steps=(N_("10 Buchstaben in Fach 3"), N_("alle 26 Buchstaben in Fach 3"),
+                 N_("alle Buchstaben in Fach 6 und alle Ziffern in Fach 4"))),
     Award("flow", N_("Mitschreiben im Fluss"), N_("Kontinuierlich mit Klartext ohne eigene Wörter, Zeichensatz "
                                                  "mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich "
                                                  "überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen "
@@ -85,42 +88,44 @@ AWARDS = (
           (20, 25, 30, 35), N_("WPM"), 40, two_days=True),
     Award("qrn", N_("QRN-fest"), N_("Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen "
                                     "Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen der "
-                                    "rechtzeitige erste Versuch; Bronze: Band leicht 90 %, Silber: mittel "
-                                    "90 %, Gold: stark 85 %"),
-          (1, 2, 3), "", 25, two_days=True, stepped=True),
+                                    "rechtzeitige erste Versuch"),
+          (1, 2, 3), "", 25, two_days=True, stepped=True,
+          steps=(N_("Band leicht, ≥ 90 %"), N_("Band mittel, ≥ 90 %"), N_("Band stark, ≥ 85 %"))),
     Award("rufz", N_("Rufz"), N_("Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, "
                                  "Zeichentempo beim Start ≥ 20 WPM"),
           (2000, 3500, 5500, 7500), N_("Punkte"), 27, unit_dative=N_("Punkten"), two_days=True),
-    Award("contest", N_("Contest"), N_("Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % "
-                                       "Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 %; "
-                                       "Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler"),
-          (1, 2, 3), "", koch.FINAL_LESSON, two_days=True, stepped=True),
+    Award("contest", N_("Contest"), N_("Contest-Durchgang ≥ 10 Min."),
+          (1, 2, 3), "", koch.FINAL_LESSON, two_days=True, stepped=True,
+          steps=(N_("≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler"),
+                 N_("≥ 25 WPM, Aktivität ≥ 2, 20 QSOs in 10 Min., ≤ 5 % Fehler"),
+                 N_("≥ 30 WPM, Aktivität ≥ 3, 25 QSOs in 10 Min., höchstens 1 Fehler"))),
     Award("wpx", N_("WPX"), N_("Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und "
                                "Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM"),
           (100, 400, 1200, 2000), N_("Präfixe"), 25, unit_dative=N_("Präfixen")),
     Award("headphones", N_("Kopfhörer"), N_("3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen "
-                                            "richtig, ohne „Nochmal“; Silber und Gold mit der Länge Normal "
-                                            "oder Lang"), (15, 20, 25), N_("WPM eff."), koch.FINAL_LESSON),
+                                            "richtig, ohne „Nochmal“, Zeichen ≥ 18 WPM; Silber und Gold mit "
+                                            "der Länge Normal oder Lang"), (15, 20, 25), N_("WPM eff."), koch.FINAL_LESSON),
     Award("confusion", N_("Verwechslung überwunden"), N_("Ein häufig verwechseltes Paar 28 Tage lang mit je "
                                                          "≥ 40 Versuchen höchstens einmal verwechselt"),
           (1, 3, 6), N_("Paare"), 5, unit_one=N_("Paar"), unit_dative=N_("Paaren")),
     Award("endurance", N_("Ausdauer"), N_("Tage mit ≥ 10 Min. Übung, nicht in Folge"),
           (10, 50, 150, 365), N_("Tage"), unit_dative=N_("Tagen")),
-    Award("heard", N_("Zeichen gehört"), N_("Richtig erkannte Zufallszeichen"),
+    Award("heard", N_("Zeichen gehört"), N_("Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM"),
           (5000, 25000, 100000, 250000), N_("Zeichen")),
     Award("first_qso", N_("Erstes QSO verstanden"), N_("Normales QSO mit Abfrage, alles richtig, ohne "
-                                                       "„Nochmal“, ≥ 15 WPM effektiv"), (1,), from_lesson=40, levels=False),
+                                                       "„Nochmal“, ≥ 15 WPM effektiv, Zeichen ≥ 18 WPM"), (1,),
+          from_lesson=40, levels=False),
     Award("all_contests", N_("Worked All Contests"), N_("Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % "
                                                         "Fehlern"), (5,), N_("Contests"), koch.FINAL_LESSON,
           levels=False),
     Award("club", N_("Clubabend"), N_("Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als "
                                       "Trainer geleitet"), (1, 5, 15, 40), N_("Abende"),
-          unit_one=N_("Abend"), unit_dative=N_("Abenden")),
+          unit_one=N_("Abend"), unit_dative=N_("Abenden"), together=True),
     Award("q_groups", N_("Q-Gruppen-Kenner"), N_("Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an "
                                                  "mindestens 2 Tagen, Zeichen ≥ 18 WPM"),
           (len(Q_GROUPS),), N_("Q-Gruppen"), 40, levels=False),
-    Award("digits", N_("Alle Ziffern"), N_("Alle 10 Ziffern mindestens in Fach 3"), (10,), N_("Ziffern"),
-          39, levels=False),
+    Award("digits", N_("Alle Ziffern"), N_("Alle 10 Ziffern mindestens in Fach 3, erreicht mit Zeichen "
+                                           "≥ 18 WPM"), (10,), N_("Ziffern"), 39, levels=False),
 )
 BY_KEY = {award.key: award for award in AWARDS}
 
@@ -310,14 +315,15 @@ def _koch(data: Data) -> list:
 
 
 def _best_day(entry: dict, fallback: date) -> date:
+    """Tag, an dem das für die Diplome zählende Fach erreicht wurde."""
     try:
-        return date.fromisoformat(entry.get("best_day") or entry.get("day"))
+        return date.fromisoformat(entry.get("award_day") or entry.get("best_day") or entry.get("day"))
     except (TypeError, ValueError):
         return fallback
 
 
 def _wal(data: Data, today: date) -> list:
-    reached = {ch: (review.best_box(e), _best_day(e, today)) for ch, e in data.review.items()}
+    reached = {ch: (review.award_box(e), _best_day(e, today)) for ch, e in data.review.items()}
     letters3 = sorted(day for ch, (box, day) in reached.items() if ch in LETTERS and box >= BOX_3)
     events = []
     if len(letters3) >= 10:
@@ -332,7 +338,7 @@ def _wal(data: Data, today: date) -> list:
 
 def wal_progress(data: Data) -> tuple:
     """(erreicht, nötig) für die nächste Stufe von Worked All Letters."""
-    boxes = {ch: review.best_box(e) for ch, e in data.review.items()}
+    boxes = {ch: review.award_box(e) for ch, e in data.review.items()}
     letters3 = sum(boxes.get(ch, 0) >= BOX_3 for ch in LETTERS)
     if letters3 < 10:
         return letters3, 10
@@ -530,12 +536,20 @@ def _wpx(data: Data) -> list:
     return _cumulative((day, 1) for day in first_day.values())
 
 
+def _qso_understood(r: dict) -> bool:
+    """Alles richtig, ohne „Nochmal“ und mit Zeichen ≥ 18 WPM; Ergebnisse
+    von vor 2.26 haben kein Zeichentempo und zählen ohne diese Bedingung."""
+    if r.get("char_wpm") is not None and _num(r["char_wpm"]) < MIN_CHAR_WPM:
+        return False
+    return bool(_num(r.get("total"))) and r.get("correct") == r.get("total") and not r.get("replays")
+
+
 def _headphones(data: Data) -> list:
     events, run = [], []
     for r in data.results:
         if r.get("mode") != "qso_head" or r.get("kind") != RAGCHEW:
             continue
-        if _num(r.get("total")) and r.get("correct") == r.get("total") and not r.get("replays"):
+        if _qso_understood(r):
             run.append((_num(r.get("wpm")), r.get("length") == "Kurz"))
             if len(run) >= 3:
                 wpm = min(w for w, _ in run[-3:])
@@ -663,13 +677,14 @@ def _endurance(data: Data) -> list:
 
 
 def _heard(data: Data) -> list:
-    return _cumulative((s.day, sum(1 for _, _, ok in s.chars if ok)) for s in data.sessions if _random_chars(s))
+    return _cumulative((s.day, sum(1 for _, _, ok in s.chars if ok)) for s in data.sessions
+                       if _random_chars(s) and _char_wpm(s.config) >= MIN_CHAR_WPM)
 
 
 def _first_qso(data: Data) -> list:
     return [(r["day"], 1) for r in data.results
-            if r.get("mode") in ("qso_quiz", "qso_head") and r.get("kind") == RAGCHEW and _num(r.get("total"))
-            and r.get("correct") == r.get("total") and not r.get("replays") and _num(r.get("wpm")) >= 15]
+            if r.get("mode") in ("qso_quiz", "qso_head") and r.get("kind") == RAGCHEW and _qso_understood(r)
+            and _num(r.get("wpm")) >= 15]
 
 
 def _all_contests(data: Data) -> list:
@@ -717,7 +732,7 @@ def _q_groups(data: Data) -> list:
 
 def _digits(data: Data, today: date) -> list:
     reached = sorted(_best_day(e, today) for ch, e in data.review.items()
-                     if ch in DIGITS and review.best_box(e) >= BOX_3)
+                     if ch in DIGITS and review.award_box(e) >= BOX_3)
     return [(day, n) for n, day in enumerate(reached, 1)]
 
 
@@ -806,12 +821,6 @@ def seals_of(state: dict, key: str) -> dict:
     return out
 
 
-def seals_on(state: dict, day: date) -> list:
-    """[(Schlüssel, Stufe)] der Siegel, die an `day` dazukamen."""
-    return [(award.key, level) for award in AWARDS
-            for level, seal_day in sorted(seals_of(state, award.key).items()) if seal_day == day]
-
-
 def check(today: date = None, data: Data = None):
     """Neue Siegel eintragen. Rückgabe (neu, nachgetragen): `neu` ist eine
     Liste (Schlüssel, Stufe) für das Diplom-Fenster; beim allerersten Aufruf
@@ -840,7 +849,9 @@ def check(today: date = None, data: Data = None):
 def overview(state: dict = None, statuses: dict = None) -> list:
     """[(Diplom, Status)] für die Übersicht. Die Tage der Siegel kommen aus
     dem Protokoll, wo es sie schon gibt; was noch nicht eingetragen ist,
-    zeigt den Tag aus der Auswertung."""
+    zeigt den Tag aus der Auswertung. Diplome, die nur gemeinsam mit
+    anderen gehen (Clubabend), stehen ohne Siegel am Ende: Wer allein übt,
+    hat sonst mitten in der Liste ein Ziel, das er allein nie erreicht."""
     state = state if state is not None else load()
     statuses = statuses if statuses is not None else evaluate()
     out = []
@@ -857,7 +868,7 @@ def overview(state: dict = None, statuses: dict = None) -> list:
             if award.key == "wal":
                 shown.progress = status.progress
         out.append((award, shown))
-    return out
+    return sorted(out, key=lambda row: row[0].together and not any(row[1].dates))
 
 
 def level_name(award: Award, level: int) -> str:

@@ -101,11 +101,12 @@ after every exercise; a new seal shows a window with the date and a
 landscape) with your callsign and name from “▸ More options” (which you
 can also change in the window). During the
 daily practice the window comes only after the evening summary, which
-also mentions a seal earned that day.
+also mentions the new seals from the daily practice.
 
 The overview is in the **Statistics** tab under “Awards”: all awards with
 the seals achieved, the next goal (e.g. “Silver: 18 / 25 lessons”) and
-from which lesson it can be reached; open ones are grey. A selected row
+from which lesson it can be reached; open ones are grey. Club night only
+works together in the network and is listed last while it has no seal. A selected row
 shows the condition and the days of the seals, for QRN-proof, Contest and
 Confusion also how close you are to the next level (best run or the next
 pair with the days left); “View and print award” shows the award of the
@@ -114,22 +115,22 @@ highest level.
 | Award | Levels | From lesson | Condition |
 |---|---|---|---|
 | Koch | Lesson 10 / 25 / 41 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or continuous) |
-| Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts |
+| Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts, reached with characters ≥ 18 WPM |
 | Copying in flow | 10 / 15 / 22 WPM effective | 15 | Continuous with plain text (words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “words” does not count |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Continuous with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
 | QRN-proof | band light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
 | Contest | see right | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
 | WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for the call again), characters ≥ 18 WPM |
-| Headphones | 15 / 20 / 25 WPM effective | 41 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
+| Headphones | 15 / 20 / 25 WPM effective | 41 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”, characters ≥ 18 WPM; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
 | Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
 | Endurance | 10 / 50 / 150 / 365 days | – | Days with ≥ 10 min practice, not in a row |
-| Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters |
+| Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters, characters ≥ 18 WPM |
 | Club night | 1 / 5 / 15 / 40 evenings | – | Days with ≥ 10 min of network sessions in total, taken part in or led as trainer (only runs with participants) |
-| First QSO understood | – | 40 | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective |
+| First QSO understood | – | 40 | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective, characters ≥ 18 WPM |
 | Worked All Contests | – | 41 | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
 | Q-code expert | – | 40 | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
-| All digits | – | 39 | All 10 digits at least in box 3 |
+| All digits | – | 39 | All 10 digits at least in box 3, reached with characters ≥ 18 WPM |
 
 - For flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need two
   different days** – one lucky run is not enough.

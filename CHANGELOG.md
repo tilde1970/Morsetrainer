@@ -1,5 +1,23 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Diplome nur mit schnellen Zeichen:** Worked All Letters und Alle
+  Ziffern zählen ein Fach der Lernkartei nur, wenn es mit Zeichen ab 18 WPM
+  erreicht wurde; die Lernkartei selbst arbeitet wie bisher. Fächer von
+  vor dieser Version zählen weiter. Auch „Zeichen gehört“ zählt nur noch
+  Übungen ab 18 WPM Zeichentempo.
+- **QSO:** Das Ergebnis speichert jetzt auch das Zeichentempo. Für
+  Kopfhörer und Erstes QSO verstanden zählen neue QSOs erst ab 18 WPM
+  Zeichentempo, ältere Ergebnisse wie bisher.
+- **Urkunde:** Bei Worked All Letters, QRN-fest und Contest steht auf dem
+  Diplom nur noch die Bedingung der erreichten Stufe statt aller Stufen.
+- **Abendbilanz:** Sie nennt nur noch die Siegel aus der Tagesübung, nicht
+  noch einmal die, deren Fenster heute schon kam.
+- **Clubabend:** Das Diplom geht nur gemeinsam im Netzwerk. Ohne Siegel
+  steht es am Ende der Übersicht, mit „gemeinsam im Netzwerk“ statt
+  „0 / 1 Abend“.
+
 ## 2.25
 
 - **Betriebszeichen:** In den Lektionen 42–45 wird nach bestandenem

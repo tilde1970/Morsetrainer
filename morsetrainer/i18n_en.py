@@ -1018,9 +1018,10 @@ EN.update({
         "Passed lesson run (≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM)",
     "Lektionen": "lessons",
     "Worked All Letters": "Worked All Letters",
-    "Bronze: 10 Buchstaben in Fach 3, Silber: alle 26, Gold: alle Buchstaben in Fach 6 und alle Ziffern "
-    "in Fach 4":
-        "Bronze: 10 letters in box 3, Silver: all 26, Gold: all letters in box 6 and all digits in box 4",
+    "Fächer der Lernkartei, erreicht mit Zeichen ≥ 18 WPM": "Review boxes, reached with characters ≥ 18 WPM",
+    "10 Buchstaben in Fach 3": "10 letters in box 3",
+    "alle 26 Buchstaben in Fach 3": "all 26 letters in box 3",
+    "alle Buchstaben in Fach 6 und alle Ziffern in Fach 4": "all letters in box 6 and all digits in box 4",
     "Mitschreiben im Fluss": "Copying in flow",
     "Kontinuierlich mit Klartext ohne eigene Wörter, Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, "
     "≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen oder QSO":
@@ -1033,20 +1034,23 @@ EN.update({
         "run, ≥ 90 % minus extra keys",
     "QRN-fest": "QRN-proof",
     "Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, "
-    "effektiv ≥ 12 WPM, bei Gruppen der rechtzeitige erste Versuch; Bronze: Band leicht 90 %, Silber: mittel "
-    "90 %, Gold: stark 85 %":
+    "effektiv ≥ 12 WPM, bei Gruppen der rechtzeitige erste Versuch":
         "Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, "
-        "effective ≥ 12 WPM, in groups the first attempt in time; Bronze: band light 90 %, Silver: medium "
-        "90 %, Gold: heavy 85 %",
+        "effective ≥ 12 WPM, in groups the first attempt in time",
+    "Band leicht, ≥ 90 %": "band light, ≥ 90 %",
+    "Band mittel, ≥ 90 %": "band medium, ≥ 90 %",
+    "Band stark, ≥ 85 %": "band heavy, ≥ 85 %",
     "Rufz": "Rufz",
     "Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Zeichentempo beim Start ≥ 20 WPM":
         "Full Rufz run with 50 calls, no prefix filter, character speed at the start ≥ 20 WPM",
     "Punkte": "points",
     "Punkten": "points",
-    "Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, "
-    "Aktivität ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler":
-        "Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, "
-        "activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error",
+    "Contest-Durchgang ≥ 10 Min.": "Contest run ≥ 10 min",
+    "≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler": "≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors",
+    "≥ 25 WPM, Aktivität ≥ 2, 20 QSOs in 10 Min., ≤ 5 % Fehler":
+        "≥ 25 WPM, activity ≥ 2, 20 QSOs in 10 min, ≤ 5 % errors",
+    "≥ 30 WPM, Aktivität ≥ 3, 25 QSOs in 10 Min., höchstens 1 Fehler":
+        "≥ 30 WPM, activity ≥ 3, 25 QSOs in 10 min, at most 1 error",
     "WPX": "WPX", "QRQ": "QRQ", "WPM": "WPM",
     "Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach "
     "dem Call), Zeichen ≥ 18 WPM":
@@ -1065,10 +1069,10 @@ EN.update({
     "Noch kein Paar unter deinen häufigsten Verwechslungen": "No pair among your most frequent confusions yet",
     "Nächstes Paar {pair}: noch {days} Tage ohne Verwechslung, {tries} / {need} Versuche je Zeichen":
         "Next pair {pair}: {days} more days without confusion, {tries} / {need} attempts per character",
-    "3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“; Silber und Gold "
-    "mit der Länge Normal oder Lang":
-        "3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”; Silver and "
-        "Gold with the length Normal or Long",
+    "3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“, Zeichen ≥ 18 WPM; "
+    "Silber und Gold mit der Länge Normal oder Lang":
+        "3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”, characters "
+        "≥ 18 WPM; Silver and Gold with the length Normal or Long",
     "Verwechslung überwunden": "Confusion overcome",
     "Ein häufig verwechseltes Paar 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt":
         "A frequently confused pair confused at most once in 28 days with ≥ 40 attempts each",
@@ -1080,10 +1084,10 @@ EN.update({
     "Tage": "days",
     "Tagen": "days",
     "Zeichen gehört": "Characters heard",
-    "Richtig erkannte Zufallszeichen": "Correctly recognised random characters",
+    "Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM": "Correctly recognised random characters, characters ≥ 18 WPM",
     "Erstes QSO verstanden": "First QSO understood",
-    "Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv":
-        "Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective",
+    "Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv, Zeichen ≥ 18 WPM":
+        "Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective, characters ≥ 18 WPM",
     "Worked All Contests": "Worked All Contests",
     "Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern":
         "All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors",
@@ -1099,11 +1103,13 @@ EN.update({
         "Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM",
     "Q-Gruppen": "Q codes",
     "Alle Ziffern": "All digits",
-    "Alle 10 Ziffern mindestens in Fach 3": "All 10 digits at least in box 3",
+    "Alle 10 Ziffern mindestens in Fach 3, erreicht mit Zeichen ≥ 18 WPM":
+        "All 10 digits at least in box 3, reached with characters ≥ 18 WPM",
     "Ziffern": "digits",
     "Diplome": "Awards", "Diplom": "Award", "Siegel": "Seals", "Nächstes Ziel": "Next goal",
     "ab Lektion": "from lesson", "erreicht": "achieved",
     "an einem zweiten Tag wiederholen": "repeat on a second day",
+    "gemeinsam im Netzwerk": "together in the network",
     "{have} / {need} {unit}": "{have} / {need} {unit}",
     "{level}: {progress}": "{level}: {progress}",
     "Stufen: {steps} {unit}": "Levels: {steps} {unit}",

@@ -37,6 +37,8 @@ def next_text(award, status) -> str:
     if level is None:
         return "✓"
     progress = ""
+    if award.together and level == 0:
+        return tr("gemeinsam im Netzwerk")
     if status.second_day and award.two_days:
         progress = tr("an einem zweiten Tag wiederholen")
     elif status.progress:
@@ -54,6 +56,8 @@ def detail_text(award, status) -> str:
     if award.levels and not award.stepped:
         steps = " · ".join(f"{tr(awards.LEVEL_NAMES[i])} {_amount(t)}" for i, t in enumerate(award.targets))
         lines.append(tr("Stufen: {steps} {unit}").format(steps=steps, unit=tr(award.unit)).strip())
+    for level, step in enumerate(award.steps):
+        lines.append(tr("{level}: {progress}").format(level=tr(awards.LEVEL_NAMES[level]), progress=tr(step)))
     if award.two_days:
         lines.append(tr("Silber und höher: an zwei verschiedenen Tagen."))
     if status.hint:
@@ -78,8 +82,11 @@ def seal_name(award, level) -> str:
 
 
 def diploma_condition(award, level) -> str:
-    """Bedingung, bei Stufen mit Schwelle die der erreichten Stufe."""
+    """Bedingung, bei Stufen nur die der erreichten Stufe."""
     text = tr(award.condition)
+    if award.steps:
+        text += " – " + tr("{level}: {progress}").format(level=tr(awards.LEVEL_NAMES[level]),
+                                                          progress=tr(award.steps[level]))
     if award.levels and not award.stepped:
         text += " – " + tr("{level} ab {target} {unit}").format(
             level=tr(awards.LEVEL_NAMES[level]), target=_amount(award.targets[level]),

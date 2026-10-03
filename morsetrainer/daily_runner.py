@@ -349,5 +349,6 @@ class DailyRunner:
         self.summary = EveningSummary(
             self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
             offer, self.start_extra, completed, week.stars_in_week(self.state, self.today),
-            seals=[seal_name(awards.BY_KEY[key], level) for key, level in awards.seals_on(awards.load(), self.today)],
+            # Nur Siegel, die noch kein Diplom-Fenster gezeigt hat; es folgt beim Schließen.
+            seals=[seal_name(awards.BY_KEY[key], level) for key, level, _ in self.app.pending_seals],
             on_close=self.app.show_pending_seals)

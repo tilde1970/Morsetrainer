@@ -1,5 +1,23 @@
 # Changes
 
+## Unreleased
+
+- **Awards only with fast characters:** Worked All Letters and All digits
+  count a review box only if it was reached with characters at 18 WPM or
+  faster; the review boxes themselves work as before. Boxes from before
+  this version still count. “Characters heard” also counts only sessions
+  with a character speed of 18 WPM or more.
+- **QSO:** the result now also stores the character speed. For Headphones
+  and First QSO understood, new QSOs count only from 18 WPM character
+  speed, older results as before.
+- **Certificate:** for Worked All Letters, QRN-proof and Contest, the award
+  shows only the condition of the level reached instead of all levels.
+- **Evening summary:** it names only the seals from the daily practice,
+  not again those whose window already came today.
+- **Club night:** this award only works together in the network. Without
+  a seal it is listed last in the overview, with “together in the network”
+  instead of “0 / 1 evening”.
+
 ## 2.25
 
 - **Prosigns:** in lessons 42–45, passing a run offers the next prosign

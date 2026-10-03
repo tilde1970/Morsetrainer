@@ -24,7 +24,11 @@ gezielten Üben FOCUS_FACTOR (core/weighting.py).
 Gespeichert in stats/review.json: {Zeichen: {"box", "due", "day", Zähler,
 "best_box", "best_day"}}. "best_box" ist das höchste je erreichte Fach (für
 Fortschritt und Diplome: ein späteres Zurückstufen nimmt es nicht weg);
-ältere Einträge ohne das Feld gelten mit ihrem aktuellen Fach."""
+ältere Einträge ohne das Feld gelten mit ihrem aktuellen Fach.
+"award_box" und "award_day" ebenso, aber nur aus Sitzungen mit
+Zeichentempo ab koch.SLOW_CHAR_WPM: Diese Fächer zählen für die Diplome,
+weil sich langsamere Zeichen mitzählen lassen. Einträge von vor diesem
+Feld übernehmen beim ersten Entscheiden ihr bisheriges "best_box"."""
 from datetime import date, timedelta
 
 from morsetrainer.core import stats, storage
@@ -49,7 +53,7 @@ def _path():
 
 
 # Zahlenfelder eines Eintrags: Fächer und die Zähler des Tages ("day").
-BOX_FIELDS = ("box", "best_box")
+BOX_FIELDS = ("box", "best_box", "award_box")
 DAY_FIELDS = ("n", "fluent", "pn", "pfluent")
 
 
@@ -114,9 +118,16 @@ def best_box(entry: dict) -> int:
     return max(int(entry.get("best_box", 0)), int(entry.get("box", 0)))
 
 
-def update(per_char: dict, promote: bool = False, today=None, events=None) -> dict:
+def award_box(entry: dict) -> int:
+    """Höchstes Fach, das für die Diplome zählt (siehe Modultext)."""
+    return int(entry["award_box"]) if "award_box" in entry else best_box(entry)
+
+
+def update(per_char: dict, promote: bool = False, today=None, events=None, fast: bool = True) -> dict:
     """Übernimmt die Ergebnisse einer Sitzung (SessionStats.per_char).
     `promote`: Die Sitzung darf Zeichen hochstufen (siehe Modultext).
+    `fast`: Zeichentempo ab koch.SLOW_CHAR_WPM; nur dann zählt ein neues
+    Fach auch für die Diplome ("award_box").
     `events`: Liste, an die jede Hochstufung als {"char", "box", "first"}
     angehängt wird; "first": das Fach ist für dieses Zeichen neu."""
     today = today or date.today()
@@ -135,18 +146,22 @@ def update(per_char: dict, promote: bool = False, today=None, events=None) -> di
         if promote:
             entry["pn"] += attempts
             entry["pfluent"] += fluent
-        _decide(char, entry, today, events)
+        _decide(char, entry, today, events, fast)
     _save(data)
     return data
 
 
-def _decide(char: str, entry: dict, today: date, events=None) -> None:
+def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True) -> None:
     """Höchstens eine Entscheidung je Zeichen und Tag."""
     if entry["decided"] or entry["n"] < MIN_ATTEMPTS:
         return
     share = entry["fluent"] / entry["n"]
     old_box = box = int(entry.get("box", 0))
     old_best = best_box(entry)
+    if "award_box" not in entry:
+        entry["award_box"] = old_best
+        if "best_day" in entry:
+            entry["award_day"] = entry["best_day"]
     if share < SURE_SHARE:
         box = 0 if share < SHAKY_SHARE else max(box - 1, 0)
     elif "due" not in entry:
@@ -160,6 +175,8 @@ def _decide(char: str, entry: dict, today: date, events=None) -> None:
         entry.update(best_box=box, best_day=today.isoformat())
     elif "best_box" not in entry:
         entry["best_box"] = old_best
+    if fast and box > entry["award_box"]:
+        entry.update(award_box=box, award_day=today.isoformat())
     if box > old_box and events is not None:
         events.append({"char": char, "box": box, "first": box > old_best})
 

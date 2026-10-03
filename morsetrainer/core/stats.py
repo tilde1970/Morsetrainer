@@ -20,6 +20,7 @@ from pathlib import Path
 from morsetrainer import DATA_DIR
 from morsetrainer.core import storage
 from morsetrainer.core import tempo
+from morsetrainer.core.koch import SLOW_CHAR_WPM
 from morsetrainer.core.morse import display_text
 from morsetrainer.i18n import N_
 
@@ -233,7 +234,7 @@ class SessionStats:
             _merge_all_time(self)
             from morsetrainer.core import review  # review importiert stats
             review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset),
-                          events=self.review_events)
+                          events=self.review_events, fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
         return self.log_path if self.log_error is None else None
 
 

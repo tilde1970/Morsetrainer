@@ -65,6 +65,15 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("wal", data(review=review)), [day(9), None, None])
         self.assertEqual(awards.wal_progress(data(review=review)), (10, 26))
 
+    def test_letter_boxes_count_only_when_reached_fast(self):
+        # award_box: Fach aus Sitzungen ab 18 WPM; best_box allein (alte Einträge) zählt weiter.
+        review = {ch: {"box": 3, "best_box": 3, "award_box": 1, "best_day": day(i).isoformat()}
+                  for i, ch in enumerate("ABCDEFGHIJ")}
+        self.assertEqual(dates("wal", data(review=review)), [None, None, None])
+        review["A"].update(award_box=2, award_day=day(20).isoformat())
+        review.update({ch: {"box": 2, "best_box": 2, "best_day": day(0).isoformat()} for ch in "KLMNOPQRS"})
+        self.assertEqual(dates("wal", data(review=review))[0], day(20))
+
     def test_flow_and_qrq_need_full_clean_runs(self):
         flow = dict(content="words", completed=True, duration_s=180, total=100, correct=95, extra_keys=3,
                     farnsworth_wpm=15, charset=koch.lesson_charset(20))
@@ -164,6 +173,15 @@ class AwardsTest(unittest.TestCase):
         long = [result("qso_head", 1, length="Normal", **good)] * 3
         self.assertEqual(dates("headphones", data(results=short + long)), [day(0), day(1), day(1)])
 
+    def test_qso_awards_need_fast_chars_where_known(self):
+        good = dict(kind="ragchew", correct=3, total=3, replays=0, wpm=16)
+        slow = [result("qso_head", 0, char_wpm=16, **good)] * 3
+        self.assertEqual(dates("headphones", data(results=slow))[0], None)
+        self.assertEqual(dates("first_qso", data(results=slow)), [None])
+        fast = [result("qso_head", 1, char_wpm=20, **good)] * 3
+        self.assertEqual(dates("headphones", data(results=slow + fast))[0], day(1))
+        self.assertEqual(dates("first_qso", data(results=[result("qso_quiz", 2, **good)])), [day(2)])  # vor 2.26
+
     def test_skipped_head_copy_breaks_the_run(self):
         good = dict(kind="ragchew", correct=3, total=3, replays=0, wpm=16)
         runs = [result("qso_head", 0, **good)] * 2 + [result("qso_head", 0, kind="ragchew", correct=0, total=3,
@@ -183,8 +201,8 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("endurance", data(practice=practice))[0], day(18))
         chars = [("K", "K", True)] * 2500
         sessions = [session("single", 0, chars=chars), session("word", 1, chars=chars),
-                    session("group", 2, chars=chars)]
-        self.assertEqual(dates("heard", data(sessions))[0], day(2))
+                    session("group", 2, wpm=15, chars=chars), session("group", 3, chars=chars)]
+        self.assertEqual(dates("heard", data(sessions))[0], day(3))  # Wörter und 15 WPM zählen nicht
 
     def test_unlevelled_awards(self):
         quiz = result("qso_quiz", 0, kind="ragchew", correct=5, total=5, replays=0, wpm=15)
@@ -229,6 +247,21 @@ class OverviewTest(unittest.TestCase):
         self.assertEqual((panel.seals_text(awards.BY_KEY["first_qso"], status),
                           panel.next_text(awards.BY_KEY["first_qso"], status)), ("–", "–"))
 
+    def test_club_without_seal_comes_last(self):
+        rows = awards.overview({"seals": {}, "seeded": True}, awards.evaluate(data(), today=day(5)))
+        award, status = rows[-1]
+        self.assertEqual(award.key, "club")
+        self.assertEqual(panel.next_text(award, status), "gemeinsam im Netzwerk")
+        statuses = awards.evaluate(data([session("network", 0, duration_s=600)]), today=day(5))
+        keys = [a.key for a, _ in awards.overview({"seals": {}, "seeded": True}, statuses)]
+        self.assertEqual(keys, [a.key for a in awards.AWARDS])
+
+    def test_diploma_shows_only_the_reached_step(self):
+        text = panel.diploma_condition(awards.BY_KEY["contest"], 2)
+        self.assertIn("Gold: ≥ 30 WPM", text)
+        self.assertNotIn("Bronze", text)
+        self.assertIn("Bronze: ", panel.detail_text(awards.BY_KEY["qrn"], awards.evaluate(data())["qrn"]))
+
     def test_protocol_dates_win_and_stay(self):
         state = {"seals": {"club": {"0": day(-3).isoformat()}, "endurance": {"0": day(-9).isoformat()}},
                  "seeded": True}
@@ -260,7 +293,6 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(awards.seals_of(awards.load(), "first_qso"), {0: day(7)})
         self.assertEqual(awards.check(today=day(8), data=data()), ([], None))  # nichts geht verloren
         self.assertIn("club", awards.load()["seals"])
-        self.assertEqual(awards.seals_on(awards.load(), day(7)), [("first_qso", 0)])
 
 
 class DamagedDataTest(unittest.TestCase):
