@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.27
 
 - **Stabilität:** Bricht die Tonausgabe in Kontinuierlich, QSO oder Contest
   mit einem unerwarteten Fehler ab, endet die Übung mit einer Meldung,

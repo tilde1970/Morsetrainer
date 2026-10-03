@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.27
 
 - **Stability:** if audio output in continuous, QSO or contest stops with
   an unexpected error, the session ends with a message instead of staying
