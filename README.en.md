@@ -125,9 +125,9 @@ highest level.
 | Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
 | Endurance | 10 / 50 / 150 / 365 days | – | Days with ≥ 10 min practice, not in a row |
 | Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters |
+| Club night | 1 / 5 / 15 / 40 evenings | – | Days with ≥ 10 min of network sessions in total, taken part in or led as trainer (only runs with participants) |
 | First QSO understood | – | 40 | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective |
 | Worked All Contests | – | 41 | All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors |
-| Club night | – | – | Took part in a network session or led it as trainer (at least one run with participants) |
 | Q-code expert | – | 40 | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
 | All digits | – | 39 | All 10 digits at least in box 3 |
 

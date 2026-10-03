@@ -190,6 +190,7 @@ class NetworkModeFrame:
         self.board = None
         self.run_active = False
         self.run_token = 0
+        self.run_started = 0.0
         self.source = None
         self.custom_items = []
         self.planned = 0
@@ -870,6 +871,7 @@ class NetworkModeFrame:
         self.run_signs = self.signs_var.get()
         self.pause_s = pause_s
         self.run_token += 1
+        self.run_started = time.monotonic()
         self.item_n = 0
         self.item = None
         self.solution_selected = None
@@ -1070,12 +1072,14 @@ class NetworkModeFrame:
 
     def _log_led_run(self, wpm):
         """Geleiteten Durchgang vermerken, wenn jemand mitgemacht hat – nur
-        für das Diplom Clubabend. Der Trainer tippt nicht mit: keine
-        Statistik, keine Übungszeit, nicht im Fortschrittsverlauf."""
+        für das Diplom Clubabend (zählt ab 10 Min. am Tag). Der Trainer tippt
+        nicht mit: keine Statistik, keine Übungszeit, nicht im Verlauf."""
         if not self.item_n or self.board is None or not any(self.board.expected.values()):
             return
+        duration_s = round(time.monotonic() - self.run_started, 1)
         try:
-            stats.log_result(self.session_mode, 0, 0, wpm, role=TRAINER, participants=len(self.board.names))
+            stats.log_result(self.session_mode, 0, 0, wpm, role=TRAINER, participants=len(self.board.names),
+                             duration_s=duration_s)
         except OSError:
             pass
 

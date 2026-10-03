@@ -36,6 +36,7 @@ FULL_CHARSET = koch.LCWO_ORDER
 MIN_CHAR_WPM = koch.SLOW_CHAR_WPM  # 18: darunter lassen sich Punkte und Striche zählen
 FULL_RUN_S = 180                   # „voller 3-Min.-Lauf“
 DAY_GOAL_S = 600                   # Ausdauer: Tage mit ≥ 10 Min. Übung
+CLUB_MIN_S = 600                   # Clubabend: ≥ 10 Min. Netzwerk-Übung an einem Tag
 
 Q_GROUPS = tuple(word for word in words.WORDS if len(word) == 3 and word.startswith("Q"))
 CONTEST_KINDS = ("cqww", "wpx", "wag", "arrldx", "iaru")
@@ -102,7 +103,8 @@ AWARDS = (
     Award("all_contests", N_("Worked All Contests"), N_("Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % "
                                                         "Fehlern"), (5,), N_("Contests"), koch.FINAL_LESSON,
           levels=False),
-    Award("club", N_("Clubabend"), N_("An einer Netzwerk-Übung teilgenommen oder sie geleitet"), (1,), levels=False),
+    Award("club", N_("Clubabend"), N_("Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als "
+                                      "Trainer geleitet"), (1, 5, 15, 40), N_("Abende")),
     Award("q_groups", N_("Q-Gruppen-Kenner"), N_("Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an "
                                                  "mindestens 2 Tagen, Zeichen ≥ 18 WPM"),
           (len(Q_GROUPS),), N_("Q-Gruppen"), 40, levels=False),
@@ -661,9 +663,15 @@ def _all_contests(data: Data) -> list:
 
 
 def _club(data: Data) -> list:
-    days = [(s.day, 1) for s in data.sessions if s.config.get("mode") == "network"]
-    days += [(r["day"], 1) for r in data.results if r.get("mode") == "network"]
-    return days
+    """Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder geleitet."""
+    seconds = {}
+    for s in data.sessions:
+        if s.config.get("mode") == "network":
+            seconds[s.day] = seconds.get(s.day, 0) + _num(s.summary.get("duration_s"))
+    for r in data.results:
+        if r.get("mode") == "network":
+            seconds[r["day"]] = seconds.get(r["day"], 0) + _num(r.get("duration_s"))
+    return _cumulative((day, 1) for day, total in seconds.items() if total >= CLUB_MIN_S)
 
 
 def _q_groups(data: Data) -> list:

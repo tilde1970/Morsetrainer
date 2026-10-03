@@ -2,10 +2,12 @@
 
 ## Unveröffentlicht
 
-- **Clubabend auch für den Trainer:** Wer eine Netzwerk-Übung leitet,
-  bekommt das Diplom Clubabend, sobald ein Durchgang mit Teilnehmern zu
-  Ende ist; das Diplom-Fenster kommt erst nach „Sitzung schließen“, nicht
-  vor der Gruppe. Statistik und Übungszeit bleiben beim Trainer unberührt.
+- **Clubabend mit Stufen, auch für den Trainer:** Das Diplom Clubabend
+  hat jetzt Bronze bis Platin (1 / 5 / 15 / 40 Abende). Ein Abend zählt
+  ab zusammen 10 Minuten Netzwerk-Übung an einem Tag, mitgemacht oder als
+  Trainer geleitet (nur Durchgänge mit Teilnehmern). Schon erhaltene
+  Siegel bleiben. Das Diplom-Fenster kommt beim Trainer erst nach
+  „Sitzung schließen“, nicht vor der Gruppe. Statistik und Übungszeit bleiben beim Trainer unberührt.
 - **Lebenslinie:** Im Reiter Statistik unter den Diplomen ein Diagramm
   vom ersten Üben bis heute – Sterne gesamt, höchste geübte Koch-Lektion
   und Tagestempo der Tagesübung auf einer gemeinsamen Zeitachse, darunter

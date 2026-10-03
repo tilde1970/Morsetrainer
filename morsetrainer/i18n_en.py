@@ -1058,7 +1058,9 @@ EN.update({
         "All 5 contest types with ≥ 30 QSOs each and ≤ 10 % errors",
     "Contests": "contests",
     "Clubabend": "Club night",
-    "An einer Netzwerk-Übung teilgenommen oder sie geleitet": "Took part in or led a network session",
+    "Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als Trainer geleitet":
+        "Days with ≥ 10 min of network sessions in total, taken part in or led as trainer",
+    "Abende": "evenings",
     "Q-Gruppen-Kenner": "Q-code expert",
     "Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM":
         "Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM",

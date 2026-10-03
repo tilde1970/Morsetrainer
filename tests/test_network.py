@@ -574,9 +574,12 @@ class NetworkTabTest(unittest.TestCase):
         self.assertEqual([(r["mode"], r["role"], r["participants"]) for r in led], [("network", "trainer", 1)])
         self.assertNotIn(("trainer", "start"), self.practice)  # keine Übungszeit
         self.assertFalse(any(e.get("mode") == "network" and e["total"] == 0 for e in stats.load_history()))
+        self.assertGreaterEqual(led[0]["duration_s"], 0)
         trainer_only = awards.load_data()
         trainer_only.sessions = []  # ohne die Sitzungsdatei des Teilnehmers
-        self.assertTrue(awards.level_dates(awards._club(trainer_only), (1,))[0])
+        self.assertFalse(awards._club(trainer_only))  # kürzer als 10 Minuten
+        with mock.patch.object(awards, "CLUB_MIN_S", 0):
+            self.assertTrue(awards.level_dates(awards._club(trainer_only), (1,))[0])
         self.trainer.close_session()
         self.assertEqual(closed, [True])
 

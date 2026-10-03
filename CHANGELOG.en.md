@@ -2,9 +2,12 @@
 
 ## Unreleased
 
-- **Club night for the trainer too:** whoever leads a network session gets
-  the Club night award once a run with participants has ended; the award
-  window only appears after “Close session”, not in front of the group.
+- **Club night with levels, for the trainer too:** the Club night award
+  now goes from bronze to platinum (1 / 5 / 15 / 40 evenings). An evening
+  counts from 10 minutes of network sessions in total on one day, taken
+  part in or led as trainer (only runs with participants). Seals already
+  earned are kept. The trainer sees the award window only after “Close
+  session”, not in front of the group.
   The trainer's statistics and practice time stay untouched.
 - **Lifeline:** on the Statistics tab below the awards, a chart from your
   first practice until today – total stars, highest Koch lesson practised

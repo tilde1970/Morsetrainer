@@ -192,7 +192,19 @@ class AwardsTest(unittest.TestCase):
         contests = [result("contest", i, contest=kind, total=30, correct=28, nil=2)
                     for i, kind in enumerate(awards.CONTEST_KINDS)]
         self.assertEqual(dates("all_contests", data(results=contests)), [day(4)])
-        self.assertEqual(dates("club", data([session("network", 2)])), [day(2)])
+        self.assertEqual(dates("club", data([session("network", 2, duration_s=600)]))[0], day(2))
+        led = result("network", 1, role="trainer", duration_s=240)
+        self.assertIsNone(dates("club", data([session("network", 1, duration_s=300)], [led]))[0])  # 9 Min.
+        evening = [session("network", 3, duration_s=300), session("network", 3, duration_s=300)]
+        self.assertEqual(dates("club", data(evening))[0], day(3))  # Durchgänge eines Abends zählen zusammen
+        led_long = result("network", 4, role="trainer", duration_s=660)
+        self.assertEqual(dates("club", data(results=[led_long]))[0], day(4))
+
+    def test_club_levels_count_evenings(self):
+        evenings = [session("network", i, duration_s=600) for i in range(40)]
+        self.assertEqual(dates("club", data(evenings)), [day(0), day(4), day(14), day(39)])
+        same_day = [session("network", 0, duration_s=600)] * 5
+        self.assertEqual(dates("club", data(same_day)), [day(0), None, None, None])  # ein Abend
         groups = [(q, q, True) for q in awards.Q_GROUPS]
         q = [session("word", 0, groups=groups * 2), session("word", 1, groups=groups)]
         self.assertEqual(dates("q_groups", data(q)), [day(1)])
@@ -219,7 +231,7 @@ class OverviewTest(unittest.TestCase):
         state = {"seals": {"club": {"0": day(-3).isoformat()}, "endurance": {"0": day(-9).isoformat()}},
                  "seeded": True}
         rows = dict(awards.overview(state, awards.evaluate(data([session("network", 0)]), today=day(5))))
-        self.assertEqual(rows[awards.BY_KEY["club"]].dates, [day(-3)])
+        self.assertEqual(rows[awards.BY_KEY["club"]].dates, [day(-3), None, None, None])  # altes Siegel = Bronze
         endurance = rows[awards.BY_KEY["endurance"]]
         self.assertEqual((endurance.dates[0], endurance.next_level, endurance.progress), (day(-9), 1, (0, 50)))
         self.assertIn("Bronze am", panel.detail_text(awards.BY_KEY["endurance"], endurance))
@@ -237,11 +249,11 @@ class CheckTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_first_check_seeds_silently_then_reports_new(self):
-        club = data([session("network", 0)])
+        club = data([session("network", 0, duration_s=600)])
         self.assertEqual(awards.check(today=day(5), data=club), ([], 1))
         self.assertEqual(awards.seals_of(awards.load(), "club"), {0: day(0)})  # Tag des Erreichens
         quiz = result("qso_quiz", 6, kind="ragchew", correct=5, total=5, replays=0, wpm=15)
-        more = data([session("network", 0)], [quiz])
+        more = data([session("network", 0, duration_s=600)], [quiz])
         self.assertEqual(awards.check(today=day(7), data=more), ([("first_qso", 0)], None))
         self.assertEqual(awards.seals_of(awards.load(), "first_qso"), {0: day(7)})
         self.assertEqual(awards.check(today=day(8), data=data()), ([], None))  # nichts geht verloren
