@@ -1,5 +1,12 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Clubabend:** Netzwerk-Übungen aus Versionen vor 2.22 zählen wieder.
+  Ihre Protokolle enthalten keine Dauer, deshalb galten sie seit 2.23 als
+  0 Minuten und das Diplom fehlte. Für sie genügt wie früher die
+  Teilnahme an dem Tag.
+
 ## 2.23
 
 - **Daten sichern und einlesen:** Unter „Weitere Optionen → Daten“

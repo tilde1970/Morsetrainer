@@ -673,11 +673,14 @@ def _all_contests(data: Data) -> list:
 
 
 def _club(data: Data) -> list:
-    """Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder geleitet."""
+    """Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder geleitet.
+    Protokolle von vor 2.22 haben keine Dauer; ihr Tag zählt wie früher
+    schon durch die Teilnahme."""
     seconds = {}
     for s in data.sessions:
         if s.config.get("mode") == "network":
-            seconds[s.day] = seconds.get(s.day, 0) + _num(s.summary.get("duration_s"))
+            duration = s.summary.get("duration_s")
+            seconds[s.day] = seconds.get(s.day, 0) + (_num(duration) if duration is not None else CLUB_MIN_S)
     for r in data.results:
         if r.get("mode") == "network":
             seconds[r["day"]] = seconds.get(r["day"], 0) + _num(r.get("duration_s"))

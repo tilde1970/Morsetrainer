@@ -199,6 +199,8 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("club", data(evening))[0], day(3))  # Durchgänge eines Abends zählen zusammen
         led_long = result("network", 4, role="trainer", duration_s=660)
         self.assertEqual(dates("club", data(results=[led_long]))[0], day(4))
+        old_log = session("network", 5)  # Protokoll ohne Dauer (vor 2.22): Teilnahme genügt
+        self.assertEqual(dates("club", data([old_log]))[0], day(5))
 
     def test_club_levels_count_evenings(self):
         evenings = [session("network", i, duration_s=600) for i in range(40)]

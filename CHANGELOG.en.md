@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+- **Club night:** network sessions from versions before 2.22 count again.
+  Their logs contain no duration, so since 2.23 they counted as 0 minutes
+  and the award was missing. For them, taking part on that day is enough,
+  as before.
+
 ## 2.23
 
 - **Back up and restore data:** under “More options → Data”, all settings
