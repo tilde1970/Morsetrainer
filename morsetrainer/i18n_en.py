@@ -150,6 +150,19 @@ EN.update({
     "Austausch": "Exchange",
 })
 
+# --- daily_runner.py, widgets/daily_panel.py (Tagesübung) ---
+EN.update({
+    "▶ Tagesübung ({minutes} Min)": "▶ Daily practice ({minutes} min)",
+    "Heute: {stars}": "Today: {stars}",
+    "Tagesübung": "Daily practice",
+    "{elapsed} von {total} Min": "{elapsed} of {total} min",
+    "Aufwärmen": "Warm-up",
+    "Hauptteil": "Main part",
+    "Ausklang": "Wind-down",
+    "Tagesübung geschafft.": "Daily practice done.",
+    "Tagesübung abgebrochen – deine Sterne bleiben.": "Daily practice stopped – you keep your stars.",
+})
+
 # --- widgets/ ---
 EN.update({
     "Änderungen": "Changes",

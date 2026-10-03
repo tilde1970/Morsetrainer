@@ -17,6 +17,7 @@ from tkinter import messagebox, ttk
 from morsetrainer import DATA_DIR, i18n
 from morsetrainer.core import audio, errorlog, koch, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
+from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
@@ -28,6 +29,7 @@ from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.net import update
+from morsetrainer.widgets.daily_panel import DailyBar
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
@@ -46,6 +48,8 @@ DEFAULT_GEOMETRY = "720x900"
 MIN_WIDTH = 720
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
+# Startet die Tagesübung; von keinem Reiter belegt.
+DAILY_KEY = "F12"
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
 CONFUSION_PAIRS = 4
 # Übungszeit in der Fußzeile während eines Durchgangs so oft auffrischen.
@@ -88,9 +92,13 @@ class MorseTrainerApp:
         self._restore_shared_settings()
         self._update_more()
         self._build_footer()
+        # Vor dem Notizbuch gepackt: steht über den Reitern.
+        self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start())
+        self.daily_bar.pack()
         self._build_notebook()
         self._build_all_time_tab()
         self._refresh_all_time()
+        self.daily = DailyRunner(self, self.daily_bar)
 
         root.bind("<Key>", self._dispatch_key)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -252,8 +260,9 @@ class MorseTrainerApp:
         self._update_cpm()
         ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
 
-        # Einstellbar im Reiter Statistik, angezeigt in der Fußzeile.
-        self.daily_goal_var = tk.IntVar(value=15)
+        # Einstellbar im Reiter Statistik, angezeigt in der Fußzeile; so
+        # lang wie die Tagesübung (core/daily.py).
+        self.daily_goal_var = tk.IntVar(value=10)
 
     def _choose_language(self):
         """Gewählte Sprache merken (gespeichert in _save_state); sie gilt ab
@@ -752,6 +761,7 @@ class MorseTrainerApp:
         self.new_char_button.config(state="disabled")
         self.confusion_button.config(state="disabled")
         self.review_button.config(state="disabled")
+        self.daily_bar.set_enabled(False)
         # Der Netzwerk-Reiter zählt selbst nur die Durchgänge, nicht das
         # Warten auf den Trainer.
         if not getattr(self._active_mode(), "uses_network_hooks", False):
@@ -775,6 +785,7 @@ class MorseTrainerApp:
         self.running_mode = False
         self.confusion_button.config(state="normal")
         self.review_button.config(state="normal")
+        self.daily_bar.set_enabled(True)
         self._sync_lesson()
 
     def _handle_mode_stop(self):
@@ -782,10 +793,23 @@ class MorseTrainerApp:
         self._restore_drill_charset()
         self._record_practice()
         self._update_practice()
+        if self.daily.active:
+            # Tagesübung: kein Ja/Nein-Dialog, der Ablauf geht weiter (oder endet
+            # über finish_daily).
+            self._refresh_all_time()
+            self.daily.on_block_end(self._active_mode())
+            return
         self._unlock_tabs()
         self._refresh_all_time()
         self._offer_next_lesson(self._active_mode())
         self._offer_groups(self._active_mode())
+
+    def finish_daily(self):
+        """Tagesübung zu Ende (DailyRunner): Reiter wieder frei."""
+        self.running_mode = False
+        self._unlock_tabs()
+        self._refresh_all_time()
+        self._update_practice()
 
     def _restore_drill_charset(self):
         """Nach „Fällige gezielt üben“ wieder der Zeichensatz davor, sofern
@@ -806,6 +830,12 @@ class MorseTrainerApp:
     def _dispatch_key(self, event):
         # Funktionstasten sind Kürzel des aktiven Reiters und gelten auch in
         # Eingabefeldern (dort haben sie sonst keine Bedeutung).
+        if event.keysym == "Escape" and self.daily.active:
+            self.daily.abort()
+            return
+        if event.keysym == DAILY_KEY and not self.running_mode and not self.daily.active:
+            self.daily.start()
+            return
         if event.keysym in FUNCTION_KEYS:
             mode = self._active_mode()
             if mode is not None and hasattr(mode, "on_function_key"):
@@ -874,7 +904,10 @@ class MorseTrainerApp:
     def on_close(self):
         # Jeder Schritt für sich: Ein Fehler beim Speichern oder in einem
         # Reiter darf das Schließen nicht verhindern.
-        for step in (self._record_practice, self._save_state, *(mode.on_close for mode in self.modes)):
+        # Zuerst die Tagesübung beenden: Sie stellt die gemeinsamen Einstellungen
+        # zurück, bevor sie gespeichert werden.
+        for step in (self.daily.abort, self._record_practice, self._save_state,
+                     *(mode.on_close for mode in self.modes)):
             try:
                 step()
             except Exception:
