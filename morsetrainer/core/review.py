@@ -21,7 +21,7 @@ Ehrliche Grundlage:
 
 Fällige Zeichen bekommen in der Gewichtung den Faktor DUE_FACTOR, beim
 gezielten Üben FOCUS_FACTOR (core/weighting.py).
-Gespeichert in stats/review.json: {Zeichen: {"box", "due", "day", Zähler,
+Gespeichert in der Datenbank unter "review": {Zeichen: {"box", "due", "day", Zähler,
 "best_box", "best_day"}}. "best_box" ist das höchste je erreichte Fach (für
 Fortschritt und Diplome: ein späteres Zurückstufen nimmt es nicht weg);
 ältere Einträge ohne das Feld gelten mit ihrem aktuellen Fach.
@@ -31,7 +31,7 @@ weil sich langsamere Zeichen mitzählen lassen. Einträge von vor diesem
 Feld übernehmen beim ersten Entscheiden ihr bisheriges "best_box"."""
 from datetime import date, timedelta
 
-from morsetrainer.core import stats, storage
+from morsetrainer.core import db
 from morsetrainer.core.morse import MORSE_CODE
 
 INTERVALS = (1, 2, 4, 8, 16, 32)  # Tage bis zur nächsten Wiederholung je Fach
@@ -48,8 +48,7 @@ FOCUS_FACTOR = 4.0
 focus = set()
 
 
-def _path():
-    return stats.STATS_DIR / "review.json"
+STATE_KEY = "review"
 
 
 # Zahlenfelder eines Eintrags: Fächer und die Zähler des Tages ("day").
@@ -58,9 +57,7 @@ DAY_FIELDS = ("n", "fluent", "pn", "pfluent")
 
 
 def load() -> dict:
-    data = storage.load_json(_path(), {})
-    if not isinstance(data, dict):
-        return {}
+    data = db.load_state(STATE_KEY, {})
     return {ch: _clean(e) for ch, e in data.items() if isinstance(e, dict)}
 
 
@@ -83,9 +80,8 @@ def _is_int(value) -> bool:
 
 def _save(data: dict) -> None:
     try:
-        stats.STATS_DIR.mkdir(exist_ok=True)
-        storage.write_json_atomic(_path(), data, indent=1)
-    except OSError:
+        db.save_state(STATE_KEY, data)
+    except (db.Error, OSError):
         pass
 
 
@@ -209,6 +205,6 @@ def next_due(data=None, today=None):
 
 def reset() -> None:
     try:
-        _path().unlink(missing_ok=True)
-    except OSError:
+        db.delete_state(STATE_KEY)
+    except (db.Error, OSError):
         pass

@@ -3,20 +3,16 @@ Tage im Wochenstreifen (core/week.py).
 
 Gezählt wird die Zeit, in der irgendein Trainingsmodus läuft (zwischen
 Start und Stop), gespeichert als {"2026-09-26": Sekunden, …} in
-stats/practice.json. Die Gesamtstatistik zurückzusetzen lässt sie stehen."""
+der Datenbank unter "practice". Die Gesamtstatistik zurückzusetzen lässt sie stehen."""
 from datetime import date
 
-from morsetrainer.core import stats, storage
+from morsetrainer.core import db
 
-PRACTICE_FILE_NAME = "practice.json"
-
-
-def _path():
-    return stats.STATS_DIR / PRACTICE_FILE_NAME
+STATE_KEY = "practice"
 
 
 def load() -> dict:
-    data = storage.load_json(_path(), {})
+    data = db.load_state(STATE_KEY, {})
     return {k: float(v) for k, v in data.items() if isinstance(v, (int, float)) and not isinstance(v, bool)}
 
 
@@ -27,9 +23,8 @@ def add(seconds: float, day: date = None) -> None:
     key = (day or date.today()).isoformat()
     data[key] = round(data.get(key, 0.0) + seconds, 1)
     try:
-        stats.STATS_DIR.mkdir(exist_ok=True)
-        storage.write_json_atomic(_path(), data, indent=1, sort_keys=True)
-    except OSError:
+        db.save_state(STATE_KEY, data)
+    except (db.Error, OSError):
         pass
 
 

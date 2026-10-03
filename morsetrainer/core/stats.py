@@ -9,8 +9,9 @@ A session file looks like:
     {"type": "group", "sent": "KMU", "typed": "KMU", ...}   (group mode only)
     {"type": "summary", "total": 12, "correct": 10, "per_char": {...}}
 
-stats/all_time.json accumulates per-character totals across all sessions,
-including which characters were typed instead ("confusions"; "" = missed).
+The state "all_time" in the database (core/db.py) accumulates per-character
+totals across all sessions, including which characters were typed instead
+("confusions"; "" = missed).
 """
 import json
 import statistics
@@ -18,14 +19,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from morsetrainer import DATA_DIR
-from morsetrainer.core import storage
+from morsetrainer.core import db
 from morsetrainer.core import tempo
 from morsetrainer.core.koch import SLOW_CHAR_WPM
 from morsetrainer.core.morse import display_text
 from morsetrainer.i18n import N_
 
 STATS_DIR = DATA_DIR / "stats"
-ALL_TIME_FILE = STATS_DIR / "all_time.json"
 
 # Latenzen darüber (z. B. weil man kurz abgelenkt war) werden gekappt,
 # damit ein einzelner Ausreißer den Schnitt eines Zeichens nicht verzerrt.
@@ -45,7 +45,7 @@ class SessionStats:
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
                  self_assessed=False, in_history=True, review_promote=False, char_stats=True, config_extra=None):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
-        J/N). Sie werden protokolliert, aber nicht in all_time.json und den
+        J/N). Sie werden protokolliert, aber nicht in die Gesamtstatistik und den
         Fortschrittsverlauf übernommen. `in_history=False`: Die Sitzung hat
         einen eigenen Eintrag im Verlauf (z. B. Rufz über log_result) und
         erscheint dort nicht zusätzlich; die Zeichenstatistik zählt normal.
@@ -213,7 +213,7 @@ class SessionStats:
         return out
 
     def finalize(self, extra=None):
-        """Write the closing summary line, merge into all_time.json, and
+        """Write the closing summary line, merge into the all-time totals, and
         close the log file. Returns the log file path, or None if nothing
         was ever recorded (in which case the empty file is removed).
         `extra` adds fields to the summary line (e.g. "wpm_effective_reached")."""
@@ -260,7 +260,7 @@ def _merge_all_time(session: "SessionStats") -> None:
         correct_times = e.get("correct_reaction_times", [])
         x["correct_reaction_time_s"] = x.get("correct_reaction_time_s", 0.0) + sum(correct_times)
         x["correct_timed_count"] = x.get("correct_timed_count", 0) + len(correct_times)
-        # Ältere all_time.json-Einträge kennen die Latenz-Felder noch nicht.
+        # Ältere Einträge der Gesamtstatistik kennen die Latenz-Felder noch nicht.
         x["total_latency_s"] = x.get("total_latency_s", 0.0) + sum(e["latencies"])
         x["latency_count"] = x.get("latency_count", 0) + len(e["latencies"])
         # Davon angenommen statt gemessen (siehe record_char, `assumed`).
@@ -270,45 +270,47 @@ def _merge_all_time(session: "SessionStats") -> None:
         for typed, count in e["confusions"].items():
             confusions[typed] = confusions.get(typed, 0) + count
     try:
-        STATS_DIR.mkdir(exist_ok=True)
-        storage.write_json_atomic(ALL_TIME_FILE, all_time, indent=2)
-    except OSError:
+        db.save_state(ALL_TIME_KEY, all_time)
+    except (db.Error, OSError):
         pass  # Gesamtstatistik bleibt auf dem alten Stand; das Sitzungsprotokoll ist geschrieben
+
+
+ALL_TIME_KEY = "all_time"
+RESET_KEY = "reset"
 
 
 def load_all_time() -> dict:
     """Cumulative per-character totals across all past sessions. A broken
-    file is set aside (see storage.load_json) instead of crashing."""
-    return storage.load_json(ALL_TIME_FILE, {})
+    entry is set aside (see db.load_state) instead of crashing."""
+    return db.load_state(ALL_TIME_KEY, {})
 
 
 def reset_all_time() -> None:
-    """Wipe the cumulative statistics. Individual session log files are
-    untouched — only the running totals in all_time.json are cleared. The
-    reset time is remembered so that recent_char_data() ignores older logs."""
-    if ALL_TIME_FILE.exists():
-        ALL_TIME_FILE.unlink()
+    """Wipe the cumulative statistics. Individual session logs are
+    untouched — only the running totals are cleared. The reset time is
+    remembered so that recent_char_data() ignores older logs."""
     from morsetrainer.core import review
-    review.reset()
     try:
-        storage.write_json_atomic(RESET_FILE, {"time": datetime.now().isoformat(timespec="seconds")})
-    except OSError:
+        with db.transaction():
+            db.delete_state(ALL_TIME_KEY)
+            review.reset()
+            db.save_state(RESET_KEY, {"time": datetime.now().isoformat(timespec="seconds")})
+    except (db.Error, OSError):
         pass
 
 
 # Verwechslungen „vergessen“: nur Sitzungen der letzten so vielen Tage.
 RECENT_DAYS = 30
-RESET_FILE = STATS_DIR / "reset.json"
 
 
 def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
-    """Zeichenstatistik wie in all_time.json ({Zeichen: {"good", "wrong",
+    """Zeichenstatistik wie die Gesamtstatistik ({Zeichen: {"good", "wrong",
     "confusions"}}), aber nur aus den Sitzungsdateien der letzten `days`
     Tage und nach dem letzten Zurücksetzen. Längst behobene Verwechslungen
     fallen so heraus. Selbst bewertete Sitzungen und Klartext zählen nicht."""
     now = now or datetime.now()
     cutoff = now - timedelta(days=days)
-    reset = storage.load_json(RESET_FILE, {}).get("time") if RESET_FILE.exists() else None
+    reset = db.load_state(RESET_KEY, {}).get("time")
     try:
         cutoff = max(cutoff, datetime.fromisoformat(reset)) if reset else cutoff
     except (TypeError, ValueError):

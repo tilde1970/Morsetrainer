@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import align, audio, stats, storage
+from morsetrainer.core import align, audio, db, stats, storage
 
 
 class StorageTest(unittest.TestCase):
@@ -64,7 +64,6 @@ class StatsRobustnessTest(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
             mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
         ]
         for patch in self.patches:
@@ -76,7 +75,7 @@ class StatsRobustnessTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_broken_all_time_does_not_block(self):
-        stats.ALL_TIME_FILE.write_text("{kaputt", encoding="utf-8")
+        db._write("INSERT INTO state (key, data) VALUES ('all_time', '{kaputt')")
         self.assertEqual(stats.load_all_time(), {})
         session = stats.SessionStats("single", "K", 20, 600)
         session.record_char("K", "K", True, 0.5, 20.0)

@@ -20,7 +20,7 @@ Regeln, die das Hören-Lernen schützen:
   reicht für ★ Sauber ein niedrigerer Anteil.
 - Sterne gehen nie verloren; am selben Tag gibt es jeden höchstens einmal.
 
-Gespeichert in stats/daily.json (bleibt beim Zurücksetzen der
+Gespeichert in der Datenbank unter "daily" (bleibt beim Zurücksetzen der
 Gesamtstatistik stehen):
 {"lesson", "lesson_since", "pending_lesson", "pending_since",
  "tempo": {"wpm", "effective"}, "pending_tempo", "pending_tempo_since",
@@ -32,9 +32,9 @@ import math
 from dataclasses import dataclass, field
 from datetime import date
 
-from morsetrainer.core import koch, review, stats, storage, tempo
+from morsetrainer.core import db, koch, review, stats, tempo
 
-DAILY_FILE_NAME = "daily.json"
+STATE_KEY = "daily"
 
 TOTAL_MINUTES = 10
 # Etwas Spielraum für ★ Dabei: die letzte Eingabe nach Ablauf der Zeit,
@@ -88,14 +88,8 @@ class Block:
     params: dict = field(default_factory=dict)
 
 
-def _path():
-    return stats.STATS_DIR / DAILY_FILE_NAME
-
-
 def load() -> dict:
-    data = storage.load_json(_path(), {})
-    if not isinstance(data, dict):
-        return {}
+    data = db.load_state(STATE_KEY, {})
     if not isinstance(data.get("days"), dict):
         data["days"] = {}
     return data
@@ -103,9 +97,8 @@ def load() -> dict:
 
 def save(state: dict) -> None:
     try:
-        stats.STATS_DIR.mkdir(exist_ok=True)
-        storage.write_json_atomic(_path(), state, indent=1, sort_keys=True)
-    except OSError:
+        db.save_state(STATE_KEY, state)
+    except (db.Error, OSError):
         pass  # Stand von heute fehlt dann; die Übung selbst ist protokolliert
 
 

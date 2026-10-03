@@ -115,8 +115,7 @@ class SmallRobustnessTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             blocker = Path(tmp) / "stats"
             blocker.write_text("keine Mappe")  # mkdir scheitert
-            with mock.patch.object(stats, "STATS_DIR", blocker), \
-                    mock.patch.object(practice, "_path", lambda: blocker / "practice.json"):
+            with mock.patch.object(stats, "STATS_DIR", blocker):
                 practice.add(60)  # kein Fehler
 
     def test_item_with_text_that_is_no_string_is_ignored(self):

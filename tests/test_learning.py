@@ -265,7 +265,6 @@ class TempoHistoryTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
             with mock.patch.object(stats, "STATS_DIR", directory), \
-                    mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"), \
                     mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"):
                 session = stats.SessionStats("group", "KM", 20, 600)
                 session.record_char("K", "K", True, 0.5, 20.0)
@@ -278,7 +277,6 @@ class TempoHistoryTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
             with mock.patch.object(stats, "STATS_DIR", directory), \
-                    mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"), \
                     mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"):
                 for extra in (None, {"wpm_effective_reached": 13}):
                     session = stats.SessionStats("group", "KM", 20, 600, farnsworth_wpm=10)

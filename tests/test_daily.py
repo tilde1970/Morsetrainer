@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import daily, koch, stats
+from morsetrainer.core import daily, db, koch, stats
 
 TODAY = date(2026, 10, 5)
 
@@ -215,9 +215,9 @@ class StorageTest(unittest.TestCase):
             daily.finish_block(state, TODAY, main_block(), main_result(50, 50, wpm=koch.SLOW_CHAR_WPM - 1))
             daily.save(state)
             self.assertEqual(daily.stars_on(daily.load(), TODAY), [daily.SAUBER])
-            (Path(tmp) / daily.DAILY_FILE_NAME).write_text("{kaputt", encoding="utf-8")
+            db._write("UPDATE state SET data = '{kaputt' WHERE key = 'daily'")
             self.assertEqual(daily.load(), {"days": {}})
-            self.assertTrue(list(Path(tmp).glob("daily.json.defekt-*")))
+            self.assertEqual(len(db._read("SELECT key FROM state WHERE key LIKE 'daily.defekt-%'")), 1)
 
 
 def write_session(directory: Path, day: date, mode: str, chars=(), config=None, summary=None, index=0):

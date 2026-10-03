@@ -11,6 +11,7 @@ import numpy as np
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import align
 from morsetrainer.core import band
+from morsetrainer.core import db
 from morsetrainer.core import stats
 
 
@@ -71,9 +72,7 @@ class StatsTest(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
             mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
-            mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
         ]
         for patch in self.patches:
             patch.start()
@@ -170,10 +169,10 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(tempo.cpm(12), 60)
 
     def test_old_all_time_without_confusions_still_works(self):
-        stats.ALL_TIME_FILE.write_text(json.dumps({"K": {
+        db.save_state("all_time", {"K": {
             "good": 3, "wrong": 1, "total_reaction_time_s": 2.0, "total_effective_wpm": 80.0,
             "correct_effective_wpm_total": 60.0, "attempts": 4,
-        }}), encoding="utf-8")
+        }})
         rows = stats.all_time_char_rows(stats.load_all_time())
         self.assertEqual(rows[0][6], "")
         self._session([("K", "R")]).finalize()

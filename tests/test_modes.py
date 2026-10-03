@@ -25,9 +25,7 @@ class AppTestCase(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
             mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
-            mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
             mock.patch.object(app_module, "WINDOW_STATE_FILE", directory / "window_state.json"),
         ]
         for patch in self.patches:

@@ -160,20 +160,17 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(review.next_due()[1], "R")
         self.assertEqual(sorted(review.boxed_chars({**storage_data, "+": {"day": "2026-10-03", "n": 2}})),
                          ["K", "M", "R"])  # noch ohne Fach: nicht gelernt
-        with mock.patch.object(stats, "ALL_TIME_FILE", Path(self.tmp.name) / "all_time.json"):
-            weights = dict(zip("KMR", CharPicker("KMR", weighted=True).weights()))
+        weights = dict(zip("KMR", CharPicker("KMR", weighted=True).weights()))
         self.assertAlmostEqual(weights["K"], weights["R"] * review.DUE_FACTOR)
 
     def test_session_updates_review_and_reset_clears_it(self):
-        with mock.patch.object(stats, "ALL_TIME_FILE", Path(self.tmp.name) / "all_time.json"), \
-                mock.patch.object(stats, "RESET_FILE", Path(self.tmp.name) / "reset.json"):
-            session = stats.SessionStats("group", "KM", 20, 600)
-            for _ in range(6):
-                session.record_char("K", "K", True, 0.5, 20.0)
-            session.finalize()
-            self.assertIn("K", review.load())
-            stats.reset_all_time()
-            self.assertEqual(review.load(), {})
+        session = stats.SessionStats("group", "KM", 20, 600)
+        for _ in range(6):
+            session.record_char("K", "K", True, 0.5, 20.0)
+        session.finalize()
+        self.assertIn("K", review.load())
+        stats.reset_all_time()
+        self.assertEqual(review.load(), {})
 
     def test_best_box_and_promotion_events(self):
         day = date(2026, 9, 27)
@@ -209,18 +206,17 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(review.best_box({}), 0)
 
     def test_session_log_has_conditions_duration_and_events(self):
-        with mock.patch.object(stats, "ALL_TIME_FILE", Path(self.tmp.name) / "all_time.json"):
-            charset = koch.lesson_charset(8)
-            session = stats.SessionStats("group", charset, 20, 600, review_promote=True,
-                                         config_extra={"lesson": 8, "band": "light"})
-            for _ in range(6):
-                session.record_char("K", "K", True, 0.5, 20.0, latency=0.5)
-            path = session.finalize({"first_try_correct": 5, "first_try_total": 6})
-            lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-            self.assertEqual((lines[0]["lesson"], lines[0]["band"]), (8, "light"))
-            self.assertEqual(lines[-1]["first_try_correct"], 5)
-            self.assertIn("duration_s", lines[-1])
-            self.assertEqual(session.review_events, [])  # neues Zeichen: erst morgen hochstufbar
+        charset = koch.lesson_charset(8)
+        session = stats.SessionStats("group", charset, 20, 600, review_promote=True,
+                                     config_extra={"lesson": 8, "band": "light"})
+        for _ in range(6):
+            session.record_char("K", "K", True, 0.5, 20.0, latency=0.5)
+        path = session.finalize({"first_try_correct": 5, "first_try_total": 6})
+        lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual((lines[0]["lesson"], lines[0]["band"]), (8, "light"))
+        self.assertEqual(lines[-1]["first_try_correct"], 5)
+        self.assertIn("duration_s", lines[-1])
+        self.assertEqual(session.review_events, [])  # neues Zeichen: erst morgen hochstufbar
 
     def test_damaged_entries_are_usable(self):
         review._save({

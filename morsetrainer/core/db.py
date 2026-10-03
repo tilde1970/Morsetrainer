@@ -32,10 +32,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
-from morsetrainer import DATA_DIR
-
 DB_FILE_NAME = "morsetrainer.db"
-DEFAULT_PATH = DATA_DIR / "stats" / DB_FILE_NAME
 SCHEMA_VERSION = 1
 # So lange wartet ein Fenster, wenn das andere gerade schreibt.
 BUSY_TIMEOUT_MS = 5000
@@ -81,6 +78,7 @@ CREATE TABLE IF NOT EXISTS meta (
 _lock = threading.RLock()
 _path = None
 _conn = None
+_conn_path = None
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
 
 
@@ -93,7 +91,13 @@ class Session:
 
 
 def path() -> Path:
-    return _path or DEFAULT_PATH
+    """stats/morsetrainer.db, oder die mit use() gesetzte Datei. Folgt
+    stats.STATS_DIR, damit Tests mit eigenem Ordner ihre eigene Datenbank
+    bekommen."""
+    if _path is not None:
+        return _path
+    from morsetrainer.core import stats  # stats importiert db
+    return stats.STATS_DIR / DB_FILE_NAME
 
 
 def use(new_path) -> None:
@@ -148,9 +152,11 @@ def _set_aside(file: Path) -> None:
 
 
 def _connection() -> sqlite3.Connection:
-    global _conn
+    global _conn, _conn_path
+    file = path()
+    if _conn is not None and file != _conn_path:
+        close()
     if _conn is None:
-        file = path()
         file.parent.mkdir(parents=True, exist_ok=True)
         try:
             _conn = _open(file)
@@ -159,6 +165,7 @@ def _connection() -> sqlite3.Connection:
         except sqlite3.DatabaseError:
             _set_aside(file)
             _conn = _open(file)
+        _conn_path = file
     return _conn
 
 

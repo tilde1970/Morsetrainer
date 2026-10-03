@@ -4,7 +4,7 @@ Silber, Gold und teils Platin (Konzept-Motivation.md, „Dauerhaft: Diplome“).
 Ausgewertet wird immer alles, was schon gespeichert ist: Sitzungsdateien,
 stats/results.jsonl, Lernkartei (höchstes je erreichtes Fach) und
 Übungszeit je Tag. Vergeben wird nur aus Durchgängen ohne Selbstbewertung.
-Was einmal erreicht ist, steht mit Datum in stats/awards.json und geht nie
+Was einmal erreicht ist, steht mit Datum in der Datenbank ("awards") und geht nie
 verloren, auch nicht durch „Gesamtstatistik zurücksetzen“ (die
 Sitzungsdateien bleiben dabei ohnehin stehen).
 
@@ -19,9 +19,9 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 from morsetrainer.i18n import N_
-from morsetrainer.core import errorlog, koch, practice, review, stats, storage, words
+from morsetrainer.core import db, errorlog, koch, practice, review, stats, words
 
-AWARDS_FILE_NAME = "awards.json"
+STATE_KEY = "awards"
 
 LEVEL_NAMES = (N_("Bronze"), N_("Silber"), N_("Gold"), N_("Platin"))
 SILVER = 1
@@ -790,23 +790,16 @@ def _guarded(key: str, compute, default):
 
 
 # --- Protokoll ---------------------------------------------------------------------
-def _path():
-    return stats.STATS_DIR / AWARDS_FILE_NAME
-
-
 def load() -> dict:
-    data = storage.load_json(_path(), {})
-    if not isinstance(data, dict):
-        data = {}
+    data = db.load_state(STATE_KEY, {})
     seals = data.get("seals") if isinstance(data.get("seals"), dict) else {}
     return {"seals": {k: v for k, v in seals.items() if isinstance(v, dict)}, "seeded": bool(data.get("seeded"))}
 
 
 def save(state: dict) -> None:
     try:
-        stats.STATS_DIR.mkdir(exist_ok=True)
-        storage.write_json_atomic(_path(), state, indent=1, sort_keys=True)
-    except OSError:
+        db.save_state(STATE_KEY, state)
+    except (db.Error, OSError):
         pass
 
 

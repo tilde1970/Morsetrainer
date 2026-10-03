@@ -503,8 +503,6 @@ class NetworkTabTest(unittest.TestCase):
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
-            mock.patch.object(stats, "ALL_TIME_FILE", directory / "all_time.json"),
-            mock.patch.object(stats, "RESET_FILE", directory / "reset.json"),
             mock.patch.object(stats, "RESULTS_FILE", directory / "results.jsonl"),
         ]
         for patch in self.patches:
@@ -988,7 +986,7 @@ class NetworkTabTest(unittest.TestCase):
         logs = list(Path(self.tmp.name).glob("20*-network.jsonl"))
         self.assertEqual(len(logs), 1)
         self.assertIn('"char_stats": false', logs[0].read_text(encoding="utf-8"))
-        self.assertFalse((Path(self.tmp.name) / "all_time.json").exists())
+        self.assertEqual(stats.load_all_time(), {})
 
     def test_trainer_enters_paper_sheets(self):
         self.connect()
