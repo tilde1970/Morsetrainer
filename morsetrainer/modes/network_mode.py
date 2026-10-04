@@ -35,7 +35,7 @@ import time
 import tkinter as tk
 import tkinter.font as tkfont
 from datetime import datetime
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from morsetrainer.core import align, answer_sheet, audio, band, stats, tempo
 import numpy as np
@@ -282,6 +282,9 @@ class NetworkModeFrame:
         self.open_button.pack(side="right")
         self.session_info_var = tk.StringVar(value="")
         ttk.Label(box, textvariable=self.session_info_var, style="Score.TLabel").pack(anchor="w", pady=(4, 0))
+        # Gesperrte PIN-Versuche, entfernte Teilnehmer (bleibt bis zum nächsten Hinweis)
+        self.notice_var = tk.StringVar(value="")
+        ttk.Label(box, textvariable=self.notice_var, foreground=theme.ERROR).pack(anchor="w")
         theme.hint(box, wrap=540, text=tr(
             "Die Teilnehmer finden die Sitzung über „Suchen“ oder geben die Adresse ein. Beim ersten "
             "Öffnen fragt unter Windows eventuell die Firewall – für private Netzwerke zulassen.")).pack(
@@ -466,6 +469,10 @@ class NetworkModeFrame:
         theme.hint(parent, textvariable=self.detail_var, wrap=wrap).pack(side="bottom", anchor="w", pady=(4, 0))
         ttk.Label(parent, textvariable=self.group_var, justify="left", wraplength=wrap).pack(
             side="bottom", anchor="w", pady=(6, 0))
+        actions = ttk.Frame(parent)
+        actions.pack(side="bottom", fill="x", pady=(4, 0))
+        self.kick_button = ttk.Button(actions, text=tr("Entfernen"), command=self.kick_selected, state="disabled")
+        self.kick_button.pack(side="right")
         rows = ttk.Frame(parent)
         rows.pack(fill="both", expand=detached)
         tree = ttk.Treeview(rows, columns=columns, show="headings", height=12 if detached else TABLE_ROWS[0])
@@ -482,7 +489,7 @@ class NetworkModeFrame:
         tree.tag_configure("gone", foreground=theme.DISABLED)
         scrollbar.pack(side="right", fill="y")
         tree.pack(side="left", fill="both", expand=True)
-        tree.bind("<<TreeviewSelect>>", lambda e: self._show_details())
+        tree.bind("<<TreeviewSelect>>", lambda e: (self._show_details(), self._show_kick()))
         self.tree = tree
         self.advice_button = ttk.Button(advice, command=self.apply_advice)
 
@@ -703,8 +710,13 @@ class NetworkModeFrame:
             found, self.found = self.found, None
             self._show_found(found)
         if self.server is not None:
-            for event in self.server.poll():
-                self._on_server_event(event)
+            events = self.server.poll()
+            for event in events:
+                self._handle_server_event(event)
+            if events:
+                # Einmal je Abruf, nicht je Nachricht: Eine Flut von Antworten
+                # soll die Oberfläche nicht lahmlegen.
+                self._after_server_events()
             if self.run_active and self.run_continuous and self.item is not None:
                 self._show_progress()
             if self.item_open and self.deadline is not None and time.time() >= self.deadline:
@@ -767,6 +779,7 @@ class NetworkModeFrame:
             self.server.stop()
         self.server = None
         self.session_info_var.set("")
+        self.notice_var.set("")
         self.open_button.config(text=tr("Sitzung öffnen"))
         for widget in (self.start_button, self.next_button, self.replay_button):
             widget.config(state="disabled")
@@ -778,8 +791,14 @@ class NetworkModeFrame:
         self.session_closed()
 
     def _on_server_event(self, event):
+        self._handle_server_event(event)
+        self._after_server_events()
+
+    def _handle_server_event(self, event):
         kind, name = event[0], event[1]
-        if kind == "join":
+        if kind == "locked":
+            self.notice_var.set(tr("Zu oft falsche PIN von {host} – 1 Minute gesperrt.").format(host=name))
+        elif kind == "join":
             self.board.add_participant(name)
         elif kind == "answer" and self.board is not None:
             message = event[2]
@@ -787,6 +806,8 @@ class NetworkModeFrame:
         elif kind == "paper" and self.board is not None and not self.run_active:
             # Nach dem Durchgang abgetippt; währenddessen gehört es nicht hierher.
             self.board.record_paper(name, event[2].get("n"), event[2].get("typed"))
+
+    def _after_server_events(self):
         if self.item_open and not self.run_paced and self._all_answered():
             self.close_item()
         self._refresh_table()
@@ -1158,7 +1179,31 @@ class NetworkModeFrame:
             self.tree.configure(height=min(max(len(self.board.names), TABLE_ROWS[0]), TABLE_ROWS[1]))
         self.group_var.set("" if hiding else self._group_text())
         self._show_details()
+        self._show_kick()
         self._show_advice()
+
+    def _show_kick(self):
+        name = self._selected_name()
+        online = self.server is not None and name in self.server.names()
+        self.kick_button.config(state="normal" if online else "disabled")
+
+    def kick_selected(self):
+        """Gewählten Teilnehmer hinauswerfen; sein Rechner kann sich in
+        dieser Sitzung nicht wieder anmelden."""
+        name = self._selected_name()
+        if self.server is None or name is None or name not in self.server.names():
+            return
+        if not messagebox.askyesno(
+                tr("Teilnehmer entfernen"),
+                tr("{name} entfernen? Dieser Rechner kann sich bis zum Schließen der Sitzung nicht wieder "
+                   "anmelden.").format(name=name),
+                parent=self.tree.winfo_toplevel()):
+            return
+        if self.server.kick(name):
+            self.notice_var.set(tr("{name} entfernt.").format(name=name))
+        for event in self.server.poll():
+            self._handle_server_event(event)
+        self._after_server_events()
 
     def _selected_name(self):
         selection = self.tree.selection()

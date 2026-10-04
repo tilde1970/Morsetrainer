@@ -899,6 +899,12 @@ EN.update({
     "Adresse {address} · PIN {pin}": "Address {address} · PIN {pin}",
     "Warte auf Teilnehmer…": "Waiting for participants…",
     "Sitzung geschlossen.": "Session closed.",
+    "Zu oft falsche PIN von {host} – 1 Minute gesperrt.": "Wrong PIN from {host} too often – locked for 1 minute.",
+    "Entfernen": "Remove",
+    "Teilnehmer entfernen": "Remove participant",
+    "{name} entfernen? Dieser Rechner kann sich bis zum Schließen der Sitzung nicht wieder anmelden.":
+        "Remove {name}? This computer cannot log in again until the session is closed.",
+    "{name} entfernt.": "{name} removed.",
     "Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!":
         "Invalid count, answer time, writing pause or group length!",
     "Ablauf:": "Flow:",

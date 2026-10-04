@@ -16,6 +16,7 @@ from morsetrainer.net import protocol, scoreboard
 from morsetrainer.net.scoreboard import (
     Scoreboard, evaluate, solution_cells, solution_columns, solution_rows, solution_text,
 )
+from morsetrainer.net import server as server_module
 from morsetrainer.net.server import TrainerServer
 
 
@@ -410,6 +411,122 @@ class ConnectionTest(unittest.TestCase):
         self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
 
 
+class ProtectionTest(unittest.TestCase):
+    """Schutz im fremden Netz: PIN-Sperre, Hinauswerfen, Grenzen für
+    Verbindungen und Nachrichten."""
+
+    def setUp(self):
+        patch = mock.patch.object(server_module, "PIN_FAIL_DELAY_S", 0)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.server = TrainerServer("Kurs", "4711")
+        self.server.start(0)
+        self.addCleanup(self.server.stop)
+        self.clients = []
+        self.addCleanup(lambda: [client.close() for client in self.clients])
+
+    def join(self, name, pin="4711"):
+        client = net_client.TraineeClient()
+        client.connect("127.0.0.1", self.server.port, name, pin)
+        self.clients.append(client)
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(client.poll()) or events))
+        return client, events[0]
+
+    def raw(self, hello=None):
+        sock = socket.create_connection(("127.0.0.1", self.server.port))
+        self.addCleanup(sock.close)
+        if hello is not None:
+            sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION, "name": hello,
+                                          "pin": "4711", "heartbeat": True}))
+            self.assertEqual(protocol.LineReader(sock).read()["type"], "welcome")
+        return sock
+
+    def test_too_many_wrong_pins_lock_the_address(self):
+        for _ in range(server_module.PIN_MAX_FAILS):
+            self.assertEqual(self.join("DL4YM", pin="0000")[1], ("reject", "pin", None))
+        self.assertIn(("locked", "127.0.0.1"), self.server.poll())
+        # Gesperrt: auch die richtige PIN zählt nicht.
+        self.assertEqual(self.join("DL4YM")[1], ("reject", "pin", None))
+        self.server.locked_until["127.0.0.1"] = time.monotonic() - 1  # Sperre abgelaufen
+        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
+
+    def test_a_typo_now_and_then_does_not_lock(self):
+        for _ in range(3):
+            for _ in range(server_module.PIN_MAX_FAILS - 1):
+                self.assertEqual(self.join("DL4YM", pin="0000")[1], ("reject", "pin", None))
+            client, event = self.join("DL4YM")  # richtig: Zähler wieder auf null
+            self.assertEqual(event, ("welcome", "Kurs", None))
+            client.close()
+            self.assertTrue(wait_for(lambda: "DL4YM" not in self.server.names()))
+        self.assertNotIn("127.0.0.1", self.server.locked_until)
+
+    def test_parallel_guesses_are_counted_together(self):
+        def guess(pin):
+            sock = socket.create_connection(("127.0.0.1", self.server.port))
+            sock.sendall(protocol.encode({"type": "hello", "proto": protocol.PROTOCOL_VERSION, "name": "X",
+                                          "pin": pin}))
+            return sock
+        # Mehr falsche gleichzeitig als erlaubt: Danach ist die Adresse gesperrt.
+        socks = [guess(f"{n:04d}") for n in range(server_module.MAX_PENDING_PER_HOST)]
+        replies = [protocol.LineReader(sock).read()["reason"] for sock in socks]
+        for sock in socks:
+            sock.close()
+        self.assertEqual(replies, ["pin"] * len(socks))
+        self.assertEqual(self.server.poll().count(("locked", "127.0.0.1")), 1)
+        self.assertEqual(self.join("DL4YM")[1], ("reject", "pin", None))
+
+    def test_kick_disconnects_and_keeps_the_computer_out(self):
+        client, _ = self.join("DK2AB")
+        self.assertTrue(wait_for(lambda: "DK2AB" in self.server.names()))
+        self.server.poll()
+        self.assertTrue(self.server.kick("DK2AB"))
+        self.assertFalse(self.server.kick("DK2AB"))
+        self.assertEqual(self.server.poll(), [("leave", "DK2AB")])
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(client.poll()) or ("closed",) in events))
+        self.assertEqual(self.join("DK2AB")[1][0], "error")  # kommt nicht wieder herein
+        self.assertEqual(self.server.names(), [])
+
+    def test_unannounced_connections_per_address_are_limited(self):
+        idle = [self.raw() for _ in range(server_module.MAX_PENDING_PER_HOST)]
+        extra = self.raw()
+        extra.settimeout(2)
+        self.assertEqual(extra.recv(10), b"")  # sofort zu
+        idle[0].settimeout(0.2)
+        with self.assertRaises(socket.timeout):
+            idle[0].recv(10)  # die anderen warten noch auf ihr hello
+        for sock in idle:
+            sock.close()
+        self.assertTrue(wait_for(lambda: not self.server.pending, timeout=3))
+        self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
+
+    def test_total_connections_are_limited(self):
+        with mock.patch.object(server_module, "MAX_CONNECTIONS", 3):
+            socks = [self.raw(hello=f"T{n}") for n in range(3)]
+            self.assertEqual(self.join("DL4YM")[1][0], "error")
+            socks[0].close()
+            self.assertTrue(wait_for(lambda: self.server.open_count == 2))
+            self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
+
+    def test_flood_disconnects(self):
+        with mock.patch.object(server_module, "MESSAGE_BURST", 20), \
+                mock.patch.object(server_module, "MESSAGE_RATE", 1.0):
+            sock = self.raw(hello="Flut")
+            self.assertTrue(wait_for(lambda: "Flut" in self.server.names()))
+            sock.sendall(protocol.encode({"type": "answer", "n": 1, "typed": "X"}) * 100)
+            self.assertTrue(wait_for(lambda: "Flut" not in self.server.names()))
+
+    def test_honest_bursts_fit(self):
+        # Kontinuierlich: bis 30 Min. eine Antwort je Gruppe; Papierbogen: bis 200 Zeilen.
+        self.assertGreaterEqual(server_module.MESSAGE_BURST, 1000)
+        sock = self.raw(hello="Papier")
+        sock.sendall(b"".join(protocol.encode({"type": "paper", "n": n, "typed": "KMR"}) for n in range(1, 1001)))
+        events = []
+        self.assertTrue(wait_for(lambda: events.extend(self.server.poll()) or
+                                 len([e for e in events if e[0] == "paper"]) == 1000))
+        self.assertIn("Papier", self.server.names())
+
 
 class HeartbeatTest(unittest.TestCase):
     """Lebenszeichen: Wer verschwindet, ohne die Verbindung zu schließen
@@ -553,6 +670,34 @@ class NetworkTabTest(unittest.TestCase):
         self.trainee.connect()
         self.assertTrue(wait_for(lambda: self.trainee.connected and "DL4YM" in self.trainer.board.names,
                                  pump=self.pump))
+
+    def test_trainer_removes_a_participant(self):
+        self.connect()
+        tree = self.trainer.tree
+        self.assertEqual(str(self.trainer.kick_button["state"]), "disabled")  # nichts gewählt
+        tree.selection_set(tree.get_children()[0])
+        self.pump()
+        self.assertEqual(str(self.trainer.kick_button["state"]), "normal")
+        with mock.patch("morsetrainer.modes.network_mode.messagebox.askyesno", return_value=False):
+            self.trainer.kick_selected()
+        self.assertIn("DL4YM", self.trainer.server.names())
+        with mock.patch("morsetrainer.modes.network_mode.messagebox.askyesno", return_value=True):
+            self.trainer.kick_selected()
+        self.assertNotIn("DL4YM", self.trainer.server.names())
+        self.assertIn("DL4YM entfernt", self.trainer.notice_var.get())
+        self.assertIn("getrennt", tree.item(tree.get_children()[0])["values"][1])
+        self.assertEqual(str(self.trainer.kick_button["state"]), "disabled")
+        self.assertTrue(wait_for(lambda: not self.trainee.connected, pump=self.pump))
+
+    def test_flood_of_events_refreshes_the_table_once(self):
+        self.connect()
+        for n in range(500):
+            self.trainer.server.events.put(("answer", "DL4YM", {"type": "answer", "n": n, "typed": "X"}))
+        self.trainer.server.events.put(("locked", "10.0.0.9"))
+        with mock.patch.object(self.trainer, "_refresh_table") as refresh:
+            self.trainer._poll()
+        self.assertEqual(refresh.call_count, 1)
+        self.assertIn("10.0.0.9", self.trainer.notice_var.get())
 
     def test_run_with_own_text(self):
         self.connect()
