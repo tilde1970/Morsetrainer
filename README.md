@@ -1,4 +1,5 @@
-# Morsetrainer
+#
+Morsetrainer
 
 Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
 
@@ -27,6 +28,7 @@ Optionen“ → „Sprache / Language“. English overview: [README.en.md](READM
 - **Statistik:** je Zeichen, Lernkartei über Tage, häufigste
   Verwechslungen zum gezielten Üben, Diplome in Bronze, Silber und Gold
   zum Ausdrucken, Lebenslinie.
+  ![Koch-Diplom in Gold zum Ausdrucken](docs/bilder/diplom.png)
 - **Netzwerk:** Kurs oder Clubabend im lokalen Netz. Der Trainer gibt vor,
   alle hören dieselbe Sequenz und tippen mit, der Trainer sieht live, wer
   was getippt hat. Auch mit festem Takt für Papier und Bleistift.

@@ -28,6 +28,7 @@ restart. The screenshots show the German interface.
 - **Statistics:** per character, spaced repetition over days, most frequent
   confusions to practise specifically, printable awards in bronze, silver
   and gold, lifeline.
+  ![Koch award in gold, ready to print](docs/bilder/diplom.en.png)
 - **Network:** class or club evening on the local network. The trainer
   sets the pace, everyone hears the same sequence and types along, the
   trainer sees live who typed what. Also with a fixed pace for pencil and

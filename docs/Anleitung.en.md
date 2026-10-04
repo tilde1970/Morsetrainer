@@ -102,6 +102,8 @@ can also change in the window). During the
 daily practice the window comes only after the evening summary, which
 also mentions the new seals from the daily practice.
 
+![Example: Koch award in gold for DL4YM](bilder/diplom.en.png)
+
 The overview is in the **Statistics** tab under “Awards”: all awards with
 the seals achieved, the next goal (e.g. “Silver: 18 / 25 lessons”) and
 from which lesson it can be reached; open ones are grey. Club night only
