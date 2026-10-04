@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.37
 
 - **Rauschabstand in dB, echte Stufen:** Das Rauschen steht jetzt als
   Rauschabstand (S/N in 2,4 kHz) im Fenster und reicht von +20 dB bis

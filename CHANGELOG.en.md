@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.37
 
 - **S/N in dB, real levels:** noise is now shown as signal-to-noise ratio
   (S/N in 2.4 kHz) and ranges from +20 dB to −10 dB; if it gets louder,
