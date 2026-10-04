@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.33
 
 - **Mac-App:** Für Macs mit Apple-Prozessor (M1 und neuer) gibt es jetzt
   `Morsetrainer-macOS.zip` im Release. Die App ist nicht bei Apple

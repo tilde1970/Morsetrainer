@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.33
 
 - **Mac app:** for Macs with Apple silicon (M1 and newer) the release now
   includes `Morsetrainer-macOS.zip`. The app is not signed with Apple; on
