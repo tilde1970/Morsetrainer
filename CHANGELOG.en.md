@@ -1,5 +1,15 @@
 # Changes
 
+## Unreleased
+
+- **Banknote-style motifs:** every award has its own motif in the style of
+  an intaglio engraving – straight key, racing car, globe, headphones,
+  rotary dial, classroom and more. On the right stands the club house of
+  the Gütersloh club (N47), where the Morsetrainer is made.
+- **Award number:** with a callsign entered, a number such as
+  `DL1ABC-KOCH-G-20261004` (callsign, award, level, date) appears at the top
+  right.
+
 ## 2.33
 
 - **Mac app:** for Macs with Apple silicon (M1 and newer) the release now

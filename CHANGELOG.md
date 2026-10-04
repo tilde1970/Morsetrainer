@@ -1,5 +1,14 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Motive wie auf Geldscheinen:** Jedes Diplom hat ein eigenes Motiv im
+  Stil eines Stichtiefdrucks – Handtaste, Rennwagen, Weltkugel, Kopfhörer,
+  Wählscheibe, Klassenzimmer und mehr. Rechts steht das Clubheim des OV
+  Gütersloh (N47), wo der Morsetrainer entsteht.
+- **Diplom-Nummer:** Mit eingetragenem Rufzeichen steht oben rechts eine
+  Nummer wie `DL1ABC-KOCH-G-20261004` (Rufzeichen, Diplom, Stufe, Datum).
+
 ## 2.33
 
 - **Mac-App:** Für Macs mit Apple-Prozessor (M1 und neuer) gibt es jetzt

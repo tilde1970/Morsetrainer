@@ -1051,6 +1051,8 @@ class HelpWindowTest(AppTestCase):
         self.assertIn(("li", "• Punkt eins weiter"), blocks)
         self.assertIn(("row", "**X**\ty"), blocks)
         self.assertIn(("code", "code"), blocks)
+        images = help_window.parse('Text\n\n![Bild](a.png)\n\n<img src="b.png" width="640" alt="x">\n')
+        self.assertEqual([b for b in images if b[0] != "gap"], [("p", "Text")])
 
     def test_help_shows_changelog_and_readme(self):
         from morsetrainer.widgets import help_window
@@ -1061,6 +1063,7 @@ class HelpWindowTest(AppTestCase):
         self.assertIn(app_module.__version__, changelog)  # aktuelle Version steht drin
         self.assertIn("Trainingsmodi", readme)
         self.assertNotIn("**", readme)
+        self.assertNotIn("<img", readme)
         help_window.HelpWindow.show(self.root)  # zweiter Aufruf: dasselbe Fenster
         self.assertIs(help_window.HelpWindow._open, window)
 

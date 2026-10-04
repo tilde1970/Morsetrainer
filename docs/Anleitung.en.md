@@ -102,7 +102,17 @@ can also change in the window). During the
 daily practice the window comes only after the evening summary, which
 also mentions the new seals from the daily practice.
 
-![Example: Koch award in gold for DL1ABC](bilder/diplom.en.png)
+Every award has its own motif on the left in the style of an intaglio
+engraving like on banknotes, e.g. the straight key for Koch, the racing car
+for QRQ or the rotary dial for “All digits”. On the right stands the club
+house of the Gütersloh club (N47), where the Morsetrainer is made.
+
+<img src="bilder/diplom.en.png" width="640" alt="Example: Koch award in gold for DL1ABC">
+
+**Award number:** with a callsign entered, a number such as
+`DL1ABC-KOCH-G-20261004` appears at the top right: callsign, award, level
+(B, S, G, P) and date. It is unique, because each level is awarded only
+once per callsign.
 
 The overview is in the **Statistics** tab under “Awards”: all awards with
 the seals achieved, the next goal (e.g. “Silver: 18 / 25 lessons”) and

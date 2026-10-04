@@ -5,7 +5,8 @@ Stufen und die Tage der Siegel.
 
 Dazu das Diplom-Fenster für neue Siegel (nach einer Übung, in der
 Tagesübung erst nach der Abendbilanz) mit „Drucken“: eine HTML-Seite in
-Urkunden-Optik (core/diploma.py), die der Browser druckt."""
+Urkunden-Optik (core/diploma.py), die der Browser druckt, wahlweise
+mit Motiv und Diplom-Nummer."""
 import tkinter as tk
 from tkinter import ttk
 
@@ -94,14 +95,21 @@ def diploma_condition(award, level) -> str:
     return text
 
 
-def print_diploma(award, level, day, call: str, holder: str = "") -> str:
-    """Diplom als HTML-Seite im Browser öffnen; Rückgabe: Meldung."""
-    page = diploma.diploma_html(
+def diploma_page(award, level, day, call: str, holder: str = "") -> str:
+    """HTML-Seite des Diploms; die Nummer nur mit Rufzeichen."""
+    return diploma.diploma_html(
         tr(award.name), tr(awards.LEVEL_NAMES[level]) if award.levels else "",
         diploma.seal_colors(level, award.levels), diploma_condition(award, level),
         day.strftime(tr("%d.%m.%Y")), call, holder,
         labels={"title": tr("Diplom"), "awarded": tr("verliehen an"), "date": tr("Datum:"),
-                "footer": tr("Morsetrainer · entwickelt von DL4YM")})
+                "footer": tr("Morsetrainer · entwickelt von DL4YM"), "number": tr("Nr.")},
+        number=diploma.diploma_number(call, award.key, level if award.levels else None, day),
+        motif=award.key)
+
+
+def print_diploma(award, level, day, call: str, holder: str = "") -> str:
+    """Diplom als HTML-Seite im Browser öffnen; Rückgabe: Meldung."""
+    page = diploma_page(award, level, day, call, holder)
     path = stats.STATS_DIR / DIPLOMA_FILE_NAME
     try:
         stats.STATS_DIR.mkdir(parents=True, exist_ok=True)

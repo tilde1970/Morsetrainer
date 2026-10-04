@@ -1,10 +1,14 @@
 """Druckbares Diplom in Urkunden-Optik: Guilloche-Rahmen, Rosetten,
 Diplomname auch in Morsezeichen, Siegel mit Bändern in der Farbe der
-Stufe, Rufzeichen und Datum. Erzeugt wird eine HTML-Seite mit
+Stufe, Rufzeichen und Datum, dazu Motive im Stil eines Stichtiefdrucks:
+links eines je Diplom, rechts das Clubheim von OV N47 (Gütersloh), wo der
+Morsetrainer entsteht (assets/motive, erzeugt mit tools/motive/stich.py). Erzeugt wird eine HTML-Seite mit
 eingebettetem SVG, die der Browser druckt (A4 quer), wie beim
 Antwortbogen – ohne Bilder oder Schriften aus dem Netz."""
 import html
 import math
+import re
+from pathlib import Path
 
 from morsetrainer.core.morse import MORSE_CODE
 
@@ -17,6 +21,8 @@ WIDTH, HEIGHT = 277, 190
 BAND = 9.5      # Abstand der Rahmenmitte vom Blattrand
 WAVE = 2.6      # Ausschlag der Rahmenwellen
 PAPER = "#fbf7ec"
+MOTIF_DIR = Path(__file__).resolve().parents[1] / "assets" / "motive"
+CLUB_MOTIF = "n47"
 UMLAUTS = {"Ä": "AE", "Ö": "OE", "Ü": "UE", "ß": "SS"}
 
 
@@ -204,12 +210,48 @@ def _ring_text(level_name: str) -> str:
     return part * 2 if len(part) <= 24 else part
 
 
+LEVEL_LETTERS = "BSGP"  # Bronze, Silber/Silver, Gold, Platin/Platinum
+
+
+def diploma_number(call: str, award_key: str, level, day) -> str:
+    """Lesbare Diplom-Nummer wie „DL1ABC-KOCH-G-20261004“: Rufzeichen,
+    Diplom, Stufe (ohne bei Diplomen ohne Stufen) und Datum. Eindeutig, weil
+    jede Stufe je Rufzeichen nur einmal vergeben wird; in jeder Sprache
+    gleich. Leer ohne Rufzeichen."""
+    call = "".join(call.split()).upper()
+    if not call:
+        return ""
+    parts = [call, award_key.replace("_", "").upper()]
+    if level is not None:
+        parts.append(LEVEL_LETTERS[level])
+    parts.append(day.strftime("%Y%m%d"))
+    return "-".join(parts)
+
+
+def motif_svg(key: str, css_class: str) -> str:
+    """Motiv `key` als eingebettetes SVG mit Klasse `css_class`; leer, wenn
+    es die Datei nicht gibt (das Diplom kommt dann ohne aus)."""
+    try:
+        svg = (MOTIF_DIR / f"{key}.svg").read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return ""
+    view = re.search(r'viewBox="([\d. -]+)"', svg)
+    start, end = svg.find(">") + 1, svg.rfind("</svg>")
+    if not view or start <= 0 or end < start:
+        return ""
+    return (f'<svg class="motif {css_class}" viewBox="{view.group(1)}" aria-hidden="true">'
+            f'{svg[start:end]}</svg>')
+
+
 def diploma_html(name: str, level_name: str, colors: tuple, condition: str, date_text: str,
-                 call: str = "", holder: str = "", labels: dict = None) -> str:
+                 call: str = "", holder: str = "", labels: dict = None, number: str = "",
+                 motif: str = "") -> str:
     """HTML-Seite eines Diploms. `level_name` leer bei Diplomen ohne Stufen;
     `call` (groß) und `holder` (Name, darunter) beide leer: ohne
     Empfängerzeile. `labels` liefert die (übersetzten) Texte "title",
-    "awarded", "date", "footer"."""
+    "awarded", "date", "footer", "number". `number`: Diplom-Nummer
+    (diploma_number), leer ohne. `motif`: Schlüssel des Motivs (meist der
+    des Diploms), leer ohne."""
     labels = labels or {}
     esc = html.escape
     fill, edge = colors
@@ -250,12 +292,18 @@ h2 {{ font-family: "Noto Serif Display", "Noto Serif", Georgia, serif; font-size
          letter-spacing: 0.12em; margin: 0.5mm 0 1mm; color: {ink}; }}
 .holder {{ font-size: 18pt; font-style: italic; margin: 0 0 2mm; }}
 .awarded + .holder {{ font-size: 28pt; margin: 1mm 0 3mm; }}
-.condition {{ font-size: 11pt; line-height: 1.4; max-width: 175mm; margin: 3mm 0 0; color: #3a3f47; }}
+.condition {{ font-size: 10.5pt; line-height: 1.35; max-width: 205mm; margin: 3mm 0 0; color: #3a3f47; }}
 .middle {{ flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }}
 .bottom {{ width: 100%; display: flex; justify-content: space-between; align-items: flex-end;
            font-size: 10.5pt; }}
 .line {{ border-top: 0.3mm solid {ink}; padding-top: 1.2mm; width: 80mm; color: #3a3f47; }}
 .seal {{ display: block; flex-shrink: 0; margin-bottom: -9mm; }}
+.number {{ position: absolute; right: 0; top: -6mm; margin: 0; font-size: 9pt; letter-spacing: 0.12em;
+           color: {ink}; }}
+.motif {{ position: absolute; top: 50mm; width: 56mm; height: 62mm; color: {ink}; opacity: 0.7;
+          --paper: {PAPER}; }}
+.motif.left {{ left: 20mm; }}
+.motif.right {{ right: 20mm; }}
 </style></head><body>
 <div class="sheet">
 <svg class="art" viewBox="0 0 {WIDTH} {HEIGHT}" preserveAspectRatio="none">
@@ -263,12 +311,15 @@ h2 {{ font-family: "Noto Serif Display", "Noto Serif", Georgia, serif; font-size
 {_border(ink, accent)}
 {_corner_rosettes(ink, accent)}
 </svg>
+{motif_svg(motif, "left") if motif else ""}
+{motif_svg(CLUB_MOTIF, "right") if motif else ""}
 <div class="content">
 <p class="program">Morsetrainer</p>
+{_number_line(number, labels)}
 <h1>{esc(labels.get("title", "Diplom"))}</h1>
 <div class="rule">✦</div>
 <h2>{esc(name)}</h2>
-{morse_svg(name, _mix(accent, ink, 0.45))}
+{morse_svg(name, _mix(accent, ink, 0.45), max_width=110)}
 <div class="middle">
 {recipient}
 <p class="condition">{esc(condition)}</p>
@@ -282,3 +333,9 @@ h2 {{ font-family: "Noto Serif Display", "Noto Serif", Georgia, serif; font-size
 </div>
 </body></html>
 """
+
+
+def _number_line(number: str, labels: dict) -> str:
+    if not number:
+        return ""
+    return f'<p class="number">{html.escape(labels.get("number", "Nr."))} {html.escape(number)}</p>'

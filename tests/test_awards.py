@@ -366,5 +366,70 @@ class DiplomaTest(unittest.TestCase):
         self.assertEqual(diploma.morse_svg("E", "#000").count("<rect"), 1)
 
 
+class DiplomaNumberTest(unittest.TestCase):
+    DAY = date(2026, 10, 4)
+
+    def test_number_is_readable(self):
+        self.assertEqual(diploma.diploma_number("dl1abc ", "koch", 2, self.DAY), "DL1ABC-KOCH-G-20261004")
+        self.assertEqual(diploma.diploma_number("DL1ABC", "qrq", 3, self.DAY), "DL1ABC-QRQ-P-20261004")
+        self.assertEqual(diploma.diploma_number("DL1ABC", "first_qso", None, self.DAY), "DL1ABC-FIRSTQSO-20261004")
+        self.assertEqual(diploma.diploma_number("  ", "koch", 0, self.DAY), "")
+
+    def test_diploma_shows_number(self):
+        award = awards.BY_KEY["koch"]
+        page = panel.diploma_page(award, 2, self.DAY, "DL1ABC", "Max")
+        for text in ("Nr. DL1ABC-KOCH-G-20261004", "Max", "Gold", "04.10.2026", "landscape"):
+            self.assertIn(text, page)
+        self.assertNotIn("Nr.", panel.diploma_page(award, 2, self.DAY, "", "Max"))
+        plain = panel.diploma_page(awards.BY_KEY["first_qso"], 0, self.DAY, "DL1ABC", "")
+        self.assertIn("DL1ABC-FIRSTQSO-20261004", plain)
+
+
+class DiplomaMotifTest(unittest.TestCase):
+    DAY = date(2026, 10, 4)
+
+    def test_every_award_has_a_motif_and_the_club_house_exists(self):
+        for key in list(awards.BY_KEY) + [diploma.CLUB_MOTIF]:
+            svg = diploma.motif_svg(key, "left")
+            self.assertTrue(svg.startswith('<svg class="motif left" viewBox="'), key)
+            self.assertIn("currentColor", svg)
+            self.assertIn("var(--paper", svg)
+
+    def test_diploma_shows_award_motif_left_and_club_house_right(self):
+        page = panel.diploma_page(awards.BY_KEY["koch"], 2, self.DAY, "DL1ABC", "Max")
+        self.assertEqual(page.count('class="motif left"'), 1)
+        self.assertEqual(page.count('class="motif right"'), 1)
+
+    def test_missing_motif_is_left_out(self):
+        self.assertEqual(diploma.motif_svg("gibt-es-nicht", "left"), "")
+        with mock.patch.object(diploma, "MOTIF_DIR", Path("/nirgends")):
+            page = panel.diploma_page(awards.BY_KEY["koch"], 0, self.DAY, "DL1ABC", "")
+        self.assertNotIn('class="motif', page)
+        self.assertIn("DL1ABC", page)
+
+
+class DiplomaWindowTest(unittest.TestCase):
+    def setUp(self):
+        import tkinter as tk
+        try:
+            self.root = tk.Tk()
+        except tk.TclError:
+            self.skipTest("keine Anzeige")
+        self.root.withdraw()
+        self.tk = tk
+
+    def tearDown(self):
+        self.root.destroy()
+
+    def test_print_uses_call_and_name_from_the_window(self):
+        tk = self.tk
+        call, name = tk.StringVar(value="dl1abc"), tk.StringVar(value="Max")
+        window = panel.DiplomaWindow(self.root, [("koch", 2, date(2026, 10, 4))], call, name)
+        with mock.patch.object(panel, "print_diploma", return_value="ok") as printed:
+            window._print(awards.BY_KEY["koch"], 2, date(2026, 10, 4))
+        printed.assert_called_once_with(awards.BY_KEY["koch"], 2, date(2026, 10, 4), "DL1ABC", "Max")
+        window.close()
+
+
 if __name__ == "__main__":
     unittest.main()

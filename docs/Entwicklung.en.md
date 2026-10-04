@@ -35,6 +35,8 @@ morsetrainer/
 tests/               automated tests
 docs/                manual, development, pictures for the README
 packaging/           AppImage build (icon, desktop file)
+tools/motive/        award motifs: drawings (quellen/) and stich.py, which
+                     generates morsetrainer/assets/motive/ from them
 .github/workflows/   builds AppImage, exe and Mac app for releases, with SHA256SUMS.txt
 ```
 

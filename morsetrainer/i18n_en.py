@@ -1144,6 +1144,7 @@ EN.update({
     "falls vorhanden; für Diplome, Contest und Netzwerk": "if you have one; for awards, contest and network",
     "ohne eigenes Rufzeichen: ein ausgedachtes eintragen": "no callsign of your own: enter a made-up one",
     "Diplom ansehen und drucken": "View and print award",
+    "Nr.": "No.",
     "Aus deinem bisherigen Üben wurden {n} Diplome nachgetragen. Du findest sie im Reiter Statistik unter "
     "„Diplome“ und kannst sie dort ansehen und drucken.":
         "{n} awards were filled in from your practice so far. You will find them in the Statistics tab under "

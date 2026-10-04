@@ -9,7 +9,8 @@ falls vorhanden.
 Dargestellt wird ein kleiner Teil von Markdown, genug für die beiden
 Dateien: Überschriften, Absätze, Listen, **fett**, *kursiv*, `Code`,
 Codeblöcke, Links (nur der Text) und Tabellen (je Zeile ein Absatz mit
-fetter erster Spalte)."""
+fetter erster Spalte). Bilder (`![…](…)` oder `<img …>` allein in einer
+Zeile) fallen weg."""
 import re
 import sys
 import tkinter as tk
@@ -22,6 +23,7 @@ from morsetrainer.widgets import theme
 
 DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "docs/Anleitung.md"))
 
+_IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>")
 _INLINE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`|\*(.+?)\*|\[([^\]]+)\]\([^)]*\)")
 
 
@@ -57,6 +59,8 @@ def parse(text: str):
         stripped = line.strip()
         if not stripped:
             blocks.append(("gap", ""))
+            continue
+        if _IMAGE.fullmatch(stripped):
             continue
         heading = re.match(r"(#{1,3})\s+(.*)", stripped)
         if heading:

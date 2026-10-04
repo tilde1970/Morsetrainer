@@ -98,7 +98,17 @@ Fenster auch änderbar). In der
 Tagesübung kommt das Fenster erst nach der Abendbilanz, die die neuen
 Siegel aus der Tagesübung auch nennt.
 
-![Beispiel: Koch-Diplom in Gold für DL1ABC](bilder/diplom.png)
+Jedes Diplom hat links ein eigenes Motiv im Stil eines Stichtiefdrucks wie
+auf Geldscheinen, etwa die Handtaste bei Koch, den Rennwagen bei QRQ oder
+die Wählscheibe bei „Alle Ziffern“. Rechts steht das Clubheim des OV
+Gütersloh (N47), wo der Morsetrainer entsteht.
+
+<img src="bilder/diplom.png" width="640" alt="Beispiel: Koch-Diplom in Gold für DL1ABC">
+
+**Diplom-Nummer:** Mit eingetragenem Rufzeichen steht oben rechts eine
+Nummer wie `DL1ABC-KOCH-G-20261004`: Rufzeichen, Diplom, Stufe (B, S, G,
+P) und Datum. Sie ist eindeutig, weil jede Stufe je Rufzeichen nur einmal
+vergeben wird.
 
 Die Übersicht steht im Reiter **Statistik** unter „Diplome“: alle
 Diplome mit erreichten Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25
