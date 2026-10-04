@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.30
 
 - **Updates mit Prüfsumme:** Jedes Release enthält `SHA256SUMS.txt` mit den
   Prüfsummen. Das Update im Programm installiert nur eine Datei, die dazu

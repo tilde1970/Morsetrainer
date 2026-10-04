@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.30
 
 - **Updates with checksum:** every release contains `SHA256SUMS.txt` with the
   checksums. The update in the program only installs a file that matches;
