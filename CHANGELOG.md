@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.35
 
 - **Diplom-Vorschau:** „Vorschau: nächstes Ziel“ im Reiter Statistik unter
   „Diplome“ zeigt das Diplom der nächsten offenen Stufe, mit Stempel

@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.35
 
 - **Award preview:** “Preview: next goal” in the Statistics tab under
   “Awards” shows the award of the next open level, stamped “PREVIEW”,
