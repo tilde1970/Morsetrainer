@@ -98,7 +98,7 @@ Fenster auch änderbar). In der
 Tagesübung kommt das Fenster erst nach der Abendbilanz, die die neuen
 Siegel aus der Tagesübung auch nennt.
 
-![Beispiel: Koch-Diplom in Gold für DL4YM](bilder/diplom.png)
+![Beispiel: Koch-Diplom in Gold für DL1ABC](bilder/diplom.png)
 
 Die Übersicht steht im Reiter **Statistik** unter „Diplome“: alle
 Diplome mit erreichten Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25

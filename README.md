@@ -1,5 +1,4 @@
-#
-Morsetrainer
+# Morsetrainer
 
 Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
 
@@ -9,8 +8,6 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 **English:** The program can be switched to English under „▸ Weitere
 Optionen“ → „Sprache / Language“. English overview: [README.en.md](README.en.md).
-
-![Reiter Gruppen: Mitschreiben im Koch-Tempo 20/10, „Richtig: ESJ“](docs/bilder/gruppen.png)
 
 ## Was er kann
 
@@ -28,12 +25,23 @@ Optionen“ → „Sprache / Language“. English overview: [README.en.md](READM
 - **Statistik:** je Zeichen, Lernkartei über Tage, häufigste
   Verwechslungen zum gezielten Üben, Diplome in Bronze, Silber und Gold
   zum Ausdrucken, Lebenslinie.
-  ![Koch-Diplom in Gold zum Ausdrucken](docs/bilder/diplom.png)
 - **Netzwerk:** Kurs oder Clubabend im lokalen Netz. Der Trainer gibt vor,
   alle hören dieselbe Sequenz und tippen mit, der Trainer sieht live, wer
   was getippt hat. Auch mit festem Takt für Papier und Bleistift.
 
-![Clubabend: Tabelle des Trainers mit vier Teilnehmern](docs/bilder/netzwerk.png)
+## So sieht er aus
+
+### Mitschreiben im Koch-Tempo
+
+<img src="docs/bilder/gruppen.png" width="640" alt="Reiter Gruppen: Mitschreiben im Koch-Tempo 20/10, „Richtig: ESJ“">
+
+### Diplom zum Ausdrucken
+
+<img src="docs/bilder/diplom.png" width="640" alt="Koch-Diplom in Gold für DL1ABC">
+
+### Clubabend im Netzwerk
+
+<img src="docs/bilder/netzwerk.png" width="640" alt="Clubabend: Tabelle des Trainers mit vier Teilnehmern">
 
 ## Download
 

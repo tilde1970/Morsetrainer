@@ -10,8 +10,6 @@ or together at a club evening on the local network.
 „▸ Weitere Optionen“ → „Sprache / Language“; it takes effect after a
 restart. The screenshots show the German interface.
 
-![Groups tab: copying at Koch speed 20/10, “Richtig: ESJ” (correct)](docs/bilder/gruppen.png)
-
 ## What it does
 
 - **Koch method** with the lessons of lcwo.net and Koch speed 20/10: hear
@@ -28,13 +26,24 @@ restart. The screenshots show the German interface.
 - **Statistics:** per character, spaced repetition over days, most frequent
   confusions to practise specifically, printable awards in bronze, silver
   and gold, lifeline.
-  ![Koch award in gold, ready to print](docs/bilder/diplom.en.png)
 - **Network:** class or club evening on the local network. The trainer
   sets the pace, everyone hears the same sequence and types along, the
   trainer sees live who typed what. Also with a fixed pace for pencil and
   paper.
 
-![Club evening: the trainer's table with four participants](docs/bilder/netzwerk.png)
+## Screenshots
+
+### Copying at Koch speed
+
+<img src="docs/bilder/gruppen.png" width="640" alt="Groups tab: copying at Koch speed 20/10, “Richtig: ESJ” (correct)">
+
+### Award to print
+
+<img src="docs/bilder/diplom.en.png" width="640" alt="Koch award in gold for DL1ABC">
+
+### Club evening on the network
+
+<img src="docs/bilder/netzwerk.png" width="640" alt="Club evening: the trainer's table with four participants">
 
 ## Download
 
