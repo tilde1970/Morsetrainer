@@ -77,6 +77,14 @@ jobs:
       - run: pip install -r requirements.txt pyinstaller pillow
       - run: bash packaging/get_voice.sh
       - run: pyinstaller --noconfirm --windowed --name Morsetrainer --osx-bundle-identifier io.github.tilde1970.morsetrainer --add-data "CHANGELOG.md:." --add-data "CHANGELOG.en.md:." --add-data "docs/Anleitung.md:docs" --add-data "docs/Anleitung.en.md:docs" --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
+      # Der sounddevice-Hook packt die PortAudio-DLLs für Windows mit ein. Nach
+      # dem Löschen die App neu (ad hoc) signieren, sonst passt das Siegel
+      # nicht mehr und macOS meldet „beschädigt“.
+      - run: |
+          find dist/Morsetrainer.app -name 'libportaudio*.dll' -delete
+          test -f dist/Morsetrainer.app/Contents/Frameworks/_sounddevice_data/portaudio-binaries/libportaudio.dylib
+          codesign --force --sign - dist/Morsetrainer.app
+          codesign --verify --deep --strict --verbose=2 dist/Morsetrainer.app
       # Stimme und MP3 in der App prüfen (ohne Fenster, ohne Ton).
       - run: dist/Morsetrainer.app/Contents/MacOS/Morsetrainer --selftest selftest.mp3 && test -s selftest.mp3
       # ditto erhält Symlinks und Signatur der App im ZIP.
