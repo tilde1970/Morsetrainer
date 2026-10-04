@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.32
 
 - **Koch-Diplom:** Silber und Gold gibt es wie bei Fluss, QRQ, QRN-fest,
   Rufz und Contest erst an zwei verschiedenen Tagen. Wer gleich in

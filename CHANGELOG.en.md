@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.32
 
 - **Koch award:** like flow, QRQ, QRN-proof, Rufz and contest, Silver and
   Gold now need two different days. Starting straight at lesson 41 used to
