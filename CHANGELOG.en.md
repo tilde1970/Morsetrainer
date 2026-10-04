@@ -1,5 +1,15 @@
 # Changes
 
+## Unreleased
+
+- **Updates with checksum:** every release contains `SHA256SUMS.txt` with the
+  checksums. The update in the program only installs a file that matches;
+  a damaged or wrong download is discarded and the program stays as it is.
+- **Manual:** the README is now a short overview with pictures; the full
+  manual is in `docs/Anleitung.en.md` and, as before, in the program under
+  “Help”. New in it: notes on the security of updates and network mode and
+  how to verify the checksums by hand.
+
 ## 2.29
 
 - **Faster:** statistics, the lifeline and awards are evaluated faster

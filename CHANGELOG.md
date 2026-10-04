@@ -1,5 +1,16 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Updates mit Prüfsumme:** Jedes Release enthält `SHA256SUMS.txt` mit den
+  Prüfsummen. Das Update im Programm installiert nur eine Datei, die dazu
+  passt; ein beschädigter oder falscher Download wird verworfen und das
+  Programm bleibt, wie es ist.
+- **Anleitung:** Die README ist jetzt ein kurzer Überblick mit Bildern; die
+  ausführliche Anleitung steht in `docs/Anleitung.md` und wie bisher im
+  Programm unter „Hilfe“. Neu darin: Hinweise zur Sicherheit von Updates
+  und Netzwerkmodus und wie man die Prüfsummen von Hand nachprüft.
+
 ## 2.29
 
 - **Schneller:** Statistik, Lebenslinie und Diplome werden nach einem
