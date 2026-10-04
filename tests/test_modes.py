@@ -1065,6 +1065,68 @@ class HelpWindowTest(AppTestCase):
         self.assertIs(help_window.HelpWindow._open, window)
 
 
+class DecimalTest(AppTestCase):
+    def test_statistics_use_the_decimal_comma(self):
+        panel = self.mode("Einzelzeichen").stats_panel
+        panel.refresh({"correct": 9, "total": 10, "accuracy_pct": 90.0, "avg_effective_wpm": 8.25},
+                      [("K", 9, 1, 10, 2.27, 5.9, "")])
+        self.assertEqual(panel.speed_var.get(), "Ø effektive Geschwindigkeit: 8,2 WPM")
+        row = panel.char_tree.item(panel.char_tree.get_children()[0])["values"]
+        self.assertEqual([str(v) for v in row[3:5]], ["2,27", "5,9"])
+
+    def test_progress_text_uses_the_decimal_comma(self):
+        from datetime import datetime
+        panel = self.app.progress_panel
+        history = [{"time": datetime(2026, 9, 25, 10), "mode": "single", "accuracy_pct": 97.6, "wpm": 15,
+                    "total": 50},
+                   {"time": datetime(2026, 10, 3, 10), "mode": "single", "accuracy_pct": 94.7, "wpm": 20,
+                    "total": 50}]
+        with mock.patch.object(stats, "load_history", return_value=history):
+            panel.refresh()
+        self.assertIn("Trefferquote 97,6 % → 94,7 %", panel.info_var.get())
+        row = panel.table.item(panel.table.get_children()[0])["values"]
+        self.assertEqual(str(row[1]), "94,7 %")
+
+
+class ContestNamesTest(AppTestCase):
+    def test_contest_tab_shows_names_without_prefix(self):
+        from morsetrainer.core import qso_text
+        contest = self.mode("Contest")
+        self.assertEqual(set(qso_text.CONTEST_NAMES), set(qso_text.QSO_TYPES) - {qso_text.RAGCHEW})
+        self.assertEqual(contest.kind_combo.get(), "CQ WW (Zone)")
+        self.assertNotIn("Contest:", " ".join(contest.kind_combo.cget("values")))
+        contest.kind_combo.set("WAG (DOK)")
+        self.assertEqual(contest.settings()["kind"], "wag")
+        contest.restore_settings({"kind": "iaru"})
+        self.assertEqual(contest.kind_combo.get(), "IARU HF (ITU-Zone/HQ)")
+        contest.restore_settings({"kind": "ragchew"})  # kein Contest: bleibt
+        self.assertEqual(contest.settings()["kind"], "iaru")
+
+
+class LayoutTest(AppTestCase):
+    def test_group_length_row_only_while_it_has_text(self):
+        groups = self.mode("Gruppen")
+        self.assertEqual(groups.length_info_label.winfo_manager(), "")  # keine Leerzeile
+        groups.length_info_var.set("Aktuelle Gruppenlänge: 3")
+        self.assertEqual(groups.length_info_label.winfo_manager(), "pack")
+        groups.length_info_var.set("")
+        self.assertEqual(groups.length_info_label.winfo_manager(), "")
+
+    def test_history_headings_name_their_length(self):
+        from morsetrainer.modes import sequence_mode
+        texts = []
+
+        def collect(widget):
+            for child in widget.winfo_children():
+                if child.winfo_class() == "TLabelframe":
+                    texts.append(str(child.cget("text")))
+                collect(child)
+        collect(self.root)
+        self.assertIn(f"Verlauf (letzte {single_mode.HISTORY_LEN})", texts)
+        self.assertIn(f"Verlauf (letzte {sequence_mode.HISTORY_LEN})", texts)
+        self.assertNotIn("Verlauf", texts)
+
+
 class ThemeTest(AppTestCase):
     def test_choice_boxes_stay_readable_with_focus(self):
         # clam färbte die Schrift fokussierter Klapplisten weiß auf weißem Feld

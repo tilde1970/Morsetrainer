@@ -79,8 +79,10 @@ class GroupModeFrame(SequenceModeFrame):
                 longer=LONGER_AFTER, shorter=SHORTER_AFTER),
             variable=self.adaptive_var,
         ).pack(side="left")
+        # Nur während eines Durchgangs mit wachsender Länge, sonst ohne Leerzeile.
         self.length_info_var = tk.StringVar(value="")
-        theme.hint(parent, textvariable=self.length_info_var).pack(anchor="w", padx=(24, 0))
+        self.length_info_label = theme.hint(parent, textvariable=self.length_info_var)
+        self.length_info_var.trace_add("write", lambda *_: self._place_length_info(adaptive))
         self.adaptive = None
         self.saved_length = None  # zuletzt erreichte Länge, Start beim nächsten Mal
 
@@ -105,6 +107,12 @@ class GroupModeFrame(SequenceModeFrame):
             self.adaptive = None
             self.length_info_var.set("")
         return True
+
+    def _place_length_info(self, after):
+        if self.length_info_var.get():
+            self.length_info_label.pack(anchor="w", padx=(24, 0), after=after)
+        else:
+            self.length_info_label.pack_forget()
 
     def _show_length(self, change: int = 0):
         note = {1: tr(" – länger, weiter so!"), -1: tr(" – etwas kürzer")}.get(change, "")

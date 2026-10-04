@@ -94,6 +94,10 @@ def clean_input(text: str) -> str:
     return "".join(ch for ch in text.upper() if ch in MORSE_CODE)
 
 
+# So viele Sequenzen zeigt „Verlauf“ (gesendet = bzw. ≠ getippt).
+HISTORY_LEN = 10
+
+
 class SequenceModeFrame(DailyModeMixin):
     daily_keys = ("input_style", "adaptive_tempo", "band", "give_up")
     session_mode = "group"
@@ -349,7 +353,7 @@ class SequenceModeFrame(DailyModeMixin):
 
         self.stats_panel = StatsPanel(parent)
 
-        history = theme.card(parent, tr("Verlauf"))
+        history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
@@ -886,7 +890,7 @@ class SequenceModeFrame(DailyModeMixin):
                     self.diff_var.set(typed_line)
 
         self.history.append(f"{sent}{'=' if all_correct else '≠'}{typed}")
-        self.history = self.history[-10:]
+        self.history = self.history[-HISTORY_LEN:]
         self.history_var.set("   ".join(self.history))
 
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())

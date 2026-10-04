@@ -76,6 +76,8 @@ RETRY_EXCLUDE_MIN = 5
 COMPARE_GAP_SECONDS = 0.6
 # Hinweis auf die Gruppen nur, wenn das Zeitlimit am Ende höchstens so lang ist.
 GROUPS_HINT_MAX_LIMIT = 1.5
+# So viele Antworten zeigt „Verlauf“ (✓/✗).
+HISTORY_LEN = 40
 
 
 def next_limit(limit: float, in_time_and_correct: bool, upper: float = ICR_RANGE[1]) -> float:
@@ -187,7 +189,7 @@ class SingleModeFrame(DailyModeMixin):
 
         self.stats_panel = StatsPanel(parent)
 
-        history = theme.card(parent, tr("Verlauf (letzte 40)"))
+        history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=520).pack(anchor="w")
 
@@ -421,7 +423,7 @@ class SingleModeFrame(DailyModeMixin):
     def _add_history(self, correct: bool):
         self._count_streak(correct)
         self.history.append(correct)
-        self.history = self.history[-40:]
+        self.history = self.history[-HISTORY_LEN:]
         self.history_var.set("".join("✓" if ok else "✗" for ok in self.history))
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 

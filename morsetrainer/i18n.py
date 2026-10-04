@@ -59,3 +59,10 @@ def number(value, decimals=None) -> str:
     number(1.2, 2) -> „1,20“ bzw. „1.20“."""
     text = f"{value:,}" if decimals is None else f"{value:,.{decimals}f}"
     return text if LANG == "en" else text.translate(str.maketrans(",.", ".,"))
+
+
+def short_number(value) -> str:
+    """Wie f"{value:g}" (Nachkommastellen nur, wenn nötig), mit dem
+    Dezimalzeichen der Sprache: 94.7 -> „94,7“ bzw. „94.7“, 100.0 -> „100“."""
+    text = f"{value:g}"
+    return text if LANG == "en" else text.replace(".", ",")

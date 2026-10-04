@@ -101,10 +101,18 @@ class LanguageSettingTest(unittest.TestCase):
         with mock.patch.object(i18n, "LANG", "en"):
             self.assertEqual((i18n.number(12345), i18n.number(0.38, 2)), ("12,345", "0.38"))
 
+    def test_short_numbers_only_show_needed_decimals(self):
+        self.assertEqual([i18n.short_number(v) for v in (94.7, 100.0, 5)], ["94,7", "100", "5"])
+        with mock.patch.object(i18n, "LANG", "en"):
+            self.assertEqual([i18n.short_number(v) for v in (94.7, 100.0, 5)], ["94.7", "100", "5"])
+
     def test_context_picks_its_own_entry(self):
         with mock.patch.object(i18n, "_TABLE", EN):
             self.assertEqual(i18n.tr("Zeichen"), "Characters")
             self.assertEqual(i18n.tr("Zeichen", context="Einheit"), "characters")
+            # Rolle („Ich bin: Teilnehmer“) und Überschrift der Tabelle
+            self.assertEqual(i18n.tr("Teilnehmer"), "Participant")
+            self.assertEqual(i18n.tr("Teilnehmer", context="Mehrzahl"), "Participants")
             self.assertEqual(i18n.tr("gibt es nicht"), "gibt es nicht")
 
     def test_help_uses_english_files(self):

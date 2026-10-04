@@ -48,7 +48,7 @@ from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource, qso_sections
-from morsetrainer.modes.sequence_mode import BAND_LABELS, answer_limit
+from morsetrainer.modes.sequence_mode import BAND_LABELS, HISTORY_LEN, answer_limit
 from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
@@ -280,15 +280,19 @@ class NetworkModeFrame:
         self.port_spin.pack(side="left")
         self.open_button = ttk.Button(row, text=tr("Sitzung öffnen"), command=self.toggle_session)
         self.open_button.pack(side="right")
-        self.session_info_var = tk.StringVar(value="")
-        ttk.Label(box, textvariable=self.session_info_var, style="Score.TLabel").pack(anchor="w", pady=(4, 0))
-        # Gesperrte PIN-Versuche, entfernte Teilnehmer (bleibt bis zum nächsten Hinweis)
-        self.notice_var = tk.StringVar(value="")
-        ttk.Label(box, textvariable=self.notice_var, foreground=theme.ERROR).pack(anchor="w")
-        theme.hint(box, wrap=540, text=tr(
+        hint = theme.hint(box, wrap=540, text=tr(
             "Die Teilnehmer finden die Sitzung über „Suchen“ oder geben die Adresse ein. Beim ersten "
-            "Öffnen fragt unter Windows eventuell die Firewall – für private Netzwerke zulassen.")).pack(
-            anchor="w", pady=(2, 0))
+            "Öffnen fragt unter Windows eventuell die Firewall – für private Netzwerke zulassen."))
+        hint.pack(anchor="w", pady=(2, 0))
+        # Adresse und PIN, darunter gesperrte PIN-Versuche und entfernte
+        # Teilnehmer (bleibt bis zum nächsten Hinweis); leer ohne Zeile.
+        self.session_info_var = tk.StringVar(value="")
+        self.notice_var = tk.StringVar(value="")
+        for var, options, pad in ((self.session_info_var, {"style": "Score.TLabel"}, (4, 0)),
+                                  (self.notice_var, {"foreground": theme.ERROR}, 0)):
+            label = ttk.Label(box, textvariable=var, **options)
+            var.trace_add("write", lambda *_, v=var, l=label, p=pad: (
+                l.pack(anchor="w", pady=p, before=hint) if v.get() else l.pack_forget()))
 
         options = theme.card(parent, tr("Übung"))
         content = ttk.Frame(options)
@@ -422,7 +426,7 @@ class NetworkModeFrame:
         ttk.Label(parent, textvariable=self.trainer_status_var, style="Status.TLabel", wraplength=560,
                   justify="center").pack(pady=(12, 6))
 
-        table = theme.card(parent, tr("Teilnehmer"))
+        table = theme.card(parent, tr("Teilnehmer", context="Mehrzahl"))
         head = self.table_head = ttk.Frame(table)
         head.pack(fill="x", pady=(0, 4))
         self.detach_button = ttk.Button(head, text=tr("In eigenem Fenster"), style="Flat.TButton",
@@ -613,7 +617,7 @@ class NetworkModeFrame:
             anchor="w", pady=(6, 0))
 
         self.stats_panel = StatsPanel(parent)
-        history = theme.card(parent, tr("Verlauf"))
+        history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
@@ -2027,7 +2031,7 @@ class NetworkModeFrame:
             else:
                 self.diff_var.set("")
         self.history.append(f"{result.sent}{'=' if result.correct else '≠'}{result.typed}")
-        self.history = self.history[-10:]
+        self.history = self.history[-HISTORY_LEN:]
         self.history_var.set("   ".join(self.history))
         self.trainee_status_var.set(tr("Warte auf den Trainer…"))
 
@@ -2093,7 +2097,7 @@ class NetworkModeFrame:
         tree.focus(first)
         tree.see(first)
         self.history = [f"{result.sent}{'=' if result.correct else '≠'}{result.typed}"
-                        for _, result, _ in self.paced_results][-10:]
+                        for _, result, _ in self.paced_results][-HISTORY_LEN:]
         self.history_var.set("   ".join(self.history))
 
     def play_result(self):

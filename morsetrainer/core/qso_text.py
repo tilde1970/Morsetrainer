@@ -46,6 +46,14 @@ QSO_TYPES = {
     "arrldx": N_("Contest: ARRL DX (Staat/Leistung)"),
     "iaru": N_("Contest: IARU HF (ITU-Zone/HQ)"),
 }
+# Im Reiter Contest ohne den Vorsatz „Contest:“ (steht schon davor).
+CONTEST_NAMES = {
+    "cqww": N_("CQ WW (Zone)"),
+    "wpx": N_("CQ WPX (Nummer)"),
+    "wag": N_("WAG (DOK)"),
+    "arrldx": N_("ARRL DX (Staat/Leistung)"),
+    "iaru": N_("IARU HF (ITU-Zone/HQ)"),
+}
 
 # Arten, wie ein Abfragefeld verglichen wird (siehe qso_mode.normalize).
 TEXT, RST, NUMBER = "text", "rst", "number"

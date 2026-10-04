@@ -219,10 +219,10 @@ class RunModeFrame:
         box.columnconfigure(1, weight=1)
         row_pad = {"padx": (0, 8), "pady": 2}
         ttk.Label(box, text=tr("Contest:")).grid(row=0, column=0, sticky="w", **row_pad)
-        self.kind_var = tk.StringVar(value=qso_text.QSO_TYPES["cqww"])
+        self.kind_var = tk.StringVar(value=qso_text.CONTEST_NAMES["cqww"])
         self.kind_combo = ChoiceBox(
-            box, self.kind_var, [label for key, label in qso_text.QSO_TYPES.items() if key != qso_text.RAGCHEW],
-            width=32,
+            box, self.kind_var, list(qso_text.CONTEST_NAMES.values()),
+            width=26,
         )
         self.kind_combo.grid(row=0, column=1, columnspan=2, sticky="w", pady=2)
 
@@ -353,7 +353,7 @@ class RunModeFrame:
             var.set(value.upper())
 
     def _kind(self) -> str:
-        return next((k for k, v in qso_text.QSO_TYPES.items() if v == self.kind_var.get()), "cqww")
+        return next((k for k, v in qso_text.CONTEST_NAMES.items() if v == self.kind_var.get()), "cqww")
 
     def _my_call(self) -> str:
         return self.my_call_var.get().strip().upper()
@@ -794,8 +794,8 @@ class RunModeFrame:
         call = data.get("my_call")
         if isinstance(call, str) and call and all(ch in MORSE_CODE for ch in call):
             self.my_call_var.set(call)
-        if data.get("kind") in qso_text.QSO_TYPES and data["kind"] != qso_text.RAGCHEW:
-            self.kind_var.set(qso_text.QSO_TYPES[data["kind"]])
+        if data.get("kind") in qso_text.CONTEST_NAMES:
+            self.kind_var.set(qso_text.CONTEST_NAMES[data["kind"]])
         for key, var, limits in (("activity", self.activity_var, (1, 5)), ("duration", self.duration_var, (0, 240)),
                                  ("wpm_spread", self.wpm_spread_var, CALLER_WPM_SPREAD_RANGE),
                                  ("freq_spread", self.freq_spread_var, CALLER_FREQ_SPREAD_RANGE)):

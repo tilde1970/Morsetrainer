@@ -671,6 +671,32 @@ class NetworkTabTest(unittest.TestCase):
         self.assertTrue(wait_for(lambda: self.trainee.connected and "DL4YM" in self.trainer.board.names,
                                  pump=self.pump))
 
+    def test_session_box_without_empty_lines(self):
+        def shown(var):
+            return [w for w in self._labels_of(var) if w.winfo_manager() == "pack"]
+        self.assertEqual(shown(self.trainer.session_info_var), [])
+        self.assertEqual(shown(self.trainer.notice_var), [])
+        self.trainer.port_var.set(free_port())
+        self.trainer.open_session()
+        self.assertEqual(len(shown(self.trainer.session_info_var)), 1)
+        self.trainer.notice_var.set("Zu oft falsche PIN von 10.0.0.9 – 1 Minute gesperrt.")
+        info, notice = shown(self.trainer.session_info_var)[0], shown(self.trainer.notice_var)[0]
+        self.assertLess(info.master.pack_slaves().index(info),
+                        notice.master.pack_slaves().index(notice))  # PIN oben, Hinweis darunter
+        self.trainer.close_session()
+        self.assertEqual(shown(self.trainer.session_info_var) + shown(self.trainer.notice_var), [])
+
+    def _labels_of(self, var):
+        found = []
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                if child.winfo_class() == "TLabel" and str(child.cget("textvariable")) == str(var):
+                    found.append(child)
+                walk(child)
+        walk(self.root)
+        return found
+
     def test_trainer_removes_a_participant(self):
         self.connect()
         tree = self.trainer.tree

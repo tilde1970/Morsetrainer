@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core.morse import display_text
-from morsetrainer.i18n import tr
+from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import theme
 
 
@@ -46,18 +46,18 @@ class StatsPanel:
 
     def refresh(self, summary: dict, rows: list):
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f}%)")
-        speed = tr("Ø effektive Geschwindigkeit: {wpm:.1f} WPM").format(wpm=summary["avg_effective_wpm"])
+        speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
         if summary.get("cpm"):
             speed += tr(" · {cpm:.0f} ZpM gemessen").format(cpm=summary["cpm"])
         self.speed_var.set(speed)
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
         for char, good, wrong, _total, avg_rt, avg_wpm, confusions in rows:
-            self.char_tree.insert("", "end", values=(display_text(char), good, wrong, f"{avg_rt:.2f}", f"{avg_wpm:.1f}", confusions))
+            self.char_tree.insert("", "end", values=(display_text(char), good, wrong, number(avg_rt, 2), number(avg_wpm, 1), confusions))
 
-    def show_saved(self, number, error=None):
-        """`number`: Nummer des gespeicherten Durchgangs (SessionStats.finalize)."""
+    def show_saved(self, session_number, error=None):
+        """`session_number`: Nummer des gespeicherten Durchgangs (SessionStats.finalize)."""
         if error:
             self.save_var.set(tr("Protokoll nicht gespeichert: {error}").format(error=error))
-        elif number is not None:
-            self.save_var.set(tr("Gespeichert (Durchgang {number})").format(number=number))
+        elif session_number is not None:
+            self.save_var.set(tr("Gespeichert (Durchgang {number})").format(number=session_number))

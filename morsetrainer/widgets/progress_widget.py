@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import stats
-from morsetrainer.i18n import number, tr
+from morsetrainer.i18n import number, short_number, tr
 from morsetrainer.widgets import theme
 
 MAX_POINTS = 100
@@ -80,7 +80,7 @@ class _LineChart:
         while tick <= high + 1e-9:
             y = y_of(tick)
             c.create_line(x0, y, x1, y, fill=GRID, width=1)
-            c.create_text(x0 - 6, y, text=f"{tick:g}", anchor="e", fill=TEXT_SECONDARY, font=FONT)
+            c.create_text(x0 - 6, y, text=short_number(tick), anchor="e", fill=TEXT_SECONDARY, font=FONT)
             tick += step
 
         n = len(self.values)
@@ -107,7 +107,7 @@ class _LineChart:
                 c.create_oval(x - 4, y - 4, x + 4, y + 4, fill=SERIES, outline=SURFACE, width=2)
         # Direkte Beschriftung nur am letzten Wert, in Textfarbe.
         x, y, value, _ = self.points[-1]
-        c.create_text(x + 8, y, text=f"{value:g}{self.unit}", anchor="w", fill=TEXT_PRIMARY,
+        c.create_text(x + 8, y, text=f"{short_number(value)}{self.unit}", anchor="w", fill=TEXT_PRIMARY,
                       font=theme.HEADING)
 
     def _motion(self, event):
@@ -125,7 +125,7 @@ class _LineChart:
         x0, y0, x1, y1 = self._plot_box()
         c.create_line(x, y0, x, y1, fill=TEXT_SECONDARY, width=1, tags="hover")
         c.create_oval(x - 5, y - 5, x + 5, y + 5, fill=SERIES, outline=SURFACE, width=2, tags="hover")
-        label = f"{entry['time'].strftime(tr('%d.%m. %H:%M'))}  ·  {value:g}{self.unit}"
+        label = f"{entry['time'].strftime(tr('%d.%m. %H:%M'))}  ·  {short_number(value)}{self.unit}"
         text = c.create_text(0, 0, text=label, anchor="nw", fill=TEXT_PRIMARY, font=FONT, tags="hover")
         bx0, by0, bx1, by1 = c.bbox(text)
         w, h = bx1 - bx0 + 10, by1 - by0 + 6
@@ -150,7 +150,7 @@ class ProgressPanel:
         self.table_button = ttk.Button(top, text=tr("Tabelle"), command=self._toggle_table)
         self.table_button.pack(side="right")
         self.info_var = tk.StringVar(value="")
-        theme.hint(box, textvariable=self.info_var, wrap=520).pack(anchor="w")
+        theme.hint(box, textvariable=self.info_var, wrap=640).pack(anchor="w")
 
         self.charts = ttk.Frame(box)
         self.charts.pack(fill="x")
@@ -186,9 +186,10 @@ class ProgressPanel:
         if entries:
             first = entries[0]["accuracy_pct"]
             last = entries[-1]["accuracy_pct"]
-            text = tr("{n} Durchgänge seit {date} · Trefferquote {first:g} % → {last:g} %, "
+            text = tr("{n} Durchgänge seit {date} · Trefferquote {first} % → {last} %, "
                       "Tempo {wpm_first} → {wpm_last} WPM").format(
-                n=len(entries), date=entries[0]["time"].strftime(tr("%d.%m.%Y")), first=first, last=last,
+                n=len(entries), date=entries[0]["time"].strftime(tr("%d.%m.%Y")), first=short_number(first),
+                last=short_number(last),
                 wpm_first=entries[0]["wpm"], wpm_last=entries[-1]["wpm"])
             scores = [e["score"] for e in entries if "score" in e]
             if scores:
@@ -202,7 +203,7 @@ class ProgressPanel:
         for item in self.table.get_children():
             self.table.delete(item)
         for e in reversed(entries):
-            self.table.insert("", "end", values=(e["time"].strftime(tr("%d.%m.%Y %H:%M")), f"{e['accuracy_pct']:g} %",
+            self.table.insert("", "end", values=(e["time"].strftime(tr("%d.%m.%Y %H:%M")), f"{short_number(e['accuracy_pct'])} %",
                                                  e["wpm"], e["total"]))
 
     def _hover(self, index):
