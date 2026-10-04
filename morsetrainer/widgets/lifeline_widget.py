@@ -47,14 +47,14 @@ def _ticks(key, values):
     return low, high, [low + i * step for i in range(int((high - low) / step) + 1)]
 
 
-def value_text(key, value) -> str:
+def value_text(key, value, koch_done=False) -> str:
     if value is None:
         return "–"
     if key == STARS:
         return f"{value} ★"
     if key == LESSON:
         text = tr("Lektion {n}").format(n=value)
-        return text + " (" + tr("Koch geschafft") + ")" if value >= koch.FINAL_LESSON else text
+        return text + " (" + tr("Koch geschafft") + ")" if koch_done else text
     return f"{value} WPM"
 
 
@@ -64,13 +64,19 @@ def seal_text(key, level) -> str:
     return f"{tr(award.name)} {tr(name)}".strip()
 
 
+def koch_done(line, day) -> bool:
+    """An `day` schon die Abschlusslektion bestanden (Gold im Koch-Diplom)?"""
+    done = line.get("koch_done")
+    return done is not None and done <= day
+
+
 def summary_text(line) -> str:
     if not line["days"]:
         return tr("Die Lebenslinie beginnt mit dem ersten Üben.")
     seals = sum(len(v) for d, v in line["seals"].items() if d <= line["days"][-1])
     parts = [value_text(STARS, line["stars"][-1])]
     if line["lesson"][-1] is not None:
-        parts.append(value_text(LESSON, line["lesson"][-1]))
+        parts.append(value_text(LESSON, line["lesson"][-1], koch_done(line, line["days"][-1])))
     if line["tempo"][-1] is not None:
         parts.append(value_text(TEMPO, line["tempo"][-1]))
     parts.append(tr("1 Siegel") if seals == 1 else tr("{n} Siegel").format(n=seals))
@@ -205,7 +211,7 @@ class LifelinePanel:
         c.create_line(x, 0, x, HEIGHT - AXIS_ROW, fill=theme.MUTED, tags="hover")
         day = self.line["days"][i]
         lines = [day.strftime(tr("%d.%m.%Y")) + "  ·  " + "  ·  ".join(
-            value_text(key, self.line[key][i]) for key, _ in PANELS)]
+            value_text(key, self.line[key][i], koch_done(self.line, day)) for key, _ in PANELS)]
         lines += ["◆ " + seal_text(key, level) for key, level in self.line["seals"].get(day, [])]
         text = c.create_text(0, 0, text="\n".join(lines), anchor="nw", fill=theme.TEXT, font=theme.SMALL,
                              tags="hover")

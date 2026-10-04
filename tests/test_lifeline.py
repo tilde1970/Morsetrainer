@@ -80,5 +80,29 @@ class DailyTempoTest(unittest.TestCase):
         self.assertEqual(state["days"][START.isoformat()]["tempo"], 12)
 
 
+
+class KochDoneTest(unittest.TestCase):
+    """„Koch geschafft“ erst mit bestandener Lektion 41 (Gold im Koch-
+    Diplom), nicht schon mit einem Durchgang in Lektion 41."""
+
+    def test_practising_lesson_41_is_not_done(self):
+        from morsetrainer.widgets import lifeline_widget as widget
+        line = lifeline.build({}, [session(0, lesson=koch.FINAL_LESSON)], EMPTY_AWARDS, {}, day(1))
+        self.assertEqual(line["lesson"], [koch.FINAL_LESSON] * 2)
+        self.assertIsNone(line["koch_done"])
+        self.assertNotIn("Koch geschafft", widget.summary_text(line))
+        self.assertIn("Lektion 41", widget.summary_text(line))
+
+    def test_gold_seal_marks_the_day(self):
+        from morsetrainer.widgets import lifeline_widget as widget
+        seals = {"seals": {"koch": {str(lifeline.KOCH_DONE_LEVEL): day(2).isoformat()}}, "seeded": True}
+        line = lifeline.build({}, [session(0, lesson=koch.FINAL_LESSON)], seals, {}, day(3))
+        self.assertEqual(line["koch_done"], day(2))
+        self.assertFalse(widget.koch_done(line, day(1)))
+        self.assertTrue(widget.koch_done(line, day(2)))
+        self.assertIn("Lektion 41 (Koch geschafft)", widget.summary_text(line))
+        bronze = {"seals": {"koch": {"0": day(1).isoformat()}}, "seeded": True}
+        self.assertIsNone(lifeline.build({}, [session(0, lesson=10)], bronze, {}, day(3))["koch_done"])
+
 if __name__ == "__main__":
     unittest.main()
