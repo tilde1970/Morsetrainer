@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.34
 
 - **Motive wie auf Geldscheinen:** Jedes Diplom hat ein eigenes Motiv im
   Stil eines Stichtiefdrucks – Handtaste, Rennwagen, Weltkugel, Kopfhörer,
@@ -8,6 +8,8 @@
   Gütersloh (N47), wo der Morsetrainer entsteht.
 - **Diplom-Nummer:** Mit eingetragenem Rufzeichen steht oben rechts eine
   Nummer wie `DL1ABC-KOCH-G-20261004` (Rufzeichen, Diplom, Stufe, Datum).
+- **Mac-App:** ohne die überflüssigen Windows-Bibliotheken, knapp 1 MB
+  kleiner.
 
 ## 2.33
 

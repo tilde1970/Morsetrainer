@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.34
 
 - **Banknote-style motifs:** every award has its own motif in the style of
   an intaglio engraving – straight key, racing car, globe, headphones,
@@ -9,6 +9,7 @@
 - **Award number:** with a callsign entered, a number such as
   `DL1ABC-KOCH-G-20261004` (callsign, award, level, date) appears at the top
   right.
+- **Mac app:** without the unneeded Windows libraries, almost 1 MB smaller.
 
 ## 2.33
 
