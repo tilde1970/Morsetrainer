@@ -3,374 +3,41 @@
 Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
 
 Vom Lernen einzelner Zeichen nach der Koch-Methode bis zum eigenen
-Contest-Pile-up unter realistischen Kurzwellenbedingungen.
+Contest-Pile-up unter realistischen Kurzwellenbedingungen – allein am
+eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 **English:** The program can be switched to English under „▸ Weitere
-Optionen“ → „Sprache / Language“. English manual: [README.en.md](README.en.md).
+Optionen“ → „Sprache / Language“. English overview: [README.en.md](README.en.md).
 
-## Trainingsmodi
+![Reiter Gruppen: Mitschreiben im Koch-Tempo 20/10, „Richtig: ESJ“](docs/bilder/gruppen.png)
 
-| Reiter | Was du übst |
-|---|---|
-| **Einzelzeichen** | Einzelne Zeichen erkennen; nach jeder Antwort steht deine Zeit und das aktuelle Limit, z. B. „0,38 s, Limit 1,20 s“. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist, und länger, wenn du Zeichen verpasst; eine Verwechslung ändert es nicht. Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen direkt nacheinander. |
-| **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
-| **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Standard ist „Erst merken“: erst das ganze Wort hören, dann tippen; eine zu langsame Antwort wird vermerkt. Auch R, K und die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden Wörtern. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
-| **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert (mit Starttempo) und Verlauf; danach lassen sich die verpassten und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören, dann mit Lösung noch einmal, im Originaltempo. |
-| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Auf Wunsch mit **Bandbedingungen** (leicht, mittel, stark), die durchgehend unter dem ganzen Durchgang liegen. Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten Zeichen; **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
-| **Sprechen** | Hören & Sagen ohne Tastatur (wie Morse Code Ninja): Morsezeichen, Denkpause, in der du laut sagst, was du gehört hast, dann sagt eine Stimme die Lösung an – Zeichen, Gruppen und Rufzeichen buchstabiert (deutsche Buchstabennamen oder Buchstabieralphabet), Wörter und Wendungen als Ganzes bzw. mit ihrer Bedeutung („TNX“ → „danke“) – und das Zeichen kommt noch einmal. Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen). Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen. **Als MP3 speichern** für unterwegs (Handy, Auto). Zählt nur für die Übungszeit. |
-| **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
-| **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
-| **Netzwerk** | Üben in der Gruppe im lokalen Netz (Kurs, Clubabend): Ein Trainer gibt vor, alle hören dieselbe Sequenz über den eigenen Kopfhörer und tippen mit; der Trainer sieht live, wer was getippt hat. Siehe unten. |
-| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen), **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel, **Diplome** und **Lebenslinie** (siehe unten) und Fortschrittsverlauf je Modus. |
+## Was er kann
 
-In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
+- **Koch-Methode** mit den Lektionen von lcwo.net und Koch-Tempo 20/10:
+  Zeichen als Klangbild hören statt Punkte und Striche zu zählen. Die
+  nächste Lektion wird angeboten, sobald 90 % sitzen.
+- **Tagesübung (10 Min):** stellt zusammen, was heute dran ist –
+  Aufwärmen, Hauptteil, Ausklang – mit drei Sternen am Tag und Wochenziel.
+- **Übungen:** Einzelzeichen mit Zeitlimit, Gruppen, Wörter und
+  Q-Gruppen, echte Rufzeichen (auch als Rufz-Durchgang), Mitschreiben im
+  Fluss, Hören & Sagen ohne Tastatur (auch als MP3), komplette QSOs und
+  Contest-Betrieb als Run-Station wie im Morse Runner.
+- **Bandbedingungen:** Rauschen, QRN, QSB, Chirp, SSB-Gebrabbel und
+  CW-QRM, einzeln regelbar.
+- **Statistik:** je Zeichen, Lernkartei über Tage, häufigste
+  Verwechslungen zum gezielten Üben, Diplome in Bronze, Silber und Gold
+  zum Ausdrucken, Lebenslinie.
+- **Netzwerk:** Kurs oder Clubabend im lokalen Netz. Der Trainer gibt vor,
+  alle hören dieselbe Sequenz und tippen mit, der Trainer sieht live, wer
+  was getippt hat. Auch mit festem Takt für Papier und Bleistift.
 
-- **Eingabe:** *Mitschreiben* (tippen, während der Ton läuft), *Erst merken*
-  (tippen nach dem Ton) oder *Kopfhören* (nichts tippen; Enter löst auf, dann
-  J = gewusst, N = nicht gewusst). Kopfhören beruht auf deiner eigenen
-  Bewertung und zählt daher nicht für die Gesamtstatistik und die Lektion.
-- **Tempo wächst mit** (wie bei RufzXP): richtig beim ersten Versuch +1 WPM,
-  falsch beim ersten Versuch −1 WPM – gemeint ist das effektive Tempo. Mit
-  Farnsworth werden erst die Pausen kürzer; sind sie weg, wird das
-  Zeichentempo schneller. Langsamer werden die Zeichen höchstens bis 18 WPM,
-  darunter werden die Pausen länger, damit man nicht mitzählen kann. Dieselbe
-  Regel gilt für „Tempo automatisch anpassen“ im QSO-Reiter. Der
-  Fortschrittsverlauf zeigt das effektive Tempo (z. B. 10 bei 20/10 WPM).
-- **Bandbedingungen** in drei Stufen: leicht, mittel, stark. Sie liegen auch
-  unter dem Anfangszeichen (VVV =) und dem Schlusszeichen (+).
-
-### Tagesübung
-
-Keine Lust zu entscheiden, was du heute übst? **▶ Tagesübung (10 Min)**
-oben in der Kopfleiste (oder F12) stellt zehn Minuten aus dem zusammen, was
-dran ist, und schaltet die Reiter selbst um:
-
-| Stand | Aufwärmen | Hauptteil | Ausklang |
-|---|---|---|---|
-| Lektion 1–9 | Einzelzeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Kontinuierlich, Gruppen von 3, 2 Min |
-| Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
-| Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
-| nach Koch (Lektion 41 bestanden) | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
-
-- **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
-  der Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
-  Verwechslungen. Bei vielen fälligen Zeichen wird es etwas länger, der
-  Hauptteil entsprechend kürzer. Das Zeitlimit macht weiter, wo es beim
-  letzten Mal aufgehört hat, und wird hier nie länger als 1,5 s.
-- **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
-  18 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: unter
-  75 % beim ersten Versuch (mindestens 100 Zeichen) 1 WPM langsamer. Nach
-  Koch wird es ab 90 % auch 1 WPM schneller; vorher nicht, denn ein guter
-  Tag bringt dann schon das nächste Zeichen.
-- **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
-  beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion –
-  ohne Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim
-  ersten Mal die aus der Kopfleiste; Lektion und Zeichensatz oben bleiben
-  für das freie Üben, wie du sie eingestellt hast.
-- **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
-  für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen einer
-  neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
-  vorgemerkt, ein Zeichen erstmals in Fach 3 der Lernkartei oder ein
-  Tagestempo, das du noch nie hattest. Eine zweite Tagesübung am selben Tag kann
-  fehlende Sterne nachholen; verdiente Sterne gehen nie verloren, auch
-  nicht beim Abbrechen.
-- **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue Sterne
-  und was als Nächstes kommt. Sie bleibt stehen, bis du mit Enter oder
-  „Weiter“ fortfährst; Esc beendet die Tagesübung. Die Einstellungen der Reiter sind danach wieder wie vorher.
-- **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
-  (Reaktionszeit je Zeichen bei Einzelzeichen, Gruppenquote; nur mit genug
-  Daten und bei gleichem Tempo, nie „schlechter“), wie viel bis zur
-  nächsten Lektion fehlt, der Stand zum Wochenziel und, wenn der Hauptteil
-  gut lief, einmal am Tag **Noch 5 Min** mit etwas anderem: deine
-  Verwechslungen aus der Lektion, einen Rufz-Durchgang oder Wörter.
-- **Woche:** Neben dem Knopf steht der Wochenstreifen ab Montag, z. B.
-  „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ = ohne Tagesübung frei geübt, mit
-  erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum
-  **Wochenziel von 12 Sternen**. Das schaffst du mit vier bis fünf
-  Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Bis zur
-  ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.
-  „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“.
-
-### Diplome
-
-Wie DXCC oder WAC im Funkbetrieb: Diplome für das, was du dauerhaft
-kannst, in Stufen **Bronze, Silber, Gold** und teils **Platin**. Geprüft
-wird nach jeder Übung; ein neues Siegel zeigt ein Fenster mit Datum und
-Knopf **Drucken** – das Diplom öffnet sich als Urkunde im Browser (A4
-quer) mit deinem Rufzeichen und Namen aus „▸ Weitere Optionen“ (im
-Fenster auch änderbar). In der
-Tagesübung kommt das Fenster erst nach der Abendbilanz, die die neuen
-Siegel aus der Tagesübung auch nennt.
-
-Die Übersicht steht im Reiter **Statistik** unter „Diplome“: alle
-Diplome mit erreichten Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25
-Lektionen“) und ab welcher Lektion es erreichbar ist; offene stehen grau.
-Clubabend geht nur gemeinsam im Netzwerk und steht ohne Siegel am Ende.
-Eine gewählte Zeile zeigt Bedingung und Tage der Siegel, bei QRN-fest,
-Contest und Verwechslung auch, wie nah du der nächsten Stufe bist (bester
-Lauf bzw. das nächste Paar mit verbleibenden Tagen); „Diplom ansehen
-und drucken“ zeigt das Diplom der höchsten Stufe.
-
-| Diplom | Stufen | ab Lektion | Bedingung |
-|---|---|---|---|
-| Koch | Lektion 10 / 25 / 41 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
-| Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach, erreicht mit Zeichen ≥ 18 WPM |
-| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
-| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
-| QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
-| Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
-| Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
-| WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM |
-| Kopfhörer | 15 / 20 / 25 WPM effektiv | 41 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“, Zeichen ≥ 18 WPM; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
-| Verwechslung überwunden | 1 / 3 / 6 Paare | 5 | Ein Paar, das zu deinen häufigsten Verwechslungen gehörte, 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt |
-| Ausdauer | 10 / 50 / 150 / 365 Tage | – | Tage mit ≥ 10 Min. Übung, nicht in Folge |
-| Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM |
-| Clubabend | 1 / 5 / 15 / 40 Abende | – | Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als Trainer geleitet (nur Durchgänge mit Teilnehmern) |
-| Erstes QSO verstanden | – | 40 | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv, Zeichen ≥ 18 WPM |
-| Worked All Contests | – | 41 | Alle 5 Contest-Arten mit je ≥ 30 QSOs und ≤ 10 % Fehlern |
-| Q-Gruppen-Kenner | – | 40 | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
-| Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3, erreicht mit Zeichen ≥ 18 WPM |
-
-- Bei Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher erst
-  an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht.
-- Gezählt werden nur Durchgänge ohne Selbstbewertung.
-- Erreichte Siegel stehen mit Datum in der Datenbank und gehen nie
-  verloren, auch nicht mit „Gesamtstatistik zurücksetzen“.
-- Beim ersten Start mit Diplomen wird still nachgetragen, was sich aus dem
-  bisherigen Üben ergibt (mit dem Tag, an dem es erreicht wurde); ein
-  Hinweis sagt, wie viele Diplome es sind.
-
-### Lebenslinie
-
-Unter den Diplomen im Reiter **Statistik** zeigt die **Lebenslinie** den
-langen Weg vom ersten Üben bis heute: Sterne der Tagesübung aufsummiert,
-die höchste geübte Koch-Lektion (bis zur Abschlusslektion 41) und das
-Tagestempo der Tagesübung, darunter die Siegel der Diplome als Rauten in
-ihrer Farbe. Alle drei Linien steigen nur oder bleiben stehen; mit der
-Maus siehst du für jeden Tag die Werte und die Siegel. Die Lebenslinie
-bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
-
-### Lernweg für Einsteiger
-
-1. **Koch-Lektion** oben auf 1 stellen (K und M). Voreingestellt ist das
-   **Koch-Tempo 20/10** (unter „▸ Weitere Optionen“ jederzeit wieder
-   herstellbar): Die Zeichen kommen schnell genug, dass du sie als Klangbild
-   hörst statt Punkte und Striche zu zählen, dafür mit längeren Pausen
-   dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
-2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen. Das **Zeitlimit**
-   ist von Anfang an eingeschaltet: Es bleibt keine Zeit zum Zählen von
-   Punkten und Strichen, das Zeichen muss als Klangbild kommen. Ein falsch
-   erkanntes Zeichen hörst du gleich noch einmal, während die Lösung
-   dasteht; abgefragt wird es erst nach ein paar anderen Zeichen wieder.
-   Die Leertaste wiederholt ein Zeichen, verlängert aber die Frist nicht;
-   erst nach der Wiederholung erkannt zählt als nicht erkannt.
-   Nach einem Durchgang mit mindestens 50 Zeichen und 90 % richtig – mit
-   Zeitlimit von Anfang bis Ende, am Schluss höchstens 1,5 s – schlägt die
-   App vor, bei den Gruppen weiterzumachen.
-3. Im Reiter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
-   Einzelzeichen. Nach einem Fehler siehst und hörst du die Lösung, dann
-   geht es weiter wie im Funkbetrieb; schwache Zeichen kommen über die
-   Gewichtung später wieder. Unter „Lösung zeigen nach“ lassen sich bis zu
-   3 Fehlversuche einstellen: Dann werden erst nur die falschen Stellen
-   markiert und die Gruppe kommt noch einmal.
-4. Wer in den Gruppen (oder im Modus Kontinuierlich) in einem Durchgang mit
-   mindestens 50 Zeichen 90 % beim ersten Versuch schafft, bekommt die
-   nächste Lektion angeboten. Für die Lektion zählt ein erster Versuch nur,
-   wenn du die Gruppe nicht mit der Leertaste wiederholt hast und zügig
-   geantwortet hast (1,5 s plus 0,6 s je Zeichen nach Tonende); zu viel
-   Getipptes zählt als Fehler. Schwache und neue Zeichen kommen automatisch
-   öfter dran. Nach den 40 Lektionen von lcwo.net schließt Lektion 41 ab:
-   alle Zeichen, keins mehr als neu bevorzugt (schwache kommen weiter
-   öfter). Wer möchte, nimmt danach in den Lektionen 42–45 die
-   Betriebszeichen aus dem QSO dazu: AR (Taste `+`), KN (`(`), SK (`*`) und
-   BK (`#`). Dorthin wird nicht von selbst weitergeschaltet, die Lektion
-   stellst du oben ein; danach wird dir das nächste Betriebszeichen wieder
-   angeboten. Gelernte Betriebszeichen wiederholt auch die Tagesübung.
-5. Ab Lektion 6 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
-   dem neuesten Zeichen kommen bevorzugt), danach
-   **Kontinuierlich** und **QSO**.
-6. Im Reiter **Statistik** (Verwechslungen der letzten 30 Tage) zeigt „Die 4 häufigsten gezielt üben“, welche
-   Zeichen du verwechselst, und übt genau diese gegeneinander. „↩ Lektion“
-   oben führt zurück zu deiner Lektion.
-
-Außerdem hilfreich:
-
-- **Täglich kurz** üben schlägt selten lang: Die Fußzeile zeigt die heutige
-  Übungszeit und das Tagesziel (einstellbar im Reiter Statistik), der
-  Wochenstreifen oben die Tage, an denen du geübt hast.
-- **Tonhöhe und Tempo leicht variieren** (gemeinsame Einstellung): Wer immer
-  nur genau einen Klang hört, tut sich auf dem Band schwerer.
-- **Sprache:** Unter „▸ Weitere Optionen“ → „Sprache / Language“ lässt sich
-  die Oberfläche auf Englisch umstellen (wirkt nach Neustart). Die Stimme im
-  Reiter „Sprechen“ bleibt deutsch.
-- **Rufzeichen und Name:** Unter „▸ Weitere Optionen“ einmal eintragen.
-  Sie stehen auf den Diplomen und sind die Vorgabe für „Mein
-  Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort ohne Name
-  das Rufzeichen). Beide Felder ziehen mit, bis du dort etwas anderes
-  einträgst, etwa ein Contest-Rufzeichen. Ohne eigenes Rufzeichen genügt
-  der Name: Er steht dann allein auf dem Diplom; für den Contest trägst du
-  dort ein ausgedachtes Rufzeichen ein.
-
-### Bandbedingungen (QSO und Contest)
-
-Einzeln zuschaltbar und regelbar: Rauschen, Knackstörungen (QRN), QSB,
-Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz.
-
-### Netzwerk: Üben in der Gruppe
-
-Für Kursabende und Clubheim: Alle Rechner sind im selben Netz (WLAN oder
-LAN), einer ist der Trainer, die anderen melden sich als Teilnehmer an.
-Übertragen wird nur Text; den Ton erzeugt jeder Rechner selbst – ohne
-Aussetzer, mit eigenem Kopfhörer und eigener Tonhöhe.
-
-**Trainer:** Im Reiter *Netzwerk* „Trainer“ wählen, **Sitzung öffnen**.
-Angezeigt werden Adresse und eine vierstellige PIN für die Teilnehmer.
-Dann Inhalt (Einzelzeichen, Gruppen, Wörter, Rufzeichen, Wendungen,
-QSO-Klartext oder **eigener Text**, eine Zeile je Sequenz; Betriebszeichen
-als + für AR, ( für KN, * für SK, # für BK), Anzahl Sequenzen (bei
-QSO-Klartext ganze QSOs, gesendet in Abschnitten bis zum nächsten =, K
-oder Schlusszeichen wie „UR RST 599 599 =“), Antwortzeit und
-Bandbedingungen wählen; Zeichensatz, Tempo und Farnsworth kommen aus der
-Kopfleiste. Bei langsamem Zeichentempo (unter 18 WPM) weist die
-Kopfleiste in allen Reitern darauf hin, dass man die Zeichen mitzählen
-kann, und bietet das Koch-Tempo 20/10 an.
-Nach **Start** kommt zuerst das Anfangszeichen VVV = (abschaltbar), nach der
-letzten Sequenz das Schlusszeichen +. Dann bekommen alle dieselbe Sequenz
-zur selben Zeit. Die
-nächste kommt, sobald alle geantwortet haben oder die Antwortzeit um ist
-(oder mit **Weiter**); **Für alle wiederholen** spielt die aktuelle noch
-einmal. Die Tabelle zeigt je Teilnehmer die aktuelle Antwort, den Anteil
-richtiger Zeichen, wie viele Sequenzen **flüssig** richtig waren und die
-typische Zeit vom Tonende bis Enter, darunter die Gruppe: Trefferquote,
-Anteil flüssiger Sequenzen, häufigste Fehler, schwächste Zeichen. Flüssig
-heißt: richtig beim ersten Hören und schnell genug, dass nicht gezählt
-wurde – im selben Zeitfenster wie in den Reitern Gruppen, Wörter und
-Rufzeichen (1,5 s plus 0,6 s je Zeichen nach dem Ton). Die Antwortzeit ist
-nur die harte Grenze. Ein Klick auf einen Teilnehmer zeigt seine Fehler und
-schwächsten Zeichen. Bei vielen Teilnehmern lässt sich die Tabelle **in ein
-eigenes Fenster** auskoppeln (etwa für einen zweiten Bildschirm oder den
-Beamer); dort wirken F5–F7 ebenso, Schließen holt sie zurück in den Reiter. Nach genug Sequenzen im selben Tempo (50 Zeichen über
-alle) gibt es eine **Tempo-Empfehlung**: ab 90 % flüssig schneller, unter
-75 % langsamer, per Knopf um 1 WPM effektiv übernehmbar. **Als CSV
-speichern** legt eine Tabelle in `stats/` ab: je Teilnehmer eine Zeile mit
-Trefferquote, flüssigen Sequenzen, häufigsten Fehlern und schwächsten
-Zeichen, je Sequenz eine Spalte (mit Tempo; ↻ = für alle wiederholt) mit
-dem Getippten und der Zeit bis zur Antwort.
-
-**Fester Takt (Mitschreiben auf Papier):** Unter *Ablauf* statt „Warten
-auf Antworten“ den festen Takt wählen – für Kurse, in denen nicht jeder
-einen Rechner hat. Die nächste Sequenz kommt dann nach Ton plus
-**Schreibpause**, egal wer schon geantwortet hat. Die Pause gilt gleich für
-jede Sequenz; die Vorgabe richtet sich nach dem Inhalt (Einzelzeichen 2 s,
-Wörter 3 s, Gruppen, Rufzeichen und eigener Text 4 s, Wendungen und QSO 5 s),
-denn wer zu lange Zeit hat, fängt an zu grübeln. Bis zum Ende zeigt der
-Trainerbildschirm keine Lösung – er hängt womöglich am Beamer: Der Status
-nennt nur „Nr. 7 von 20“, die Tabelle nur, ob eine Antwort eingegangen ist,
-Auswertung und eigener Text sind ausgeblendet. **Für alle wiederholen**
-(F6) bleibt für Notfälle und verlängert die Frist; **Weiter** (F7) geht
-sofort zur nächsten. Besser Blöcke von 20–25 Sequenzen mit Auflösung
-dazwischen als „bis Stop“. Wer nur mit Zettel und Stift dabei ist, braucht
-weder Rechner noch Anmeldung, hört aber über die Lautsprecher des Trainers:
-Beim Umschalten auf den festen Takt ist „Auch an diesem Rechner abspielen“
-daher gleich eingeschaltet. Sie vergleichen selbst mit der Auflösung –
-oder geben ihren Zettel ab, und der Trainer tippt ihn nach dem Durchgang
-unter **Papierbogen eintragen** ein (Name, dann je Nummer die Zeile, leer =
-verpasst; derselbe Name ersetzt den Bogen). Wer einen Rechner hat und
-trotzdem mit dem Stift schreiben will, hakt beim Verbinden „Im festen Takt
-auf Papier mitschreiben und am Ende abtippen“ an: Während des Durchgangs
-bleibt das Eingabefeld zu, danach erscheint je Nummer ein Feld zum
-Abtippen, **Auswerten** schickt es an den Trainer. Abgetippte Antworten
-zählen für richtig/falsch, Fehler und schwache Zeichen, aber ohne Zeit:
-nicht als flüssig und nicht für die Tempo-Empfehlung, und in der eigenen
-Statistik nicht für Gewichtung und Lernkartei. In der Tabelle steht bei
-ihnen „Papier“.
-
-**Antwortbogen drucken** (bei den Optionen des festen Takts) öffnet einen
-Bogen im Browser zum Ausdrucken: Name, Datum, nummerierte Zeilen
-spaltenweise wie in der Auflösung – bei Gruppen und Einzelzeichen mit
-einem Kästchen je Zeichen, sonst mit freier Linie; so viele Zeilen wie
-eingestellt (bei „bis Stop“ und QSOs 25).
-
-**Kontinuierlich:** Unter *Ablauf* „Kontinuierlich“ wählen und die
-**Dauer** in Minuten einstellen. Dann kommen Gruppen (oder Wörter,
-Rufzeichen …) ohne Pause wie im Reiter *Kontinuierlich*, bis die Zeit um
-ist; alle tippen fortlaufend mit, ohne Enter. Ausgewertet wird am Ende wie
-dort: Eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Jeder
-Teilnehmer meldet sein Ergebnis je Gruppe, damit gelten Tabelle,
-Auflösung (nummerierte Gruppen) und CSV wie gewohnt; während des
-Durchgangs zeigt der Trainerbildschirm wie im festen Takt nichts, was
-Lösungen verrät, nur die Restzeit. Stop vorzeitig wertet bis dahin.
-Bandbedingungen liegen unter dem ganzen Durchgang; eigenen Text gibt es
-hier nicht.
-
-**Ton für alle über den Lautsprecher:** Mit „Ton für alle nur über diesen
-Rechner (Lautsprecher)“ spielt nur der Trainerrechner, die
-Teilnehmer-Rechner bleiben stumm und dienen nur zum Eintippen. So braucht
-niemand Kopfhörer, und alle hören gleichzeitig dasselbe – jeder Rechner
-spielt sonst etwas versetzt, je nach Netz und Soundkarte. Die Zeit bis zur
-Antwort rechnen die Teilnehmer-Rechner ab dem Eingang der Sequenz. Die
-Lösung kommt in diesem Fall einmal für alle über den Lautsprecher, sobald
-jemand sie nicht flüssig richtig hatte. Das geht in beiden Abläufen und
-passt gut zum festen Takt, wenn Papier und Rechner gemischt sind.
-
-**Auflösung:** Der Knopf neben „Als CSV speichern“ öffnet ein eigenes
-Fenster für den Beamer, in beiden Abläufen. Während des Durchgangs zeigt es
-groß die laufende Nummer („Verpasst? Lücke lassen und bei der nächsten
-Nummer weiterschreiben.“), danach alle Lösungen nummeriert, spaltenweise
-von oben nach unten wie auf dem Zettel, in Monoschrift; ↻ markiert, was
-für alle wiederholt wurde. A−/A+ (oder +/−) ändern die Schriftgröße,
-**Kopieren** legt die Liste in die Zwischenablage. Ein Klick auf eine
-Lösung – oder Pfeiltasten und Leertaste – spielt sie am Trainerrechner
-noch einmal ab, ohne Störungen: So wird aus dem Nachlesen ein Nachhören.
-
-**Teilnehmer:** „Teilnehmer“ wählen, Name oder Rufzeichen und die PIN
-eintragen, **Suchen** (oder die Adresse des Trainers eingeben) und
-**Verbinden**. Getippt wird schon während des Tons; mit dem letzten
-Zeichen ist die Antwort fertig, Enter braucht es nur, wenn man weniger
-Zeichen hat. Je Sequenz gibt es einen Versuch, danach steht die Lösung da. War sie nicht
-flüssig richtig, kommt die Sequenz zur Lösung noch einmal (abschaltbar
-beim Trainer). Wer nicht rechtzeitig fertig wird, dem wird das bis dahin
-Getippte gewertet. Im festen Takt steht danach nur „Nr. 7 notiert“;
-die Lösungen kommen am Ende als Liste mit gesendet, getippt und ✓/✗, und
-jede Sequenz lässt sich per Doppelklick oder Leertaste noch einmal hören.
-Die Ergebnisse zählen für die eigene Statistik wie ein
-normaler Durchgang, mit der Zeit je Zeichen wie beim Mitschreiben; nach
-„Für alle wiederholen“ oder zu langsam gilt ein richtiges Zeichen als
-unsicher und kommt mit „schwache bevorzugt“ öfter. Übungszeit zählt nur,
-solange ein Durchgang läuft, nicht beim Warten auf den Trainer.
-
-Der Trainer braucht den Port 7373 (TCP) und für die Suche 7374 (UDP).
-Unter Windows fragt beim ersten Öffnen die Firewall – für private
-Netzwerke zulassen. Findet die Suche nichts (manche WLANs blockieren
-Broadcasts), die angezeigte Adresse von Hand eingeben.
-
-Hat der Trainer eine neuere Programmversion, fragt der Teilnehmer beim
-Verbinden, ob er sie laden soll (siehe *Updates*); danach startet der
-Morsetrainer neu und verbindet sich wieder mit dem Trainer.
-
-### Hilfe im Programm
-
-Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
-Versionen (CHANGELOG.md) und diese Anleitung.
-
-### Tastenkürzel
-
-- **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
-  beendet.
-- **Einzelzeichen, Gruppen, Wörter, Rufzeichen:** Leertaste wiederholt.
-  Beim Kopfhören: Enter löst auf, J = gewusst, N = nicht gewusst.
-- **Rufz (nach dem Durchgang):** F6 verpasste Rufzeichen nachhören bzw. das aktuelle nochmal, F7 von vorn, Esc anhalten.
-- **Sprechen:** F5 Start/Stop, Leertaste spielt den aktuellen Eintrag noch einmal, Esc stoppt.
-- **QSO:** F5 neues QSO/Stop, F6 nochmal hören, F7 Text zeigen, F8 prüfen.
-- **Netzwerk (Trainer):** F5 Start/Stop, F6 für alle wiederholen, F7 weiter.
-- **Contest:** F1 CQ, F2 Austausch, F3 TU/loggen, F4 eigenes Call,
-  F5 sein Call, F7 „?“, F8 „AGN“. Enter sendet die passende nächste
-  Nachricht (ESM), Esc bricht das Senden ab.
+![Clubabend: Tabelle des Trainers mit vier Teilnehmern](docs/bilder/netzwerk.png)
 
 ## Download
 
 Fertige Programme gibt es unter
-[Releases](https://github.com/tilde1970/Morsetrainer/releases):
+[Releases](https://github.com/tilde1970/Morsetrainer/releases), Python
+wird dafür nicht benötigt:
 
 - **Linux:** `Morsetrainer-x86_64.AppImage` herunterladen, ausführbar machen
   (`chmod +x Morsetrainer-x86_64.AppImage`) und starten.
@@ -378,99 +45,45 @@ Fertige Programme gibt es unter
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
   („Weitere Informationen“ → „Trotzdem ausführen“).
 
-Python wird dafür nicht benötigt.
+Ab Version 2.30 liegt `SHA256SUMS.txt` mit den Prüfsummen daneben. Zum
+Nachprüfen unter Linux `sha256sum -c --ignore-missing SHA256SUMS.txt`,
+unter Windows in der PowerShell `Get-FileHash Morsetrainer.exe` und mit
+der Zeile in `SHA256SUMS.txt` vergleichen.
 
-### Updates
+## Erste Schritte
 
-Beim Start schaut der Morsetrainer im Hintergrund nach, ob es ein neueres
-Release gibt, und fragt dann, ob er es laden soll. Mit „Ja“ lädt er die
-exe bzw. das AppImage von GitHub, tauscht die eigene Datei aus und startet
-neu; mit „Nein“ fragt er bei dieser Version nicht noch einmal, unten in
-der Fußzeile steht nur „Version … verfügbar“. Ohne Internet passiert
-nichts, das Programm läuft ganz normal. Aus dem Quelltext gestartet gibt es
-nur den Hinweis. Liegt die Datei in einem Ordner ohne Schreibrecht, bitte
-von Hand herunterladen.
+1. Oben **Koch-Lektion 1** einstellen (K und M); „▶ anhören“ spielt das
+   neue Zeichen vor.
+2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen, dann im Reiter
+   **Gruppen** mitschreiben, während der Ton läuft.
+3. Oder einfach **▶ Tagesübung (10 Min)** drücken (F12) – sie schaltet die
+   Reiter selbst um.
+4. Unter „▸ Weitere Optionen“ Rufzeichen und Name eintragen; sie stehen
+   auf den Diplomen.
 
-## Aus dem Quelltext starten
+Alles Weitere steht in der [Anleitung](docs/Anleitung.md), im Programm
+unter **Hilfe**.
 
-Voraussetzung ist Python 3.10 oder neuer mit Tk.
+## Sicherheit
 
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-packaging/get_voice.sh           # Stimme für den Reiter Sprechen (ca. 63 MB)
-python main.py
-```
+- **Updates:** Beim Start fragt der Morsetrainer, wenn es ein neueres
+  Release gibt, und tauscht auf Wunsch die exe bzw. das AppImage aus.
+  Geladen wird nur aus diesem Repository über HTTPS, und die Datei muss zur
+  Prüfsumme in `SHA256SUMS.txt` passen. Das fängt beschädigte Downloads
+  ab, ersetzt aber keine Signatur: Wer das Release austauschen kann, kann
+  auch die Prüfsumme austauschen.
+- **Netzwerkmodus:** unverschlüsselt über TCP, die vierstellige PIN hält
+  nur Versehen ab. Gedacht für das Club- oder Heimnetz, nicht für
+  öffentliche WLANs. Updates reicht der Trainer nicht weiter, er nennt nur
+  seine Versionsnummer.
 
-Tests:
+## Mehr
 
-```bash
-python -m unittest discover tests
-```
-
-## Projektstruktur
-
-```
-main.py              Startdatei
-morsetrainer/
-  app.py             Hauptfenster mit allen Reitern
-  i18n.py            Sprache (Deutsch/Englisch), Texte in i18n_en.py
-  core/              Morsecode, Ton, Bandbedingungen, Texte, Statistik
-  modes/             ein Modul je Trainingsreiter
-  net/               Netzwerkmodus (Trainer, Teilnehmer, Auswertung), Updates
-  widgets/           wiederverwendbare Oberflächen-Bausteine
-tests/               automatische Tests
-packaging/           AppImage-Build (Icon, Desktop-Datei)
-.github/workflows/   baut AppImage und exe für Releases
-```
-
-## Daten
-
-Aus dem Quelltext gestartet liegen die Daten im Programmverzeichnis, beim
-AppImage in `~/.local/share/morsetrainer/`, bei der exe in
-`%APPDATA%\Morsetrainer\`.
-
-
-- `stats/morsetrainer.db`: alle Übungsdaten in einer SQLite-Datenbank –
-  jeder Durchgang mit seinen Zeichen, Ergebnisse von QSO-Abfragen und
-  Contests, Gesamtstatistik, Lernkartei, Tagesübung mit Sternen, Lektion
-  und Tagestempo, Übungszeit pro Tag und die erreichten Diplome. Jede
-  Zeile wird sofort gespeichert; ein Absturz kostet höchstens die
-  laufende. Ist die Datei beschädigt, wird sie als
-  `morsetrainer.db.defekt-<Zeit>` beiseitegelegt und eine neue begonnen.
-- Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
-  die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`).
-- Bis Version 2.27 lagen die Übungsdaten als einzelne Dateien in `stats/`
-  (`*.jsonl`, `all_time.json`, `review.json`, `daily.json`, `awards.json`,
-  `practice.json`, `results.jsonl`). Der erste Start einer neueren Version
-  übernimmt sie in die Datenbank und verschiebt sie danach nach
-  `stats/alt-json/`; gelöscht wird nichts.
-- `window_state.json`: Fenstergröße und alle Einstellungen, auch die Sprache.
-- `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
-  im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von
-  [supercheckpartial.com](https://www.supercheckpartial.com) herunter und
-  lege sie als `callsigns.scp` in das Datenverzeichnis. Ohne die Datei
-  erzeugt der Trainer Rufzeichen nach Landesmuster.
-- `woerter.txt`: eigene Wörter für den Reiter „Wörter“, eins pro Zeile,
-  optional mit Bedeutung: `DOK = Distrikts-Ortsverbandskenner`. Der Knopf
-  „Eigene Wörter bearbeiten“ legt die Datei mit Anleitung an und öffnet sie.
-  Die Wörter kommen zu den eingebauten dazu.
-
-### Sichern und auf einen neuen Rechner umziehen
-
-Unter „Weitere Optionen → Daten“ sichert **Sichern …** alle Einstellungen
-und Daten (`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`)
-in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
-**Einlesen …** holt sie auf dem neuen Rechner zurück: `stats/` wird
-vollständig ersetzt, die anderen Dateien, soweit sie in der Sicherung
-sind. Der bisherige Stand landet vorher als `vor-import-<Zeit>.zip` im
-Datenverzeichnis. Danach beendet sich das Programm; beim nächsten Start
-gelten die eingelesenen Einstellungen. Die Datenbank kommt als stimmiger
-Stand in die Sicherung, auch wenn gerade geübt wird; beim Einlesen wird
-sie vorher geprüft. Sicherungen von Version 2.27 und älter lassen sich
-weiter einlesen, ihre Dateien übernimmt der nächste Start. Die Stimme für die Sprachausgabe
-(`voices/`) ist nicht dabei, sie steckt im AppImage bzw. in der exe.
+- [Anleitung](docs/Anleitung.md): alle Reiter, Tagesübung, Diplome,
+  Netzwerk, Tastenkürzel, Daten und Sicherung
+- [Änderungen](CHANGELOG.md) je Version
+- [Entwicklung](docs/Entwicklung.md): aus dem Quelltext starten, Tests,
+  Projektstruktur, Release
 
 ## Lizenz
 

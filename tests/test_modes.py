@@ -1055,7 +1055,7 @@ class HelpWindowTest(AppTestCase):
         help_window.HelpWindow.show(self.root)
         window = help_window.HelpWindow._open
         changelog = window.texts["CHANGELOG.md"].get("1.0", "end")
-        readme = window.texts["README.md"].get("1.0", "end")
+        readme = window.texts["docs/Anleitung.md"].get("1.0", "end")
         self.assertIn(app_module.__version__, changelog)  # aktuelle Version steht drin
         self.assertIn("Trainingsmodi", readme)
         self.assertNotIn("**", readme)

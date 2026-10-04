@@ -1,9 +1,10 @@
-"""Hilfe-Fenster: Anleitung (README.md) und Änderungen (CHANGELOG.md) im
-Programm lesen.
+"""Hilfe-Fenster: Anleitung (docs/Anleitung.md) und Änderungen
+(CHANGELOG.md) im Programm lesen.
 
-Die beiden Dateien liegen neben main.py; in AppImage und exe packt
-PyInstaller sie mit ein (--add-data), dort liegen sie unter sys._MEIPASS.
-Auf Englisch gelten README.en.md und CHANGELOG.en.md, falls vorhanden.
+Die Pfade gelten ab dem Verzeichnis von main.py; in AppImage und exe packt
+PyInstaller die Dateien mit ein (--add-data), dort liegen sie unter
+sys._MEIPASS. Auf Englisch gelten Anleitung.en.md und CHANGELOG.en.md,
+falls vorhanden.
 
 Dargestellt wird ein kleiner Teil von Markdown, genug für die beiden
 Dateien: Überschriften, Absätze, Listen, **fett**, *kursiv*, `Code`,
@@ -19,7 +20,7 @@ from morsetrainer import i18n
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import theme
 
-DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "README.md"))
+DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "docs/Anleitung.md"))
 
 _INLINE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`|\*(.+?)\*|\[([^\]]+)\]\([^)]*\)")
 

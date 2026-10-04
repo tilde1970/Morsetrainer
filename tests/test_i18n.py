@@ -109,9 +109,10 @@ class LanguageSettingTest(unittest.TestCase):
 
     def test_help_uses_english_files(self):
         from morsetrainer.widgets import help_window
-        for name in ("README.md", "CHANGELOG.md"):
-            self.assertEqual(help_window.doc_path(name).name, name)
-            self.assertEqual(help_window.doc_path(name, "en").name, name.replace(".md", ".en.md"))
+        for _, name in help_window.DOCS:
+            self.assertTrue(help_window.doc_path(name).exists())
+            self.assertEqual(help_window.doc_path(name).name, Path(name).name)
+            self.assertEqual(help_window.doc_path(name, "en").name, Path(name).name.replace(".md", ".en.md"))
             self.assertTrue(help_window.doc_path(name, "en").exists())
 
 
