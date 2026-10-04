@@ -72,10 +72,11 @@ unter **Hilfe**.
   Prüfsumme in `SHA256SUMS.txt` passen. Das fängt beschädigte Downloads
   ab, ersetzt aber keine Signatur: Wer das Release austauschen kann, kann
   auch die Prüfsumme austauschen.
-- **Netzwerkmodus:** unverschlüsselt über TCP, die vierstellige PIN hält
-  nur Versehen ab. Gedacht für das Club- oder Heimnetz, nicht für
-  öffentliche WLANs. Updates reicht der Trainer nicht weiter, er nennt nur
-  seine Versionsnummer.
+- **Netzwerkmodus:** unverschlüsselt über TCP. Gedacht für das Club- oder
+  Heimnetz, nicht für öffentliche WLANs. Nach 5 falschen PINs ist ein
+  Rechner eine Minute gesperrt, Unbekannte kann der Trainer entfernen.
+  Updates reicht der Trainer nicht weiter, er nennt nur seine
+  Versionsnummer.
 
 ## Mehr
 

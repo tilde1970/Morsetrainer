@@ -349,6 +349,14 @@ mode is meant for a club or home network; on unfamiliar or public Wi-Fi
 the class. The trainer does not pass on updates: it only tells its version
 number, the download always comes from GitHub (see *Updates*).
 
+From version 2.31 on, the trainer slows down PIN guessing: after 5 wrong
+PINs the computer is locked for a minute (even for the right PIN), and
+“Wrong PIN from … too often” appears below address and PIN. If a stranger
+shows up in the table, select them and click **Remove**: the connection is
+dropped, and this computer cannot get back in until the session is closed.
+The trainer also disconnects computers that flood it with connections or
+messages.
+
 ## Help in the program
 
 The **Help** button on the right of the footer shows the changes of the

@@ -73,9 +73,10 @@ program under **Help**.
   checksum in `SHA256SUMS.txt`. This catches damaged downloads but is no
   substitute for a signature: whoever can replace the release can replace
   the checksum too.
-- **Network mode:** unencrypted over TCP, the four-digit PIN only prevents
-  mistakes. Meant for a club or home network, not for public Wi-Fi. The
-  trainer does not pass on updates, it only tells its version number.
+- **Network mode:** unencrypted over TCP. Meant for a club or home
+  network, not for public Wi-Fi. After 5 wrong PINs a computer is locked
+  for a minute, and the trainer can remove strangers. The trainer does not
+  pass on updates, it only tells its version number.
 
 ## More
 

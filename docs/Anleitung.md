@@ -353,6 +353,14 @@ keine Sitzung öffnen und die Sitzung nach dem Kurs schließen. Ein Update
 reicht der Trainer nicht weiter: Er nennt nur seine Versionsnummer,
 geladen wird immer von GitHub (siehe *Updates*).
 
+Ab Version 2.31 bremst der Trainer das Durchprobieren der PIN: Nach 5
+falschen PINs ist der Rechner eine Minute gesperrt (auch für die richtige
+PIN), und unter Adresse und PIN steht „Zu oft falsche PIN von …“. Taucht
+ein Unbekannter in der Tabelle auf, ihn auswählen und **Entfernen**: Die
+Verbindung wird getrennt, und dieser Rechner kommt bis zum Schließen der
+Sitzung nicht wieder herein. Außerdem trennt der Trainer Rechner, die ihn
+mit Verbindungen oder Nachrichten überschütten.
+
 ## Hilfe im Programm
 
 Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
