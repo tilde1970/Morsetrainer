@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.31
 
 - **Safer network:** after 5 wrong PINs a computer is locked for a minute,
   and the trainer sees a notice. Until now the PIN could be guessed in

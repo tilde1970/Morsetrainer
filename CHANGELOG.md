@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.31
 
 - **Netzwerk sicherer:** Nach 5 falschen PINs ist ein Rechner eine Minute
   gesperrt, der Trainer sieht einen Hinweis. Bisher ließ sich die PIN in
