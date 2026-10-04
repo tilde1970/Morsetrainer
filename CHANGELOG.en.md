@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Koch award:** like flow, QRQ, QRN-proof, Rufz and contest, Silver and
+  Gold now need two different days. Starting straight at lesson 41 used to
+  give all three levels with a single run. Seals already earned stay.
 - **Lifeline:** “Koch completed” only appears once lesson 41 is passed
   (gold in the Koch award), not already after one run in lesson 41.
 - **Decimal comma:** in German, the statistics table, speed and progress

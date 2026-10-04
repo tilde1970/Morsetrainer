@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- **Koch-Diplom:** Silber und Gold gibt es wie bei Fluss, QRQ, QRN-fest,
+  Rufz und Contest erst an zwei verschiedenen Tagen. Wer gleich in
+  Lektion 41 einsteigt, bekam bisher mit einem einzigen Lauf alle drei
+  Stufen. Schon erreichte Siegel bleiben.
 - **Lebenslinie:** „Koch geschafft“ steht erst da, wenn Lektion 41
   bestanden ist (Gold im Koch-Diplom), nicht schon nach einem Durchgang in
   Lektion 41.
