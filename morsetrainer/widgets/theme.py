@@ -137,7 +137,10 @@ def apply(root) -> None:
         style.map(widget, bordercolor=[("focus", FOCUS)],
                   fieldbackground=[("disabled", BG), ("readonly", SURFACE)],
                   background=[("active", BUTTON_ACTIVE)])
+    # clam färbt die Schrift einer fokussierten Klappliste weiß (für ein
+    # blaues Feld); unser Feld bleibt weiß, also auch die Schrift dunkel.
     style.map("TCombobox", fieldbackground=[("readonly", SURFACE), ("disabled", BG)],
+              foreground=[("disabled", DISABLED), ("readonly", TEXT)],
               selectbackground=[("readonly", SURFACE)], selectforeground=[("readonly", TEXT)])
 
     for widget in ("TCheckbutton", "TRadiobutton"):

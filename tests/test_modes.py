@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 import tkinter as tk
+from tkinter import ttk
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -15,6 +16,7 @@ from morsetrainer import app as app_module
 from morsetrainer.core import db, koch, stats
 from morsetrainer.modes import continuous_mode, run_mode, single_mode
 from morsetrainer.modes import sequence_mode as sq
+from morsetrainer.widgets import theme
 
 
 class AppTestCase(unittest.TestCase):
@@ -1063,6 +1065,24 @@ class HelpWindowTest(AppTestCase):
         self.assertIs(help_window.HelpWindow._open, window)
 
 
+class ThemeTest(AppTestCase):
+    def test_choice_boxes_stay_readable_with_focus(self):
+        # clam färbte die Schrift fokussierter Klapplisten weiß auf weißem Feld
+        # (leeres Contest-Feld beim Öffnen des Reiters).
+        style = ttk.Style()
+        for state in (["readonly"], ["readonly", "focus"], ["readonly", "focus", "hover"]):
+            foreground = style.lookup("TCombobox", "foreground", state)
+            self.assertNotEqual(foreground, style.lookup("TCombobox", "fieldbackground", state), state)
+            self.assertEqual(foreground, theme.TEXT, state)
+        self.assertEqual(style.lookup("TCombobox", "foreground", ["disabled", "readonly"]), theme.DISABLED)
+
+
 class IconTest(AppTestCase):
+    def test_no_input_method_under_x11(self):
+        # ibus machte den Aufbau des Hauptfensters zehnmal langsamer.
+        if self.root.tk.call("tk", "windowingsystem") != "x11":
+            self.skipTest("nur X11")
+        self.assertEqual(str(self.root.tk.call("tk", "useinputmethods")), "0")
+
     def test_window_icon_is_set(self):
         self.assertEqual([icon.width() for icon in self.app.icons], list(app_module.ICON_SIZES))
