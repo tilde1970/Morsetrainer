@@ -1,5 +1,16 @@
 # Changes
 
+## Unreleased
+
+- **Mac app:** for Macs with Apple silicon (M1 and newer) the release now
+  includes `Morsetrainer-macOS.zip`. The app is not signed with Apple; on
+  first start you have to approve it, on macOS 15 under “Privacy &
+  Security” with “Open Anyway” (see the manual). The data lives in
+  `~/Library/Application Support/Morsetrainer/`. There is no automatic
+  update on the Mac, only the hint about a new version. Intel Macs run the
+  Morsetrainer from source, the manual explains how. Not yet tested on a
+  Mac – feedback is welcome.
+
 ## 2.32
 
 - **Koch award:** like flow, QRQ, QRN-proof, Rufz and contest, Silver and

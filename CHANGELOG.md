@@ -1,5 +1,17 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Mac-App:** Für Macs mit Apple-Prozessor (M1 und neuer) gibt es jetzt
+  `Morsetrainer-macOS.zip` im Release. Die App ist nicht bei Apple
+  signiert; beim ersten Start muss man sie freigeben, unter macOS 15 in
+  „Datenschutz & Sicherheit“ mit „Dennoch öffnen“ (siehe Anleitung). Die
+  Daten liegen in `~/Library/Application Support/Morsetrainer/`. Ein
+  automatisches Update gibt es auf dem Mac nicht, nur den Hinweis auf eine
+  neue Version. Intel-Macs starten den Morsetrainer aus dem Quelltext, die
+  Anleitung beschreibt wie. Noch nicht auf einem Mac getestet –
+  Rückmeldungen sind willkommen.
+
 ## 2.32
 
 - **Koch-Diplom:** Silber und Gold gibt es wie bei Fluss, QRQ, QRN-fest,
