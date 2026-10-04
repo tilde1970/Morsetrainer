@@ -1,5 +1,17 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Netzwerk sicherer:** Nach 5 falschen PINs ist ein Rechner eine Minute
+  gesperrt, der Trainer sieht einen Hinweis. Bisher ließ sich die PIN in
+  Sekunden durchprobieren.
+- **Teilnehmer entfernen:** Der Trainer kann einen gewählten Teilnehmer
+  aus der Sitzung werfen; dieser Rechner kommt bis zum Schließen der
+  Sitzung nicht wieder herein.
+- **Robuster:** Der Trainer begrenzt die Zahl der Verbindungen und trennt
+  Rechner, die ihn mit Nachrichten überschütten; die Tabelle wird nicht
+  mehr für jede einzelne Nachricht neu aufgebaut.
+
 ## 2.30
 
 - **Updates mit Prüfsumme:** Jedes Release enthält `SHA256SUMS.txt` mit den

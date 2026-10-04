@@ -1,5 +1,17 @@
 # Changes
 
+## Unreleased
+
+- **Safer network:** after 5 wrong PINs a computer is locked for a minute,
+  and the trainer sees a notice. Until now the PIN could be guessed in
+  seconds.
+- **Remove participants:** the trainer can throw a selected participant
+  out of the session; that computer cannot get back in until the session
+  is closed.
+- **More robust:** the trainer limits the number of connections and drops
+  computers that flood it with messages; the table is no longer rebuilt
+  for every single message.
+
 ## 2.30
 
 - **Updates with checksum:** every release contains `SHA256SUMS.txt` with the
