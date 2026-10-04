@@ -2,6 +2,17 @@
 
 ## Unveröffentlicht
 
+- **Lebenslinie:** „Koch geschafft“ steht erst da, wenn Lektion 41
+  bestanden ist (Gold im Koch-Diplom), nicht schon nach einem Durchgang in
+  Lektion 41.
+- **Dezimalkomma:** Statistiktabelle, Geschwindigkeit und Fortschritt
+  zeigen auf Deutsch Kommas („2,27“, „94,7 %“) statt Punkten.
+- **Contest:** Die Auswahl zeigt nur noch den Namen („CQ WW (Zone)“)
+  statt „Contest: Contest: …“.
+- **Kleinigkeiten:** Überschrift „Participants“ auf Englisch, keine leeren
+  Zeilen mehr im Reiter Gruppen und im Sitzungskasten des Netzwerks, „Verlauf
+  (letzte 10)“ bzw. „(letzte 40)“ in allen Reitern, Fortschrittstext ohne
+  verwaisten Zeilenumbruch.
 - **Schneller Start unter Linux:** Mit der Eingabemethode ibus (Standard
   unter Ubuntu) brauchte das Hauptfenster etwa 9 s zum Aufbau, jetzt unter
   1 s. Der Morsetrainer nutzt keine Eingabemethode mehr; Umlaute der

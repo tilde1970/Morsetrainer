@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Lifeline:** “Koch completed” only appears once lesson 41 is passed
+  (gold in the Koch award), not already after one run in lesson 41.
+- **Decimal comma:** in German, the statistics table, speed and progress
+  now show commas instead of points.
+- **Contest:** the selection only shows the name (“CQ WW (zone)”) instead
+  of “Contest: Contest: …”.
+- **Small things:** heading “Participants” in English, no more empty lines
+  in the Groups tab and in the network session box, “History (last 10)” or
+  “(last 40)” in all tabs, progress text without a stray line break.
 - **Faster start on Linux:** with the ibus input method (default on
   Ubuntu) the main window took about 9 s to build, now under 1 s. The
   Morsetrainer no longer uses an input method; keyboard umlauts still
