@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.36
 
 - **Bandbedingungen zentral:** Welche Störungen wie stark und wie laut,
   stellst du jetzt an einer Stelle ein (Weitere Optionen oder „Einstellen …“

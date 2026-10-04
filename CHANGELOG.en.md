@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.36
 
 - **Central band conditions:** which interference, how strong and how
   loud is now set in one place (More options or “Adjust …” in a tab); the
