@@ -4,13 +4,17 @@ beim Programmstart (latest_version) oder ein Trainer im Netzwerk-Reiter
 mit neuerer Version.
 
 Geladen wird nur aus diesem Repo und nur eine neuere Version – ein
-Trainer im Netz nennt bloß die Nummer. Aus dem Quelltext gestartet
+Trainer im Netz nennt bloß die Nummer. Die Datei muss zur Prüfsumme in
+SHA256SUMS.txt desselben Releases passen. Das fängt beschädigte und
+falsche Downloads ab, aber keinen, der das Release selbst austauschen
+kann: Der ersetzt die Prüfsumme gleich mit. Aus dem Quelltext gestartet
 (python main.py) gibt es nichts auszutauschen; dann bleibt es beim
 Hinweis.
 
 Windows: Eine laufende exe lässt sich nicht überschreiben, aber
 umbenennen. Die alte wird zu Morsetrainer.old.exe und beim nächsten Start
 entfernt (cleanup)."""
+import hashlib
 import http.client
 import json
 import os
@@ -32,6 +36,9 @@ CHUNK = 1 << 16
 # Kleiner ist kein Morsetrainer, sondern z. B. eine Fehlerseite.
 MIN_SIZE = 5_000_000
 MAGIC = {WINDOWS_ASSET: b"MZ", APPIMAGE_ASSET: b"\x7fELF"}
+SUMS_ASSET = "SHA256SUMS.txt"
+MAX_SUMS_BYTES = 1 << 16
+SHA256_RE = re.compile(r"[0-9a-f]{64}")
 
 
 class UpdateError(Exception):
@@ -94,15 +101,34 @@ def download_url(version: str, asset: str) -> str:
     return f"https://github.com/{REPO}/releases/download/v{version}/{asset}"
 
 
+def expected_sha256(version: str, asset: str) -> str:
+    """Prüfsumme von `asset` aus SHA256SUMS.txt des Releases (Zeilen
+    „<sha256>  <Datei>“ wie von sha256sum). UpdateError, wenn die Datei
+    fehlt oder `asset` darin nicht vorkommt."""
+    request = urllib.request.Request(download_url(version, SUMS_ASSET), headers={"User-Agent": "Morsetrainer"})
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
+            text = response.read(MAX_SUMS_BYTES).decode("ascii", "replace")
+    except NET_ERRORS as exc:
+        raise UpdateError(f"keine Prüfsumme: {exc}") from exc
+    for line in text.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[1].lstrip("*") == asset and SHA256_RE.fullmatch(parts[0].lower()):
+            return parts[0].lower()
+    raise UpdateError(f"keine Prüfsumme für {asset}")
+
+
 def download(version: str, target: Path, asset: str, progress=None, cancelled=lambda: False) -> Path:
     """Lädt `asset` von Version `version` neben `target` (als .new) und
-    prüft, ob es vollständig ist und nach Programm aussieht. `progress`:
-    (geladen, gesamt oder 0) je Block."""
+    prüft, ob es vollständig ist, zur Prüfsumme passt und nach Programm
+    aussieht. `progress`: (geladen, gesamt oder 0) je Block."""
     if parse_version(version) is None:
         raise UpdateError(f"keine Versionsnummer: {version!r}")
+    expected = expected_sha256(version, asset)
     part = target.with_name(target.name + ".new")
     request = urllib.request.Request(download_url(version, asset), headers={"User-Agent": "Morsetrainer"})
     try:
+        digest = hashlib.sha256()
         with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response, open(part, "wb") as out:
             total = int(response.headers.get("Content-Length") or 0)
             done = 0
@@ -110,6 +136,7 @@ def download(version: str, target: Path, asset: str, progress=None, cancelled=la
                 if cancelled():
                     raise UpdateError("abgebrochen")
                 out.write(chunk)
+                digest.update(chunk)
                 done += len(chunk)
                 if progress is not None:
                     progress(done, total)
@@ -119,6 +146,8 @@ def download(version: str, target: Path, asset: str, progress=None, cancelled=la
             head = check.read(4)
         if done < MIN_SIZE or not head.startswith(MAGIC.get(asset, b"")):
             raise UpdateError("Die geladene Datei ist kein Morsetrainer")
+        if digest.hexdigest() != expected:
+            raise UpdateError("Prüfsumme stimmt nicht (SHA256SUMS.txt)")
     except NET_ERRORS as exc:
         _remove(part)
         raise UpdateError(str(exc)) from exc

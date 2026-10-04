@@ -47,7 +47,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt pyinstaller
       - run: bash packaging/get_voice.sh
-      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "README.md:." --add-data "CHANGELOG.md:." --add-data "README.en.md:." --add-data "CHANGELOG.en.md:." --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
+      - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "CHANGELOG.md:." --add-data "CHANGELOG.en.md:." --add-data "docs/Anleitung.md:docs" --add-data "docs/Anleitung.en.md:docs" --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
       # Stimme und MP3 in der exe prüfen (ohne Fenster, ohne Ton).
       - shell: pwsh
         run: |
@@ -75,6 +75,9 @@ jobs:
           awk -v v="${GITHUB_REF_NAME#v}" '/^## /{if(f)exit; if($2==v)f=1; next} f' CHANGELOG.md > notes.md
           printf '\nAlle Änderungen: [CHANGELOG.md](%s/%s/blob/main/CHANGELOG.md), im Programm unter „Hilfe“.\n' \
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> notes.md
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --notes-file notes.md --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe
+      # Prüfsummen: zum Nachprüfen von Hand, und das Update im Programm
+      # lädt nur, was hierzu passt (morsetrainer/net/update.py).
+      - run: sha256sum Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe > SHA256SUMS.txt
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --notes-file notes.md --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe SHA256SUMS.txt
         env:
           GH_TOKEN: ${{ github.token }}

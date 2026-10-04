@@ -1,5 +1,6 @@
 """Updates: Versionsvergleich, Download und Austausch des Programms,
 Updateprüfung beim Start (auch ohne Internet)."""
+import hashlib
 import io
 import json
 import tempfile
@@ -20,6 +21,23 @@ class FakeResponse(io.BytesIO):
     def __init__(self, data: bytes, length=None):
         super().__init__(data)
         self.headers = {"Content-Length": str(len(data) if length is None else length)}
+
+
+def serve(files: dict):
+    """urlopen-Ersatz: liefert je Dateiname am Ende der URL (data, length)
+    oder bytes; fehlende Dateien geben 404."""
+    def urlopen(request, timeout=None):
+        name = request.full_url.rsplit("/", 1)[-1]
+        if name not in files:
+            raise urllib.error.HTTPError(request.full_url, 404, "Not Found", {}, None)
+        data = files[name]
+        return FakeResponse(*data) if isinstance(data, tuple) else FakeResponse(data)
+    return urlopen
+
+
+def sums(data: bytes, asset=update.WINDOWS_ASSET) -> bytes:
+    other = hashlib.sha256(b"anders").hexdigest()
+    return f"{other}  Morsetrainer-x86_64.AppImage.zsync\n{hashlib.sha256(data).hexdigest()}  {asset}\n".encode()
 
 
 class VersionTest(unittest.TestCase):
@@ -66,11 +84,13 @@ class InstallTest(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
 
     def fetch(self, data, length=None, asset=update.WINDOWS_ASSET):
-        with mock.patch.object(update.urllib.request, "urlopen", return_value=FakeResponse(data, length)) as urlopen:
+        files = {asset: (data, length), update.SUMS_ASSET: sums(data, asset)}
+        with mock.patch.object(update.urllib.request, "urlopen", side_effect=serve(files)) as urlopen:
             progress = []
             part = update.download("2.16", self.target, asset, lambda done, total: progress.append((done, total)))
-        self.assertEqual(urlopen.call_args[0][0].full_url,
-                         f"https://github.com/tilde1970/Morsetrainer/releases/download/v2.16/{asset}")
+        base = "https://github.com/tilde1970/Morsetrainer/releases/download/v2.16/"
+        self.assertEqual([c[0][0].full_url for c in urlopen.call_args_list],
+                         [base + update.SUMS_ASSET, base + asset])
         self.assertEqual(progress[-1], (len(data), len(data)))
         return part
 
@@ -103,7 +123,8 @@ class InstallTest(unittest.TestCase):
             (b"MZ", None),                             # zu klein
         ]
         for data, length in cases:
-            with mock.patch.object(update.urllib.request, "urlopen", return_value=FakeResponse(data, length)):
+            files = {update.WINDOWS_ASSET: (data, length), update.SUMS_ASSET: sums(data)}
+            with mock.patch.object(update.urllib.request, "urlopen", side_effect=serve(files)):
                 with self.assertRaises(update.UpdateError):
                     update.download("2.16", self.target, update.WINDOWS_ASSET)
         error = urllib.error.HTTPError("url", 404, "Not Found", {}, None)
@@ -114,6 +135,33 @@ class InstallTest(unittest.TestCase):
             update.download("../evil", self.target, update.WINDOWS_ASSET)
         self.assertEqual([p.name for p in self.dir.iterdir()], ["Morsetrainer.exe"])
         self.assertEqual(self.target.read_bytes(), b"MZ old")
+
+    def test_checksum_must_match(self):
+        good = b"MZ" + b"x" * 100
+        bad = b"MZ" + b"y" * 100
+        cases = {
+            "falsche Datei": {update.WINDOWS_ASSET: bad, update.SUMS_ASSET: sums(good)},
+            "ohne SHA256SUMS.txt": {update.WINDOWS_ASSET: good},
+            "Datei nicht aufgeführt": {update.WINDOWS_ASSET: good,
+                                       update.SUMS_ASSET: sums(good, update.APPIMAGE_ASSET)},
+            "kaputte Zeile": {update.WINDOWS_ASSET: good,
+                              update.SUMS_ASSET: f"xyz  {update.WINDOWS_ASSET}\n".encode()},
+        }
+        for label, files in cases.items():
+            with self.subTest(label), \
+                    mock.patch.object(update.urllib.request, "urlopen", side_effect=serve(files)):
+                with self.assertRaises(update.UpdateError):
+                    update.download("2.16", self.target, update.WINDOWS_ASSET)
+        self.assertEqual([p.name for p in self.dir.iterdir()], ["Morsetrainer.exe"])
+        self.assertEqual(self.target.read_bytes(), b"MZ old")
+
+    def test_checksum_line_with_binary_marker_and_upper_case(self):
+        data = b"MZ" + b"x" * 100
+        line = f"{hashlib.sha256(data).hexdigest().upper()} *{update.WINDOWS_ASSET}\n".encode()
+        files = {update.WINDOWS_ASSET: data, update.SUMS_ASSET: line}
+        with mock.patch.object(update.urllib.request, "urlopen", side_effect=serve(files)):
+            part = update.download("2.16", self.target, update.WINDOWS_ASSET)
+        self.assertEqual(part.read_bytes(), data)
 
     def test_relaunch_does_not_inherit_the_packed_environment(self):
         env = {"APPIMAGE": "/old.AppImage", "APPDIR": "/tmp/.mount", "LD_LIBRARY_PATH": "/tmp/.mount/lib",
