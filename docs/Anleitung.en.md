@@ -396,6 +396,33 @@ SHA256SUMS.txt` in the download folder; on Windows run `Get-FileHash
 Morsetrainer.exe` in PowerShell and compare the value with the line in
 `SHA256SUMS.txt`.
 
+### macOS
+
+There is no ready-to-run program for macOS; the AppImage does not run
+there. The Morsetrainer can be started from source, though. This has not
+been tested on a Mac yet – feedback is welcome.
+
+1. Install Python 3.10 or newer from [python.org](https://www.python.org/downloads/macos/).
+   This Python comes with a working Tk; with Homebrew's Python the window
+   often stays empty or `tkinter` is missing.
+2. On the [Releases](https://github.com/tilde1970/Morsetrainer/releases)
+   page, download “Source code (zip)” of the latest release and unpack it.
+3. In the Terminal, change into the unpacked folder and set it up once:
+
+   ```
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+4. Start with `python main.py`. Later, `source .venv/bin/activate` and
+   `python main.py` in the same folder are enough.
+
+The data then lives in the unpacked folder (see [Data](#data)). There is no
+automatic update this way, only the hint about a new version. To update,
+unpack the new source and copy `stats/`, `window_state.json` and, if
+present, `callsigns.scp` and `woerter.txt` from the old folder into it.
+
 ### Updates
 
 On start the Morsetrainer checks in the background whether there is a newer

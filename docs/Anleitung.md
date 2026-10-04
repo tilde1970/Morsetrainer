@@ -401,6 +401,34 @@ Prüfsummen. Zum Nachprüfen unter Linux im Download-Ordner
 PowerShell `Get-FileHash Morsetrainer.exe` und den Wert mit der Zeile in
 `SHA256SUMS.txt` vergleichen.
 
+### macOS
+
+Für macOS gibt es kein fertiges Programm, das AppImage läuft dort nicht.
+Der Morsetrainer lässt sich aber aus dem Quelltext starten. Das ist bisher
+nicht auf einem Mac getestet – Rückmeldungen sind willkommen.
+
+1. Python 3.10 oder neuer von [python.org](https://www.python.org/downloads/macos/)
+   installieren. Dieses Python bringt ein funktionierendes Tk mit; mit dem
+   Python aus Homebrew bleibt das Fenster oft leer oder es fehlt `tkinter`.
+2. Unter [Releases](https://github.com/tilde1970/Morsetrainer/releases) beim
+   neuesten Release „Source code (zip)“ laden und entpacken.
+3. Im Terminal in den entpackten Ordner wechseln und einmalig einrichten:
+
+   ```
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+4. Starten mit `python main.py`. Später reichen
+   `source .venv/bin/activate` und `python main.py` im selben Ordner.
+
+Die Daten liegen dann im entpackten Ordner (siehe [Daten](#daten)). Das
+automatische Update gibt es so nicht, nur den Hinweis auf eine neue
+Version. Zum Aktualisieren den neuen Quelltext entpacken und `stats/`,
+`window_state.json` und ggf. `callsigns.scp` und `woerter.txt` aus dem
+alten Ordner hineinkopieren.
+
 ### Updates
 
 Beim Start schaut der Morsetrainer im Hintergrund nach, ob es ein neueres
