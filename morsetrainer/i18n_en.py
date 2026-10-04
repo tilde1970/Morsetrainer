@@ -1051,13 +1051,15 @@ EN.update({
         "Continuous with random groups (≥ 5 characters), full character set, no Farnsworth, full 3-min "
         "run, ≥ 90 % minus extra keys",
     "QRN-fest": "QRN-proof",
-    "Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, "
-    "effektiv ≥ 12 WPM, bei Gruppen der rechtzeitige erste Versuch":
-        "Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, "
-        "effective ≥ 12 WPM, in groups the first attempt in time",
-    "Band leicht, ≥ 90 %": "band light, ≥ 90 %",
-    "Band mittel, ≥ 90 %": "band medium, ≥ 90 %",
-    "Band stark, ≥ 85 %": "band heavy, ≥ 85 %",
+    "Gruppen oder Kontinuierlich mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und "
+    "nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen der "
+    "rechtzeitige erste Versuch":
+        "Groups or continuous with random characters, ≥ 200 characters, band conditions on for the whole run "
+        "and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM, in groups the "
+        "first attempt in time",
+    "Band leicht, ≥ 90 %": "conditions light, ≥ 90 %",
+    "Band mittel, ≥ 90 %": "conditions medium, ≥ 90 %",
+    "Band stark, ≥ 85 %": "conditions heavy, ≥ 85 %",
     "Rufz": "Rufz",
     "Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Zeichentempo beim Start ≥ 20 WPM":
         "Full Rufz run with 50 calls, no prefix filter, character speed at the start ≥ 20 WPM",
@@ -1078,8 +1080,9 @@ EN.update({
     "Präfixen": "prefixes",
     "Kopfhörer": "Headphones",
     "Noch kein Lauf ab Band {band}, der die übrigen Bedingungen erfüllt":
-        "No run yet from band {band} that meets the other conditions",
-    "Bester Lauf ab Band {band}: {share} % (nötig {need} %)": "Best run from band {band}: {share} % (needed {need} %)",
+        "No run yet from conditions {band} that meets the other conditions",
+    "Bester Lauf ab Band {band}: {share} % (nötig {need} %)":
+        "Best run from conditions {band}: {share} % (needed {need} %)",
     "Noch kein Durchgang mit ≥ {wpm} WPM und Aktivität ≥ {activity}":
         "No run yet with ≥ {wpm} WPM and activity ≥ {activity}",
     "Bester Durchgang mit ≥ {wpm} WPM: {rate} QSOs in 10 Min. (nötig {need}), {errors} Fehler ({share} %)":
@@ -1166,17 +1169,29 @@ EN.update({
     "keine Störung eingeschaltet": "no interference switched on",
     "Störungen": "Interference",
     "Lautstärke der Störgeräusche": "Noise volume",
-    "Schwächer als Stufe leicht.": "Weaker than level light.",
     "Lautstärke {gain} %": "volume {gain} %",
     "Stufe {name}": "level {name}",
     "Stufe:": "Level:",
+    "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
+    "(90 % und mehr), und mit „leicht“ beginnen.":
+        "Learn new characters without interference. Switch it on once the character set is solid without "
+        "interference (90 % or more), and start with “light”.",
+    "an/aus erst nach dem Durchgang": "on/off only after the run",
     "Entspricht mindestens Stufe {name}.": "Matches at least level {name}.",
     "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken sofort, "
-    "auch im laufenden Durchgang.":
+    "auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers.":
         "Applies to all tabs; there you only switch the band conditions on or off. Changes take effect "
-        "immediately, even during a run.",
-    "Gegenüber den Zeichen; 100 % ist die normale Mischung. Für das Diplom QRN-fest zählt mindestens 100 % "
-    "und mindestens die Stufe.":
-        "Relative to the signals; 100 % is the normal mix. For the QRN-proof award the volume must be at "
-        "least 100 % and the setting at least the level.",
+        "immediately, even during a run. On the network everyone hears the trainer's setting.",
+    "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist die "
+    "normale Mischung, für das Diplom QRN-fest müssen es mindestens 100 % sein.":
+        "All interference together, relative to the signals; also shifts the signal-to-noise ratio. 100 % is "
+        "the normal mix; the QRN-proof award needs at least 100 %.",
+    "S/N {db}": "S/N {db}",
+    "bis {hz} Hz": "up to {hz} Hz",
+    "Keiner Stufe zugeordnet: Stufe leicht braucht mindestens Rauschen {snr} und QSB {qsb} %.":
+        "No level reached: level light needs at least noise {snr} and QSB {qsb} %.",
+    "S/N: Rauschabstand in 2,4 kHz Bandbreite gegenüber dem ungeschwächten Signal; im Ohr, das CW wie ein "
+    "Filter von etwa 50 Hz hört, sind es rund 17 dB mehr.":
+        "S/N: signal-to-noise ratio in 2.4 kHz bandwidth relative to the unfaded signal; the ear hears CW "
+        "like a filter of about 50 Hz, where it is roughly 17 dB more.",
 })

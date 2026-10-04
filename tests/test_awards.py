@@ -134,6 +134,8 @@ class AwardsTest(unittest.TestCase):
                 session("continuous", 2, band="medium", band_min="medium", **{**base, "band_gain_min": 80}),
                 session("continuous", 3, band="medium", band_min="medium", content="chars", **base)]
         self.assertEqual([(d, rank) for d, rank, _ in awards._qrn_runs(data(runs))], [(day(0), 1), (day(3), 2)])
+        plain = session("continuous", 4, band="medium", band_min="medium", content="words", **base)
+        self.assertEqual(awards._qrn_runs(data([plain])), [])  # Klartext zählt nicht
 
     def test_hints_show_how_close_the_next_level_is(self):
         base = dict(charset=koch.lesson_charset(30), total=200, correct=170, accuracy_pct=85.0, band_gain=100)

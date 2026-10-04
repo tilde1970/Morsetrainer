@@ -130,7 +130,7 @@ level will look like – stamped “PREVIEW”, without date and number.
 | Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts, reached with characters ≥ 18 WPM |
 | Copying in flow | 10 / 15 / 22 WPM effective | 15 | Continuous with plain text (words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “words” does not count |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Continuous with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
-| QRN-proof | band light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous, ≥ 200 characters, noise volume ≥ 100 % for the whole run, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
+| QRN-proof | conditions light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous with random characters, ≥ 200 characters, band conditions on for the whole run and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
 | Contest | see right | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
 | WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for the call again), characters ≥ 18 WPM |
@@ -231,10 +231,43 @@ frequency; plus the **noise volume** relative to the signals. The buttons
 **light**, **medium** and **heavy** set the levels that the QRN-proof
 award counts; the window shows which level the setting matches at least.
 
+Noise is given as **signal-to-noise ratio (S/N)**, measured in 2.4 kHz
+bandwidth relative to the unfaded signal; the slider ranges from +20 dB to
+−10 dB. The ear hears CW like a filter of about 50 Hz, where the ratio is
+roughly 17 dB better – so −4 dB feels like a good +13 dB in a narrow
+filter. If the noise gets louder than the receiver would pass, it turns
+the signal down like an AGC instead of clipping. Chirp is shown in Hz
+(largest offset while keying).
+
+| Level | Noise (S/N) | QSB (deepest dip) | plus |
+|---|---|---|---|
+| light | +8 dB | 30 % (about −3 dB) | – |
+| medium | +2 dB | 50 % (about −5.5 dB) | QRN 30 % |
+| heavy | −4 dB | 80 % (about −12 dB) | QRN 50 %, CW QRM 30 % |
+
+Fading changes irregularly (two overlaid variations); its depth follows
+the slider and varies only a little – the level sets the difficulty, not
+chance.
+
+**When to switch on?** Learn new characters without interference. Band
+conditions pay off once the character set is solid without them (90 % or
+more); then start with “light”.
+
 In the tabs (Groups, Words, Callsigns, Continuous, QSO, Contest, Network)
-you only switch band conditions on or off. Changes take effect
-immediately, even during a run; the award then counts the weakest setting
-of the run. On the network all participants hear the trainer's setting.
+you only switch band conditions on or off. Strength and volume take
+effect immediately, even during a run; the award then counts the weakest
+setting of the run. In Groups, Words, Callsigns, Continuous and Network
+you can switch them on or off only between runs, in QSO and Contest at
+any time. On the network all participants hear the trainer's setting,
+with the same fading and the same stations.
+
+As on the air, fading, noise and the neighbouring QRM keep running during
+your answer pause; each sequence hits a different spot.
+
+Runs with band conditions appear in the history but do not count for the
+character statistics, the weighting, the confusions or the review box: a
+character lost in the noise or in a QSB dip says nothing about whether
+you know it.
 
 ## Network: practising as a group
 

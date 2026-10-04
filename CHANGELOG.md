@@ -1,5 +1,50 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Rauschabstand in dB, echte Stufen:** Das Rauschen steht jetzt als
+  Rauschabstand (S/N in 2,4 kHz) im Fenster und reicht von +20 dB bis
+  −10 dB; wird es lauter, regelt der „Empfänger“ das Signal herunter (wie
+  eine AGC), statt zu übersteuern. Die Stufen sind deutlich auseinander:
+  leicht +8 dB, mittel +2 dB, stark −4 dB (bisher +15, +11 und +7,5 dB –
+  für geübte Ohren kaum ein Unterschied). Chirp steht in Hz.
+- **QSB nach Stufe statt nach Zufall:** Die Tiefe des Fadings folgt dem
+  Regler und streut nur noch wenig; zwei überlagerte Schwankungen machen
+  den Verlauf unregelmäßig wie auf dem Band.
+- **Einsteiger:** Wer die Bandbedingungen zum ersten Mal zuschaltet,
+  beginnt mit „leicht“; das Fenster rät, neue Zeichen ohne Störungen zu
+  lernen. Die Anleitung zeigt, was in jeder Stufe steckt.
+- **Netzwerk:** Alle Teilnehmer hören dasselbe Fading und dieselben
+  Stationen (gemeinsamer Zufallswert vom Trainer).
+- **Diplom QRN-fest:** zählt in Kontinuierlich nur noch Zufallszeichen –
+  Klartext ist im Störnebel durch den Zusammenhang viel leichter (wie
+  schon bei QRQ). Erreichte Siegel bleiben.
+- Nach dem Schließen des Einstellungsfensters geht der Fokus zurück, etwa
+  ins Eingabefeld eines laufenden Durchgangs.
+- Das Rauschen vor und nach jeder Sequenz wird weich ein- und
+  ausgeblendet, statt im Kopfhörer schlagartig einzusetzen.
+- **Fading und QRM laufen weiter:** In Gruppen, Wörtern, Rufzeichen und
+  bei Netzwerk-Sequenzen begannen QSB und das Nachbar-QRM bei jeder Sequenz
+  wieder an derselben Stelle – jede Gruppe lag im selben Fading-Abschnitt
+  (womöglich den ganzen Durchgang im Loch oder nie), und das QRM sendete
+  immer denselben Anfang. Jetzt laufen sie wie auf dem Band auch während
+  der Antwortpause weiter.
+- **Störungen verfälschen die Statistik nicht mehr:** Durchgänge mit
+  Bandbedingungen zählen nicht mehr für Zeichenstatistik, Gewichtung,
+  Verwechslungen und Lernkartei (im Verlauf erscheinen sie weiter). Damit
+  das eindeutig bleibt, lassen sie sich in diesen Reitern nur zwischen zwei
+  Durchgängen an- und ausschalten; Stärke und Lautstärke wirken weiter
+  sofort.
+- **Bandbedingungen, Feinschliff:** Die Kurzfassung unter „Weitere Optionen“
+  wird nicht mehr abgeschnitten; eine Störung auf 0 % gilt als aus. Das
+  Einstellungsfenster bleibt über dem Hauptfenster und sagt, dass im
+  Netzwerk die Einstellung des Trainers gilt. Die Bedingung des Diploms
+  QRN-fest nennt jetzt auch, dass die Bandbedingungen den ganzen Lauf an
+  bleiben und nicht leichter gestellt werden dürfen.
+- **Netzwerk robuster:** Unsinnige Werte für die Bandbedingungen (NaN,
+  unendlich) werden verworfen; vorbereitete Störsignale belegen nicht mehr
+  unbegrenzt Speicher, wenn der Trainer die Einstellung oft ändert.
+
 ## 2.36
 
 - **Bandbedingungen zentral:** Welche Störungen wie stark und wie laut,

@@ -128,7 +128,7 @@ dem Stempel „VORSCHAU“, ohne Datum und Nummer.
 | Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach, erreicht mit Zeichen ≥ 18 WPM |
 | Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
-| QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
+| QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
 | Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
 | WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM |
@@ -235,11 +235,44 @@ und **stark** setzen die Stufen, nach denen auch das Diplom QRN-fest
 zählt; das Fenster zeigt, welcher Stufe die Einstellung mindestens
 entspricht.
 
+Das Rauschen wird als **Rauschabstand (S/N)** angegeben, gemessen in
+2,4 kHz Bandbreite gegenüber dem ungeschwächten Signal; der Regler reicht
+von +20 dB bis −10 dB. Das Ohr hört CW wie durch ein Filter von etwa
+50 Hz, dort ist der Abstand rund 17 dB größer – −4 dB fühlen sich also
+an wie gut +13 dB im schmalen Filter. Wird das Rauschen lauter als der
+Empfänger es durchließe, regelt er wie eine AGC das Signal herunter
+statt zu übersteuern. Chirp steht in Hz (größte Ablage beim Tasten).
+
+| Stufe | Rauschen (S/N) | QSB (tiefstes Loch) | dazu |
+|---|---|---|---|
+| leicht | +8 dB | 30 % (ca. −3 dB) | – |
+| mittel | +2 dB | 50 % (ca. −5,5 dB) | QRN 30 % |
+| stark | −4 dB | 80 % (ca. −12 dB) | QRN 50 %, CW-QRM 30 % |
+
+Das Fading wechselt unregelmäßig (zwei überlagerte Schwankungen), seine
+Tiefe folgt dem Regler und streut nur wenig – die Stufe bestimmt die
+Schwierigkeit, nicht der Zufall.
+
+**Wann zuschalten?** Neue Zeichen ohne Störungen lernen. Bandbedingungen
+lohnen sich, wenn der Zeichensatz ohne Störungen sicher sitzt (90 % und
+mehr); dann mit „leicht“ beginnen.
+
 In den Reitern (Gruppen, Wörter, Rufzeichen, Kontinuierlich, QSO, Contest,
-Netzwerk) schaltest du die Bandbedingungen nur an oder aus. Änderungen
-wirken sofort, auch im laufenden Durchgang; für das Diplom zählt dann das
-Schwächste im Durchgang. Im Netzwerk hören alle Teilnehmer die
-Einstellung des Trainers.
+Netzwerk) schaltest du die Bandbedingungen nur an oder aus. Stärke und
+Lautstärke wirken sofort, auch im laufenden Durchgang; für das Diplom
+zählt dann das Schwächste im Durchgang. An und aus geht in Gruppen,
+Wörtern, Rufzeichen, Kontinuierlich und Netzwerk nur zwischen zwei
+Durchgängen, in QSO und Contest jederzeit. Im Netzwerk hören alle
+Teilnehmer die Einstellung des Trainers, mit demselben Fading und
+denselben Stationen.
+
+Wie auf dem Band laufen Fading, Rauschen und das Nachbar-QRM auch während
+deiner Antwortpause weiter; jede Sequenz trifft eine andere Stelle.
+
+Durchgänge mit Bandbedingungen erscheinen im Verlauf, zählen aber nicht
+für die Zeichenstatistik, die Gewichtung, die Verwechslungen und die
+Lernkartei: Ein Zeichen, das im Rauschen oder in einem QSB-Loch
+untergeht, sagt nichts darüber, ob du es kannst.
 
 ## Netzwerk: Üben in der Gruppe
 

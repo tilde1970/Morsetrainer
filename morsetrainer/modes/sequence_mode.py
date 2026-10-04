@@ -277,7 +277,7 @@ class SequenceModeFrame(DailyModeMixin):
         theme.hint(tempo_row, textvariable=self.tempo_info_var).pack(side="left", padx=(8, 0))
 
         self.band_var = tk.BooleanVar(value=False)
-        BandToggle(options, self.band_settings, self.band_var)
+        self.band_toggle = BandToggle(options, self.band_settings, self.band_var)
 
         duration = ttk.Frame(options)
         duration.pack(fill="x", pady=1)
@@ -392,6 +392,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.deadline = self._daily_deadline()
         self.session_id += 1
         self.running = True
+        self.band_toggle.set_locked(True)
         self.style = self.style_var.get()
         self._show_answer_row()
         self.repeat_pending = False
@@ -421,7 +422,9 @@ class SequenceModeFrame(DailyModeMixin):
             self.session_mode, self._log_charset(), wpm, freq,
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
             self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
-            review_promote=self.review_promotes, char_stats=self.char_stats,
+            # Unter Bandbedingungen geht manches Zeichen im Rauschen oder
+            # QSB-Loch unter; das sagt nichts darüber, ob man es kann.
+            review_promote=self.review_promotes, char_stats=self.char_stats and spec is None,
             config_extra=self._config_extra(spec),
         )
         self._setup_pickers(self.weighted_var.get())
@@ -483,6 +486,7 @@ class SequenceModeFrame(DailyModeMixin):
 
     def stop(self):
         self.running = False
+        self.band_toggle.set_locked(False)
         self.waiting_for_input = False
         self.submit_pending = False
         self.start_button.config(text=tr("Start"))

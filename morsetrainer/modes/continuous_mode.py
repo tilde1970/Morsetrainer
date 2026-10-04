@@ -203,7 +203,8 @@ class ContinuousModeFrame(DailyModeMixin):
         ttk.Label(grouping, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
         theme.hint(grouping, text=tr("(mit Wortpause dazwischen; 0 = durchgehend)")).pack(side="left", padx=(4, 0))
         self.band_var = tk.BooleanVar(value=False)
-        BandToggle(options, self.band_settings, self.band_var, on_change=self._update_band, pady=(2, 0))
+        self.band_toggle = BandToggle(options, self.band_settings, self.band_var, on_change=self._update_band,
+                                      pady=(2, 0))
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
@@ -322,7 +323,9 @@ class ContinuousModeFrame(DailyModeMixin):
             return
         self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw,
                                           review_promote=self.content == "chars",
-                                          char_stats=self.content not in PLAIN_TEXT,
+                                          # Im Störnebel verlorene Zeichen zählen nicht für die
+                                          # Zeichenstatistik (wie in sequence_mode).
+                                          char_stats=self.content not in PLAIN_TEXT and spec is None,
                                           group_len=self.group_len or None,
                                           config_extra={"lesson": koch.lesson_of(charset), **band_config(spec),
                                                         "content": self.content,
@@ -334,6 +337,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.diff_var.set(tr("Erscheint nach dem Stoppen."))
 
         self.running = True
+        self.band_toggle.set_locked(True)
         self.start_button.config(text=tr("Stop"))
         self.status_var.set(tr("Läuft – höre zu und tippe mit…"))
         self.on_start_cb()
@@ -466,6 +470,7 @@ class ContinuousModeFrame(DailyModeMixin):
 
     def stop(self):
         self.running = False
+        self.band_toggle.set_locked(False)
         if self.play_thread is not None:
             self.play_thread.join(timeout=2)
             self.play_thread = None

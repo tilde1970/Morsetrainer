@@ -12,20 +12,36 @@ from morsetrainer.widgets import theme
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
-    ("noise", N_("Rauschen"), 40),
-    ("qrn", N_("Knackstörungen (QRN)"), 50),
+    ("noise", N_("Rauschen"), 60),
+    ("qrn", N_("Knackstörungen (QRN)"), 30),
     ("qsb", N_("QSB (Fading)"), 50),
     ("chirp", N_("Chirp"), 50),
     ("ssb", N_("SSB-Gebrabbel"), 40),
-    ("cw_qrm", N_("CW-QRM (Nachbar-Run)"), 35),
+    ("cw_qrm", N_("CW-QRM (Nachbar-Run)"), 30),
 )
 SHORT_NAMES = {"noise": N_("Rauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": N_("Chirp"),
                "ssb": "SSB", "cw_qrm": "CW-QRM"}
 PRESET_NAMES = {"light": N_("leicht"), "medium": N_("mittel"), "heavy": N_("stark")}
-# Startwerte, solange nichts gespeichert ist.
-DEFAULT_PRESET = "medium"
+# Startwerte, solange nichts gespeichert ist: wer zum ersten Mal zuschaltet,
+# soll nicht gleich im tiefen Fading landen.
+DEFAULT_PRESET = "light"
 # Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
 GAIN_RANGE = (round(band.GAIN_RANGE[0] * 100), round(band.GAIN_RANGE[1] * 100))
+
+
+def signed_db(value: float) -> str:
+    """„+8 dB“, „−4 dB“ (mit echtem Minuszeichen)."""
+    return f"{value:+.0f} dB".replace("-", "−")
+
+
+def level_text(key: str, level: float, gain: float = 1.0) -> str:
+    """Anzeige eines Pegels (0..1) in der Sprache der Funkamateure:
+    Rauschen als Rauschabstand, Chirp als Frequenzablage, sonst Prozent."""
+    if key == "noise":
+        return tr("S/N {db}").format(db=signed_db(band.noise_snr_db(level, gain)))
+    if key == "chirp":
+        return tr("bis {hz} Hz").format(hz=round(band.chirp_max_hz(level)))
+    return f"{round(level * 100)} %"
 
 
 def toggle_value(value):
@@ -53,12 +69,15 @@ class BandSettings:
         self.gain_var = tk.DoubleVar(value=100)
         self.listeners = []
         self.window = None
+        self.focus_before = None  # Fokus im Hauptfenster vor dem Öffnen
         self.set_preset(DEFAULT_PRESET, notify=False)
 
     # --- Werte -----------------------------------------------------------
     def spec(self) -> dict:
+        """Eingeschaltete Störungen mit Pegel über 0 % (0 % wäre nicht zu hören)."""
         return {
-            "levels": {key: round(level.get()) / 100 for key, (on, level) in self.controls.items() if on.get()},
+            "levels": {key: round(level.get()) / 100 for key, (on, level) in self.controls.items()
+                       if on.get() and round(level.get()) > 0},
             "gain": round(self.gain_var.get()) / 100,
         }
 
@@ -103,10 +122,11 @@ class BandSettings:
         return self.restore({"levels": levels, "gain": round(self.gain_var.get()) / 100})
 
     def summary(self) -> str:
-        """Kurzfassung für die Reiter, z. B. „Rauschen 40 %, QRN 30 % ·
-        Lautstärke 100 % · Stufe mittel“."""
+        """Kurzfassung für die Reiter, z. B. „Rauschen S/N +2 dB, QRN 30 %,
+        QSB 50 % · Lautstärke 100 % · Stufe mittel“."""
         spec = self.spec()
-        parts = [f"{tr(SHORT_NAMES[key])} {round(level * 100)} %" for key, level in spec["levels"].items()]
+        parts = [f"{tr(SHORT_NAMES[key])} {level_text(key, level, spec['gain'])}"
+                 for key, level in spec["levels"].items()]
         text = ", ".join(parts) if parts else tr("keine Störung eingeschaltet")
         text += " · " + tr("Lautstärke {gain} %").format(gain=round(spec["gain"] * 100))
         rank = band.preset_rank(spec)
@@ -128,8 +148,10 @@ class BandSettings:
             self.window.deiconify()
             self.window.lift()
             return
+        self.focus_before = self.root.focus_get()
         window = self.window = tk.Toplevel(self.root)
         window.title(tr("Bandbedingungen"))
+        window.transient(self.root)  # bleibt über dem Hauptfenster
         window.configure(background=theme.BG)
         window.resizable(True, False)
         window.protocol("WM_DELETE_WINDOW", self.close_window)
@@ -138,7 +160,11 @@ class BandSettings:
         frame.pack(fill="both", expand=True)
         theme.hint(frame, wrap=460, text=tr(
             "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken "
-            "sofort, auch im laufenden Durchgang.")).pack(anchor="w", pady=(0, 6))
+            "sofort, auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers.")).pack(
+            anchor="w", pady=(0, 2))
+        theme.hint(frame, wrap=460, text=tr(
+            "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
+            "(90 % und mehr), und mit „leicht“ beginnen.")).pack(anchor="w", pady=(0, 6))
 
         presets = ttk.Frame(frame)
         presets.pack(fill="x", pady=(0, 4))
@@ -155,7 +181,7 @@ class BandSettings:
                 row=row, column=0, sticky="w", padx=(0, 12), pady=1)
             scale = ttk.Scale(box, from_=0, to=100, variable=level, length=200, command=lambda _: self._changed())
             scale.grid(row=row, column=1, sticky="we", pady=1)
-            shown = ttk.Label(box, width=5, anchor="e")
+            shown = ttk.Label(box, width=11, anchor="e")
             shown.grid(row=row, column=2, padx=(6, 0))
             self.widgets[key] = (scale, shown)
         buttons = ttk.Frame(box)
@@ -172,9 +198,14 @@ class BandSettings:
         theme.hint(row, text=tr("lauter")).pack(side="left")
         self.gain_shown = ttk.Label(row, width=6, anchor="e")
         self.gain_shown.pack(side="left", padx=(6, 0))
+        theme.hint(box, wrap=440, text=tr(
+            "S/N: Rauschabstand in 2,4 kHz Bandbreite gegenüber dem ungeschwächten Signal; im Ohr, das CW "
+            "wie ein Filter von etwa 50 Hz hört, sind es rund 17 dB mehr.")).grid(
+            row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="w", pady=(6, 0))
         theme.hint(gain, wrap=440, text=tr(
-            "Gegenüber den Zeichen; 100 % ist die normale Mischung. Für das Diplom QRN-fest zählt mindestens "
-            "100 % und mindestens die Stufe.")).pack(anchor="w", pady=(4, 0))
+            "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist "
+            "die normale Mischung, für das Diplom QRN-fest müssen es mindestens 100 % sein.")).pack(
+            anchor="w", pady=(4, 0))
 
         self.rank_var = tk.StringVar(value="")
         theme.hint(frame, textvariable=self.rank_var).pack(anchor="w", pady=(4, 0))
@@ -182,9 +213,17 @@ class BandSettings:
         self._update_window()
 
     def close_window(self) -> None:
+        """Schließt das Fenster und gibt den Fokus zurück, etwa an das
+        Eingabefeld eines laufenden Durchgangs."""
         if self.window is not None:
             self.window.destroy()
             self.window = None
+        focus, self.focus_before = self.focus_before, None
+        try:
+            if focus is not None and focus.winfo_exists():
+                focus.focus_set()
+        except tk.TclError:
+            pass
 
     def _set_all(self, enabled: bool) -> None:
         for on, _ in self.controls.values():
@@ -197,11 +236,17 @@ class BandSettings:
         for key, (scale, shown) in self.widgets.items():
             on, level = self.controls[key]
             scale.state(["!disabled"] if on.get() else ["disabled"])
-            shown.config(text=f"{round(level.get())} %", foreground="" if on.get() else theme.DISABLED)
+            shown.config(text=level_text(key, round(level.get()) / 100, round(self.gain_var.get()) / 100),
+                         foreground="" if on.get() else theme.DISABLED)
         self.gain_shown.config(text=f"{round(self.gain_var.get())} %")
         rank = band.preset_rank(self.spec())
-        self.rank_var.set(tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank])) if rank
-                          else tr("Schwächer als Stufe leicht."))
+        if rank:
+            self.rank_var.set(tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank])))
+        else:
+            light = band.PRESETS["light"]
+            self.rank_var.set(tr("Keiner Stufe zugeordnet: Stufe leicht braucht mindestens Rauschen {snr} "
+                                 "und QSB {qsb} %.").format(snr=level_text("noise", light["noise"]),
+                                                             qsb=round(light["qsb"] * 100)))
 
 
 class BandToggle:
@@ -218,15 +263,27 @@ class BandToggle:
         self.frame.pack(**({"fill": "x", "pady": 1} | pack))
         top = ttk.Frame(self.frame)
         top.pack(fill="x")
-        ttk.Checkbutton(top, text=tr("Bandbedingungen"), variable=variable).pack(side="left")
+        self.check = ttk.Checkbutton(top, text=tr("Bandbedingungen"), variable=variable)
+        self.check.pack(side="left")
         ttk.Button(top, text=tr("Einstellen …"), style="Flat.TButton",
                    command=settings.open_window).pack(side="left", padx=(6, 0))
+        self.locked_hint = theme.hint(top, text=tr("an/aus erst nach dem Durchgang"))
         self.summary_var = tk.StringVar(value="")
         self.summary = theme.hint(self.frame, textvariable=self.summary_var, wrap=520)
         self.summary.pack(anchor="w", padx=(22, 0))
         variable.trace_add("write", lambda *_: self._changed())
         settings.subscribe(self._changed)
         self._show()
+
+    def set_locked(self, locked: bool) -> None:
+        """Während eines Durchgangs: an/aus gesperrt (davon hängt ab, ob er
+        für die Zeichenstatistik zählt); Stärke und Lautstärke bleiben
+        einstellbar."""
+        self.check.state(["disabled"] if locked else ["!disabled"])
+        if locked:
+            self.locked_hint.pack(side="left", padx=(8, 0))
+        else:
+            self.locked_hint.pack_forget()
 
     def _show(self) -> None:
         self.summary_var.set(self.settings.summary())

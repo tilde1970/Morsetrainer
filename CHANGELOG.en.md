@@ -1,5 +1,49 @@
 # Changes
 
+## Unreleased
+
+- **S/N in dB, real levels:** noise is now shown as signal-to-noise ratio
+  (S/N in 2.4 kHz) and ranges from +20 dB to −10 dB; if it gets louder,
+  the “receiver” turns the signal down (like an AGC) instead of clipping.
+  The levels are clearly apart: light +8 dB, medium +2 dB, heavy −4 dB
+  (previously +15, +11 and +7.5 dB – hardly a difference for trained
+  ears). Chirp is shown in Hz.
+- **QSB by level instead of chance:** fading depth follows the slider and
+  varies only a little; two overlaid variations make it irregular as on
+  the air.
+- **Beginners:** switching band conditions on for the first time starts
+  with “light”; the window advises learning new characters without
+  interference. The manual shows what each level contains.
+- **Network:** all participants hear the same fading and the same stations
+  (shared random value from the trainer).
+- **QRN-proof award:** in Continuous only random characters count – plain
+  text is much easier in the noise thanks to context (as with QRQ already).
+  Seals already achieved stay.
+- After closing the settings window, focus returns, e.g. to the entry
+  field of a running session.
+- The noise before and after each sequence fades in and out softly
+  instead of starting abruptly in the headphones.
+- **Fading and QRM keep running:** in Groups, Words, Callsigns and network
+  sequences, QSB and the neighbouring QRM restarted at the same point with
+  every sequence – each group hit the same part of the fading (possibly
+  in the dip for the whole run, or never), and the QRM always sent the same
+  opening. Now they keep running during the answer pause, as on the air.
+- **Interference no longer distorts the statistics:** runs with band
+  conditions no longer count for the character statistics, weighting,
+  confusions and review box (they still appear in the history). To keep
+  this unambiguous, they can be switched on or off in these tabs only
+  between runs; strength and volume still take effect immediately.
+- **Band conditions, polish:** the summary under “More options” is no
+  longer cut off; interference at 0 % counts as off. The settings window
+  stays above the main window and says that on the network the trainer's
+  setting applies. The QRN-proof award condition now also states that band
+  conditions must stay on for the whole run and must not be made easier.
+  In English the award levels are called “conditions light/medium/heavy”
+  instead of “band …”, which sounded like a frequency band.
+- **Network more robust:** nonsensical band-condition values (NaN,
+  infinity) are rejected; prepared interference signals no longer use
+  unlimited memory when the trainer changes the setting often.
+
 ## 2.36
 
 - **Central band conditions:** which interference, how strong and how

@@ -87,9 +87,10 @@ AWARDS = (
     Award("qrq", N_("QRQ"), N_("Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne "
                                "Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten"),
           (20, 25, 30, 35), N_("WPM"), 40, two_days=True),
-    Award("qrn", N_("QRN-fest"), N_("Gruppen oder Kontinuierlich, ≥ 200 Zeichen, Störlautstärke den ganzen "
-                                    "Lauf ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen der "
-                                    "rechtzeitige erste Versuch"),
+    Award("qrn", N_("QRN-fest"), N_("Gruppen oder Kontinuierlich mit Zufallszeichen, ≥ 200 Zeichen, "
+                                    "Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, "
+                                    "Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen "
+                                    "der rechtzeitige erste Versuch"),
           (1, 2, 3), "", 25, two_days=True, stepped=True,
           steps=(N_("Band leicht, ≥ 90 %"), N_("Band mittel, ≥ 90 %"), N_("Band stark, ≥ 85 %"))),
     Award("rufz", N_("Rufz"), N_("Voller Rufz-Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, "
@@ -385,6 +386,8 @@ def _qrn_runs(data: Data) -> list:
             rank = min(rank or 0, BAND_RANK.get(_text(summary.get("band_min")), 0)) or None
         if mode not in ("group", "continuous") or rank is None:
             continue
+        if mode == "continuous" and c.get("content", "chars") != "chars":
+            continue  # Klartext ist im Störnebel viel leichter (Zusammenhang); wie bei QRQ
         # Lautstärke der Störungen: der kleinste Wert im Durchgang (ältere
         # Sitzungen: der beim Start; Kontinuierlich hatte bis 2.35 keinen
         # Regler, also 100 %).

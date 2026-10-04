@@ -290,7 +290,7 @@ class MorseTrainerApp:
         ttk.Button(band_row, text=tr("Einstellen …"), command=self.band_settings.open_window).pack(
             side="left", padx=(6, 8))
         self.band_summary_var = tk.StringVar(value="")
-        theme.hint(band_row, textvariable=self.band_summary_var).pack(side="left")
+        theme.hint(band_row, textvariable=self.band_summary_var, wrap=440).pack(side="left")
         self.band_settings.subscribe(lambda: self.band_summary_var.set(self.band_settings.summary()))
 
         # Sichern und Einlesen aller Einstellungen und Daten (core/backup.py),

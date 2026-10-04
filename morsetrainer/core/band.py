@@ -17,11 +17,13 @@ und mit eigenem Pegel (0..1, siehe EFFECTS):
 Rauschen und SSB-Gebrabbel werden einmal als Schleife per FFT geformt. Weil
 die FFT-Synthese periodisch ist, geht das Ende nahtlos in den Anfang über;
 so kostet das laufende Mischen fast nichts."""
+import math
 import random
+import time
 
 import numpy as np
 
-from morsetrainer.core.morse import SAMPLE_RATE, build_text, silence
+from morsetrainer.core.morse import AMPLITUDE, SAMPLE_RATE, build_text, silence
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
 # indiziert.
@@ -29,9 +31,18 @@ EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm")
 
 NOISE_LOOP_SECONDS = 20
 PASSBAND_HZ = (300, 2700)
-# Rauschpegel (Effektivwert) bei Regler auf 100 %; die Zeichen haben
-# Spitzenwert morse.AMPLITUDE (0,5).
-MAX_NOISE_RMS = 0.25
+# Rauschen als Rauschabstand S/N in dB, gemessen in der Bandbreite des
+# Empfängerfilters (rund 2,4 kHz) gegenüber dem ungeschwächten Signal
+# (Dauerstrich, Effektivwert SIGNAL_RMS): Regler 0 % … 100 % gleichmäßig
+# über SNR_DB_RANGE. Das Ohr hört CW wie durch ein Filter von etwa 50 Hz,
+# dort ist der Abstand rund EAR_GAIN_DB größer.
+SNR_DB_RANGE = (20.0, -10.0)
+SIGNAL_RMS = AMPLITUDE / math.sqrt(2)
+EAR_GAIN_DB = 10 * math.log10(2400 / 50)
+# Lauter als das wird das Rauschen nicht; stattdessen wird alles Übrige
+# leiser, wie bei der Regelung (AGC) eines Empfängers. So übersteuert auch
+# ein Signal unter dem Rauschen nichts.
+NOISE_RMS_CAP = 0.2
 
 # Knackstörungen: mittlere Anzahl pro Sekunde, Länge und Stärke (ein
 # Vielfaches von MAX_QRN_RMS bei Regler auf 100 %).
@@ -40,13 +51,19 @@ CRASH_SECONDS = (0.03, 0.2)
 CRASH_GAIN = (2.0, 5.0)
 MAX_QRN_RMS = 0.25
 
-# QSB: Grundstärke der Stationen (Station 0 ist meist gut zu hören) und
-# Fading-Periode/-Tiefe. Die Werte gelten für Regler auf 50 %; 100 % macht
-# Stärkeunterschiede und Fading doppelt so tief (Fading höchstens 95 %).
-STRENGTH_FIRST = (0.8, 1.0)
+# QSB: Grundstärke der Stationen (Station 0 ist gut zu hören; die Werte
+# gelten für Regler auf 50 %, 100 % macht die Unterschiede doppelt so groß)
+# und Fading. Die Tiefe des Fadings folgt dem Regler (100 % = QSB_MAX_DEPTH,
+# rund −26 dB im tiefsten Loch) mit wenig Streuung je Station, damit die
+# Stufe und nicht der Zufall die Schwierigkeit bestimmt. Zwei überlagerte
+# Schwingungen ungleicher Periode machen den Verlauf unregelmäßig.
+STRENGTH_FIRST = (0.9, 1.0)
 STRENGTH_OTHERS = (0.35, 1.0)
 QSB_PERIOD_SECONDS = (6.0, 30.0)
-QSB_DEPTH = (0.3, 0.85)
+QSB_SECOND_RATIO = (2.2, 3.4)   # zweite Schwingung so viel schneller
+QSB_SECOND_WEIGHT = 0.5
+QSB_MAX_DEPTH = 0.95
+QSB_DEPTH_SPREAD = (0.85, 1.15)
 
 # Chirp: Anteil der Stationen mit „zwitscherndem“ Sender (mindestens eine),
 # Frequenzablage beim Tasten (bei Regler auf 50 %; skaliert linear) und
@@ -210,8 +227,10 @@ class BandConditions:
     `background_gain` skaliert alle Störgeräusche gemeinsam (nicht die
     Stationen selbst), z. B. um sie gegenüber den Zeichen leiser zu machen."""
 
-    def __init__(self, station_count: int):
-        self.rng = np.random.default_rng()
+    def __init__(self, station_count: int, seed=None):
+        """`seed`: gleicher Wert, gleiche Stationen und gleiches Fading (im
+        Netzwerk hören so alle Teilnehmer dieselben Bedingungen)."""
+        self.rng = np.random.default_rng(seed)
         self.noise = _shaped_noise_loop()
         self.enabled = dict.fromkeys(EFFECTS, False)
         self.levels = dict.fromkeys(EFFECTS, 0.5)
@@ -221,10 +240,11 @@ class BandConditions:
         self.strengths = [self.rng.uniform(*STRENGTH_FIRST)] + [
             self.rng.uniform(*STRENGTH_OTHERS) for _ in range(station_count - 1)
         ]
-        self.qsb = [
-            (1 / self.rng.uniform(*QSB_PERIOD_SECONDS), self.rng.uniform(*QSB_DEPTH), self.rng.uniform(0, 2 * np.pi))
-            for _ in range(station_count)
-        ]
+        self.qsb = []  # je Station (Frequenz, Phase, Frequenz 2, Phase 2, Streuung der Tiefe)
+        for _ in range(station_count):
+            freq = 1 / self.rng.uniform(*QSB_PERIOD_SECONDS)
+            self.qsb.append((freq, self.rng.uniform(0, 2 * np.pi), freq * self.rng.uniform(*QSB_SECOND_RATIO),
+                             self.rng.uniform(0, 2 * np.pi), self.rng.uniform(*QSB_DEPTH_SPREAD)))
         chirpy = [self.rng.random() < CHIRP_PROBABILITY for _ in range(station_count)]
         if not any(chirpy):
             chirpy[int(self.rng.integers(station_count))] = True
@@ -270,6 +290,25 @@ class BandConditions:
         self.ssb_pos = int(self.rng.integers(SSB_LOOP_SECONDS * SAMPLE_RATE))
         self.cw_qrm_pos = 0
         self.crash = np.zeros(0, dtype=np.float32)  # Rest einer laufenden Knackstörung
+        self.clock = None  # time.time() zu sample_pos 0, ab dem ersten catch_up()
+
+    def catch_up(self) -> None:
+        """Für Wiedergaben mit Pausen dazwischen (Abfragemodi): Fading,
+        Rauschen und Nachbar-QRM laufen in der Zwischenzeit weiter wie auf dem
+        Band, statt bei jeder Sequenz an derselben Stelle zu beginnen. Schon
+        berechnete, noch nicht gehörte Samples zählen als Vorlauf."""
+        now = time.time()
+        if self.clock is None:
+            self.clock = now - self.sample_pos / SAMPLE_RATE
+        gap = int((now - self.clock) * SAMPLE_RATE) - self.sample_pos
+        if gap <= 0:
+            return
+        self.sample_pos += gap
+        self.noise_pos = (self.noise_pos + gap) % len(self.noise)
+        self.ssb_pos = (self.ssb_pos + gap) % (SSB_LOOP_SECONDS * SAMPLE_RATE)
+        if self.cw_qrm is not None:
+            self.cw_qrm_pos = (self.cw_qrm_pos + gap) % len(self.cw_qrm)
+        self.crash = np.zeros(0, dtype=np.float32)
 
     def process(self, block: np.ndarray, station: int) -> np.ndarray:
         """Ein Block einer einzelnen Station, mit QSB und Hintergrund."""
@@ -280,14 +319,16 @@ class BandConditions:
         einem Block der Länge `n` (kürzere Blöcke werden mit Stille
         aufgefüllt) und legt Rauschen/QRM darunter. Station None steht für
         den eigenen Mithörton (kein QSB)."""
+        noise_rms, agc = self.noise_and_agc()
         out = np.zeros(n, dtype=np.float64)
         for block, station in sources:
-            out[:len(block)] += block[:n] * self.station_gain(station, len(block[:n]))
+            gain = self.station_gain(station, len(block[:n]))
+            out[:len(block)] += block[:n] * (gain if station is None else gain * agc)  # Mithörton ohne AGC
         levels = self.levels
-        background = np.zeros(n, dtype=np.float64)
         if self._on("noise"):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
-            background += noise * (MAX_NOISE_RMS * levels["noise"])
+            out += noise * noise_rms
+        background = np.zeros(n, dtype=np.float64)
         if self._on("qrn"):
             background += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
         ssb, cw_qrm = self.ssb, self.cw_qrm  # können parallel in prepare() entstehen
@@ -297,9 +338,21 @@ class BandConditions:
         if self._on("cw_qrm") and cw_qrm is not None:
             self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos, n)
             background += part * levels["cw_qrm"]
-        out += background * self.background_gain
+        out += background * (self.background_gain * agc)
         self.sample_pos += n
         return soft_limit(out).astype(np.float32)
+
+    def noise_and_agc(self):
+        """(Effektivwert des Rauschens, Faktor für alles Übrige). Der
+        Rauschabstand folgt Regler und Lautstärke (noise_snr_db); wäre das
+        Rauschen lauter als NOISE_RMS_CAP, werden stattdessen die Signale
+        leiser (AGC)."""
+        if not self._on("noise") or self.background_gain <= 0:
+            return 0.0, 1.0
+        rms = SIGNAL_RMS * 10 ** (-noise_snr_db(self.levels["noise"], self.background_gain) / 20)
+        if rms <= NOISE_RMS_CAP:
+            return rms, 1.0
+        return NOISE_RMS_CAP, NOISE_RMS_CAP / rms
 
     def station_gain(self, station, n: int):
         """Lautstärke einer Station über die nächsten `n` Samples (QSB);
@@ -307,11 +360,13 @@ class BandConditions:
         if station is None or not self._on("qsb"):
             return 1.0
         station %= len(self.qsb)
-        scale = 2 * self.levels["qsb"]
-        freq, depth, phase = self.qsb[station]
+        level = self.levels["qsb"]
+        freq, phase, freq2, phase2, spread = self.qsb[station]
         t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
-        fading = 1 - min(depth * scale, 0.95) * 0.5 * (1 + np.sin(2 * np.pi * freq * t + phase))
-        strength = max(1 - (1 - self.strengths[station]) * scale, 0.05)
+        wave = (np.sin(2 * np.pi * freq * t + phase) + QSB_SECOND_WEIGHT * np.sin(2 * np.pi * freq2 * t + phase2))
+        dip = 0.5 * (1 + wave / (1 + QSB_SECOND_WEIGHT))  # 0 … 1
+        fading = 1 - min(level * QSB_MAX_DEPTH * spread, QSB_MAX_DEPTH) * dip
+        strength = max(1 - (1 - self.strengths[station]) * 2 * level, 0.05)
         return strength * fading
 
     def _crashes(self, n: int) -> np.ndarray:
@@ -333,6 +388,18 @@ class BandConditions:
         return (self.noise[start:start + length] * envelope * self.rng.uniform(*CRASH_GAIN)).astype(np.float32)
 
 
+def noise_snr_db(level: float, gain: float = 1.0) -> float:
+    """Rauschabstand in dB (2,4 kHz) für Regler `level` (0..1) und die
+    Lautstärke der Störgeräusche `gain` (größer = mehr Rauschen)."""
+    snr = SNR_DB_RANGE[0] + (SNR_DB_RANGE[1] - SNR_DB_RANGE[0]) * level
+    return snr - 20 * math.log10(gain) if gain > 0 else math.inf
+
+
+def chirp_max_hz(level: float) -> float:
+    """Größte Frequenzablage beim Tasten für Regler `level` (chirp_for)."""
+    return CHIRP_DELTA_HZ[1] * 2 * level
+
+
 def _loop_slice(loop: np.ndarray, pos: int, n: int):
     """Nächste `n` Samples einer Endlosschleife ab `pos`; (neue Position, Samples)."""
     idx = (pos + np.arange(n)) % len(loop)
@@ -340,14 +407,19 @@ def _loop_slice(loop: np.ndarray, pos: int, n: int):
 
 # Stufen als Schnellwahl in der zentralen Einstellung und als Maßstab für
 # das Diplom QRN-fest: Störung -> Pegel.
+# Rauschabstand (noise_snr_db): leicht +8 dB, mittel +2 dB, stark −4 dB in
+# 2,4 kHz (im Ohr rund 17 dB mehr); dazu wachsen QSB und weitere Störungen.
 PRESETS = {
-    "light": {"noise": 0.25, "qsb": 0.3},
-    "medium": {"noise": 0.4, "qrn": 0.3, "qsb": 0.5},
-    "heavy": {"noise": 0.6, "qrn": 0.5, "qsb": 0.8, "cw_qrm": 0.3},
+    "light": {"noise": 0.4, "qsb": 0.3},
+    "medium": {"noise": 0.6, "qrn": 0.3, "qsb": 0.5},
+    "heavy": {"noise": 0.8, "qrn": 0.5, "qsb": 0.8, "cw_qrm": 0.3},
 }
 # Rauschen schon vor dem ersten und noch nach dem letzten Zeichen.
 PRESET_LEAD_SECONDS = (0.4, 0.3)
 PRESET_BLOCK_SECONDS = 0.02
+# Rauschen weich ein- und ausblenden (Kopfhörer); liegt ganz im Vor- bzw.
+# Nachlauf, die Zeichen bleiben unberührt.
+PRESET_FADE_SECONDS = 0.04
 
 
 def preset_conditions(preset: str, freq: int) -> BandConditions:
@@ -362,14 +434,22 @@ def preset_conditions(preset: str, freq: int) -> BandConditions:
 
 def apply_preset(band: BandConditions, samples: np.ndarray) -> tuple[np.ndarray, float]:
     """Legt die Bandbedingungen unter `samples` (Station 0), mit etwas
-    Rauschen davor und danach. Gibt (Samples, Vorlauf in Sekunden) zurück."""
+    Rauschen davor und danach. Gibt (Samples, Vorlauf in Sekunden) zurück.
+    Zwischen zwei Aufrufen laufen die Bedingungen mit der Uhr weiter
+    (catch_up), auch beim Wiederholen derselben Sequenz."""
     lead, tail = PRESET_LEAD_SECONDS
     padded = np.concatenate([silence(lead), samples, silence(tail)])
-    band.rewind()
+    band.catch_up()
     block = int(SAMPLE_RATE * PRESET_BLOCK_SECONDS)
     # Blockweise wie im QSO-Modus, damit Knackstörungen im richtigen Takt kommen.
-    out = [band.mix([(padded[i:i + block], 0)], len(padded[i:i + block])) for i in range(0, len(padded), block)]
-    return np.concatenate(out), lead
+    out = np.concatenate([band.mix([(padded[i:i + block], 0)], len(padded[i:i + block]))
+                          for i in range(0, len(padded), block)])
+    fade = min(int(PRESET_FADE_SECONDS * SAMPLE_RATE), len(out) // 2)
+    if fade:
+        ramp = (0.5 - 0.5 * np.cos(np.linspace(0, np.pi, fade))).astype(np.float32)
+        out[:fade] *= ramp
+        out[-fade:] *= ramp[::-1]
+    return out, lead
 
 
 # --- Zentrale Einstellung --------------------------------------------------
@@ -377,10 +457,18 @@ def apply_preset(band: BandConditions, samples: np.ndarray) -> tuple[np.ndarray,
 # verschickt wird: {"levels": {Störung: Pegel 0..1, nur eingeschaltete},
 # "gain": Lautstärke der Störgeräusche (background_gain)}.
 GAIN_RANGE = (0.1, 1.5)
+# Optional "seed" (0 … SEED_LIMIT − 1): Zufallswert für BandConditions, im
+# Netzwerk vom Trainer je Durchgang gewählt.
+SEED_LIMIT = 2 ** 31
 
 
 def spec_from_preset(preset: str) -> dict:
     return {"levels": dict(PRESETS[preset]), "gain": 1.0}
+
+
+def _number(value) -> bool:
+    """Endliche Zahl (JSON erlaubt auch NaN und Infinity)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def clean_spec(data):
@@ -390,12 +478,16 @@ def clean_spec(data):
         return None
     levels = {}
     for effect, level in data["levels"].items():
-        if effect in EFFECTS and isinstance(level, (int, float)) and not isinstance(level, bool):
+        if effect in EFFECTS and _number(level):
             levels[effect] = min(max(float(level), 0.0), 1.0)
     gain = data.get("gain", 1.0)
-    if not isinstance(gain, (int, float)) or isinstance(gain, bool):
+    if not _number(gain):
         gain = 1.0
-    return {"levels": levels, "gain": min(max(float(gain), GAIN_RANGE[0]), GAIN_RANGE[1])}
+    spec = {"levels": levels, "gain": min(max(float(gain), GAIN_RANGE[0]), GAIN_RANGE[1])}
+    seed = data.get("seed")
+    if isinstance(seed, int) and not isinstance(seed, bool) and 0 <= seed < SEED_LIMIT:
+        spec["seed"] = seed
+    return spec
 
 
 def apply_spec(band: BandConditions, spec) -> None:
@@ -410,7 +502,7 @@ def apply_spec(band: BandConditions, spec) -> None:
 
 
 def conditions(spec, freq: int, stations: int = 1) -> BandConditions:
-    band = BandConditions(stations)
+    band = BandConditions(stations, spec.get("seed") if spec else None)
     apply_spec(band, spec)
     band.prepare(freq)
     return band
@@ -418,7 +510,7 @@ def conditions(spec, freq: int, stations: int = 1) -> BandConditions:
 
 def spec_key(spec) -> tuple:
     """Hashbarer Schlüssel einer Spec, z. B. für einen Cache."""
-    return tuple(sorted(spec["levels"].items())), spec["gain"]
+    return tuple(sorted(spec["levels"].items())), spec["gain"], spec.get("seed")
 
 
 def preset_rank(spec):

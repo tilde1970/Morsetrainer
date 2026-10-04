@@ -48,7 +48,7 @@ from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource, qso_sections
-from morsetrainer.modes.sequence_mode import HISTORY_LEN, answer_limit
+from morsetrainer.modes.sequence_mode import HISTORY_LEN
 from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
@@ -103,6 +103,10 @@ DEFAULT_ANSWER_S = 8
 TABLE_ROWS = (6, 12)
 # Antwortbogen: so viele Zeilen, wenn die Anzahl nicht feststeht (bis Stop, QSOs).
 SHEET_DEFAULT_ROWS = 25
+
+
+# So viele Bandbedingungen (Einstellung, Tonhöhe) hält _band() vorrätig.
+BAND_CACHE_SIZE = 4
 
 
 def make_pin() -> str:
@@ -208,6 +212,7 @@ class NetworkModeFrame:
         self.server = None
         self.board = None
         self.run_active = False
+        self.run_seed = 0          # Zufallswert der Bandbedingungen (_host_spec)
         self.run_token = 0
         self.run_started = 0.0
         self.source = None
@@ -346,7 +351,7 @@ class NetworkModeFrame:
             "vermutlich mit.")).pack(anchor="w", pady=(0, 2))
 
         self.band_var = tk.BooleanVar(value=False)
-        BandToggle(options, self.band_settings, self.band_var)
+        self.band_toggle = BandToggle(options, self.band_settings, self.band_var)
         self.signs_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(options, text=tr("Anfangs- und Schlusszeichen senden (VVV = und +)"),
                         variable=self.signs_var).pack(anchor="w", pady=1)
@@ -904,6 +909,8 @@ class NetworkModeFrame:
         for name in self.server.names():
             self.board.add_participant(name)
         self.run_active = True
+        self.band_toggle.set_locked(True)
+        self.run_seed = random.randrange(band.SEED_LIMIT)
         self.run_paced = self.flow_var.get() == PACED
         self.run_continuous = continuous
         self.duration_s = duration * 60
@@ -1090,6 +1097,7 @@ class NetworkModeFrame:
         if self.run_continuous:
             self._stop_stream()
         self.run_active = False
+        self.band_toggle.set_locked(False)
         self.run_token += 1
         if self.server is not None:
             wpm = self.item["wpm"] if self.item else self.wpm_var.get()
@@ -1657,7 +1665,8 @@ class NetworkModeFrame:
         if kind == "start":
             wpm, fw = message.get("wpm"), message.get("fw")
             self._start_client_run(str(message.get("charset", ""))[:100], wpm if isinstance(wpm, int) else 0,
-                                   fw if isinstance(fw, int) else None, kind=message.get("kind"))
+                                   fw if isinstance(fw, int) else None, kind=message.get("kind"),
+                                   band_on=message_spec(message) is not None)
             if message.get("signs") is True:
                 self._client_signs(START_TEXT + " ", message)
                 self.trainee_status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
@@ -1695,13 +1704,15 @@ class NetworkModeFrame:
             self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
                 correct=self.run_correct, total=self.run_total) if self.run_total else tr("Durchgang beendet."))
 
-    def _start_client_run(self, charset, wpm, fw, kind=None):
+    def _start_client_run(self, charset, wpm, fw, kind=None, band_on=False):
         """`kind`: Inhaltsart des Trainers; Klartext zählt nicht für die
-        Zeichenstatistik (unbekannt, etwa beim Dazukommen: zählt)."""
+        Zeichenstatistik (unbekannt, etwa beim Dazukommen: zählt), ebenso
+        wenig ein Durchgang mit Bandbedingungen (`band_on`)."""
         self._end_client_run()
         self.practice_start()
+        plain = isinstance(kind, str) and kind in PLAIN_TEXT
         self.session_stats = SessionStats(self.session_mode, charset, wpm, self._freq(), farnsworth_wpm=fw,
-                                          char_stats=not (isinstance(kind, str) and kind in PLAIN_TEXT))
+                                          char_stats=not plain and not band_on)
         # Latenz für richtig, aber unsicher (Wiederholung, zu langsam): wie in
         # sequence_mode doppelt so lang wie üblich, höchstens LATENCY_CAP_S.
         median = CharPicker(charset, weighted=True).median_latency() if charset else None
@@ -1745,7 +1756,8 @@ class NetworkModeFrame:
         if self.current is not None and not self.answered:
             self.submit(timed_out=True)
         if self.session_stats is None:
-            self._start_client_run("", wpm, fw)  # mitten im Durchgang dazugekommen
+            # Mitten im Durchgang dazugekommen.
+            self._start_client_run("", wpm, fw, band_on=message_spec(item) is not None)
         paced = item.get("paced") is True
         self.current = {"n": item["n"], "text": str(item["text"])[:protocol.TEXT_MAX], "wpm": wpm, "fw": fw,
                         "band": message_spec(item), "paced": paced, "silent": item.get("silent") is True,
@@ -1783,7 +1795,7 @@ class NetworkModeFrame:
         if self.stream is not None:
             self._finish_stream(stopped_at=time.time())
         if self.session_stats is None:
-            self._start_client_run("", wpm, fw)
+            self._start_client_run("", wpm, fw, band_on=message_spec(message) is not None)
         self.current = None
         entries, seconds = net_stream.timeline(groups, wpm, fw)
         silent = message.get("silent") is True
@@ -1883,12 +1895,20 @@ class NetworkModeFrame:
         return freq if 300 <= freq <= 1000 else 600
 
     def _host_spec(self):
-        """Bandbedingungen, die der Trainer gerade mitschickt, oder None."""
-        return self.band_settings.spec() if self.band_var.get() else None
+        """Bandbedingungen, die der Trainer gerade mitschickt, oder None; mit
+        dem Zufallswert des Durchgangs, damit alle (auch der Trainer selbst)
+        dieselben Stationen und dasselbe Fading hören."""
+        if not self.band_var.get():
+            return None
+        return {**self.band_settings.spec(), "seed": self.run_seed}
 
     def _band(self, spec, freq):
         key = (band.spec_key(spec), freq)
         if key not in self._band_cache:
+            # Jede Einstellung hält eigene Störsignale (CW-QRM mehrere MB);
+            # ändert der Trainer sie oft, nicht alle aufheben.
+            if len(self._band_cache) >= BAND_CACHE_SIZE:
+                self._band_cache.clear()
             self._band_cache[key] = band.conditions(spec, freq)
         return self._band_cache[key]
 
