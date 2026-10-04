@@ -131,8 +131,10 @@ highest level.
 | Q-code expert | – | 40 | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
 | All digits | – | 39 | All 10 digits at least in box 3, reached with characters ≥ 18 WPM |
 
-- For flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need two
-  different days** – one lucky run is not enough.
+- For Koch, flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need
+  two different days** – one lucky run is not enough. Starting straight at
+  lesson 41 gives Bronze on the first day and Silver and Gold with another
+  passed run on a different day.
 - Only runs without self-assessment count.
 - Seals achieved are kept with their date in the database and are
   never lost, not even with “Reset overall statistics”.

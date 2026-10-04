@@ -55,10 +55,23 @@ class AwardsTest(unittest.TestCase):
     def test_koch_gold_with_final_lesson(self):
         runs = [session("group", 0, lesson=25, first_try_correct=50, first_try_total=50),
                 session("group", 1, lesson=40, first_try_correct=50, first_try_total=50)]
-        self.assertEqual(dates("koch", data(runs)), [day(0), day(0), None])
-        runs.append(session("group", 2, lesson=koch.lesson_of(koch.FINAL_CHARSET), first_try_correct=50,
-                            first_try_total=50))
-        self.assertEqual(dates("koch", data(runs)), [day(0), day(0), day(2)])
+        # Silber und höher an zwei verschiedenen Tagen: Lektion 40 zählt auch für 25.
+        self.assertEqual(dates("koch", data(runs)), [day(0), day(1), None])
+        final = koch.lesson_of(koch.FINAL_CHARSET)
+        runs.append(session("group", 2, lesson=final, first_try_correct=50, first_try_total=50))
+        self.assertEqual(dates("koch", data(runs)), [day(0), day(1), None])  # erst ein Tag mit 41
+        runs.append(session("continuous", 4, lesson=final, content="chars", total=60, correct=60,
+                            accuracy_pct=100.0))
+        self.assertEqual(dates("koch", data(runs)), [day(0), day(1), day(4)])
+
+    def test_koch_entry_at_final_lesson_needs_a_second_day(self):
+        # Einstieg in Lektion 41: ein Glückstreffer bringt nur Bronze.
+        final = koch.lesson_of(koch.FINAL_CHARSET)
+        runs = [session("group", 0, lesson=final, first_try_correct=58, first_try_total=60),
+                session("group", 0, lesson=final, first_try_correct=59, first_try_total=60)]
+        self.assertEqual(dates("koch", data(runs)), [day(0), None, None])
+        runs.append(session("group", 1, lesson=final, first_try_correct=57, first_try_total=60))
+        self.assertEqual(dates("koch", data(runs)), [day(0), day(1), day(1)])
 
     def test_worked_all_letters_counts_best_box(self):
         review = {ch: {"box": 0, "best_box": 2, "best_day": day(i).isoformat()} for i, ch in enumerate("ABCDEFGHIJ")}

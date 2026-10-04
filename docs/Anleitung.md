@@ -127,8 +127,10 @@ und drucken“ zeigt das Diplom der höchsten Stufe.
 | Q-Gruppen-Kenner | – | 40 | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
 | Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3, erreicht mit Zeichen ≥ 18 WPM |
 
-- Bei Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher erst
-  an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht.
+- Bei Koch, Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher
+  erst an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht. Wer
+  gleich in Lektion 41 einsteigt, bekommt am ersten Tag Bronze und mit einem
+  weiteren bestandenen Lauf an einem anderen Tag Silber und Gold.
 - Gezählt werden nur Durchgänge ohne Selbstbewertung.
 - Erreichte Siegel stehen mit Datum in der Datenbank und gehen nie
   verloren, auch nicht mit „Gesamtstatistik zurücksetzen“.

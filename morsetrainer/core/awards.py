@@ -73,7 +73,8 @@ class Award:
 
 AWARDS = (
     Award("koch", N_("Koch"), N_("Bestandener Aufstiegslauf (≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, "
-                                "Zeichen ≥ 18 WPM)"), (10, 25, koch.FINAL_LESSON), N_("Lektionen"), 1),
+                                "Zeichen ≥ 18 WPM)"), (10, 25, koch.FINAL_LESSON), N_("Lektionen"), 1,
+          two_days=True),
     Award("wal", N_("Worked All Letters"), N_("Fächer der Lernkartei, erreicht mit Zeichen ≥ 18 WPM"),
           (1, 2, 3), N_("Zeichen"), 1, stepped=True,
           steps=(N_("10 Buchstaben in Fach 3"), N_("alle 26 Buchstaben in Fach 3"),
