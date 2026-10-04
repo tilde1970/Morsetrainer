@@ -1,5 +1,12 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Gesamtstatistik zurücksetzen:** Die Abfrage sagt jetzt genau, was
+  gelöscht wird (Statistik je Zeichen, Lernkartei, Verwechslungen) und was
+  bleibt. Bisher fehlte die Lernkartei, und die Rede war noch von
+  Logdateien, die es seit 2.28 nicht mehr gibt.
+
 ## 2.35
 
 - **Diplom-Vorschau:** „Vorschau: nächstes Ziel“ im Reiter Statistik unter

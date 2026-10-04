@@ -905,9 +905,13 @@ class MorseTrainerApp:
     def _reset_all_time(self):
         if messagebox.askyesno(
             tr("Gesamtstatistik zurücksetzen"),
-            tr("Die komplette Gesamtstatistik (alle bisherigen Durchgänge) wirklich löschen?\n"
-               "Das kann nicht rückgängig gemacht werden. Die einzelnen Sitzungs-Logdateien "
-               "in stats/ bleiben davon unberührt."),
+            tr("Gesamtstatistik wirklich zurücksetzen?\n\n"
+               "Gelöscht werden die Statistik je Zeichen, die Lernkartei (alle Zeichen fangen "
+               "wieder in Fach 1 an) und die bisherigen Verwechslungen.\n\n"
+               "Erhalten bleiben die einzelnen Durchgänge, Koch-Lektion, Tagesübung, "
+               "Lebenslinie, erreichte Diplome und Einstellungen.\n\n"
+               "Das kann nicht rückgängig gemacht werden – vorher am besten unter "
+               "„Weitere Optionen → Daten“ sichern."),
         ):
             stats.reset_all_time()
             self._refresh_all_time()

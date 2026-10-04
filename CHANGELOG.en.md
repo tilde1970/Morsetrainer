@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+- **Reset overall statistics:** the confirmation now says exactly what is
+  deleted (statistics per character, review box, confusions) and what is
+  kept. Until now it did not mention the review box and still referred to
+  log files that no longer exist since 2.28.
+
 ## 2.35
 
 - **Award preview:** “Preview: next goal” in the Statistics tab under

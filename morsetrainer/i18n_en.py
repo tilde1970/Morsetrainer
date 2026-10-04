@@ -116,11 +116,19 @@ EN.update({
     "{sent} {arrow} {typed}   {count:>3}×   ({share:.0%} der {sent})":
         "{sent} {arrow} {typed}   {count:>3}×   ({share:.0%} of {sent})",
     "Noch zu wenige Verwechslungen zum gezielten Üben.": "Not enough confusions yet for targeted practice.",
-    "Die komplette Gesamtstatistik (alle bisherigen Durchgänge) wirklich löschen?\n"
-    "Das kann nicht rückgängig gemacht werden. Die einzelnen Sitzungs-Logdateien "
-    "in stats/ bleiben davon unberührt.":
-        "Really delete the complete overall statistics (all previous sessions)?\n"
-        "This cannot be undone. The individual session log files in stats/ are not affected.",
+    "Gesamtstatistik wirklich zurücksetzen?\n\n"
+    "Gelöscht werden die Statistik je Zeichen, die Lernkartei (alle Zeichen fangen "
+    "wieder in Fach 1 an) und die bisherigen Verwechslungen.\n\n"
+    "Erhalten bleiben die einzelnen Durchgänge, Koch-Lektion, Tagesübung, "
+    "Lebenslinie, erreichte Diplome und Einstellungen.\n\n"
+    "Das kann nicht rückgängig gemacht werden – vorher am besten unter "
+    "„Weitere Optionen → Daten“ sichern.":
+        "Really reset the overall statistics?\n\n"
+        "This deletes the statistics per character, the review box (all characters start "
+        "again in box 1) and the confusions so far.\n\n"
+        "Kept are the individual runs, Koch lesson, daily practice, lifeline, awards "
+        "achieved and settings.\n\n"
+        "This cannot be undone – best back up first under “More options → Data”.",
     "Einzelzeichen": "Characters",  # Reitername, kurz wie die übrigen
     "Gruppen": "Groups",
     "Wörter": "Words",
