@@ -74,6 +74,12 @@ UPDATE_POLL_MS = 500
 class MorseTrainerApp:
     def __init__(self, root):
         self.root = root
+        # Eingabemethode (ibus u. a., XIM) aus: Unter X11 kostet sie jedes
+        # Fenster eine Rundreise zum IM-Server – das Hauptfenster brauchte
+        # 9 s statt unter 1 s, und antwortet der Server nicht, hängt Tk.
+        # Umlaute der Tastatur gehen weiter, nur Tottasten/Compose nicht.
+        if root.tk.call("tk", "windowingsystem") == "x11":
+            root.tk.call("tk", "useinputmethods", "0")
         self.running_mode = False
         # „Fällige gezielt üben“: (Zeichensatz davor, erweiterter Zeichensatz);
         # nach dem Durchgang kommt der alte zurück, siehe _handle_mode_stop.

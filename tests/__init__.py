@@ -9,6 +9,10 @@ from pathlib import Path
 
 # Die Tests prüfen deutsche Texte, unabhängig von der Spracheinstellung.
 os.environ["MORSETRAINER_LANG"] = "de"
+# Ohne Eingabemethode (ibus): Mit ihr kostet unter X11 jedes Tk-Fenster eine
+# Rundreise zum IM-Server, die Tests liefen zehnmal so lange und blieben ab
+# und zu ganz hängen. Muss vor dem ersten tk.Tk() gesetzt sein.
+os.environ["XMODIFIERS"] = "@im=none"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
