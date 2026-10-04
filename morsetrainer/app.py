@@ -15,7 +15,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, awards, backup, errorlog, koch, migration, practice, review, stats, storage, tempo
+from morsetrainer.core import audio, awards, backup, band, errorlog, koch, migration, practice, review, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, tr
@@ -30,6 +30,7 @@ from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.net import update
 from morsetrainer.widgets.awards_panel import AwardsPanel, DiplomaWindow
+from morsetrainer.widgets.band_settings import BandSettings
 from morsetrainer.widgets.daily_panel import DailyBar
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.lifeline_widget import LifelinePanel
@@ -280,6 +281,17 @@ class MorseTrainerApp:
         self.language_box.bind("<<ComboboxSelected>>", lambda e: self._choose_language())
         self.language_hint_var = tk.StringVar(value="")
         theme.hint(language, textvariable=self.language_hint_var).pack(side="left")
+
+        # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
+        self.band_settings = BandSettings(self.root)
+        band_row = ttk.Frame(self.more_frame)
+        band_row.pack(fill="x", pady=2)
+        ttk.Label(band_row, text=tr("Bandbedingungen")).pack(side="left")
+        ttk.Button(band_row, text=tr("Einstellen …"), command=self.band_settings.open_window).pack(
+            side="left", padx=(6, 8))
+        self.band_summary_var = tk.StringVar(value="")
+        theme.hint(band_row, textvariable=self.band_summary_var).pack(side="left")
+        self.band_settings.subscribe(lambda: self.band_summary_var.set(self.band_settings.summary()))
 
         # Sichern und Einlesen aller Einstellungen und Daten (core/backup.py),
         # etwa für den Umzug auf einen neuen Rechner.
@@ -635,6 +647,7 @@ class MorseTrainerApp:
                 settings[key] = var.get()
             except tk.TclError:
                 pass  # Feld gerade leer/ungültig: zuletzt gespeicherten Wert behalten
+        settings["band"] = self.band_settings.settings()
         return settings
 
     def _restore_shared_settings(self) -> None:
@@ -642,7 +655,10 @@ class MorseTrainerApp:
         Werte werden ignoriert, dann bleibt der Standardwert."""
         saved = self.saved_state.get("shared")
         if not isinstance(saved, dict):
-            return
+            saved = {}
+        if not self.band_settings.restore(saved.get("band")):
+            self._migrate_band_settings()
+        self.band_summary_var.set(self.band_settings.summary())
         for key, (var, limits) in self._shared_vars().items():
             value = saved.get(key)
             if isinstance(var, tk.BooleanVar):
@@ -653,6 +669,25 @@ class MorseTrainerApp:
                     var.set(value)
             elif isinstance(value, str) and value.strip():
                 var.set(value)
+
+    def _migrate_band_settings(self) -> None:
+        """Bis Version 2.35 hatte jeder Reiter seine eigenen Bandbedingungen:
+        QSO und Contest je Störung, die übrigen eine Stufe (Gruppen usw. mit
+        eigener Lautstärke). Die erste Einstellung, die an war, wird zentral."""
+        if not any(self.band_settings.restore_panel(self._saved_mode_settings(title).get("band"))
+                   for title in ("QSO", "Contest")):
+            for title in ("Gruppen", "Wörter", "Rufzeichen", "Kontinuierlich", "Netzwerk"):
+                preset = self._saved_mode_settings(title).get("band")
+                if preset in band.PRESETS:
+                    self.band_settings.set_preset(preset, notify=False)
+                    break
+        for title in ("Gruppen", "Wörter", "Rufzeichen"):
+            data = self._saved_mode_settings(title)
+            gain = data.get("band_gain")
+            if data.get("band") in band.PRESETS and isinstance(gain, int) and not isinstance(gain, bool):
+                spec = self.band_settings.spec()
+                self.band_settings.restore({**spec, "gain": gain / 100})
+                break
 
     def farnsworth_wpm(self):
         """Effektive Farnsworth-Geschwindigkeit, oder None wenn aus bzw.
@@ -941,6 +976,8 @@ class MorseTrainerApp:
             tab = ttk.Frame(self.notebook)
             self.notebook.add(tab, text=tr(title))
             extra = {"vary_var": self.vary_var} if getattr(frame_cls, "uses_vary", False) else {}
+            if getattr(frame_cls, "uses_band", False):
+                extra["band_settings"] = self.band_settings
             if getattr(frame_cls, "uses_tempo_adjust", False):
                 extra["adjust_tempo"] = self.adjust_tempo
             if getattr(frame_cls, "uses_network_hooks", False):

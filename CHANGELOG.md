@@ -2,6 +2,14 @@
 
 ## Unveröffentlicht
 
+- **Bandbedingungen zentral:** Welche Störungen wie stark und wie laut,
+  stellst du jetzt an einer Stelle ein (Weitere Optionen oder „Einstellen …“
+  im Reiter); die Reiter schalten sie nur noch an oder aus. Damit gibt es
+  alle sechs Störungen (auch Chirp, SSB-Gebrabbel, CW-QRM) und die
+  Lautstärke überall, nicht mehr nur in QSO und Contest. Leicht, mittel und
+  stark bleiben als Schnellwahl und für das Diplom QRN-fest. Alte
+  Einstellungen werden übernommen. Im Netzwerk hören Teilnehmer ab dieser
+  Version genau die Einstellung des Trainers, ältere die nächste Stufe.
 - **Gesamtstatistik zurücksetzen:** Die Abfrage sagt jetzt genau, was
   gelöscht wird (Statistik je Zeichen, Lernkartei, Verwechslungen) und was
   bleibt. Bisher fehlte die Lernkartei, und die Rede war noch von

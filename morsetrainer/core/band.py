@@ -338,9 +338,8 @@ def _loop_slice(loop: np.ndarray, pos: int, n: int):
     idx = (pos + np.arange(n)) % len(loop)
     return int((pos + n) % len(loop)), loop[idx]
 
-# Stufen für die Übungsmodi mit Einzelsequenzen (Gruppen, Wörter,
-# Rufzeichen): Störung -> Pegel. Dort gibt es keine eigenen Regler, nur
-# die Wahl der Stufe und die Lautstärke der Störungen (background_gain).
+# Stufen als Schnellwahl in der zentralen Einstellung und als Maßstab für
+# das Diplom QRN-fest: Störung -> Pegel.
 PRESETS = {
     "light": {"noise": 0.25, "qsb": 0.3},
     "medium": {"noise": 0.4, "qrn": 0.3, "qsb": 0.5},
@@ -371,3 +370,64 @@ def apply_preset(band: BandConditions, samples: np.ndarray) -> tuple[np.ndarray,
     # Blockweise wie im QSO-Modus, damit Knackstörungen im richtigen Takt kommen.
     out = [band.mix([(padded[i:i + block], 0)], len(padded[i:i + block])) for i in range(0, len(padded), block)]
     return np.concatenate(out), lead
+
+
+# --- Zentrale Einstellung --------------------------------------------------
+# Eine „Spec“ ist ein schlichtes dict, wie es gespeichert und im Netzwerk
+# verschickt wird: {"levels": {Störung: Pegel 0..1, nur eingeschaltete},
+# "gain": Lautstärke der Störgeräusche (background_gain)}.
+GAIN_RANGE = (0.1, 1.5)
+
+
+def spec_from_preset(preset: str) -> dict:
+    return {"levels": dict(PRESETS[preset]), "gain": 1.0}
+
+
+def clean_spec(data):
+    """Prüft eine Spec aus einer Datei oder vom Netzwerk; None, wenn sie
+    unbrauchbar ist. Unbekannte Störungen fallen weg, Werte werden begrenzt."""
+    if not isinstance(data, dict) or not isinstance(data.get("levels"), dict):
+        return None
+    levels = {}
+    for effect, level in data["levels"].items():
+        if effect in EFFECTS and isinstance(level, (int, float)) and not isinstance(level, bool):
+            levels[effect] = min(max(float(level), 0.0), 1.0)
+    gain = data.get("gain", 1.0)
+    if not isinstance(gain, (int, float)) or isinstance(gain, bool):
+        gain = 1.0
+    return {"levels": levels, "gain": min(max(float(gain), GAIN_RANGE[0]), GAIN_RANGE[1])}
+
+
+def apply_spec(band: BandConditions, spec) -> None:
+    """Überträgt eine Spec auf BandConditions (None: alles aus). Auch
+    während der Wiedergabe; danach band.prepare() aufrufen."""
+    levels = spec["levels"] if spec else {}
+    for effect in EFFECTS:
+        band.enabled[effect] = effect in levels
+        if effect in levels:
+            band.levels[effect] = levels[effect]
+    band.background_gain = spec["gain"] if spec else 1.0
+
+
+def conditions(spec, freq: int, stations: int = 1) -> BandConditions:
+    band = BandConditions(stations)
+    apply_spec(band, spec)
+    band.prepare(freq)
+    return band
+
+
+def spec_key(spec) -> tuple:
+    """Hashbarer Schlüssel einer Spec, z. B. für einen Cache."""
+    return tuple(sorted(spec["levels"].items())), spec["gain"]
+
+
+def preset_rank(spec):
+    """Schwerste Stufe aus PRESETS, die die Spec mindestens erreicht (jede
+    Störung der Stufe mindestens so stark), oder None. Die Lautstärke zählt
+    hier nicht; das Diplom prüft sie getrennt."""
+    levels = spec["levels"] if spec else {}
+    rank = None
+    for preset, wanted in PRESETS.items():  # leicht -> stark
+        if all(levels.get(effect, 0.0) >= level - 1e-9 for effect, level in wanted.items()):
+            rank = preset
+    return rank

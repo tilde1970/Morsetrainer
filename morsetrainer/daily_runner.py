@@ -25,7 +25,7 @@ from morsetrainer.widgets.awards_panel import seal_name
 MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter", "callsign": "Rufzeichen",
                "continuous": "Kontinuierlich"}
 # Feste Einstellungen je Modus (Schlüssel wie settings() des Reiters).
-_SEQUENCE = {"adaptive_tempo": False, "band": None, "give_up": 1}
+_SEQUENCE = {"adaptive_tempo": False, "band": False, "give_up": 1}
 MODE_SETTINGS = {
     # Das Zeitlimit kommt aus daily.warmup_limit(): ein Limit aus dem Reiter
     # soll nicht ins Aufwärmen nachwirken.
@@ -33,7 +33,7 @@ MODE_SETTINGS = {
     "group": {**_SEQUENCE, "input_style": COPY, "adaptive": True, "min_len": 2, "max_len": 6},
     "word": {**_SEQUENCE, "input_style": MEMORIZE},
     "callsign": {**_SEQUENCE, "input_style": COPY, "prefixes": "", "learned_only": True, "rufz": False},
-    "continuous": {"band": None},
+    "continuous": {"band": False},
 }
 # Ein Block, der kürzer lief, wurde von Hand gestoppt (die Reiter enden
 # sonst erst nach Ablauf der Zeit und der letzten Eingabe).

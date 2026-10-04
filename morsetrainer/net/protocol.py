@@ -35,6 +35,11 @@ Protokoll: Ist die des Trainers neuer, bietet der Teilnehmer ein Update an
     end     {"signs", "wpm", "band", "silent"}
                                               Durchgang zu Ende; "signs": + spielen
 
+"band" ist die Stufe der Bandbedingungen ("light", "medium", "heavy" oder
+null = ohne); ab Version 2.36 kommt bei start, item, stream und end dazu
+"band_spec" mit allen Werten der zentralen Einstellung (core/band.py,
+clean_spec). Ältere Teilnehmer nehmen dann die Stufe.
+
 Beide Richtungen:
     ping    {}                                Lebenszeichen, sonst ohne Bedeutung
 

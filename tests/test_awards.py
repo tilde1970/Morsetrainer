@@ -22,7 +22,7 @@ def session(mode, offset=0, chars=(), groups=(), **config_and_summary):
     summary = {}
     for key, value in config_and_summary.items():
         (summary if key in ("total", "correct", "accuracy_pct", "extra_keys", "completed", "duration_s",
-                            "first_try_correct", "first_try_total", "band_gain_min") else config)[key] = value
+                            "first_try_correct", "first_try_total", "band_gain_min", "band_min") else config)[key] = value
     return Session(day(offset), config, summary, list(chars), list(groups))
 
 
@@ -125,6 +125,15 @@ class AwardsTest(unittest.TestCase):
                 session("group", 1, **base, first_try_correct=170, first_try_total=200),  # zu viel überlegt
                 session("group", 2, **base, first_try_correct=185, first_try_total=200, band_gain_min=100)]
         self.assertEqual(dates("qrn", data(runs))[0], day(2))
+
+    def test_qrn_counts_weakest_band_level_of_the_run(self):
+        base = dict(charset=koch.lesson_charset(30), total=200, correct=200, accuracy_pct=100.0, band_gain=100,
+                    band_gain_min=100, wpm=20, farnsworth_wpm=12, completed=True, extra_keys=0, duration_s=200)
+        runs = [session("group", 0, band="heavy", band_min="light", **base),  # mittendrin leichter gestellt
+                session("group", 1, band="heavy", band_min=None, **base),     # zwischendurch aus
+                session("continuous", 2, band="medium", band_min="medium", **{**base, "band_gain_min": 80}),
+                session("continuous", 3, band="medium", band_min="medium", content="chars", **base)]
+        self.assertEqual([(d, rank) for d, rank, _ in awards._qrn_runs(data(runs))], [(day(0), 1), (day(3), 2)])
 
     def test_hints_show_how_close_the_next_level_is(self):
         base = dict(charset=koch.lesson_charset(30), total=200, correct=170, accuracy_pct=85.0, band_gain=100)

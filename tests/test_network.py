@@ -1249,12 +1249,11 @@ class NetworkTabTest(unittest.TestCase):
         from morsetrainer.core import audio
         from morsetrainer.core.morse import END_TEXT, START_TEXT
         from morsetrainer.modes import network_mode
-        from morsetrainer.modes.sequence_mode import BAND_LABELS
         self.connect()
         self.wpm.set(40)
         self.trainer.signs_var.set(True)
         self.trainer.listen_var.set(True)
-        self.trainer.band_var.set(next(label for label, preset in BAND_LABELS.items() if preset))
+        self.trainer.band_var.set(True)
         self.trainer.content_var.set("Eigener Text")
         self.trainer.custom_text.insert("1.0", "KM\n")
         with mock.patch.object(audio, "play_quietly") as quietly, mock.patch.object(audio, "play"), \
@@ -1283,7 +1282,7 @@ class NetworkTabTest(unittest.TestCase):
         # F7 während VVV =: die erste Sequenz kommt sofort, nicht doppelt.
         self.trainer.stop_run()
         self.trainer.speaker_var.set(False)
-        self.trainer.band_var.set("aus")
+        self.trainer.band_var.set(False)
         with mock.patch.object(audio, "play_quietly"), mock.patch.object(audio, "play"):
             self.trainer.custom_text.insert("1.0", "UR\n")
             self.trainer.start_run()

@@ -37,12 +37,13 @@ import numpy as np
 from morsetrainer.core import align, audio
 from morsetrainer.core import qso_text
 from morsetrainer.core import stats
-from morsetrainer.core.band import BandConditions
+from morsetrainer.core.band import BandConditions, apply_spec
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE, build_text
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.qso_quiz import is_correct
 from morsetrainer.widgets import theme
-from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ChoiceBox, ScrollableFrame
+from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
+from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 TICK_MS = 30
 MIX_CHUNK_SECONDS = 0.02
@@ -181,8 +182,12 @@ def call_matches(sent: str, call: str) -> str:
 
 
 class RunModeFrame:
-    def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop):
+    uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
+
+    def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
+                 band_settings=None):
         self.root = parent.winfo_toplevel()
+        self.band_settings = band_settings or BandSettings(self.root)
         self.wpm_var = wpm_var
         self.freq_var = freq_var
         self.on_start_cb = on_start
@@ -342,7 +347,9 @@ class RunModeFrame:
         self.log_tree.pack(fill="x")
 
         # Unten, damit Eingabe und Log im laufenden Contest ohne Scrollen sichtbar sind.
-        self.band_panel = BandSettingsPanel(parent, on_change=self._apply_band_settings)
+        self.band_var = tk.BooleanVar(value=False)
+        BandToggle(parent, self.band_settings, self.band_var, on_change=self._apply_band_settings, padx=12,
+                   pady=(2, 4))
 
         self._on_setup_change()
 
@@ -375,7 +382,7 @@ class RunModeFrame:
 
     def _apply_band_settings(self):
         if self.band is not None:
-            self.band_panel.apply_to(self.band)
+            apply_spec(self.band, self.band_settings.spec() if self.band_var.get() else None)
             self.band.prepare(self.freq)
 
     # --- Ablauf -----------------------------------------------------------
@@ -777,7 +784,7 @@ class RunModeFrame:
             "duration": duration,
             "wpm_spread": self._int_or(self.wpm_spread_var, CALLER_WPM_SPREAD),
             "freq_spread": self._int_or(self.freq_spread_var, CALLER_FREQ_OFFSET_HZ),
-            "band": self.band_panel.settings(),
+            "band": self.band_var.get(),
         }
 
     @staticmethod
@@ -802,7 +809,8 @@ class RunModeFrame:
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)
-        self.band_panel.restore(data.get("band"))
+        if "band" in data and toggle_value(data["band"]) is not None:
+            self.band_var.set(toggle_value(data["band"]))
         self._on_setup_change()
 
     def on_close(self):

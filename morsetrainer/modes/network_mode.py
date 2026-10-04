@@ -48,7 +48,7 @@ from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource, qso_sections
-from morsetrainer.modes.sequence_mode import BAND_LABELS, HISTORY_LEN, answer_limit
+from morsetrainer.modes.sequence_mode import HISTORY_LEN, answer_limit
 from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
@@ -59,6 +59,7 @@ from morsetrainer.net.scoreboard import (
 )
 from morsetrainer.net.server import TrainerServer
 from morsetrainer.widgets import theme
+from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
@@ -108,10 +109,26 @@ def make_pin() -> str:
     return f"{random.randint(0, 9999):04d}"
 
 
-def sequence_seconds(text: str, wpm: int, fw, band_preset) -> float:
+def band_fields(spec) -> dict:
+    """Bandbedingungen für eine Nachricht: "band_spec" mit allen Werten und
+    für ältere Versionen (bis 2.35) unter "band" die nächstliegende Stufe."""
+    if spec is None:
+        return {"band": None}
+    return {"band": band.preset_rank(spec) or "light", "band_spec": spec}
+
+
+def message_spec(message):
+    """Bandbedingungen aus einer Nachricht (band_fields) als Spec, oder None."""
+    spec = band.clean_spec(message.get("band_spec"))
+    if spec is None and isinstance(message.get("band"), str) and message["band"] in band.PRESETS:
+        spec = band.spec_from_preset(message["band"])
+    return spec
+
+
+def sequence_seconds(text: str, wpm: int, fw, band_on) -> float:
     """So lange läuft der Ton einer Sequenz beim Teilnehmer (ohne Latenz)."""
     seconds = len(build_text(text, wpm, 600, fw)) / SAMPLE_RATE
-    if band_preset:
+    if band_on:
         seconds += sum(band.PRESET_LEAD_SECONDS)
     return seconds
 
@@ -155,10 +172,11 @@ class NetworkModeFrame:
     # sowie adjust_tempo (für die Tempo-Empfehlung).
     uses_network_hooks = True
     uses_tempo_adjust = True
+    uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
                  practice_start=None, practice_stop=None, adjust_tempo=None, version=None,
-                 updater=None, session_closed=None):
+                 updater=None, session_closed=None, band_settings=None):
         """Übungszeit zählt beim Teilnehmer nur, solange ein Durchgang läuft
         (practice_start/practice_stop), nicht beim Warten auf den Trainer;
         die Reiter bleiben gesperrt, solange er verbunden ist.
@@ -168,6 +186,7 @@ class NetworkModeFrame:
         `session_closed`: Der Trainer hat seine Sitzung geschlossen (dann
         die Diplome prüfen: Clubabend gilt auch fürs Leiten)."""
         self.root = parent.winfo_toplevel()
+        self.band_settings = band_settings or BandSettings(self.root)
         self.version = version
         self.updater = updater
         self.adjust_tempo = adjust_tempo
@@ -326,12 +345,8 @@ class NetworkModeFrame:
             "Hören und innerhalb von 1,5 s plus 0,6 s je Zeichen nach dem Ton – wer länger braucht, zählt "
             "vermutlich mit.")).pack(anchor="w", pady=(0, 2))
 
-        band_row = ttk.Frame(options)
-        band_row.pack(fill="x", pady=1)
-        ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
-        self.band_var = tk.StringVar(value="aus")
-        self.band_box = ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8)
-        self.band_box.pack(side="left")
+        self.band_var = tk.BooleanVar(value=False)
+        BandToggle(options, self.band_settings, self.band_var)
         self.signs_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(options, text=tr("Anfangs- und Schlusszeichen senden (VVV = und +)"),
                         variable=self.signs_var).pack(anchor="w", pady=1)
@@ -907,18 +922,18 @@ class NetworkModeFrame:
         self.paper_button.config(state="disabled")
         self.close_paper()
         self.export_var.set("")
-        wpm, fw, preset = self.wpm_var.get(), self.farnsworth_wpm(), BAND_LABELS.get(self.band_var.get())
+        wpm, fw, spec = self.wpm_var.get(), self.farnsworth_wpm(), self._host_spec()
         self.server.broadcast({"type": "start", "kind": kind, "charset": charset, "wpm": wpm, "fw": fw,
-                               "signs": self.run_signs, "band": preset, "silent": self.run_speaker})
+                               "signs": self.run_signs, **band_fields(spec), "silent": self.run_speaker})
         if not self.run_signs:
             self.next_item()
             return
         # Erst VVV = bei allen, dann die erste Sequenz.
         if self.listen_var.get() or self.run_speaker:
-            self._play_signs(START_TEXT + " ", wpm, fw, preset)
+            self._play_signs(START_TEXT + " ", wpm, fw, spec)
         self.trainer_status_var.set(tr("Achtung: {text}").format(text=START_TEXT))
         token = self.run_token
-        delay = AUDIO_LATENCY + sequence_seconds(START_TEXT + " ", wpm, fw, preset)
+        delay = AUDIO_LATENCY + sequence_seconds(START_TEXT + " ", wpm, fw, spec)
         self._after(int(delay * 1000), lambda: self.run_active and token == self.run_token and self.item is None
                     and self.next_item())
 
@@ -944,7 +959,7 @@ class NetworkModeFrame:
             wpm = self.item["wpm"] if self.item else 20
         self.item_n += 1
         self.item = {"type": "item", "n": self.item_n, "text": text, "wpm": wpm, "fw": self.farnsworth_wpm(),
-                     "band": BAND_LABELS.get(self.band_var.get()), "paced": self.run_paced,
+                     **band_fields(self._host_spec()), "paced": self.run_paced,
                      "silent": self.run_speaker}
         self.board.add_item(self.item_n, text, self.server.names(), wpm, self.item["fw"])
         self.server.broadcast(self.item)
@@ -964,19 +979,19 @@ class NetworkModeFrame:
         self.item_n = len(groups)
         self.planned = len(groups)
         self.item = {"type": "stream", "n": len(groups), "text": groups[-1], "wpm": wpm, "fw": fw, "band": None}
-        preset = BAND_LABELS.get(self.band_var.get())
-        conditions = self._band(preset, self._freq()) if preset else None  # vor dem Senden, dauert etwas
-        self.server.broadcast({"type": "stream", "groups": groups, "wpm": wpm, "fw": fw, "band": preset,
+        spec = self._host_spec()
+        conditions = band.conditions(spec, self._freq()) if spec else None  # vor dem Senden, dauert etwas
+        self.server.broadcast({"type": "stream", "groups": groups, "wpm": wpm, "fw": fw, **band_fields(spec),
                                "silent": self.run_speaker})
         entries, seconds = net_stream.timeline(groups, wpm, fw)
-        start = time.time() + AUDIO_LATENCY + net_stream.lead_seconds(preset)
+        start = time.time() + AUDIO_LATENCY + net_stream.lead_seconds(spec)
         if self.listen_var.get() or self.run_speaker:
             self.stream_player = net_stream.Player(groups, wpm, self._freq(), fw, conditions)
             start = self.stream_player.start
         self.stream_timing = (entries, start)
         self.stream_end = start + seconds
         token = self.run_token
-        rest = seconds + net_stream.lead_seconds(preset) + net_stream.tail_seconds(preset)
+        rest = seconds + net_stream.lead_seconds(spec) + net_stream.tail_seconds(spec)
         self._after(int((AUDIO_LATENCY + rest + net_stream.FINISH_GRACE_SECONDS) * 1000),
                     lambda: self.run_active and token == self.run_token and self.stop_run())
         self._refresh_table()
@@ -1012,8 +1027,9 @@ class NetworkModeFrame:
     def _play_here(self, item, solution=False):
         freq = self._freq()
         samples = build_text(item["text"], item["wpm"], freq, item["fw"])
-        if item["band"]:
-            samples, _ = band.apply_preset(self._band(item["band"], freq), samples)
+        spec = message_spec(item)
+        if spec:
+            samples, _ = band.apply_preset(self._band(spec, freq), samples)
         try:
             audio.play(samples)
         except audio.AudioError as exc:
@@ -1077,11 +1093,11 @@ class NetworkModeFrame:
         self.run_token += 1
         if self.server is not None:
             wpm = self.item["wpm"] if self.item else self.wpm_var.get()
-            preset = BAND_LABELS.get(self.band_var.get())
-            self.server.broadcast({"type": "end", "signs": self.run_signs, "wpm": wpm, "band": preset,
+            spec = self._host_spec()
+            self.server.broadcast({"type": "end", "signs": self.run_signs, "wpm": wpm, **band_fields(spec),
                                    "silent": self.run_speaker})
             if self.run_signs and (self.listen_var.get() or self.run_speaker):
-                self._play_signs(END_TEXT, wpm, None, preset)
+                self._play_signs(END_TEXT, wpm, None, spec)
             self._log_led_run(wpm)
         self.start_button.config(text=tr("Start"))
         self.next_button.config(state="disabled")
@@ -1730,10 +1746,9 @@ class NetworkModeFrame:
             self.submit(timed_out=True)
         if self.session_stats is None:
             self._start_client_run("", wpm, fw)  # mitten im Durchgang dazugekommen
-        preset = item.get("band") if item.get("band") in band.PRESETS else None
         paced = item.get("paced") is True
         self.current = {"n": item["n"], "text": str(item["text"])[:protocol.TEXT_MAX], "wpm": wpm, "fw": fw,
-                        "band": preset, "paced": paced, "silent": item.get("silent") is True,
+                        "band": message_spec(item), "paced": paced, "silent": item.get("silent") is True,
                         "paper": paced and self.paper_var.get(), "replayed": False,
                         "received": received or time.time()}
         # Papier: nichts eintippen, keine Antwort; abgetippt wird am Ende.
@@ -1772,13 +1787,13 @@ class NetworkModeFrame:
         self.current = None
         entries, seconds = net_stream.timeline(groups, wpm, fw)
         silent = message.get("silent") is True
-        preset = message.get("band") if message.get("band") in band.PRESETS else None
+        spec = message_spec(message)
         player = None
         if not silent:
-            conditions = self._band(preset, self._freq()) if preset else None
+            conditions = band.conditions(spec, self._freq()) if spec else None
             player = net_stream.Player(groups, wpm, self._freq(), fw, conditions)
         self.stream = {"groups": groups, "wpm": wpm, "fw": fw, "entries": entries, "player": player,
-                       "start": (received or time.time()) + AUDIO_LATENCY + net_stream.lead_seconds(preset)}
+                       "start": (received or time.time()) + AUDIO_LATENCY + net_stream.lead_seconds(spec)}
         self.input_var.set("")
         self.key_times, self.typed_so_far = [], ""
         self.feedback_var.set("")
@@ -1789,7 +1804,7 @@ class NetworkModeFrame:
                                     + (" " + tr("(Lautsprecher)") if silent else ""))
         self.stream_token += 1
         token = self.stream_token
-        rest = seconds + net_stream.lead_seconds(preset) + net_stream.tail_seconds(preset)
+        rest = seconds + net_stream.lead_seconds(spec) + net_stream.tail_seconds(spec)
         self._after(int((AUDIO_LATENCY + rest + net_stream.FINISH_GRACE_SECONDS) * 1000) + 300,
                     lambda: token == self.stream_token and self._finish_stream())
 
@@ -1850,15 +1865,14 @@ class NetworkModeFrame:
             return
         if not (isinstance(fw, int) and 1 <= fw < wpm):
             fw = None
-        preset = message.get("band") if message.get("band") in band.PRESETS else None
-        self._play_signs(text, wpm, fw, preset)
+        self._play_signs(text, wpm, fw, message_spec(message))
 
-    def _play_signs(self, text, wpm, fw, preset):
+    def _play_signs(self, text, wpm, fw, spec):
         """VVV = oder +, wie in den übrigen Reitern unter den Störungen."""
         freq = self._freq()
         samples = build_text(text, wpm, freq, fw)
-        if preset:
-            samples = band.apply_preset(self._band(preset, freq), samples)[0]
+        if spec:
+            samples = band.apply_preset(self._band(spec, freq), samples)[0]
         audio.play_quietly(samples)
 
     def _freq(self) -> int:
@@ -1868,10 +1882,14 @@ class NetworkModeFrame:
             return 600
         return freq if 300 <= freq <= 1000 else 600
 
-    def _band(self, preset, freq):
-        key = (preset, freq)
+    def _host_spec(self):
+        """Bandbedingungen, die der Trainer gerade mitschickt, oder None."""
+        return self.band_settings.spec() if self.band_var.get() else None
+
+    def _band(self, spec, freq):
+        key = (band.spec_key(spec), freq)
         if key not in self._band_cache:
-            self._band_cache[key] = band.preset_conditions(preset, freq)
+            self._band_cache[key] = band.conditions(spec, freq)
         return self._band_cache[key]
 
     def _play_current(self, solution=False, item=None):
@@ -2175,7 +2193,7 @@ class NetworkModeFrame:
             "role": self.role_var.get(),
             "session": self.session_var.get(),
             "content": self.content_var.get(),
-            "band": BAND_LABELS.get(self.band_var.get()),
+            "band": self.band_var.get(),
             "auto": self.auto_var.get(),
             "flow": self.flow_var.get(),
             "solution": self.solution_var.get(),
@@ -2205,9 +2223,8 @@ class NetworkModeFrame:
         if data.get("flow") in (WAIT, PACED, CONTINUOUS):
             self.flow_var.set(data["flow"])
             self._show_flow_options()
-        for label, preset in BAND_LABELS.items():
-            if data.get("band") == preset:
-                self.band_var.set(label)
+        if "band" in data and toggle_value(data["band"]) is not None:
+            self.band_var.set(toggle_value(data["band"]))
         for key, var in (("auto", self.auto_var), ("solution", self.solution_var), ("listen", self.listen_var),
                          ("speaker", self.speaker_var), ("signs", self.signs_var), ("paper", self.paper_var)):
             if isinstance(data.get(key), bool):

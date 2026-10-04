@@ -472,13 +472,13 @@ class DailyInterfaceTest(AppTestCase):
         g.daily_configure(4.5, input_style=sq.COPY, adaptive_tempo=False, band=None, give_up=1,
                           adaptive=True, min_len=2, max_len=6)
         self.assertEqual((g.style_var.get(), g.tempo_var.get(), g.band_var.get(), g.max_len_var.get()),
-                         (sq.COPY, False, "aus", 6))
+                         (sq.COPY, False, False, 6))
         self.assertEqual(g.options_card.winfo_manager(), "")
         g.saved_length = 5  # beim Üben erreicht: bleibt
         g.daily_release()
         self.assertEqual((g.style_var.get(), g.tempo_var.get(), g.band_var.get(), g.give_up_var.get(),
                           g.adaptive_var.get(), g.min_len_var.get(), g.max_len_var.get()),
-                         (sq.MEMORIZE, True, "leicht", 3, False, 3, 4))
+                         (sq.MEMORIZE, True, True, 3, False, 3, 4))
         self.assertEqual(g.options_card.master.pack_slaves().index(g.options_card), position)
         self.assertEqual(g.saved_length, 5)
         self.assertIsNone(g.daily_minutes)
@@ -674,7 +674,7 @@ class SequenceBandTest(AppTestCase):
     def test_start_and_end_signs_carry_the_band_conditions(self):
         from morsetrainer.core import band
         s = self.mode("Gruppen")
-        s.band = band.preset_conditions("medium", 600)
+        s.band_var.set(True)
         with mock.patch.object(sq.audio, "play") as play, \
                 mock.patch.object(sq.audio, "play_quietly") as quietly:
             s.send_prosigns = True
@@ -693,8 +693,8 @@ class ContinuousBandTest(AppTestCase):
         import numpy as np
         from morsetrainer.core import band
         c = self.mode("Kontinuierlich")
-        c.restore_settings({"band": "medium"})
-        self.assertEqual(c.settings()["band"], "medium")
+        c.restore_settings({"band": "medium"})  # Stufe aus Version 2.35: an
+        self.assertIs(c.settings()["band"], True)
         c.band = band.preset_conditions("medium", 600)
         written = []
         stream = type("S", (), {"write": lambda self, block: written.append(block)})()

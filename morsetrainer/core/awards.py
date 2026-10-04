@@ -379,12 +379,16 @@ def _qrn_runs(data: Data) -> list:
     for s in data.sessions:
         c, summary = s.config, s.summary
         mode, rank = c.get("mode"), BAND_RANK.get(_text(c.get("band")))
+        if "band_min" in summary:
+            # Ab 2.36 gelten die Bandbedingungen auch mitten im Durchgang:
+            # zählt die schwächste Stufe darin (None: zwischendurch aus).
+            rank = min(rank or 0, BAND_RANK.get(_text(summary.get("band_min")), 0)) or None
         if mode not in ("group", "continuous") or rank is None:
             continue
-        # Kontinuierlich hat keinen Regler für die Störlautstärke: immer 100 %.
-        # Gruppen: der kleinste Wert im Durchgang (ältere Sitzungen: der beim Start).
-        gain = (min(_num(c.get("band_gain"), 100), _num(summary.get("band_gain_min"), 100))
-                if mode == "group" else 100)
+        # Lautstärke der Störungen: der kleinste Wert im Durchgang (ältere
+        # Sitzungen: der beim Start; Kontinuierlich hatte bis 2.35 keinen
+        # Regler, also 100 %).
+        gain = min(_num(c.get("band_gain"), 100), _num(summary.get("band_gain_min"), 100))
         if (gain < 100 or _num(summary.get("total")) < 200 or _char_wpm(c) < 20 or _effective_wpm(s) < 12
                 or not _contains(c.get("charset"), koch.lesson_charset(25))):
             continue

@@ -42,11 +42,12 @@ from morsetrainer.core.morse import (
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import theme
+from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
 from morsetrainer.modes.daily_support import DailyModeMixin
-from morsetrainer.modes.sequence_mode import BAND_LABELS
+from morsetrainer.modes.sequence_mode import BAND_ORDER, band_config
 
 # Der Audio-Thread schreibt die Zeichen in so großen Häppchen in den Stream,
 # damit ein Stop nicht erst das ganze (evtl. lange Farnsworth-)Zeichen
@@ -130,8 +131,12 @@ PREVIEW_SLACK_SECONDS = 1.0
 
 class ContinuousModeFrame(DailyModeMixin):
     daily_keys = ("content", "group_len", "band")
-    def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop):
+    uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
+
+    def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
+                 band_settings=None):
         self.root = parent.winfo_toplevel()
+        self.band_settings = band_settings or BandSettings(self.root)
         self.charset_var = charset_var
         self.wpm_var = wpm_var
         self.freq_var = freq_var
@@ -156,6 +161,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.koch_result = None   # (Zeichensatz, richtig, gesamt) für den Koch-Aufstieg
         self.audio_error = None   # Fehlermeldung aus dem Audio-Thread
         self.band = None          # BandConditions des laufenden Durchgangs, None = ohne Störungen
+        self.band_tracked = False  # Durchgang begann mit Bandbedingungen
         self.full_rows = []       # Gegenüberstellung der ganzen letzten Sitzung
         self.full_window = None
         self.full_width = None    # Spalten beim letzten Aufbau des Fensters
@@ -196,12 +202,8 @@ class ContinuousModeFrame(DailyModeMixin):
             ["!disabled"] if self.content_var.get() == "Zufallszeichen" else ["disabled"]))
         ttk.Label(grouping, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
         theme.hint(grouping, text=tr("(mit Wortpause dazwischen; 0 = durchgehend)")).pack(side="left", padx=(4, 0))
-        band_row = ttk.Frame(options)
-        band_row.pack(fill="x", pady=(2, 0))
-        ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
-        self.band_var = tk.StringVar(value="aus")
-        ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
-        theme.hint(band_row, text=tr("(Rauschen, QSB, Knacken, QRM)")).pack(side="left", padx=(6, 0))
+        self.band_var = tk.BooleanVar(value=False)
+        BandToggle(options, self.band_settings, self.band_var, on_change=self._update_band, pady=(2, 0))
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
@@ -228,7 +230,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.stats_panel = StatsPanel(parent)
 
     def settings(self) -> dict:
-        data = {"content": CONTENTS.get(self.content_var.get()), "band": BAND_LABELS.get(self.band_var.get())}
+        data = {"content": CONTENTS.get(self.content_var.get()), "band": self.band_var.get()}
         for key, var in (("duration", self.duration_var), ("group_len", self.group_len_var)):
             try:
                 data[key] = var.get()
@@ -240,14 +242,30 @@ class ContinuousModeFrame(DailyModeMixin):
         for label, key in CONTENTS.items():
             if data.get("content") == key:
                 self.content_var.set(label)
-        for label, preset in BAND_LABELS.items():
-            if data.get("band") == preset:
-                self.band_var.set(label)
+        if "band" in data and toggle_value(data["band"]) is not None:
+            self.band_var.set(toggle_value(data["band"]))
         for key, var, limits in (("duration", self.duration_var, (0, 120)),
                                  ("group_len", self.group_len_var, GROUP_LEN_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)
+
+    def _update_band(self):
+        """Schalter und zentrale Einstellung wirken auch im laufenden
+        Durchgang; das Schwächste davon zählt für das Diplom."""
+        if not self.running:
+            return
+        spec = self.band_settings.spec() if self.band_var.get() else None
+        if spec is None:
+            self.band = None
+        elif self.band is None:
+            self.band = band.conditions(spec, self.freq)
+        else:
+            band.apply_spec(self.band, spec)
+            self.band.prepare(self.freq)
+        if self.band_tracked:
+            self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
+            self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec), key=BAND_ORDER.index)
 
     def toggle_running(self):
         if self.running:
@@ -281,8 +299,11 @@ class ContinuousModeFrame(DailyModeMixin):
         self.fw = self.farnsworth_wpm()
         # Bandbedingungen laufen durchgehend unter dem ganzen Durchgang mit
         # (Rauschen und QSB reißen nicht zwischen den Zeichen ab).
-        preset = BAND_LABELS.get(self.band_var.get())
-        self.band = band.preset_conditions(preset, self.freq) if preset else None
+        spec = self.band_settings.spec() if self.band_var.get() else None
+        self.band = band.conditions(spec, self.freq) if spec else None
+        self.band_tracked = spec is not None
+        self.band_gain_min = round(spec["gain"] * 100) if spec else 0
+        self.band_rank_min = band.preset_rank(spec)
         self.sent_log = []
         self.typed_log = []
         try:
@@ -303,7 +324,7 @@ class ContinuousModeFrame(DailyModeMixin):
                                           review_promote=self.content == "chars",
                                           char_stats=self.content not in PLAIN_TEXT,
                                           group_len=self.group_len or None,
-                                          config_extra={"lesson": koch.lesson_of(charset), "band": preset,
+                                          config_extra={"lesson": koch.lesson_of(charset), **band_config(spec),
                                                         "content": self.content,
                                                         "user_words": self.source.has_user_words(),
                                                         **self._daily_config()})
@@ -368,7 +389,9 @@ class ContinuousModeFrame(DailyModeMixin):
                             break
                         group += 1
                         continue
-                    samples = build_samples(char, self.wpm, self.freq, self.fw)
+                    conditions = self.band
+                    chirp = conditions.chirp_for(0) if conditions is not None else None
+                    samples = build_samples(char, self.wpm, self.freq, self.fw, chirp)
                     if not self._write(stream, samples):
                         break
                     # write() kehrt zurück, sobald die Samples im Puffer sind; zu
@@ -400,7 +423,8 @@ class ContinuousModeFrame(DailyModeMixin):
             if not self._live():
                 return False
             block = samples[start:start + chunk]
-            stream.write(block if self.band is None else self.band.process(block, 0))
+            conditions = self.band  # kann der GUI-Thread jederzeit tauschen (_update_band)
+            stream.write(block if conditions is None else conditions.process(block, 0))
         return True
 
     def _tick(self):
@@ -518,7 +542,10 @@ class ContinuousModeFrame(DailyModeMixin):
         self.stats_panel.refresh(summary, self.session_stats.char_rows())
         # Überzählige Tasten zählen für Lektion und Diplome als Fehler;
         # „completed“: bis zum Ende der eingestellten Dauer, nicht von Hand gestoppt.
-        path = self.session_stats.finalize({"extra_keys": extra, "completed": self.finishing})
+        result = {"extra_keys": extra, "completed": self.finishing}
+        if self.band_tracked:
+            result.update(band_gain_min=self.band_gain_min, band_min=self.band_rank_min)
+        path = self.session_stats.finalize(result)
         self._remember_result(self.session_stats, summary, extra_keys=extra, completed=self.finishing)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None

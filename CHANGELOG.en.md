@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Central band conditions:** which interference, how strong and how
+  loud is now set in one place (More options or “Adjust …” in a tab); the
+  tabs only switch it on or off. All six kinds of interference (including
+  chirp, SSB babble, CW QRM) and the volume are now available everywhere,
+  not only in QSO and Contest. Light, medium and heavy remain as quick
+  choices and for the QRN-proof award. Old settings are carried over. On
+  the network, participants from this version on hear exactly the
+  trainer's setting, older ones the nearest level.
 - **Reset overall statistics:** the confirmation now says exactly what is
   deleted (statistics per character, review box, confusions) and what is
   kept. Until now it did not mention the review box and still referred to

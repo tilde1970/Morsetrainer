@@ -31,7 +31,8 @@ Wahlweise wächst das Tempo mit (wie bei RufzXP): richtig beim ersten
 Versuch +1 WPM, falsch beim ersten Versuch −1 WPM, angewandt auf das
 effektive Tempo nach der gemeinsamen Regel in core/tempo.py (erst die
 Pausen, die Zeichen bleiben schnell). Es
-lassen sich Bandbedingungen in drei Stufen unterlegen. Mit „Tonhöhe und Tempo
+lassen sich Bandbedingungen unterlegen (eingestellt zentral, siehe
+widgets/band_settings.py). Mit „Tonhöhe und Tempo
 variieren“ (gemeinsame Einstellung) klingt jede Sequenz etwas anders.
 
 Optional mit fester Dauer: nach Ablauf wird die laufende Sequenz noch
@@ -57,8 +58,9 @@ from morsetrainer.core.weighting import CharPicker
 from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import theme
+from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
-from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 # Nach so vielen Fehlversuchen kommt die Lösung (gesehen und gehört), dann
 # die nächste Sequenz. Standard 1: Weiterkopieren wie im Funkbetrieb statt
@@ -84,10 +86,18 @@ def answer_limit(length: int) -> float:
     """Sekunden nach Tonende, in denen eine Antwort als flüssig gilt."""
     return ANSWER_BASE_S + ANSWER_PER_CHAR_S * length
 
-# Bandbedingungen: Beschriftung -> Stufe aus band.PRESETS (None = aus).
-BAND_LABELS = {N_("aus"): None, N_("leicht"): "light", N_("mittel"): "medium", N_("stark"): "heavy"}
-# Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
-BAND_GAIN_RANGE = (10, 150)
+# Stufen aus band.PRESETS vom leichtesten zum schwersten (für das Schwächste
+# im Durchgang, siehe _band_for_play).
+BAND_ORDER = (None, *band.PRESETS)
+
+
+def band_config(spec) -> dict:
+    """Bandbedingungen für die config-Zeile der Sitzungsdatei: die erreichte
+    Stufe (für das Diplom QRN-fest; "custom", wenn schwächer als die
+    leichteste) und die Lautstärke; ohne Bandbedingungen band None."""
+    if spec is None:
+        return {"band": None}
+    return {"band": band.preset_rank(spec) or "custom", "band_gain": round(spec["gain"] * 100)}
 
 
 def clean_input(text: str) -> str:
@@ -113,9 +123,11 @@ class SequenceModeFrame(DailyModeMixin):
     char_stats = True
     # Bekommt die gemeinsame Einstellung "Tonhöhe und Tempo variieren".
     uses_vary = True
+    # Bekommt die zentralen Bandbedingungen (widgets/band_settings.py).
+    uses_band = True
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
-                 vary_var=None):
+                 vary_var=None, band_settings=None):
         self.root = parent.winfo_toplevel()
         self.charset_var = charset_var
         self.wpm_var = wpm_var
@@ -123,6 +135,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.weighted_var = weighted_var
         self.farnsworth_wpm = farnsworth_wpm  # callable -> effektive WPM oder None
         self.vary_var = vary_var
+        self.band_settings = band_settings or BandSettings(self.root)
         self.on_start_cb = on_start
         self.on_stop_cb = on_stop
 
@@ -151,6 +164,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.tempo = None        # mitwachsendes Zeichentempo, None = aus
         self.tempo_best = None   # höchstes effektives Tempo mit einer beim ersten Versuch richtigen Sequenz
         self.band = None         # BandConditions, None = ohne Störungen
+        self.band_tracked = False  # Durchgang begann mit Bandbedingungen
         self.repeat_pending = False
         self.deadline = None   # time.time(), ab der keine neue Sequenz mehr kommt
         self.session_id = 0    # damit ein alter Timer keine neue Sitzung anzeigt
@@ -206,8 +220,7 @@ class SequenceModeFrame(DailyModeMixin):
         data = {
             "input_style": self.style_var.get(),
             "adaptive_tempo": self.tempo_var.get(),
-            "band": BAND_LABELS.get(self.band_var.get()),
-            "band_gain": round(self.band_gain_var.get()),
+            "band": self.band_var.get(),
         }
         for key, var in (("duration", self.duration_var), ("give_up", self.give_up_var)):
             try:
@@ -223,15 +236,12 @@ class SequenceModeFrame(DailyModeMixin):
             self.style_var.set(data["input_style"])
         if isinstance(data.get("adaptive_tempo"), bool):
             self.tempo_var.set(data["adaptive_tempo"])
-        for label, preset in BAND_LABELS.items():
-            if data.get("band") == preset:
-                self.band_var.set(label)
-        for key, var, limits in (("duration", self.duration_var, (0, 120)), ("give_up", self.give_up_var, GIVE_UP_RANGE),
-                                 ("band_gain", self.band_gain_var, BAND_GAIN_RANGE)):
+        if "band" in data and toggle_value(data["band"]) is not None:
+            self.band_var.set(toggle_value(data["band"]))
+        for key, var, limits in (("duration", self.duration_var, (0, 120)), ("give_up", self.give_up_var, GIVE_UP_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)
-        self._show_band_gain()
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
@@ -266,29 +276,8 @@ class SequenceModeFrame(DailyModeMixin):
         self.tempo_info_var = tk.StringVar(value="")
         theme.hint(tempo_row, textvariable=self.tempo_info_var).pack(side="left", padx=(8, 0))
 
-        band_row = ttk.Frame(options)
-        band_row.pack(fill="x", pady=1)
-        ttk.Label(band_row, text=tr("Bandbedingungen:")).pack(side="left", padx=(0, 4))
-        self.band_var = tk.StringVar(value="aus")
-        ChoiceBox(band_row, self.band_var, BAND_LABELS, width=8).pack(side="left")
-        theme.hint(band_row, text=tr("(Rauschen, QSB, Knacken, QRM)")).pack(side="left", padx=(6, 0))
-
-        gain_row = ttk.Frame(options)
-        gain_row.pack(fill="x", pady=1)
-        ttk.Label(gain_row, text=tr("Störgeräusche:")).pack(side="left", padx=(0, 4))
-        theme.hint(gain_row, text=tr("leiser")).pack(side="left")
-        self.band_gain_var = tk.DoubleVar(value=100)
-        self.band_gain_scale = ttk.Scale(
-            gain_row, from_=BAND_GAIN_RANGE[0], to=BAND_GAIN_RANGE[1], variable=self.band_gain_var, length=180,
-            command=lambda _: self._show_band_gain(),
-        )
-        self.band_gain_scale.pack(side="left", padx=6)
-        theme.hint(gain_row, text=tr("lauter")).pack(side="left")
-        self.band_gain_text = tk.StringVar(value="")
-        self.band_gain_label = ttk.Label(gain_row, textvariable=self.band_gain_text, width=6, anchor="e")
-        self.band_gain_label.pack(side="left", padx=(6, 0))
-        self.band_var.trace_add("write", lambda *_: self._show_band_gain())
-        self._show_band_gain()
+        self.band_var = tk.BooleanVar(value=False)
+        BandToggle(options, self.band_settings, self.band_var)
 
         duration = ttk.Frame(options)
         duration.pack(fill="x", pady=1)
@@ -357,13 +346,6 @@ class SequenceModeFrame(DailyModeMixin):
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
-    def _show_band_gain(self):
-        """Prozentanzeige; ohne Bandbedingungen ist der Regler gesperrt."""
-        self.band_gain_text.set(f"{round(self.band_gain_var.get())} %")
-        active = BAND_LABELS.get(self.band_var.get()) is not None
-        self.band_gain_scale.state(["!disabled"] if active else ["disabled"])
-        self.band_gain_label.config(foreground="" if active else theme.DISABLED)
-
     def _show_answer_row(self):
         if self.style == HEAD:
             self.entry_frame.pack_forget()
@@ -415,9 +397,6 @@ class SequenceModeFrame(DailyModeMixin):
         self.repeat_pending = False
         self.revealed = False
         self.first_try_correct = self.first_try_total = 0
-        # Kleinste Störlautstärke im Durchgang (der Regler bleibt bedienbar),
-        # damit das Diplom QRN-fest nicht mit heruntergezogenem Regler geht.
-        self.band_gain_min = round(self.band_gain_var.get())
         self._count_streak()
         self.koch_result = None
         self.tempo, self.tempo_fw = None, None
@@ -425,8 +404,15 @@ class SequenceModeFrame(DailyModeMixin):
             self.tempo, self.tempo_fw = wpm, self.farnsworth_wpm()
         self.tempo_best = None
         self._show_tempo()
-        preset = BAND_LABELS.get(self.band_var.get())
-        self.band = band.preset_conditions(preset, freq) if preset else None
+        spec = self.band_settings.spec() if self.band_var.get() else None
+        # Das Schwächste im Durchgang (Schalter und Einstellung bleiben
+        # bedienbar), damit das Diplom QRN-fest nicht mit heruntergedrehten
+        # Störungen geht.
+        self.band_tracked = spec is not None
+        self.band_gain_min = round(spec["gain"] * 100) if spec else 0
+        self.band_rank_min = band.preset_rank(spec)
+        self.band = None
+        self._band_for_play(freq)
         self.start_button.config(text=tr("Stop"))
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
@@ -436,7 +422,7 @@ class SequenceModeFrame(DailyModeMixin):
             group_len=self._session_group_len(), farnsworth_wpm=self.farnsworth_wpm(),
             self_assessed=self.style == HEAD, in_history=not self._fixed_run(),
             review_promote=self.review_promotes, char_stats=self.char_stats,
-            config_extra=self._config_extra(preset),
+            config_extra=self._config_extra(spec),
         )
         self._setup_pickers(self.weighted_var.get())
         # Latenz für richtig, aber unsicher (siehe on_submit): doppelt so lang
@@ -453,21 +439,35 @@ class SequenceModeFrame(DailyModeMixin):
         else:
             self.next_sequence()
 
-    def _config_extra(self, preset) -> dict:
+    def _config_extra(self, spec) -> dict:
         """Bedingungen des Durchgangs für die config-Zeile der Sitzungsdatei."""
-        extra = {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
-                 "band": preset, "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
-                 **self._daily_config()}
-        if preset:
-            extra["band_gain"] = round(self.band_gain_var.get())
-        return extra
+        return {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
+                **band_config(spec), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
+                **self._daily_config()}
+
+    def _band_for_play(self, freq):
+        """Bandbedingungen für die nächste Wiedergabe: Schalter und zentrale
+        Einstellung gelten auch mitten im Durchgang. Merkt sich das Schwächste
+        davon (Stufe, Lautstärke) für das Diplom."""
+        spec = self.band_settings.spec() if self.band_var.get() else None
+        if spec is None:
+            self.band = None
+        else:
+            if self.band is None:
+                self.band = band.BandConditions(1)
+            band.apply_spec(self.band, spec)
+            self.band.prepare(freq)
+        if self.band_tracked:
+            self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
+            rank = band.preset_rank(spec)
+            self.band_rank_min = min(self.band_rank_min, rank, key=BAND_ORDER.index)
+        return self.band
 
     def _with_band(self, samples):
         """Bandbedingungen auch unter Anfangs- und Schlusszeichen, damit die
         Störungen von Anfang an da sind und nicht erst mit der ersten Sequenz."""
-        if self.band is None:
+        if self._band_for_play(self._audio_settings()[1]) is None:
             return samples
-        self.band.background_gain = self.band_gain_var.get() / 100
         return band.apply_preset(self.band, samples)[0]
 
     def _play_intro(self):
@@ -524,8 +524,8 @@ class SequenceModeFrame(DailyModeMixin):
         if self.tempo is not None:
             extra = {"wpm_effective_reached": self.tempo_best,
                      "wpm_effective_end": tempo.effective(self.tempo, self.tempo_fw)}
-        if self.band is not None:
-            extra["band_gain_min"] = self.band_gain_min
+        if self.band_tracked:
+            extra.update(band_gain_min=self.band_gain_min, band_min=self.band_rank_min)
         if not self.session_stats.self_assessed:
             # Erster Versuch, flüssig (ohne Wiederholen, im Zeitfenster): Grundlage
             # für Lektion, Tagesübung und Diplome.
@@ -658,16 +658,14 @@ class SequenceModeFrame(DailyModeMixin):
         # unnötig spät freigegeben wird.
         fw = self._farnsworth()
         last = len(self.current_sequence) - 1
+        chirp = self.band.chirp_for(0) if self._band_for_play(freq) is not None else None
         parts = [
-            build_samples(ch, wpm, freq, fw if i < last else None)
+            build_samples(ch, wpm, freq, fw if i < last else None, chirp)
             for i, ch in enumerate(self.current_sequence)
         ]
         samples = np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
         lead = 0.0
         if self.band is not None:
-            # Der Regler gilt auch mitten im Durchgang ab der nächsten Sequenz.
-            self.band.background_gain = self.band_gain_var.get() / 100
-            self.band_gain_min = min(self.band_gain_min, round(self.band_gain_var.get()))
             samples, lead = band.apply_preset(self.band, samples)
         # Hörbar wird der Ton erst nach der Ausgabelatenz; ab dann zählt die
         # Reaktionszeit, und erst danach ist er zu Ende.

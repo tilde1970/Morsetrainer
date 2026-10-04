@@ -35,12 +35,13 @@ from morsetrainer.core import align, audio
 from morsetrainer.core import qso_text, tempo
 import numpy as np
 
-from morsetrainer.core.band import BandConditions, soft_limit
+from morsetrainer.core.band import BandConditions, apply_spec, soft_limit
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.continuous_mode import plausible
 from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets import theme
-from morsetrainer.widgets.ui_widgets import BandSettingsPanel, ChoiceBox, ScrollableFrame
+from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
+from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 from morsetrainer.core.morse import (
     MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, duration_seconds, silence,
     word_gap_extra_seconds,
@@ -116,10 +117,12 @@ def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
 
 class QsoModeFrame:
     uses_tempo_adjust = True
+    uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
-                 adjust_tempo=None):
+                 adjust_tempo=None, band_settings=None):
         self.root = parent.winfo_toplevel()
+        self.band_settings = band_settings or BandSettings(self.root)
         self.wpm_var = wpm_var
         self.freq_var = freq_var
         self.farnsworth_wpm = farnsworth_wpm  # callable -> effektive WPM oder None
@@ -164,7 +167,9 @@ class QsoModeFrame:
         ).pack(anchor="w", padx=10, pady=(8, 2))
 
         self._build_qso_settings(parent)
-        self.band_panel = BandSettingsPanel(parent, on_change=self._apply_band_settings)
+        self.band_var = tk.BooleanVar(value=False)
+        BandToggle(parent, self.band_settings, self.band_var, on_change=self._apply_band_settings, padx=12,
+                   pady=(2, 4))
 
         self.eval_var.trace_add("write", lambda *_: self._on_eval_change())
         self.kind_var.trace_add("write", lambda *_: self._on_kind_change())
@@ -263,7 +268,7 @@ class QsoModeFrame:
         """Auch während der Wiedergabe: der Audio-Thread liest nur die
         einfachen Attribute von self.band."""
         if self.band is not None:
-            self.band_panel.apply_to(self.band)
+            apply_spec(self.band, self.band_settings.spec() if self.band_var.get() else None)
             self.band.prepare(self.voices[0][1])
 
     def _on_kind_change(self):
@@ -725,7 +730,7 @@ class QsoModeFrame:
             "length": LENGTH_LABELS.index(self.length_var.get()),
             "adaptive": self.adaptive_var.get(),
             "pileups": self.pileup_var.get(),
-            "band": self.band_panel.settings(),
+            "band": self.band_var.get(),
         }
 
     def restore_settings(self, data: dict) -> None:
@@ -742,7 +747,8 @@ class QsoModeFrame:
             self.adaptive_var.set(data["adaptive"])
         if data.get("pileups") in PILEUP_LEVELS:
             self.pileup_var.set(data["pileups"])
-        self.band_panel.restore(data.get("band"))
+        if "band" in data and toggle_value(data["band"]) is not None:
+            self.band_var.set(toggle_value(data["band"]))
 
     def on_close(self):
         if self.running:

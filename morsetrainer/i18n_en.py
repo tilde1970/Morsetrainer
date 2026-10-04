@@ -473,12 +473,9 @@ EN.update({
     "Lösung zeigen nach": "Show solution after",
     "Fehlversuchen": "failed attempts",
     "Tempo wächst mit (richtig +{step}, falsch −{step} WPM)": "Speed adapts (correct +{step}, wrong −{step} WPM)",
-    "Bandbedingungen:": "Band conditions:",
     "leicht": "light",
     "mittel": "medium",
     "stark": "heavy",
-    "(Rauschen, QSB, Knacken, QRM)": "(noise, QSB, static, QRM)",
-    "Störgeräusche:": "Noise level:",
     "leiser": "quieter",
     "lauter": "louder",
     "Dauer:": "Duration:",
@@ -1164,4 +1161,22 @@ EN.update({
     "zurückgesetzt wird.":
         "Select a row to see the condition. Seals you have achieved stay, even when the overall statistics "
         "are reset.",
+    # Zentrale Bandbedingungen (widgets/band_settings.py)
+    "Einstellen …": "Adjust …",
+    "keine Störung eingeschaltet": "no interference switched on",
+    "Störungen": "Interference",
+    "Lautstärke der Störgeräusche": "Noise volume",
+    "Schwächer als Stufe leicht.": "Weaker than level light.",
+    "Lautstärke {gain} %": "volume {gain} %",
+    "Stufe {name}": "level {name}",
+    "Stufe:": "Level:",
+    "Entspricht mindestens Stufe {name}.": "Matches at least level {name}.",
+    "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken sofort, "
+    "auch im laufenden Durchgang.":
+        "Applies to all tabs; there you only switch the band conditions on or off. Changes take effect "
+        "immediately, even during a run.",
+    "Gegenüber den Zeichen; 100 % ist die normale Mischung. Für das Diplom QRN-fest zählt mindestens 100 % "
+    "und mindestens die Stufe.":
+        "Relative to the signals; 100 % is the normal mix. For the QRN-proof award the volume must be at "
+        "least 100 % and the setting at least the level.",
 })

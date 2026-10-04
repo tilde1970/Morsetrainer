@@ -12,7 +12,7 @@ Diese Anleitung steht auch im Programm unter **Hilfe**. Einen kurzen
 | **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
 | **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Standard ist „Erst merken“: erst das ganze Wort hören, dann tippen; eine zu langsame Antwort wird vermerkt. Auch R, K und die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden Wörtern. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
 | **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert (mit Starttempo) und Verlauf; danach lassen sich die verpassten und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören, dann mit Lösung noch einmal, im Originaltempo. |
-| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Auf Wunsch mit **Bandbedingungen** (leicht, mittel, stark), die durchgehend unter dem ganzen Durchgang liegen. Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten Zeichen; **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
+| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Auf Wunsch mit **Bandbedingungen**, die durchgehend unter dem ganzen Durchgang liegen. Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten Zeichen; **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
 | **Sprechen** | Hören & Sagen ohne Tastatur (wie Morse Code Ninja): Morsezeichen, Denkpause, in der du laut sagst, was du gehört hast, dann sagt eine Stimme die Lösung an – Zeichen, Gruppen und Rufzeichen buchstabiert (deutsche Buchstabennamen oder Buchstabieralphabet), Wörter und Wendungen als Ganzes bzw. mit ihrer Bedeutung („TNX“ → „danke“) – und das Zeichen kommt noch einmal. Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen). Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen. **Als MP3 speichern** für unterwegs (Handy, Auto). Zählt nur für die Übungszeit. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
@@ -32,8 +32,9 @@ In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
   darunter werden die Pausen länger, damit man nicht mitzählen kann. Dieselbe
   Regel gilt für „Tempo automatisch anpassen“ im QSO-Reiter. Der
   Fortschrittsverlauf zeigt das effektive Tempo (z. B. 10 bei 20/10 WPM).
-- **Bandbedingungen** in drei Stufen: leicht, mittel, stark. Sie liegen auch
-  unter dem Anfangszeichen (VVV =) und dem Schlusszeichen (+).
+- **Bandbedingungen** an- und ausschalten (eingestellt werden sie zentral,
+  siehe unten). Sie liegen auch unter dem Anfangszeichen (VVV =) und dem
+  Schlusszeichen (+).
 
 ## Tagesübung
 
@@ -223,10 +224,22 @@ Außerdem hilfreich:
   der Name: Er steht dann allein auf dem Diplom; für den Contest trägst du
   dort ein ausgedachtes Rufzeichen ein.
 
-## Bandbedingungen (QSO und Contest)
+## Bandbedingungen
 
-Einzeln zuschaltbar und regelbar: Rauschen, Knackstörungen (QRN), QSB,
-Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz.
+Eingestellt wird an einer Stelle: **Weitere Optionen → Bandbedingungen
+→ Einstellen …** oder „Einstellen …“ in einem Reiter. Einzeln zuschaltbar
+und regelbar sind Rauschen, Knackstörungen (QRN), QSB, Chirp, SSB-Gebrabbel
+und CW-QRM auf der Nachbarfrequenz; dazu die **Lautstärke der
+Störgeräusche** gegenüber den Zeichen. Die Knöpfe **leicht**, **mittel**
+und **stark** setzen die Stufen, nach denen auch das Diplom QRN-fest
+zählt; das Fenster zeigt, welcher Stufe die Einstellung mindestens
+entspricht.
+
+In den Reitern (Gruppen, Wörter, Rufzeichen, Kontinuierlich, QSO, Contest,
+Netzwerk) schaltest du die Bandbedingungen nur an oder aus. Änderungen
+wirken sofort, auch im laufenden Durchgang; für das Diplom zählt dann das
+Schwächste im Durchgang. Im Netzwerk hören alle Teilnehmer die
+Einstellung des Trainers.
 
 ## Netzwerk: Üben in der Gruppe
 
