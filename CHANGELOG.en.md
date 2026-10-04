@@ -1,5 +1,15 @@
 # Changes
 
+## Unreleased
+
+- **Faster start on Linux:** with the ibus input method (default on
+  Ubuntu) the main window took about 9 s to build, now under 1 s. The
+  Morsetrainer no longer uses an input method; keyboard umlauts still
+  work, dead keys and compose sequences do not.
+- **Readable drop-down lists:** a drop-down list with keyboard focus showed
+  white text on a white field and looked empty – most noticeably the
+  contest selection when opening the Contest tab.
+
 ## 2.31
 
 - **Safer network:** after 5 wrong PINs a computer is locked for a minute,

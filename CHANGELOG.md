@@ -1,5 +1,15 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Schneller Start unter Linux:** Mit der Eingabemethode ibus (Standard
+  unter Ubuntu) brauchte das Hauptfenster etwa 9 s zum Aufbau, jetzt unter
+  1 s. Der Morsetrainer nutzt keine Eingabemethode mehr; Umlaute der
+  Tastatur gehen weiter, Tottasten und Compose-Folgen nicht.
+- **Klapplisten lesbar:** Eine Klappliste mit Tastaturfokus zeigte weiße
+  Schrift auf weißem Feld und wirkte leer – am auffälligsten die
+  Contest-Auswahl beim Öffnen des Reiters Contest.
+
 ## 2.31
 
 - **Netzwerk sicherer:** Nach 5 falschen PINs ist ein Rechner eine Minute
