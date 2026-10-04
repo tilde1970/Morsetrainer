@@ -45,6 +45,10 @@ Python installation is needed:
   (`chmod +x Morsetrainer-x86_64.AppImage`) and run it.
 - **Windows:** download and run `Morsetrainer.exe`. The file is not signed,
   so Windows SmartScreen warns on first start (“More info” → “Run anyway”).
+- **macOS (Apple silicon):** download `Morsetrainer-macOS.zip`, unpack it
+  and drag `Morsetrainer.app` into Applications. The app is not signed, so
+  you have to approve it on first start – see the
+  [manual](docs/Anleitung.en.md#macos), which also covers Intel Macs.
 
 From version 2.30 on, `SHA256SUMS.txt` with the checksums sits next to the
 programs. To verify, on Linux run `sha256sum -c --ignore-missing

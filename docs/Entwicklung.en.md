@@ -35,12 +35,12 @@ morsetrainer/
 tests/               automated tests
 docs/                manual, development, pictures for the README
 packaging/           AppImage build (icon, desktop file)
-.github/workflows/   builds AppImage and exe for releases, with SHA256SUMS.txt
+.github/workflows/   builds AppImage, exe and Mac app for releases, with SHA256SUMS.txt
 ```
 
 ## Release
 
-A tag `vX.Y` starts `.github/workflows/release.yml`: it builds AppImage and
-exe, writes `SHA256SUMS.txt` and creates the release with the version's
+A tag `vX.Y` starts `.github/workflows/release.yml`: it builds AppImage,
+exe and Mac app (ZIP, Apple silicon only, unsigned), writes `SHA256SUMS.txt` and creates the release with the version's
 section from `CHANGELOG.md`. The update in the program only installs files
 that match `SHA256SUMS.txt` (`morsetrainer/net/update.py`).

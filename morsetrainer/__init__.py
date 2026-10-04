@@ -13,13 +13,15 @@ def _data_dir() -> Path:
     """Ort der Nutzerdaten (stats/, window_state.json, callsigns.scp).
 
     Aus dem Quelltext gestartet: das Projektverzeichnis neben main.py.
-    Als AppImage oder exe (PyInstaller) ist das Programmverzeichnis nicht
-    beschreibbar, dann das übliche Datenverzeichnis des Benutzers."""
+    Als AppImage, exe oder Mac-App (PyInstaller) ist das Programmverzeichnis
+    nicht beschreibbar, dann das übliche Datenverzeichnis des Benutzers."""
     if not getattr(sys, "frozen", False):
         return Path(__file__).resolve().parent.parent
     if sys.platform == "win32":
         base = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming")
         path = base / "Morsetrainer"
+    elif sys.platform == "darwin":
+        path = Path.home() / "Library" / "Application Support" / "Morsetrainer"
     else:
         base = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
         path = base / "morsetrainer"

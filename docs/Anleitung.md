@@ -403,9 +403,35 @@ PowerShell `Get-FileHash Morsetrainer.exe` und den Wert mit der Zeile in
 
 ### macOS
 
-Für macOS gibt es kein fertiges Programm, das AppImage läuft dort nicht.
-Der Morsetrainer lässt sich aber aus dem Quelltext starten. Das ist bisher
-nicht auf einem Mac getestet – Rückmeldungen sind willkommen.
+Für Macs mit Apple-Prozessor (M1 und neuer) gibt es
+`Morsetrainer-macOS.zip`. Herunterladen, entpacken (Doppelklick, falls der
+Browser das nicht schon getan hat) und `Morsetrainer.app` in den Ordner
+„Programme“ ziehen. Die App ist bisher nicht auf einem Mac getestet –
+Rückmeldungen sind willkommen.
+
+Da die App nicht bei Apple signiert ist (dafür bräuchte es ein bezahltes
+Apple-Entwicklerkonto), blockiert macOS den ersten Start:
+
+- **macOS 15 (Sequoia) und neuer:** Die App einmal per Doppelklick
+  starten und die Meldung mit „Fertig“ schließen. Dann
+  „Systemeinstellungen“ → „Datenschutz & Sicherheit“, ganz unten bei
+  „Morsetrainer wurde blockiert“ auf „Dennoch öffnen“ klicken und mit dem
+  Passwort bestätigen.
+- **macOS 14 und älter:** Im Finder mit Rechtsklick (oder Ctrl-Klick) auf
+  `Morsetrainer.app` → „Öffnen“, dann in der Meldung noch einmal „Öffnen“.
+
+Danach startet die App ganz normal. Meldet macOS, die App sei
+„beschädigt“, hilft im Terminal
+`xattr -dr com.apple.quarantine /Applications/Morsetrainer.app`.
+
+Die Daten liegen in `~/Library/Application Support/Morsetrainer/`. Das
+automatische Update gibt es auf dem Mac nicht, nur den Hinweis auf eine
+neue Version; dann die neue ZIP-Datei laden und die App im Ordner
+„Programme“ ersetzen. Die Daten bleiben dabei erhalten. Nach jedem
+Austausch will macOS die Freigabe noch einmal.
+
+**Ältere Macs mit Intel-Prozessor** starten den Morsetrainer aus dem
+Quelltext:
 
 1. Python 3.10 oder neuer von [python.org](https://www.python.org/downloads/macos/)
    installieren. Dieses Python bringt ein funktionierendes Tk mit; mit dem
@@ -423,11 +449,9 @@ nicht auf einem Mac getestet – Rückmeldungen sind willkommen.
 4. Starten mit `python main.py`. Später reichen
    `source .venv/bin/activate` und `python main.py` im selben Ordner.
 
-Die Daten liegen dann im entpackten Ordner (siehe [Daten](#daten)). Das
-automatische Update gibt es so nicht, nur den Hinweis auf eine neue
-Version. Zum Aktualisieren den neuen Quelltext entpacken und `stats/`,
-`window_state.json` und ggf. `callsigns.scp` und `woerter.txt` aus dem
-alten Ordner hineinkopieren.
+So gestartet liegen die Daten im entpackten Ordner. Zum Aktualisieren den
+neuen Quelltext entpacken und `stats/`, `window_state.json` und ggf.
+`callsigns.scp` und `woerter.txt` aus dem alten Ordner hineinkopieren.
 
 ### Updates
 
@@ -436,9 +460,9 @@ Release gibt, und fragt dann, ob er es laden soll. Mit „Ja“ lädt er die
 exe bzw. das AppImage von GitHub, tauscht die eigene Datei aus und startet
 neu; mit „Nein“ fragt er bei dieser Version nicht noch einmal, unten in
 der Fußzeile steht nur „Version … verfügbar“. Ohne Internet passiert
-nichts, das Programm läuft ganz normal. Aus dem Quelltext gestartet gibt es
-nur den Hinweis. Liegt die Datei in einem Ordner ohne Schreibrecht, bitte
-von Hand herunterladen.
+nichts, das Programm läuft ganz normal. Aus dem Quelltext gestartet und
+auf dem Mac gibt es nur den Hinweis. Liegt die Datei in einem Ordner ohne
+Schreibrecht, bitte von Hand herunterladen.
 
 Geladen wird nur aus diesem Repository über HTTPS und nur eine neuere
 Version. Die Datei muss zur Prüfsumme in `SHA256SUMS.txt` desselben
@@ -451,7 +475,8 @@ kann, tauscht auch die Prüfsumme; eine Signatur gibt es nicht.
 
 Aus dem Quelltext gestartet liegen die Daten im Programmverzeichnis, beim
 AppImage in `~/.local/share/morsetrainer/`, bei der exe in
-`%APPDATA%\Morsetrainer\`.
+`%APPDATA%\Morsetrainer\`, bei der Mac-App in
+`~/Library/Application Support/Morsetrainer/`.
 
 - `stats/morsetrainer.db`: alle Übungsdaten in einer SQLite-Datenbank –
   jeder Durchgang mit seinen Zeichen, Ergebnisse von QSO-Abfragen und

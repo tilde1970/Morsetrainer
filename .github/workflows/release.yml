@@ -1,5 +1,5 @@
-# Baut AppImage (Linux) und exe (Windows).
-# Tag "v*" pushen -> GitHub-Release mit beiden Dateien.
+# Baut AppImage (Linux), exe (Windows) und App (macOS, Apple Silicon).
+# Tag "v*" pushen -> GitHub-Release mit allen Dateien.
 # Manuell gestartet (workflow_dispatch) -> nur Build-Artefakte zum Testen.
 name: Release
 
@@ -58,9 +58,34 @@ jobs:
           name: windows
           path: dist/Morsetrainer.exe
 
+  macos:
+    # macos-latest = Apple Silicon (arm64). Die App ist nicht signiert und
+    # nicht notarisiert (kein Apple-Entwicklerkonto), PyInstaller signiert
+    # nur ad hoc; beim ersten Start muss man sie freigeben (Anleitung.md).
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      # get_voice.sh braucht bash 4 (declare -A) und sha256sum.
+      - run: brew install bash coreutils
+      # Pillow wandelt das .ico in das .icns der App um.
+      - run: pip install -r requirements.txt pyinstaller pillow
+      - run: bash packaging/get_voice.sh
+      - run: pyinstaller --noconfirm --windowed --name Morsetrainer --osx-bundle-identifier io.github.tilde1970.morsetrainer --add-data "CHANGELOG.md:." --add-data "CHANGELOG.en.md:." --add-data "docs/Anleitung.md:docs" --add-data "docs/Anleitung.en.md:docs" --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
+      # Stimme und MP3 in der App prüfen (ohne Fenster, ohne Ton).
+      - run: dist/Morsetrainer.app/Contents/MacOS/Morsetrainer --selftest selftest.mp3 && test -s selftest.mp3
+      # ditto erhält Symlinks und Signatur der App im ZIP.
+      - run: ditto -c -k --sequesterRsrc --keepParent dist/Morsetrainer.app dist/Morsetrainer-macOS.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: macos
+          path: dist/Morsetrainer-macOS.zip
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [appimage, windows]
+    needs: [appimage, windows, macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -77,7 +102,7 @@ jobs:
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> notes.md
       # Prüfsummen: zum Nachprüfen von Hand, und das Update im Programm
       # lädt nur, was hierzu passt (morsetrainer/net/update.py).
-      - run: sha256sum Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe > SHA256SUMS.txt
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --notes-file notes.md --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe SHA256SUMS.txt
+      - run: sha256sum Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe Morsetrainer-macOS.zip > SHA256SUMS.txt
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Morsetrainer $GITHUB_REF_NAME" --notes-file notes.md --generate-notes Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe Morsetrainer-macOS.zip SHA256SUMS.txt
         env:
           GH_TOKEN: ${{ github.token }}

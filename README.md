@@ -44,6 +44,10 @@ wird dafür nicht benötigt:
 - **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
   („Weitere Informationen“ → „Trotzdem ausführen“).
+- **macOS (Apple-Prozessor):** `Morsetrainer-macOS.zip` herunterladen,
+  entpacken und `Morsetrainer.app` in „Programme“ ziehen. Die App ist nicht
+  signiert, beim ersten Start muss man sie freigeben – siehe
+  [Anleitung](docs/Anleitung.md#macos), dort auch der Weg für Intel-Macs.
 
 Ab Version 2.30 liegt `SHA256SUMS.txt` mit den Prüfsummen daneben. Zum
 Nachprüfen unter Linux `sha256sum -c --ignore-missing SHA256SUMS.txt`,

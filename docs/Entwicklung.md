@@ -35,12 +35,12 @@ morsetrainer/
 tests/               automatische Tests
 docs/                Anleitung, Entwicklung, Bilder für die README
 packaging/           AppImage-Build (Icon, Desktop-Datei)
-.github/workflows/   baut AppImage und exe für Releases, mit SHA256SUMS.txt
+.github/workflows/   baut AppImage, exe und Mac-App für Releases, mit SHA256SUMS.txt
 ```
 
 ## Release
 
-Ein Tag `vX.Y` startet `.github/workflows/release.yml`: Es baut AppImage
-und exe, schreibt `SHA256SUMS.txt` und legt alles mit dem Abschnitt der
+Ein Tag `vX.Y` startet `.github/workflows/release.yml`: Es baut AppImage,
+exe und Mac-App (ZIP, nur Apple-Prozessor, nicht signiert), schreibt `SHA256SUMS.txt` und legt alles mit dem Abschnitt der
 Version aus `CHANGELOG.md` als Release an. Das Update im Programm lädt nur
 Dateien, die zu `SHA256SUMS.txt` passen (`morsetrainer/net/update.py`).

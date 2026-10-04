@@ -398,9 +398,33 @@ Morsetrainer.exe` in PowerShell and compare the value with the line in
 
 ### macOS
 
-There is no ready-to-run program for macOS; the AppImage does not run
-there. The Morsetrainer can be started from source, though. This has not
-been tested on a Mac yet – feedback is welcome.
+For Macs with Apple silicon (M1 and newer) there is
+`Morsetrainer-macOS.zip`. Download it, unpack it (double-click, unless the
+browser has already done so) and drag `Morsetrainer.app` into the
+Applications folder. The app has not been tested on a Mac yet – feedback is
+welcome.
+
+As the app is not signed with Apple (that needs a paid Apple developer
+account), macOS blocks the first start:
+
+- **macOS 15 (Sequoia) and newer:** Double-click the app once and close
+  the message with “Done”. Then go to “System Settings” → “Privacy &
+  Security”, scroll down to “Morsetrainer was blocked”, click “Open
+  Anyway” and confirm with your password.
+- **macOS 14 and older:** In the Finder, right-click (or Ctrl-click)
+  `Morsetrainer.app` → “Open”, then “Open” again in the message.
+
+After that the app starts normally. If macOS says the app is “damaged”,
+run `xattr -dr com.apple.quarantine /Applications/Morsetrainer.app` in the
+Terminal.
+
+The data lives in `~/Library/Application Support/Morsetrainer/`. There is no
+automatic update on the Mac, only the hint about a new version; then
+download the new ZIP file and replace the app in the Applications folder.
+Your data stays where it is. After each replacement macOS asks for the
+approval again.
+
+**Older Macs with an Intel processor** run the Morsetrainer from source:
 
 1. Install Python 3.10 or newer from [python.org](https://www.python.org/downloads/macos/).
    This Python comes with a working Tk; with Homebrew's Python the window
@@ -418,10 +442,9 @@ been tested on a Mac yet – feedback is welcome.
 4. Start with `python main.py`. Later, `source .venv/bin/activate` and
    `python main.py` in the same folder are enough.
 
-The data then lives in the unpacked folder (see [Data](#data)). There is no
-automatic update this way, only the hint about a new version. To update,
-unpack the new source and copy `stats/`, `window_state.json` and, if
-present, `callsigns.scp` and `woerter.txt` from the old folder into it.
+Run this way, the data lives in the unpacked folder. To update, unpack the
+new source and copy `stats/`, `window_state.json` and, if present,
+`callsigns.scp` and `woerter.txt` from the old folder into it.
 
 ### Updates
 
@@ -430,8 +453,8 @@ release and then asks whether to download it. With “Yes” it downloads the
 exe or AppImage from GitHub, replaces its own file and restarts; with “No”
 it does not ask again for this version, the footer just shows “Version …
 available”. Without internet nothing happens, the program runs as usual.
-Run from source, there is only the hint. If the file is in a folder without
-write permission, please download it by hand.
+Run from source or on the Mac, there is only the hint. If the file is in a
+folder without write permission, please download it by hand.
 
 Downloads come only from this repository over HTTPS and only for a newer
 version. The file has to match the checksum in `SHA256SUMS.txt` of the same
@@ -444,7 +467,8 @@ the checksum too; there is no signature.
 
 When started from source, the data lives in the program directory; for the
 AppImage in `~/.local/share/morsetrainer/`, for the exe in
-`%APPDATA%\Morsetrainer\`.
+`%APPDATA%\Morsetrainer\`, for the Mac app in
+`~/Library/Application Support/Morsetrainer/`.
 
 - `stats/morsetrainer.db`: all practice data in an SQLite database – every
   run with its characters, results of QSO checks and contests, overall
