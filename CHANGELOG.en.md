@@ -1,5 +1,11 @@
 # Changes
 
+## Unreleased
+
+- **Award preview:** “Preview: next goal” in the Statistics tab under
+  “Awards” shows the award of the next open level, stamped “PREVIEW”,
+  without date and number.
+
 ## 2.34
 
 - **Banknote-style motifs:** every award has its own motif in the style of

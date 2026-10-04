@@ -400,6 +400,13 @@ class DiplomaMotifTest(unittest.TestCase):
         self.assertEqual(page.count('class="motif left"'), 1)
         self.assertEqual(page.count('class="motif right"'), 1)
 
+    def test_preview_has_stamp_but_no_date_or_number(self):
+        page = panel.diploma_page(awards.BY_KEY["headphones"], 1, None, "DL1ABC", "Max")
+        for text in ("VORSCHAU", "Silber", "DL1ABC", "Datum: –", 'class="motif left"'):
+            self.assertIn(text, page)
+        self.assertNotIn("Nr.", page)
+        self.assertNotIn("VORSCHAU", panel.diploma_page(awards.BY_KEY["headphones"], 1, self.DAY, "DL1ABC", "Max"))
+
     def test_missing_motif_is_left_out(self):
         self.assertEqual(diploma.motif_svg("gibt-es-nicht", "left"), "")
         with mock.patch.object(diploma, "MOTIF_DIR", Path("/nirgends")):
@@ -430,6 +437,24 @@ class DiplomaWindowTest(unittest.TestCase):
         printed.assert_called_once_with(awards.BY_KEY["koch"], 2, date(2026, 10, 4), "DL1ABC", "Max")
         window.close()
 
+
+    def test_preview_button_shows_the_next_open_level(self):
+        box = self.tk.Frame(self.root)
+        awards_box = panel.AwardsPanel(box, station=lambda: ("DL1ABC", "Max"))
+        koch, club = awards.BY_KEY["koch"], awards.BY_KEY["club"]
+        done = awards.Status([date(2026, 10, 4)] * 4, 40)
+        awards_box.refresh([(koch, awards.Status([date(2026, 10, 1), None, None], 12)), (club, done)])
+        awards_box.tree.selection_set("koch")
+        awards_box._show_detail()
+        self.assertEqual(str(awards_box.preview_button["state"]), "normal")
+        with mock.patch.object(panel, "preview_diploma", return_value="ok") as preview:
+            awards_box._preview()
+        preview.assert_called_once_with(koch, 1, "DL1ABC", "Max")
+        self.assertEqual(awards_box.note_var.get(), "ok")
+        awards_box.tree.selection_set("club")  # alle Stufen erreicht: keine Vorschau
+        awards_box._show_detail()
+        self.assertEqual(str(awards_box.preview_button["state"]), "disabled")
+        self.assertEqual(awards_box.note_var.get(), "")
 
 if __name__ == "__main__":
     unittest.main()

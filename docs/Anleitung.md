@@ -117,7 +117,9 @@ Clubabend geht nur gemeinsam im Netzwerk und steht ohne Siegel am Ende.
 Eine gewählte Zeile zeigt Bedingung und Tage der Siegel, bei QRN-fest,
 Contest und Verwechslung auch, wie nah du der nächsten Stufe bist (bester
 Lauf bzw. das nächste Paar mit verbleibenden Tagen); „Diplom ansehen
-und drucken“ zeigt das Diplom der höchsten Stufe.
+und drucken“ zeigt das Diplom der höchsten Stufe. „Vorschau: nächstes
+Ziel“ zeigt, wie das Diplom der nächsten offenen Stufe aussehen wird – mit
+dem Stempel „VORSCHAU“, ohne Datum und Nummer.
 
 | Diplom | Stufen | ab Lektion | Bedingung |
 |---|---|---|---|

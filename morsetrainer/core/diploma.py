@@ -245,13 +245,14 @@ def motif_svg(key: str, css_class: str) -> str:
 
 def diploma_html(name: str, level_name: str, colors: tuple, condition: str, date_text: str,
                  call: str = "", holder: str = "", labels: dict = None, number: str = "",
-                 motif: str = "") -> str:
+                 motif: str = "", stamp: str = "") -> str:
     """HTML-Seite eines Diploms. `level_name` leer bei Diplomen ohne Stufen;
     `call` (groß) und `holder` (Name, darunter) beide leer: ohne
     Empfängerzeile. `labels` liefert die (übersetzten) Texte "title",
     "awarded", "date", "footer", "number". `number`: Diplom-Nummer
     (diploma_number), leer ohne. `motif`: Schlüssel des Motivs (meist der
-    des Diploms), leer ohne."""
+    des Diploms), leer ohne. `stamp`: schräger Stempel quer über das Blatt
+    (z. B. „VORSCHAU“), leer ohne."""
     labels = labels or {}
     esc = html.escape
     fill, edge = colors
@@ -304,6 +305,10 @@ h2 {{ font-family: "Noto Serif Display", "Noto Serif", Georgia, serif; font-size
           --paper: {PAPER}; }}
 .motif.left {{ left: 20mm; }}
 .motif.right {{ right: 20mm; }}
+.stamp {{ position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }}
+.stamp span {{ transform: rotate(-22deg); padding: 2mm 10mm; border: 1.6mm solid rgba(170, 30, 30, 0.28);
+               border-radius: 5mm; color: rgba(170, 30, 30, 0.28); font-family: "DejaVu Sans", Arial, sans-serif;
+               font-size: 64pt; font-weight: bold; letter-spacing: 0.12em; }}
 </style></head><body>
 <div class="sheet">
 <svg class="art" viewBox="0 0 {WIDTH} {HEIGHT}" preserveAspectRatio="none">
@@ -330,6 +335,7 @@ h2 {{ font-family: "Noto Serif Display", "Noto Serif", Georgia, serif; font-size
 <div class="line">{esc(labels.get("footer", ""))}</div>
 </div>
 </div>
+{f'<div class="stamp"><span>{esc(stamp)}</span></div>' if stamp else ""}
 </div>
 </body></html>
 """

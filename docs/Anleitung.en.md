@@ -121,7 +121,8 @@ works together in the network and is listed last while it has no seal. A selecte
 shows the condition and the days of the seals, for QRN-proof, Contest and
 Confusion also how close you are to the next level (best run or the next
 pair with the days left); “View and print award” shows the award of the
-highest level.
+highest level. “Preview: next goal” shows what the award of the next open
+level will look like – stamped “PREVIEW”, without date and number.
 
 | Award | Levels | From lesson | Condition |
 |---|---|---|---|

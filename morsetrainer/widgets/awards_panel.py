@@ -17,6 +17,7 @@ from morsetrainer.widgets import theme
 
 WRAP = 520
 DIPLOMA_FILE_NAME = "diplom.html"
+PREVIEW_FILE_NAME = "diplom-vorschau.html"
 SEAL_SIZE = 56
 
 
@@ -96,28 +97,41 @@ def diploma_condition(award, level) -> str:
 
 
 def diploma_page(award, level, day, call: str, holder: str = "") -> str:
-    """HTML-Seite des Diploms; die Nummer nur mit Rufzeichen."""
+    """HTML-Seite des Diploms; die Nummer nur mit Rufzeichen. `day` None:
+    Vorschau einer noch offenen Stufe – ohne Datum und Nummer, mit Stempel."""
+    preview = day is None
     return diploma.diploma_html(
         tr(award.name), tr(awards.LEVEL_NAMES[level]) if award.levels else "",
         diploma.seal_colors(level, award.levels), diploma_condition(award, level),
-        day.strftime(tr("%d.%m.%Y")), call, holder,
+        "–" if preview else day.strftime(tr("%d.%m.%Y")), call, holder,
         labels={"title": tr("Diplom"), "awarded": tr("verliehen an"), "date": tr("Datum:"),
                 "footer": tr("Morsetrainer · entwickelt von DL4YM"), "number": tr("Nr.")},
-        number=diploma.diploma_number(call, award.key, level if award.levels else None, day),
-        motif=award.key)
+        number="" if preview else diploma.diploma_number(call, award.key, level if award.levels else None, day),
+        motif=award.key, stamp=tr("VORSCHAU") if preview else "")
 
 
-def print_diploma(award, level, day, call: str, holder: str = "") -> str:
-    """Diplom als HTML-Seite im Browser öffnen; Rückgabe: Meldung."""
-    page = diploma_page(award, level, day, call, holder)
-    path = stats.STATS_DIR / DIPLOMA_FILE_NAME
+def _open_page(page: str, name: str):
+    """Seite unter stats/ speichern und im Browser öffnen; Pfad oder Fehlermeldung."""
+    path = stats.STATS_DIR / name
     try:
         stats.STATS_DIR.mkdir(parents=True, exist_ok=True)
         path.write_text(page, encoding="utf-8")
         open_in_editor(path)
     except OSError as exc:
-        return tr("Nicht gespeichert: {error}").format(error=exc)
-    return tr("Im Browser geöffnet, dort drucken: {path}").format(path=path)
+        return None, tr("Nicht gespeichert: {error}").format(error=exc)
+    return path, None
+
+
+def print_diploma(award, level, day, call: str, holder: str = "") -> str:
+    """Diplom als HTML-Seite im Browser öffnen; Rückgabe: Meldung."""
+    path, error = _open_page(diploma_page(award, level, day, call, holder), DIPLOMA_FILE_NAME)
+    return error or tr("Im Browser geöffnet, dort drucken: {path}").format(path=path)
+
+
+def preview_diploma(award, level, call: str, holder: str = "") -> str:
+    """Vorschau der Stufe `level` (noch nicht erreicht) im Browser; Rückgabe: Meldung."""
+    path, error = _open_page(diploma_page(award, level, None, call, holder), PREVIEW_FILE_NAME)
+    return error or tr("Vorschau im Browser geöffnet: {path}").format(path=path)
 
 
 def draw_seal(parent, award, level) -> tk.Canvas:
@@ -191,7 +205,9 @@ class DiplomaWindow:
 
 
 class AwardsPanel:
-    def __init__(self, parent, on_show=None):
+    def __init__(self, parent, on_show=None, station=None):
+        """`on_show`: (Schlüssel, Stufe, Tag) des gewählten Siegels anzeigen;
+        `station`: liefert (Rufzeichen, Name) für die Vorschau."""
         box = theme.card(parent, tr("Diplome"))
         self.summary_var = tk.StringVar(value="")
         ttk.Label(box, textvariable=self.summary_var, style="Score.TLabel").pack(anchor="w", pady=(0, 6))
@@ -212,9 +228,17 @@ class AwardsPanel:
         self.detail_var = tk.StringVar(value="")
         theme.hint(box, textvariable=self.detail_var, wrap=WRAP).pack(anchor="w", pady=(6, 0))
         self.on_show = on_show
-        self.show_button = ttk.Button(box, text=tr("Diplom ansehen und drucken"), command=self._show_diploma,
+        self.station = station
+        buttons = ttk.Frame(box)
+        buttons.pack(anchor="w", pady=(6, 0))
+        self.show_button = ttk.Button(buttons, text=tr("Diplom ansehen und drucken"), command=self._show_diploma,
                                       state="disabled")
-        self.show_button.pack(anchor="w", pady=(6, 0))
+        self.show_button.pack(side="left")
+        self.preview_button = ttk.Button(buttons, text=tr("Vorschau: nächstes Ziel"), command=self._preview,
+                                         state="disabled")
+        self.preview_button.pack(side="left", padx=(8, 0))
+        self.note_var = tk.StringVar(value="")
+        theme.hint(box, textvariable=self.note_var, wrap=WRAP).pack(anchor="w", pady=(4, 0))
         self.rows = {}
 
     def refresh(self, rows=None):
@@ -250,14 +274,31 @@ class AwardsPanel:
         reached = [(level, day) for level, day in enumerate(status.dates) if day is not None]
         return (selected[0], *reached[-1]) if reached else None
 
+    def _next_goal(self):
+        """(Diplom, nächste offene Stufe) der gewählten Zeile oder None."""
+        selected = self.tree.selection()
+        if not selected or selected[0] not in self.rows:
+            return None
+        award, status = self.rows[selected[0]]
+        level = status.next_level
+        return None if level is None else (award, level)
+
     def _show_diploma(self):
         seal = self._selected_seal()
         if seal and self.on_show:
             self.on_show(seal)
 
+    def _preview(self):
+        goal = self._next_goal()
+        if goal:
+            call, name = self.station() if self.station else ("", "")
+            self.note_var.set(preview_diploma(*goal, call, name))
+
     def _show_detail(self):
         selected = self.tree.selection()
+        self.note_var.set("")
         self.show_button.config(state="normal" if self._selected_seal() else "disabled")
+        self.preview_button.config(state="normal" if self._next_goal() else "disabled")
         if selected and selected[0] in self.rows:
             self.detail_var.set(detail_text(*self.rows[selected[0]]))
         else:

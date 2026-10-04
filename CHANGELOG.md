@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Diplom-Vorschau:** „Vorschau: nächstes Ziel“ im Reiter Statistik unter
+  „Diplome“ zeigt das Diplom der nächsten offenen Stufe, mit Stempel
+  „VORSCHAU“, ohne Datum und Nummer.
+
 ## 2.34
 
 - **Motive wie auf Geldscheinen:** Jedes Diplom hat ein eigenes Motiv im

@@ -699,7 +699,8 @@ class MorseTrainerApp:
         ttk.Spinbox(row, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5).pack(side="left")
         ttk.Label(row, text=tr("Min. pro Tag")).pack(side="left", padx=(4, 0))
         theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(anchor="w", pady=(4, 0))
-        self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")))
+        self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")),
+                                        station=lambda: (self.station_call(), self.station_name_var.get().strip()))
         self.lifeline_panel = LifelinePanel(frame)
 
         review_box = theme.card(frame, tr("Wiederholung über Tage (Lernkartei)"))

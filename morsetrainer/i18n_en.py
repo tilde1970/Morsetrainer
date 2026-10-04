@@ -1144,6 +1144,9 @@ EN.update({
     "falls vorhanden; für Diplome, Contest und Netzwerk": "if you have one; for awards, contest and network",
     "ohne eigenes Rufzeichen: ein ausgedachtes eintragen": "no callsign of your own: enter a made-up one",
     "Diplom ansehen und drucken": "View and print award",
+    "Vorschau: nächstes Ziel": "Preview: next goal",
+    "VORSCHAU": "PREVIEW",
+    "Vorschau im Browser geöffnet: {path}": "Preview opened in the browser: {path}",
     "Nr.": "No.",
     "Aus deinem bisherigen Üben wurden {n} Diplome nachgetragen. Du findest sie im Reiter Statistik unter "
     "„Diplome“ und kannst sie dort ansehen und drucken.":
