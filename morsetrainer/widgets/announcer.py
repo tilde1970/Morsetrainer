@@ -17,7 +17,9 @@ englischen Stimme (core/speech.py, VOICES).
 Erzeugt wird die Sprache in einem Hintergrund-Thread; die Oberfläche fragt
 mit after() nach, ob sie fertig ist (Tk darf nur aus seinem eigenen Thread
 bedient werden)."""
+import re
 import threading
+import time
 import tkinter as tk
 
 from morsetrainer import i18n
@@ -29,6 +31,10 @@ from morsetrainer.i18n import tr
 AFTER_SPEECH_MS = 250
 POLL_MS = 20
 CACHE_SIZE = 64
+# Lange Ansagen (Statistik) satzweise: der erste Satz klingt sofort, die
+# übrigen entstehen, während er läuft. Kurze bleiben ein Stück.
+SPLIT_ABOVE_CHARS = 60
+CHUNK_CHARS = 150
 
 _instance = None
 _synth_lock = threading.Lock()  # Piper nicht aus zwei Threads zugleich
@@ -69,25 +75,36 @@ class Announcer:
             return
         self.token += 1
         token = self.token
-        result = {}
+        chunks = _chunks(text)
+        results = {}  # Nr. -> Samples (oder None), sobald erzeugt
 
         def work():
-            result["samples"] = self._synth(text)
+            for index, chunk in enumerate(chunks):
+                if token != self.token:
+                    return  # verdrängt: den Rest nicht mehr erzeugen
+                results[index] = self._synth(chunk)
 
-        thread = threading.Thread(target=work, daemon=True)
-        thread.start()
+        threading.Thread(target=work, daemon=True).start()
+        state = {"next": 0, "free_at": 0.0}  # nächstes Stück; wann das laufende zu Ende ist
 
         def poll():
-            if thread.is_alive():
-                self.root.after(POLL_MS, poll)
+            if token != self.token:  # verdrängt: Ablauf trotzdem freigeben
+                if then is not None:
+                    then()
                 return
-            samples = result.get("samples")
-            delay = 0
-            if token == self.token and samples is not None and len(samples):
-                audio.play_quietly(samples)
-                delay = int((len(samples) / SAMPLE_RATE + AUDIO_LATENCY) * 1000) + AFTER_SPEECH_MS
-            if then is not None:
-                self.root.after(delay, then)
+            index = state["next"]
+            if index >= len(chunks):
+                if then is not None:
+                    wait = max(state["free_at"] - time.time(), 0.0)
+                    self.root.after(int(wait * 1000) + AFTER_SPEECH_MS, then)
+                return
+            if index in results and time.time() >= state["free_at"]:
+                samples = results[index]
+                if samples is not None and len(samples):
+                    audio.play_quietly(samples)
+                    state["free_at"] = time.time() + len(samples) / SAMPLE_RATE + (AUDIO_LATENCY if index == 0 else 0)
+                state["next"] += 1
+            self.root.after(POLL_MS, poll)
 
         poll()
 
@@ -122,6 +139,21 @@ class Announcer:
                     self._cache.pop(next(iter(self._cache)))
                 self._cache[text] = samples
         return samples
+
+
+def _chunks(text: str) -> list:
+    """Kurze Ansage: ein Stück. Lange: erster Satz allein, der Rest in
+    Stücken bis CHUNK_CHARS, an Satzgrenzen geteilt."""
+    if len(text) <= SPLIT_ABOVE_CHARS:
+        return [text]
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    chunks = [sentences[0]]
+    for sentence in sentences[1:]:
+        if len(chunks) > 1 and len(chunks[-1]) + 1 + len(sentence) <= CHUNK_CHARS:
+            chunks[-1] += " " + sentence
+        else:
+            chunks.append(sentence)
+    return chunks
 
 
 def install(root) -> Announcer:

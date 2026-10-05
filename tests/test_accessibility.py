@@ -122,6 +122,20 @@ class AnnouncerTest(AppTestCase):
         self.assertTrue(self.pump_until(lambda: len(self.played) > played))
         self.assertEqual(self.said.count("Richtig."), 1)
 
+    def test_long_announcement_starts_with_the_first_sentence(self):
+        from morsetrainer.widgets import announcer
+        self.assertEqual(announcer._chunks("Richtig."), ["Richtig."])
+        text = "Statistik. " + " ".join(f"Satz Nummer {n} mit etwas Inhalt." for n in range(8))
+        chunks = announcer._chunks(text)
+        self.assertEqual(chunks[0], "Statistik.")
+        self.assertTrue(all(len(chunk) <= announcer.CHUNK_CHARS for chunk in chunks[1:]))
+        self.assertEqual(" ".join(chunks), text)
+        done = []
+        self.app.announcer.say(text, then=lambda: done.append(True), force=True)
+        self.assertTrue(self.pump_until(lambda: done, timeout=5))
+        self.assertEqual([s for s in self.said if not s.startswith("Reiter")], chunks)
+        self.assertEqual(len(self.played), len(chunks) + sum(s.startswith("Reiter") for s in self.said))
+
     def test_f9_toggles_and_confirms(self):
         self.app._dispatch_key(mock.Mock(keysym="F9", char=""))
         self.assertTrue(self.app.announcer.enabled())
