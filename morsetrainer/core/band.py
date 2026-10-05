@@ -108,6 +108,10 @@ FILTER_ORDER = 4
 FILTER_IR_SECONDS = 0.06
 FILTER_FFT_SIZE = 2 ** 15
 
+# Station für die Sprachansage im Mischer (widgets/announcer.py): wie der
+# Mithörton ohne Filter, QSB und AGC, aber eigens abbrechbar.
+VOICE = "voice"
+
 _noise_loop = None
 _ssb_loop = None
 
@@ -398,7 +402,7 @@ class BandConditions:
         sidetone = np.zeros(n, dtype=np.float64)
         for block, station in sources:
             block = block[:n]
-            if station is None:
+            if station is None or station == VOICE:
                 sidetone[:len(block)] += block
             else:
                 out[:len(block)] += block * (self.station_gain(station, len(block)) * agc)

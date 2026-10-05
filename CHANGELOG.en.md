@@ -26,7 +26,10 @@
   program uses its built-in voice to announce results (spelled in Groups,
   Words and Callsigns, errors in Characters), the end of a run, tab
   changes and the daily practice cards; F11 reads out where you are. The
-  program waits for the announcement. (German voice.)
+  program waits for the announcement. (German voice.) Also in QSO (next
+  step, quiz fields, result with the correct values), in Contest (logging
+  errors right after the TU, in the audio), in the Statistics tab (F11
+  reads an overview) and in tables (selected row).
 - **High contrast** (accessibility): black, white and yellow colour
   scheme with strong borders, under “More options”, from the next start.
   All text at least 7:1 against its background, including charts and the

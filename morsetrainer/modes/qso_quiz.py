@@ -6,7 +6,7 @@ from tkinter import ttk
 
 from morsetrainer.core import qso_text
 from morsetrainer.i18n import tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 
 
@@ -54,6 +54,8 @@ class QuizPanel:
         self.grid = ttk.Frame(self.box)
         self.grid.pack(fill="x", pady=(0, 6))
         self.vars, self.entries, self.marks = {}, {}, {}
+        self.results = {}  # (Zeile, Spalte) -> richtig? nach „Prüfen“
+        self.fixes = []    # [(Zeile, Spalte, erwartet)] der falschen Felder
 
         bottom = ttk.Frame(self.box)
         bottom.pack(fill="x")
@@ -70,6 +72,7 @@ class QuizPanel:
         for child in self.grid.winfo_children():
             child.destroy()
         self.vars, self.entries, self.marks = {}, {}, {}
+        self.results, self.fixes = {}, []
         for col, header in enumerate(qso.quiz_columns):
             ttk.Label(self.grid, text=header, style="Hint.TLabel").grid(row=0, column=1 + 2 * col, columnspan=2, sticky="w")
         for row, (label, cells) in enumerate(qso.quiz_rows, start=1):
@@ -87,11 +90,34 @@ class QuizPanel:
                 mark.grid(row=row, column=2 + 2 * col, sticky="w", padx=(2, 6))
                 self.vars[row - 1, col] = var
                 self.entries[row - 1, col] = entry
+                # Ansage (Barrierefreiheit): welches Feld, nach dem Prüfen das Ergebnis.
+                entry.bind("<FocusIn>", lambda e, key=(row - 1, col): self._announce_field(key), add="+")
                 self.marks[row - 1, col] = mark
         self.score_var.set("")
         self.fix_var.set("")
         self.checked = False
         self.set_check_enabled(True)
+
+    def _announce_field(self, key) -> None:
+        row, col = key
+        label, cells = self.qso.quiz_rows[row]
+        text = f"{label}, {self.qso.quiz_columns[col]}."
+        if key in self.results:
+            if self.results[key]:
+                text += " Richtig."
+            else:
+                text += f" Falsch. Richtig wäre: {announcer.value(cells[col][0])}."
+        announcer.say(text)
+
+    def spoken_result(self) -> str:
+        """Ergebnis von „Prüfen“ zum Ansagen, mit den richtigen Werten."""
+        total = len(self.vars)
+        correct = sum(self.results.values())
+        text = f"{correct} von {total} richtig."
+        if self.fixes:
+            text += " Richtig wäre: " + " ".join(
+                f"{label}, {column}: {announcer.value(expected)}." for label, column, expected in self.fixes)
+        return text
 
     def set_check_enabled(self, enabled: bool) -> None:
         self.check_button.config(state="normal" if enabled and not self.checked else "disabled")
@@ -108,8 +134,10 @@ class QuizPanel:
             bg = theme.OK_BG if ok else theme.ERROR_BG
             self.entries[row, col].config(background=bg, readonlybackground=bg, state="readonly")
             self.marks[row, col].config(text="✓" if ok else "✗", foreground=theme.OK if ok else theme.ERROR)
+            self.results[row, col] = ok
             if not ok:
                 fixes.append(f"{label} ({self.qso.quiz_columns[col]}): {expected}")
+                self.fixes.append((label, self.qso.quiz_columns[col], expected))
         total = len(self.vars)
         self.score_var.set(tr("{correct} / {total} richtig").format(correct=correct, total=total))
         self.fix_var.set(tr("Richtig wäre: ") + ", ".join(fixes) if fixes else "")

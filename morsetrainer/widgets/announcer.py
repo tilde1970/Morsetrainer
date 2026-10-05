@@ -82,6 +82,24 @@ class Announcer:
 
         poll()
 
+    def render(self, text: str, deliver) -> None:
+        """Sprache für `text` im Hintergrund erzeugen und `deliver(samples)`
+        im Tk-Thread aufrufen, ohne sie abzuspielen (für Reiter mit eigenem
+        Tonstrom, z. B. den Contest-Mischer). Nichts, wenn die Ansage aus ist."""
+        if not text or not self.enabled() or self.available() is not None:
+            return
+        result = {}
+        thread = threading.Thread(target=lambda: result.update(samples=self._synth(text)), daemon=True)
+        thread.start()
+
+        def poll():
+            if thread.is_alive():
+                self.root.after(POLL_MS, poll)
+            elif result.get("samples") is not None and len(result["samples"]):
+                deliver(result["samples"])
+
+        poll()
+
     def _synth(self, text: str):
         samples = self._cache.get(text)
         if samples is None:
@@ -98,10 +116,28 @@ class Announcer:
 
 
 def install(root) -> Announcer:
-    """Eine Ansage für das ganze Programm (vom Hauptfenster)."""
+    """Eine Ansage für das ganze Programm (vom Hauptfenster). Tabellen lesen
+    die gewählte Zeile vor, wenn man mit der Tastatur darin unterwegs ist."""
     global _instance
     _instance = Announcer(root)
+    root.bind_class("Treeview", "<<TreeviewSelect>>", _read_row, add="+")
     return _instance
+
+
+def _read_row(event) -> None:
+    """Gewählte Tabellenzeile als „Spalte: Wert, …“ ansagen – nur mit
+    Tastaturfokus in der Tabelle, nicht beim Auffrischen von selbst."""
+    tree = event.widget
+    try:
+        if not active() or tree.focus_get() is not tree or not tree.selection():
+            return
+        values = tree.item(tree.selection()[0], "values")
+        columns = tree["columns"]
+        parts = [f"{tree.heading(column, 'text')}: {value}"
+                 for column, value in zip(columns, values) if str(value).strip()]
+    except tk.TclError:
+        return
+    _instance.say(". ".join(parts) + ".")
 
 
 def get():
@@ -122,6 +158,30 @@ def say(text: str, then=None) -> None:
     _instance.say(text, then)
 
 
+def render(text: str, deliver) -> None:
+    """Sprache erzeugen und `deliver(samples)` übergeben, falls die Ansage an
+    ist (für Reiter mit eigenem Tonstrom)."""
+    if _instance is not None:
+        _instance.render(text, deliver)
+
+
 def spell(text: str) -> str:
     """Buchstabiert (Ka, Emm, U …); leer wird „nichts“."""
     return speech.spoken(text) or "nichts"
+
+
+def spell_nato(text: str) -> str:
+    """Buchstabiert im Funkalphabet (Delta Lima Vier …), wie Rufzeichen im
+    Contest gesprochen werden."""
+    return speech.spoken(text, "nato") or "nichts"
+
+
+def value(text: str) -> str:
+    """Ein Wert aus dem Log: Rufzeichen, Rapport, Nummern und Kürzel (NY)
+    buchstabiert, Namen und Orte (auch kurze wie Eva) als Wort."""
+    text = str(text).strip()
+    if not text:
+        return "nichts"
+    if any(ch.isdigit() for ch in text) or len(text) <= 2:
+        return spell_nato(text)
+    return text.capitalize()

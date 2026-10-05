@@ -479,9 +479,22 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   richtigen Antworten kommt der kurze Quittungston; am Ende jedes
   Durchgangs das Ergebnis; der Name des Reiters beim Wechseln; die Karten
   der Tagesübung. Der Ablauf wartet, bis die Ansage zu Ende ist.
+- **QSO:** am Ende, was jetzt zu tun ist („Trag ins Log ein … F8 prüft“)
+  bzw. beim Mittippen das Ergebnis in Prozent; in der Abfrage beim
+  Hineinspringen der Name des Feldes („Name, Station 2“), nach „Prüfen“
+  das Ergebnis mit den richtigen Werten (Rufzeichen buchstabiert, Namen
+  als Wort) und beim erneuten Besuch eines Feldes, ob es richtig war.
+- **Contest:** Fehler beim Loggen gleich nach deinem TU, im Tonstrom über
+  dem Pile-up („Busted. Richtig: Delta, Lima, Eins …“, „Austausch falsch“,
+  „Nicht im Log“); richtig geloggte QSOs bleiben still, damit die Rate
+  nicht leidet. Am Ende das Ergebnis.
+- **Tabellen:** Gehst du mit den Pfeiltasten durch eine Tabelle
+  (Statistik, Diplome, Contest-Log), wird die Zeile mit den Spaltennamen
+  vorgelesen.
 - **Wo bin ich? (F11):** liest Reiter, Status, letzte Rückmeldung und
-  Restzeit vor, in der Tagesübung die aktuelle Karte – auch bei
-  ausgeschalteter Ansage.
+  Restzeit vor, in der Tagesübung die aktuelle Karte, im Reiter Statistik
+  eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
+  Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
 - **Schriftgröße:** Strg+Plus/Strg+Minus/Strg+0, siehe oben.
 - **Hoher Kontrast:** „Einstellungen …“ → „Hoher Kontrast (Schwarz,
   Weiß, Gelb)“, wirkt nach einem Neustart. Schwarzer Grund, weiße Schrift,
@@ -489,8 +502,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   sich mindestens 7:1 vom Grund ab. Richtig und falsch stehen immer auch
   als Text da, nicht nur als Farbe.
 - Die Stimme ist deutsch, die Ansagen sind es daher auch bei englischer
-  Oberfläche. Einstellungen, Statistik und Diplome kann die Ansage noch
-  nicht vorlesen; das ist der nächste Schritt.
+  Oberfläche. Netzwerk, Sprechen, das Einstellungsfenster und die
+  Abendbilanz sagt sie noch nicht an.
 
 ## Tastenkürzel
 

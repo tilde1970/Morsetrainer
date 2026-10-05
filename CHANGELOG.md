@@ -27,7 +27,10 @@
   eingebauten Stimme Ergebnisse (in Gruppen, Wörtern, Rufzeichen
   buchstabiert, in Einzelzeichen die Fehler), das Ende eines Durchgangs,
   den Reiterwechsel und die Karten der Tagesübung an; F11 liest vor, wo
-  man gerade ist. Der Ablauf wartet auf die Ansage.
+  man gerade ist. Der Ablauf wartet auf die Ansage. Auch im QSO (nächster
+  Schritt, Abfragefelder, Ergebnis mit richtigen Werten), im Contest
+  (Logfehler gleich nach dem TU, im Tonstrom), im Reiter Statistik (F11
+  liest eine Übersicht vor) und in Tabellen (gewählte Zeile).
 - **Hoher Kontrast** (Barrierefreiheit): Farbschema Schwarz, Weiß, Gelb
   mit kräftigen Rahmen, unter „Weitere Optionen“, ab dem nächsten Start.
   Alle Schriften mindestens 7:1 zum Grund, auch Diagramme und die Farben

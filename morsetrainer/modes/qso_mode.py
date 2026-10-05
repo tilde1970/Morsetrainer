@@ -39,7 +39,7 @@ from morsetrainer.core.band import BandConditions, apply_spec, soft_limit
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.continuous_mode import plausible
 from morsetrainer.modes.qso_quiz import QuizPanel
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 from morsetrainer.core.morse import (
@@ -568,20 +568,28 @@ class QsoModeFrame:
             combo.config(state="readonly")
 
         mode = self._eval_mode()
+        # Ansage (Barrierefreiheit): was jetzt zu tun ist; die Stimme ist deutsch.
         if self.tracking:
             accuracy = self._finalize_session()
             self.revealed = True
             self.tracking = False
             self.status_var.set(tr("Ausgewertet – rot markiert: falsch oder verpasst.") + self._adapt_speed(accuracy))
+            spoken = (f"Ausgewertet. {round(accuracy * 100)} Prozent der Zeichen richtig."
+                      if accuracy is not None else "Ausgewertet.")
         elif mode == EVAL_HEAD and not self.quiz_checked:
             self.status_var.set(tr("Beantworte die Fragen und drück „Prüfen“."))
+            spoken = "QSO zu Ende. Beantworte die Fragen; Tab springt in die Felder, F8 prüft."
         elif mode == EVAL_QUIZ and not self.quiz_checked:
             self.status_var.set(tr("Ergänze dein Log und drück „Prüfen“.") if self.qso.is_contest
                                 else tr("Trag ein, was du gehört hast, und drück „Prüfen“."))
+            spoken = "QSO zu Ende. Trag ins Log ein, was du gehört hast; Tab springt in die Felder, F8 prüft."
         else:
             self.status_var.set(tr("QSO beendet."))
+            spoken = "QSO beendet."
         if stopped:
             self.status_var.set(tr("Gestoppt. ") + self.status_var.get())
+            spoken = "Gestoppt. " + spoken
+        announcer.say(spoken)
         self.quiz_ready = True
         self.quiz.set_check_enabled(True)
 
@@ -688,6 +696,7 @@ class QsoModeFrame:
         else:
             note = self._adapt_speed(correct / total if total else None)
         self.status_var.set(tr("Abfrage ausgewertet.") + note)
+        announcer.say(self.quiz.spoken_result())
         self._render_reveal()
         self._update_layout()
         self._update_reveal_button()

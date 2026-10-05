@@ -469,9 +469,23 @@ versions (CHANGELOG) and this manual.
   answers get the short confirmation tone; the result at the end of each
   run; the tab name when switching; the cards of the daily practice. The
   program waits until the announcement has finished.
+- **QSO:** at the end, what to do next (“enter your log … F8 checks”) or,
+  when copying along, the result in percent; in the quiz the name of the
+  field when you enter it (“Name, Station 2”), after “Check” the result
+  with the correct values (callsigns spelled, names as words) and, when
+  you return to a field, whether it was right.
+- **Contest:** logging errors right after your TU, in the audio over the
+  pile-up (“Busted. Richtig: Delta, Lima, Eins …”, “Austausch falsch”,
+  “Nicht im Log”); correctly logged QSOs stay silent so the rate does not
+  suffer. The result at the end.
+- **Tables:** when you move through a table with the arrow keys
+  (statistics, awards, contest log), the row is read out with the column
+  names.
 - **Where am I? (F11):** reads out the tab, status, last feedback and
-  remaining time, during daily practice the current card – even with
-  announcements switched off.
+  remaining time, during daily practice the current card, in the
+  Statistics tab an overview (overall result, most errors, confusions,
+  review box, seals, practice today) – even with announcements switched
+  off.
 - **Font size:** Ctrl+Plus/Ctrl+Minus/Ctrl+0, see above.
 - **High contrast:** “Settings …” → “High contrast (black, white,
   yellow)”, takes effect after a restart. Black background, white text,
@@ -479,8 +493,8 @@ versions (CHANGELOG) and this manual.
   from its background by at least 7:1. Right and wrong are always shown
   as text too, not only as colour.
 - The voice is German, so the announcements are German even with the
-  English interface. Settings, statistics and awards cannot be read out
-  yet; that is the next step.
+  English interface. Network, Speak, the settings window and the evening
+  summary are not announced yet.
 
 ## Keyboard shortcuts
 

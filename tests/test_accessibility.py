@@ -302,3 +302,78 @@ class SettingsWindowTest(AppTestCase):
         self.assertTrue(more)
         self.assertTrue(any("Farnsworth" in t for t in texts))
         self.assertFalse(any("Schriftgröße" in t or "Sichern" in t for t in texts))
+
+
+class AnnouncerModesTest(AnnouncerTest):
+    """Ansage in QSO, Contest und Statistik."""
+
+    def test_contest_speaks_log_errors_into_the_mix(self):
+        import numpy as np
+        from morsetrainer.core import band, qso_text
+        from morsetrainer.modes import run_mode
+        self.app.announcer.var.set(True)
+        self.app.station_call_var.set("DL0ABC")
+        contest = self.mode("Contest")
+        for patch in (mock.patch.object(run_mode.Mixer, "start"), mock.patch.object(run_mode.Mixer, "stop")):
+            patch.start()
+            self.addCleanup(patch.stop)
+        contest.start()
+        caller = run_mode.Caller(call="DL1ABC", exchange="14", exchange_kind=qso_text.TEXT, station=1,
+                                 wpm=20, freq=600.0, strength=1.0, patience=3)
+        caller.state = "worked"
+        contest.callers = [caller]
+        contest.exchange_sent_to = "DL1ABD"
+        contest.call_var.set("DL1ABD")
+        contest.exch_var.set("14")
+        contest._send("tu")
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Busted") for s in self.said)))
+        self.assertIn("Busted. Richtig: Delta, Lima, Eins, Alfa, Bravo, Tschali.", self.said)
+        self.assertTrue(self.pump_until(lambda: any(src[2] == band.VOICE for src in contest.mixer.sources)))
+        contest.stop()
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Contest beendet. 0 von 1") for s in self.said)))
+        # Die Sprache läuft ungefiltert wie der Mithörton.
+        conditions = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0, "filter": 250}, 600)
+        tone = np.full(960, 0.3, dtype=np.float32)
+        self.assertAlmostEqual(float(np.max(conditions.mix([(tone, band.VOICE)], 960))), 0.3, delta=0.01)
+
+    def test_qso_quiz_names_fields_and_reads_the_result(self):
+        from morsetrainer.core import qso_text
+        from morsetrainer.modes.qso_quiz import QuizPanel
+        self.app.announcer.var.set(True)
+        qso = mock.Mock(quiz_columns=("Station 1", "Station 2"),
+                        quiz_rows=(("Rufzeichen", (("DL1ABC", qso_text.TEXT), ("DK2XY", qso_text.TEXT))),
+                                   ("Name", (("Hans", qso_text.TEXT), ("Eva", qso_text.TEXT)))))
+        quiz = QuizPanel(self.root, on_checked=lambda correct, total: None)
+        quiz.reset(qso)
+        quiz._announce_field((1, 0))
+        self.assertTrue(self.pump_until(lambda: "Name, Station 1." in self.said))
+        for key, typed in (((0, 0), "DL1ABC"), ((0, 1), "DK2XY"), ((1, 0), "Hans"), ((1, 1), "Ute")):
+            quiz.vars[key].set(typed)
+        quiz.check()
+        self.assertEqual(quiz.spoken_result(), "3 von 4 richtig. Richtig wäre: Name, Station 2: Eva.")
+        quiz._announce_field((1, 1))
+        self.assertTrue(self.pump_until(lambda: "Name, Station 2. Falsch. Richtig wäre: Eva." in self.said))
+
+    def test_statistics_are_read_out(self):
+        text = self.app.statistics_spoken()
+        self.assertTrue(text.startswith("Statistik. Noch keine Durchgänge."), text)
+        self.assertIn("Lernkartei", text)
+        self.app.select_tab(len(self.app.notebook.tabs()) - 1)
+        self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Statistik.") for s in self.said)))
+
+    def test_table_row_is_read_with_keyboard_focus_only(self):
+        from morsetrainer.widgets import announcer
+        self.app.announcer.var.set(True)
+        tree = ttk.Treeview(self.root, columns=("call", "ok"), show="headings")
+        tree.heading("call", text="Call")
+        tree.heading("ok", text="Ergebnis")
+        row = tree.insert("", "end", values=("DL1ABC", "Busted"))
+        tree.selection_set(row)
+        event = mock.Mock(widget=tree)
+        with mock.patch.object(tree, "focus_get", return_value=None):
+            announcer._read_row(event)  # beim Auffrischen: still
+        with mock.patch.object(tree, "focus_get", return_value=tree):
+            announcer._read_row(event)
+        self.assertTrue(self.pump_until(lambda: "Call: DL1ABC. Ergebnis: Busted." in self.said))
+        self.assertEqual(sum(s.startswith("Call:") for s in self.said), 1)

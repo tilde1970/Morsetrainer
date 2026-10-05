@@ -37,15 +37,17 @@ import numpy as np
 from morsetrainer.core import align, audio
 from morsetrainer.core import qso_text
 from morsetrainer.core import stats
-from morsetrainer.core.band import BandConditions, apply_spec
+from morsetrainer.core.band import VOICE, BandConditions, apply_spec
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE, build_text
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.qso_quiz import is_correct
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 TICK_MS = 30
+# Pause zwischen eigenem TU und der Ansage eines Logfehlers.
+AFTER_TX_SPEECH_S = 0.2
 MIX_CHUNK_SECONDS = 0.02
 # Stationen je Sitzung (Stimmen für Chirp/QSB werden reihum vergeben).
 MAX_STATIONS = 64
@@ -204,6 +206,7 @@ class RunModeFrame:
         self.log = []
         self.my_serial = 1
         self.exchange_sent_to = ""  # Rufzeichen, an das zuletzt der Austausch ging
+        self.log_phrase = ""  # Ansage zum zuletzt geloggten QSO (nur Fehler)
         self.deadline = None
         self.started_at = 0.0
         self.session_id = 0
@@ -469,6 +472,11 @@ class RunModeFrame:
                 correct=correct, total=total) + (f" · {', '.join(details)}." if details else "."))
         else:
             self.status_var.set(tr("Beendet."))
+        if total:
+            spoken = [f"Contest beendet. {correct} von {total} QSOs richtig geloggt."]
+            spoken += [f"{n} {label}." for n, label in ((counts["busted"], "Busted"), (counts["nil"], "nicht im Log"),
+                                                         (counts["exchange"], "Austausch falsch")) if n]
+            announcer.say(" ".join(spoken))
         self.on_stop_cb()
 
     def _tick(self, session_id):
@@ -550,11 +558,22 @@ class RunModeFrame:
         start = self.mixer.clock + int(0.05 * SAMPLE_RATE)
         self.my_tx_start = start
         self.my_tx_end = self.mixer.add(samples, None, start)
+        if kind in ("tu", "correct_tu") and self.log_phrase:
+            # Fehler im Log ansagen, nach dem eigenen TU (Barrierefreiheit).
+            announcer.render(self.log_phrase, self._speak_in_mix)
+            self.log_phrase = ""
         self._schedule(self.my_tx_end, self._react, "tu" if kind == "correct_tu" else kind, call, self.msg_id)
         if unlogged:
             self.status_var.set(tr("Sende: {text} – nicht geloggt ({missing} fehlt)").format(text=text, missing=unlogged))
         else:
             self.status_var.set(tr("Sende: {text}").format(text=text))
+
+    def _speak_in_mix(self, samples):
+        """Ansage in den laufenden Tonstrom, sobald das eigene Senden zu Ende
+        ist; ungefiltert wie der Mithörton."""
+        if self.running and self.mixer is not None:
+            start = max(self.mixer.clock, self.my_tx_end) + int(AFTER_TX_SPEECH_S * SAMPLE_RATE)
+            self.mixer.add(samples, VOICE, start)
 
     def _abort_sending(self):
         if self.running and self.mixer is not None:
@@ -613,6 +632,16 @@ class RunModeFrame:
                 exchange=worked.exchange)
         else:
             ok, category, result = True, "ok", "✓"
+        # Für die Ansage: Fehler mit Rufzeichen im Funkalphabet; ein richtig
+        # geloggtes QSO bleibt still, sonst litte die Rate.
+        if category == "nil":
+            self.log_phrase = "Nicht im Log. Keine Station hat dir einen Austausch gegeben."
+        elif category == "busted":
+            self.log_phrase = f"Busted. Richtig: {announcer.spell_nato(worked.call)}."
+        elif category == "exchange":
+            self.log_phrase = f"Austausch falsch. Richtig: {announcer.value(worked.exchange)}."
+        else:
+            self.log_phrase = ""
         if worked is not None:
             worked.state = "done"
         self.log.append({"call": call, "exch": exch, "ok": ok, "category": category,

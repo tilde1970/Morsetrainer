@@ -526,6 +526,9 @@ class MorseTrainerApp:
         if self.daily.active and self.daily.card_open:
             self.announcer.say(self.daily.card_text, force=True)
             return
+        if self._active_mode() is None:  # Reiter Statistik
+            self.announcer.say(self.statistics_spoken(), force=True)
+            return
         parts = [self._tab_name()]
         mode = self._active_mode()
         for attr in ("status_var", "feedback_var", "remaining_var"):
@@ -542,6 +545,34 @@ class MorseTrainerApp:
         if index < len(tabs) and str(self.notebook.tab(tabs[index], "state")) == "normal":
             self.notebook.select(tabs[index])
 
+    def statistics_spoken(self) -> str:
+        """Der Reiter Statistik zum Vorlesen (F11): Gesamtergebnis, schwächste
+        Zeichen, häufigste Verwechslungen, Lernkartei, Siegel, heute geübt."""
+        spell = announcer.spell
+        data = stats.load_all_time()
+        summary = stats.all_time_summary(data)
+        parts = ["Statistik"]
+        if summary["total"]:
+            parts.append(f"Insgesamt {summary['correct']} von {summary['total']} Zeichen richtig, "
+                         f"{round(summary['accuracy_pct'])} Prozent")
+            weak = [row for row in stats.all_time_char_rows(data) if row[2]][:3]
+            if weak:
+                parts.append("Die meisten Fehler: " + ", ".join(
+                    f"{spell(char)} {wrong} mal" for char, _, wrong, *_ in weak))
+        else:
+            parts.append("Noch keine Durchgänge")
+        pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
+        if pairs:
+            parts.append("Häufigste Verwechslungen: " + ", ".join(
+                f"{spell(sent)} als {spell(typed)} getippt, {count} mal" for sent, typed, count, _ in pairs))
+        due = review.due_chars()
+        parts.append(("Heute in der Lernkartei fällig: " + ", ".join(spell(ch) for ch in due)) if due
+                     else "In der Lernkartei ist heute nichts fällig")
+        parts.append(self.awards_panel.summary_var.get())
+        if self.practice_var.get():
+            parts.append(self.practice_var.get())
+        return ". ".join(part for part in parts if part) + "."
+
     def _tab_name(self) -> str:
         """Name des sichtbaren Reiters, deutsch (die Stimme ist deutsch)."""
         index = self.notebook.index("current")
@@ -550,7 +581,8 @@ class MorseTrainerApp:
         return self.notebook.tab("current", "text")
 
     def _announce_tab(self, event=None) -> None:
-        announcer.say(f"Reiter {self._tab_name()}.")
+        hint = " F11 liest die Übersicht vor." if self._active_mode() is None else ""
+        announcer.say(f"Reiter {self._tab_name()}.{hint}")
 
     def zoom(self, direction: int) -> None:
         """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal)."""
