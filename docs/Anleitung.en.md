@@ -492,10 +492,12 @@ versions (CHANGELOG) and this manual.
   yellow main buttons and highlights, strong borders; all text stands out
   from its background by at least 7:1. Right and wrong are always shown
   as text too, not only as colour.
-- The voice is German, so the announcements are German even with the
-  English interface. If the voice is missing, F9 and F11 play an error
-  tone and the reason appears in the status line. Network, Speak, the settings window and the evening
-  summary are not announced yet.
+- Announcements use the language of the interface: German with the
+  Thorsten voice, English with the Lessac voice (callsigns then “Delta
+  Lima One”). If the voice is missing, F9 and F11 play an error tone and
+  the reason appears in the status line. Network, Speak, the settings
+  window and the evening summary are not announced yet; the Speak tab
+  stays German.
 
 ## Keyboard shortcuts
 

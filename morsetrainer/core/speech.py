@@ -1,5 +1,7 @@
-"""Sprachausgabe mit Piper: eine neuronale Stimme, offline, für „Hören &
-Sagen“ (Lösung ansagen) und den MP3-Export.
+"""Sprachausgabe mit Piper: neuronale Stimmen, offline, für „Hören &
+Sagen“ (Lösung ansagen), den MP3-Export und die Ansage für Blinde und
+Sehbehinderte (widgets/announcer.py). Deutsch (Thorsten) für alles,
+Englisch (Lessac) für die Ansage bei englischer Oberfläche.
 
 Die Stimme (ONNX-Modell plus .json) liegt in voices/: in AppImage und exe
 mitgeliefert (sys._MEIPASS/voices), aus dem Quelltext im Datenverzeichnis
@@ -10,9 +12,9 @@ Geladen wird die Stimme erst beim ersten Gebrauch (knapp 1 s), in einem
 Hintergrund-Thread über Speaker.preload(), damit weder der Programmstart
 noch die erste Ansage stockt.
 
-Gesprochen wird buchstabiert: deutsche Buchstabennamen (A, Be, Ce …) oder
-das internationale Buchstabieralphabet (Alfa, Bravo …), wie es im
-Funkbetrieb üblich ist. Wortgrenzen werden zu einer kurzen Pause."""
+Gesprochen wird buchstabiert: Buchstabennamen (A, Be, Ce … bzw. ay, bee,
+see …) oder das internationale Buchstabieralphabet (Alfa, Bravo …), wie
+es im Funkbetrieb üblich ist. Wortgrenzen werden zu einer kurzen Pause."""
 import sys
 import threading
 from pathlib import Path
@@ -24,6 +26,8 @@ from morsetrainer.core.morse import AMPLITUDE, PROSIGNS, SAMPLE_RATE
 from morsetrainer.i18n import tr
 
 VOICE_NAME = "de_DE-thorsten-medium"
+# Stimme je Sprache der Oberfläche (packaging/get_voice.sh lädt sie).
+VOICES = {"de": VOICE_NAME, "en": "en_US-lessac-medium"}
 
 GERMAN = {
     "A": "A", "B": "Be", "C": "Ze", "D": "De", "E": "E", "F": "Eff", "G": "Ge", "H": "Ha", "I": "I",
@@ -51,32 +55,62 @@ PROSIGN_NAMES = {"=": "BT", "+": "AR", **PROSIGNS}
 
 ALPHABETS = {"de": GERMAN, "nato": NATO}
 
+# Englische Stimme: Buchstabennamen so geschrieben, dass sie nicht als Wort
+# gelesen werden („A“ wäre der Artikel), das Funkalphabet in der üblichen
+# Schreibweise.
+ENGLISH = {
+    "A": "ay", "B": "bee", "C": "see", "D": "dee", "E": "ee", "F": "eff", "G": "gee", "H": "aitch",
+    "I": "eye", "J": "jay", "K": "kay", "L": "el", "M": "em", "N": "en", "O": "oh", "P": "pee",
+    "Q": "cue", "R": "ar", "S": "ess", "T": "tee", "U": "you", "V": "vee", "W": "double you", "X": "ex",
+    "Y": "why", "Z": "zed",
+}
+NATO_EN = {
+    "A": "Alfa", "B": "Bravo", "C": "Charlie", "D": "Delta", "E": "Echo", "F": "Foxtrot", "G": "Golf",
+    "H": "Hotel", "I": "India", "J": "Juliett", "K": "Kilo", "L": "Lima", "M": "Mike", "N": "November",
+    "O": "Oscar", "P": "Papa", "Q": "Quebec", "R": "Romeo", "S": "Sierra", "T": "Tango", "U": "Uniform",
+    "V": "Victor", "W": "Whiskey", "X": "X-ray", "Y": "Yankee", "Z": "Zulu",
+}
+DIGITS_EN = {"0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five", "6": "six",
+             "7": "seven", "8": "eight", "9": "nine"}
+SIGNS_EN = {".": "period", ",": "comma", "?": "question mark", "/": "slash"}
+# Je Sprache: (Alphabete, Ziffern, Satzzeichen).
+TABLES = {
+    "de": ({"de": GERMAN, "nato": NATO}, DIGITS, SIGNS),
+    "en": ({"de": ENGLISH, "nato": NATO_EN}, DIGITS_EN, SIGNS_EN),
+}
 
-def _name(ch: str, letters: dict) -> str:
+
+def _tables(alphabet: str, lang: str):
+    alphabets, digits, signs = TABLES.get(lang, TABLES["de"])
+    return alphabets.get(alphabet, alphabets["de"]), digits, signs
+
+
+def _name(ch: str, letters: dict, digits: dict = DIGITS, signs: dict = SIGNS) -> str:
     if ch in PROSIGN_NAMES:
         return " ".join(letters[c] for c in PROSIGN_NAMES[ch])
-    return letters.get(ch) or DIGITS.get(ch) or SIGNS.get(ch) or ""
+    return letters.get(ch) or digits.get(ch) or signs.get(ch) or ""
 
 
-def spoken(text: str, alphabet: str = "de") -> str:
-    """Text buchstabiert, so wie die Stimme ihn sprechen soll."""
-    letters = ALPHABETS.get(alphabet, GERMAN)
+def spoken(text: str, alphabet: str = "de", lang: str = "de") -> str:
+    """Text buchstabiert, so wie die Stimme ihn sprechen soll. `alphabet`:
+    "de" Buchstabennamen, "nato" Funkalphabet; `lang`: Sprache der Stimme."""
+    letters, digits, signs = _tables(alphabet, lang)
     words = []
     for word in text.upper().split():
-        words.append(", ".join(name for name in (_name(ch, letters) for ch in word) if name))
+        words.append(", ".join(name for name in (_name(ch, letters, digits, signs) for ch in word) if name))
     return ". ".join(w for w in words if w)
 
 
-def spoken_words(text: str, alphabet: str = "de") -> str:
+def spoken_words(text: str, alphabet: str = "de", lang: str = "de") -> str:
     """Wörter als Ganzes sprechen (klein geschrieben, damit die Stimme sie
     nicht buchstabiert); Zahlen, Satz- und Betriebszeichen einzeln."""
-    letters = ALPHABETS.get(alphabet, GERMAN)
+    letters, digits, signs = _tables(alphabet, lang)
     out = []
     for word in text.upper().split():
         if word.isalpha():
             out.append(word.lower())
         else:
-            out.append(", ".join(name for name in (_name(ch, letters) for ch in word) if name))
+            out.append(", ".join(name for name in (_name(ch, letters, digits, signs) for ch in word) if name))
     return ". ".join(w for w in out if w)
 
 
@@ -88,9 +122,10 @@ def voice_dirs() -> list:
     return dirs
 
 
-def voice_path():
+def voice_path(lang: str = "de"):
+    name = VOICES.get(lang, VOICE_NAME)
     for directory in voice_dirs():
-        path = directory / f"{VOICE_NAME}.onnx"
+        path = directory / f"{name}.onnx"
         if path.exists() and path.with_suffix(".onnx.json").exists():
             return path
     return None
@@ -108,7 +143,8 @@ class Speaker:
     """Lädt die Stimme einmal und erzeugt Sprache als float32 bei
     SAMPLE_RATE, etwa so laut wie die Morsezeichen."""
 
-    def __init__(self):
+    def __init__(self, lang: str = "de"):
+        self.lang = lang if lang in VOICES else "de"
         self.voice = None
         self.error = None
         self._lock = threading.Lock()
@@ -119,10 +155,10 @@ class Speaker:
             import piper  # noqa: F401
         except ImportError:
             return tr("Sprachausgabe nicht verfügbar: Piper ist nicht installiert (pip install piper-tts).")
-        if voice_path() is None:
+        if voice_path(self.lang) is None:
             return tr("Sprachausgabe nicht verfügbar: Stimme {voice} fehlt "
                       "(packaging/get_voice.sh lädt sie nach {folder}).").format(
-                voice=VOICE_NAME, folder=DATA_DIR / "voices")
+                voice=VOICES[self.lang], folder=DATA_DIR / "voices")
         return self.error
 
     def load(self) -> bool:
@@ -133,7 +169,7 @@ class Speaker:
                 return False
             try:
                 from piper import PiperVoice
-                self.voice = PiperVoice.load(str(voice_path()))
+                self.voice = PiperVoice.load(str(voice_path(self.lang)))
             except Exception as exc:  # kaputtes Modell, fehlende Laufzeit …
                 self.error = tr("Sprachausgabe nicht verfügbar: {error}").format(error=exc)
                 return False
@@ -154,5 +190,15 @@ class Speaker:
         return (samples * (AMPLITUDE * 0.9 / peak)).astype(np.float32)
 
 
-# Eine Stimme für das ganze Programm.
+# Die deutsche Stimme für Sprechen und MP3; für die Ansage speaker_for().
 speaker = Speaker()
+_speakers = {"de": speaker}
+
+
+def speaker_for(lang: str) -> Speaker:
+    """Stimme für die Sprache `lang` (einmal geladen); unbekannt: Deutsch."""
+    if lang not in VOICES:
+        lang = "de"
+    if lang not in _speakers:
+        _speakers[lang] = Speaker(lang)
+    return _speakers[lang]

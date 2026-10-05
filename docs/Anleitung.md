@@ -501,10 +501,12 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   gelbe Hauptknöpfe und Markierungen, kräftige Rahmen; jede Schrift hebt
   sich mindestens 7:1 vom Grund ab. Richtig und falsch stehen immer auch
   als Text da, nicht nur als Farbe.
-- Die Stimme ist deutsch, die Ansagen sind es daher auch bei englischer
-  Oberfläche. Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton, und der
-  Grund steht in der Statuszeile. Netzwerk, Sprechen, das Einstellungsfenster und die
-  Abendbilanz sagt sie noch nicht an.
+- Die Ansage spricht die Sprache der Oberfläche: deutsch mit der Stimme
+  Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann „Delta Lima
+  One“). Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton, und der
+  Grund steht in der Statuszeile. Netzwerk, Sprechen, das
+  Einstellungsfenster und die Abendbilanz sagt sie noch nicht an; der
+  Reiter Sprechen bleibt deutsch.
 
 ## Tastenkürzel
 

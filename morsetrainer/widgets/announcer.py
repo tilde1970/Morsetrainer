@@ -11,8 +11,8 @@ Morsezeichen und Ansage teilen sich die Tonausgabe (ein neuer Ton bricht
 den laufenden ab). Deshalb gibt say() den Ablauf erst frei, wenn die Ansage
 zu Ende ist: Die Reiter übergeben, was danach kommt, als `then`.
 
-Die Stimme ist deutsch, daher sind die Ansagen immer deutsch, auch bei
-englischer Oberfläche.
+Gesprochen wird in der Sprache der Oberfläche, mit der deutschen bzw.
+englischen Stimme (core/speech.py, VOICES).
 
 Erzeugt wird die Sprache in einem Hintergrund-Thread; die Oberfläche fragt
 mit after() nach, ob sie fertig ist (Tk darf nur aus seinem eigenen Thread
@@ -20,8 +20,10 @@ bedient werden)."""
 import threading
 import tkinter as tk
 
+from morsetrainer import i18n
 from morsetrainer.core import audio, sfx, speech
 from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
+from morsetrainer.i18n import tr
 
 # Pause nach einer Ansage, bevor es weitergeht.
 AFTER_SPEECH_MS = 250
@@ -40,14 +42,19 @@ class Announcer:
         self._cache = {}
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
-                           and speech.speaker.voice is None and speech.speaker.preload())
+                           and self.speaker().voice is None and self.speaker().preload())
 
     def enabled(self) -> bool:
         return self.var.get()
 
+    @staticmethod
+    def speaker():
+        """Die Stimme in der Sprache der Oberfläche."""
+        return speech.speaker_for(i18n.LANG)
+
     def available(self):
         """None, wenn angesagt werden kann, sonst der Grund."""
-        return speech.speaker.available()
+        return self.speaker().available()
 
     def say(self, text: str, then=None, force: bool = False) -> None:
         """`text` ansagen, danach `then()` aufrufen. Ist die Ansage aus (und
@@ -107,7 +114,7 @@ class Announcer:
         if samples is None:
             with _synth_lock:
                 try:
-                    samples = speech.speaker.synth(text)
+                    samples = self.speaker().synth(text)
                 except Exception:  # Stimme defekt: lieber still als abgestürzt
                     samples = None
             if samples is not None:
@@ -168,14 +175,14 @@ def render(text: str, deliver) -> None:
 
 
 def spell(text: str) -> str:
-    """Buchstabiert (Ka, Emm, U …); leer wird „nichts“."""
-    return speech.spoken(text) or "nichts"
+    """Buchstabiert (Ka, Emm, U … bzw. kay, em, you …); leer wird „nichts“."""
+    return speech.spoken(text, lang=i18n.LANG) or tr("nichts")
 
 
 def spell_nato(text: str) -> str:
     """Buchstabiert im Funkalphabet (Delta Lima Vier …), wie Rufzeichen im
     Contest gesprochen werden."""
-    return speech.spoken(text, "nato") or "nichts"
+    return speech.spoken(text, "nato", lang=i18n.LANG) or tr("nichts")
 
 
 def value(text: str) -> str:
@@ -183,7 +190,7 @@ def value(text: str) -> str:
     buchstabiert, Namen und Orte (auch kurze wie Eva) als Wort."""
     text = str(text).strip()
     if not text:
-        return "nichts"
+        return tr("nichts")
     if any(ch.isdigit() for ch in text) or len(text) <= 2:
         return spell_nato(text)
     return text.capitalize()

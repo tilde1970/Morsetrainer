@@ -473,9 +473,10 @@ class RunModeFrame:
         else:
             self.status_var.set(tr("Beendet."))
         if total:
-            spoken = [f"Contest beendet. {correct} von {total} QSOs richtig geloggt."]
-            spoken += [f"{n} {label}." for n, label in ((counts["busted"], "Busted"), (counts["nil"], "nicht im Log"),
-                                                         (counts["exchange"], "Austausch falsch")) if n]
+            spoken = [tr("Contest beendet. {correct} von {total} QSOs richtig geloggt.").format(
+                correct=correct, total=total)]
+            spoken += [f"{n} {label}." for n, label in ((counts["busted"], "Busted"), (counts["nil"], tr("nicht im Log")),
+                                                         (counts["exchange"], tr("Austausch falsch"))) if n]
             announcer.say(" ".join(spoken))
         self.on_stop_cb()
 
@@ -635,11 +636,11 @@ class RunModeFrame:
         # Für die Ansage: Fehler mit Rufzeichen im Funkalphabet; ein richtig
         # geloggtes QSO bleibt still, sonst litte die Rate.
         if category == "nil":
-            self.log_phrase = "Nicht im Log. Keine Station hat dir einen Austausch gegeben."
+            self.log_phrase = tr("Nicht im Log. Keine Station hat dir einen Austausch gegeben.")
         elif category == "busted":
-            self.log_phrase = f"Busted. Richtig: {announcer.spell_nato(worked.call)}."
+            self.log_phrase = tr("Busted. Richtig: {call}.").format(call=announcer.spell_nato(worked.call))
         elif category == "exchange":
-            self.log_phrase = f"Austausch falsch. Richtig: {announcer.value(worked.exchange)}."
+            self.log_phrase = tr("Austausch falsch. Richtig: {exchange}.").format(exchange=announcer.value(worked.exchange))
         else:
             self.log_phrase = ""
         if worked is not None:

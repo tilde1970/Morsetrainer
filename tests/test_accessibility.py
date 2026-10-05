@@ -382,8 +382,26 @@ class AnnouncerModesTest(AnnouncerTest):
         self.assertEqual(sum(s.startswith("Call:") for s in self.said), 1)
 
 
-class MissingVoiceTest(AppTestCase):
-    """Ohne Stimme meldet ein Fehlerton, dass nichts angesagt werden kann."""
+class VoiceLanguageTest(AppTestCase):
+    """Ansage in der Sprache der Oberfläche; ohne Stimme ein Fehlerton."""
+
+    def test_english_spelling(self):
+        from morsetrainer.core import speech
+        self.assertEqual(speech.spoken("KM U", lang="en"), "kay, em. you")
+        self.assertEqual(speech.spoken("DL1ABC", "nato", lang="en"),
+                         "Delta, Lima, one, Alfa, Bravo, Charlie")
+        self.assertEqual(speech.spoken("DL1", "nato"), "Delta, Lima, Eins")  # deutsch unverändert
+
+    def test_voice_follows_interface_language(self):
+        from morsetrainer import i18n
+        from morsetrainer.core import speech
+        from morsetrainer.widgets import announcer
+        self.assertIs(announcer.Announcer.speaker(), speech.speaker)
+        with mock.patch.object(i18n, "LANG", "en"):
+            self.assertEqual(announcer.Announcer.speaker().lang, "en")
+            self.assertEqual(announcer.spell_nato("K1"), "Kilo, one")
+            self.assertEqual(announcer.spell(""), "nichts")  # tr() bleibt in den Tests deutsch
+        self.assertEqual(speech.speaker_for("xx").lang, "de")
 
     def test_missing_voice_plays_error_tone(self):
         from morsetrainer.widgets import announcer

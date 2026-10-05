@@ -803,7 +803,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.feedback_label.config(foreground="")
         self.status_var.set(tr("Gewusst? J oder N"))
         self._set_head_buttons(assess=True)
-        announcer.say(f"Lösung: {announcer.spell(self.current_sequence)}. Gewusst? J oder N.")
+        announcer.say(tr("Lösung: {text}. Gewusst? J oder N.").format(text=announcer.spell(self.current_sequence)))
 
     def assess(self, known: bool):
         """Kopfhören: eigene Bewertung. Nicht gewusst zählt jedes Zeichen als
@@ -856,11 +856,12 @@ class SequenceModeFrame(DailyModeMixin):
         if head:
             spoken = ""  # die Lösung wurde schon beim Aufdecken angesagt
         elif all_correct:
-            spoken = "Richtig, aber zu langsam." if slow else "Richtig."
+            spoken = tr("Richtig, aber zu langsam.") if slow else tr("Richtig.")
         elif give_up:
-            spoken = f"Falsch. Gesendet: {announcer.spell(sent)}. Getippt: {announcer.spell(typed)}."
+            spoken = tr("Falsch. Gesendet: {sent}. Getippt: {typed}.").format(sent=announcer.spell(sent),
+                                                                             typed=announcer.spell(typed))
         else:
-            spoken = "Falsch. Hör noch einmal hin."
+            spoken = tr("Falsch. Hör noch einmal hin.")
         if all_correct:
             if self.sound_var.get() and not speaking:
                 sfx.play_ok()

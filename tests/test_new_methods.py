@@ -37,7 +37,7 @@ class SpeechTextTest(unittest.TestCase):
         self.assertEqual(len(out), SAMPLE_RATE)
 
     def test_missing_voice_is_reported(self):
-        with mock.patch.object(speech, "voice_path", lambda: None):
+        with mock.patch.object(speech, "voice_path", lambda lang="de": None):
             reason = speech.Speaker().available()
         if reason is not None:  # ohne Piper steht dort das
             self.assertIn("nicht verfügbar", reason)

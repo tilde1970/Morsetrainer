@@ -568,27 +568,27 @@ class QsoModeFrame:
             combo.config(state="readonly")
 
         mode = self._eval_mode()
-        # Ansage (Barrierefreiheit): was jetzt zu tun ist; die Stimme ist deutsch.
+        # Ansage (Barrierefreiheit): was jetzt zu tun ist.
         if self.tracking:
             accuracy = self._finalize_session()
             self.revealed = True
             self.tracking = False
             self.status_var.set(tr("Ausgewertet – rot markiert: falsch oder verpasst.") + self._adapt_speed(accuracy))
-            spoken = (f"Ausgewertet. {round(accuracy * 100)} Prozent der Zeichen richtig."
-                      if accuracy is not None else "Ausgewertet.")
+            spoken = (tr("Ausgewertet. {percent} Prozent der Zeichen richtig.").format(percent=round(accuracy * 100))
+                      if accuracy is not None else tr("Ausgewertet."))
         elif mode == EVAL_HEAD and not self.quiz_checked:
             self.status_var.set(tr("Beantworte die Fragen und drück „Prüfen“."))
-            spoken = "QSO zu Ende. Beantworte die Fragen; Tab springt in die Felder, F8 prüft."
+            spoken = tr("QSO zu Ende. Beantworte die Fragen; Tab springt in die Felder, F8 prüft.")
         elif mode == EVAL_QUIZ and not self.quiz_checked:
             self.status_var.set(tr("Ergänze dein Log und drück „Prüfen“.") if self.qso.is_contest
                                 else tr("Trag ein, was du gehört hast, und drück „Prüfen“."))
-            spoken = "QSO zu Ende. Trag ins Log ein, was du gehört hast; Tab springt in die Felder, F8 prüft."
+            spoken = tr("QSO zu Ende. Trag ins Log ein, was du gehört hast; Tab springt in die Felder, F8 prüft.")
         else:
             self.status_var.set(tr("QSO beendet."))
-            spoken = "QSO beendet."
+            spoken = tr("QSO beendet.")
         if stopped:
             self.status_var.set(tr("Gestoppt. ") + self.status_var.get())
-            spoken = "Gestoppt. " + spoken
+            spoken = tr("Gestoppt. ") + spoken
         announcer.say(spoken)
         self.quiz_ready = True
         self.quiz.set_check_enabled(True)

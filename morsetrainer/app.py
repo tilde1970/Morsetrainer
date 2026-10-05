@@ -405,7 +405,7 @@ class MorseTrainerApp:
         window.deiconify()
         window.lift()
         window.focus_set()
-        announcer.say("Einstellungen.")
+        announcer.say(tr("Einstellungen") + ".")
 
     def close_settings(self) -> None:
         """Ausblenden und den Fokus zurückgeben, etwa ans Eingabefeld."""
@@ -506,7 +506,7 @@ class MorseTrainerApp:
     def _contrast_toggled(self) -> None:
         changed = self.contrast_var.get() != self.contrast_at_start
         self.contrast_hint_var.set(tr("wirkt nach Neustart des Programms") if changed else "")
-        announcer.say("Hoher Kontrast nach Neustart." if changed and self.contrast_var.get() else "")
+        announcer.say(tr("Hoher Kontrast nach Neustart.") if changed and self.contrast_var.get() else "")
 
     def toggle_announce(self) -> None:
         """F9: Ansage an/aus, hörbar bestätigt."""
@@ -524,7 +524,7 @@ class MorseTrainerApp:
                 mode.status_var.set(reason)
             sfx.play_error()
             return
-        self.announcer.say("Ansage an." if self.announcer.enabled() else "Ansage aus.", force=True)
+        self.announcer.say(tr("Ansage an.") if self.announcer.enabled() else tr("Ansage aus."), force=True)
 
     def read_status(self) -> None:
         """F11: vorlesen, wo man ist – Reiter, Status, Rückmeldung, Restzeit
@@ -557,38 +557,36 @@ class MorseTrainerApp:
         spell = announcer.spell
         data = stats.load_all_time()
         summary = stats.all_time_summary(data)
-        parts = ["Statistik"]
+        parts = [tr("Statistik")]
         if summary["total"]:
-            parts.append(f"Insgesamt {summary['correct']} von {summary['total']} Zeichen richtig, "
-                         f"{round(summary['accuracy_pct'])} Prozent")
+            parts.append(tr("Insgesamt {correct} von {total} Zeichen richtig, {percent} Prozent").format(
+                correct=summary["correct"], total=summary["total"], percent=round(summary["accuracy_pct"])))
             weak = [row for row in stats.all_time_char_rows(data) if row[2]][:3]
             if weak:
-                parts.append("Die meisten Fehler: " + ", ".join(
-                    f"{spell(char)} {wrong} mal" for char, _, wrong, *_ in weak))
+                parts.append(tr("Die meisten Fehler: ") + ", ".join(
+                    tr("{char} {count} mal").format(char=spell(char), count=wrong) for char, _, wrong, *_ in weak))
         else:
-            parts.append("Noch keine Durchgänge")
+            parts.append(tr("Noch keine Durchgänge"))
         pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
         if pairs:
-            parts.append("Häufigste Verwechslungen: " + ", ".join(
-                f"{spell(sent)} als {spell(typed)} getippt, {count} mal" for sent, typed, count, _ in pairs))
+            parts.append(tr("Häufigste Verwechslungen: ") + ", ".join(
+                tr("{sent} als {typed} getippt, {count} mal").format(sent=spell(sent), typed=spell(typed), count=count)
+                for sent, typed, count, _ in pairs))
         due = review.due_chars()
-        parts.append(("Heute in der Lernkartei fällig: " + ", ".join(spell(ch) for ch in due)) if due
-                     else "In der Lernkartei ist heute nichts fällig")
+        parts.append((tr("Heute in der Lernkartei fällig: ") + ", ".join(spell(ch) for ch in due)) if due
+                     else tr("In der Lernkartei ist heute nichts fällig"))
         parts.append(self.awards_panel.summary_var.get())
         if self.practice_var.get():
             parts.append(self.practice_var.get())
         return ". ".join(part for part in parts if part) + "."
 
     def _tab_name(self) -> str:
-        """Name des sichtbaren Reiters, deutsch (die Stimme ist deutsch)."""
-        index = self.notebook.index("current")
-        if index < len(self.mode_titles):
-            return self.mode_titles[index]
+        """Name des sichtbaren Reiters, wie er angezeigt (und angesagt) wird."""
         return self.notebook.tab("current", "text")
 
     def _announce_tab(self, event=None) -> None:
-        hint = " F11 liest die Übersicht vor." if self._active_mode() is None else ""
-        announcer.say(f"Reiter {self._tab_name()}.{hint}")
+        hint = " " + tr("F11 liest die Übersicht vor.") if self._active_mode() is None else ""
+        announcer.say(tr("Reiter {name}.").format(name=self._tab_name()) + hint)
 
     def zoom(self, direction: int) -> None:
         """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal)."""

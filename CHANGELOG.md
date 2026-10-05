@@ -27,8 +27,9 @@
   eingebauten Stimme Ergebnisse (in Gruppen, Wörtern, Rufzeichen
   buchstabiert, in Einzelzeichen die Fehler), das Ende eines Durchgangs,
   den Reiterwechsel und die Karten der Tagesübung an; F11 liest vor, wo
-  man gerade ist. Der Ablauf wartet auf die Ansage; ohne Stimme kommt bei
-  F9 und F11 ein Fehlerton. Auch im QSO (nächster
+  man gerade ist. Der Ablauf wartet auf die Ansage. Deutsche oder
+  englische Stimme passend zur Oberfläche; ohne Stimme kommt bei F9 und
+  F11 ein Fehlerton. Auch im QSO (nächster
   Schritt, Abfragefelder, Ergebnis mit richtigen Werten), im Contest
   (Logfehler gleich nach dem TU, im Tonstrom), im Reiter Statistik (F11
   liest eine Übersicht vor) und in Tabellen (gewählte Zeile).

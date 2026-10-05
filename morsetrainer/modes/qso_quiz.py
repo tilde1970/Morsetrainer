@@ -104,18 +104,18 @@ class QuizPanel:
         text = f"{label}, {self.qso.quiz_columns[col]}."
         if key in self.results:
             if self.results[key]:
-                text += " Richtig."
+                text += " " + tr("Richtig.")
             else:
-                text += f" Falsch. Richtig wäre: {announcer.value(cells[col][0])}."
+                text += " " + tr("Falsch. Richtig wäre: {value}.").format(value=announcer.value(cells[col][0]))
         announcer.say(text)
 
     def spoken_result(self) -> str:
         """Ergebnis von „Prüfen“ zum Ansagen, mit den richtigen Werten."""
         total = len(self.vars)
         correct = sum(self.results.values())
-        text = f"{correct} von {total} richtig."
+        text = tr("{correct} von {total} richtig.").format(correct=correct, total=total)
         if self.fixes:
-            text += " Richtig wäre: " + " ".join(
+            text += " " + tr("Richtig wäre:") + " " + " ".join(
                 f"{label}, {column}: {announcer.value(expected)}." for label, column, expected in self.fixes)
         return text
 

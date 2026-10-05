@@ -418,7 +418,8 @@ class SingleModeFrame(DailyModeMixin):
         self.feedback_var.set(text)
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
-        announcer.say(f"Zu langsam. Es war {announcer.spell(self.current_char)}.", then=self._after_error)
+        announcer.say(tr("Zu langsam. Es war {char}.").format(char=announcer.spell(self.current_char)),
+                      then=self._after_error)
 
     def _add_history(self, correct: bool):
         self._count_streak(correct)
@@ -493,11 +494,12 @@ class SingleModeFrame(DailyModeMixin):
 
         self._add_history(correct and not helped)
         if helped:
-            announcer.say(f"Erst nach Wiederholung: {announcer.spell(self.current_char)}.",
+            announcer.say(tr("Erst nach Wiederholung: {char}.").format(char=announcer.spell(self.current_char)),
                           then=lambda: self._after_error(play_correction=False))
         elif correct:
             token = self.timeout_token
             self.root.after(FEEDBACK_MS, self._after_correction, token)
         else:
-            announcer.say(f"Falsch. {announcer.spell(self.current_char)}, nicht {announcer.spell(typed)}.",
+            announcer.say(tr("Falsch. {char}, nicht {typed}.").format(char=announcer.spell(self.current_char),
+                                                                       typed=announcer.spell(typed)),
                           then=self._after_error)
