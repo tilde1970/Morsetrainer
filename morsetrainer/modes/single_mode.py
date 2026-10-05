@@ -51,7 +51,7 @@ from morsetrainer.core.morse import (
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.i18n import number, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 from morsetrainer.core.weighting import CharPicker
@@ -409,7 +409,7 @@ class SingleModeFrame(DailyModeMixin):
         if self.first_hearing:
             self.limit = next_limit(self.limit, False, self._limit_max())
             self._show_limit()
-        if self.sound_var.get():
+        if self.sound_var.get() and not announcer.active():
             sfx.play_error()
         self.last_typed = None
         text = tr("Zu langsam: war {char}").format(char=display_text(self.current_char))
@@ -418,7 +418,7 @@ class SingleModeFrame(DailyModeMixin):
         self.feedback_var.set(text)
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
-        self._after_error()
+        announcer.say(f"Zu langsam. Es war {announcer.spell(self.current_char)}.", then=self._after_error)
 
     def _add_history(self, correct: bool):
         self._count_streak(correct)
@@ -471,7 +471,8 @@ class SingleModeFrame(DailyModeMixin):
                 char=display_text(self.current_char)))
             self.feedback_label.config(foreground=theme.MUTED)
         elif correct:
-            if self.sound_var.get():
+            # Mit Ansage nur der kurze Ton: ein Wort nach jedem Zeichen hielte auf.
+            if self.sound_var.get() or announcer.active():
                 sfx.play_ok()
             text = tr("Richtig: {text}").format(text=display_text(self.current_char))
             if not self.daily_minutes:
@@ -484,7 +485,7 @@ class SingleModeFrame(DailyModeMixin):
             self.feedback_var.set(text)
             self.feedback_label.config(foreground=theme.OK)
         else:
-            if self.sound_var.get():
+            if self.sound_var.get() and not announcer.active():
                 sfx.play_error()
             self.feedback_var.set(tr("Falsch: war {char}, du: {typed}").format(
                 char=display_text(self.current_char), typed=display_text(typed)))
@@ -492,9 +493,11 @@ class SingleModeFrame(DailyModeMixin):
 
         self._add_history(correct and not helped)
         if helped:
-            self._after_error(play_correction=False)
+            announcer.say(f"Erst nach Wiederholung: {announcer.spell(self.current_char)}.",
+                          then=lambda: self._after_error(play_correction=False))
         elif correct:
             token = self.timeout_token
             self.root.after(FEEDBACK_MS, self._after_correction, token)
         else:
-            self._after_error()
+            announcer.say(f"Falsch. {announcer.spell(self.current_char)}, nicht {announcer.spell(typed)}.",
+                          then=self._after_error)

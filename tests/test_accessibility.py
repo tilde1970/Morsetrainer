@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
+from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.widgets import theme
@@ -60,3 +61,98 @@ class FontScaleTest(AppTestCase):
         self.assertEqual(theme.zoom_step(100, 1), 110)
         self.assertEqual(theme.zoom_step(130, -1), 125)
         self.assertEqual(theme.zoom_step(100, -1), 100)
+
+
+class AnnouncerTest(AppTestCase):
+    """Sprachansage: Ergebnis, Reiter und Status mit der eingebauten Stimme;
+    der Ablauf geht erst nach der Ansage weiter."""
+
+    def setUp(self):
+        super().setUp()
+        import numpy as np
+        from morsetrainer.core import speech
+        from morsetrainer.widgets import announcer
+        self.announcer = announcer
+        self.said, self.played = [], []
+        self.patches = [
+            mock.patch.object(speech.speaker, "available", lambda: None),
+            mock.patch.object(speech.speaker, "synth",
+                              lambda text: (self.said.append(text), np.zeros(4800, dtype=np.float32))[1]),
+            mock.patch.object(announcer.audio, "play_quietly", lambda samples: self.played.append(len(samples))),
+        ]
+        for patch in self.patches:
+            patch.start()
+
+    def tearDown(self):
+        for patch in self.patches:
+            patch.stop()
+        super().tearDown()
+
+    def pump_until(self, condition, timeout=3.0):
+        import time
+        end = time.monotonic() + timeout
+        while time.monotonic() < end and not condition():
+            self.root.update()
+            time.sleep(0.01)
+        return condition()
+
+    def test_off_means_nothing_said_and_flow_goes_on(self):
+        done = []
+        self.app.announcer.say("Richtig.", then=lambda: done.append(True))
+        self.assertEqual(done, [True])
+        self.assertEqual(self.said, [])
+
+    def test_flow_waits_for_the_announcement(self):
+        self.app.announcer.var.set(True)
+        done = []
+        self.app.announcer.say("Richtig.", then=lambda: done.append(True))
+        self.assertEqual(done, [])  # noch nicht: erst sprechen
+        self.assertTrue(self.pump_until(lambda: done))
+        self.assertIn("Richtig.", self.said)
+        self.assertIn(4800, self.played)
+        played = len(self.played)
+        self.app.announcer.say("Richtig.")  # aus dem Zwischenspeicher
+        self.assertTrue(self.pump_until(lambda: len(self.played) > played))
+        self.assertEqual(self.said.count("Richtig."), 1)
+
+    def test_f9_toggles_and_confirms(self):
+        self.app._dispatch_key(mock.Mock(keysym="F9", char=""))
+        self.assertTrue(self.app.announcer.enabled())
+        self.assertTrue(self.pump_until(lambda: "Ansage an." in self.said))
+        self.app._dispatch_key(mock.Mock(keysym="F9", char=""))
+        self.assertFalse(self.app.announcer.enabled())
+        self.assertTrue(self.pump_until(lambda: "Ansage aus." in self.said))
+        self.assertIs(self.app._shared_settings()["announce"], False)
+
+    def test_f11_reads_tab_and_status_even_when_off(self):
+        self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
+        self.assertTrue(self.pump_until(lambda: self.said))
+        self.assertTrue(self.said[0].startswith("Einzelzeichen. Bereit"), self.said)
+
+    def test_group_answers_are_spelled(self):
+        from tests.test_modes import GroupEvaluationTest
+        self.app.announcer.var.set(True)
+        group = self.mode("Gruppen")
+        helper = GroupEvaluationTest()
+        helper.group = group
+        group.give_up_var.set(1)
+        group.style_var.set("copy")
+        group.start()
+        helper._answer("KMU", "KMM")
+        self.assertTrue(self.pump_until(lambda: any("Gesendet" in s for s in self.said)))
+        self.assertIn("Falsch. Gesendet: Ka, Emm, U. Getippt: Ka, Emm, Emm.", self.said)
+        group.stop()
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Durchgang beendet.") for s in self.said)))
+
+    def test_single_char_error_is_named(self):
+        import time
+        self.app.announcer.var.set(True)
+        single = self.mode("Einzelzeichen")
+        single.start()
+        single.current_char, single.voice, single.waiting_for_input, single.replayed = "K", (20, 600), True, False
+        single.play_start_time = time.time() - 0.5
+        single.on_key(type("E", (), {"keysym": "m", "char": "m"})())
+        self.assertTrue(self.pump_until(lambda: self.said))
+        self.assertEqual(self.said[0], "Falsch. Ka, nicht Emm.")
+        self.assertTrue(self.pump_until(lambda: single.correcting))  # Klangvergleich kommt danach
+        single.stop()

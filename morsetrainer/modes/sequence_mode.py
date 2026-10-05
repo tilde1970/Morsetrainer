@@ -57,7 +57,7 @@ from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.i18n import N_, number, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
@@ -803,6 +803,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.feedback_label.config(foreground="")
         self.status_var.set(tr("Gewusst? J oder N"))
         self._set_head_buttons(assess=True)
+        announcer.say(f"Lösung: {announcer.spell(self.current_sequence)}. Gewusst? J oder N.")
 
     def assess(self, known: bool):
         """Kopfhören: eigene Bewertung. Nicht gewusst zählt jedes Zeichen als
@@ -851,8 +852,17 @@ class SequenceModeFrame(DailyModeMixin):
         self._update_tempo(all_correct, rated_attempts)
 
         explanation = self._explain(sent)
+        speaking = announcer.active()  # die Ansage ersetzt den Quittungston
+        if head:
+            spoken = ""  # die Lösung wurde schon beim Aufdecken angesagt
+        elif all_correct:
+            spoken = "Richtig, aber zu langsam." if slow else "Richtig."
+        elif give_up:
+            spoken = f"Falsch. Gesendet: {announcer.spell(sent)}. Getippt: {announcer.spell(typed)}."
+        else:
+            spoken = "Falsch. Hör noch einmal hin."
         if all_correct:
-            if self.sound_var.get():
+            if self.sound_var.get() and not speaking:
                 sfx.play_ok()
             note = ""
             if self._fixed_run():
@@ -872,7 +882,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
         else:
-            if self.sound_var.get():
+            if self.sound_var.get() and not speaking:
                 sfx.play_error()
             if give_up:
                 text = tr("Lösung: {text}").format(text=display_text(sent)) + (f"\n{explanation}" if explanation else "")
@@ -897,6 +907,10 @@ class SequenceModeFrame(DailyModeMixin):
 
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 
+        announcer.say(spoken, then=lambda: self._go_on(all_correct, give_up))
+
+    def _go_on(self, all_correct: bool, give_up: bool):
+        """Nach Rückmeldung (und Ansage): Lösung noch einmal hören oder weiter."""
         if give_up and self._fixed_run():
             self._later(1500, self.next_sequence)  # Lösung lesen, weiter im Takt
         elif give_up:

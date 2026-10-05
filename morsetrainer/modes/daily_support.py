@@ -17,6 +17,7 @@ Antworten beim ersten Hören zählt er in _count_streak()."""
 import time
 
 from morsetrainer.core import review
+from morsetrainer.widgets import announcer
 
 
 class DailyModeMixin:
@@ -88,6 +89,9 @@ class DailyModeMixin:
                       for ch, e in getattr(session, "per_char", {}).items()},
             **extra,
         }
+        # In der Tagesübung sagt die Zwischenkarte das Ergebnis an.
+        if not self.daily_minutes and summary.get("total"):
+            announcer.say(f"Durchgang beendet. {summary['correct']} von {summary['total']} Zeichen richtig.")
 
     def _count_streak(self, clean: bool = None) -> None:
         """Serie fortsetzen (`clean`: beim ersten Hören richtig, ohne

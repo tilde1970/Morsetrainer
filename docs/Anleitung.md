@@ -460,10 +460,31 @@ mit Verbindungen oder Nachrichten überschütten.
 Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
 Versionen (CHANGELOG.md) und diese Anleitung.
 
+## Für Blinde und Sehbehinderte
+
+- **Ansage (F9):** Das Programm sagt mit der eingebauten Stimme selbst an,
+  was sonst nur auf dem Bildschirm steht – ohne Screenreader. F9 schaltet
+  die Ansage an und aus (auch unter „▸ Weitere Optionen“ → „Rückmeldung
+  ansagen“), die Stimme bestätigt es.
+- **Was angesagt wird:** in Gruppen, Wörtern und Rufzeichen das Ergebnis
+  jeder Antwort („Richtig“, „Falsch. Hör noch einmal hin“, nach dem letzten
+  Versuch „Gesendet: Ka, Emm, U. Getippt: Ka, Emm, Emm“), beim Kopfhören
+  die Lösung; in Einzelzeichen nur Fehler („Falsch. Ka, nicht Emm“), bei
+  richtigen Antworten kommt der kurze Quittungston; am Ende jedes
+  Durchgangs das Ergebnis; der Name des Reiters beim Wechseln; die Karten
+  der Tagesübung. Der Ablauf wartet, bis die Ansage zu Ende ist.
+- **Wo bin ich? (F11):** liest Reiter, Status, letzte Rückmeldung und
+  Restzeit vor, in der Tagesübung die aktuelle Karte – auch bei
+  ausgeschalteter Ansage.
+- **Schriftgröße:** Strg+Plus/Strg+Minus/Strg+0, siehe oben.
+- Die Stimme ist deutsch, die Ansagen sind es daher auch bei englischer
+  Oberfläche. Einstellungen, Statistik und Diplome kann die Ansage noch
+  nicht vorlesen; das ist der nächste Schritt.
+
 ## Tastenkürzel
 
 - **Überall:** Strg+Plus/Strg+Minus Schrift größer/kleiner, Strg+0 normal
-  (auf dem Mac auch Cmd).
+  (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist.
 - **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
   beendet.
 - **Einzelzeichen, Gruppen, Wörter, Rufzeichen:** Leertaste wiederholt.

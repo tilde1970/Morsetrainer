@@ -22,6 +22,11 @@
   100 % to 200 %, under “More options” or with Ctrl+Plus/Minus/0 in any
   window. Table rows, check boxes and line wrapping grow with it, and so
   does the main window.
+- **Announcements for blind and visually impaired users (F9):** the
+  program uses its built-in voice to announce results (spelled in Groups,
+  Words and Callsigns, errors in Characters), the end of a run, tab
+  changes and the daily practice cards; F11 reads out where you are. The
+  program waits for the announcement. (German voice.)
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

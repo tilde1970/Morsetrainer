@@ -451,10 +451,31 @@ messages.
 The **Help** button on the right of the footer shows the changes of the
 versions (CHANGELOG) and this manual.
 
+## For blind and visually impaired users
+
+- **Announcements (F9):** the program uses its built-in voice to say what
+  is otherwise only on screen – no screen reader needed. F9 switches
+  announcements on and off (also under “▸ More options” → “Announce
+  feedback”), and the voice confirms it.
+- **What is announced:** in Groups, Words and Callsigns the result of each
+  answer (“Richtig”, “Falsch. Hör noch einmal hin”, after the last attempt
+  “Gesendet: Ka, Emm, U. Getippt: Ka, Emm, Emm”), the solution in head
+  copy; in Characters only errors (“Falsch. Ka, nicht Emm”), correct
+  answers get the short confirmation tone; the result at the end of each
+  run; the tab name when switching; the cards of the daily practice. The
+  program waits until the announcement has finished.
+- **Where am I? (F11):** reads out the tab, status, last feedback and
+  remaining time, during daily practice the current card – even with
+  announcements switched off.
+- **Font size:** Ctrl+Plus/Ctrl+Minus/Ctrl+0, see above.
+- The voice is German, so the announcements are German even with the
+  English interface. Settings, statistics and awards cannot be read out
+  yet; that is the next step.
+
 ## Keyboard shortcuts
 
 - **Everywhere:** Ctrl+Plus/Ctrl+Minus larger/smaller font, Ctrl+0 normal
-  (on the Mac also Cmd).
+  (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are.
 - **Daily practice:** F12 starts, Enter skips the card between blocks, Esc
   stops.
 - **Characters, Groups, Words, Callsigns:** the space bar repeats.

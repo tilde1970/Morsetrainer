@@ -16,6 +16,7 @@ from datetime import date
 
 from morsetrainer.core import awards, daily, koch, practice, review, stats, week
 from morsetrainer.i18n import tr
+from morsetrainer.widgets import announcer
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, review_line, stars_named)
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
@@ -58,6 +59,7 @@ class DailyRunner:
         self.tick_id = None
         self.card_open = False
         self.card_shown = 0.0
+        self.card_text = ""  # zuletzt gezeigte Karte als Ansage
         self.extra = False
         self.summary = None
         self.refresh_idle()
@@ -283,6 +285,9 @@ class DailyRunner:
         self.bar.show_card(title, lines, strong)
         self.card_open = True
         self.card_shown = time.time()
+        # Ansage (Barrierefreiheit); F11 liest sie noch einmal vor.
+        self.card_text = ". ".join([title, *lines, "Weiter mit Enter"]) + "."
+        announcer.say(self.card_text)
         self.app.root.focus_set()  # Enter und Esc sollen ankommen
 
     def continue_now(self) -> None:
@@ -328,6 +333,8 @@ class DailyRunner:
         else:
             note = tr("Tagesübung geschafft.") if completed else tr("Tagesübung abgebrochen – deine Sterne bleiben.")
         self.bar.show_idle(note)
+        if not (self.aborting and self.quiet):
+            announcer.say(note)
         self.refresh_week(state=self.state)
         self.app.finish_daily()
         if self.aborting and self.quiet:

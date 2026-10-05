@@ -23,6 +23,11 @@
   vergrößern, 100 % bis 200 %, unter „Weitere Optionen“ oder mit
   Strg+Plus/Minus/0 in jedem Fenster. Tabellenzeilen, Schalter und
   Zeilenumbrüche wachsen mit, das Hauptfenster auch.
+- **Ansage für Blinde und Sehbehinderte (F9):** Das Programm sagt mit der
+  eingebauten Stimme Ergebnisse (in Gruppen, Wörtern, Rufzeichen
+  buchstabiert, in Einzelzeichen die Fehler), das Ende eines Durchgangs,
+  den Reiterwechsel und die Karten der Tagesübung an; F11 liest vor, wo
+  man gerade ist. Der Ablauf wartet auf die Ansage.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

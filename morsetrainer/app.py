@@ -37,7 +37,7 @@ from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.updater import DECLINED, Updater
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 __author__ = "DL4YM"
@@ -55,6 +55,9 @@ LEGACY_DEFAULT_CALL = "DL4YM"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # Startet die Tagesübung; von keinem Reiter belegt.
 DAILY_KEY = "F12"
+# Sprachansage an/aus und „wo bin ich?“ (widgets/announcer.py).
+ANNOUNCE_KEY = "F9"
+STATUS_KEY = "F11"
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
 CONFUSION_PAIRS = 4
 # Übungszeit in der Fußzeile während eines Durchgangs so oft auffrischen.
@@ -99,6 +102,7 @@ class MorseTrainerApp:
         root.resizable(True, True)
 
         theme.apply(root)
+        self.announcer = announcer.install(root)
         self._build_settings()
         self._restore_shared_settings()
         self._update_more()
@@ -301,6 +305,14 @@ class MorseTrainerApp:
         theme.hint(zoom, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal")).pack(side="left")
         self.font_scale_var.trace_add("write", lambda *_: self._apply_font_scale())
 
+        # Sprachansage für Blinde und Sehbehinderte (widgets/announcer.py).
+        speak = ttk.Frame(self.more_frame)
+        speak.pack(fill="x", pady=2)
+        ttk.Checkbutton(speak, text=tr("Rückmeldung ansagen (F9)"), variable=self.announcer.var,
+                        command=self._announce_toggled).pack(side="left")
+        self.announce_hint_var = tk.StringVar(value=tr("für Blinde und Sehbehinderte; F11 liest vor, wo du bist"))
+        theme.hint(speak, textvariable=self.announce_hint_var, wrap=420).pack(side="left", padx=(8, 0))
+
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)
         band_row = ttk.Frame(self.more_frame)
@@ -419,6 +431,43 @@ class MorseTrainerApp:
         except tk.TclError:
             fw = "WPM"
         self.farnsworth_cpm_var.set(tr("{wpm} (alle außer Einzelzeichen)").format(wpm=fw))
+
+    def toggle_announce(self) -> None:
+        """F9: Ansage an/aus, hörbar bestätigt."""
+        self.announcer.var.set(not self.announcer.var.get())
+        self._announce_toggled()
+
+    def _announce_toggled(self) -> None:
+        reason = self.announcer.available()
+        if reason is not None:
+            self.announce_hint_var.set(reason)
+            return
+        self.announcer.say("Ansage an." if self.announcer.enabled() else "Ansage aus.", force=True)
+
+    def read_status(self) -> None:
+        """F11: vorlesen, wo man ist – Reiter, Status, Rückmeldung, Restzeit
+        oder die Karte der Tagesübung."""
+        if self.daily.active and self.daily.card_open:
+            self.announcer.say(self.daily.card_text, force=True)
+            return
+        parts = [self._tab_name()]
+        mode = self._active_mode()
+        for attr in ("status_var", "feedback_var", "remaining_var"):
+            var = getattr(mode, attr, None)
+            text = var.get().strip() if var is not None else ""
+            if text:
+                parts.append(text.replace("\n", ". "))
+        self.announcer.say(". ".join(parts) + ".", force=True)
+
+    def _tab_name(self) -> str:
+        """Name des sichtbaren Reiters, deutsch (die Stimme ist deutsch)."""
+        index = self.notebook.index("current")
+        if index < len(self.mode_titles):
+            return self.mode_titles[index]
+        return self.notebook.tab("current", "text")
+
+    def _announce_tab(self, event=None) -> None:
+        announcer.say(f"Reiter {self._tab_name()}.")
 
     def zoom(self, direction: int) -> None:
         """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal)."""
@@ -687,6 +736,7 @@ class MorseTrainerApp:
             "station_call": (self.station_call_var, None),
             "station_name": (self.station_name_var, None),
             "font_scale": (self.font_scale_var, (theme.ZOOM_STEPS[0], theme.ZOOM_STEPS[-1])),
+            "announce": (self.announcer.var, None),
         }
 
     def _shared_settings(self) -> dict:
@@ -1043,6 +1093,7 @@ class MorseTrainerApp:
             self.modes.append(mode)
             self.mode_titles.append(title)
             self.tab_ids.append(str(tab))
+        self.notebook.bind("<<NotebookTabChanged>>", self._announce_tab, add="+")
 
     def _lock_tabs(self):
         # Fokus aus Eingabefeldern oben (Zeichen, WPM …) nehmen, sonst
@@ -1141,6 +1192,12 @@ class MorseTrainerApp:
             return
         if event.keysym == "Return" and self.daily.card_open:
             self.daily.continue_now()
+            return
+        if event.keysym == ANNOUNCE_KEY:
+            self.toggle_announce()
+            return
+        if event.keysym == STATUS_KEY:
+            self.read_status()
             return
         if event.keysym == DAILY_KEY and not self.running_mode and not self.daily.active:
             self.daily.start()
