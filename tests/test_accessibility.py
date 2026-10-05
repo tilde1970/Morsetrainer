@@ -207,3 +207,46 @@ class ContrastTest(AppTestCase):
                     root.destroy()
         finally:
             theme.set_palette("light")
+
+
+class KeyboardTest(AppTestCase):
+    """Alles per Tastatur: Tab erreicht Knöpfe und Schalter, Kürzel für
+    Reiter und Bandbedingungen."""
+
+    def test_tab_reaches_buttons_and_check_boxes(self):
+        # Bis 2.37 hatten Knöpfe und Schalter takefocus 0 (per Tab nicht erreichbar).
+        mode = self.mode("Gruppen")
+        for widget in (mode.start_button, self.app.more_button,
+                       ttk.Checkbutton(self.root), ttk.Radiobutton(self.root)):
+            self.assertNotEqual(str(widget.cget("takefocus")), "0", widget)
+
+    def test_mouse_click_does_not_move_focus_to_buttons(self):
+        body = self.root.tk.eval("info body ::ttk::clickToFocus")
+        self.assertIn("TButton", body)
+
+    def test_space_on_a_focused_button_is_not_an_answer(self):
+        mode = self.app._active_mode()
+        button = mode.start_button
+        with mock.patch.object(mode, "on_key") as on_key:
+            self.app._dispatch_key(mock.Mock(keysym="space", char=" ", widget=button))
+            on_key.assert_not_called()
+            self.app._dispatch_key(mock.Mock(keysym="k", char="k", widget=button))
+            on_key.assert_called_once()  # Buchstaben gehen weiter an den Reiter
+            on_key.reset_mock()
+            notes = tk.Text(self.root)
+            self.app._dispatch_key(mock.Mock(keysym="k", char="k", widget=notes))
+            on_key.assert_not_called()  # Tippen ins Notizfeld ist keine Antwort
+
+    def test_alt_number_selects_tab_unless_locked(self):
+        self.app.select_tab(1)
+        self.assertEqual(self.app._tab_name(), "Gruppen")
+        self.app.select_tab(8)
+        self.assertEqual(self.app._tab_name(), "Netzwerk")
+        self.app._lock_tabs()
+        self.app.select_tab(0)
+        self.assertEqual(self.app._tab_name(), "Netzwerk")  # gesperrt während eines Durchgangs
+        self.assertTrue(self.root.bind_all("<Alt-Key-1>"))
+        self.assertTrue(self.root.bind_all("<Control-b>"))
+
+    def test_tab_leaves_text_fields(self):
+        self.assertIn("break", self.root.bind_class("Text", "<Tab>"))

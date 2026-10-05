@@ -178,18 +178,32 @@ def apply(root) -> None:
     root.option_add("*TCombobox*Listbox.background", SURFACE)
     root.option_add("*TCombobox*Listbox.selectBackground", SELECT)
     root.option_add("*TCombobox*Listbox.selectForeground", TEXT)
-    # Knöpfe und Schalter nehmen beim Anklicken keinen Tastaturfokus: Die
-    # Leertaste heißt in den Reitern "Wiederholen" und würde sonst den
-    # zuletzt angeklickten Knopf auslösen (z. B. Start/Stop).
-    for widget in ("TButton", "TCheckbutton", "TRadiobutton"):
-        root.option_add(f"*{widget}.takeFocus", 0)
+    # Knöpfe und Schalter sind per Tab erreichbar (Tastaturbedienung), nehmen
+    # beim Anklicken mit der Maus aber keinen Fokus: Die Leertaste heißt in
+    # den Reitern "Wiederholen" und würde sonst den zuletzt angeklickten Knopf
+    # auslösen (z. B. Start/Stop).
+    try:
+        root.tk.eval(
+            "proc ::ttk::clickToFocus {w} {"
+            " if {[winfo class $w] in {TButton TCheckbutton TRadiobutton}} return;"
+            " if {[ttk::takesFocus $w]} { focus $w } }")
+    except tk.TclError:
+        pass
+    # In Textfeldern (Notizen, eigener Text) führt Tab weiter, statt ein
+    # Tabzeichen einzufügen.
+    root.bind_class("Text", "<Tab>", lambda e: (e.widget.tk_focusNext().focus_set(), "break")[1])
+    for back in ("<Shift-Tab>", "<Shift-ISO_Left_Tab>"):  # X11 meldet Umschalt+Tab als ISO_Left_Tab
+        try:
+            root.bind_class("Text", back, lambda e: (e.widget.tk_focusPrev().focus_set(), "break")[1])
+        except tk.TclError:
+            pass
 
     style = ttk.Style(root)
     style.theme_use("clam")
     style.configure(
         ".", background=BG, foreground=TEXT, bordercolor=BORDER, darkcolor=BG, lightcolor=BG,
         troughcolor=BUTTON, focuscolor=ACCENT, selectbackground=SELECT, selectforeground=TEXT,
-        insertcolor=TEXT, font="TkDefaultFont",
+        insertcolor=TEXT, font="TkDefaultFont", focusthickness=2,
     )
     style.map(".", foreground=[("disabled", DISABLED)])
 
@@ -206,25 +220,28 @@ def apply(root) -> None:
 
     style.configure("TButton", background=BUTTON, bordercolor=BORDER, lightcolor=BUTTON, darkcolor=BUTTON,
                     padding=(10, 2), anchor="center", borderwidth=BORDER_WIDTH)
+    # Tastaturfokus deutlich sichtbar: Rahmen innen und außen in der
+    # Akzentfarbe (beim Akzent-Knopf in der Schriftfarbe), Schalter mit
+    # hinterlegter Beschriftung, Schieberegler mit farbiger Schiene.
     style.map("TButton",
               background=[("disabled", BG), ("pressed", BUTTON_ACTIVE), ("active", BUTTON_ACTIVE)],
-              lightcolor=[("disabled", BG), ("active", BUTTON_ACTIVE)],
-              darkcolor=[("disabled", BG), ("active", BUTTON_ACTIVE)],
+              lightcolor=[("disabled", BG), ("focus", ACCENT), ("active", BUTTON_ACTIVE)],
+              darkcolor=[("disabled", BG), ("focus", ACCENT), ("active", BUTTON_ACTIVE)],
               bordercolor=[("focus", ACCENT)])
     # Schrift auf dem Akzent: weiß auf Blau, im hohen Kontrast schwarz auf Gelb.
     style.configure("Accent.TButton", background=ACCENT, foreground=SURFACE, bordercolor=ACCENT,
                     lightcolor=ACCENT, darkcolor=ACCENT, font=HEADING, padding=(18, 4))
     style.map("Accent.TButton",
               background=[("disabled", BUTTON), ("pressed", ACCENT_ACTIVE), ("active", ACCENT_ACTIVE)],
-              lightcolor=[("disabled", BUTTON), ("active", ACCENT_ACTIVE)],
-              darkcolor=[("disabled", BUTTON), ("active", ACCENT_ACTIVE)],
+              lightcolor=[("disabled", BUTTON), ("focus", TEXT), ("active", ACCENT_ACTIVE)],
+              darkcolor=[("disabled", BUTTON), ("focus", TEXT), ("active", ACCENT_ACTIVE)],
               foreground=[("disabled", DISABLED)],
-              bordercolor=[("disabled", BORDER), ("focus", ACCENT_ACTIVE)])
+              bordercolor=[("disabled", BORDER), ("focus", TEXT)])
     # Flacher Knopf ohne Rahmen, z. B. zum Auf-/Zuklappen.
     style.configure("Flat.TButton", background=BG, bordercolor=BG, lightcolor=BG, darkcolor=BG,
                     foreground=ACCENT, padding=(2, 2))
     style.map("Flat.TButton", background=[("active", BUTTON)], lightcolor=[("active", BUTTON)],
-              darkcolor=[("active", BUTTON)], bordercolor=[("active", BUTTON)])
+              darkcolor=[("active", BUTTON)], bordercolor=[("focus", ACCENT), ("active", BUTTON)])
 
     for widget in ("TEntry", "TSpinbox", "TCombobox"):
         style.configure(widget, fieldbackground=SURFACE, background=BUTTON, bordercolor=BORDER,
@@ -242,12 +259,12 @@ def apply(root) -> None:
     for widget in ("TCheckbutton", "TRadiobutton"):
         style.configure(widget, background=BG, indicatorbackground=SURFACE, indicatorforeground=ACCENT,
                         upperbordercolor=MUTED, lowerbordercolor=MUTED, padding=(0, 2))
-        style.map(widget, background=[("active", BG)],
+        style.map(widget, background=[("focus", SELECT), ("active", BG)],
                   indicatorbackground=[("disabled", BG), ("pressed", SELECT), ("selected", SURFACE)])
 
     style.configure("TScale", background=BUTTON, troughcolor=TROUGH, bordercolor=BORDER,
                     lightcolor=BUTTON, darkcolor=BUTTON)
-    style.map("TScale", background=[("disabled", BG), ("active", ACCENT)])
+    style.map("TScale", background=[("disabled", BG), ("active", ACCENT)], troughcolor=[("focus", ACCENT)])
     style.configure("TScrollbar", background=BUTTON, troughcolor=BG, bordercolor=BG, arrowcolor=MUTED,
                     lightcolor=BUTTON, darkcolor=BUTTON)
     style.map("TScrollbar", background=[("active", BUTTON_ACTIVE)])

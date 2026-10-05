@@ -55,6 +55,10 @@ LEGACY_DEFAULT_CALL = "DL4YM"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # Startet die Tagesübung; von keinem Reiter belegt.
 DAILY_KEY = "F12"
+# Bedienelemente, die Leertaste, Enter und Pfeile selbst auswerten, wenn sie
+# den Tastaturfokus haben.
+FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, ttk.Treeview, ttk.Scale,
+                   ttk.Combobox)
 # Sprachansage an/aus und „wo bin ich?“ (widgets/announcer.py).
 ANNOUNCE_KEY = "F9"
 STATUS_KEY = "F11"
@@ -134,6 +138,13 @@ class MorseTrainerApp:
                 for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
                     root.bind_all(f"<{modifier}-{key}>", lambda e, d=direction: self.zoom(d) or "break")
         theme.scale_wraps(root)  # Reiter sind nach dem Einlesen der Schriftgröße entstanden
+        # Alt+1 … Alt+9, Alt+0: Reiter 1 … 10 (auf dem Mac Cmd, Option+Ziffer
+        # schreibt dort Sonderzeichen); Strg+B: Bandbedingungen.
+        tab_modifier = "Command" if sys.platform == "darwin" else "Alt"
+        for number in range(10):
+            root.bind_all(f"<{tab_modifier}-Key-{number}>",
+                          lambda e, n=(number - 1) % 10: self.select_tab(n) or "break")
+        root.bind_all("<Control-b>", lambda e: self.band_settings.open_window() or "break")
         root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _set_icon(self):
@@ -477,6 +488,13 @@ class MorseTrainerApp:
             if text:
                 parts.append(text.replace("\n", ". "))
         self.announcer.say(". ".join(parts) + ".", force=True)
+
+    def select_tab(self, index: int) -> None:
+        """Reiter Nr. `index` (ab 0) zeigen, wenn er nicht gesperrt ist
+        (während eines Durchgangs sind die anderen Reiter gesperrt)."""
+        tabs = self.notebook.tabs()
+        if index < len(tabs) and str(self.notebook.tab(tabs[index], "state")) == "normal":
+            self.notebook.select(tabs[index])
 
     def _tab_name(self) -> str:
         """Name des sichtbaren Reiters, deutsch (die Stimme ist deutsch)."""
@@ -1114,6 +1132,8 @@ class MorseTrainerApp:
             self.mode_titles.append(title)
             self.tab_ids.append(str(tab))
         self.notebook.bind("<<NotebookTabChanged>>", self._announce_tab, add="+")
+        # Tastatur: Strg+Tab / Strg+Umschalt+Tab blättern durch die Reiter.
+        self.notebook.enable_traversal()
 
     def _lock_tabs(self):
         # Fokus aus Eingabefeldern oben (Zeichen, WPM …) nehmen, sonst
@@ -1231,7 +1251,12 @@ class MorseTrainerApp:
         # das WPM-Feld beim Ändern der Geschwindigkeit, oder das Antwortfeld im
         # Gruppen-/Rufzeichen-Modus), sollen nicht zusätzlich als Morse-Antwort
         # gewertet werden.
-        if isinstance(event.widget, (tk.Entry, ttk.Entry)):
+        if isinstance(event.widget, (tk.Entry, ttk.Entry, tk.Text)):
+            return
+        # Mit der Tastatur auf einen Knopf, Schalter, Reiter oder eine Tabelle
+        # gegangen: Leertaste, Enter und Pfeile gehören diesem Element.
+        if (isinstance(event.widget, FOCUS_OWNS_KEYS)
+                and event.keysym in ("space", "Return", "KP_Enter", "Up", "Down", "Left", "Right")):
             return
         mode = self._active_mode()
         if mode is not None:

@@ -32,6 +32,12 @@
   mit kräftigen Rahmen, unter „Weitere Optionen“, ab dem nächsten Start.
   Alle Schriften mindestens 7:1 zum Grund, auch Diagramme und die Farben
   der QSO-Stationen.
+- **Bedienung ohne Maus:** Knöpfe und Schalter sind per Tab erreichbar,
+  der Tastaturfokus ist deutlich markiert; Alt+1 … Alt+0 und Strg+Tab
+  wechseln die Reiter, Strg+B öffnet die Bandbedingungen, Esc schließt
+  auch die Netzwerk-Fenster. Ein Mausklick legt den Fokus weiterhin nicht
+  auf Knöpfe, die Leertaste bleibt „Wiederholen“. Tippen ins Notizfeld
+  zählt nicht mehr als Antwort.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

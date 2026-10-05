@@ -489,7 +489,14 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 ## Tastenkürzel
 
 - **Überall:** Strg+Plus/Strg+Minus Schrift größer/kleiner, Strg+0 normal
-  (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist.
+  (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist;
+  Alt+1 … Alt+9 und Alt+0 wechseln zu Reiter 1 … 10, Strg+Tab blättert
+  durch die Reiter (auf dem Mac Cmd+Ziffer); Strg+B öffnet die
+  Bandbedingungen.
+- **Ohne Maus:** Tab und Umschalt+Tab gehen durch alle Felder, Knöpfe und
+  Schalter (der Fokus ist farbig markiert), Leertaste drückt den Knopf
+  bzw. schaltet um, Pfeiltasten wählen in Listen, Reglern und Reitern.
+  Esc schließt die Nebenfenster.
 - **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
   beendet.
 - **Einzelzeichen, Gruppen, Wörter, Rufzeichen:** Leertaste wiederholt.

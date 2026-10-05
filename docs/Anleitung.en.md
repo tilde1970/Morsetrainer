@@ -480,7 +480,13 @@ versions (CHANGELOG) and this manual.
 ## Keyboard shortcuts
 
 - **Everywhere:** Ctrl+Plus/Ctrl+Minus larger/smaller font, Ctrl+0 normal
-  (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are.
+  (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are;
+  Alt+1 … Alt+9 and Alt+0 switch to tab 1 … 10, Ctrl+Tab cycles through
+  the tabs (on the Mac Cmd+digit); Ctrl+B opens the band conditions.
+- **Without a mouse:** Tab and Shift+Tab go through all fields, buttons and
+  check boxes (the focus is highlighted in colour), the space bar presses
+  the button or toggles, arrow keys choose in lists, sliders and tabs.
+  Esc closes the secondary windows.
 - **Daily practice:** F12 starts, Enter skips the card between blocks, Esc
   stops.
 - **Characters, Groups, Words, Callsigns:** the space bar repeats.

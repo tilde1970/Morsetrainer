@@ -31,6 +31,12 @@
   scheme with strong borders, under “More options”, from the next start.
   All text at least 7:1 against its background, including charts and the
   colours of the QSO stations.
+- **Use without a mouse:** buttons and check boxes can be reached with
+  Tab, and the keyboard focus is clearly highlighted; Alt+1 … Alt+0 and
+  Ctrl+Tab switch tabs, Ctrl+B opens the band conditions, Esc also closes
+  the network windows. A mouse click still does not put the focus on
+  buttons, so the space bar stays “repeat”. Typing in the notes field no
+  longer counts as an answer.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

@@ -544,6 +544,7 @@ class NetworkModeFrame:
         # Auch im eigenen Fenster steuern (z. B. am Beamer): F5–F7.
         window.bind("<Key>", lambda e: self.on_function_key(e.keysym))
         window.protocol("WM_DELETE_WINDOW", self.attach_table)
+        window.bind("<Escape>", lambda e: self.attach_table())
         self.table_window = window
         self._refresh_table(selected)
 
@@ -1368,6 +1369,7 @@ class NetworkModeFrame:
         self.solution_text_widget = text
         window.bind("<Key>", self._on_solution_key)
         window.protocol("WM_DELETE_WINDOW", self.close_solution)
+        window.bind("<Escape>", lambda e: self.close_solution())
         self.solution_window = window
         self._refresh_solution()
         window.focus_force()
@@ -1498,6 +1500,7 @@ class NetworkModeFrame:
         self.paper_sheet.frame.pack(anchor="w", padx=10, pady=(0, 10))
         name_entry.bind("<Return>", lambda e: self.paper_sheet.focus(0) or "break")
         window.protocol("WM_DELETE_WINDOW", self.close_paper)
+        window.bind("<Escape>", lambda e: self.close_paper())
         self.paper_window = window
         name_entry.focus_set()
 
