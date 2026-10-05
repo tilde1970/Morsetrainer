@@ -22,6 +22,9 @@ BAND_OPTIONS = (
 SHORT_NAMES = {"noise": N_("Rauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": N_("Chirp"),
                "ssb": "SSB", "cw_qrm": "CW-QRM"}
 PRESET_NAMES = {"light": N_("leicht"), "medium": N_("mittel"), "heavy": N_("stark")}
+FILTER_NAMES = {2400: N_("2,4 kHz"), 500: N_("500 Hz"), 250: N_("250 Hz")}
+QRM_OFFSET_NAMES = {"far": N_("weit (300–500 Hz)"), "near": N_("nah (50–200 Hz)"), "zero": N_("Zero-Beat")}
+QRM_OFFSET_SHORT = {"far": N_("weit"), "near": N_("nah"), "zero": N_("Zero-Beat")}
 # Startwerte, solange nichts gespeichert ist: wer zum ersten Mal zuschaltet,
 # soll nicht gleich im tiefen Fading landen.
 DEFAULT_PRESET = "light"
@@ -36,7 +39,8 @@ def signed_db(value: float) -> str:
 
 def level_text(key: str, level: float, gain: float = 1.0) -> str:
     """Anzeige eines Pegels (0..1) in der Sprache der Funkamateure:
-    Rauschen als Rauschabstand, Chirp als Frequenzablage, sonst Prozent."""
+    Rauschen als Rauschabstand (2,4 kHz), Chirp als Frequenzablage, sonst
+    Prozent."""
     if key == "noise":
         return tr("S/N {db}").format(db=signed_db(band.noise_snr_db(level, gain)))
     if key == "chirp":
@@ -67,6 +71,8 @@ class BandSettings:
         for key, _, default in BAND_OPTIONS:
             self.controls[key] = (tk.BooleanVar(value=False), tk.DoubleVar(value=default))
         self.gain_var = tk.DoubleVar(value=100)
+        self.filter_var = tk.IntVar(value=band.DEFAULT_FILTER)
+        self.qrm_offset_var = tk.StringVar(value=band.DEFAULT_QRM_OFFSET)
         self.listeners = []
         self.window = None
         self.focus_before = None  # Fokus im Hauptfenster vor dem Öffnen
@@ -74,12 +80,18 @@ class BandSettings:
 
     # --- Werte -----------------------------------------------------------
     def spec(self) -> dict:
-        """Eingeschaltete Störungen mit Pegel über 0 % (0 % wäre nicht zu hören)."""
-        return {
+        """Eingeschaltete Störungen mit Pegel über 0 % (0 % wäre nicht zu
+        hören); Filter und QRM-Abstand nur, wenn nicht die Grundeinstellung."""
+        spec = {
             "levels": {key: round(level.get()) / 100 for key, (on, level) in self.controls.items()
                        if on.get() and round(level.get()) > 0},
             "gain": round(self.gain_var.get()) / 100,
         }
+        if self.filter_var.get() != band.DEFAULT_FILTER:
+            spec["filter"] = self.filter_var.get()
+        if self.qrm_offset_var.get() != band.DEFAULT_QRM_OFFSET:
+            spec["qrm_offset"] = self.qrm_offset_var.get()
+        return spec
 
     def set_spec(self, spec, notify=True) -> None:
         for key, (on, level) in self.controls.items():
@@ -87,13 +99,17 @@ class BandSettings:
             if key in spec["levels"]:
                 level.set(round(spec["levels"][key] * 100))
         self.gain_var.set(round(spec["gain"] * 100))
+        self.filter_var.set(spec.get("filter", band.DEFAULT_FILTER))
+        self.qrm_offset_var.set(spec.get("qrm_offset", band.DEFAULT_QRM_OFFSET))
         if notify:
             self._changed()
 
     def set_preset(self, preset: str, notify=True) -> None:
-        """Stufe übernehmen; die Lautstärke bleibt."""
+        """Stufe übernehmen; Lautstärke, Filter und QRM-Abstand bleiben."""
+        current = self.spec()
         spec = band.spec_from_preset(preset)
-        spec["gain"] = round(self.gain_var.get()) / 100
+        spec["gain"] = current["gain"]
+        spec |= {key: current[key] for key in ("filter", "qrm_offset") if key in current}
         self.set_spec(spec, notify)
 
     def settings(self) -> dict:
@@ -123,11 +139,16 @@ class BandSettings:
 
     def summary(self) -> str:
         """Kurzfassung für die Reiter, z. B. „Rauschen S/N +2 dB, QRN 30 %,
-        QSB 50 % · Lautstärke 100 % · Stufe mittel“."""
+        QSB 50 %, CW-QRM 30 % nah · Filter 500 Hz · Lautstärke 100 % ·
+        Stufe mittel“."""
         spec = self.spec()
         parts = [f"{tr(SHORT_NAMES[key])} {level_text(key, level, spec['gain'])}"
+                 + (f" {tr(QRM_OFFSET_SHORT[spec['qrm_offset']])}" if key == "cw_qrm" and "qrm_offset" in spec
+                    else "")
                  for key, level in spec["levels"].items()]
         text = ", ".join(parts) if parts else tr("keine Störung eingeschaltet")
+        if "filter" in spec:
+            text += " · " + tr("Filter {width}").format(width=tr(FILTER_NAMES[spec["filter"]]))
         text += " · " + tr("Lautstärke {gain} %").format(gain=round(spec["gain"] * 100))
         rank = band.preset_rank(spec)
         if rank:
@@ -184,10 +205,33 @@ class BandSettings:
             shown = ttk.Label(box, width=11, anchor="e")
             shown.grid(row=row, column=2, padx=(6, 0))
             self.widgets[key] = (scale, shown)
+        offsets = ttk.Frame(box)
+        offsets.grid(row=len(BAND_OPTIONS), column=0, columnspan=3, sticky="w", padx=(22, 0), pady=(0, 2))
+        theme.hint(offsets, text=tr("CW-QRM-Abstand:")).pack(side="left", padx=(0, 6))
+        self.offset_buttons = []
+        for key, name in QRM_OFFSET_NAMES.items():
+            button = ttk.Radiobutton(offsets, text=tr(name), value=key, variable=self.qrm_offset_var,
+                                     command=self._changed)
+            button.pack(side="left", padx=(0, 8))
+            self.offset_buttons.append(button)
         buttons = ttk.Frame(box)
-        buttons.grid(row=len(BAND_OPTIONS), column=0, columnspan=3, sticky="e", pady=(6, 0))
+        buttons.grid(row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="e", pady=(6, 0))
         ttk.Button(buttons, text=tr("Alle aus"), command=lambda: self._set_all(False)).pack(side="right")
         ttk.Button(buttons, text=tr("Alle an"), command=lambda: self._set_all(True)).pack(side="right", padx=4)
+
+        receiver = theme.card(frame, tr("CW-Filter"), padx=0)
+        row = ttk.Frame(receiver)
+        row.pack(fill="x")
+        for width, name in FILTER_NAMES.items():
+            ttk.Radiobutton(row, text=tr(name), value=width, variable=self.filter_var,
+                            command=self._changed).pack(side="left", padx=(0, 12))
+        self.filter_shown = ttk.Label(row, anchor="e")
+        self.filter_shown.pack(side="right")
+        theme.hint(receiver, wrap=440, text=tr(
+            "Um deine Tonhöhe; Zeichen, Rauschen und Störungen laufen hindurch. Ein schmales Filter nimmt "
+            "Rauschen und weiter entferntes QRM weg, klingelt aber leicht; Stationen neben deiner Tonhöhe "
+            "werden leiser. Gegen QRM nah oder Zero-Beat hilft es nicht – dann hilft nur das Ohr.")).pack(
+            anchor="w", pady=(4, 0))
 
         gain = theme.card(frame, tr("Lautstärke der Störgeräusche"), padx=0)
         row = ttk.Frame(gain)
@@ -201,14 +245,14 @@ class BandSettings:
         theme.hint(box, wrap=440, text=tr(
             "S/N: Rauschabstand in 2,4 kHz Bandbreite gegenüber dem ungeschwächten Signal; im Ohr, das CW "
             "wie ein Filter von etwa 50 Hz hört, sind es rund 17 dB mehr.")).grid(
-            row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="w", pady=(6, 0))
+            row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
         theme.hint(gain, wrap=440, text=tr(
             "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist "
             "die normale Mischung, für das Diplom QRN-fest müssen es mindestens 100 % sein.")).pack(
             anchor="w", pady=(4, 0))
 
         self.rank_var = tk.StringVar(value="")
-        theme.hint(frame, textvariable=self.rank_var).pack(anchor="w", pady=(4, 0))
+        theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(4, 0))
         ttk.Button(frame, text=tr("Schließen"), command=self.close_window).pack(anchor="e", pady=(8, 0))
         self._update_window()
 
@@ -239,14 +283,25 @@ class BandSettings:
             shown.config(text=level_text(key, round(level.get()) / 100, round(self.gain_var.get()) / 100),
                          foreground="" if on.get() else theme.DISABLED)
         self.gain_shown.config(text=f"{round(self.gain_var.get())} %")
-        rank = band.preset_rank(self.spec())
+        for button in self.offset_buttons:
+            button.state(["!disabled"] if self.controls["cw_qrm"][0].get() else ["disabled"])
+        spec = self.spec()
+        if "filter" in spec and "noise" in spec["levels"]:
+            snr = band.noise_snr_db(spec["levels"]["noise"], spec["gain"]) + band.filter_noise_db(spec["filter"])
+            self.filter_shown.config(text=tr("im Filter S/N {db}").format(db=signed_db(snr)))
+        else:
+            self.filter_shown.config(text="")
+        rank = band.preset_rank(spec)
         if rank:
-            self.rank_var.set(tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank])))
+            text = tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank]))
         else:
             light = band.PRESETS["light"]
-            self.rank_var.set(tr("Keiner Stufe zugeordnet: Stufe leicht braucht mindestens Rauschen {snr} "
-                                 "und QSB {qsb} %.").format(snr=level_text("noise", light["noise"]),
-                                                             qsb=round(light["qsb"] * 100)))
+            text = tr("Keiner Stufe zugeordnet: Stufe leicht braucht mindestens Rauschen {snr} "
+                      "und QSB {qsb} %.").format(snr=level_text("noise", light["noise"]),
+                                                  qsb=round(light["qsb"] * 100))
+        if "filter" in spec:
+            text += " " + tr("Mit schmalem Filter zählt der Rauschabstand im Filter.")
+        self.rank_var.set(text)
 
 
 class BandToggle:

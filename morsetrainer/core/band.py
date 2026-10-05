@@ -12,11 +12,17 @@ und mit eigenem Pegel (0..1, siehe EFFECTS):
   Synthetisch erzeugt (Sägezahn-Stimme durch wechselnde Vokal-Formanten,
   Silben, Wörter, Sprecherwechsel), also unverständlich, klingt aber nach
   Sprache.
-- CW-QRM: ein Contest-Run auf der Nachbarfrequenz, schneller und leiser.
+- CW-QRM: ein Contest-Run auf der Nachbarfrequenz, weit daneben, nah dran
+  oder fast auf der eigenen Frequenz (Zero-Beat); mit eigenem QSB.
+
+Dazu ein wählbares CW-Filter (2,4 kHz wie bisher, 500 Hz, 250 Hz) um die
+eigene Tonhöhe: Signale, Rauschen und QRM laufen hindurch, der eigene
+Mithörton nicht.
 
 Rauschen und SSB-Gebrabbel werden einmal als Schleife per FFT geformt. Weil
 die FFT-Synthese periodisch ist, geht das Ende nahtlos in den Anfang über;
 so kostet das laufende Mischen fast nichts."""
+import functools
 import math
 import random
 import time
@@ -83,11 +89,23 @@ VOWEL_FORMANTS = (
     (300, 870, 2240), (660, 1720, 2410), (490, 1350, 1690),
 )
 
-# CW-QRM: Abstand zur eigenen Frequenz und Tempo; bei Regler auf 100 % so
-# laut wie die eigenen Stationen.
-CW_QRM_OFFSET_HZ = (300, 500)
+# CW-QRM: Abstand zur eigenen Frequenz (wählbar) und Tempo; bei Regler auf
+# 100 % so laut wie die eigenen Stationen. „weit“ nimmt ein schmales Filter
+# weg, „nah“ und „Zero-Beat“ nicht – dann hilft nur selektives Hören.
+QRM_OFFSETS = {"far": (300, 500), "near": (50, 200), "zero": (0, 15)}
+DEFAULT_QRM_OFFSET = "far"
 CW_QRM_WPM = (22, 32)
 CW_QRM_PAUSE_SECONDS = (1.0, 2.5)  # dort, wo seine (nicht hörbaren) Anrufer senden
+
+# CW-Filter: Bandbreite (-3 dB) um die eigene Tonhöhe. 2400 ist das
+# SSB-Filter, das Rauschen und SSB-Gebrabbel ohnehin schon formt; dann wird
+# nichts zusätzlich gefiltert. Steile Flanken (Butterworth-Ordnung) und
+# minimale Phase: kausal wie ein echtes Filter, das schmale klingelt leicht.
+FILTER_WIDTHS = (2400, 500, 250)
+DEFAULT_FILTER = 2400
+FILTER_ORDER = 4
+FILTER_IR_SECONDS = 0.06
+FILTER_FFT_SIZE = 2 ** 15
 
 _noise_loop = None
 _ssb_loop = None
@@ -187,13 +205,13 @@ def _ssb_babble_loop() -> np.ndarray:
 
 
 # --- CW-QRM ----------------------------------------------------------------------
-def _cw_qrm_loop(rng, freq: int) -> np.ndarray:
+def _cw_qrm_loop(rng, freq: int, offset_range=QRM_OFFSETS[DEFAULT_QRM_OFFSET]) -> np.ndarray:
     """Nur die Run-Station eines Contest-Runs auf der Nachbarfrequenz; ihre
     Anrufer sind zu schwach und fallen in die Pausen."""
     # Erst hier importiert: qso_text lädt die Rufzeichenliste aus den
     # Modi, und die Modi importieren dieses Modul.
     from morsetrainer.core import qso_text
-    offset = rng.uniform(*CW_QRM_OFFSET_HZ) * rng.choice((-1, 1))
+    offset = rng.uniform(*offset_range) * rng.choice((-1, 1))
     if not 250 <= freq + offset <= 1200:
         offset = -offset
     wpm = int(rng.integers(*CW_QRM_WPM))
@@ -206,6 +224,41 @@ def _cw_qrm_loop(rng, freq: int) -> np.ndarray:
         for station, text in qso.transmissions
     ]
     return np.concatenate(parts).astype(np.float32)
+
+
+# --- CW-Filter -------------------------------------------------------------------
+def filter_response(width: int, freq: float, f: np.ndarray) -> np.ndarray:
+    """Betrag des Filters bei den Frequenzen `f`: Butterworth-Flanken,
+    symmetrisch um `freq`."""
+    return 1 / np.sqrt(1 + ((f - freq) / (width / 2)) ** (2 * FILTER_ORDER))
+
+
+def filter_ir(width: int, freq: float) -> np.ndarray:
+    """Impulsantwort des CW-Filters (minimalphasig über das Cepstrum),
+    auf FILTER_IR_SECONDS gekürzt und bei `freq` auf Verstärkung 1."""
+    n = FILTER_FFT_SIZE
+    f = np.fft.rfftfreq(n, 1 / SAMPLE_RATE)
+    log_mag = np.log(np.maximum(filter_response(width, freq, f), 1e-5))
+    cepstrum = np.fft.irfft(log_mag, n)
+    folded = np.zeros(n)
+    folded[0], folded[n // 2] = cepstrum[0], cepstrum[n // 2]
+    folded[1:n // 2] = 2 * cepstrum[1:n // 2]
+    h = np.fft.irfft(np.exp(np.fft.rfft(folded)), n)[:int(FILTER_IR_SECONDS * SAMPLE_RATE)]
+    fade = len(h) // 5
+    h[-fade:] *= 0.5 + 0.5 * np.cos(np.linspace(0, np.pi, fade))
+    t = np.arange(len(h)) / SAMPLE_RATE
+    return h / abs(np.sum(h * np.exp(-2j * np.pi * freq * t)))
+
+
+@functools.lru_cache(maxsize=None)
+def filter_noise_db(width: int, freq: float = 600) -> float:
+    """So viel weniger Bandrauschen lässt das Filter durch als das
+    SSB-Filter allein (2,4 kHz)."""
+    if width == DEFAULT_FILTER:
+        return 0.0
+    f = np.fft.rfftfreq(FILTER_FFT_SIZE, 1 / SAMPLE_RATE)
+    wide = _passband_gain(f) ** 2
+    return float(10 * np.log10(np.sum(wide) / np.sum(wide * filter_response(width, freq, f) ** 2)))
 
 
 def soft_limit(x: np.ndarray, knee: float = 0.8) -> np.ndarray:
@@ -235,8 +288,13 @@ class BandConditions:
         self.enabled = dict.fromkeys(EFFECTS, False)
         self.levels = dict.fromkeys(EFFECTS, 0.5)
         self.background_gain = 1.0
+        self.filter_width = DEFAULT_FILTER
+        self.qrm_offset = DEFAULT_QRM_OFFSET
         self.ssb = None
         self.cw_qrm = None
+        self.cw_qrm_offset = None  # QRM_OFFSETS-Schlüssel, mit dem cw_qrm entstand
+        self.filter = None  # ((Breite, Tonhöhe), Impulsantwort) oder None
+        self._filter_spectra = {}
         self.strengths = [self.rng.uniform(*STRENGTH_FIRST)] + [
             self.rng.uniform(*STRENGTH_OTHERS) for _ in range(station_count - 1)
         ]
@@ -253,14 +311,26 @@ class BandConditions:
             if c else None
             for c in chirpy
         ]
+        # Eigenes Fading des CW-QRM (wie eine weitere Station).
+        freq = 1 / self.rng.uniform(*QSB_PERIOD_SECONDS)
+        self.qrm_qsb = (freq, self.rng.uniform(0, 2 * np.pi), freq * self.rng.uniform(*QSB_SECOND_RATIO),
+                        self.rng.uniform(0, 2 * np.pi), self.rng.uniform(*QSB_DEPTH_SPREAD))
         self.rewind()
 
     def prepare(self, freq: int) -> None:
-        """Erzeugt die Störsignale, die gerade eingeschaltet sind (einmalig)."""
+        """Erzeugt die Störsignale, die gerade eingeschaltet sind (einmalig,
+        neu bei anderem QRM-Abstand), und das CW-Filter um `freq`."""
         if self.enabled["ssb"] and self.ssb is None:
             self.ssb = _ssb_babble_loop()
-        if self.enabled["cw_qrm"] and self.cw_qrm is None:
-            self.cw_qrm = _cw_qrm_loop(self.rng, freq)
+        if self.enabled["cw_qrm"] and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset):
+            offset = self.qrm_offset
+            self.cw_qrm = _cw_qrm_loop(self.rng, freq, QRM_OFFSETS[offset])
+            self.cw_qrm_pos %= len(self.cw_qrm)
+            self.cw_qrm_offset = offset
+        if self.filter_width == DEFAULT_FILTER:
+            self.filter = None
+        elif self.filter is None or self.filter[0] != (self.filter_width, freq):
+            self.filter = ((self.filter_width, freq), filter_ir(self.filter_width, freq).astype(np.float64))
 
     def _on(self, effect: str) -> bool:
         return self.enabled[effect] and self.levels[effect] > 0
@@ -290,6 +360,7 @@ class BandConditions:
         self.ssb_pos = int(self.rng.integers(SSB_LOOP_SECONDS * SAMPLE_RATE))
         self.cw_qrm_pos = 0
         self.crash = np.zeros(0, dtype=np.float32)  # Rest einer laufenden Knackstörung
+        self.filter_tail = np.zeros(0)  # Nachklingen des Filters in den nächsten Block
         self.clock = None  # time.time() zu sample_pos 0, ab dem ersten catch_up()
 
     def catch_up(self) -> None:
@@ -309,6 +380,7 @@ class BandConditions:
         if self.cw_qrm is not None:
             self.cw_qrm_pos = (self.cw_qrm_pos + gap) % len(self.cw_qrm)
         self.crash = np.zeros(0, dtype=np.float32)
+        self.filter_tail = np.zeros(0)
 
     def process(self, block: np.ndarray, station: int) -> np.ndarray:
         """Ein Block einer einzelnen Station, mit QSB und Hintergrund."""
@@ -317,13 +389,18 @@ class BandConditions:
     def mix(self, sources, n: int) -> np.ndarray:
         """Mischt mehrere gleichzeitige Signale [(Block, Station), …] zu
         einem Block der Länge `n` (kürzere Blöcke werden mit Stille
-        aufgefüllt) und legt Rauschen/QRM darunter. Station None steht für
-        den eigenen Mithörton (kein QSB)."""
+        aufgefüllt) und legt Rauschen/QRM darunter, alles durch das
+        CW-Filter. Station None steht für den eigenen Mithörton (kein QSB,
+        keine AGC, nicht gefiltert)."""
         noise_rms, agc = self.noise_and_agc()
         out = np.zeros(n, dtype=np.float64)
+        sidetone = np.zeros(n, dtype=np.float64)
         for block, station in sources:
-            gain = self.station_gain(station, len(block[:n]))
-            out[:len(block)] += block[:n] * (gain if station is None else gain * agc)  # Mithörton ohne AGC
+            block = block[:n]
+            if station is None:
+                sidetone[:len(block)] += block
+            else:
+                out[:len(block)] += block * (self.station_gain(station, len(block)) * agc)
         levels = self.levels
         if self._on("noise"):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
@@ -336,11 +413,33 @@ class BandConditions:
             self.ssb_pos, part = _loop_slice(ssb, self.ssb_pos, n)
             background += part * (MAX_SSB_RMS * levels["ssb"])
         if self._on("cw_qrm") and cw_qrm is not None:
-            self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos, n)
-            background += part * levels["cw_qrm"]
+            self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos % len(cw_qrm), n)
+            fading = self._fading(self.qrm_qsb, n) if self._on("qsb") else 1.0
+            background += part * fading * levels["cw_qrm"]
         out += background * (self.background_gain * agc)
+        out = self._filtered(out)
         self.sample_pos += n
-        return soft_limit(out).astype(np.float32)
+        return soft_limit(out + sidetone).astype(np.float32)
+
+    def _filtered(self, x: np.ndarray) -> np.ndarray:
+        """x durch das CW-Filter (Overlap-Add per FFT; das Nachklingen geht in
+        den nächsten Block). Ohne schmales Filter unverändert."""
+        current = self.filter  # kann parallel in prepare() wechseln
+        if current is None:
+            return x
+        h = current[1]
+        n, tail_len = len(x), len(h) - 1
+        size = 1 << (n + tail_len - 1).bit_length()
+        key = (current[0], size)
+        spectrum = self._filter_spectra.get(key)
+        if spectrum is None:
+            spectrum = self._filter_spectra[key] = np.fft.rfft(h, size)
+        y = np.fft.irfft(np.fft.rfft(x, size) * spectrum, size)[:n + tail_len]
+        tail = self.filter_tail
+        if len(tail) == tail_len:
+            y[:tail_len] += tail
+        self.filter_tail = y[n:]
+        return y[:n]
 
     def noise_and_agc(self):
         """(Effektivwert des Rauschens, Faktor für alles Übrige). Der
@@ -360,14 +459,17 @@ class BandConditions:
         if station is None or not self._on("qsb"):
             return 1.0
         station %= len(self.qsb)
+        strength = max(1 - (1 - self.strengths[station]) * 2 * self.levels["qsb"], 0.05)
+        return strength * self._fading(self.qsb[station], n)
+
+    def _fading(self, params, n: int) -> np.ndarray:
+        """Fading-Verlauf (0 … 1) über die nächsten `n` Samples."""
+        freq, phase, freq2, phase2, spread = params
         level = self.levels["qsb"]
-        freq, phase, freq2, phase2, spread = self.qsb[station]
         t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
         wave = (np.sin(2 * np.pi * freq * t + phase) + QSB_SECOND_WEIGHT * np.sin(2 * np.pi * freq2 * t + phase2))
         dip = 0.5 * (1 + wave / (1 + QSB_SECOND_WEIGHT))  # 0 … 1
-        fading = 1 - min(level * QSB_MAX_DEPTH * spread, QSB_MAX_DEPTH) * dip
-        strength = max(1 - (1 - self.strengths[station]) * 2 * level, 0.05)
-        return strength * fading
+        return 1 - min(level * QSB_MAX_DEPTH * spread, QSB_MAX_DEPTH) * dip
 
     def _crashes(self, n: int) -> np.ndarray:
         """Knackstörungen im nächsten Block (meist Stille)."""
@@ -455,7 +557,9 @@ def apply_preset(band: BandConditions, samples: np.ndarray) -> tuple[np.ndarray,
 # --- Zentrale Einstellung --------------------------------------------------
 # Eine „Spec“ ist ein schlichtes dict, wie es gespeichert und im Netzwerk
 # verschickt wird: {"levels": {Störung: Pegel 0..1, nur eingeschaltete},
-# "gain": Lautstärke der Störgeräusche (background_gain)}.
+# "gain": Lautstärke der Störgeräusche (background_gain)}, optional "filter"
+# (aus FILTER_WIDTHS) und "qrm_offset" (Schlüssel aus QRM_OFFSETS); fehlen
+# sie, gelten 2,4 kHz und „weit“ (Versionen bis 2.37 kennen sie nicht).
 GAIN_RANGE = (0.1, 1.5)
 # Optional "seed" (0 … SEED_LIMIT − 1): Zufallswert für BandConditions, im
 # Netzwerk vom Trainer je Durchgang gewählt.
@@ -484,6 +588,10 @@ def clean_spec(data):
     if not _number(gain):
         gain = 1.0
     spec = {"levels": levels, "gain": min(max(float(gain), GAIN_RANGE[0]), GAIN_RANGE[1])}
+    if data.get("filter") in FILTER_WIDTHS and not isinstance(data.get("filter"), bool):
+        spec["filter"] = data["filter"]
+    if data.get("qrm_offset") in QRM_OFFSETS:
+        spec["qrm_offset"] = data["qrm_offset"]
     seed = data.get("seed")
     if isinstance(seed, int) and not isinstance(seed, bool) and 0 <= seed < SEED_LIMIT:
         spec["seed"] = seed
@@ -499,6 +607,8 @@ def apply_spec(band: BandConditions, spec) -> None:
         if effect in levels:
             band.levels[effect] = levels[effect]
     band.background_gain = spec["gain"] if spec else 1.0
+    band.filter_width = spec.get("filter", DEFAULT_FILTER) if spec else DEFAULT_FILTER
+    band.qrm_offset = spec.get("qrm_offset", DEFAULT_QRM_OFFSET) if spec else DEFAULT_QRM_OFFSET
 
 
 def conditions(spec, freq: int, stations: int = 1) -> BandConditions:
@@ -510,14 +620,19 @@ def conditions(spec, freq: int, stations: int = 1) -> BandConditions:
 
 def spec_key(spec) -> tuple:
     """Hashbarer Schlüssel einer Spec, z. B. für einen Cache."""
-    return tuple(sorted(spec["levels"].items())), spec["gain"], spec.get("seed")
+    return (tuple(sorted(spec["levels"].items())), spec["gain"], spec.get("seed"),
+            spec.get("filter", DEFAULT_FILTER), spec.get("qrm_offset", DEFAULT_QRM_OFFSET))
 
 
 def preset_rank(spec):
     """Schwerste Stufe aus PRESETS, die die Spec mindestens erreicht (jede
     Störung der Stufe mindestens so stark), oder None. Die Lautstärke zählt
-    hier nicht; das Diplom prüft sie getrennt."""
-    levels = spec["levels"] if spec else {}
+    hier nicht; das Diplom prüft sie getrennt. Ein schmales Filter nimmt
+    Rauschen weg; das Rauschen zählt dann um so viel schwächer."""
+    levels = dict(spec["levels"]) if spec else {}
+    if spec and "noise" in levels:
+        levels["noise"] -= filter_noise_db(spec.get("filter", DEFAULT_FILTER)) / abs(
+            SNR_DB_RANGE[0] - SNR_DB_RANGE[1])
     rank = None
     for preset, wanted in PRESETS.items():  # leicht -> stark
         if all(levels.get(effect, 0.0) >= level - 1e-9 for effect, level in wanted.items()):

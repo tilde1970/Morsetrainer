@@ -1,5 +1,18 @@
 # Changes
 
+## Unreleased
+
+- **Selectable CW filter:** 2.4 kHz (as before), 500 Hz or 250 Hz around
+  your pitch. Signals, noise, QRM and SSB babble pass through it, your own
+  sidetone in the contest does not. The narrow filter rings slightly and
+  removes noise and distant QRM; the window shows the S/N inside the
+  filter, and levels and the award use it.
+- **CW QRM close to your frequency:** offset selectable – far
+  (300–500 Hz), close (50–200 Hz) or zero beat. With QSB, the QRM now
+  fades too, independently of your stations.
+- A network test depended on the clock and occasionally failed under
+  load; it now sets the key times itself.
+
 ## 2.37
 
 - **S/N in dB, real levels:** noise is now shown as signal-to-noise ratio

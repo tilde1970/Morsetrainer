@@ -323,6 +323,26 @@ EN.update({
     "Chirp": "Chirp",
     "SSB-Gebrabbel": "SSB babble",
     "CW-QRM (Nachbar-Run)": "CW QRM (adjacent run)",
+    "2,4 kHz": "2.4 kHz",
+    "500 Hz": "500 Hz",
+    "250 Hz": "250 Hz",
+    "weit (300–500 Hz)": "far (300–500 Hz)",
+    "nah (50–200 Hz)": "close (50–200 Hz)",
+    "Zero-Beat": "zero beat",
+    "weit": "far",
+    "nah": "close",
+    "Filter {width}": "Filter {width}",
+    "CW-QRM-Abstand:": "CW QRM offset:",
+    "CW-Filter": "CW filter",
+    "Um deine Tonhöhe; Zeichen, Rauschen und Störungen laufen hindurch. Ein schmales Filter nimmt "
+    "Rauschen und weiter entferntes QRM weg, klingelt aber leicht; Stationen neben deiner Tonhöhe "
+    "werden leiser. Gegen QRM nah oder Zero-Beat hilft es nicht – dann hilft nur das Ohr.":
+        "Centred on your pitch; signals, noise and interference all pass through it. A narrow filter removes "
+        "noise and more distant QRM but rings slightly; stations off your pitch get quieter. It does not help "
+        "against close or zero-beat QRM – then only your ear helps.",
+    "im Filter S/N {db}": "in the filter S/N {db}",
+    "Mit schmalem Filter zählt der Rauschabstand im Filter.":
+        "With a narrow filter, the S/N inside the filter counts.",
     "Alle aus": "All off",
     "Alle an": "All on",
 })

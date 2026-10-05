@@ -159,6 +159,99 @@ class NetworkCacheTest(AppTestCase):
         self.assertLessEqual(len(net._band_cache), network_mode.BAND_CACHE_SIZE)
 
 
+class FilterAndQrmTest(unittest.TestCase):
+    """CW-Filter um die eigene Tonhöhe und CW-QRM in wählbarem Abstand."""
+
+    @staticmethod
+    def tone(freq, seconds=1.0):
+        import numpy as np
+        t = np.arange(int(seconds * band.SAMPLE_RATE)) / band.SAMPLE_RATE
+        return (0.3 * np.sin(2 * np.pi * freq * t)).astype(np.float32)
+
+    @staticmethod
+    def blockwise(conditions, samples, station=0):
+        import numpy as np
+        block = int(band.SAMPLE_RATE * band.PRESET_BLOCK_SECONDS)
+        return np.concatenate([conditions.mix([(samples[i:i + block], station)], len(samples[i:i + block]))
+                               for i in range(0, len(samples), block)])
+
+    def test_narrow_filter_passes_own_pitch_and_removes_far_signals(self):
+        import numpy as np
+        half = band.SAMPLE_RATE // 2
+        for width, far_db in ((500, -6), (250, -25)):
+            spec = {"levels": {"qrn": 0.01}, "gain": 1.0, "filter": width}
+            own = self.blockwise(band.conditions(spec, 600), self.tone(600))
+            far = self.blockwise(band.conditions(spec, 600), self.tone(950))
+            self.assertAlmostEqual(float(np.max(np.abs(own[half:]))), 0.3, delta=0.01)
+            self.assertLess(20 * np.log10(np.max(np.abs(far[half:])) / 0.3), far_db)
+        # 2,4 kHz wie bisher: nichts zusätzlich gefiltert.
+        wide = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0}, 600)
+        self.assertIsNone(wide.filter)
+
+    def test_own_sidetone_bypasses_the_filter(self):
+        import numpy as np
+        conditions = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0, "filter": 250}, 600)
+        out = self.blockwise(conditions, self.tone(1000), station=None)
+        self.assertAlmostEqual(float(np.max(np.abs(out))), 0.3, delta=0.01)
+
+    def test_filter_takes_away_noise(self):
+        import numpy as np
+        silent = np.zeros(band.SAMPLE_RATE, dtype=np.float32)
+        rms = {}
+        for width in band.FILTER_WIDTHS:
+            out = self.blockwise(band.conditions({"levels": {"noise": 0.5}, "gain": 1.0, "filter": width}, 600),
+                                 silent)
+            rms[width] = float(np.sqrt(np.mean(out[4800:] ** 2)))
+        for width in (500, 250):
+            measured = 20 * np.log10(rms[2400] / rms[width])
+            self.assertAlmostEqual(measured, band.filter_noise_db(width), delta=1.0)
+        self.assertGreater(band.filter_noise_db(250), band.filter_noise_db(500) + 2)
+
+    def test_narrow_filter_lowers_the_rank(self):
+        spec = band.spec_from_preset("medium")
+        self.assertEqual(band.preset_rank(spec | {"filter": 2400}), "medium")
+        # Mittel (+2 dB) im 500-Hz-Filter rund +8 dB: wie leicht; im 250-Hz-Filter leichter als leicht.
+        self.assertEqual(band.preset_rank(spec | {"filter": 500}), "light")
+        self.assertIsNone(band.preset_rank(spec | {"filter": 250}))
+        heavy = band.spec_from_preset("heavy") | {"filter": 500}
+        self.assertEqual(band.preset_rank(heavy), "medium")  # −4 dB im Filter rund +2 dB
+
+    def test_qrm_lies_in_the_chosen_offset(self):
+        import numpy as np
+        for key, (low, high) in band.QRM_OFFSETS.items():
+            conditions = band.conditions({"levels": {"cw_qrm": 1.0}, "gain": 1.0, "qrm_offset": key, "seed": 3},
+                                         600)
+            loop = conditions.cw_qrm
+            spectrum = np.abs(np.fft.rfft(loop))
+            peak = np.fft.rfftfreq(len(loop), 1 / band.SAMPLE_RATE)[np.argmax(spectrum)]
+            self.assertLessEqual(abs(peak - 600), high + 5, key)
+            self.assertGreaterEqual(abs(peak - 600), low - 5, key)
+        # Abstand im laufenden Durchgang umgestellt: neues QRM.
+        before = conditions.cw_qrm
+        band.apply_spec(conditions, {"levels": {"cw_qrm": 1.0}, "gain": 1.0, "qrm_offset": "far"})
+        conditions.prepare(600)
+        self.assertIsNot(conditions.cw_qrm, before)
+        self.assertEqual(conditions.cw_qrm_offset, "far")
+
+    def test_qrm_fades_with_qsb(self):
+        import numpy as np
+        conditions = band.conditions({"levels": {"cw_qrm": 1.0, "qsb": 1.0}, "gain": 1.0, "seed": 1}, 600)
+        gains = conditions._fading(conditions.qrm_qsb, 30 * band.SAMPLE_RATE)
+        self.assertLess(float(np.min(gains)), 0.3)
+        self.assertAlmostEqual(float(np.max(gains)), 1.0, delta=0.2)
+
+    def test_spec_keeps_valid_filter_and_offset(self):
+        spec = band.clean_spec({"levels": {}, "gain": 1.0, "filter": 500, "qrm_offset": "zero"})
+        self.assertEqual((spec["filter"], spec["qrm_offset"]), (500, "zero"))
+        spec = band.clean_spec({"levels": {}, "gain": 1.0, "filter": 300, "qrm_offset": "beside"})
+        self.assertNotIn("filter", spec)
+        self.assertNotIn("qrm_offset", spec)
+        self.assertNotIn("filter", band.clean_spec({"levels": {}, "gain": 1.0, "filter": True}))
+        plain = {"levels": {"noise": 0.5}, "gain": 1.0}
+        self.assertNotEqual(band.spec_key(plain), band.spec_key(plain | {"filter": 250}))
+        self.assertNotEqual(band.spec_key(plain), band.spec_key(plain | {"qrm_offset": "near"}))
+
+
 class CentralSettingsTest(AppTestCase):
     def test_saved_and_restored_with_shared_settings(self):
         settings = self.app.band_settings
@@ -198,6 +291,26 @@ class CentralSettingsTest(AppTestCase):
             self.assertEqual(self.app.band_settings.rank_var.get(), "Entspricht mindestens Stufe stark.")
         finally:
             settings.close_window()
+
+    def test_filter_and_offset_are_kept_by_presets_and_shown(self):
+        settings = self.app.band_settings
+        settings.set_spec({"levels": {"noise": 0.6, "cw_qrm": 0.3}, "gain": 1.0, "filter": 500,
+                           "qrm_offset": "near"})
+        settings.set_preset("heavy")
+        spec = settings.spec()
+        self.assertEqual((spec["filter"], spec["qrm_offset"]), (500, "near"))
+        summary = settings.summary()
+        self.assertIn("CW-QRM 30 % nah", summary)
+        self.assertIn("Filter 500 Hz", summary)
+        settings.open_window()
+        try:
+            self.assertIn("im Filter S/N", settings.filter_shown.cget("text"))
+            self.assertIn("Rauschabstand im Filter", settings.rank_var.get())
+        finally:
+            settings.close_window()
+        # Grundeinstellung: nicht in der Spec (ältere Versionen kennen sie nicht).
+        settings.set_spec({"levels": {"noise": 0.6}, "gain": 1.0})
+        self.assertEqual(settings.spec(), {"levels": {"noise": 0.6}, "gain": 1.0})
 
     def test_tabs_only_save_on_or_off(self):
         for title in ("Gruppen", "Kontinuierlich", "QSO", "Contest", "Netzwerk"):

@@ -1,5 +1,19 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **CW-Filter wählbar:** 2,4 kHz (wie bisher), 500 Hz oder 250 Hz um die
+  eigene Tonhöhe. Zeichen, Rauschen, QRM und SSB-Gebrabbel laufen
+  hindurch, der eigene Mithörton im Contest nicht. Das schmale Filter
+  klingelt leicht, nimmt Rauschen und weit entferntes QRM weg; das
+  Fenster zeigt den Rauschabstand im Filter, und Stufen und Diplom
+  rechnen damit.
+- **CW-QRM nah an der Frequenz:** Abstand wählbar – weit (300–500 Hz),
+  nah (50–200 Hz) oder Zero-Beat. Mit QSB schwankt das QRM jetzt auch,
+  unabhängig von den eigenen Stationen.
+- Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
+  er setzt die Tastenzeiten jetzt selbst.
+
 ## 2.37
 
 - **Rauschabstand in dB, echte Stufen:** Das Rauschen steht jetzt als

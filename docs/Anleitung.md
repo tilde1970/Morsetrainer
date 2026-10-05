@@ -253,6 +253,23 @@ Das Fading wechselt unregelmäßig (zwei überlagerte Schwankungen), seine
 Tiefe folgt dem Regler und streut nur wenig – die Stufe bestimmt die
 Schwierigkeit, nicht der Zufall.
 
+**CW-QRM-Abstand:** Der Nachbar-Run liegt **weit** (300–500 Hz) daneben,
+**nah** (50–200 Hz) oder auf **Zero-Beat** (fast auf deiner Frequenz).
+Nah und Zero-Beat sind das eigentliche Training im selektiven Hören, wie
+es Contester brauchen. Mit eingeschaltetem QSB schwankt auch das QRM, und
+zwar unabhängig von deinen Stationen.
+
+**CW-Filter:** 2,4 kHz (wie ein SSB-Filter, die Grundeinstellung),
+500 Hz oder 250 Hz um deine Tonhöhe. Zeichen, Rauschen und Störungen
+laufen hindurch, dein eigener Mithörton im Contest nicht. Ein schmales
+Filter nimmt Rauschen weg (500 Hz rund 6 dB, 250 Hz rund 9 dB) und
+QRM, das weit daneben liegt; es klingelt aber leicht, und Stationen
+neben deiner Tonhöhe (Anrufer im Contest, die Gegenstation im QSO)
+werden leiser. Gegen QRM nah oder auf Zero-Beat hilft es nicht. Der
+S/N-Wert bezieht sich weiter auf 2,4 kHz; das Fenster zeigt zusätzlich
+den Wert im Filter. Für die Stufen und das Diplom zählt der Wert im
+Filter: „mittel“ mit 500-Hz-Filter entspricht etwa „leicht“.
+
 **Wann zuschalten?** Neue Zeichen ohne Störungen lernen. Bandbedingungen
 lohnen sich, wenn der Zeichensatz ohne Störungen sicher sitzt (90 % und
 mehr); dann mit „leicht“ beginnen.

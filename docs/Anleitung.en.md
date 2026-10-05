@@ -249,6 +249,23 @@ Fading changes irregularly (two overlaid variations); its depth follows
 the slider and varies only a little – the level sets the difficulty, not
 chance.
 
+**CW QRM offset:** the adjacent run is **far** (300–500 Hz) away,
+**close** (50–200 Hz) or at **zero beat** (almost on your frequency).
+Close and zero beat are the real training in selective listening that
+contesters need. With QSB switched on, the QRM fades too, independently
+of your stations.
+
+**CW filter:** 2.4 kHz (like an SSB filter, the default), 500 Hz or
+250 Hz around your pitch. Signals, noise and interference pass through
+it, your own sidetone in the contest does not. A narrow filter removes
+noise (500 Hz about 6 dB, 250 Hz about 9 dB) and QRM that is far away;
+but it rings slightly, and stations off your pitch (callers in the
+contest, the other station in a QSO) get quieter. It does not help
+against close or zero-beat QRM. The S/N value still refers to 2.4 kHz;
+the window also shows the value inside the filter. The levels and the
+award count the value inside the filter: “medium” with a 500 Hz filter
+is about “light”.
+
 **When to switch on?** Learn new characters without interference. Band
 conditions pay off once the character set is solid without them (90 % or
 more); then start with “light”.
