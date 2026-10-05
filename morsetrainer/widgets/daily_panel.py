@@ -12,7 +12,7 @@ from tkinter import ttk
 
 from morsetrainer.core import daily, stats, week
 from morsetrainer.i18n import N_, number, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 FULL_STAR, EMPTY_STAR = "★", "☆"
 BLOCK_LABELS = {daily.WARMUP: N_("Aufwärmen"), daily.MAIN: N_("Hauptteil"), daily.OUTRO: N_("Ausklang"),
@@ -118,6 +118,15 @@ def better_line(item: dict) -> str:
             wpm=item["wpm"], before=number(round(item["before"] * 100)), now=number(round(item["now"] * 100)))
     return tr("{char} kommt schneller: {before} s → {now} s").format(
         char=item["char"], before=number(item["before"], 2), now=number(item["now"], 2))
+
+
+def _spoken_better(item: dict) -> str:
+    """Wie better_line, zum Vorlesen (Zeichen buchstabiert, „von … auf …“)."""
+    if item["kind"] == "groups":
+        return tr("Gruppen bei {wpm} WPM von {before} auf {now} Prozent beim ersten Versuch").format(
+            wpm=item["wpm"], before=number(round(item["before"] * 100)), now=number(round(item["now"] * 100)))
+    return tr("{char} kommt schneller, von {before} auf {now} Sekunden").format(
+        char=announcer.spell(item["char"]), before=number(item["before"], 2), now=number(item["now"], 2))
 
 
 def outlook_line(outlook) -> str:
@@ -289,6 +298,36 @@ class EveningSummary:
         window.bind("<Escape>", lambda e: self.close())
         window.protocol("WM_DELETE_WINDOW", self.close)
         self.done_button.focus_set()
+        # Ansage (Barrierefreiheit): alles in Sätzen, F11 im Fenster wiederholt.
+        self.spoken = self._spoken(title, stars, comparison, outlook, seals, week_stars)
+        window.bind("<F11>", lambda e: announcer.get() and announcer.get().say(self.spoken, force=True))
+        announcer.say(self.spoken)
+
+    def _spoken(self, title, stars, comparison, outlook, seals, week_stars) -> str:
+        parts = [title]
+        if stars:
+            parts.append(tr("{count} von {total} Sternen: {names}").format(
+                count=len(stars), total=len(daily.STAR_ORDER),
+                names=", ".join(tr(STAR_NAMES[s]) for s in daily.STAR_ORDER if s in stars)))
+        else:
+            parts.append(tr("Heute noch kein Stern"))
+        if week_stars is not None:
+            parts.append(tr("Wochenziel erreicht: {stars} Sterne").format(stars=week_stars)
+                         if week_stars >= week.WEEK_GOAL
+                         else tr("{stars} von {goal} Sternen diese Woche").format(stars=week_stars, goal=week.WEEK_GOAL))
+        better = comparison.get("better", [])
+        if better:
+            parts.append(tr("Besser geworden: ") + "; ".join(_spoken_better(item) for item in better))
+        elif comparison.get("status") == daily.HELD:
+            parts.append(tr("Stand gehalten."))
+        if outlook:
+            parts.append(outlook_line(outlook))
+        if seals:
+            parts.append((tr("Neues Siegel: ") if len(seals) == 1 else tr("Neue Siegel: ")) + "; ".join(seals))
+        parts.append(tr("Enter: Fertig."))
+        if self.extra_button is not None:
+            parts.append(tr("Mit Tab: {label}.").format(label=self.extra_button.cget("text")))
+        return ". ".join(part.rstrip(".") for part in parts if part) + "."
 
     def _extra(self) -> None:
         self.close(follow=False)  # neue Siegel erst nach der Zugabe zeigen

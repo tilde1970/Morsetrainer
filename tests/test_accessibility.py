@@ -501,4 +501,36 @@ class FocusAnnounceTest(AnnouncerTest):
         self.pump_until(lambda: False, timeout=0.2)
         self.assertEqual(self.said, [])
         box.event_generate("<<TraverseIn>>")  # mit Tab hineingesprungen
-        self.assertTrue(self.pump_until(lambda: "Schriftgröße, Auswahl, 100 %." in self.said))
+        self.assertTrue(self.pump_until(lambda: "Schriftgröße, Auswahl, 100 Prozent." in self.said))
+
+
+
+class EveningSummaryAnnounceTest(AnnouncerTest):
+    def test_evening_summary_is_read_in_sentences(self):
+        from morsetrainer.core import daily
+        from morsetrainer.widgets import announcer
+        from morsetrainer.widgets.daily_panel import EveningSummary
+        self.app.announcer.var.set(True)
+        comparison = {"better": [{"kind": "char", "char": "K", "before": 0.52, "now": 0.41},
+                                 {"kind": "groups", "wpm": 20, "before": 0.6, "now": 0.75}]}
+        outlook = {"lesson": 5, "missing": 4}
+        summary = EveningSummary(self.root, [daily.DABEI, daily.SAUBER], comparison, outlook,
+                                 offer=(daily.CONFUSIONS, "SH"), on_extra=lambda offer: None, week_stars=7,
+                                 seals=["QRN-fest, Stufe 1"])
+        text = summary.spoken
+        self.assertTrue(text.startswith("Tagesübung geschafft. 2 von 3 Sternen: Dabei, Sauber. "), text)
+        self.assertIn("7 von", text)
+        self.assertIn("Ka kommt schneller, von 0,52 auf 0,41 Sekunden", text)
+        self.assertIn("Gruppen bei 20 WPM von 60 auf 75 Prozent beim ersten Versuch", text)
+        self.assertIn("Neues Siegel: QRN-fest, Stufe 1", text)
+        self.assertIn("Enter: Fertig. Mit Tab: Noch", text)
+        self.assertNotIn("★", text)
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Tagesübung geschafft.") for s in self.said)))
+        summary.close()
+
+    def test_symbols_become_words(self):
+        from morsetrainer.widgets import announcer
+        self.assertEqual(announcer.speakable("84 % → 90 %"), "84 Prozent auf 90 Prozent")
+        self.assertEqual(announcer.speakable("Abgebrochen – deine Sterne bleiben."), "Abgebrochen, deine Sterne bleiben.")
+        self.assertEqual(announcer.speakable("✓ KM"), "richtig KM")
+        self.assertEqual(announcer.speakable("Warte auf den Trainer…"), "Warte auf den Trainer")

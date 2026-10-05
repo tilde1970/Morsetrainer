@@ -36,7 +36,8 @@
   angesprungene Bedienelemente sagen Name, Art und Stand an, Änderungen
   per Tastatur ebenfalls (kleiner eingebauter Screenreader). Im Netzwerk
   hört der Teilnehmer Verbinden/Trennen, das Ergebnis jeder Antwort und
-  des Durchgangs; Sequenzen des Trainers haben Vorrang.
+  des Durchgangs; Sequenzen des Trainers haben Vorrang. Die Abendbilanz
+  der Tagesübung wird ganz vorgelesen.
 - **Hoher Kontrast** (Barrierefreiheit): Farbschema Schwarz, Weiß, Gelb
   mit kräftigen Rahmen, unter „Weitere Optionen“, ab dem nächsten Start.
   Alle Schriften mindestens 7:1 zum Grund, auch Diagramme und die Farben

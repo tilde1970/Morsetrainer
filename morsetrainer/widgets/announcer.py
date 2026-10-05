@@ -75,6 +75,7 @@ class Announcer:
         nicht `force`) oder keine Stimme da, kommt `then` sofort. Eine neue
         Ansage verdrängt eine noch nicht begonnene ältere; deren `then` wird
         trotzdem aufgerufen, damit kein Ablauf hängen bleibt."""
+        text = speakable(text)
         if not text or not (force or self.enabled()) or self.available() is not None:
             if force and text and self.available() is not None:
                 sfx.play_error()  # ausdrücklich verlangt (F9, F11), aber keine Stimme: hörbar melden
@@ -121,6 +122,7 @@ class Announcer:
         """Sprache für `text` im Hintergrund erzeugen und `deliver(samples)`
         im Tk-Thread aufrufen, ohne sie abzuspielen (für Reiter mit eigenem
         Tonstrom, z. B. den Contest-Mischer). Nichts, wenn die Ansage aus ist."""
+        text = speakable(text)
         if not text or not self.enabled() or self.available() is not None:
             return
         result = {}
@@ -377,6 +379,23 @@ def render(text: str, deliver) -> None:
     ist (für Reiter mit eigenem Tonstrom)."""
     if _instance is not None:
         _instance.render(text, deliver)
+
+
+# Zeichen, die auf dem Bildschirm etwas bedeuten, die Stimme aber nicht
+# (oder falsch) liest.
+_SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("±", N_(" plus minus ")),
+            ("✓", N_("richtig")), ("✗", N_("falsch")), ("★", N_(" Stern ")), ("☆", ""), ("…", ""),
+            ("%", N_(" Prozent")), ("–", ","))
+
+
+def speakable(text: str) -> str:
+    """Text für die Stimme: Symbole als Wort, doppelte Leerzeichen weg."""
+    if not text:
+        return ""
+    for symbol, word in _SYMBOLS:
+        if symbol in text:
+            text = text.replace(symbol, tr(word) if word else "")
+    return re.sub(r" {2,}", " ", re.sub(r" +([,.])", r"\1", text)).strip()
 
 
 def remaining() -> float:
