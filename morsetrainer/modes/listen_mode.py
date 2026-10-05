@@ -31,7 +31,7 @@ from morsetrainer.core.morse import (
 )
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import ItemSource
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Wörter"): "words", N_("Wendungen"): "phrases",
@@ -252,6 +252,7 @@ class ListenModeFrame:
             return
         opts = self._options()
         if opts is None:
+            announcer.say(self.status_var.get())  # warum es nicht losgeht
             return
         self.opts = opts
         self.source = opts["source"]
@@ -276,6 +277,7 @@ class ListenModeFrame:
         if speech.speaker.error:
             self.stop()
             self.status_var.set(speech.speaker.error)
+            announcer.say(speech.speaker.error)
             return
         self._next_item(session_id)
 
@@ -291,6 +293,7 @@ class ListenModeFrame:
         if self.done >= self.total:
             self.stop()
             self.status_var.set(tr("Fertig: {n} Einträge.").format(n=self.total))
+            announcer.say(self.status_var.get())
             return
         text, meaning = self.source.next()
         wpm, freq = self._voice_for(self.opts)
@@ -347,6 +350,7 @@ class ListenModeFrame:
         self.export_button.config(state="normal")
         self.progress_var.set("")
         self.status_var.set(tr("Gestoppt."))
+        announcer.say(self.status_var.get())  # am Ende verdrängt von „Fertig …“
         self.on_stop_cb()
 
     # --- MP3 -------------------------------------------------------------
@@ -375,6 +379,8 @@ class ListenModeFrame:
         self.export_result = None
         self.export_done = 0
         self.status_var.set(tr("MP3 wird erstellt …"))
+        announcer.say(self.status_var.get())
+        self.export_spoken = None
         threading.Thread(target=self._export_worker, args=(path, opts), daemon=True).start()
         self._watch_export(opts["count"])
 
@@ -405,6 +411,8 @@ class ListenModeFrame:
                 self.export_result = tr("MP3 abgebrochen.")
             else:
                 self.export_result = tr("Gespeichert: {path} ({minutes:.0f} Min.)").format(path=path, minutes=writer.seconds / 60)
+                # Ansage ohne Pfad (der hilft beim Zuhören nicht).
+                self.export_spoken = tr("MP3 gespeichert, {minutes:.0f} Minuten.").format(minutes=writer.seconds / 60)
         except (mp3.Mp3Error, OSError) as exc:
             self.export_result = str(exc)
         except Exception as exc:
@@ -422,6 +430,7 @@ class ListenModeFrame:
         self.export_button.config(text=tr("Als MP3 speichern…"), command=self.export)
         self.progress_var.set("")
         self.status_var.set(self.export_result)
+        announcer.say(self.export_spoken or self.export_result)
 
     # --- Tasten ----------------------------------------------------------
     def on_function_key(self, key: str):

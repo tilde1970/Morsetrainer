@@ -456,7 +456,7 @@ messages.
 The **Help** button on the right of the footer shows the changes of the
 versions (CHANGELOG) and this manual.
 
-## For blind and visually impaired users
+## Accessibility
 
 - **Announcements (F9):** the program uses its built-in voice to say what
   is otherwise only on screen – no screen reader needed. F9 switches
@@ -489,6 +489,9 @@ versions (CHANGELOG) and this manual.
   improved, what is almost done, new seals – then “Enter: Done” and, if
   offered, “With Tab: 5 more min …”. F11 in the window repeats it.
   Symbols such as %, →, ≥ or ★ are spoken as words.
+- **Speak:** the tab speaks by itself while practising; announced are
+  only why it does not start, the end (“Done: 20 items”), the MP3 export
+  and its result. F11 gives the progress (“3 of 20”).
 - **Award window:** new seals with condition and date, then the hint on
   Tab and Escape; the print buttons say which award they print. F11 in
   the window repeats.
@@ -514,9 +517,7 @@ versions (CHANGELOG) and this manual.
 - Announcements use the language of the interface: German with the
   Thorsten voice, English with the Lessac voice (callsigns then “Delta
   Lima One”). If the voice is missing, F9 and F11 play an error tone and
-  the reason appears in the status line. The Speak tab is not announced
-  yet; the Speak tab
-  stays German.
+  the reason appears in the status line. The Speak tab stays German.
 
 ## Keyboard shortcuts
 

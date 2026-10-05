@@ -26,6 +26,8 @@ EN.update({
     # Sprachansage (widgets/announcer.py), gesprochen mit der Stimme der Oberflächensprache
     "Knopf": "button",
     "Antwort": "Answer",
+    "MP3 gespeichert, {minutes:.0f} Minuten.": "MP3 saved, {minutes:.0f} minutes.",
+    "{done} von {total}": "{done} of {total}",
     "Drucken: {seal}": "Print: {seal}",
     "{seal}. {condition}. Erreicht am {date}": "{seal}. {condition}. Achieved on {date}",
     "Mit Tab: Drucken, Rufzeichen und Name auf dem Diplom. Escape schließt.":
@@ -108,8 +110,7 @@ EN.update({
     "Falsch. Gesendet: {sent}. Getippt: {typed}.": "Wrong. Sent: {sent}. Typed: {typed}.",
     "Falsch. Hör noch einmal hin.": "Wrong. Listen again.",
     "Hoher Kontrast (Schwarz, Weiß, Gelb)": "High contrast (black, white, yellow)",
-    "für Blinde und Sehbehinderte; F11 liest vor, wo du bist":
-        "for blind and visually impaired users; F11 reads out where you are",
+    "F11 liest vor, wo du bist": "F11 reads out where you are",
     "Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal": "Ctrl+Plus larger, Ctrl+Minus smaller, Ctrl+0 normal",
     "Sichern …": "Back up …",
     "Einlesen …": "Restore …",

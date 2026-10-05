@@ -23,7 +23,7 @@
   vergrößern, 100 % bis 200 %, unter „Weitere Optionen“ oder mit
   Strg+Plus/Minus/0 in jedem Fenster. Tabellenzeilen, Schalter und
   Zeilenumbrüche wachsen mit, das Hauptfenster auch.
-- **Ansage für Blinde und Sehbehinderte (F9):** Das Programm sagt mit der
+- **Sprachansage (Barrierefreiheit, F9):** Das Programm sagt mit der
   eingebauten Stimme Ergebnisse (in Gruppen, Wörtern, Rufzeichen
   buchstabiert, in Einzelzeichen die Fehler), das Ende eines Durchgangs,
   den Reiterwechsel und die Karten der Tagesübung an; F11 liest vor, wo
@@ -37,7 +37,8 @@
   per Tastatur ebenfalls (kleiner eingebauter Screenreader). Im Netzwerk
   hört der Teilnehmer Verbinden/Trennen, das Ergebnis jeder Antwort und
   des Durchgangs; Sequenzen des Trainers haben Vorrang. Die Abendbilanz
-  der Tagesübung und das Diplom-Fenster werden ganz vorgelesen.
+  der Tagesübung und das Diplom-Fenster werden ganz vorgelesen; im Reiter
+  Sprechen Startprobleme, Ende und MP3-Export.
 - **Hoher Kontrast** (Barrierefreiheit): Farbschema Schwarz, Weiß, Gelb
   mit kräftigen Rahmen, unter „Weitere Optionen“, ab dem nächsten Start.
   Alle Schriften mindestens 7:1 zum Grund, auch Diagramme und die Farben

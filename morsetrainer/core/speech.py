@@ -1,6 +1,6 @@
 """Sprachausgabe mit Piper: neuronale Stimmen, offline, für „Hören &
-Sagen“ (Lösung ansagen), den MP3-Export und die Ansage für Blinde und
-Sehbehinderte (widgets/announcer.py). Deutsch (Thorsten) für alles,
+Sagen“ (Lösung ansagen), den MP3-Export und die Sprachansage zur
+Barrierefreiheit (widgets/announcer.py). Deutsch (Thorsten) für alles,
 Englisch (Lessac) für die Ansage bei englischer Oberfläche.
 
 Die Stimme (ONNX-Modell plus .json) liegt in voices/: in AppImage und exe

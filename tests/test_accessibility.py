@@ -565,3 +565,36 @@ class DiplomaAnnounceTest(AnnouncerTest):
             window._print(awards.BY_KEY["koch"], 2, date(2026, 10, 4))
         self.assertTrue(self.pump_until(lambda: "Diplom im Browser geöffnet." in self.said))
         window.close()
+
+
+class ListenAnnounceTest(AnnouncerTest):
+    """Reiter Sprechen: angesagt wird nur, was man sonst nur sieht."""
+
+    def test_start_problem_end_and_progress(self):
+        from morsetrainer.modes import listen_mode
+        self.app.announcer.var.set(True)
+        listen = self.mode("Sprechen")
+        with mock.patch.object(listen, "_options", lambda: listen.status_var.set("Kein Zeichensatz") or None):
+            listen.start()
+        self.assertTrue(self.pump_until(lambda: "Kein Zeichensatz" in self.said))
+        # Fortschritt für F11 als „3 von 20“
+        self.app.select_tab(self.app.mode_titles.index("Sprechen"))
+        listen.status_var.set("Hör zu …")
+        listen.progress_var.set("3/20")
+        self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
+        self.assertTrue(self.pump_until(lambda: any("Hör zu. 3 von 20" in s for s in self.said)), self.said)
+        # Ende eines Durchgangs
+        with mock.patch.object(listen_mode.audio, "play"):
+            listen.running, listen.done, listen.total = True, 20, 20
+            listen._next_item()
+        self.assertTrue(self.pump_until(lambda: "Fertig: 20 Einträge." in self.said))
+
+    def test_export_result_without_path(self):
+        self.app.announcer.var.set(True)
+        listen = self.mode("Sprechen")
+        listen.exporting = True
+        listen.export_result = "Gespeichert: /home/maik/übung.mp3 (12 Min.)"
+        listen.export_spoken = "MP3 gespeichert, 12 Minuten."
+        listen._watch_export(20)
+        self.assertTrue(self.pump_until(lambda: "MP3 gespeichert, 12 Minuten." in self.said))
+        self.assertFalse([s for s in self.said if "/home" in s])

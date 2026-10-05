@@ -466,7 +466,7 @@ mit Verbindungen oder Nachrichten überschütten.
 Der Knopf **Hilfe** rechts in der Fußzeile zeigt die Änderungen der
 Versionen (CHANGELOG.md) und diese Anleitung.
 
-## Für Blinde und Sehbehinderte
+## Barrierefreiheit
 
 - **Ansage (F9):** Das Programm sagt mit der eingebauten Stimme selbst an,
   was sonst nur auf dem Bildschirm steht – ohne Screenreader. F9 schaltet
@@ -499,6 +499,9 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   geworden ist, was fast geschafft ist, neue Siegel –, dann „Enter:
   Fertig“ und, falls angeboten, „Mit Tab: Noch 5 Min …“. F11 im Fenster
   wiederholt sie. Symbole wie %, →, ≥ oder ★ spricht die Ansage als Wort.
+- **Sprechen:** Der Reiter spricht beim Üben selbst; angesagt wird nur,
+  warum er nicht startet, das Ende („Fertig: 20 Einträge“), der MP3-Export
+  und sein Ergebnis. F11 nennt den Fortschritt („3 von 20“).
 - **Diplom-Fenster:** neue Siegel mit Bedingung und Datum, dann der
   Hinweis auf Tab und Escape; die Drucken-Knöpfe sagen, welches Diplom sie
   drucken. F11 im Fenster wiederholt.
@@ -524,9 +527,7 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - Die Ansage spricht die Sprache der Oberfläche: deutsch mit der Stimme
   Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann „Delta Lima
   One“). Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton, und der
-  Grund steht in der Statuszeile. Den Reiter Sprechen sagt sie noch
-  nicht an; der
-  Reiter Sprechen bleibt deutsch.
+  Grund steht in der Statuszeile. Der Reiter Sprechen bleibt deutsch.
 
 ## Tastenkürzel
 

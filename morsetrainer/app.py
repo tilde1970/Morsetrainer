@@ -367,7 +367,7 @@ class MorseTrainerApp:
         speak.pack(fill="x", pady=2)
         ttk.Checkbutton(speak, text=tr("Rückmeldung ansagen (F9)"), variable=self.announcer.var,
                         command=self._announce_toggled).pack(side="left")
-        self.announce_hint_var = tk.StringVar(value=tr("für Blinde und Sehbehinderte; F11 liest vor, wo du bist"))
+        self.announce_hint_var = tk.StringVar(value=tr("F11 liest vor, wo du bist"))
         theme.hint(speak, textvariable=self.announce_hint_var, wrap=420).pack(side="left", padx=(8, 0))
 
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
@@ -542,9 +542,12 @@ class MorseTrainerApp:
             return
         parts = [self._tab_name()]
         mode = self._active_mode()
-        for attr in ("status_var", "feedback_var", "remaining_var"):
+        for attr in ("status_var", "feedback_var", "remaining_var", "progress_var"):
             var = getattr(mode, attr, None)
             text = var.get().strip() if var is not None else ""
+            if attr == "progress_var":  # „3/20“ im Reiter Sprechen
+                text = re.sub(r"^(\d+)/(\d+)$", lambda m: tr("{done} von {total}").format(
+                    done=m.group(1), total=m.group(2)), text)
             if text:
                 parts.append(text.replace("\n", ". "))
         self.announcer.say(". ".join(parts) + ".", force=True)

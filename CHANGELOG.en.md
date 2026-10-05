@@ -22,7 +22,7 @@
   100 % to 200 %, under “More options” or with Ctrl+Plus/Minus/0 in any
   window. Table rows, check boxes and line wrapping grow with it, and so
   does the main window.
-- **Announcements for blind and visually impaired users (F9):** the
+- **Spoken announcements (accessibility, F9):** the
   program uses its built-in voice to announce results (spelled in Groups,
   Words and Callsigns, errors in Characters), the end of a run, tab
   changes and the daily practice cards; F11 reads out where you are. The
@@ -35,7 +35,8 @@
   built-in screen reader). On the network, participants hear connecting
   and disconnecting, the result of each answer and of the run; the
   trainer's sequences take priority. The daily practice's evening summary
-  and the award window are read out in full.
+  and the award window are read out in full; in the Speak tab start
+  problems, the end and the MP3 export.
 - **High contrast** (accessibility): black, white and yellow colour
   scheme with strong borders, under “More options”, from the next start.
   All text at least 7:1 against its background, including charts and the
