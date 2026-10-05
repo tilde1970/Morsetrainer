@@ -123,6 +123,9 @@ class MorseTrainerApp:
         self._follow_station()
         self._build_all_time_tab()
         self._refresh_all_time()
+        # Tab-Reihenfolge folgt der Stapelreihenfolge: die Fußzeile (Hilfe)
+        # zuletzt, nach Tagesübung und Reitern.
+        self.footer.lift()
         self.daily = DailyRunner(self, self.daily_bar)
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
@@ -743,7 +746,7 @@ class MorseTrainerApp:
 
     def _build_footer(self):
         # Vor dem Notebook gepackt, damit es bei kleinem Fenster nicht verdrängt wird.
-        footer = ttk.Frame(self.root, padding=(10, 4))
+        footer = self.footer = ttk.Frame(self.root, padding=(10, 4))
         footer.pack(side="bottom", fill="x")
         self.practice_var = tk.StringVar(value="")
         ttk.Label(footer, textvariable=self.practice_var).pack(side="left")

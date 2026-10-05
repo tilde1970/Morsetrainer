@@ -249,6 +249,13 @@ class KeyboardTest(AppTestCase):
         self.assertTrue(self.root.bind_all("<Alt-Key-1>"))
         self.assertTrue(self.root.bind_all("<Control-b>"))
 
+    def test_footer_comes_last_in_tab_order(self):
+        # Tab folgt der Stapelreihenfolge (winfo children von unten nach oben).
+        order = [str(w) for w in self.root.winfo_children()]
+        footer = order.index(str(self.app.footer))
+        self.assertGreater(footer, order.index(str(self.app.notebook)))
+        self.assertGreater(footer, order.index(str(self.app.daily_bar.frame)))
+
     def test_tab_leaves_text_fields(self):
         self.assertIn("break", self.root.bind_class("Text", "<Tab>"))
 
