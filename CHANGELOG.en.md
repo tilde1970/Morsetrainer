@@ -18,6 +18,10 @@
   interference quieter for themselves (10–90 % of the trainer's setting,
   never louder), e.g. with tinnitus or a hearing aid. The trainer sees
   this as ↓ in the table, detail line and CSV.
+- **Font size (accessibility):** the whole interface can be enlarged,
+  100 % to 200 %, under “More options” or with Ctrl+Plus/Minus/0 in any
+  window. Table rows, check boxes and line wrapping grow with it, and so
+  does the main window.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

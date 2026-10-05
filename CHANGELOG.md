@@ -19,6 +19,10 @@
   sich leiser stellen (10–90 % der Einstellung des Trainers, nie lauter),
   etwa bei Tinnitus oder Hörgerät. Der Trainer sieht das als ↓ in Tabelle,
   Detailzeile und CSV.
+- **Schriftgröße (Barrierefreiheit):** Die ganze Oberfläche lässt sich
+  vergrößern, 100 % bis 200 %, unter „Weitere Optionen“ oder mit
+  Strg+Plus/Minus/0 in jedem Fenster. Tabellenzeilen, Schalter und
+  Zeilenumbrüche wachsen mit, das Hauptfenster auch.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

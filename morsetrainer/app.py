@@ -119,6 +119,13 @@ class MorseTrainerApp:
         audio.keep_awake()
 
         root.bind("<Key>", self._dispatch_key)
+        # Schriftgröße in jedem Fenster, auch in Eingabefeldern.
+        for keys, direction in ((("plus", "equal", "KP_Add"), 1), (("minus", "KP_Subtract"), -1),
+                                (("0", "KP_0", "KP_Insert"), 0)):
+            for key in keys:
+                for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
+                    root.bind_all(f"<{modifier}-{key}>", lambda e, d=direction: self.zoom(d) or "break")
+        theme.scale_wraps(root)  # Reiter sind nach dem Einlesen der Schriftgröße entstanden
         root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _set_icon(self):
@@ -282,6 +289,18 @@ class MorseTrainerApp:
         self.language_hint_var = tk.StringVar(value="")
         theme.hint(language, textvariable=self.language_hint_var).pack(side="left")
 
+        # Schriftgröße (Barrierefreiheit), auch per Strg+Plus/Minus/0.
+        zoom = ttk.Frame(self.more_frame)
+        zoom.pack(fill="x", pady=2)
+        ttk.Label(zoom, text=tr("Schriftgröße")).pack(side="left")
+        self.font_scale_var = tk.IntVar(value=theme.ZOOM_STEPS[0])
+        self.zoom_box = ttk.Combobox(zoom, values=[f"{step} %" for step in theme.ZOOM_STEPS], state="readonly",
+                                     width=7)
+        self.zoom_box.pack(side="left", padx=(6, 8))
+        self.zoom_box.bind("<<ComboboxSelected>>", lambda e: self.set_font_scale(int(self.zoom_box.get().split()[0])))
+        theme.hint(zoom, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal")).pack(side="left")
+        self.font_scale_var.trace_add("write", lambda *_: self._apply_font_scale())
+
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)
         band_row = ttk.Frame(self.more_frame)
@@ -400,6 +419,36 @@ class MorseTrainerApp:
         except tk.TclError:
             fw = "WPM"
         self.farnsworth_cpm_var.set(tr("{wpm} (alle außer Einzelzeichen)").format(wpm=fw))
+
+    def zoom(self, direction: int) -> None:
+        """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal)."""
+        current = self.font_scale_var.get()
+        self.set_font_scale(theme.ZOOM_STEPS[0] if direction == 0 else theme.zoom_step(current, direction))
+
+    def set_font_scale(self, percent: int) -> None:
+        self.font_scale_var.set(min(max(percent, theme.ZOOM_STEPS[0]), theme.ZOOM_STEPS[-1]))
+
+    def _apply_font_scale(self) -> None:
+        try:
+            percent = self.font_scale_var.get()
+        except tk.TclError:
+            return
+        if percent != theme.scale():
+            theme.set_scale(self.root, percent)
+            self._fit_window()
+        self.zoom_box.set(f"{theme.scale()} %")
+
+    def _fit_window(self) -> None:
+        """Nach dem Vergrößern der Schrift: Fenster so weit wachsen lassen,
+        dass alles hineinpasst (höchstens bildschirmgroß, nie kleiner)."""
+        root = self.root
+        if root.state() != "normal":
+            return  # maximiert oder minimiert: nicht anfassen
+        root.update_idletasks()
+        width = min(max(root.winfo_width(), root.winfo_reqwidth()), root.winfo_screenwidth() - 40)
+        height = min(max(root.winfo_height(), root.winfo_reqheight()), root.winfo_screenheight() - 80)
+        if (width, height) != (root.winfo_width(), root.winfo_height()):
+            root.geometry(f"{width}x{height}")
 
     def _toggle_more(self):
         self.more_var.set(not self.more_var.get())
@@ -637,6 +686,7 @@ class MorseTrainerApp:
             "more_options": (self.more_var, None),
             "station_call": (self.station_call_var, None),
             "station_name": (self.station_name_var, None),
+            "font_scale": (self.font_scale_var, (theme.ZOOM_STEPS[0], theme.ZOOM_STEPS[-1])),
         }
 
     def _shared_settings(self) -> dict:

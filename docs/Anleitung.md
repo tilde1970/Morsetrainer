@@ -216,6 +216,10 @@ Außerdem hilfreich:
 - **Sprache:** Unter „▸ Weitere Optionen“ → „Sprache / Language“ lässt sich
   die Oberfläche auf Englisch umstellen (wirkt nach Neustart). Die Stimme im
   Reiter „Sprechen“ bleibt deutsch.
+- **Schriftgröße:** Unter „▸ Weitere Optionen“ → „Schriftgröße“ oder mit
+  **Strg+Plus**, **Strg+Minus** und **Strg+0** (normal) wird die ganze
+  Oberfläche größer, bis 200 %; das Fenster wächst mit. Die Einstellung
+  bleibt gespeichert.
 - **Rufzeichen und Name:** Unter „▸ Weitere Optionen“ einmal eintragen.
   Sie stehen auf den Diplomen und sind die Vorgabe für „Mein
   Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort ohne Name
@@ -458,6 +462,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 
 ## Tastenkürzel
 
+- **Überall:** Strg+Plus/Strg+Minus Schrift größer/kleiner, Strg+0 normal
+  (auf dem Mac auch Cmd).
 - **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
   beendet.
 - **Einzelzeichen, Gruppen, Wörter, Rufzeichen:** Leertaste wiederholt.

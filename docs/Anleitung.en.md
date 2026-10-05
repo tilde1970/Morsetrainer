@@ -214,6 +214,10 @@ Also helpful:
   week strip at the top the days you practised.
 - **Vary pitch and speed slightly** (shared setting): if you only ever hear
   exactly one sound, you will find it harder on the band.
+- **Font size:** under “▸ More options” → “Font size”, or with
+  **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0** (normal), the whole
+  interface gets larger, up to 200 %; the window grows with it. The
+  setting is saved.
 - **Callsign and name:** enter them once under “▸ More options”. They
   appear on the awards and are the default for “My callsign” in Contest and
   “Name/callsign” in Network (there the callsign if there is no name).
@@ -449,6 +453,8 @@ versions (CHANGELOG) and this manual.
 
 ## Keyboard shortcuts
 
+- **Everywhere:** Ctrl+Plus/Ctrl+Minus larger/smaller font, Ctrl+0 normal
+  (on the Mac also Cmd).
 - **Daily practice:** F12 starts, Enter skips the card between blocks, Esc
   stops.
 - **Characters, Groups, Words, Callsigns:** the space bar repeats.

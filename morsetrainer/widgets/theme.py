@@ -12,6 +12,7 @@ Stile:
     Feedback.TLabel   große Rückmeldung (Richtig/Falsch), Farbe per foreground
     Score.TLabel      fette Zwischenstände (Punkte, x / y richtig)
     Footer.TLabel     Fußzeile"""
+import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
 
@@ -47,6 +48,16 @@ HEADING = "MtHeading"
 # wird; daher hier festhalten.
 _fonts = []
 
+# Schriftgröße im Programm (Barrierefreiheit): Prozent der Größe bei
+# apply(). Alle Tk- und benannten Schriften wachsen mit, ebenso die
+# Zeilenhöhe der Tabellen und die Umbruchbreite mehrzeiliger Texte.
+ZOOM_STEPS = (100, 110, 125, 150, 175, 200)
+_STD_FONTS = ("TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont",
+              "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont")
+_base_sizes = {}  # Schriftname -> Größe bei 100 %
+INDICATOR_SIZE = 10  # Kästchen von Schaltern bei 100 % (wie clam)
+_scale = 100
+
 
 def _named_fonts(root) -> None:
     base = tkfont.nametofont("TkDefaultFont", root=root)
@@ -67,6 +78,67 @@ def _named_fonts(root) -> None:
         (HEADING, family, size, {"weight": "bold"}),
     ):
         _fonts.append(tkfont.Font(root=root, name=name, family=fam, size=sz, exists=False, **extra))
+    global _scale
+    _scale = 100
+    _base_sizes.clear()
+    for name in _STD_FONTS + (MONO, MONO_LARGE, MONO_ENTRY, STATUS, FEEDBACK, SCORE, SMALL, SMALL_ITALIC, HEADING):
+        try:
+            named = tkfont.nametofont(name, root=root)
+        except tk.TclError:
+            continue
+        _base_sizes[name] = int(named.cget("size")) or named.actual("size")
+
+
+def scale() -> int:
+    """Aktuelle Schriftgröße in Prozent."""
+    return _scale
+
+
+def scaled(pixels: int) -> int:
+    """Pixelmaß (z. B. Umbruchbreite) für die aktuelle Schriftgröße."""
+    return round(pixels * _scale / 100)
+
+
+def set_scale(root, percent: int) -> None:
+    """Schriftgröße für das ganze Programm (ZOOM_STEPS[0] … [-1] Prozent)."""
+    global _scale
+    _scale = min(max(int(percent), ZOOM_STEPS[0]), ZOOM_STEPS[-1])
+    for name, size in _base_sizes.items():
+        tkfont.nametofont(name, root=root).configure(size=round(size * _scale / 100))
+    _row_height(ttk.Style(root), root)
+    scale_wraps(root)
+
+
+def zoom_step(percent: int, direction: int) -> int:
+    """Nächste Stufe aus ZOOM_STEPS nach oben (+1) oder unten (−1)."""
+    if direction > 0:
+        return next((step for step in ZOOM_STEPS if step > percent), ZOOM_STEPS[-1])
+    return next((step for step in reversed(ZOOM_STEPS) if step < percent), ZOOM_STEPS[0])
+
+
+def scale_wraps(widget) -> None:
+    """Umbruchbreiten unter `widget` an die Schriftgröße anpassen; die
+    ursprüngliche Breite merkt sich jedes Widget beim ersten Mal."""
+    for child in widget.winfo_children():
+        base = getattr(child, "_mt_wrap", None)
+        if base is None:
+            try:
+                base = int(float(str(child.cget("wraplength"))))
+            except (tk.TclError, ValueError):
+                base = 0
+            child._mt_wrap = base
+        if base:
+            child.configure(wraplength=scaled(base))
+        scale_wraps(child)
+
+
+def _row_height(style, root) -> None:
+    """Maße, die nicht von selbst mit der Schrift wachsen: Tabellenzeilen
+    und die Kästchen von Schaltern."""
+    row_height = tkfont.nametofont("TkDefaultFont", root=root).metrics("linespace") + 8
+    style.configure("Treeview", rowheight=row_height)
+    for widget in ("TCheckbutton", "TRadiobutton"):
+        style.configure(widget, indicatorsize=scaled(INDICATOR_SIZE))
 
 
 def apply(root) -> None:
@@ -167,13 +239,20 @@ def apply(root) -> None:
               foreground=[("selected", TEXT), ("disabled", DISABLED)],
               expand=[("selected", (1, 1, 1, 0))])
 
-    row_height = tkfont.nametofont("TkDefaultFont", root=root).metrics("linespace") + 8
     style.configure("Treeview", background=SURFACE, fieldbackground=SURFACE, foreground=TEXT,
-                    bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE, rowheight=row_height)
+                    bordercolor=BORDER, lightcolor=SURFACE, darkcolor=SURFACE)
+    _row_height(style, root)
     style.map("Treeview", background=[("selected", SELECT)], foreground=[("selected", TEXT)])
     style.configure("Treeview.Heading", background=BUTTON, foreground=MUTED, bordercolor=BORDER,
                     lightcolor=BUTTON, darkcolor=BUTTON, font=HEADING, padding=(4, 3))
     style.map("Treeview.Heading", background=[("active", BUTTON_ACTIVE)])
+    # Später geöffnete Fenster: Umbruchbreiten gleich passend zur Schriftgröße.
+    root.bind_class("Toplevel", "<Map>", _on_window_shown, add="+")
+
+
+def _on_window_shown(event) -> None:
+    if _scale != 100 and isinstance(event.widget, tk.Toplevel):
+        scale_wraps(event.widget)
 
 
 def hint(parent, text=None, textvariable=None, wrap=None, **kwargs) -> ttk.Label:

@@ -17,6 +17,8 @@ EN.update({
         "Vary pitch and speed slightly (so you don't get used to one sound)",
     "wirkt nach Neustart des Programms": "takes effect after restarting the program",
     "Daten": "Data",
+    "Schriftgröße": "Font size",
+    "Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal": "Ctrl+Plus larger, Ctrl+Minus smaller, Ctrl+0 normal",
     "Sichern …": "Back up …",
     "Einlesen …": "Restore …",
     "alle Einstellungen und Statistiken, z. B. für einen neuen Rechner":
