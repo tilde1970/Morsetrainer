@@ -57,6 +57,9 @@ class FontScaleTest(AppTestCase):
         self.app._restore_shared_settings()
         self.assertEqual(theme.scale(), 150)
 
+    def test_font_size_box_shows_normal_size_at_first_start(self):
+        self.assertEqual(self.app.zoom_box.get(), "100 %")
+
     def test_zoom_steps(self):
         self.assertEqual(theme.zoom_step(100, 1), 110)
         self.assertEqual(theme.zoom_step(130, -1), 125)

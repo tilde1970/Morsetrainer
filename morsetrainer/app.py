@@ -300,6 +300,7 @@ class MorseTrainerApp:
         self.font_scale_var = tk.IntVar(value=theme.ZOOM_STEPS[0])
         self.zoom_box = ttk.Combobox(zoom, values=[f"{step} %" for step in theme.ZOOM_STEPS], state="readonly",
                                      width=7)
+        self.zoom_box.set(f"{theme.ZOOM_STEPS[0]} %")
         self.zoom_box.pack(side="left", padx=(6, 8))
         self.zoom_box.bind("<<ComboboxSelected>>", lambda e: self.set_font_scale(int(self.zoom_box.get().split()[0])))
         theme.hint(zoom, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal")).pack(side="left")
