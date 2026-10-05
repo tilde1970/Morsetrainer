@@ -15,12 +15,13 @@ BAND_OPTIONS = (
     ("noise", N_("Rauschen"), 60),
     ("qrn", N_("Knackstörungen (QRN)"), 30),
     ("qsb", N_("QSB (Fading)"), 50),
+    ("strength", N_("Stärkeunterschiede (QSO, Contest)"), 50),
     ("chirp", N_("Chirp"), 50),
     ("ssb", N_("SSB-Gebrabbel"), 40),
     ("cw_qrm", N_("CW-QRM (Nachbar-Run)"), 30),
 )
 SHORT_NAMES = {"noise": N_("Rauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": N_("Chirp"),
-               "ssb": "SSB", "cw_qrm": "CW-QRM"}
+               "ssb": "SSB", "cw_qrm": "CW-QRM", "strength": N_("Stärke")}
 PRESET_NAMES = {"light": N_("leicht"), "medium": N_("mittel"), "heavy": N_("stark")}
 FILTER_NAMES = {2400: N_("2,4 kHz"), 500: N_("500 Hz"), 250: N_("250 Hz")}
 QRM_OFFSET_NAMES = {"far": N_("weit (300–500 Hz)"), "near": N_("nah (50–200 Hz)"), "zero": N_("Zero-Beat")}
@@ -28,6 +29,9 @@ QRM_OFFSET_SHORT = {"far": N_("weit"), "near": N_("nah"), "zero": N_("Zero-Beat"
 # Startwerte, solange nichts gespeichert ist: wer zum ersten Mal zuschaltet,
 # soll nicht gleich im tiefen Fading landen.
 DEFAULT_PRESET = "light"
+# Gespeicherte Einstellungen tragen diese Fassung; ohne sie stammen sie aus
+# Version 2.37 oder älter, als QSB auch die Stärkeunterschiede enthielt.
+SETTINGS_VERSION = 2
 # Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
 GAIN_RANGE = (round(band.GAIN_RANGE[0] * 100), round(band.GAIN_RANGE[1] * 100))
 
@@ -77,6 +81,7 @@ class BandSettings:
         self.window = None
         self.focus_before = None  # Fokus im Hauptfenster vor dem Öffnen
         self.set_preset(DEFAULT_PRESET, notify=False)
+        self.controls["strength"][0].set(True)
 
     # --- Werte -----------------------------------------------------------
     def spec(self) -> dict:
@@ -105,22 +110,29 @@ class BandSettings:
             self._changed()
 
     def set_preset(self, preset: str, notify=True) -> None:
-        """Stufe übernehmen; Lautstärke, Filter und QRM-Abstand bleiben."""
+        """Stufe übernehmen; Lautstärke, Stärkeunterschiede, Filter und
+        QRM-Abstand bleiben (sie gehören nicht zur Stufe)."""
         current = self.spec()
         spec = band.spec_from_preset(preset)
         spec["gain"] = current["gain"]
+        if "strength" in current["levels"]:
+            spec["levels"]["strength"] = current["levels"]["strength"]
         spec |= {key: current[key] for key in ("filter", "qrm_offset") if key in current}
         self.set_spec(spec, notify)
 
     def settings(self) -> dict:
         """Zum Speichern (window_state.json, Abschnitt shared)."""
-        return self.spec()
+        return self.spec() | {"version": SETTINGS_VERSION}
 
     def restore(self, data) -> bool:
-        """Gegenstück zu settings(); False, wenn nichts Brauchbares dabei war."""
+        """Gegenstück zu settings(); False, wenn nichts Brauchbares dabei war.
+        Aus älteren Versionen: Wer QSB an hatte, hatte auch die
+        Stärkeunterschiede – sie bleiben mit demselben Pegel an."""
         spec = band.clean_spec(data)
         if spec is None:
             return False
+        if data.get("version") is None and "qsb" in spec["levels"]:
+            spec["levels"].setdefault("strength", spec["levels"]["qsb"])
         self.set_spec(spec, notify=False)
         return True
 

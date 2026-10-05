@@ -4,8 +4,9 @@ und mit eigenem Pegel (0..1, siehe EFFECTS):
 - Rauschen: Bandrauschen, wie es aus einem SSB-/CW-Empfänger kommt (auf
   ca. 300–2700 Hz begrenzt, leicht zu den Höhen abfallend).
 - QRN: vereinzelte Knackstörungen, z. B. von Gewittern.
-- QSB: jede Station kommt unterschiedlich stark an und schwankt langsam in
-  der Lautstärke (Fading).
+- QSB: jede Station schwankt langsam in der Lautstärke (Fading).
+- Stärkeunterschiede: jede Station kommt unterschiedlich stark an (bis
+  2.37 ein Teil von QSB).
 - Chirp: einige Stationen haben einen schlecht stabilisierten Sender, der
   beim Tasten kurz neben der Frequenz liegt („zwitschert“).
 - SSB-Gebrabbel: eine verstimmte SSB-Station auf der Nachbarfrequenz.
@@ -33,7 +34,7 @@ from morsetrainer.core.morse import AMPLITUDE, SAMPLE_RATE, build_text, silence
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
 # indiziert.
-EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm")
+EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm", "strength")
 
 NOISE_LOOP_SECONDS = 20
 PASSBAND_HZ = (300, 2700)
@@ -57,9 +58,9 @@ CRASH_SECONDS = (0.03, 0.2)
 CRASH_GAIN = (2.0, 5.0)
 MAX_QRN_RMS = 0.25
 
-# QSB: Grundstärke der Stationen (Station 0 ist gut zu hören; die Werte
-# gelten für Regler auf 50 %, 100 % macht die Unterschiede doppelt so groß)
-# und Fading. Die Tiefe des Fadings folgt dem Regler (100 % = QSB_MAX_DEPTH,
+# Stärkeunterschiede: Grundstärke der Stationen (Station 0 ist gut zu
+# hören; die Werte gelten für Regler auf 50 %, 100 % macht die Unterschiede
+# doppelt so groß). QSB: Fading. Die Tiefe des Fadings folgt dem Regler (100 % = QSB_MAX_DEPTH,
 # rund −26 dB im tiefsten Loch) mit wenig Streuung je Station, damit die
 # Stufe und nicht der Zufall die Schwierigkeit bestimmt. Zwei überlagerte
 # Schwingungen ungleicher Periode machen den Verlauf unregelmäßig.
@@ -454,13 +455,18 @@ class BandConditions:
         return NOISE_RMS_CAP, NOISE_RMS_CAP / rms
 
     def station_gain(self, station, n: int):
-        """Lautstärke einer Station über die nächsten `n` Samples (QSB);
-        1, wenn QSB aus ist oder für den eigenen Mithörton (None)."""
-        if station is None or not self._on("qsb"):
+        """Lautstärke einer Station über die nächsten `n` Samples
+        (Stärkeunterschiede und QSB); 1, wenn beides aus ist oder für den
+        eigenen Mithörton (None)."""
+        if station is None:
             return 1.0
         station %= len(self.qsb)
-        strength = max(1 - (1 - self.strengths[station]) * 2 * self.levels["qsb"], 0.05)
-        return strength * self._fading(self.qsb[station], n)
+        gain = 1.0
+        if self._on("strength"):
+            gain = max(1 - (1 - self.strengths[station]) * 2 * self.levels["strength"], 0.05)
+        if self._on("qsb"):
+            gain = gain * self._fading(self.qsb[station], n)
+        return gain
 
     def _fading(self, params, n: int) -> np.ndarray:
         """Fading-Verlauf (0 … 1) über die nächsten `n` Samples."""

@@ -228,8 +228,10 @@ Außerdem hilfreich:
 
 Eingestellt wird an einer Stelle: **Weitere Optionen → Bandbedingungen
 → Einstellen …** oder „Einstellen …“ in einem Reiter. Einzeln zuschaltbar
-und regelbar sind Rauschen, Knackstörungen (QRN), QSB, Chirp, SSB-Gebrabbel
-und CW-QRM auf der Nachbarfrequenz; dazu die **Lautstärke der
+und regelbar sind Rauschen, Knackstörungen (QRN), QSB, Chirp, SSB-Gebrabbel,
+CW-QRM auf der Nachbarfrequenz und **Stärkeunterschiede** (wie
+unterschiedlich laut die Stationen in QSO und Contest ankommen – bis 2.37
+ein Teil von QSB, jetzt getrennt vom Fading); dazu die **Lautstärke der
 Störgeräusche** gegenüber den Zeichen. Die Knöpfe **leicht**, **mittel**
 und **stark** setzen die Stufen, nach denen auch das Diplom QRN-fest
 zählt; das Fenster zeigt, welcher Stufe die Einstellung mindestens

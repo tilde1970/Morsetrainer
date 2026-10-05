@@ -233,6 +233,17 @@ class FilterAndQrmTest(unittest.TestCase):
         self.assertIsNot(conditions.cw_qrm, before)
         self.assertEqual(conditions.cw_qrm_offset, "far")
 
+    def test_strength_and_fading_are_separate(self):
+        import numpy as np
+        conditions = band.conditions({"levels": {"strength": 1.0}, "gain": 1.0, "seed": 2}, 600, stations=4)
+        gains = [conditions.station_gain(station, 10) for station in range(4)]
+        self.assertTrue(all(np.isscalar(gain) for gain in gains))  # ohne QSB kein Verlauf
+        self.assertGreater(max(gains) - min(gains), 0.1)
+        conditions = band.conditions({"levels": {"qsb": 1.0}, "gain": 1.0, "seed": 2}, 600, stations=4)
+        starts = [float(conditions.station_gain(station, 1)[0]) for station in range(4)]
+        peaks = [float(np.max(conditions.station_gain(station, 30 * band.SAMPLE_RATE))) for station in range(4)]
+        self.assertTrue(all(peak > 0.95 for peak in peaks), (starts, peaks))  # nur Fading, keine Grundstärke
+
     def test_qrm_fades_with_qsb(self):
         import numpy as np
         conditions = band.conditions({"levels": {"cw_qrm": 1.0, "qsb": 1.0}, "gain": 1.0, "seed": 1}, 600)
@@ -257,11 +268,11 @@ class CentralSettingsTest(AppTestCase):
         settings = self.app.band_settings
         settings.set_spec({"levels": {"noise": 0.7, "ssb": 0.2, "chirp": 0.0}, "gain": 0.8})  # 0 % wie aus
         saved = self.app._shared_settings()["band"]
-        self.assertEqual(saved, {"levels": {"noise": 0.7, "ssb": 0.2}, "gain": 0.8})
+        self.assertEqual(saved, {"levels": {"noise": 0.7, "ssb": 0.2}, "gain": 0.8, "version": 2})
         settings.set_preset("light")
         self.app.saved_state = {"shared": {"band": saved}}
         self.app._restore_shared_settings()
-        self.assertEqual(settings.spec(), saved)
+        self.assertEqual(settings.spec(), {"levels": {"noise": 0.7, "ssb": 0.2}, "gain": 0.8})
         self.assertIn("SSB 20 %", self.app.band_summary_var.get())
 
     def test_migrates_qso_panel_or_group_preset(self):
@@ -291,6 +302,22 @@ class CentralSettingsTest(AppTestCase):
             self.assertEqual(self.app.band_settings.rank_var.get(), "Entspricht mindestens Stufe stark.")
         finally:
             settings.close_window()
+
+    def test_strength_differences_from_older_versions(self):
+        settings = self.app.band_settings
+        # Bis 2.37 gehörten sie zu QSB: bleiben mit demselben Pegel an.
+        self.assertTrue(settings.restore({"levels": {"qsb": 0.8, "noise": 0.5}, "gain": 1.0}))
+        self.assertEqual(settings.spec()["levels"]["strength"], 0.8)
+        self.assertTrue(settings.restore({"levels": {"noise": 0.5}, "gain": 1.0}))
+        self.assertNotIn("strength", settings.spec()["levels"])
+        # Neue Fassung: ausgeschaltet bleibt aus.
+        self.assertTrue(settings.restore({"levels": {"qsb": 0.8}, "gain": 1.0, "version": 2}))
+        self.assertNotIn("strength", settings.spec()["levels"])
+        # Stufen-Knöpfe lassen sie, wie sie sind; zur Stufe zählen sie nicht.
+        settings.set_spec({"levels": {"strength": 0.7}, "gain": 1.0})
+        settings.set_preset("medium")
+        self.assertEqual(settings.spec()["levels"]["strength"], 0.7)
+        self.assertEqual(band.preset_rank(settings.spec()), "medium")
 
     def test_filter_and_offset_are_kept_by_presets_and_shown(self):
         settings = self.app.band_settings

@@ -11,6 +11,10 @@
 - **CW-QRM nah an der Frequenz:** Abstand wählbar – weit (300–500 Hz),
   nah (50–200 Hz) oder Zero-Beat. Mit QSB schwankt das QRM jetzt auch,
   unabhängig von den eigenen Stationen.
+- **Stärkeunterschiede getrennt vom QSB:** Wie unterschiedlich laut die
+  Stationen in QSO und Contest ankommen, ist jetzt ein eigener Schalter
+  mit Regler, unabhängig vom Fading. Wer QSB an hatte, behält sie; die
+  Stufen-Knöpfe ändern sie nicht.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

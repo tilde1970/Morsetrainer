@@ -324,6 +324,8 @@ EN.update({
     "SSB-Gebrabbel": "SSB babble",
     "CW-QRM (Nachbar-Run)": "CW QRM (adjacent run)",
     "2,4 kHz": "2.4 kHz",
+    "Stärkeunterschiede (QSO, Contest)": "Strength differences (QSO, contest)",
+    "Stärke": "Strength",
     "500 Hz": "500 Hz",
     "250 Hz": "250 Hz",
     "weit (300–500 Hz)": "far (300–500 Hz)",

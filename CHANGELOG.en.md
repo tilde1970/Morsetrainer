@@ -10,6 +10,10 @@
 - **CW QRM close to your frequency:** offset selectable – far
   (300–500 Hz), close (50–200 Hz) or zero beat. With QSB, the QRM now
   fades too, independently of your stations.
+- **Strength differences separate from QSB:** how differently loud the
+  stations arrive in QSO and contest is now a switch and slider of its
+  own, independent of fading. Anyone who had QSB on keeps them; the level
+  buttons do not change them.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 
