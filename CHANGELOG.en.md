@@ -35,7 +35,7 @@
   built-in screen reader). On the network, participants hear connecting
   and disconnecting, the result of each answer and of the run; the
   trainer's sequences take priority. The daily practice's evening summary
-  is read out in full.
+  and the award window are read out in full.
 - **High contrast** (accessibility): black, white and yellow colour
   scheme with strong borders, under “More options”, from the next start.
   All text at least 7:1 against its background, including charts and the

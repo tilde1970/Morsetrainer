@@ -385,7 +385,7 @@ def render(text: str, deliver) -> None:
 # (oder falsch) liest.
 _SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("±", N_(" plus minus ")),
             ("✓", N_("richtig")), ("✗", N_("falsch")), ("★", N_(" Stern ")), ("☆", ""), ("…", ""),
-            ("%", N_(" Prozent")), ("–", ","))
+            ("%", N_(" Prozent")), ("≥", N_("mindestens")), ("≤", N_("höchstens")), ("–", ","))
 
 
 def speakable(text: str) -> str:

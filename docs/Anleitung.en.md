@@ -488,7 +488,10 @@ versions (CHANGELOG) and this manual.
 - **Evening summary:** read out in full – stars, weekly goal, what has
   improved, what is almost done, new seals – then “Enter: Done” and, if
   offered, “With Tab: 5 more min …”. F11 in the window repeats it.
-  Symbols such as %, → or ★ are spoken as words.
+  Symbols such as %, →, ≥ or ★ are spoken as words.
+- **Award window:** new seals with condition and date, then the hint on
+  Tab and Escape; the print buttons say which award they print. F11 in
+  the window repeats.
 - **Controls:** when you Tab into a field, button or check box, it says
   what it is and how it is set (“Sprache / Language, list, English”, “High contrast,
   check box, off”, “Speed, number field, 20 WPM”); changes with the space
@@ -511,8 +514,8 @@ versions (CHANGELOG) and this manual.
 - Announcements use the language of the interface: German with the
   Thorsten voice, English with the Lessac voice (callsigns then “Delta
   Lima One”). If the voice is missing, F9 and F11 play an error tone and
-  the reason appears in the status line. Speak and the award windows
-  are not announced yet; the Speak tab
+  the reason appears in the status line. The Speak tab is not announced
+  yet; the Speak tab
   stays German.
 
 ## Keyboard shortcuts

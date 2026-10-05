@@ -533,4 +533,35 @@ class EveningSummaryAnnounceTest(AnnouncerTest):
         self.assertEqual(announcer.speakable("84 % → 90 %"), "84 Prozent auf 90 Prozent")
         self.assertEqual(announcer.speakable("Abgebrochen – deine Sterne bleiben."), "Abgebrochen, deine Sterne bleiben.")
         self.assertEqual(announcer.speakable("✓ KM"), "richtig KM")
+        self.assertEqual(announcer.speakable("≥ 50 Zeichen, ≤ 3 Fehler"), "mindestens 50 Zeichen, höchstens 3 Fehler")
         self.assertEqual(announcer.speakable("Warte auf den Trainer…"), "Warte auf den Trainer")
+
+
+
+class DiplomaAnnounceTest(AnnouncerTest):
+    def test_diploma_window_is_read_and_print_buttons_are_named(self):
+        from datetime import date
+        from morsetrainer.core import awards
+        from morsetrainer.widgets import announcer
+        from morsetrainer.widgets import awards_panel as panel
+        self.app.announcer.var.set(True)
+        window = panel.DiplomaWindow(self.root, [("koch", 2, date(2026, 10, 4)), ("qrn", 0, date(2026, 10, 5))],
+                                     tk.StringVar(value="DL4YM"), tk.StringVar(value="Maik"))
+        koch = panel.seal_name(awards.BY_KEY["koch"], 2)
+        self.assertTrue(window.spoken.startswith("Neue Siegel. " + koch + ". "), window.spoken)
+        self.assertIn("Erreicht am 04.10.2026", window.spoken)
+        self.assertTrue(window.spoken.endswith("Escape schließt."))
+        buttons = []
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                if child.winfo_class() == "TButton" and str(child.cget("text")) == "Drucken":
+                    buttons.append(announcer.describe(child))
+                walk(child)
+        walk(window.window)
+        self.assertEqual(buttons[0], f"Drucken: {koch}, Knopf.")
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Neue Siegel.") for s in self.said)))
+        with mock.patch.object(panel, "print_diploma", return_value=("Im Browser geöffnet, dort drucken: /x", True)):
+            window._print(awards.BY_KEY["koch"], 2, date(2026, 10, 4))
+        self.assertTrue(self.pump_until(lambda: "Diplom im Browser geöffnet." in self.said))
+        window.close()

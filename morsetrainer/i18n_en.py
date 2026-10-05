@@ -26,6 +26,11 @@ EN.update({
     # Sprachansage (widgets/announcer.py), gesprochen mit der Stimme der Oberflächensprache
     "Knopf": "button",
     "Antwort": "Answer",
+    "Drucken: {seal}": "Print: {seal}",
+    "{seal}. {condition}. Erreicht am {date}": "{seal}. {condition}. Achieved on {date}",
+    "Mit Tab: Drucken, Rufzeichen und Name auf dem Diplom. Escape schließt.":
+        "With Tab: print, callsign and name on the award. Escape closes.",
+    "Diplom im Browser geöffnet.": "Award opened in the browser.",
     " auf ": " to ",
     " und ": " and ",
     "etwa ": "about ",
@@ -34,6 +39,8 @@ EN.update({
     "falsch": "wrong",
     " Stern ": " star ",
     " Prozent": " percent",
+    "mindestens": "at least",
+    "höchstens": "at most",
     "{count} von {total} Sternen: {names}": "{count} of {total} stars: {names}",
     "Heute noch kein Stern": "No star yet today",
     "Wochenziel erreicht: {stars} Sterne": "Weekly goal reached: {stars} stars",

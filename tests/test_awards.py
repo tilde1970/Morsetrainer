@@ -443,9 +443,10 @@ class DiplomaWindowTest(unittest.TestCase):
         tk = self.tk
         call, name = tk.StringVar(value="dl1abc"), tk.StringVar(value="Max")
         window = panel.DiplomaWindow(self.root, [("koch", 2, date(2026, 10, 4))], call, name)
-        with mock.patch.object(panel, "print_diploma", return_value="ok") as printed:
+        with mock.patch.object(panel, "print_diploma", return_value=("Im Browser geöffnet", True)) as printed:
             window._print(awards.BY_KEY["koch"], 2, date(2026, 10, 4))
         printed.assert_called_once_with(awards.BY_KEY["koch"], 2, date(2026, 10, 4), "DL1ABC", "Max")
+        self.assertEqual(window.note_var.get(), "Im Browser geöffnet")
         window.close()
 
 

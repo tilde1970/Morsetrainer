@@ -498,7 +498,10 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - **Abendbilanz:** wird ganz vorgelesen – Sterne, Wochenziel, was besser
   geworden ist, was fast geschafft ist, neue Siegel –, dann „Enter:
   Fertig“ und, falls angeboten, „Mit Tab: Noch 5 Min …“. F11 im Fenster
-  wiederholt sie. Symbole wie %, → oder ★ spricht die Ansage als Wort.
+  wiederholt sie. Symbole wie %, →, ≥ oder ★ spricht die Ansage als Wort.
+- **Diplom-Fenster:** neue Siegel mit Bedingung und Datum, dann der
+  Hinweis auf Tab und Escape; die Drucken-Knöpfe sagen, welches Diplom sie
+  drucken. F11 im Fenster wiederholt.
 - **Bedienelemente:** Springst du mit Tab in ein Feld, einen Knopf oder
   Schalter, sagt es, was es ist und wie es steht („Sprache / Language,
   Auswahl, Deutsch“, „Hoher Kontrast, Schalter, aus“, „Tempo, Zahlenfeld,
@@ -521,8 +524,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - Die Ansage spricht die Sprache der Oberfläche: deutsch mit der Stimme
   Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann „Delta Lima
   One“). Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton, und der
-  Grund steht in der Statuszeile. Sprechen und die Diplom-Fenster
-  sagt sie noch nicht an; der
+  Grund steht in der Statuszeile. Den Reiter Sprechen sagt sie noch
+  nicht an; der
   Reiter Sprechen bleibt deutsch.
 
 ## Tastenkürzel

@@ -13,7 +13,7 @@ from tkinter import ttk
 from morsetrainer.core import awards, diploma, stats
 from morsetrainer.i18n import number, tr
 from morsetrainer.modes.word_mode import open_in_editor
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 WRAP = 520
 DIPLOMA_FILE_NAME = "diplom.html"
@@ -122,10 +122,11 @@ def _open_page(page: str, name: str):
     return path, None
 
 
-def print_diploma(award, level, day, call: str, holder: str = "") -> str:
-    """Diplom als HTML-Seite im Browser öffnen; Rückgabe: Meldung."""
+def print_diploma(award, level, day, call: str, holder: str = ""):
+    """Diplom als HTML-Seite im Browser öffnen; Rückgabe: (Meldung, ob es
+    geklappt hat)."""
     path, error = _open_page(diploma_page(award, level, day, call, holder), DIPLOMA_FILE_NAME)
-    return error or tr("Im Browser geöffnet, dort drucken: {path}").format(path=path)
+    return error or tr("Im Browser geöffnet, dort drucken: {path}").format(path=path), error is None
 
 
 def preview_diploma(award, level, call: str, holder: str = "") -> str:
@@ -159,6 +160,7 @@ class DiplomaWindow:
         window.resizable(False, False)
         frame = ttk.Frame(window, padding=16)
         frame.pack(fill="both", expand=True)
+        spoken = [window.title()]
         for key, level, day in seals:
             award = awards.BY_KEY[key]
             row = ttk.Frame(frame)
@@ -169,8 +171,14 @@ class DiplomaWindow:
             ttk.Label(text, text=seal_name(award, level), style="Status.TLabel").pack(anchor="w")
             theme.hint(text, text=diploma_condition(award, level), wrap=380).pack(anchor="w")
             theme.hint(text, text=day.strftime(tr("%d.%m.%Y"))).pack(anchor="w")
-            ttk.Button(row, text=tr("Drucken"),
-                       command=lambda a=award, lv=level, d=day: self._print(a, lv, d)).pack(side="right", padx=(8, 0))
+            print_button = ttk.Button(row, text=tr("Drucken"),
+                                      command=lambda a=award, lv=level, d=day: self._print(a, lv, d))
+            print_button.pack(side="right", padx=(8, 0))
+            # Ansage: welches Diplom der Knopf druckt, und alles beim Öffnen.
+            announcer.name(print_button, tr("Drucken: {seal}").format(seal=seal_name(award, level)))
+            spoken.append(tr("{seal}. {condition}. Erreicht am {date}").format(
+                seal=seal_name(award, level), condition=diploma_condition(award, level),
+                date=day.strftime(tr("%d.%m.%Y"))))
 
         line = ttk.Frame(frame)
         line.pack(fill="x", pady=(4, 0))
@@ -190,10 +198,17 @@ class DiplomaWindow:
         window.bind("<Escape>", lambda e: self.close())
         window.protocol("WM_DELETE_WINDOW", self.close)
         done.focus_set()
+        spoken.append(tr("Mit Tab: Drucken, Rufzeichen und Name auf dem Diplom. Escape schließt."))
+        self.spoken = ". ".join(part.rstrip(".") for part in spoken) + "."
+        window.bind("<F11>", lambda e: announcer.get() and announcer.get().say(self.spoken, force=True))
+        announcer.say(self.spoken)
 
     def _print(self, award, level, day):
         call, name = self.call_var.get().strip().upper(), self.name_var.get().strip()
-        self.note_var.set(print_diploma(award, level, day, call, name))
+        note, opened = print_diploma(award, level, day, call, name)
+        self.note_var.set(note)
+        # Ohne Dateipfad: der hilft beim Zuhören nicht.
+        announcer.say(tr("Diplom im Browser geöffnet.") if opened else note)
 
     def close(self) -> None:
         if self.window is None:
