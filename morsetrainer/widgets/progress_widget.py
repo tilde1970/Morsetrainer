@@ -18,11 +18,8 @@ MARGIN = {"left": 38, "right": 62, "top": 12, "bottom": 22}
 # Punkte nur bis zu dieser Anzahl zeichnen, darüber nur die Linie.
 MAX_MARKERS = 40
 
-SURFACE = theme.SURFACE
-TEXT_PRIMARY = theme.TEXT
-TEXT_SECONDARY = theme.MUTED
-GRID = "#e4e6ea"
-SERIES = theme.ACCENT
+# Farben aus theme erst beim Zeichnen lesen: die Palette (z. B. hoher
+# Kontrast) steht beim Import noch nicht fest.
 FONT = theme.SMALL
 
 
@@ -39,7 +36,7 @@ class _LineChart:
 
     def __init__(self, parent, title: str, unit: str, fixed_range=None, on_hover=None):
         ttk.Label(parent, text=title, font=theme.HEADING).pack(anchor="w", pady=(6, 2))
-        self.canvas = tk.Canvas(parent, height=CHART_HEIGHT, background=SURFACE, highlightthickness=0)
+        self.canvas = tk.Canvas(parent, height=CHART_HEIGHT, background=theme.SURFACE, highlightthickness=0)
         self.canvas.pack(fill="x", pady=(2, 4))
         self.unit = unit
         self.fixed_range = fixed_range
@@ -64,7 +61,7 @@ class _LineChart:
         self.points = []
         if not self.values:
             c.create_text(c.winfo_width() / 2, CHART_HEIGHT / 2, text=tr("Noch keine Daten für diesen Modus."),
-                          fill=TEXT_SECONDARY, font=FONT)
+                          fill=theme.MUTED, font=FONT)
             return
         x0, y0, x1, y1 = self._plot_box()
         if x1 <= x0:
@@ -79,8 +76,8 @@ class _LineChart:
         tick = low
         while tick <= high + 1e-9:
             y = y_of(tick)
-            c.create_line(x0, y, x1, y, fill=GRID, width=1)
-            c.create_text(x0 - 6, y, text=short_number(tick), anchor="e", fill=TEXT_SECONDARY, font=FONT)
+            c.create_line(x0, y, x1, y, fill=theme.GRID, width=1)
+            c.create_text(x0 - 6, y, text=short_number(tick), anchor="e", fill=theme.MUTED, font=FONT)
             tick += step
 
         n = len(self.values)
@@ -96,18 +93,18 @@ class _LineChart:
             x = self.points[i][0]
             anchor = "w" if i == 0 and n > 1 else "e" if i == n - 1 and n > 1 else "center"
             c.create_text(x, y1 + 12, text=self.entries[i]["time"].strftime(time_format), anchor=anchor,
-                          fill=TEXT_SECONDARY, font=FONT)
+                          fill=theme.MUTED, font=FONT)
 
         if n > 1:
-            c.create_line(*[coord for x, y, _, _ in self.points for coord in (x, y)], fill=SERIES, width=2,
+            c.create_line(*[coord for x, y, _, _ in self.points for coord in (x, y)], fill=theme.ACCENT, width=2,
                           joinstyle="round", capstyle="round")
         if n <= MAX_MARKERS:
             for x, y, _, _ in self.points:
                 # 8-px-Punkt mit 2-px-Ring in Flächenfarbe.
-                c.create_oval(x - 4, y - 4, x + 4, y + 4, fill=SERIES, outline=SURFACE, width=2)
+                c.create_oval(x - 4, y - 4, x + 4, y + 4, fill=theme.ACCENT, outline=theme.SURFACE, width=2)
         # Direkte Beschriftung nur am letzten Wert, in Textfarbe.
         x, y, value, _ = self.points[-1]
-        c.create_text(x + 8, y, text=f"{short_number(value)}{self.unit}", anchor="w", fill=TEXT_PRIMARY,
+        c.create_text(x + 8, y, text=f"{short_number(value)}{self.unit}", anchor="w", fill=theme.TEXT,
                       font=theme.HEADING)
 
     def _motion(self, event):
@@ -123,16 +120,16 @@ class _LineChart:
             return
         x, y, value, entry = self.points[index]
         x0, y0, x1, y1 = self._plot_box()
-        c.create_line(x, y0, x, y1, fill=TEXT_SECONDARY, width=1, tags="hover")
-        c.create_oval(x - 5, y - 5, x + 5, y + 5, fill=SERIES, outline=SURFACE, width=2, tags="hover")
+        c.create_line(x, y0, x, y1, fill=theme.MUTED, width=1, tags="hover")
+        c.create_oval(x - 5, y - 5, x + 5, y + 5, fill=theme.ACCENT, outline=theme.SURFACE, width=2, tags="hover")
         label = f"{entry['time'].strftime(tr('%d.%m. %H:%M'))}  ·  {short_number(value)}{self.unit}"
-        text = c.create_text(0, 0, text=label, anchor="nw", fill=TEXT_PRIMARY, font=FONT, tags="hover")
+        text = c.create_text(0, 0, text=label, anchor="nw", fill=theme.TEXT, font=FONT, tags="hover")
         bx0, by0, bx1, by1 = c.bbox(text)
         w, h = bx1 - bx0 + 10, by1 - by0 + 6
         tx = x + 10 if x + 10 + w < c.winfo_width() else x - 10 - w
         ty = max(y0, min(y - h - 6, y1 - h))
         c.coords(text, tx + 5, ty + 3)
-        box = c.create_rectangle(tx, ty, tx + w, ty + h, fill="white", outline=GRID, tags="hover")
+        box = c.create_rectangle(tx, ty, tx + w, ty + h, fill=theme.SURFACE, outline=theme.GRID, tags="hover")
         c.tag_raise(text, box)
 
 

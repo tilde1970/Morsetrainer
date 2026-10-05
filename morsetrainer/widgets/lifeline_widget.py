@@ -13,7 +13,7 @@ from tkinter import ttk
 from morsetrainer.core import awards, diploma, koch, lifeline
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import theme
-from morsetrainer.widgets.progress_widget import GRID, MARGIN, _nice_range
+from morsetrainer.widgets.progress_widget import MARGIN, _nice_range
 
 PANEL_TITLE = 24   # Titelzeile plus Luft über der obersten Achsenzahl
 PANEL_PLOT = 66
@@ -133,7 +133,7 @@ class LifelinePanel:
         values = self.line[key]
         known = [v for v in values if v is not None]
         if not known or (key == STARS and not any(known)):
-            c.create_line(x0, y1, x1, y1, fill=GRID)
+            c.create_line(x0, y1, x1, y1, fill=theme.GRID)
             c.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=tr(EMPTY_TEXT[key]), fill=theme.MUTED,
                           font=theme.SMALL)
             return
@@ -143,7 +143,7 @@ class LifelinePanel:
             return y1 - (value - low) / (high - low) * (y1 - y0)
 
         for tick in ticks:
-            c.create_line(x0, y_of(tick), x1, y_of(tick), fill=GRID)
+            c.create_line(x0, y_of(tick), x1, y_of(tick), fill=theme.GRID)
             c.create_text(x0 - 6, y_of(tick), text=f"{tick:g}", anchor="e", fill=theme.MUTED, font=theme.SMALL)
         # Stufenlinie; vor dem ersten Wert (None) nichts.
         coords = []
@@ -220,5 +220,5 @@ class LifelinePanel:
         tx = x + 10 if x + 10 + w < c.winfo_width() else x - 10 - w
         ty = max(2, min(event.y - h - 10, HEIGHT - AXIS_ROW - h))
         c.coords(text, tx + 5, ty + 3)
-        box = c.create_rectangle(tx, ty, tx + w, ty + h, fill="white", outline=GRID, tags="hover")
+        box = c.create_rectangle(tx, ty, tx + w, ty + h, fill=theme.SURFACE, outline=theme.GRID, tags="hover")
         c.tag_raise(text, box)

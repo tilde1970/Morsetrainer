@@ -16,23 +16,42 @@ import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
 
-# Palette (hell). Gedämpfte Flächen, ein Akzent, Grün/Rot nur für Ergebnisse.
-BG = "#f3f4f6"
-SURFACE = "#ffffff"
-BORDER = "#d3d7de"
-BUTTON = "#e8eaee"
-BUTTON_ACTIVE = "#dde1e7"
-TEXT = "#1d2127"
-MUTED = "#5f6670"
-DISABLED = "#a0a6ae"
-ACCENT = "#2a6fd0"
-ACCENT_ACTIVE = "#215bb0"
-FOCUS = "#8db4ea"  # Rahmen des Eingabefelds mit Tastaturfokus
-SELECT = "#d7e6fa"
-OK = "#1e7e34"
-ERROR = "#c0392b"
-OK_BG = "#d9f2dd"
-ERROR_BG = "#f9dcd9"
+# Paletten. Hell: gedämpfte Flächen, ein Akzent, Grün/Rot nur für
+# Ergebnisse. Hoher Kontrast (Barrierefreiheit, für Sehbehinderte): Schwarz,
+# Weiß und Gelb, kräftige Rahmen; jede Textfarbe hat auf ihrem Grund
+# mindestens 7:1 (WCAG AAA). Gewählt wird vor apply() mit set_palette();
+# die Reiter lesen die Farben zur Laufzeit als theme.X.
+PALETTES = {
+    "light": {
+        "BG": "#f3f4f6", "SURFACE": "#ffffff", "BORDER": "#d3d7de", "BUTTON": "#e8eaee",
+        "BUTTON_ACTIVE": "#dde1e7", "TEXT": "#1d2127", "MUTED": "#5f6670", "DISABLED": "#a0a6ae",
+        "ACCENT": "#2a6fd0", "ACCENT_ACTIVE": "#215bb0",
+        "FOCUS": "#8db4ea",  # Rahmen des Eingabefelds mit Tastaturfokus
+        "SELECT": "#d7e6fa", "OK": "#1e7e34", "ERROR": "#c0392b", "OK_BG": "#d9f2dd", "ERROR_BG": "#f9dcd9",
+        "GRID": "#e4e6ea",  # Hilfslinien in Diagrammen
+        "TROUGH": "#d3d7de",  # Schiene der Schieberegler
+        # QSO: Station 1 bzw. Run-Station, dann abwechselnd die Gegenstationen.
+        "STATION_COLORS": ("#1f5fbf", "#b35900", "#2e8b57"),
+        "BORDER_WIDTH": 1,
+    },
+    "contrast": {
+        "BG": "#000000", "SURFACE": "#000000", "BORDER": "#ffffff", "BUTTON": "#1a1a1a",
+        "BUTTON_ACTIVE": "#333333", "TEXT": "#ffffff", "MUTED": "#e0e0e0", "DISABLED": "#9e9e9e",
+        "ACCENT": "#ffd400", "ACCENT_ACTIVE": "#ffe766", "FOCUS": "#ffd400", "SELECT": "#00468c",
+        "OK": "#6cf06c", "ERROR": "#ff8080", "OK_BG": "#003d00", "ERROR_BG": "#5c0000",
+        "GRID": "#5a5a5a", "TROUGH": "#4d4d4d", "STATION_COLORS": ("#80c8ff", "#ffb84d", "#7cfc9a"),
+        "BORDER_WIDTH": 2,
+    },
+}
+PALETTE = "light"
+globals().update(PALETTES[PALETTE])
+
+
+def set_palette(name: str) -> None:
+    """Palette wählen (vor apply(), also beim Programmstart)."""
+    global PALETTE
+    PALETTE = name if name in PALETTES else "light"
+    globals().update(PALETTES[PALETTE])
 
 # Benannte Schriften (erst nach apply() verwendbar).
 MONO = "MtMono"             # Mitschrift, Verlauf, Notizen
@@ -148,11 +167,14 @@ def apply(root) -> None:
     root.option_add("*Text.background", SURFACE)
     root.option_add("*Text.foreground", TEXT)
     root.option_add("*Text.relief", "flat")
-    root.option_add("*Text.highlightThickness", 1)
+    root.option_add("*Text.highlightThickness", BORDER_WIDTH)
+    root.option_add("*Text.insertBackground", TEXT)
+    root.option_add("*Text.selectForeground", TEXT)
     root.option_add("*Text.highlightBackground", BORDER)
     root.option_add("*Text.highlightColor", FOCUS)
     root.option_add("*Text.selectBackground", SELECT)
     root.option_add("*Canvas.background", BG)
+    root.option_add("*TCombobox*Listbox.foreground", TEXT)
     root.option_add("*TCombobox*Listbox.background", SURFACE)
     root.option_add("*TCombobox*Listbox.selectBackground", SELECT)
     root.option_add("*TCombobox*Listbox.selectForeground", TEXT)
@@ -179,17 +201,18 @@ def apply(root) -> None:
     style.configure("Score.TLabel", font=SCORE)
     style.configure("Footer.TLabel", foreground=MUTED, font=SMALL)
 
-    style.configure("TLabelframe", background=BG, bordercolor=BORDER, relief="solid", borderwidth=1)
+    style.configure("TLabelframe", background=BG, bordercolor=BORDER, relief="solid", borderwidth=BORDER_WIDTH)
     style.configure("TLabelframe.Label", background=BG, foreground=MUTED, font=HEADING)
 
     style.configure("TButton", background=BUTTON, bordercolor=BORDER, lightcolor=BUTTON, darkcolor=BUTTON,
-                    padding=(10, 2), anchor="center")
+                    padding=(10, 2), anchor="center", borderwidth=BORDER_WIDTH)
     style.map("TButton",
               background=[("disabled", BG), ("pressed", BUTTON_ACTIVE), ("active", BUTTON_ACTIVE)],
               lightcolor=[("disabled", BG), ("active", BUTTON_ACTIVE)],
               darkcolor=[("disabled", BG), ("active", BUTTON_ACTIVE)],
               bordercolor=[("focus", ACCENT)])
-    style.configure("Accent.TButton", background=ACCENT, foreground="white", bordercolor=ACCENT,
+    # Schrift auf dem Akzent: weiß auf Blau, im hohen Kontrast schwarz auf Gelb.
+    style.configure("Accent.TButton", background=ACCENT, foreground=SURFACE, bordercolor=ACCENT,
                     lightcolor=ACCENT, darkcolor=ACCENT, font=HEADING, padding=(18, 4))
     style.map("Accent.TButton",
               background=[("disabled", BUTTON), ("pressed", ACCENT_ACTIVE), ("active", ACCENT_ACTIVE)],
@@ -205,7 +228,8 @@ def apply(root) -> None:
 
     for widget in ("TEntry", "TSpinbox", "TCombobox"):
         style.configure(widget, fieldbackground=SURFACE, background=BUTTON, bordercolor=BORDER,
-                        lightcolor=SURFACE, darkcolor=SURFACE, arrowcolor=MUTED, padding=(4, 2))
+                        lightcolor=SURFACE, darkcolor=SURFACE, arrowcolor=MUTED, padding=(4, 2),
+                        borderwidth=BORDER_WIDTH)
         style.map(widget, bordercolor=[("focus", FOCUS)],
                   fieldbackground=[("disabled", BG), ("readonly", SURFACE)],
                   background=[("active", BUTTON_ACTIVE)])
@@ -221,7 +245,7 @@ def apply(root) -> None:
         style.map(widget, background=[("active", BG)],
                   indicatorbackground=[("disabled", BG), ("pressed", SELECT), ("selected", SURFACE)])
 
-    style.configure("TScale", background=BUTTON, troughcolor=BORDER, bordercolor=BORDER,
+    style.configure("TScale", background=BUTTON, troughcolor=TROUGH, bordercolor=BORDER,
                     lightcolor=BUTTON, darkcolor=BUTTON)
     style.map("TScale", background=[("disabled", BG), ("active", ACCENT)])
     style.configure("TScrollbar", background=BUTTON, troughcolor=BG, bordercolor=BG, arrowcolor=MUTED,

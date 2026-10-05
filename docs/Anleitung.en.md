@@ -468,6 +468,11 @@ versions (CHANGELOG) and this manual.
   remaining time, during daily practice the current card – even with
   announcements switched off.
 - **Font size:** Ctrl+Plus/Ctrl+Minus/Ctrl+0, see above.
+- **High contrast:** “▸ More options” → “High contrast (black, white,
+  yellow)”, takes effect after a restart. Black background, white text,
+  yellow main buttons and highlights, strong borders; all text stands out
+  from its background by at least 7:1. Right and wrong are always shown
+  as text too, not only as colour.
 - The voice is German, so the announcements are German even with the
   English interface. Settings, statistics and awards cannot be read out
   yet; that is the next step.

@@ -28,6 +28,10 @@
   buchstabiert, in Einzelzeichen die Fehler), das Ende eines Durchgangs,
   den Reiterwechsel und die Karten der Tagesübung an; F11 liest vor, wo
   man gerade ist. Der Ablauf wartet auf die Ansage.
+- **Hoher Kontrast** (Barrierefreiheit): Farbschema Schwarz, Weiß, Gelb
+  mit kräftigen Rahmen, unter „Weitere Optionen“, ab dem nächsten Start.
+  Alle Schriften mindestens 7:1 zum Grund, auch Diagramme und die Farben
+  der QSO-Stationen.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

@@ -27,6 +27,10 @@
   Words and Callsigns, errors in Characters), the end of a run, tab
   changes and the daily practice cards; F11 reads out where you are. The
   program waits for the announcement. (German voice.)
+- **High contrast** (accessibility): black, white and yellow colour
+  scheme with strong borders, under “More options”, from the next start.
+  All text at least 7:1 against its background, including charts and the
+  colours of the QSO stations.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

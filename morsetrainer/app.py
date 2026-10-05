@@ -101,6 +101,10 @@ class MorseTrainerApp:
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
 
+        # Farbschema vor dem Aufbau (wirkt daher erst nach einem Neustart).
+        shared = self.saved_state.get("shared")
+        self.contrast_at_start = isinstance(shared, dict) and shared.get("contrast") is True
+        theme.set_palette("contrast" if self.contrast_at_start else "light")
         theme.apply(root)
         self.announcer = announcer.install(root)
         self._build_settings()
@@ -306,6 +310,15 @@ class MorseTrainerApp:
         theme.hint(zoom, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal")).pack(side="left")
         self.font_scale_var.trace_add("write", lambda *_: self._apply_font_scale())
 
+        # Hoher Kontrast (Barrierefreiheit), ab dem nächsten Start.
+        contrast = ttk.Frame(self.more_frame)
+        contrast.pack(fill="x", pady=2)
+        self.contrast_var = tk.BooleanVar(value=self.contrast_at_start)
+        ttk.Checkbutton(contrast, text=tr("Hoher Kontrast (Schwarz, Weiß, Gelb)"), variable=self.contrast_var,
+                        command=self._contrast_toggled).pack(side="left")
+        self.contrast_hint_var = tk.StringVar(value="")
+        theme.hint(contrast, textvariable=self.contrast_hint_var).pack(side="left", padx=(8, 0))
+
         # Sprachansage für Blinde und Sehbehinderte (widgets/announcer.py).
         speak = ttk.Frame(self.more_frame)
         speak.pack(fill="x", pady=2)
@@ -432,6 +445,11 @@ class MorseTrainerApp:
         except tk.TclError:
             fw = "WPM"
         self.farnsworth_cpm_var.set(tr("{wpm} (alle außer Einzelzeichen)").format(wpm=fw))
+
+    def _contrast_toggled(self) -> None:
+        changed = self.contrast_var.get() != self.contrast_at_start
+        self.contrast_hint_var.set(tr("wirkt nach Neustart des Programms") if changed else "")
+        announcer.say("Hoher Kontrast nach Neustart." if changed and self.contrast_var.get() else "")
 
     def toggle_announce(self) -> None:
         """F9: Ansage an/aus, hörbar bestätigt."""
@@ -738,6 +756,7 @@ class MorseTrainerApp:
             "station_name": (self.station_name_var, None),
             "font_scale": (self.font_scale_var, (theme.ZOOM_STEPS[0], theme.ZOOM_STEPS[-1])),
             "announce": (self.announcer.var, None),
+            "contrast": (self.contrast_var, None),
         }
 
     def _shared_settings(self) -> dict:

@@ -159,3 +159,51 @@ class AnnouncerTest(AppTestCase):
         self.assertEqual(self.said[0], "Falsch. Ka, nicht Emm.")
         self.assertTrue(self.pump_until(lambda: single.correcting))  # Klangvergleich kommt danach
         single.stop()
+
+
+class ContrastTest(AppTestCase):
+    def test_palettes_have_the_same_keys_and_strong_contrast(self):
+        light, contrast = theme.PALETTES["light"], theme.PALETTES["contrast"]
+        self.assertEqual(set(light), set(contrast))
+
+        def luminance(color):
+            channels = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+        def ratio(a, b):
+            high, low = sorted((luminance(a), luminance(b)), reverse=True)
+            return (high + 0.05) / (low + 0.05)
+
+        # Text auf seinem Grund mindestens 7:1 (WCAG AAA).
+        for fg, bg in (("TEXT", "BG"), ("MUTED", "BG"), ("TEXT", "BUTTON"), ("ACCENT", "BG"), ("SURFACE", "ACCENT"),
+                       ("OK", "BG"), ("ERROR", "BG"), ("TEXT", "SELECT"), ("TEXT", "OK_BG"), ("TEXT", "ERROR_BG")):
+            self.assertGreaterEqual(ratio(contrast[fg], contrast[bg]), 7, (fg, bg))
+        for color in contrast["STATION_COLORS"]:
+            self.assertGreaterEqual(ratio(color, contrast["SURFACE"]), 7, color)
+
+    def test_chosen_at_start_and_saved(self):
+        self.assertEqual(theme.PALETTE, "light")
+        self.app.contrast_var.set(True)
+        self.app._contrast_toggled()
+        self.assertIn("Neustart", self.app.contrast_hint_var.get())
+        self.assertIs(self.app._shared_settings()["contrast"], True)
+        try:
+            self.app.saved_state = {"shared": {"contrast": True}}
+            with mock.patch.object(type(self.app), "_load_state", lambda app: {"shared": {"contrast": True}}):
+                root = tk.Tk()
+                root.withdraw()
+                try:
+                    from morsetrainer import app as app_module
+                    second = app_module.MorseTrainerApp(root)
+                    self.assertEqual(theme.PALETTE, "contrast")
+                    self.assertEqual(theme.BG, "#000000")
+                    self.assertTrue(second.contrast_var.get())
+                    self.assertEqual(ttk.Style(root).lookup("Accent.TButton", "foreground"), "#000000")
+                    for mode in second.modes:
+                        if hasattr(mode, "on_close"):
+                            mode.on_close()
+                finally:
+                    root.destroy()
+        finally:
+            theme.set_palette("light")

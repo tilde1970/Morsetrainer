@@ -19,6 +19,7 @@ EN.update({
     "Daten": "Data",
     "Schriftgröße": "Font size",
     "Rückmeldung ansagen (F9)": "Announce feedback (F9)",
+    "Hoher Kontrast (Schwarz, Weiß, Gelb)": "High contrast (black, white, yellow)",
     "für Blinde und Sehbehinderte; F11 liest vor, wo du bist":
         "for blind and visually impaired users; F11 reads out where you are (German voice)",
     "Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal": "Ctrl+Plus larger, Ctrl+Minus smaller, Ctrl+0 normal",

@@ -90,9 +90,6 @@ TICK_MS = 250
 # wenige abgefragte Felder, ein Ausreißer soll nicht gleich zwei Stufen machen.
 ADAPTIVE_STEPS = ((0.9, 1), (0.6, 0), (0.0, -1))
 
-# Station 1 bzw. Run-Station, dann abwechselnd für die Gegenstationen.
-STATION_COLORS = ("#1f5fbf", "#b35900", "#2e8b57")
-
 
 def estimate_minutes(kind: str, length: int, wpm: int, fw=None, samples: int = 3) -> float:
     """Geschätzte Dauer eines QSOs dieser Art und Länge (Mittel über einige
@@ -210,9 +207,9 @@ class QsoModeFrame:
         self.reveal_text.config(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         self.reveal_text.pack(fill="x")
-        for i, color in enumerate(STATION_COLORS):
+        for i, color in enumerate(theme.STATION_COLORS):
             self.reveal_text.tag_config(f"st{i}", foreground=color)
-        self.reveal_text.tag_config("miss", foreground="white", background=theme.ERROR)
+        self.reveal_text.tag_config("miss", foreground=theme.SURFACE, background=theme.ERROR)
         self.reveal_text.tag_config("unsent", foreground=theme.DISABLED)
         self.reveal_text.tag_config("extra", foreground=theme.DISABLED, font=theme.SMALL_ITALIC)
         self.reveal_text.config(state="disabled")

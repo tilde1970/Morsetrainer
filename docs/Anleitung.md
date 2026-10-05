@@ -477,6 +477,11 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   Restzeit vor, in der Tagesübung die aktuelle Karte – auch bei
   ausgeschalteter Ansage.
 - **Schriftgröße:** Strg+Plus/Strg+Minus/Strg+0, siehe oben.
+- **Hoher Kontrast:** „▸ Weitere Optionen“ → „Hoher Kontrast (Schwarz,
+  Weiß, Gelb)“, wirkt nach einem Neustart. Schwarzer Grund, weiße Schrift,
+  gelbe Hauptknöpfe und Markierungen, kräftige Rahmen; jede Schrift hebt
+  sich mindestens 7:1 vom Grund ab. Richtig und falsch stehen immer auch
+  als Text da, nicht nur als Farbe.
 - Die Stimme ist deutsch, die Ansagen sind es daher auch bei englischer
   Oberfläche. Einstellungen, Statistik und Diplome kann die Ansage noch
   nicht vorlesen; das ist der nächste Schritt.

@@ -8,7 +8,6 @@ from morsetrainer.core import qso_text
 from morsetrainer.i18n import tr
 from morsetrainer.widgets import theme
 
-OK_BG, WRONG_BG = theme.OK_BG, theme.ERROR_BG
 
 
 def normalize(text: str, kind: str = qso_text.TEXT) -> str:
@@ -106,7 +105,7 @@ class QuizPanel:
             expected, kind = cells[col]
             ok = is_correct(var.get(), expected, kind)
             correct += ok
-            bg = OK_BG if ok else WRONG_BG
+            bg = theme.OK_BG if ok else theme.ERROR_BG
             self.entries[row, col].config(background=bg, readonlybackground=bg, state="readonly")
             self.marks[row, col].config(text="✓" if ok else "✗", foreground=theme.OK if ok else theme.ERROR)
             if not ok:
