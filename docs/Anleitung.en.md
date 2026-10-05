@@ -478,6 +478,11 @@ versions (CHANGELOG) and this manual.
   pile-up (“Busted. Richtig: Delta, Lima, Eins …”, “Austausch falsch”,
   “Nicht im Log”); correctly logged QSOs stay silent so the rate does not
   suffer. The result at the end.
+- **Controls:** when you Tab into a field, button or check box, it says
+  what it is and how it is set (“Sprache / Language, list, English”, “High contrast,
+  check box, off”, “Speed, number field, 20 WPM”); changes with the space
+  bar, arrow keys or in a list are announced too. When the program sets
+  the focus itself (e.g. into the answer field), it stays silent.
 - **Tables:** when you move through a table with the arrow keys
   (statistics, awards, contest log), the row is read out with the column
   names.

@@ -190,11 +190,12 @@ def apply(root) -> None:
     except tk.TclError:
         pass
     # In Textfeldern (Notizen, eigener Text) führt Tab weiter, statt ein
-    # Tabzeichen einzufügen.
-    root.bind_class("Text", "<Tab>", lambda e: (e.widget.tk_focusNext().focus_set(), "break")[1])
+    # Tabzeichen einzufügen; wie Tk selbst über tk::TabToWindow, damit das
+    # Ziel <<TraverseIn>> bekommt (Fokus-Ansage).
+    root.bind_class("Text", "<Tab>", lambda e: (_tab_to(e.widget.tk_focusNext()), "break")[1])
     for back in ("<Shift-Tab>", "<Shift-ISO_Left_Tab>"):  # X11 meldet Umschalt+Tab als ISO_Left_Tab
         try:
-            root.bind_class("Text", back, lambda e: (e.widget.tk_focusPrev().focus_set(), "break")[1])
+            root.bind_class("Text", back, lambda e: (_tab_to(e.widget.tk_focusPrev()), "break")[1])
         except tk.TclError:
             pass
 
@@ -289,6 +290,11 @@ def apply(root) -> None:
     style.map("Treeview.Heading", background=[("active", BUTTON_ACTIVE)])
     # Später geöffnete Fenster: Umbruchbreiten gleich passend zur Schriftgröße.
     root.bind_class("Toplevel", "<Map>", _on_window_shown, add="+")
+
+
+def _tab_to(widget) -> None:
+    if widget is not None:
+        widget.tk.call("tk::TabToWindow", widget)
 
 
 def _on_window_shown(event) -> None:

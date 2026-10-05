@@ -488,6 +488,12 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   dem Pile-up („Busted. Richtig: Delta, Lima, Eins …“, „Austausch falsch“,
   „Nicht im Log“); richtig geloggte QSOs bleiben still, damit die Rate
   nicht leidet. Am Ende das Ergebnis.
+- **Bedienelemente:** Springst du mit Tab in ein Feld, einen Knopf oder
+  Schalter, sagt es, was es ist und wie es steht („Sprache / Language,
+  Auswahl, Deutsch“, „Hoher Kontrast, Schalter, aus“, „Tempo, Zahlenfeld,
+  20 WPM“); was du mit Leertaste, Pfeiltasten oder in einer Auswahl
+  änderst, wird ebenfalls angesagt. Setzt das Programm den Fokus selbst
+  (etwa ins Antwortfeld), bleibt es still.
 - **Tabellen:** Gehst du mit den Pfeiltasten durch eine Tabelle
   (Statistik, Diplome, Contest-Log), wird die Zeile mit den Spaltennamen
   vorgelesen.

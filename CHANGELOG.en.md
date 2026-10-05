@@ -30,7 +30,9 @@
   the interface; without a voice, F9 and F11 play an error tone. Also in QSO (next
   step, quiz fields, result with the correct values), in Contest (logging
   errors right after the TU, in the audio), in the Statistics tab (F11
-  reads an overview) and in tables (selected row).
+  reads an overview) and in tables (selected row). Controls reached with
+  Tab announce their name, kind and state, keyboard changes too (a small
+  built-in screen reader).
 - **High contrast** (accessibility): black, white and yellow colour
   scheme with strong borders, under “More options”, from the next start.
   All text at least 7:1 against its background, including charts and the

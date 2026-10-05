@@ -8,7 +8,7 @@ from tkinter import ttk
 
 from morsetrainer.core import band
 from morsetrainer.i18n import N_, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
@@ -214,6 +214,8 @@ class BandSettings:
                 row=row, column=0, sticky="w", padx=(0, 12), pady=1)
             scale = ttk.Scale(box, from_=0, to=100, variable=level, length=200, command=lambda _: self._changed())
             scale.grid(row=row, column=1, sticky="we", pady=1)
+            announcer.name(scale, tr(label), value=lambda k=key, v=level: level_text(
+                k, round(v.get()) / 100, round(self.gain_var.get()) / 100))
             shown = ttk.Label(box, width=11, anchor="e")
             shown.grid(row=row, column=2, padx=(6, 0))
             self.widgets[key] = (scale, shown)
@@ -249,8 +251,11 @@ class BandSettings:
         row = ttk.Frame(gain)
         row.pack(fill="x")
         theme.hint(row, text=tr("leiser")).pack(side="left")
-        ttk.Scale(row, from_=GAIN_RANGE[0], to=GAIN_RANGE[1], variable=self.gain_var, length=220,
-                  command=lambda _: self._changed()).pack(side="left", fill="x", expand=True, padx=6)
+        gain_scale = ttk.Scale(row, from_=GAIN_RANGE[0], to=GAIN_RANGE[1], variable=self.gain_var, length=220,
+                               command=lambda _: self._changed())
+        gain_scale.pack(side="left", fill="x", expand=True, padx=6)
+        announcer.name(gain_scale, tr("Lautstärke der Störgeräusche"),
+                       value=lambda: f"{round(self.gain_var.get())} %")
         theme.hint(row, text=tr("lauter")).pack(side="left")
         self.gain_shown = ttk.Label(row, width=6, anchor="e")
         self.gain_shown.pack(side="left", padx=(6, 0))

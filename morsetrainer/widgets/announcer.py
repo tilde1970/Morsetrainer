@@ -25,7 +25,7 @@ import tkinter as tk
 from morsetrainer import i18n
 from morsetrainer.core import audio, sfx, speech
 from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
-from morsetrainer.i18n import tr
+from morsetrainer.i18n import N_, number, tr
 
 # Pause nach einer Ansage, bevor es weitergeht.
 AFTER_SPEECH_MS = 250
@@ -162,7 +162,171 @@ def install(root) -> Announcer:
     global _instance
     _instance = Announcer(root)
     root.bind_class("Treeview", "<<TreeviewSelect>>", _read_row, add="+")
+    _install_focus(root)
     return _instance
+
+
+# --- Fokus-Ansage: ein kleiner eingebauter Screenreader ---------------------
+# Springt man mit Tab in ein Bedienelement (Tk meldet das als <<TraverseIn>>,
+# nicht wenn ein Reiter selbst den Fokus setzt), sagt es, was es ist und wie
+# es steht; Änderungen per Tastatur werden ebenfalls angesagt.
+ROLES = {
+    "TButton": N_("Knopf"), "TCheckbutton": N_("Schalter"), "TRadiobutton": N_("Optionsfeld"),
+    "TCombobox": N_("Auswahl"), "TSpinbox": N_("Zahlenfeld"), "TEntry": N_("Eingabefeld"),
+    "TScale": N_("Regler"), "Text": N_("Textfeld"), "Treeview": N_("Tabelle"), "TNotebook": N_("Reiter"),
+}
+_names = {}  # str(Widget) -> fester Name (name())
+_values = {}  # str(Widget) -> Funktion, die den angezeigten Wert liefert (z. B. S/N statt Zahl)
+
+
+def name(widget, text: str, value=None) -> None:
+    """Festen Namen für die Ansage vergeben, wo die Beschriftung daneben nicht
+    reicht; `value`: Funktion für den angesagten Wert (sonst der Inhalt)."""
+    _names[str(widget)] = text
+    if value is not None:
+        _values[str(widget)] = value
+
+
+def _install_focus(root) -> None:
+    for cls in ROLES:
+        root.bind_class(cls, "<<TraverseIn>>", lambda e: _say_focus(e.widget), add="+")
+    root.bind_class("TCheckbutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
+    root.bind_class("TRadiobutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
+    root.bind_class("TCombobox", "<<ComboboxSelected>>", lambda e: _say_value(e.widget), add="+")
+    for sequence in ("<<Increment>>", "<<Decrement>>"):
+        root.bind_class("TSpinbox", sequence, lambda e: e.widget.after_idle(_say_value, e.widget), add="+")
+    for key in ("Left", "Right", "Up", "Down", "Home", "End"):
+        root.bind_class("TScale", f"<KeyRelease-{key}>", lambda e: _say_value(e.widget), add="+")
+
+
+def _later_state(widget) -> None:
+    # ttk schaltet erst kurz nach dem Loslassen der Leertaste um.
+    widget.after(150, _say_value, widget)
+
+
+def _say_focus(widget) -> None:
+    if active():
+        try:
+            _instance.say(describe(widget))
+        except tk.TclError:
+            pass
+
+
+def _say_value(widget) -> None:
+    try:
+        if active() and widget.focus_get() is widget:
+            _instance.say(_value(widget) + ".")
+    except tk.TclError:
+        pass
+
+
+def describe(widget) -> str:
+    """„Beschriftung, Rolle, Wert“, z. B. „Hoher Kontrast, Schalter, aus.“"""
+    cls = widget.winfo_class()
+    parts = [_label(widget), tr(ROLES.get(cls, ""))]
+    value = _value(widget)
+    if value:
+        parts.append(value)
+    try:
+        if widget.instate(["disabled"]):
+            parts.append(tr("nicht verfügbar"))
+    except (AttributeError, tk.TclError):
+        pass
+    return ", ".join(part for part in parts if part) + "."
+
+
+def _value(widget) -> str:
+    key = str(widget)
+    if key in _values:
+        return str(_values[key]())
+    cls = widget.winfo_class()
+    if cls in ("TCheckbutton", "TRadiobutton"):
+        selected = widget.instate(["selected"])
+        if cls == "TCheckbutton":
+            return tr("an") if selected else tr("aus")
+        return tr("ausgewählt") if selected else tr("nicht ausgewählt")
+    if cls == "TNotebook":
+        return widget.tab("current", "text")
+    if cls == "TScale":
+        return number(float(widget.get()), 0)
+    if cls in ("TEntry", "TCombobox", "TSpinbox"):
+        text = widget.get().strip()
+        if not text:
+            return tr("leer")
+        # Zeichensätze und Rufzeichen buchstabieren, Zahlen und Wörter nicht.
+        if cls == "TEntry" and len(text) <= 12 and text.isalnum() and text.upper() == text and not text.isdigit():
+            return spell(text)
+        return text
+    if cls == "Treeview":
+        return tr("Pfeiltasten wählen eine Zeile")
+    return ""
+
+
+def _text_of(widget) -> str:
+    """Beschriftung eines Labels oder Schalters (ohne Doppelpunkt), sonst leer."""
+    if widget.winfo_class() not in ("TLabel", "TCheckbutton", "TRadiobutton", "TButton"):
+        return ""
+    try:
+        return str(widget.cget("text")).strip().rstrip(":").strip()
+    except tk.TclError:
+        return ""
+
+
+def _nearby(widget, depth: int = 0) -> str:
+    """Beschriftung links davor: im Raster aus derselben Zeile, sonst das
+    letzte Label (oder der Schalter) davor. Steht im eigenen Rahmen nichts
+    davor, die Beschriftung des Rahmens (Zeile „Aktivität: [4] …“)."""
+    parent = widget.master
+    if parent is None:
+        return ""
+    siblings = parent.winfo_children()
+    if widget.winfo_manager() == "grid":
+        info = widget.grid_info()
+        row, column = int(info["row"]), int(info["column"])
+        left = []
+        for sibling in siblings:
+            if sibling is widget or sibling.winfo_manager() != "grid":
+                continue
+            other = sibling.grid_info()
+            if int(other["row"]) == row and int(other["column"]) < column:
+                left.append((int(other["column"]), sibling))
+        for _, sibling in sorted(left, key=lambda item: item[0], reverse=True):
+            text = _text_of(sibling)
+            if text:
+                return text
+    else:
+        before = siblings[:siblings.index(widget)] if widget in siblings else []
+        for sibling in reversed(before):
+            # Erklär- und Statuszeilen sind keine Beschriftung.
+            if (sibling.winfo_class() in ("TLabel", "TCheckbutton")
+                    and str(sibling.cget("style")) not in ("Hint.TLabel", "Status.TLabel")):
+                text = _text_of(sibling)
+                if text:
+                    return text
+    if depth < 2 and parent.winfo_class() == "TFrame":
+        return _nearby(parent, depth + 1)
+    return ""
+
+
+def _label(widget) -> str:
+    """Name aus name(), dem eigenen Text, der Beschriftung davor oder dem
+    Titel der umgebenden Gruppe."""
+    key = str(widget)
+    if key in _names:
+        return _names[key]
+    if widget.winfo_class() in ("TButton", "TCheckbutton", "TRadiobutton"):
+        own = str(widget.cget("text")).strip()
+        if own:
+            return own.rstrip(" …").strip("▸▾▶ ")
+    text = _nearby(widget)
+    if text:
+        return text
+    parent = widget.master
+    while parent is not None:
+        if parent.winfo_class() == "TLabelframe":
+            return str(parent.cget("text")).strip()
+        parent = parent.master
+    return ""
 
 
 def _read_row(event) -> None:

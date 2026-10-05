@@ -316,6 +316,7 @@ class SequenceModeFrame(DailyModeMixin):
                                font=theme.MONO_LARGE, justify="center")
         self.entry.pack()
         self.entry.bind("<Return>", self.on_submit)
+        announcer.name(self.entry, tr("Antwort"))
         # Ein Leerzeichen gehört nie zur Antwort, die Leertaste wiederholt.
         self.entry.bind("<space>", lambda e: (self.repeat_sequence(), "break")[1])
         theme.hint(self.entry_frame, text=tr("Enter bestätigt")).pack(pady=(2, 0))

@@ -32,7 +32,9 @@
   F11 ein Fehlerton. Auch im QSO (nächster
   Schritt, Abfragefelder, Ergebnis mit richtigen Werten), im Contest
   (Logfehler gleich nach dem TU, im Tonstrom), im Reiter Statistik (F11
-  liest eine Übersicht vor) und in Tabellen (gewählte Zeile).
+  liest eine Übersicht vor) und in Tabellen (gewählte Zeile). Mit Tab
+  angesprungene Bedienelemente sagen Name, Art und Stand an, Änderungen
+  per Tastatur ebenfalls (kleiner eingebauter Screenreader).
 - **Hoher Kontrast** (Barrierefreiheit): Farbschema Schwarz, Weiß, Gelb
   mit kräftigen Rahmen, unter „Weitere Optionen“, ab dem nächsten Start.
   Alle Schriften mindestens 7:1 zum Grund, auch Diagramme und die Farben

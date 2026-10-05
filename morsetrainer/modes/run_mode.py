@@ -285,6 +285,7 @@ class RunModeFrame:
                                             to=CALLER_FREQ_SPREAD_RANGE[1], increment=50,
                                             textvariable=self.freq_spread_var, width=4)
         self.freq_spread_spin.pack(side="left", padx=(4, 4))
+        announcer.name(self.freq_spread_spin, tr("Tonhöhe ±"), value=lambda: f"{self.freq_spread_spin.get()} Hz")
         ttk.Label(spread_row, text="Hz").pack(side="left")
         theme.hint(box, text=tr("Wenig Tonhöhen-Streuung = dichtes Pile-up nahe deiner Frequenz. "
                                 "F10 startet und beendet den Contest."), wrap=520).grid(

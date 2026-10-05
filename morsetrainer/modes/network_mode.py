@@ -58,7 +58,7 @@ from morsetrainer.net.scoreboard import (
     solution_text,
 )
 from morsetrainer.net.server import TrainerServer
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
@@ -431,6 +431,7 @@ class NetworkModeFrame:
             "aber nicht gewertet. Betriebszeichen: + für AR, ( für KN, * für SK, # für BK – "
             "so tippen es auch die Teilnehmer.")).pack(anchor="w", pady=(4, 2))
         self.custom_text = tk.Text(self.custom_frame, height=5, width=50, font=theme.MONO, wrap="none")
+        announcer.name(self.custom_text, tr("Eigener Text"))
         self.custom_text.pack(fill="x")
         self.content_var.trace_add("write", lambda *_: self._on_content_change())
         self._on_content_change()
@@ -617,6 +618,7 @@ class NetworkModeFrame:
                                font=theme.MONO_LARGE, justify="center")
         self.entry.pack()
         self.entry.bind("<Return>", self.on_submit)
+        announcer.name(self.entry, tr("Antwort"))
         theme.hint(entry_frame, text=tr("Nach dem letzten Zeichen automatisch fertig, sonst Enter")).pack(pady=(2, 0))
 
         self.feedback_var = tk.StringVar(value="")

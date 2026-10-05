@@ -427,3 +427,78 @@ class VoiceLanguageTest(AppTestCase):
             self.assertEqual(self.app._active_mode().status_var.get(), reason)
             self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
             self.assertEqual(tone.call_count, 2)
+
+
+class FocusAnnounceTest(AnnouncerTest):
+    """Fokus-Ansage: mit Tab ins Element gesprungen sagt es, was es ist und
+    wie es steht."""
+
+    def test_settings_window_elements_are_described(self):
+        from morsetrainer.widgets import announcer
+        describe = announcer.describe
+        self.assertEqual(describe(self.app.language_box), "Sprache / Language, Auswahl, Deutsch.")
+        self.assertEqual(describe(self.app.zoom_box), "Schriftgröße, Auswahl, 100 %.")
+
+    def test_roles_values_and_labels(self):
+        from morsetrainer.widgets import announcer
+        describe = announcer.describe
+        frame = ttk.Frame(self.root)
+        check_var = tk.BooleanVar(value=True)
+        check = ttk.Checkbutton(frame, text="Hoher Kontrast", variable=check_var)
+        ttk.Label(frame, text="Rufzeichen:").pack()
+        entry = ttk.Entry(frame)
+        entry.insert(0, "DL4YM")
+        button = ttk.Button(frame, text="Sichern …", state="disabled")
+        self.assertEqual(describe(check), "Hoher Kontrast, Schalter, an.")
+        check_var.set(False)
+        self.assertEqual(describe(check), "Hoher Kontrast, Schalter, aus.")
+        self.assertEqual(describe(entry), f"Rufzeichen, Eingabefeld, {announcer.spell('DL4YM')}.")
+        self.assertEqual(describe(button), "Sichern, Knopf, nicht verfügbar.")
+        # Zeile im Raster: Beschriftung aus derselben Zeile, nicht aus der davor.
+        grid = ttk.LabelFrame(self.root, text="Gruppe")
+        ttk.Label(grid, text="Erste:").grid(row=0, column=0)
+        ttk.Label(grid, text="30 %").grid(row=0, column=2)
+        ttk.Label(grid, text="Zweite:").grid(row=1, column=0)
+        spin = ttk.Spinbox(grid, from_=0, to=9)
+        spin.set(4)
+        spin.grid(row=1, column=1)
+        self.assertEqual(describe(spin), "Zweite, Zahlenfeld, 4.")
+        # Feld ohne Beschriftung: Titel der Gruppe; fester Name mit Wert geht vor.
+        lonely = ttk.Entry(grid)
+        lonely.grid(row=5, column=0)
+        self.assertEqual(describe(lonely), "Gruppe, Eingabefeld, leer.")
+        announcer.name(lonely, "Antwort", value=lambda: "bereit")
+        self.assertEqual(describe(lonely), "Antwort, Eingabefeld, bereit.")
+
+    def test_header_and_band_window(self):
+        from morsetrainer.widgets import announcer
+        texts = []
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                if child.winfo_class() in announcer.ROLES:
+                    texts.append(announcer.describe(child))
+                walk(child)
+        walk(self.app.root)
+        self.assertIn("Tempo, Zahlenfeld, 20 WPM.", texts)
+        self.assertIn("Tonhöhe, Zahlenfeld, 600 Hz.", texts)
+        self.assertFalse([t for t in texts if "PY_VAR" in t], texts)
+        self.app.band_settings.open_window()
+        try:
+            texts.clear()
+            walk(self.app.band_settings.window)
+            self.assertTrue(any(t.startswith("Rauschen, Regler, S/N") for t in texts), texts)
+            self.assertIn("Lautstärke der Störgeräusche, Regler, 100 %.", texts)
+        finally:
+            self.app.band_settings.close_window()
+
+    def test_traverse_in_announces_but_program_focus_does_not(self):
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.2)
+        self.said.clear()
+        box = self.app.zoom_box
+        box.focus_set()  # vom Programm gesetzt: still
+        self.pump_until(lambda: False, timeout=0.2)
+        self.assertEqual(self.said, [])
+        box.event_generate("<<TraverseIn>>")  # mit Tab hineingesprungen
+        self.assertTrue(self.pump_until(lambda: "Schriftgröße, Auswahl, 100 %." in self.said))

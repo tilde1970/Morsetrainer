@@ -224,11 +224,16 @@ class MorseTrainerApp:
         self._build_koch_row(top)
         self.freq_var = tk.IntVar(value=600)
         ttk.Label(top, text="Hz").pack(side="right", padx=(4, 0))
-        ttk.Spinbox(top, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5).pack(side="right")
+        freq_spin = ttk.Spinbox(top, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5)
+        freq_spin.pack(side="right")
+        announcer.name(freq_spin, tr("Tonhöhe"), value=lambda: f"{freq_spin.get()} Hz")
         # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
         self.wpm_var = tk.IntVar(value=koch.RECOMMENDED_WPM)
         ttk.Label(top, text="WPM").pack(side="right", padx=(4, 16))
-        ttk.Spinbox(top, from_=5, to=40, textvariable=self.wpm_var, width=4).pack(side="right")
+        wpm_spin = ttk.Spinbox(top, from_=5, to=40, textvariable=self.wpm_var, width=4)
+        wpm_spin.pack(side="right")
+        announcer.name(wpm_spin, tr("Tempo"), value=lambda: f"{wpm_spin.get()} WPM")
+        freq_spin.lift()  # Tab wie auf dem Bildschirm: erst Tempo, dann Tonhöhe
 
         ttk.Label(header, text=tr("Zeichen")).grid(row=1, column=0, sticky="w", pady=(6, 0), padx=(0, 8))
         ttk.Entry(header, textvariable=self.charset_var, font=theme.MONO).grid(
