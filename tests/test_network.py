@@ -612,6 +612,11 @@ class HeartbeatTest(unittest.TestCase):
                 self.assertTrue(wait_for(lambda: events.extend(client.poll()) or ("closed",) in events))
                 self.assertEqual(events[0][0], "welcome")
 
+def network_mode_paced():
+    from morsetrainer.modes import network_mode
+    return network_mode.PACED
+
+
 class NetworkTabTest(unittest.TestCase):
     """Trainer und Teilnehmer als zwei Reiter in einem Fenster."""
 
@@ -649,6 +654,8 @@ class NetworkTabTest(unittest.TestCase):
         self.trainee = make("trainee")
 
     def tearDown(self):
+        from morsetrainer.widgets import announcer
+        announcer._instance = None
         if hasattr(self, "root"):
             self.trainee.on_close()
             self.trainer.on_close()
@@ -817,6 +824,49 @@ class NetworkTabTest(unittest.TestCase):
         self.trainee.restore_settings({"quieter": True, "quieter_pct": 5})  # außerhalb: Standard bleibt
         self.assertTrue(self.trainee.quieter_var.get())
         self.assertEqual(self.trainee.quieter_pct_var.get(), 30)
+
+    def announce(self):
+        """Ansage an, mit vorgetäuschter Stimme; gibt die Liste des Gesagten."""
+        import numpy as np
+        from morsetrainer.core import audio, speech
+        from morsetrainer.widgets import announcer
+        said = []
+        for patch in (mock.patch.object(speech.speaker, "available", lambda: None),
+                      mock.patch.object(speech.speaker, "voice", object()),
+                      mock.patch.object(speech.speaker, "synth",
+                                        lambda text: (said.append(text), np.zeros(4800, dtype=np.float32))[1]),
+                      mock.patch.object(announcer.audio, "play_quietly", lambda samples: None)):
+            patch.start()
+            self.addCleanup(patch.stop)
+        announcer.install(self.root).var.set(True)
+        return said
+
+    def test_trainee_hears_connection_result_and_end(self):
+        said = self.announce()
+        self.connect()
+        self.assertTrue(wait_for(lambda: any(s.startswith("Verbunden mit") for s in said), pump=self.pump))
+        self.start_custom("KM\nUR\n")
+        self.trainee.input_var.set("KN")
+        self.trainee.on_submit()
+        self.assertTrue(wait_for(lambda: any(s.startswith("Falsch. Richtig wäre: Ka, Emm") for s in said),
+                                 pump=self.pump))
+        self.assertEqual(self.trainee.status_var, self.trainee.trainee_status_var)  # F11 findet die Statuszeile
+        self.assertEqual(self.trainer.status_var, self.trainer.trainer_status_var)
+        self.trainer.stop_run()
+        self.assertTrue(wait_for(lambda: any(s.startswith("Durchgang beendet") for s in said), pump=self.pump))
+
+    def test_paced_answers_stay_silent(self):
+        said = self.announce()
+        self.connect()
+        said.clear()
+        self.trainer.flow_var.set(network_mode_paced())
+        self.trainer._show_flow_options()
+        self.start_custom("KM\nUR\n")
+        self.trainee.input_var.set("KM")
+        self.trainee.on_submit()
+        self.pump()
+        self.assertFalse([s for s in said if s.startswith(("Richtig", "Falsch"))], said)
+        self.trainer.stop_run()
 
     def test_replay_for_all_is_not_fluent(self):
         self.connect()

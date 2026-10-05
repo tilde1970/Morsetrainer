@@ -42,7 +42,7 @@ import numpy as np
 
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
-    code_units, display_text, silence, word_gap_extra_seconds,
+    code_units, display_text, duration_seconds, silence, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
@@ -1635,11 +1635,17 @@ class NetworkModeFrame:
             widget.config(state="normal")
         self.address_box.config(state="normal")
         self.trainee_status_var.set(status or tr("Getrennt."))
+        announcer.say(self.trainee_status_var.get())
         was_connected, self.connected = self.connected, False
         self._lock_role()
         if was_connected and self.running:
             self.running = False
             self.on_stop_cb()
+
+    @property
+    def status_var(self):
+        """Statuszeile der gewählten Rolle (F11 liest sie vor)."""
+        return self.trainer_status_var if self.role_var.get() == TRAINER else self.trainee_status_var
 
     def _on_client_event(self, event):
         kind = event[0]
@@ -1649,6 +1655,7 @@ class NetworkModeFrame:
             self.on_start_cb()  # sperrt die Reiter; Übungszeit erst ab dem Durchgang
             self.trainee_status_var.set(tr("Verbunden mit „{session}“. Warte auf den Trainer…").format(
                 session=event[1]))
+            announcer.say(self.trainee_status_var.get())
             self._check_version(event[2])
         elif kind == "reject":
             self.disconnect(tr(REJECTED.get(event[1], REJECTED["name"])))
@@ -1721,7 +1728,10 @@ class NetworkModeFrame:
                     and not self.last_result.fluent):
                 self.trainee_status_var.set(tr("Hör dir die Lösung noch einmal an…"))
                 if not self.current["silent"]:  # sonst spielt sie der Lautsprecher
-                    self._play_current(solution=True)
+                    # Erst nach einer laufenden Ansage („Falsch …“), sonst bräche sie ab.
+                    item = self.current
+                    self._after(int(announcer.remaining() * 1000),
+                                lambda: self.current is item and self._play_current(solution=True))
         elif kind == "end":
             self._end_client_run()
             if message.get("signs") is True:
@@ -1732,6 +1742,13 @@ class NetworkModeFrame:
             self._show_paced_results()
             self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
                 correct=self.run_correct, total=self.run_total) if self.run_total else tr("Durchgang beendet."))
+            # Nach dem Schlusszeichen, das sonst abbräche.
+            text = self.trainee_status_var.get()
+            wait = 0
+            wpm = message.get("wpm")
+            if message.get("signs") is True and isinstance(wpm, int) and 5 <= wpm <= 60:
+                wait = int((duration_seconds(END_TEXT, wpm) + AUDIO_LATENCY) * 1000) + 200
+            self._after(wait, lambda: announcer.say(text))
 
     def _start_client_run(self, charset, wpm, fw, kind=None, band_on=False):
         """`kind`: Inhaltsart des Trainers; Klartext zählt nicht für die
@@ -1889,6 +1906,9 @@ class NetworkModeFrame:
         sent = sum(len(normalize(item["text"])) for item, _, _ in self.paced_results)
         hits = sum(result.correct_chars for _, result, _ in self.paced_results)
         if sent:
+            announcer.say(tr("{correct} von {total} Gruppen richtig, {percent} Prozent der Zeichen.").format(
+                correct=sum(r.correct for _, r, _ in self.paced_results), total=len(self.paced_results),
+                percent=round(hits / sent * 100)))
             self.feedback_var.set(tr("{correct} von {total} Gruppen richtig, {share:.0%} der Zeichen").format(
                 correct=sum(r.correct for _, r, _ in self.paced_results), total=len(self.paced_results),
                 share=hits / sent))
@@ -2094,7 +2114,7 @@ class NetworkModeFrame:
             self.feedback_label.config(foreground=theme.TEXT)
             self.diff_var.set("")
             self.trainee_status_var.set(tr("Warte auf die nächste Sequenz…"))
-            return
+            return  # keine Ansage: im Takt kommt gleich die nächste Sequenz
         sent = display_text(self.current["text"])
         if result.correct:
             note = ""
@@ -2119,6 +2139,9 @@ class NetworkModeFrame:
         self.history = self.history[-HISTORY_LEN:]
         self.history_var.set("   ".join(self.history))
         self.trainee_status_var.set(tr("Warte auf den Trainer…"))
+        # Ansage; kurz, denn die nächste Sequenz des Trainers hat Vorrang.
+        announcer.say(tr("Richtig.") if result.correct else tr("Falsch. Richtig wäre: {value}.").format(
+            value=announcer.spell(result.sent)))
 
     def _show_paper_sheet(self):
         """Nach dem Durchgang: je mitgeschriebener Nummer ein Feld."""
@@ -2130,6 +2153,7 @@ class NetworkModeFrame:
         self.paper_card.pack(fill="x", padx=10, pady=5)
         self.trainee_status_var.set(tr("Durchgang beendet. Tippe jetzt deine Mitschrift ab und dann „Auswerten“."))
         self.trainee_sheet.focus(0)
+        announcer.say(self.trainee_status_var.get())
 
     def submit_paper(self):
         """Abgetippte Mitschrift werten, dem Trainer schicken und in die
@@ -2162,6 +2186,7 @@ class NetworkModeFrame:
         self.feedback_var.set("")
         self.trainee_status_var.set(tr("Durchgang beendet: {correct} von {total} Sequenzen richtig.").format(
             correct=self.run_correct, total=self.run_total))
+        announcer.say(self.trainee_status_var.get())
 
     def _show_paced_results(self):
         """Nach einem Durchgang im festen Takt: alle Sequenzen mit Lösung,

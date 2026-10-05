@@ -43,6 +43,8 @@ class AppTestCase(unittest.TestCase):
         return self.app.modes[self.app.mode_titles.index(title)]
 
     def tearDown(self):
+        from morsetrainer.widgets import announcer
+        announcer._instance = None  # nicht über ein zerstörtes Fenster weitersprechen
         if hasattr(self, "root"):
             for mode in self.app.modes:
                 mode.running = False

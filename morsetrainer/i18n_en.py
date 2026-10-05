@@ -26,6 +26,8 @@ EN.update({
     # Sprachansage (widgets/announcer.py), gesprochen mit der Stimme der Oberflächensprache
     "Knopf": "button",
     "Antwort": "Answer",
+    "{correct} von {total} Gruppen richtig, {percent} Prozent der Zeichen.":
+        "{correct} of {total} groups right, {percent} percent of the characters.",
     "Tonhöhe ±": "Pitch ±",
     "Tonhöhe": "Pitch",
     "Tempo": "Speed",

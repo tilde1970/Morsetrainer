@@ -45,10 +45,18 @@ class Announcer:
         self.root = root
         self.var = tk.BooleanVar(value=False)
         self.token = 0
+        self.speaking_until = 0.0  # time.time(), zu der die laufende Ansage endet
         self._cache = {}
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
                            and self.speaker().voice is None and self.speaker().preload())
+
+    def _after(self, ms: int, callback, *args) -> None:
+        """root.after; ist das Fenster schon zu (Programmende), still nichts."""
+        try:
+            self.root.after(ms, callback, *args)
+        except tk.TclError:
+            pass
 
     def enabled(self) -> bool:
         return self.var.get()
@@ -96,15 +104,16 @@ class Announcer:
             if index >= len(chunks):
                 if then is not None:
                     wait = max(state["free_at"] - time.time(), 0.0)
-                    self.root.after(int(wait * 1000) + AFTER_SPEECH_MS, then)
+                    self._after(int(wait * 1000) + AFTER_SPEECH_MS, then)
                 return
             if index in results and time.time() >= state["free_at"]:
                 samples = results[index]
                 if samples is not None and len(samples):
                     audio.play_quietly(samples)
                     state["free_at"] = time.time() + len(samples) / SAMPLE_RATE + (AUDIO_LATENCY if index == 0 else 0)
+                    self.speaking_until = state["free_at"]
                 state["next"] += 1
-            self.root.after(POLL_MS, poll)
+            self._after(POLL_MS, poll)
 
         poll()
 
@@ -120,7 +129,7 @@ class Announcer:
 
         def poll():
             if thread.is_alive():
-                self.root.after(POLL_MS, poll)
+                self._after(POLL_MS, poll)
             elif result.get("samples") is not None and len(result["samples"]):
                 deliver(result["samples"])
 
@@ -368,6 +377,14 @@ def render(text: str, deliver) -> None:
     ist (für Reiter mit eigenem Tonstrom)."""
     if _instance is not None:
         _instance.render(text, deliver)
+
+
+def remaining() -> float:
+    """Sekunden, bis die laufende Ansage zu Ende ist (0, wenn keine läuft);
+    etwa um Nachgespieltes danach zu beginnen."""
+    if _instance is None:
+        return 0.0
+    return max(_instance.speaking_until - time.time(), 0.0)
 
 
 def spell(text: str) -> str:

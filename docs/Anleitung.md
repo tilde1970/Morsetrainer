@@ -488,6 +488,13 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   dem Pile-up („Busted. Richtig: Delta, Lima, Eins …“, „Austausch falsch“,
   „Nicht im Log“); richtig geloggte QSOs bleiben still, damit die Rate
   nicht leidet. Am Ende das Ergebnis.
+- **Netzwerk (als Teilnehmer):** Verbinden, Trennen und Ablehnung; nach
+  jeder Antwort „Richtig“ oder „Falsch. Richtig wäre: Ka, Emm, U“ (im
+  festen Takt nicht, dort kommt gleich die nächste Sequenz); am Ende das
+  Ergebnis, nach dem Schlusszeichen; beim Papier die Aufforderung zum
+  Abtippen und danach das Ergebnis. Neue Sequenzen des Trainers haben
+  Vorrang und unterbrechen eine Ansage; die Lösung wird erst nach der
+  Ansage nachgespielt.
 - **Bedienelemente:** Springst du mit Tab in ein Feld, einen Knopf oder
   Schalter, sagt es, was es ist und wie es steht („Sprache / Language,
   Auswahl, Deutsch“, „Hoher Kontrast, Schalter, aus“, „Tempo, Zahlenfeld,
@@ -510,8 +517,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - Die Ansage spricht die Sprache der Oberfläche: deutsch mit der Stimme
   Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann „Delta Lima
   One“). Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton, und der
-  Grund steht in der Statuszeile. Netzwerk, Sprechen, das
-  Einstellungsfenster und die Abendbilanz sagt sie noch nicht an; der
+  Grund steht in der Statuszeile. Sprechen, die Abendbilanz und
+  die Diplom-Fenster sagt sie noch nicht an; der
   Reiter Sprechen bleibt deutsch.
 
 ## Tastenkürzel
