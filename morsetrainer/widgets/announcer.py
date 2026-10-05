@@ -4,7 +4,7 @@ Bildschirm steht – Ergebnis jeder Antwort, Ende eines Durchgangs,
 Reiterwechsel, Karten der Tagesübung. Das geht ohne Screenreader, den Tk
 nicht bedient.
 
-Ein- und ausgeschaltet mit F9 (oder unter „Weitere Optionen“); F11 liest
+Ein- und ausgeschaltet mit F9 (oder unter „Einstellungen“); F11 liest
 vor, wo man gerade ist.
 
 Morsezeichen und Ansage teilen sich die Tonausgabe (ein neuer Ton bricht

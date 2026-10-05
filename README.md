@@ -72,7 +72,7 @@ der Zeile in `SHA256SUMS.txt` vergleichen.
    **Gruppen** mitschreiben, während der Ton läuft.
 3. Oder einfach **▶ Tagesübung (10 Min)** drücken (F12) – sie schaltet die
    Reiter selbst um.
-4. Unter „▸ Weitere Optionen“ Rufzeichen und Name eintragen; sie stehen
+4. Unter „Einstellungen …“ (oben rechts) Rufzeichen und Name eintragen; sie stehen
    auf den Diplomen.
 
 Alles Weitere steht in der [Anleitung](docs/Anleitung.md), im Programm

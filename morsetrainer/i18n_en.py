@@ -17,6 +17,10 @@ EN.update({
         "Vary pitch and speed slightly (so you don't get used to one sound)",
     "wirkt nach Neustart des Programms": "takes effect after restarting the program",
     "Daten": "Data",
+    "Einstellungen …": "Settings …",
+    "Station": "Station",
+    "Sprache / Language": "Sprache / Language",  # zweisprachig, damit man zurückfindet
+    "Barrierefreiheit": "Accessibility",
     "Schriftgröße": "Font size",
     "Rückmeldung ansagen (F9)": "Announce feedback (F9)",
     "Hoher Kontrast (Schwarz, Weiß, Gelb)": "High contrast (black, white, yellow)",
@@ -30,9 +34,9 @@ EN.update({
     "Daten sichern": "Back up data",
     "Morsetrainer-Sicherung-{date}.zip": "Morsetrainer-backup-{date}.zip",
     "Die Sicherung konnte nicht geschrieben werden:\n{error}": "The backup could not be written:\n{error}",
-    "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Weitere Optionen → Daten → "
+    "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "
     "Einlesen …“ wieder einlesen.":
-        "{count} files backed up to\n{path}\n\nOn the new computer, restore them under “More options → Data → "
+        "{count} files backed up to\n{path}\n\nOn the new computer, restore them under “Settings → Data → "
         "Restore …”.",
     "Daten einlesen": "Restore data",
     "Bitte zuerst die laufende Übung beenden.": "Please finish the running exercise first.",
@@ -128,13 +132,13 @@ EN.update({
     "Erhalten bleiben die einzelnen Durchgänge, Koch-Lektion, Tagesübung, "
     "Lebenslinie, erreichte Diplome und Einstellungen.\n\n"
     "Das kann nicht rückgängig gemacht werden – vorher am besten unter "
-    "„Weitere Optionen → Daten“ sichern.":
+    "„Einstellungen → Daten“ sichern.":
         "Really reset the overall statistics?\n\n"
         "This deletes the statistics per character, the review box (all characters start "
         "again in box 1) and the confusions so far.\n\n"
         "Kept are the individual runs, Koch lesson, daily practice, lifeline, awards "
         "achieved and settings.\n\n"
-        "This cannot be undone – best back up first under “More options → Data”.",
+        "This cannot be undone – best back up first under “Settings → Data”.",
     "Einzelzeichen": "Characters",  # Reitername, kurz wie die übrigen
     "Gruppen": "Groups",
     "Wörter": "Words",

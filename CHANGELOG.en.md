@@ -37,6 +37,10 @@
   the network windows. A mouse click still does not put the focus on
   buttons, so the space bar stays “repeat”. Typing in the notes field no
   longer counts as an answer.
+- **“Settings” window** (button top right, Ctrl+Comma): callsign and
+  name, language, accessibility and data are now there; “More options”
+  keeps only the practice options, so the area above the tabs is half as
+  tall.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

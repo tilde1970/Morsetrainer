@@ -145,6 +145,8 @@ class MorseTrainerApp:
             root.bind_all(f"<{tab_modifier}-Key-{number}>",
                           lambda e, n=(number - 1) % 10: self.select_tab(n) or "break")
         root.bind_all("<Control-b>", lambda e: self.band_settings.open_window() or "break")
+        for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
+            root.bind_all(f"<{modifier}-comma>", lambda e: self.open_settings() or "break")
         root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _set_icon(self):
@@ -241,6 +243,8 @@ class MorseTrainerApp:
         # hier statt neben dem WPM-Feld, weil die obere Zeile voll ist.
         self.cpm_var = tk.StringVar(value="")
         theme.hint(toggle_row, textvariable=self.cpm_var).pack(side="right")
+        ttk.Button(toggle_row, text=tr("Einstellungen …"), style="Flat.TButton", command=self.open_settings).pack(
+            side="right", padx=(0, 12))
 
         # Hinweis bei zu langsamem Zeichentempo (koch.SLOW_CHAR_WPM), sonst
         # ausgeblendet; unter den aufklappbaren Optionen (Zeile 3).
@@ -282,9 +286,30 @@ class MorseTrainerApp:
             variable=self.vary_var,
         ).pack(anchor="w", pady=2)
 
+        # Einstellungen, die man einmal vornimmt (Station, Sprache,
+        # Barrierefreiheit, Daten): eigenes Fenster (Strg+Komma), damit der
+        # Bereich über den Reitern nur Übungsoptionen enthält. Beim Start
+        # versteckt gebaut und dann nur ein- und ausgeblendet.
+        window = self.settings_window = tk.Toplevel(self.root)
+        window.withdraw()
+        window.title(tr("Einstellungen"))
+        window.transient(self.root)
+        window.configure(background=theme.BG)
+        window.resizable(True, False)
+        window.protocol("WM_DELETE_WINDOW", self.close_settings)
+        window.bind("<Escape>", lambda e: self.close_settings())
+        self.settings_focus_before = None
+        body = ttk.Frame(window, padding=10)
+        body.pack(fill="both", expand=True)
+        station_card = theme.card(body, tr("Station"), padx=0)
+        language_card = theme.card(body, tr("Sprache / Language"), padx=0)
+        access_card = theme.card(body, tr("Barrierefreiheit"), padx=0)
+        data_card = theme.card(body, tr("Daten"), padx=0)
+        ttk.Button(body, text=tr("Schließen"), command=self.close_settings).pack(anchor="e", pady=(8, 0))
+
         # Eigenes Rufzeichen und Name: für die Diplome und als Vorgabe in
         # den Reitern Contest und Netzwerk (siehe _follow_station).
-        station = ttk.Frame(self.more_frame)
+        station = ttk.Frame(station_card)
         station.pack(fill="x", pady=2)
         self.station_call_var = tk.StringVar(value="")
         self.station_name_var = tk.StringVar(value="")
@@ -296,20 +321,19 @@ class MorseTrainerApp:
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
-        language = ttk.Frame(self.more_frame)
+        language = ttk.Frame(language_card)
         language.pack(fill="x", pady=2)
-        ttk.Label(language, text="Sprache / Language").pack(side="left")
         self.language_var = tk.StringVar(value=i18n.LANG)
         self.language_box = ttk.Combobox(language, values=list(i18n.LANGUAGES.values()), state="readonly",
                                          width=10)
         self.language_box.set(i18n.LANGUAGES[i18n.LANG])
-        self.language_box.pack(side="left", padx=(6, 8))
+        self.language_box.pack(side="left", padx=(0, 8))
         self.language_box.bind("<<ComboboxSelected>>", lambda e: self._choose_language())
         self.language_hint_var = tk.StringVar(value="")
         theme.hint(language, textvariable=self.language_hint_var).pack(side="left")
 
         # Schriftgröße (Barrierefreiheit), auch per Strg+Plus/Minus/0.
-        zoom = ttk.Frame(self.more_frame)
+        zoom = ttk.Frame(access_card)
         zoom.pack(fill="x", pady=2)
         ttk.Label(zoom, text=tr("Schriftgröße")).pack(side="left")
         self.font_scale_var = tk.IntVar(value=theme.ZOOM_STEPS[0])
@@ -322,7 +346,7 @@ class MorseTrainerApp:
         self.font_scale_var.trace_add("write", lambda *_: self._apply_font_scale())
 
         # Hoher Kontrast (Barrierefreiheit), ab dem nächsten Start.
-        contrast = ttk.Frame(self.more_frame)
+        contrast = ttk.Frame(access_card)
         contrast.pack(fill="x", pady=2)
         self.contrast_var = tk.BooleanVar(value=self.contrast_at_start)
         ttk.Checkbutton(contrast, text=tr("Hoher Kontrast (Schwarz, Weiß, Gelb)"), variable=self.contrast_var,
@@ -331,7 +355,7 @@ class MorseTrainerApp:
         theme.hint(contrast, textvariable=self.contrast_hint_var).pack(side="left", padx=(8, 0))
 
         # Sprachansage für Blinde und Sehbehinderte (widgets/announcer.py).
-        speak = ttk.Frame(self.more_frame)
+        speak = ttk.Frame(access_card)
         speak.pack(fill="x", pady=2)
         ttk.Checkbutton(speak, text=tr("Rückmeldung ansagen (F9)"), variable=self.announcer.var,
                         command=self._announce_toggled).pack(side="left")
@@ -351,10 +375,9 @@ class MorseTrainerApp:
 
         # Sichern und Einlesen aller Einstellungen und Daten (core/backup.py),
         # etwa für den Umzug auf einen neuen Rechner.
-        data = ttk.Frame(self.more_frame)
+        data = ttk.Frame(data_card)
         data.pack(fill="x", pady=2)
-        ttk.Label(data, text=tr("Daten")).pack(side="left")
-        ttk.Button(data, text=tr("Sichern …"), command=self._export_data).pack(side="left", padx=(6, 4))
+        ttk.Button(data, text=tr("Sichern …"), command=self._export_data).pack(side="left", padx=(0, 4))
         ttk.Button(data, text=tr("Einlesen …"), command=self._import_data).pack(side="left", padx=(0, 8))
         theme.hint(data, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner")).pack(
             side="left")
@@ -370,6 +393,26 @@ class MorseTrainerApp:
         # Einstellbar im Reiter Statistik, angezeigt in der Fußzeile; so
         # lang wie die Tagesübung (core/daily.py).
         self.daily_goal_var = tk.IntVar(value=10)
+
+    def open_settings(self) -> None:
+        """Einstellungsfenster zeigen (Strg+Komma); der Fokus geht hinein."""
+        window = self.settings_window
+        if window.state() == "withdrawn":
+            self.settings_focus_before = self.root.focus_get()
+        window.deiconify()
+        window.lift()
+        window.focus_set()
+        announcer.say("Einstellungen.")
+
+    def close_settings(self) -> None:
+        """Ausblenden und den Fokus zurückgeben, etwa ans Eingabefeld."""
+        self.settings_window.withdraw()
+        focus, self.settings_focus_before = self.settings_focus_before, None
+        try:
+            if focus is not None and focus.winfo_exists():
+                focus.focus_set()
+        except tk.TclError:
+            pass
 
     def _choose_language(self):
         """Gewählte Sprache merken (gespeichert in _save_state); sie gilt ab
@@ -395,7 +438,7 @@ class MorseTrainerApp:
                                  .format(error=exc), parent=self.root)
             return
         messagebox.showinfo(tr("Daten sichern"), tr(
-            "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Weitere Optionen → Daten → "
+            "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "
             "Einlesen …“ wieder einlesen.").format(count=count, path=path), parent=self.root)
 
     def _import_data(self):
@@ -1084,7 +1127,7 @@ class MorseTrainerApp:
                "Erhalten bleiben die einzelnen Durchgänge, Koch-Lektion, Tagesübung, "
                "Lebenslinie, erreichte Diplome und Einstellungen.\n\n"
                "Das kann nicht rückgängig gemacht werden – vorher am besten unter "
-               "„Weitere Optionen → Daten“ sichern."),
+               "„Einstellungen → Daten“ sichern."),
         ):
             stats.reset_all_time()
             self._refresh_all_time()

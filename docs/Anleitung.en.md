@@ -5,8 +5,8 @@ A CW trainer for everyone from beginners to contesters, developed by
 short overview with pictures is in the [README](../README.en.md).
 
 **Language:** the program starts in German. Switch to English under
-„▸ Weitere Optionen“ → „Sprache / Language“; it takes effect after a
-restart.
+„Einstellungen …“ (top right, or Ctrl+Comma) → „Sprache / Language“; it
+takes effect after a restart.
 
 ## Training modes
 
@@ -97,7 +97,7 @@ Like DXCC or WAC on the air: awards for what you can do for good, in the
 levels **Bronze, Silver, Gold** and some in **Platinum**. They are checked
 after every exercise; a new seal shows a window with the date and a
 **Print** button – the award opens as a certificate in the browser (A4
-landscape) with your callsign and name from “▸ More options” (which you
+landscape) with your callsign and name from “Settings …” (which you
 can also change in the window). During the
 daily practice the window comes only after the evening summary, which
 also mentions the new seals from the daily practice.
@@ -214,11 +214,16 @@ Also helpful:
   week strip at the top the days you practised.
 - **Vary pitch and speed slightly** (shared setting): if you only ever hear
   exactly one sound, you will find it harder on the band.
-- **Font size:** under “▸ More options” → “Font size”, or with
+- **Settings …** (top right next to “More options”, or **Ctrl+Comma**)
+  opens a window with everything you set once: callsign and name,
+  language, accessibility (font size, high contrast, announcements) and
+  backing up/restoring data. “▸ More options” keeps the practice options:
+  Farnsworth, weak characters, vary, band conditions.
+- **Font size:** under “Settings …” → “Font size”, or with
   **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0** (normal), the whole
   interface gets larger, up to 200 %; the window grows with it. The
   setting is saved.
-- **Callsign and name:** enter them once under “▸ More options”. They
+- **Callsign and name:** enter them once under “Settings …”. They
   appear on the awards and are the default for “My callsign” in Contest and
   “Name/callsign” in Network (there the callsign if there is no name).
   Both fields follow along until you enter something else there, such as
@@ -455,7 +460,7 @@ versions (CHANGELOG) and this manual.
 
 - **Announcements (F9):** the program uses its built-in voice to say what
   is otherwise only on screen – no screen reader needed. F9 switches
-  announcements on and off (also under “▸ More options” → “Announce
+  announcements on and off (also under “Settings …” → “Announce
   feedback”), and the voice confirms it.
 - **What is announced:** in Groups, Words and Callsigns the result of each
   answer (“Richtig”, “Falsch. Hör noch einmal hin”, after the last attempt
@@ -468,7 +473,7 @@ versions (CHANGELOG) and this manual.
   remaining time, during daily practice the current card – even with
   announcements switched off.
 - **Font size:** Ctrl+Plus/Ctrl+Minus/Ctrl+0, see above.
-- **High contrast:** “▸ More options” → “High contrast (black, white,
+- **High contrast:** “Settings …” → “High contrast (black, white,
   yellow)”, takes effect after a restart. Black background, white text,
   yellow main buttons and highlights, strong borders; all text stands out
   from its background by at least 7:1. Right and wrong are always shown
@@ -482,7 +487,8 @@ versions (CHANGELOG) and this manual.
 - **Everywhere:** Ctrl+Plus/Ctrl+Minus larger/smaller font, Ctrl+0 normal
   (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are;
   Alt+1 … Alt+9 and Alt+0 switch to tab 1 … 10, Ctrl+Tab cycles through
-  the tabs (on the Mac Cmd+digit); Ctrl+B opens the band conditions.
+  the tabs (on the Mac Cmd+digit); Ctrl+B opens the band conditions,
+  Ctrl+Comma the settings.
 - **Without a mouse:** Tab and Shift+Tab go through all fields, buttons and
   check boxes (the focus is highlighted in colour), the space bar presses
   the button or toggles, arrow keys choose in lists, sliders and tabs.
@@ -618,7 +624,7 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
 
 ### Backing up and moving to a new computer
 
-Under “More options → Data”, **Back up …** saves all settings and data
+Under “Settings → Data”, **Back up …** saves all settings and data
 (`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`) to a ZIP
 file in a place of your choice, e.g. a USB stick. **Restore …** brings
 them back on the new computer: `stats/` is replaced completely, the other

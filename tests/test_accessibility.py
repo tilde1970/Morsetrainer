@@ -1,4 +1,5 @@
-"""Barrierefreiheit: Schriftgröße im Programm (Strg+Plus/Minus/0)."""
+"""Barrierefreiheit: Schriftgröße, Sprachansage, hoher Kontrast, Tastatur und Einstellungsfenster."""
+import time
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
@@ -250,3 +251,47 @@ class KeyboardTest(AppTestCase):
 
     def test_tab_leaves_text_fields(self):
         self.assertIn("break", self.root.bind_class("Text", "<Tab>"))
+
+
+class SettingsWindowTest(AppTestCase):
+    """Einmalige Einstellungen im eigenen Fenster, Übungsoptionen bleiben
+    über den Reitern."""
+
+    def test_open_and_close_keeps_values(self):
+        window = self.app.settings_window
+        self.assertEqual(window.state(), "withdrawn")
+        self.root.deiconify()  # ein transient-Fenster zeigt sich nur mit seinem Hauptfenster
+        self.assertIs(self.app.zoom_box.winfo_toplevel(), window)
+        self.assertIs(self.app.language_box.winfo_toplevel(), window)
+        self.app.open_settings()
+        # Der Fenstermanager zeigt es nicht sofort (unter Last etwas später).
+        end = time.monotonic() + 2
+        while window.state() != "normal" and time.monotonic() < end:
+            self.root.update()
+            time.sleep(0.01)
+        self.assertEqual(window.state(), "normal")
+        self.app.station_call_var.set("DL4YM")
+        window.event_generate("<Escape>", when="now")
+        self.assertEqual(window.state(), "withdrawn")
+        self.app.open_settings()
+        self.assertEqual(self.app.station_call_var.get(), "DL4YM")
+        self.assertEqual(self.app._shared_settings()["station_call"], "DL4YM")
+        self.app.close_settings()
+        self.root.withdraw()
+
+    def test_shortcut_and_practice_options_stay_above_tabs(self):
+        self.assertTrue(self.root.bind_all("<Control-comma>"))
+        more = {str(w) for w in self.app.more_frame.winfo_children()}
+        texts = []
+
+        def collect(widget):
+            for child in widget.winfo_children():
+                try:
+                    texts.append(str(child.cget("text")))
+                except tk.TclError:
+                    pass
+                collect(child)
+        collect(self.app.more_frame)
+        self.assertTrue(more)
+        self.assertTrue(any("Farnsworth" in t for t in texts))
+        self.assertFalse(any("Schriftgröße" in t or "Sichern" in t for t in texts))

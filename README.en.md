@@ -7,7 +7,7 @@ contest pile-up under realistic HF conditions – alone at your own computer
 or together at a club evening on the local network.
 
 **Language:** the program starts in German. Switch to English under
-„▸ Weitere Optionen“ → „Sprache / Language“; it takes effect after a
+„Einstellungen …“ (top right) → „Sprache / Language“; it takes effect after a
 restart. The screenshots show the German interface.
 
 ## What it does
@@ -73,7 +73,7 @@ PowerShell and compare with the line in `SHA256SUMS.txt`.
    **Groups** tab while the audio plays.
 3. Or simply press **▶ Daily practice (10 min)** (F12) – it switches the
    tabs by itself.
-4. Enter your callsign and name under “▸ More options”; they appear on the
+4. Enter your callsign and name under “Settings …” (top right); they appear on the
    awards.
 
 Everything else is in the [manual](docs/Anleitung.en.md), also in the

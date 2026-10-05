@@ -94,7 +94,7 @@ Wie DXCC oder WAC im Funkbetrieb: Diplome für das, was du dauerhaft
 kannst, in Stufen **Bronze, Silber, Gold** und teils **Platin**. Geprüft
 wird nach jeder Übung; ein neues Siegel zeigt ein Fenster mit Datum und
 Knopf **Drucken** – das Diplom öffnet sich als Urkunde im Browser (A4
-quer) mit deinem Rufzeichen und Namen aus „▸ Weitere Optionen“ (im
+quer) mit deinem Rufzeichen und Namen aus „Einstellungen …“ (im
 Fenster auch änderbar). In der
 Tagesübung kommt das Fenster erst nach der Abendbilanz, die die neuen
 Siegel aus der Tagesübung auch nennt.
@@ -213,14 +213,20 @@ Außerdem hilfreich:
   Wochenstreifen oben die Tage, an denen du geübt hast.
 - **Tonhöhe und Tempo leicht variieren** (gemeinsame Einstellung): Wer immer
   nur genau einen Klang hört, tut sich auf dem Band schwerer.
-- **Sprache:** Unter „▸ Weitere Optionen“ → „Sprache / Language“ lässt sich
+- **Einstellungen …** (oben rechts neben „Weitere Optionen“, oder
+  **Strg+Komma**) öffnet ein Fenster mit allem, was man einmal einstellt:
+  Rufzeichen und Name, Sprache, Barrierefreiheit (Schriftgröße, hoher
+  Kontrast, Ansage) und Daten sichern/einlesen. Unter „▸ Weitere Optionen“
+  bleiben die Übungsoptionen: Farnsworth, schwache Zeichen, variieren,
+  Bandbedingungen.
+- **Sprache:** Unter „Einstellungen …“ → „Sprache / Language“ lässt sich
   die Oberfläche auf Englisch umstellen (wirkt nach Neustart). Die Stimme im
   Reiter „Sprechen“ bleibt deutsch.
-- **Schriftgröße:** Unter „▸ Weitere Optionen“ → „Schriftgröße“ oder mit
+- **Schriftgröße:** Unter „Einstellungen …“ → „Schriftgröße“ oder mit
   **Strg+Plus**, **Strg+Minus** und **Strg+0** (normal) wird die ganze
   Oberfläche größer, bis 200 %; das Fenster wächst mit. Die Einstellung
   bleibt gespeichert.
-- **Rufzeichen und Name:** Unter „▸ Weitere Optionen“ einmal eintragen.
+- **Rufzeichen und Name:** Unter „Einstellungen …“ einmal eintragen.
   Sie stehen auf den Diplomen und sind die Vorgabe für „Mein
   Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort ohne Name
   das Rufzeichen). Beide Felder ziehen mit, bis du dort etwas anderes
@@ -464,7 +470,7 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 
 - **Ansage (F9):** Das Programm sagt mit der eingebauten Stimme selbst an,
   was sonst nur auf dem Bildschirm steht – ohne Screenreader. F9 schaltet
-  die Ansage an und aus (auch unter „▸ Weitere Optionen“ → „Rückmeldung
+  die Ansage an und aus (auch unter „Einstellungen …“ → „Rückmeldung
   ansagen“), die Stimme bestätigt es.
 - **Was angesagt wird:** in Gruppen, Wörtern und Rufzeichen das Ergebnis
   jeder Antwort („Richtig“, „Falsch. Hör noch einmal hin“, nach dem letzten
@@ -477,7 +483,7 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   Restzeit vor, in der Tagesübung die aktuelle Karte – auch bei
   ausgeschalteter Ansage.
 - **Schriftgröße:** Strg+Plus/Strg+Minus/Strg+0, siehe oben.
-- **Hoher Kontrast:** „▸ Weitere Optionen“ → „Hoher Kontrast (Schwarz,
+- **Hoher Kontrast:** „Einstellungen …“ → „Hoher Kontrast (Schwarz,
   Weiß, Gelb)“, wirkt nach einem Neustart. Schwarzer Grund, weiße Schrift,
   gelbe Hauptknöpfe und Markierungen, kräftige Rahmen; jede Schrift hebt
   sich mindestens 7:1 vom Grund ab. Richtig und falsch stehen immer auch
@@ -492,7 +498,7 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist;
   Alt+1 … Alt+9 und Alt+0 wechseln zu Reiter 1 … 10, Strg+Tab blättert
   durch die Reiter (auf dem Mac Cmd+Ziffer); Strg+B öffnet die
-  Bandbedingungen.
+  Bandbedingungen, Strg+Komma die Einstellungen.
 - **Ohne Maus:** Tab und Umschalt+Tab gehen durch alle Felder, Knöpfe und
   Schalter (der Fokus ist farbig markiert), Leertaste drückt den Knopf
   bzw. schaltet um, Pfeiltasten wählen in Listen, Reglern und Reitern.
@@ -632,7 +638,7 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 
 ### Sichern und auf einen neuen Rechner umziehen
 
-Unter „Weitere Optionen → Daten“ sichert **Sichern …** alle Einstellungen
+Unter „Einstellungen → Daten“ sichert **Sichern …** alle Einstellungen
 und Daten (`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`)
 in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
 **Einlesen …** holt sie auf dem neuen Rechner zurück: `stats/` wird

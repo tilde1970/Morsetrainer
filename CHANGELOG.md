@@ -38,6 +38,10 @@
   auch die Netzwerk-Fenster. Ein Mausklick legt den Fokus weiterhin nicht
   auf Knöpfe, die Leertaste bleibt „Wiederholen“. Tippen ins Notizfeld
   zählt nicht mehr als Antwort.
+- **Fenster „Einstellungen“** (Knopf oben rechts, Strg+Komma): Rufzeichen
+  und Name, Sprache, Barrierefreiheit und Daten stehen jetzt dort; unter
+  „Weitere Optionen“ bleiben nur die Übungsoptionen, der Bereich über den
+  Reitern ist halb so hoch.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 
