@@ -970,13 +970,15 @@ class NetworkTabTest(unittest.TestCase):
             self.assertEqual(sorted(self.trainer.board.items.values()), ["KMR", "SU"])
             self.assertTrue(wait_for(lambda: self.trainee.stream is not None, pump=self.pump))
             self.assertIsNone(self.trainee.current)
-            # Mitschreiben, ohne Enter: jede Taste kurz nach ihrem Ton.
-            entries, start = self.trainee.stream["entries"], self.trainee.stream["player"].start
-            typed = ""
-            for char, end, _ in entries:
-                self.assertTrue(wait_for(lambda: time.time() >= start + end + 0.1, pump=self.pump))
-                typed += "X" if char == "U" else char
-                self.trainee.input_var.set(typed)
+            # Mitschreiben, ohne Enter: jede Taste kurz nach ihrem Ton. Die
+            # Zeiten werden gesetzt statt abgewartet, damit der Test nicht an
+            # der Uhr hängt (Thread-Start unter Last). Der Player schreibt in
+            # FakeStream sofort; danach steht `start` fest.
+            player = self.trainee.stream["player"]
+            self.assertTrue(wait_for(lambda: not player.thread.is_alive(), pump=self.pump))
+            entries = self.trainee.stream["entries"]
+            self.trainee.input_var.set("".join("X" if char == "U" else char for char, _, _ in entries))
+            self.trainee.key_times = [player.start + end + 0.1 for _, end, _ in entries]
             self.assertTrue(wait_for(lambda: not self.trainer.run_active, timeout=5, pump=self.pump))
             self.assertTrue(wait_for(lambda: len(self.trainer.board.answers["DL4YM"]) == 2, pump=self.pump))
         answers = self.trainer.board.answers["DL4YM"]
