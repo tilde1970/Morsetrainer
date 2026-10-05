@@ -14,6 +14,10 @@
   stations arrive in QSO and contest is now a switch and slider of its
   own, independent of fading. Anyone who had QSB on keeps them; the level
   buttons do not change them.
+- **Network: protect your hearing.** Participants can make the
+  interference quieter for themselves (10–90 % of the trainer's setting,
+  never louder), e.g. with tinnitus or a hearing aid. The trainer sees
+  this as ↓ in the table, detail line and CSV.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

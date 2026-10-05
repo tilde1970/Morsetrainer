@@ -354,6 +354,15 @@ right/wrong, errors and weak characters, but without timing: not as
 fluent and not for the speed advice, and in one's own statistics not for
 weighting and spaced repetition. The table shows “Paper” for them.
 
+**Protect your hearing:** anyone with tinnitus or a hearing aid ticks
+“Interference quieter for me” as a participant and chooses 10–90 % of the
+trainer's setting. Only noise and interference get quieter, the signals
+stay the same; it can never be louder than at the trainer. So that
+results stay comparable, the trainer sees a **↓** after the status, in
+the detail line and in the CSV file. When the trainer's loudspeaker
+plays, the trainer's setting applies. Trainers up to version 2.37 do not
+show the mark.
+
 **Print answer sheet** (with the fixed-pace options) opens a sheet in the
 browser for printing: name, date, numbered lines column by column as in
 the solutions – with one box per character for groups and single

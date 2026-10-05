@@ -324,6 +324,14 @@ EN.update({
     "SSB-Gebrabbel": "SSB babble",
     "CW-QRM (Nachbar-Run)": "CW QRM (adjacent run)",
     "2,4 kHz": "2.4 kHz",
+    "Störgeräusche bei mir leiser:": "Interference quieter for me:",
+    "Zum Schonen des Gehörs (Tinnitus, Hörgerät): Rauschen und Störungen nur bei dir leiser, die "
+    "Zeichen bleiben. Der Trainer sieht das als ↓ in der Tabelle, damit die Ergebnisse vergleichbar "
+    "bleiben. Gilt nicht, wenn der Lautsprecher des Trainers spielt.":
+        "To protect your hearing (tinnitus, hearing aid): noise and interference quieter only for you, the "
+        "signals stay the same. The trainer sees this as ↓ in the table so results stay comparable. Does not "
+        "apply when the trainer's loudspeaker plays.",
+    "↓ hört die Störgeräusche leiser": "↓ hears the interference quieter",
     "Stärkeunterschiede (QSO, Contest)": "Strength differences (QSO, contest)",
     "Stärke": "Strength",
     "500 Hz": "500 Hz",

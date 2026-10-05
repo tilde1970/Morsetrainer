@@ -362,6 +362,15 @@ nicht als flüssig und nicht für die Tempo-Empfehlung, und in der eigenen
 Statistik nicht für Gewichtung und Lernkartei. In der Tabelle steht bei
 ihnen „Papier“.
 
+**Gehör schonen:** Wer Tinnitus hat oder ein Hörgerät trägt, hakt als
+Teilnehmer „Störgeräusche bei mir leiser“ an und wählt 10–90 % der
+Einstellung des Trainers. Leiser werden nur Rauschen und Störungen, die
+Zeichen bleiben gleich; lauter als beim Trainer geht nicht. Damit die
+Ergebnisse vergleichbar bleiben, sieht der Trainer ein **↓** hinter dem
+Status, in der Detailzeile und in der CSV-Datei. Spielt der Lautsprecher
+des Trainers, gilt seine Einstellung. Trainer bis Version 2.37 zeigen
+die Markierung nicht.
+
 **Antwortbogen drucken** (bei den Optionen des festen Takts) öffnet einen
 Bogen im Browser zum Ausdrucken: Name, Datum, nummerierte Zeilen
 spaltenweise wie in der Auflösung – bei Gruppen und Einzelzeichen mit

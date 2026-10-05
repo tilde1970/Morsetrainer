@@ -121,6 +121,12 @@ def band_fields(spec) -> dict:
     return {"band": band.preset_rank(spec) or "light", "band_spec": spec}
 
 
+# Hörminderung: Teilnehmer dürfen die Störgeräusche bei sich nur leiser
+# stellen, in Prozent der Einstellung des Trainers.
+QUIETER_RANGE = (10, 90)
+QUIETER_DEFAULT = 50
+
+
 def message_spec(message):
     """Bandbedingungen aus einer Nachricht (band_fields) als Spec, oder None."""
     spec = band.clean_spec(message.get("band_spec"))
@@ -585,6 +591,18 @@ class NetworkModeFrame:
         self.paper_check = ttk.Checkbutton(
             box, text=tr("Im festen Takt auf Papier mitschreiben und am Ende abtippen"), variable=self.paper_var)
         self.paper_check.pack(anchor="w", pady=(4, 0))
+        row = ttk.Frame(box)
+        row.pack(fill="x", pady=(2, 0))
+        self.quieter_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(row, text=tr("Störgeräusche bei mir leiser:"), variable=self.quieter_var).pack(side="left")
+        self.quieter_pct_var = tk.IntVar(value=QUIETER_DEFAULT)
+        ttk.Spinbox(row, from_=QUIETER_RANGE[0], to=QUIETER_RANGE[1], increment=10,
+                    textvariable=self.quieter_pct_var, width=4).pack(side="left", padx=(4, 2))
+        ttk.Label(row, text="%").pack(side="left")
+        theme.hint(box, wrap=540, text=tr(
+            "Zum Schonen des Gehörs (Tinnitus, Hörgerät): Rauschen und Störungen nur bei dir leiser, die "
+            "Zeichen bleiben. Der Trainer sieht das als ↓ in der Tabelle, damit die Ergebnisse vergleichbar "
+            "bleiben. Gilt nicht, wenn der Lautsprecher des Trainers spielt.")).pack(anchor="w", pady=(0, 2))
 
         self.trainee_status_var = tk.StringVar(value=tr("Suche den Trainer oder gib seine Adresse ein."))
         ttk.Label(parent, textvariable=self.trainee_status_var, style="Status.TLabel", wraplength=560,
@@ -826,7 +844,8 @@ class NetworkModeFrame:
             self.board.add_participant(name)
         elif kind == "answer" and self.board is not None:
             message = event[2]
-            self.board.record(name, message.get("n"), message.get("typed"), message.get("latency"))
+            self.board.record(name, message.get("n"), message.get("typed"), message.get("latency"),
+                              quieter=message.get("quieter") is True)
         elif kind == "paper" and self.board is not None and not self.run_active:
             # Nach dem Durchgang abgetippt; währenddessen gehört es nicht hierher.
             self.board.record_paper(name, event[2].get("n"), event[2].get("typed"))
@@ -1172,6 +1191,8 @@ class NetworkModeFrame:
         for name in self.board.names:
             data = self.board.summary(name)
             state = tr("verbunden") if name in online else tr("getrennt")
+            if self.board.heard_quieter(name):
+                state += " ↓"
             last, tag = "", "gone" if name not in online else ""
             if hiding:
                 # Nur ob etwas eingegangen ist; richtig/falsch erst am Ende.
@@ -1250,8 +1271,11 @@ class NetworkModeFrame:
             return
         confusions = format_confusions(self.board.confusions(name=name)) or "–"
         weak = format_weak(self.board.weak_chars(name=name)) or "–"
-        self.detail_var.set(tr("{name}: Fehler {confusions} · schwächste Zeichen {weak}").format(
-            name=name, confusions=confusions, weak=weak))
+        text = tr("{name}: Fehler {confusions} · schwächste Zeichen {weak}").format(
+            name=name, confusions=confusions, weak=weak)
+        if self.board.heard_quieter(name):
+            text += " · " + tr("↓ hört die Störgeräusche leiser")
+        self.detail_var.set(text)
 
     def _show_advice(self):
         """Tempo-Empfehlung aus den letzten Sequenzen im aktuellen Tempo."""
@@ -1759,8 +1783,10 @@ class NetworkModeFrame:
             # Mitten im Durchgang dazugekommen.
             self._start_client_run("", wpm, fw, band_on=message_spec(item) is not None)
         paced = item.get("paced") is True
+        silent = item.get("silent") is True
+        spec, quieter = self._local_spec(message_spec(item), silent)
         self.current = {"n": item["n"], "text": str(item["text"])[:protocol.TEXT_MAX], "wpm": wpm, "fw": fw,
-                        "band": message_spec(item), "paced": paced, "silent": item.get("silent") is True,
+                        "band": spec, "quieter": quieter, "paced": paced, "silent": silent,
                         "paper": paced and self.paper_var.get(), "replayed": False,
                         "received": received or time.time()}
         # Papier: nichts eintippen, keine Antwort; abgetippt wird am Ende.
@@ -1799,12 +1825,13 @@ class NetworkModeFrame:
         self.current = None
         entries, seconds = net_stream.timeline(groups, wpm, fw)
         silent = message.get("silent") is True
-        spec = message_spec(message)
+        spec, quieter = self._local_spec(message_spec(message), silent)
         player = None
         if not silent:
             conditions = band.conditions(spec, self._freq()) if spec else None
             player = net_stream.Player(groups, wpm, self._freq(), fw, conditions)
         self.stream = {"groups": groups, "wpm": wpm, "fw": fw, "entries": entries, "player": player,
+                       "quieter": quieter,
                        "start": (received or time.time()) + AUDIO_LATENCY + net_stream.lead_seconds(spec)}
         self.input_var.set("")
         self.key_times, self.typed_so_far = [], ""
@@ -1852,7 +1879,8 @@ class NetworkModeFrame:
             self.run_correct += result.correct
             if self.client is not None:
                 self.client.send({"type": "answer", "n": item["n"], "typed": result.typed,
-                                  "latency": None if latency is None else round(latency, 3), "replayed": False})
+                                  "latency": None if latency is None else round(latency, 3), "replayed": False}
+                                 | ({"quieter": True} if stream["quieter"] else {}))
         sent = sum(len(normalize(item["text"])) for item, _, _ in self.paced_results)
         hits = sum(result.correct_chars for _, result, _ in self.paced_results)
         if sent:
@@ -1877,7 +1905,7 @@ class NetworkModeFrame:
             return
         if not (isinstance(fw, int) and 1 <= fw < wpm):
             fw = None
-        self._play_signs(text, wpm, fw, message_spec(message))
+        self._play_signs(text, wpm, fw, self._local_spec(message_spec(message))[0])
 
     def _play_signs(self, text, wpm, fw, spec):
         """VVV = oder +, wie in den übrigen Reitern unter den Störungen."""
@@ -1893,6 +1921,19 @@ class NetworkModeFrame:
         except tk.TclError:
             return 600
         return freq if 300 <= freq <= 1000 else 600
+
+    def _local_spec(self, spec, silent=False):
+        """(Spec, wie sie hier klingt; ob die Störgeräusche leiser sind).
+        Rücksicht auf das Gehör: nur leiser als beim Trainer, nie lauter;
+        spielt dessen Lautsprecher, gilt seine Einstellung."""
+        if spec is None or silent or not self.quieter_var.get():
+            return spec, False
+        try:
+            percent = self.quieter_pct_var.get()
+        except tk.TclError:
+            percent = QUIETER_DEFAULT
+        percent = min(max(percent, QUIETER_RANGE[0]), QUIETER_RANGE[1])
+        return {**spec, "gain": spec["gain"] * percent / 100}, True
 
     def _host_spec(self):
         """Bandbedingungen, die der Trainer gerade mitschickt, oder None; mit
@@ -2036,7 +2077,8 @@ class NetworkModeFrame:
         self.last_result = result
         if self.client is not None:
             self.client.send({"type": "answer", "n": self.current["n"], "typed": result.typed,
-                              "latency": round(latency, 3), "replayed": self.replayed})
+                              "latency": round(latency, 3), "replayed": self.replayed}
+                             | ({"quieter": True} if self.current.get("quieter") else {}))
         self._record(result, answer_time)
         self.run_total += 1
         self.run_correct += result.correct
@@ -2221,13 +2263,14 @@ class NetworkModeFrame:
             "speaker": self.speaker_var.get(),
             "signs": self.signs_var.get(),
             "paper": self.paper_var.get(),
+            "quieter": self.quieter_var.get(),
             "name": self.name_var.get(),
             "address": self.address_var.get(),
             "custom_text": self.custom_text.get("1.0", "end").rstrip("\n"),
         }
         for key, var in (("port", self.port_var), ("count", self.count_var), ("answer_s", self.answer_var),
                          ("group_len", self.group_len_var), ("pause_s", self.pause_var),
-                         ("duration", self.duration_var)):
+                         ("duration", self.duration_var), ("quieter_pct", self.quieter_pct_var)):
             try:
                 data[key] = var.get()
             except tk.TclError:
@@ -2246,7 +2289,8 @@ class NetworkModeFrame:
         if "band" in data and toggle_value(data["band"]) is not None:
             self.band_var.set(toggle_value(data["band"]))
         for key, var in (("auto", self.auto_var), ("solution", self.solution_var), ("listen", self.listen_var),
-                         ("speaker", self.speaker_var), ("signs", self.signs_var), ("paper", self.paper_var)):
+                         ("speaker", self.speaker_var), ("signs", self.signs_var), ("paper", self.paper_var),
+                         ("quieter", self.quieter_var)):
             if isinstance(data.get(key), bool):
                 var.set(data[key])
         self._show_speaker_options()
@@ -2259,7 +2303,8 @@ class NetworkModeFrame:
                                       ("answer_s", self.answer_var, ANSWER_RANGE),
                                       ("group_len", self.group_len_var, GROUP_LEN_RANGE),
                                       ("pause_s", self.pause_var, PAUSE_RANGE),
-                                      ("duration", self.duration_var, net_stream.DURATION_RANGE)):
+                                      ("duration", self.duration_var, net_stream.DURATION_RANGE),
+                                      ("quieter_pct", self.quieter_pct_var, QUIETER_RANGE)):
             value = data.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and low <= value <= high:
                 var.set(value)

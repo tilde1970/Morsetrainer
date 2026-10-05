@@ -95,6 +95,7 @@ class Scoreboard:
         self.answers = {}   # Name -> {Nr.: Result}
         self.replayed = set()  # Nummern, die für alle wiederholt wurden
         self.paper = set()  # Namen, deren Antworten vom Papier abgetippt sind
+        self.quieter = {}   # Name -> Nummern, bei denen die Störungen leiser waren
 
     def add_participant(self, name: str) -> None:
         if name not in self.answers:
@@ -117,6 +118,8 @@ class Scoreboard:
             self.expected.pop(n, None)
             for answers in self.answers.values():
                 answers.pop(n, None)
+            for numbers_quieter in self.quieter.values():
+                numbers_quieter.discard(n)
 
     def mark_replayed(self, n: int) -> None:
         """Nr. `n` wurde für alle wiederholt: Wer danach antwortet, hat sie
@@ -124,9 +127,10 @@ class Scoreboard:
         glauben zu müssen."""
         self.replayed.add(n)
 
-    def record(self, name: str, n, typed, latency=None):
+    def record(self, name: str, n, typed, latency=None, quieter=False):
         """Result der Antwort, oder None, wenn es die Nummer nicht gibt,
-        der Teilnehmer beim Senden nicht dabei war oder schon geantwortet hat."""
+        der Teilnehmer beim Senden nicht dabei war oder schon geantwortet hat.
+        `quieter`: Er hat die Störgeräusche bei sich leiser gestellt."""
         if not isinstance(n, int) or n not in self.items or name not in self.expected[n]:
             return None
         if n in self.answers.get(name, {}):
@@ -135,7 +139,13 @@ class Scoreboard:
             latency = None
         result = evaluate(self.items[n], _typed(typed), latency, n in self.replayed)
         self.answers[name][n] = result
+        if quieter is True:
+            self.quieter.setdefault(name, set()).add(n)
         return result
+
+    def heard_quieter(self, name: str) -> bool:
+        """Hat `name` in diesem Durchgang die Störungen leiser gehört?"""
+        return bool(self.quieter.get(name))
 
     def record_paper(self, name: str, n, typed):
         """Eine abgetippte Zeile vom Papier; überschreibt eine frühere
@@ -276,7 +286,7 @@ class Scoreboard:
         Antwort, – = nicht dabei). Der Spaltenkopf nennt das Tempo, ↻ heißt
         „für alle wiederholt“. Richtig, aber nicht flüssig, steht mit „~“
         dabei (zu langsam oder erst nach der Wiederholung); bei Papier gibt
-        es kein „flüssig“ (–). `headers`:
+        es kein „flüssig“ (–). „↓“: Störungen beim Teilnehmer leiser. `headers`:
         Beschriftungen für Name, richtige Zeichen in %, richtige Sequenzen,
         flüssige Sequenzen, Median Zeit bis Enter (s), häufigste Fehler,
         schwächste Zeichen."""
@@ -307,6 +317,8 @@ class Scoreboard:
                     cell = display_text(result.typed) + mark
                     if result.latency is not None:
                         cell += f" ({number(result.latency, 1)} s)"
+                    if n in self.quieter.get(name, ()):
+                        cell += " ↓"
                     cells.append(cell.strip())
                 else:
                     cells.append("")

@@ -777,6 +777,47 @@ class NetworkTabTest(unittest.TestCase):
         self.assertTrue(wait_for(lambda: self.trainee.current is not None, pump=self.pump))
         self.trainee.playing = False
 
+    def test_quieter_interference_is_shown_to_the_trainer(self):
+        self.connect()
+        self.trainee.quieter_var.set(True)
+        self.trainee.quieter_pct_var.set(40)
+        self.trainer.band_var.set(True)
+        self.trainer.band_settings.set_spec({"levels": {"noise": 0.6}, "gain": 1.0})
+        self.start_custom("KM\nUR\n")
+        current = self.trainee.current
+        self.assertTrue(current["quieter"])
+        self.assertAlmostEqual(current["band"]["gain"], 0.4)
+        self.assertEqual(current["band"]["levels"], {"noise": 0.6})  # Zeichen und Störungen wie beim Trainer
+        self.trainee.input_var.set("KM")
+        self.trainee.on_submit()
+        self.assertTrue(wait_for(lambda: "DL4YM" in self.trainer.board.answered(1), pump=self.pump))
+        self.assertTrue(self.trainer.board.heard_quieter("DL4YM"))
+        row = self.trainer.tree.get_children()[0]
+        self.assertEqual(self.trainer.tree.item(row)["values"][1], "verbunden ↓")
+        self.trainer.tree.selection_set(row)
+        self.pump()
+        self.assertEqual(self.trainer._selected_name(), "DL4YM")  # Markierung nicht im Namen
+        self.assertIn("↓ hört die Störgeräusche leiser", self.trainer.detail_var.get())
+        self.assertIn("KM (", self.trainer.board.csv_text(["N"] * 7))
+        self.assertIn("↓", self.trainer.board.csv_text(["N"] * 7).splitlines()[1])
+        # Lauter als beim Trainer geht nicht; ohne Häkchen keine Markierung.
+        self.trainee.quieter_pct_var.set(250)
+        self.assertAlmostEqual(self.trainee._local_spec({"levels": {}, "gain": 1.0})[0]["gain"], 0.9)
+        self.trainee.quieter_var.set(False)
+        self.assertEqual(self.trainee._local_spec({"levels": {}, "gain": 1.0}), ({"levels": {}, "gain": 1.0}, False))
+        self.assertEqual(self.trainee._local_spec({"levels": {}, "gain": 1.0}, silent=True)[1], False)
+        self.trainer.stop_run()
+
+    def test_quieter_setting_is_saved(self):
+        self.trainee.quieter_var.set(True)
+        self.trainee.quieter_pct_var.set(30)
+        data = self.trainee.settings()
+        self.assertEqual((data["quieter"], data["quieter_pct"]), (True, 30))
+        self.trainee.quieter_var.set(False)
+        self.trainee.restore_settings({"quieter": True, "quieter_pct": 5})  # außerhalb: Standard bleibt
+        self.assertTrue(self.trainee.quieter_var.get())
+        self.assertEqual(self.trainee.quieter_pct_var.get(), 30)
+
     def test_replay_for_all_is_not_fluent(self):
         self.connect()
         self.start_custom("KMR\n")

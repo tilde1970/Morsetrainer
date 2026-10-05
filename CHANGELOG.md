@@ -15,6 +15,10 @@
   Stationen in QSO und Contest ankommen, ist jetzt ein eigener Schalter
   mit Regler, unabhängig vom Fading. Wer QSB an hatte, behält sie; die
   Stufen-Knöpfe ändern sie nicht.
+- **Netzwerk: Gehör schonen.** Teilnehmer können die Störgeräusche bei
+  sich leiser stellen (10–90 % der Einstellung des Trainers, nie lauter),
+  etwa bei Tinnitus oder Hörgerät. Der Trainer sieht das als ↓ in Tabelle,
+  Detailzeile und CSV.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

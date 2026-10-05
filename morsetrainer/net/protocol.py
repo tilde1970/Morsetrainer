@@ -4,7 +4,10 @@
 Teilnehmer -> Trainer:
     hello   {"proto", "name", "pin", "version", "heartbeat"}
                                               erste Nachricht, sonst Abbruch
-    answer  {"n", "typed", "latency", "replayed"}
+    answer  {"n", "typed", "latency", "replayed", "quieter"}
+                                              "quieter": true, wenn der Teilnehmer
+                                              die Störgeräusche bei sich leiser
+                                              gestellt hat (ab 2.38; Gehör schonen)
     paper   {"n", "typed"}                    nach dem Durchgang vom Papier
                                               abgetippte Zeile (ohne Zeit)
 
