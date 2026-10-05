@@ -15,7 +15,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, awards, backup, band, errorlog, koch, migration, practice, review, stats, storage, tempo
+from morsetrainer.core import audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, tr
@@ -516,7 +516,13 @@ class MorseTrainerApp:
     def _announce_toggled(self) -> None:
         reason = self.announcer.available()
         if reason is not None:
+            # Ohne Stimme: Fehlerton (wer nichts sieht, merkt es so) und der
+            # Grund auch dort, wo man gerade hinschaut.
             self.announce_hint_var.set(reason)
+            mode = self._active_mode()
+            if mode is not None and hasattr(mode, "status_var"):
+                mode.status_var.set(reason)
+            sfx.play_error()
             return
         self.announcer.say("Ansage an." if self.announcer.enabled() else "Ansage aus.", force=True)
 

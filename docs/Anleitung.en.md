@@ -493,7 +493,8 @@ versions (CHANGELOG) and this manual.
   from its background by at least 7:1. Right and wrong are always shown
   as text too, not only as colour.
 - The voice is German, so the announcements are German even with the
-  English interface. Network, Speak, the settings window and the evening
+  English interface. If the voice is missing, F9 and F11 play an error
+  tone and the reason appears in the status line. Network, Speak, the settings window and the evening
   summary are not announced yet.
 
 ## Keyboard shortcuts

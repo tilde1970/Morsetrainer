@@ -502,7 +502,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   sich mindestens 7:1 vom Grund ab. Richtig und falsch stehen immer auch
   als Text da, nicht nur als Farbe.
 - Die Stimme ist deutsch, die Ansagen sind es daher auch bei englischer
-  Oberfläche. Netzwerk, Sprechen, das Einstellungsfenster und die
+  Oberfläche. Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton, und der
+  Grund steht in der Statuszeile. Netzwerk, Sprechen, das Einstellungsfenster und die
   Abendbilanz sagt sie noch nicht an.
 
 ## Tastenkürzel

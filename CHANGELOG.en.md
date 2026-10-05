@@ -26,7 +26,8 @@
   program uses its built-in voice to announce results (spelled in Groups,
   Words and Callsigns, errors in Characters), the end of a run, tab
   changes and the daily practice cards; F11 reads out where you are. The
-  program waits for the announcement. (German voice.) Also in QSO (next
+  program waits for the announcement. (German voice.) Without a voice, F9
+  and F11 play an error tone. Also in QSO (next
   step, quiz fields, result with the correct values), in Contest (logging
   errors right after the TU, in the audio), in the Statistics tab (F11
   reads an overview) and in tables (selected row).

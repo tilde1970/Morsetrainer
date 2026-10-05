@@ -80,6 +80,9 @@ class AnnouncerTest(AppTestCase):
         self.said, self.played = [], []
         self.patches = [
             mock.patch.object(speech.speaker, "available", lambda: None),
+            # Geladen vortäuschen: sonst lüde die Ansage die echte Stimme im
+            # Hintergrund, und ohne Piper bliebe ein Fehler an ihr hängen.
+            mock.patch.object(speech.speaker, "voice", object()),
             mock.patch.object(speech.speaker, "synth",
                               lambda text: (self.said.append(text), np.zeros(4800, dtype=np.float32))[1]),
             mock.patch.object(announcer.audio, "play_quietly", lambda samples: self.played.append(len(samples))),
@@ -377,3 +380,18 @@ class AnnouncerModesTest(AnnouncerTest):
             announcer._read_row(event)
         self.assertTrue(self.pump_until(lambda: "Call: DL1ABC. Ergebnis: Busted." in self.said))
         self.assertEqual(sum(s.startswith("Call:") for s in self.said), 1)
+
+
+class MissingVoiceTest(AppTestCase):
+    """Ohne Stimme meldet ein Fehlerton, dass nichts angesagt werden kann."""
+
+    def test_missing_voice_plays_error_tone(self):
+        from morsetrainer.widgets import announcer
+        reason = "Sprachausgabe nicht verfügbar: Piper ist nicht installiert (pip install piper-tts)."
+        with mock.patch.object(self.app.announcer, "available", return_value=reason), \
+                mock.patch.object(announcer.sfx, "play_error") as tone:
+            self.app._dispatch_key(mock.Mock(keysym="F9", char=""))
+            self.assertEqual(tone.call_count, 1)
+            self.assertEqual(self.app._active_mode().status_var.get(), reason)
+            self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
+            self.assertEqual(tone.call_count, 2)

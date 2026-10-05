@@ -20,7 +20,7 @@ bedient werden)."""
 import threading
 import tkinter as tk
 
-from morsetrainer.core import audio, speech
+from morsetrainer.core import audio, sfx, speech
 from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
 
 # Pause nach einer Ansage, bevor es weitergeht.
@@ -55,6 +55,8 @@ class Announcer:
         Ansage verdrängt eine noch nicht begonnene ältere; deren `then` wird
         trotzdem aufgerufen, damit kein Ablauf hängen bleibt."""
         if not text or not (force or self.enabled()) or self.available() is not None:
+            if force and text and self.available() is not None:
+                sfx.play_error()  # ausdrücklich verlangt (F9, F11), aber keine Stimme: hörbar melden
             if then is not None:
                 then()
             return
