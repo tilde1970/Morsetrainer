@@ -23,6 +23,7 @@ class ChoiceBox(ttk.Combobox):
         self._shown.trace_add("write", lambda *_: self._take_shown())
 
     def set_values(self, values) -> None:
+        """Neue Auswahl (`values`: deutsche Schlüssel, angezeigt übersetzt)."""
         self.keys = list(values)
         self.configure(values=[tr(key) for key in self.keys])
         self._show_variable()

@@ -48,6 +48,8 @@ def _ticks(key, values):
 
 
 def value_text(key, value, koch_done=False) -> str:
+    """Wert einer Linie als Text: Sterne, Lektion (mit „Koch geschafft“) oder
+    Tempo; „–“ ohne Wert."""
     if value is None:
         return "–"
     if key == STARS:
@@ -59,6 +61,7 @@ def value_text(key, value, koch_done=False) -> str:
 
 
 def seal_text(key, level) -> str:
+    """Name eines Siegels: Diplom und Stufe („Koch Gold“)."""
     award = awards.BY_KEY[key]
     name = awards.level_name(award, level)
     return f"{tr(award.name)} {tr(name)}".strip()
@@ -71,6 +74,8 @@ def koch_done(line, day) -> bool:
 
 
 def summary_text(line) -> str:
+    """Kurzfassung über der Lebenslinie: seit wann, und der heutige Stand von
+    Sternen, Lektion, Tempo und Siegeln."""
     if not line["days"]:
         return tr("Die Lebenslinie beginnt mit dem ersten Üben.")
     seals = sum(len(v) for d, v in line["seals"].items() if d <= line["days"][-1])
@@ -85,6 +90,9 @@ def summary_text(line) -> str:
 
 
 class LifelinePanel:
+    """Lebenslinie im Reiter Statistik: drei Linien (Sterne, Lektion, Tempo)
+    und die Siegel über alle Tage seit dem ersten Üben; beim Überfahren mit
+    der Maus die Werte des Tages."""
     def __init__(self, parent):
         box = theme.card(parent, tr("Lebenslinie"))
         self.info_var = tk.StringVar(value="")
@@ -98,6 +106,7 @@ class LifelinePanel:
         self.canvas.bind("<Leave>", lambda e: self.canvas.delete("hover"))
 
     def refresh(self):
+        """Daten neu laden und neu zeichnen."""
         self.line = lifeline.load()
         self.info_var.set(summary_text(self.line))
         self.draw()
@@ -111,6 +120,8 @@ class LifelinePanel:
         return x0, top, x1, top + PANEL_PLOT
 
     def draw(self):
+        """Zeichnet alle Linien, die Siegel und die Datumsachse auf die
+        aktuelle Breite."""
         c = self.canvas
         c.delete("all")
         days = self.line["days"]
@@ -126,6 +137,8 @@ class LifelinePanel:
         self._draw_axis()
 
     def _draw_panel(self, index, key, title):
+        """Zeichnet eine Linie (`key`) mit Titel, Achse und Stufen; ohne Werte
+        stattdessen einen Hinweis."""
         c = self.canvas
         x0, y0, x1, y1 = self._panel_box(index)
         c.create_text(x0 - MARGIN["left"] + 2, y0 - PANEL_TITLE, text=title, anchor="nw", fill=theme.TEXT,
@@ -164,6 +177,7 @@ class LifelinePanel:
         return len(PANELS) * (PANEL_TITLE + PANEL_PLOT + PANEL_GAP) + SEAL_ROW / 2
 
     def _draw_seals(self):
+        """Zeichnet die Siegel in ihrer Zeile am Tag, an dem sie erreicht wurden."""
         c = self.canvas
         y = self._seal_y()
         x0, x1 = self._x_range()
@@ -181,6 +195,8 @@ class LifelinePanel:
                 c.create_polygon(x + dx, y - r, x + dx + r, y, x + dx, y + r, x + dx - r, y, fill=fill, outline=edge)
 
     def _draw_axis(self):
+        """Datumsachse: bei wenigen Tagen erster, mittlerer und letzter Tag, sonst
+        Monatsanfänge mit genug Abstand."""
         c = self.canvas
         days = self.line["days"]
         y = HEIGHT - AXIS_ROW / 2
@@ -202,6 +218,8 @@ class LifelinePanel:
             c.create_text(self.xs[i], y, text=label, anchor="center", fill=theme.MUTED, font=theme.SMALL)
 
     def _motion(self, event):
+        """Maus über der Lebenslinie: Markierung und Werte des nächstgelegenen Tags
+        (mit Siegeln) anzeigen."""
         c = self.canvas
         c.delete("hover")
         if not self.xs:

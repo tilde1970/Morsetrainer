@@ -81,6 +81,9 @@ _scale = 100
 
 
 def _named_fonts(root) -> None:
+    """Legt die benannten Schriften (MONO, STATUS, FEEDBACK …) an, abgeleitet
+    von der Systemschrift (mindestens 10 pt), und merkt ihre Grundgrößen für
+    die Schriftgröße."""
     base = tkfont.nametofont("TkDefaultFont", root=root)
     family = base.actual("family")
     size = max(base.actual("size"), 10)
@@ -163,6 +166,8 @@ def _row_height(style, root) -> None:
 
 
 def apply(root) -> None:
+    """Wendet Farben, Schriften und Stile des gewählten Farbschemas auf das
+    ganze Programm an (einmal beim Start, vor dem Aufbau der Fenster)."""
     _named_fonts(root)
     root.configure(background=BG)
     # Klassische Tk-Widgets (Text, Canvas, Klappliste der Combobox).

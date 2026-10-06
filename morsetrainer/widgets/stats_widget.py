@@ -11,6 +11,8 @@ from morsetrainer.widgets import theme
 
 
 class StatsPanel:
+    """Statistik eines Durchgangs bzw. die Gesamtstatistik: richtig/gesamt,
+    effektives Tempo und Tabelle je Zeichen mit Verwechslungen."""
     def __init__(self, parent, title=None, tree_height=8, show_save_label=True):
         box = theme.card(parent, title or tr("Statistik (aktueller Durchgang)"))
         summary = ttk.Frame(box)
@@ -38,6 +40,7 @@ class StatsPanel:
             theme.hint(box, textvariable=self.save_var).pack(anchor="w", pady=(4, 0))
 
     def reset(self):
+        """Leert Anzeige und Tabelle (neuer Durchgang)."""
         self.stats_var.set("0 / 0 (0%)")
         self.speed_var.set(tr("Ø effektive Geschwindigkeit: –"))
         self.save_var.set("")
@@ -45,6 +48,8 @@ class StatsPanel:
             self.char_tree.delete(item)
 
     def refresh(self, summary: dict, rows: list):
+        """Zeigt `summary` (wie SessionStats.summary()) und die Zeilen `rows` (wie
+        char_rows()) an."""
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f}%)")
         speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
         if summary.get("cpm"):

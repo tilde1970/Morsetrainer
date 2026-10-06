@@ -26,6 +26,8 @@ def _amount(value) -> str:
 
 
 def seals_text(award, status) -> str:
+    """Erreichte Stufen eines Diploms als Text („Bronze, Silber“), „erreicht“
+    bei Diplomen ohne Stufen, sonst „–“."""
     reached = [level for level, day in enumerate(status.dates) if day is not None]
     if not reached:
         return "–"
@@ -35,6 +37,8 @@ def seals_text(award, status) -> str:
 
 
 def next_text(award, status) -> str:
+    """Was zur nächsten Stufe fehlt (Fortschritt, zweiter Tag, „gemeinsam im
+    Netzwerk“), oder ✓, wenn alles erreicht ist."""
     level = status.next_level
     if level is None:
         return "✓"
@@ -54,6 +58,8 @@ def next_text(award, status) -> str:
 
 
 def detail_text(award, status) -> str:
+    """Ausführliche Beschreibung eines Diploms: Bedingung, Stufen, Regeln und
+    der Hinweis, wie nah die nächste Stufe ist."""
     lines = [tr(award.condition)]
     if award.levels and not award.stepped:
         steps = " · ".join(f"{tr(awards.LEVEL_NAMES[i])} {_amount(t)}" for i, t in enumerate(award.targets))
@@ -211,6 +217,7 @@ class DiplomaWindow:
         announcer.say(tr("Diplom im Browser geöffnet.") if opened else note)
 
     def close(self) -> None:
+        """Schließt das Diplom-Fenster und meldet das (on_close)."""
         if self.window is None:
             return
         self.window.destroy()
@@ -220,6 +227,8 @@ class DiplomaWindow:
 
 
 class AwardsPanel:
+    """Übersicht der Diplome im Reiter Statistik: Tabelle mit erreichten Siegeln
+    und nächstem Ziel, darunter die Einzelheiten zum gewählten Diplom."""
     def __init__(self, parent, on_show=None, station=None):
         """`on_show`: (Schlüssel, Stufe, Tag) des gewählten Siegels anzeigen;
         `station`: liefert (Rufzeichen, Name) für die Vorschau."""

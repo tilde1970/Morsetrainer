@@ -48,6 +48,8 @@ class _LineChart:
         self.canvas.bind("<Leave>", lambda e: self.on_hover and self.on_hover(None))
 
     def set_data(self, entries, values):
+        """Neue Datenreihe (`entries` mit den Werten `values`) übernehmen und neu
+        zeichnen."""
         self.entries, self.values = entries, values
         self.draw()
 
@@ -56,6 +58,8 @@ class _LineChart:
         return (MARGIN["left"], MARGIN["top"], width - MARGIN["right"], CHART_HEIGHT - MARGIN["bottom"])
 
     def draw(self):
+        """Zeichnet Raster, Linie und Punkte auf die aktuelle Breite; ohne Werte
+        einen Hinweis."""
         c = self.canvas
         c.delete("all")
         self.points = []
@@ -114,6 +118,7 @@ class _LineChart:
         self.on_hover(nearest)
 
     def show_hover(self, index):
+        """Markiert den Punkt Nr. `index` mit Datum und Wert (None: Markierung weg)."""
         c = self.canvas
         c.delete("hover")
         if index is None or index >= len(self.points):
@@ -134,6 +139,8 @@ class _LineChart:
 
 
 class ProgressPanel:
+    """Fortschritt im Reiter Statistik: Trefferquote und Tempo der letzten
+    Durchgänge eines Modus als Linien, mit Kurzfassung."""
     def __init__(self, parent):
         box = theme.card(parent, tr("Fortschritt"))
 
@@ -164,6 +171,8 @@ class ProgressPanel:
         self.history = []
 
     def refresh(self):
+        """Verlauf neu laden; Modusauswahl auf die vorhandenen Modi setzen
+        (Standard: der zuletzt trainierte) und anzeigen."""
         self.history = stats.load_history()
         modes = [m for m in stats.HISTORY_MODES if any(e["mode"] == m for e in self.history)]
         labels = [tr(stats.HISTORY_MODES[m]) for m in modes]
@@ -178,6 +187,8 @@ class ProgressPanel:
         return next((k for k, v in stats.HISTORY_MODES.items() if tr(v) == self.mode_var.get()), None)
 
     def _show(self):
+        """Zeigt die letzten MAX_POINTS Durchgänge des gewählten Modus mit
+        Kurzfassung (von – bis) in beiden Diagrammen."""
         entries = [e for e in self.history if e["mode"] == self._mode_key()][-MAX_POINTS:]
         self.entries = entries
         if entries:

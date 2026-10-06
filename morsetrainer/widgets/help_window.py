@@ -87,6 +87,8 @@ def parse(text: str):
 
 
 def _insert_inline(widget, text: str, base_tags=()):
+    """Fügt eine Zeile mit **fett**, `Code`, *kursiv* und Links (nur der Text)
+    ein; `base_tags` gelten für die ganze Zeile."""
     pos = 0
     for match in _INLINE.finditer(text):
         widget.insert("end", text[pos:match.start()], base_tags)
@@ -104,6 +106,8 @@ def _insert_inline(widget, text: str, base_tags=()):
 
 
 def render(widget: tk.Text, text: str) -> None:
+    """Stellt Markdown-Text `text` im Textfeld `widget` dar (Blöcke aus
+    parse(), Hervorhebungen mit Tags) und sperrt es danach gegen Eingabe."""
     widget.configure(state="normal")
     widget.delete("1.0", "end")
     last = None
@@ -156,6 +160,7 @@ class HelpWindow:
 
     @classmethod
     def show(cls, root) -> None:
+        """Öffnet das Hilfefenster oder holt das schon offene nach vorn."""
         try:
             if cls._open is not None and cls._open.top.winfo_exists():
                 cls._open.top.deiconify()
@@ -217,6 +222,7 @@ class HelpWindow:
         return self.texts[DOCS[self.notebook.index("current")][1]]
 
     def focus_search(self) -> None:
+        """Strg+F: Fokus ins Suchfeld, vorhandener Text ist markiert."""
         self.search_entry.focus_set()
         self.search_entry.select_range(0, "end")
 

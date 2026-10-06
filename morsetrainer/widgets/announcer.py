@@ -44,6 +44,9 @@ _synth_lock = threading.Lock()  # Piper nicht aus zwei Threads zugleich
 
 
 class Announcer:
+    """Die Sprachansage des Programms: an/aus (var, F9), sagt Texte mit der
+    Stimme der Oberfläche, eine nach der anderen; erzeugte Sprache wird
+    zwischengespeichert."""
     def __init__(self, root):
         self.root = root
         self.var = tk.BooleanVar(value=False)
@@ -63,6 +66,7 @@ class Announcer:
             pass
 
     def enabled(self) -> bool:
+        """Ist die Ansage eingeschaltet?"""
         return self.var.get()
 
     @staticmethod
@@ -154,6 +158,8 @@ class Announcer:
         poll()
 
     def _synth(self, text: str):
+        """Sprache für `text` (zwischengespeichert, höchstens CACHE_SIZE Einträge);
+        None, wenn die Stimme versagt."""
         samples = self._cache.get(text)
         if samples is None:
             with _synth_lock:
@@ -263,6 +269,9 @@ def describe(widget) -> str:
 
 
 def _value(widget) -> str:
+    """Was ein Bedienelement gerade zeigt, als gesprochener Text: fester Wert
+    aus name(), sonst je nach Art (Schalter an/aus, gewählter Reiter, Inhalt
+    eines Feldes, Wert eines Reglers …)."""
     key = str(widget)
     if key in _values:
         return str(_values[key]())
@@ -373,6 +382,7 @@ def _read_row(event) -> None:
 
 
 def get():
+    """Die Ansage des Hauptfensters (install()), oder None vor dem Start."""
     return _instance
 
 

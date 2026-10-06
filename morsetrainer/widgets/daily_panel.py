@@ -24,6 +24,7 @@ STREAK_SHOWN_FROM = 5
 
 
 def star_text(stars) -> str:
+    """Die drei Sterne des Tages als ★/☆ in fester Reihenfolge."""
     return " ".join(FULL_STAR if s in stars else EMPTY_STAR for s in daily.STAR_ORDER)
 
 
@@ -41,6 +42,7 @@ def week_text(days: list) -> str:
 
 
 def week_goal_text(stars: int) -> str:
+    """Stand des Wochenziels („5 von 10 ★ diese Woche“ bzw. „erreicht“)."""
     if stars >= week.WEEK_GOAL:
         return tr("Wochenziel erreicht: {stars} {star}").format(stars=stars, star=FULL_STAR)
     return tr("{stars} von {goal} {star} diese Woche").format(stars=stars, goal=week.WEEK_GOAL, star=FULL_STAR)
@@ -60,15 +62,18 @@ def review_line(review: dict) -> str:
 
 
 def minutes_text(minutes: float) -> str:
+    """Minuten als „M:SS“."""
     seconds = max(int(minutes * 60), 0)
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
 def stars_named(stars) -> str:
+    """Erreichte Sterne mit Namen („★ Dabei, ★ Sauber“)."""
     return ", ".join(f"{FULL_STAR} {tr(STAR_NAMES[s])}" for s in daily.STAR_ORDER if s in stars)
 
 
 def tempo_text(tempo: dict) -> str:
+    """Tempo als „20/12 WPM“ (mit Farnsworth) bzw. „20 WPM“."""
     if tempo["effective"] < tempo["wpm"]:
         return f"{tempo['wpm']}/{tempo['effective']} WPM"
     return f"{tempo['wpm']} WPM"
@@ -101,11 +106,13 @@ def block_lines(summary: dict) -> list:
 
 
 def moment_line(moment: dict) -> str:
+    """Zeile „R sitzt jetzt: 0,41 s (letzte Woche 0,62 s)“ für die Zwischenkarte."""
     return tr("{char} sitzt jetzt: {now} s (letzte Woche {before} s)").format(
         char=moment["char"], now=number(moment["now"], 2), before=number(moment["before"], 2))
 
 
 def preview_line(block, lesson: int, tempo: dict) -> str:
+    """Vorschau auf den nächsten Block: Modus, Lektion bzw. alle Zeichen, Tempo."""
     what = (tr("alle Zeichen") if lesson >= daily.POST_KOCH
             else tr("Lektion {lesson}").format(lesson=lesson))
     return tr("Jetzt: {mode}, {what}, {tempo}").format(
@@ -113,6 +120,8 @@ def preview_line(block, lesson: int, tempo: dict) -> str:
 
 
 def better_line(item: dict) -> str:
+    """Eine Verbesserung für die Abendbilanz: Gruppen beim ersten Versuch oder
+    schnellere Reaktion auf ein Zeichen."""
     if item["kind"] == "groups":
         return tr("Gruppen bei {wpm} WPM: {before} % → {now} % beim ersten Versuch").format(
             wpm=item["wpm"], before=number(round(item["before"] * 100)), now=number(round(item["now"] * 100)))
@@ -130,6 +139,8 @@ def _spoken_better(item: dict) -> str:
 
 
 def outlook_line(outlook) -> str:
+    """Ausblick auf die nächste Lektion (geschafft oder wie viel noch fehlt);
+    leer ohne Ausblick."""
     if not outlook:
         return ""
     done = outlook["lesson"] >= daily.POST_KOCH  # nach der Abschlusslektion: Koch geschafft
@@ -144,6 +155,7 @@ def outlook_line(outlook) -> str:
 
 
 def extra_label(offer) -> str:
+    """Beschriftung des Angebots „Noch 5 Min“ (Verwechslungen, Rufz oder Wörter)."""
     kind, chars = offer
     if kind == daily.CONFUSIONS:
         what = tr("Verwechslungen {chars}").format(chars=" ".join(chars))
@@ -155,6 +167,8 @@ def extra_label(offer) -> str:
 
 
 class DailyBar:
+    """Leiste der Tagesübung über den Reitern: Startknopf, Wochenstreifen und
+    Ziel; während der Übung Block, Restzeit und die Zwischenkarte."""
     def __init__(self, parent, on_start, on_continue):
         self.frame = ttk.Frame(parent, padding=(10, 6, 10, 2))
         self.frame.columnconfigure(1, weight=1)
@@ -192,19 +206,23 @@ class DailyBar:
         self.show_idle()
 
     def pack(self, **options):
+        """Packt die Leiste in voller Breite."""
         self.frame.pack(fill="x", **options)
 
     def show_idle(self, note: str = "") -> None:
+        """Ruhezustand: Startknopf und Wochenstreifen, darunter `note`."""
         self.hide_card()
         self.active.pack_forget()
         self.idle.pack(fill="x")
         self.note_var.set(note)
 
     def show_week(self, days: list, stars: int) -> None:
+        """Wochenstreifen (`days`) und Stand des Wochenziels (`stars`) anzeigen."""
         self.week_var.set(week_text(days))
         self.goal_var.set(week_goal_text(stars))
 
     def show_active(self) -> None:
+        """Während der Übung: Block und Fortschritt statt des Startknopfs."""
         self.idle.pack_forget()
         self.active.pack(fill="x")
 
@@ -220,9 +238,11 @@ class DailyBar:
         self.card.pack(fill="x", pady=(6, 0))
 
     def hide_card(self) -> None:
+        """Blendet die Zwischenkarte aus."""
         self.card.pack_forget()
 
     def set_enabled(self, enabled: bool) -> None:
+        """Startknopf freigeben bzw. sperren (etwa während eines Durchgangs)."""
         self.start_button.config(state="normal" if enabled else "disabled")
 
     def update(self, blocks, current: int, elapsed_minutes: float, stars) -> None:
@@ -304,6 +324,8 @@ class EveningSummary:
         announcer.say(self.spoken)
 
     def _spoken(self, title, stars, comparison, outlook, seals, week_stars) -> str:
+        """Die Abendbilanz als gesprochener Text: Sterne, Wochenziel, Vergleich,
+        Ausblick und neue Siegel in ganzen Sätzen."""
         parts = [title]
         if stars:
             parts.append(tr("{count} von {total} Sternen: {names}").format(
@@ -334,6 +356,8 @@ class EveningSummary:
         self.on_extra(self.offer)
 
     def close(self, follow: bool = True) -> None:
+        """Schließt die Abendbilanz; mit `follow` geht es danach weiter (on_close,
+        z. B. neue Siegel zeigen)."""
         if self.window is not None:
             self.window.destroy()
             self.window = None

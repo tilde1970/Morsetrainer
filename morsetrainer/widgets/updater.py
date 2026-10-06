@@ -14,6 +14,9 @@ HINT, DECLINED, STARTED = "hint", "declined", "started"
 
 
 class Updater:
+    """Updates aus dem Programm heraus: fragt einmal je Version nach, lädt im
+    Hintergrund, ersetzt das Programm und startet neu (oder zeigt nur den
+    Link, wo sich nichts ersetzen lässt)."""
     def __init__(self, root, version, restart):
         """`restart(args)`: Programm beenden (alles speichern) und das neue
         mit `args` starten."""
@@ -25,10 +28,13 @@ class Updater:
 
     @property
     def busy(self) -> bool:
+        """Läuft gerade ein Download?"""
         return self.status is not None
 
     @staticmethod
     def can_install() -> bool:
+        """Lässt sich das Programm selbst ersetzen (gepackte exe bzw. AppImage mit
+        Schreibrecht im Ordner)?"""
         found = update.installed()
         return found is not None and os.access(found[0].parent, os.W_OK)
 
@@ -68,6 +74,8 @@ class Updater:
         return STARTED
 
     def _watch(self, version, show, args, failed):
+        """Verfolgt den Download im GUI-Thread: Fortschritt zeigen, bei Fehler den
+        Link zum Herunterladen, nach erfolgreicher Installation neu starten."""
         status = self.status
         if status["error"] is not None:
             self.status = None

@@ -119,6 +119,8 @@ class BandSettings:
         return spec
 
     def set_spec(self, spec, notify=True) -> None:
+        """Übernimmt `spec` in die Regler und Schalter; mit `notify` erfahren es
+        Fenster und Reiter."""
         for key, (on, level) in self.controls.items():
             on.set(key in spec["levels"])
             if key in spec["levels"]:
@@ -197,6 +199,8 @@ class BandSettings:
         self.preview_blocked = blocked
 
     def toggle_preview(self) -> None:
+        """Probehören starten bzw. beenden (Knopf, Strg+P); gesperrt, solange
+        preview_blocked() einen Grund nennt."""
         if self.preview is None:
             return
         if self.preview.running:
@@ -219,6 +223,8 @@ class BandSettings:
             self.preview_poll = self.root.after(PREVIEW_POLL_MS, self._poll_preview)
 
     def _show_preview(self) -> None:
+        """Knopf und Hinweis des Probehörens auf den Stand bringen: läuft, gesperrt
+        (mit Grund), Fehler oder bereit."""
         if self.window is None or not hasattr(self, "preview_button"):
             return
         running = self.preview is not None and self.preview.running
@@ -237,6 +243,8 @@ class BandSettings:
         self.preview_var.set(text)
 
     def subscribe(self, callback) -> None:
+        """`callback()` bei jeder Änderung der Einstellung aufrufen (Reiter,
+        Kurzfassung, Probehören)."""
         self.listeners.append(callback)
 
     def _changed(self) -> None:
@@ -246,6 +254,8 @@ class BandSettings:
 
     # --- Fenster ---------------------------------------------------------
     def open_window(self) -> None:
+        """Öffnet das Fenster Bandbedingungen (oder holt es nach vorn) und merkt,
+        wo der Fokus vorher war."""
         if self.window is not None:
             self.window.deiconify()
             self.window.lift()
@@ -418,6 +428,9 @@ class BandSettings:
         self._changed()
 
     def _update_window(self) -> None:
+        """Fenster auf den Stand bringen: Regler nur bei eingeschalteter Störung
+        bedienbar, angezeigte Werte, QRM-Abstand, S/N im Filter und welcher Stufe
+        die Einstellung entspricht."""
         if self.window is None:
             return
         for key, (scale, shown) in self.widgets.items():

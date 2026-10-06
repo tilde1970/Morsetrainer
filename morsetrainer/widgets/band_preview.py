@@ -16,6 +16,7 @@ FALLBACK_CALL = "DL1ABC"
 
 
 def cq_text(call: str) -> str:
+    """CQ-Ruf mit dem eigenen Rufzeichen (ohne eins mit FALLBACK_CALL)."""
     call = call or FALLBACK_CALL
     return f"CQ CQ DE {call} {call} K"
 
@@ -35,6 +36,8 @@ class BandPreview:
         settings.subscribe(self._apply)
 
     def start(self) -> None:
+        """Startet das Probehören mit den aktuellen Einstellungen in einem eigenen
+        Thread (nichts, wenn es schon läuft)."""
         if self.running:
             return
         wpm, self.freq, call = self.params()
@@ -48,6 +51,7 @@ class BandPreview:
         self.thread.start()
 
     def stop(self) -> None:
+        """Beendet das Probehören; der Thread hört nach dem laufenden Block auf."""
         self.running = False
 
     def _apply(self) -> None:
@@ -68,6 +72,9 @@ class BandPreview:
             self.running = False
 
     def _play(self, conditions, wpm: int, text: str) -> None:
+        """Schreibt PREVIEW_SECONDS lang CQ-Rufe mit Pausen unter den
+        Bandbedingungen in den Ausgabestrom, blockweise, damit Änderungen und
+        Stop sofort wirken."""
         n = int(SAMPLE_RATE * BLOCK_SECONDS)
         total = PREVIEW_SECONDS * SAMPLE_RATE
         signal, pos = np.zeros(0, dtype=np.float32), 0
