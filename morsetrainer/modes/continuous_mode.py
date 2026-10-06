@@ -133,6 +133,9 @@ PREVIEW_SLACK_SECONDS = 1.0
 
 
 class ContinuousModeFrame(DailyModeMixin):
+    """Reiter Kontinuierlich: der Ton läuft ohne Warten durch, du tippst mit wie
+    beim Mithören. Ausgewertet wird erst nach dem Stoppen, mit Gegenüberstellung
+    und auf Wunsch der ganzen Sitzung im eigenen Fenster."""
     daily_keys = ("content", "group_len", "band")
     uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
 
@@ -172,6 +175,8 @@ class ContinuousModeFrame(DailyModeMixin):
         self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
+        """Baut den Reiter: Einstellungen, Start, Statuszeile, Live-Anzeige,
+        Auswertung, eigene Eingabe und Statistik."""
         theme.hint(
             parent, wrap=560,
             text=tr("Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
@@ -234,6 +239,8 @@ class ContinuousModeFrame(DailyModeMixin):
         self.stats_panel = StatsPanel(parent)
 
     def settings(self) -> dict:
+        """Einstellungen zum Speichern: Inhalt, Bandbedingungen an/aus, Dauer und
+        Gruppenlänge (ungültige Felder fehlen)."""
         data = {"content": CONTENTS.get(self.content_var.get()), "band": self.band_var.get()}
         for key, var in (("duration", self.duration_var), ("group_len", self.group_len_var)):
             try:
@@ -243,6 +250,7 @@ class ContinuousModeFrame(DailyModeMixin):
         return data
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); ungültige Werte werden übergangen."""
         for label, key in CONTENTS.items():
             if data.get("content") == key:
                 self.content_var.set(label)
@@ -272,12 +280,15 @@ class ContinuousModeFrame(DailyModeMixin):
             self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec), key=BAND_ORDER.index)
 
     def toggle_running(self):
+        """Durchgang starten bzw. beenden (Knopf, F5)."""
         if self.running:
             self.stop()
         else:
             self.start()
 
     def start(self):
+        """Prüft Zeichensatz, Dauer und Inhalt und startet den Audio-Thread, der
+        nach „VVV =“ ohne Pause sendet, bis die Dauer um ist (0 = bis Stop)."""
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
             self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
@@ -373,6 +384,9 @@ class ContinuousModeFrame(DailyModeMixin):
         # Ein durchgehender Stream für die ganze Sitzung: Zeichen werden
         # lückenlos hintergeschrieben. Ein eigener Stream pro Zeichen
         # (sd.play + sd.wait) knackt beim Öffnen/Schließen und reißt Lücken.
+        """Audio-Thread: sendet „VVV =“, dann ohne Pause Zeichen bzw. Wörter aus
+        der Quelle in einem durchgehenden Strom und protokolliert das hörbare
+        Ende jedes Zeichens; ist die Zeit um, folgt das Schlusszeichen."""
         with audio.output_stream() as stream:
             # Einleitung, wird nicht ausgewertet (landet nicht in sent_log).
             if not self._write(stream, build_text(START_TEXT + " ", self.wpm, self.freq, self.fw)):
@@ -435,6 +449,9 @@ class ContinuousModeFrame(DailyModeMixin):
         return True
 
     def _tick(self):
+        """Jede Sekunde: Fehler aus dem Audio-Thread melden, die vorläufige
+        Trefferquote über die letzten PREVIEW_CHARS Zeichen und die eigene
+        Eingabe zeigen."""
         if not self.running:
             return
         if self.audio_error:
@@ -472,6 +489,8 @@ class ContinuousModeFrame(DailyModeMixin):
         self.root.after(1000, self._tick)
 
     def stop(self):
+        """Beendet die Wiedergabe (bei Stop von Hand mit Schlusszeichen) und wertet
+        den ganzen Durchgang aus."""
         self.running = False
         self.band_toggle.set_locked(False)
         if self.play_thread is not None:
@@ -603,6 +622,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self._render_full()
 
     def close_full(self):
+        """Schließt das Fenster mit der ganzen Auswertung."""
         if self.full_window is not None:
             self.full_window.destroy()
         self.full_window = None
@@ -615,6 +635,9 @@ class ContinuousModeFrame(DailyModeMixin):
         return max((width - 40) // max(self.full_font.measure("0"), 1) - 6, 10)
 
     def _render_full(self, only_if_resized=False):
+        """Füllt das Auswertungsfenster neu (nach Gruppen gegliedert, auf die
+        Fensterbreite umbrochen, Fehler markiert); mit `only_if_resized` nur, wenn
+        sich die Breite geändert hat."""
         if self.full_window is None:
             return
         columns = self._full_columns()
@@ -652,11 +675,13 @@ class ContinuousModeFrame(DailyModeMixin):
             self.zoom_full(-1)
 
     def zoom_full(self, direction: int):
+        """Schrift im Auswertungsfenster eine Stufe größer (1) oder kleiner (−1)."""
         size, low, high, step = FULL_FONT
         self.full_font.configure(size=min(max(self.full_font.cget("size") + direction * step, low), high))
         self._render_full()
 
     def copy_full(self):
+        """Kopiert den Inhalt des Auswertungsfensters in die Zwischenablage."""
         if not self.full_rows:
             return
         self.root.clipboard_clear()
@@ -664,6 +689,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.full_note_var.set(tr("In die Zwischenablage kopiert."))
 
     def on_close(self):
+        """Programmende: Wiedergabe beenden und den Durchgang speichern."""
         if self.running:
             self.running = False
             if self.play_thread is not None:
@@ -671,10 +697,13 @@ class ContinuousModeFrame(DailyModeMixin):
         self._finalize_session()
 
     def on_function_key(self, key: str):
+        """F5 startet bzw. beendet den Durchgang."""
         if key == "F5":
             self.toggle_running()
 
     def on_key(self, event):
+        """Esc beendet den Durchgang; jedes andere Morsezeichen wird mit Zeitpunkt
+        für die spätere Zuordnung mitgeschrieben."""
         if event.keysym == "Escape":
             if self.running:
                 self.stop()

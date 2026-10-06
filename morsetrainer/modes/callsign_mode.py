@@ -87,6 +87,7 @@ GUEST_PREFIXES = [
 
 
 def is_us_call(call: str) -> bool:
+    """Ist es ein US-Rufzeichen (K, N, W oder AA–AL)?"""
     return call[0] in "KNW" or ("AA" <= call[:2] <= "AL")
 
 
@@ -128,10 +129,14 @@ def filter_calls(calls, prefixes, allowed):
 
 
 def parse_prefixes(text: str):
+    """Präfix-Filter aus dem Eingabefeld: durch Leerzeichen oder Kommas getrennt,
+    in Großbuchstaben."""
     return [p for p in text.upper().replace(",", " ").split() if p]
 
 
 def generate_callsign(letters: CharPicker, digits: CharPicker) -> str:
+    """Erfundenes Rufzeichen nach dem Muster Präfix + Ziffer + Suffix, die
+    Zeichen über die (gewichtete) Auswahl `letters` bzw. `digits`."""
     prefix_len = random.choices([1, 2], weights=[1, 3])[0]
     prefix = letters.pick(prefix_len)
     digit = digits.pick()
@@ -141,6 +146,9 @@ def generate_callsign(letters: CharPicker, digits: CharPicker) -> str:
 
 
 class CallsignModeFrame(SequenceModeFrame):
+    """Reiter Rufzeichen: echte Rufzeichen aus der SCP-Liste (sonst erfundene)
+    hören und eintippen, mit Präfix-Filter, Anhängen wie /P und dem
+    Rufz-Durchgang (50 Rufzeichen, Tempo passt sich an, Punkte wie bei RufZ)."""
     session_mode = "callsign"
     daily_keys = SequenceModeFrame.daily_keys + ("prefixes", "learned_only", "rufz")
     intro_text = N_(
@@ -151,6 +159,8 @@ class CallsignModeFrame(SequenceModeFrame):
     )
 
     def _build_extra_settings(self, parent):
+        """Eigene Einstellungen des Reiters: Präfix-Filter, Anhänge, nur gelernte
+        Zeichen, Rufz-Durchgang mit Bestwert, dazu der Stand der SCP-Liste."""
         self.all_calls, release = load_callsigns()
         self.pool = []
 
@@ -253,6 +263,8 @@ class CallsignModeFrame(SequenceModeFrame):
         return int(len(samples) / SAMPLE_RATE * 1000)
 
     def _review_step(self, index, token):
+        """Nachhören nach dem Rufz: das verpasste Rufzeichen Nr. `index` erst ohne
+        Lösung vorspielen, danach (_review_reveal) mit Lösung und eigener Eingabe."""
         if not self._review_alive(token):
             return
         if index >= len(self.rufz_missed):
@@ -293,6 +305,8 @@ class CallsignModeFrame(SequenceModeFrame):
     def on_function_key(self, key: str):
         # Wie im QSO-Reiter: F6 = nochmal (das aktuelle, erst hören, dann
         # Lösung); ohne laufendes Nachhören fängt es an. F7 = von vorn.
+        """Nach einem Rufz-Durchgang: F6 spielt das aktuelle verpasste Rufzeichen
+        noch einmal, F7 beginnt das Nachhören von vorn."""
         if self.running or not self.rufz_missed or not self.review_button.winfo_viewable():
             return
         if key == "F6":
@@ -301,6 +315,8 @@ class CallsignModeFrame(SequenceModeFrame):
             self._review_missed()
 
     def on_key(self, event):
+        """Esc beendet nach dem Durchgang das Nachhören; sonst wie in
+        SequenceModeFrame."""
         if event.keysym == "Escape" and not self.running:
             self._review_stop()
         else:
@@ -311,6 +327,8 @@ class CallsignModeFrame(SequenceModeFrame):
             n=self.rufz_done, total=RUFZ_CALLS, score=number(self.rufz_score)))
 
     def start(self):
+        """Wie SequenceModeFrame.start(), dazu beim Rufz-Durchgang Punkte und
+        Starttempo zurücksetzen und ein laufendes Nachhören beenden."""
         self.rufz_active = self.rufz_var.get()
         self.rufz_done = self.rufz_correct = self.rufz_score = 0
         self.rufz_used = set()  # im Durchgang schon gesendete Rufzeichen
@@ -329,6 +347,9 @@ class CallsignModeFrame(SequenceModeFrame):
             self._show_rufz_progress()
 
     def _after_result(self, correct: bool, attempts: int):
+        """Rufz-Durchgang: zählt das Ergebnis (Punkte nur für richtig und
+        rechtzeitig, nach Länge und Tempo) und merkt verpasste Rufzeichen zum
+        Nachhören."""
         if not self.rufz_active:
             return
         self.rufz_done += 1
@@ -344,6 +365,9 @@ class CallsignModeFrame(SequenceModeFrame):
         self._show_rufz_progress()
 
     def _finalize_session(self):
+        """Wie SequenceModeFrame, dazu beim vollen Rufz-Durchgang das Ergebnis
+        protokollieren (samt Bedingungen fürs Diplom) und einen neuen Bestwert
+        merken."""
         self.rufz_summary = ""
         self.rufz_used = set()
         self.rufz_start_wpm = 0
@@ -373,6 +397,8 @@ class CallsignModeFrame(SequenceModeFrame):
         super()._finalize_session()
 
     def stop(self):
+        """Wie SequenceModeFrame.stop(); nach einem Rufz-Durchgang steht dessen
+        Ergebnis in der Statuszeile."""
         super().stop()
         if self.rufz_summary:
             self.status_var.set(self.rufz_summary)
@@ -395,6 +421,9 @@ class CallsignModeFrame(SequenceModeFrame):
                 self.list_info_var.set(self.list_text)
 
     def _validate_settings(self) -> bool:
+        """Passen Eingabeart und Zeichensatz? Rufz braucht eine Eingabe, und es muss
+        genug Rufzeichen aus den erlaubten Zeichen geben; sonst steht der Grund in
+        der Statuszeile."""
         if self.rufz_var.get() and self.style_var.get() == HEAD:
             self.status_var.set(tr("Der Rufz-Durchgang braucht eine Eingabe – Mitschreiben oder Erst merken."))
             return False
@@ -470,6 +499,8 @@ class CallsignModeFrame(SequenceModeFrame):
                 "learned_only": self.learned_var.get()}
 
     def settings(self) -> dict:
+        """Einstellungen zum Speichern: wie SequenceModeFrame, dazu Präfix-Filter,
+        Anhänge, nur gelernte Zeichen, Rufz an/aus und Rufz-Bestwert."""
         data = super().settings()
         data["prefixes"] = self.prefix_var.get()
         data["affix"] = self.affix_var.get()
@@ -480,6 +511,7 @@ class CallsignModeFrame(SequenceModeFrame):
         return data
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); ungültige Werte werden übergangen."""
         super().restore_settings(data)
         if isinstance(data.get("prefixes"), str):
             self.prefix_var.set(data["prefixes"])

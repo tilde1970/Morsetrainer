@@ -37,6 +37,9 @@ def open_in_editor(path) -> None:
 
 
 class WordModeFrame(SequenceModeFrame):
+    """Reiter Wörter: Wörter, Q-Gruppen, Abkürzungen und Wendungen (oder eigene
+    Wörter aus woerter.txt) aus dem gelernten Zeichensatz; Standard ist
+    „Erst merken“, das ganze Wort hören und dann tippen."""
     session_mode = "word"
     # Erst das ganze Wort hören, dann tippen: fördert das Wort als Klangbild
     # statt Buchstabe für Buchstabe.
@@ -50,6 +53,8 @@ class WordModeFrame(SequenceModeFrame):
     )
 
     def _build_extra_settings(self, parent):
+        """Eigene Einstellungen des Reiters: Zahl der passenden Wörter und Knopf zum
+        Bearbeiten der eigenen Wörter (woerter.txt)."""
         self.all_words = dict(words.WORDS)
         self.user_words, self.skipped = {}, []
         self.words_mtime = -1  # Änderungszeit von woerter.txt beim letzten Einlesen (None = fehlt)
@@ -78,6 +83,8 @@ class WordModeFrame(SequenceModeFrame):
             self.all_words, self.user_words, self.skipped = words.load_words()
 
     def _show_count(self):
+        """Liest woerter.txt bei Bedarf neu und zeigt, wie viele Wörter zum
+        Zeichensatz passen (davon eigene) und welche Zeilen übersprungen wurden."""
         self._reload_words()
         user, skipped = self.user_words, self.skipped
         count = len(words.words_for_charset(self._charset(), self.all_words))
@@ -98,6 +105,8 @@ class WordModeFrame(SequenceModeFrame):
             self.status_var.set(tr("{file} lässt sich nicht öffnen: {error}").format(file=words.USER_WORDS_FILE, error=exc))
 
     def _validate_settings(self) -> bool:
+        """Genug Wörter mit dem Zeichensatz? Sonst steht in der Statuszeile, ab
+        welcher Lektion es reicht."""
         self._show_count()
         charset = self._charset()
         self.words = words.words_for_charset(charset, self.all_words)
@@ -129,11 +138,15 @@ class WordModeFrame(SequenceModeFrame):
         return self.charset
 
     def settings(self) -> dict:
+        """Wie SequenceModeFrame.settings(), dazu die Kennung, dass die Umstellung
+        auf „Erst merken“ schon erfolgt ist."""
         data = super().settings()
         data["memorize_default"] = True  # Umstellung auf „Erst merken“ erledigt
         return data
 
     def restore_settings(self, data: dict) -> None:
+        """Wie SequenceModeFrame; alte Einstellungen ohne diese Kennung werden einmal
+        auf „Erst merken“ umgestellt."""
         super().restore_settings(data)
         # Gespeicherte Einstellungen ohne „memorize_default“ stammen aus der
         # Zeit, als „Mitschreiben“ Standard war: einmalig auf „Erst merken“

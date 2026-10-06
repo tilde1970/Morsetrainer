@@ -39,6 +39,7 @@ def qso_sections(charset: str) -> list:
 
 
 def first_lesson_with_phrases():
+    """Erste Koch-Lektion, deren Zeichen für genug Wendungen reichen, oder None."""
     from morsetrainer.core import koch
     for lesson in range(1, koch.MAX_LESSON + 1):
         if len(words.phrases_for_charset(koch.lesson_charset(lesson))) >= MIN_ITEMS:
@@ -105,6 +106,8 @@ class ItemSource:
         return None
 
     def next(self):
+        """Nächster Eintrag als (Text, Bedeutung); Wörter, Wendungen und Rufzeichen
+        nicht zweimal hintereinander."""
         if self.kind in ("qso", "chars", "groups"):
             # Klartext: Wiederholungen gehören dazu; Zufallszeichen: bei
             # kleinem Zeichensatz stünde sonst die Antwort fest (K M K M …).
@@ -118,6 +121,9 @@ class ItemSource:
         return text, self.meanings.get(text, "")
 
     def _draw(self) -> str:
+        """Ein Eintrag der gewählten Art: Zeichen, Gruppe, Wort (gewichtet), Wort
+        aus einem erzeugten QSO (nur mit gelernten Zeichen) oder zufällig aus der
+        Liste."""
         if self.kind == "qso":
             # Wörter mit noch nicht gelernten Satz- oder Betriebszeichen
             # (etwa <KN> vor Lektion 42) fallen weg.

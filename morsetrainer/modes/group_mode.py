@@ -55,6 +55,9 @@ class AdaptiveLength:
 
 
 class GroupModeFrame(SequenceModeFrame):
+    """Reiter Gruppen: Zufallsgruppen aus dem Zeichensatz hören und eintippen.
+    Zählt für den Koch-Aufstieg; auf Wunsch wächst die Gruppenlänge mit dem
+    Können."""
     session_mode = "group"
     daily_keys = SequenceModeFrame.daily_keys + ("adaptive", "min_len", "max_len")
     send_prosigns = True
@@ -62,6 +65,8 @@ class GroupModeFrame(SequenceModeFrame):
     review_promotes = True
 
     def _build_extra_settings(self, parent):
+        """Eigene Einstellungen des Reiters: Gruppenlänge von–bis und wachsende
+        Länge."""
         settings = ttk.Frame(parent)
         settings.pack(fill="x", pady=1)
         ttk.Label(settings, text=tr("Gruppenlänge von")).pack(side="left", padx=(0, 4))
@@ -87,6 +92,8 @@ class GroupModeFrame(SequenceModeFrame):
         self.saved_length = None  # zuletzt erreichte Länge, Start beim nächsten Mal
 
     def _validate_settings(self) -> bool:
+        """Gültiger Zeichensatz und Gruppenlänge („von“ nicht größer als „bis“)?
+        Sonst steht der Grund in der Statuszeile."""
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
             self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
@@ -141,6 +148,8 @@ class GroupModeFrame(SequenceModeFrame):
         return (self.min_len_var.get(), self.max_len_var.get(), "adaptiv" if self.adaptive else "zufällig")
 
     def settings(self) -> dict:
+        """Einstellungen zum Speichern: wie SequenceModeFrame, dazu wachsende Länge
+        an/aus, zuletzt erreichte Länge und Mindest-/Höchstlänge."""
         data = super().settings()
         data["adaptive"] = self.adaptive_var.get()
         if self.saved_length is not None:
@@ -153,6 +162,7 @@ class GroupModeFrame(SequenceModeFrame):
         return data
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); ungültige Werte werden übergangen."""
         super().restore_settings(data)
         if isinstance(data.get("adaptive"), bool):
             self.adaptive_var.set(data["adaptive"])

@@ -23,6 +23,7 @@ from morsetrainer.widgets import announcer
 
 class DailyModeMixin:
     # Schlüssel aus settings(), die die Tagesübung setzt und danach zurückstellt.
+    """Tagesübungs-Schnittstelle eines Reiters (siehe Modulbeschreibung)."""
     daily_keys = ()
     daily_minutes = None   # Dauer des laufenden Tagesübungs-Blocks, sonst None
     last_result = None
@@ -32,6 +33,8 @@ class DailyModeMixin:
     streak = best_streak = 0
 
     def daily_configure(self, minutes: float, **values) -> None:
+        """Merkt die Werte der `daily_keys`, setzt die festen Werte `values`, die
+        Blockdauer `minutes` und blendet die Einstellungskarte aus."""
         current = self.settings()
         self._daily_saved = {key: current[key] for key in self.daily_keys if key in current}
         self.restore_settings(values)
@@ -39,6 +42,7 @@ class DailyModeMixin:
         self.set_options_visible(False)
 
     def daily_release(self) -> None:
+        """Stellt die gemerkten Werte zurück und zeigt die Einstellungskarte wieder."""
         if self._daily_saved is not None:
             self.restore_settings(self._daily_saved)
             self._daily_saved = None
@@ -46,6 +50,8 @@ class DailyModeMixin:
         self.set_options_visible(True)
 
     def daily_result(self):
+        """Ergebnis des zuletzt beendeten Durchgangs (siehe _remember_result), oder
+        None."""
         return self.last_result
 
     def _daily_deadline(self):

@@ -50,6 +50,9 @@ REPLAY_GAP_S = 0.5
 
 
 class ListenModeFrame:
+    """Reiter Sprechen („Hören & Sagen“): Morsezeichen, eine Denkpause zum
+    lauten Nachsprechen, dann sagt eine Stimme die Lösung an und das Zeichen
+    kommt noch einmal. Ohne Tastatur; auch als MP3 für unterwegs."""
     uses_vary = True
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
@@ -75,6 +78,8 @@ class ListenModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
+        """Baut den Reiter: Inhalt und Ansage-Optionen, Start und MP3-Knopf,
+        Lösung, Bedeutung und Fortschritt."""
         theme.hint(
             parent, wrap=560,
             text=tr("Ohne Tastatur üben: Du hörst das Morsezeichen und sagst in der Pause laut, was du "
@@ -151,6 +156,8 @@ class ListenModeFrame:
 
     # --- Einstellungen --------------------------------------------------
     def settings(self) -> dict:
+        """Einstellungen zum Speichern: Inhalt, Alphabet, Bedeutung ansagen,
+        nochmal spielen, als Ganzes ansagen, Anzahl, Pause, Gruppenlänge."""
         data = {
             "content": CONTENTS.get(self.content_var.get()),
             "alphabet": ALPHABET_LABELS.get(self.alphabet_var.get()),
@@ -166,6 +173,7 @@ class ListenModeFrame:
         return data
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); ungültige Werte werden übergangen."""
         for label, key in CONTENTS.items():
             if data.get("content") == key:
                 self.content_var.set(label)
@@ -212,6 +220,8 @@ class ListenModeFrame:
     # --- Ein Eintrag als Audio ------------------------------------------
     @staticmethod
     def think_seconds(text: str, pause: float) -> float:
+        """Denkpause nach einem Eintrag: die eingestellte Pause plus 0,3 s je
+        Zeichen."""
         return pause + 0.3 * len(text.replace(" ", ""))
 
     @staticmethod
@@ -242,12 +252,15 @@ class ListenModeFrame:
 
     # --- Live ------------------------------------------------------------
     def toggle_running(self):
+        """Starten bzw. beenden (Knopf, F5)."""
         if self.running:
             self.stop()
         else:
             self.start()
 
     def start(self):
+        """Prüft die Einstellungen (sonst Grund in der Statuszeile und als Ansage)
+        und beginnt mit dem ersten Eintrag."""
         if self.running or self.exporting:
             return
         opts = self._options()
@@ -302,6 +315,8 @@ class ListenModeFrame:
         self._play_current()
 
     def _play_current(self):
+        """Spielt den aktuellen Eintrag mit Denkpause und plant die Ansage der
+        Lösung (und das nochmalige Zeichen) danach ein."""
         text, meaning, wpm, freq = self.current
         code, think, voice, rest = self.item_parts(text, meaning, wpm, freq, self.opts)
         self.progress_var.set(f"{self.done}/{self.total}")
@@ -341,6 +356,7 @@ class ListenModeFrame:
             self._play_current()
 
     def stop(self):
+        """Bricht ab, stoppt den Ton und gibt die Reiter frei."""
         if not self.running:
             return
         self.running = False
@@ -355,6 +371,8 @@ class ListenModeFrame:
 
     # --- MP3 -------------------------------------------------------------
     def export(self):
+        """Erzeugt dieselbe Folge als MP3-Datei (Ort per Dialog) im Hintergrund,
+        mit Fortschritt in der Statuszeile."""
         if self.running or self.exporting:
             return
         reason = mp3.available()
@@ -434,15 +452,18 @@ class ListenModeFrame:
 
     # --- Tasten ----------------------------------------------------------
     def on_function_key(self, key: str):
+        """F5 startet bzw. beendet."""
         if key == "F5":
             self.toggle_running()
 
     def on_key(self, event):
+        """Esc beendet, Leertaste wiederholt den aktuellen Eintrag."""
         if event.keysym == "Escape":
             self.stop()
         elif event.keysym == "space":
             self.repeat_item()
 
     def on_close(self):
+        """Programmende: MP3-Erzeugung abbrechen und stoppen."""
         self.cancel_export = True
         self.stop()

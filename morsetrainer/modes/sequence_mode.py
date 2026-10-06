@@ -101,6 +101,8 @@ def band_config(spec) -> dict:
 
 
 def clean_input(text: str) -> str:
+    """Nur die Morsezeichen aus `text`, in Großbuchstaben (Leerzeichen und
+    Unbekanntes fallen weg)."""
     return "".join(ch for ch in text.upper() if ch in MORSE_CODE)
 
 
@@ -109,6 +111,11 @@ HISTORY_LEN = 10
 
 
 class SequenceModeFrame(DailyModeMixin):
+    """Gemeinsame Grundlage der Reiter Gruppen, Wörter und Rufzeichen: eine
+    Sequenz hören, dann eintippen (mitschreiben, erst merken oder im Kopf
+    behalten und selbst bewerten), mit Wiederholen, Aufgeben, mitwachsendem
+    Tempo und Bandbedingungen. Die Unterklassen liefern die Sequenzen und
+    passen die Auswertung an (siehe „Überschreibbar durch Subklassen“)."""
     daily_keys = ("input_style", "adaptive_tempo", "band", "give_up")
     session_mode = "group"
     intro_text = ""
@@ -245,6 +252,9 @@ class SequenceModeFrame(DailyModeMixin):
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
+        """Baut den Reiter: Erklärung, Einstellungen (dazu die eigenen der
+        Unterklasse), Start, Ausgabe, Eingabezeile bzw. Kopfhör-Knöpfe, Verlauf und
+        Statistik."""
         if self.intro_text:
             theme.hint(parent, text=tr(self.intro_text), wrap=560).pack(anchor="w", padx=10, pady=(8, 2))
 
@@ -371,12 +381,16 @@ class SequenceModeFrame(DailyModeMixin):
         self.root.after(ms, run)
 
     def toggle_running(self):
+        """Durchgang starten bzw. beenden (Start/Stop-Knopf)."""
         if self.running:
             self.stop()
         else:
             self.start()
 
     def start(self):
+        """Prüft die Einstellungen und beginnt einen Durchgang (mit „VVV =“, wo
+        send_prosigns gesetzt ist); er endet nach der Dauer oder der festen Zahl
+        von Sequenzen."""
         if not self._validate_settings():
             return
         try:
@@ -486,6 +500,8 @@ class SequenceModeFrame(DailyModeMixin):
         self._later(dur_ms, self.next_sequence)
 
     def stop(self):
+        """Beendet den Durchgang (mit „+“, wo send_prosigns gesetzt ist), speichert
+        die Statistik und gibt die Reiter frei."""
         self.running = False
         self.band_toggle.set_locked(False)
         self.waiting_for_input = False
@@ -521,6 +537,9 @@ class SequenceModeFrame(DailyModeMixin):
         self.root.after(1000, self._update_remaining, session_id)
 
     def _finalize_session(self):
+        """Schließt die Statistik des Durchgangs ab: Ergebnis für den Koch-Aufstieg,
+        erreichtes Tempo, schwächste Bandbedingungen und Erstversuchs-Zahlen in die
+        Zusammenfassung, dann speichern und anzeigen."""
         if self.session_stats is None:
             return
         if self.koch_progress and self.first_try_total and not self.session_stats.self_assessed:
@@ -546,6 +565,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.session_stats = None
 
     def on_close(self):
+        """Programmende: laufenden Durchgang abschließen und speichern."""
         self._finalize_session()
 
     def _set_input_open(self, is_open: bool):
@@ -577,6 +597,8 @@ class SequenceModeFrame(DailyModeMixin):
             self.on_submit()
 
     def next_sequence(self):
+        """Nächste Sequenz erzeugen und vorspielen; ist die Zeit um oder die feste
+        Anzahl erreicht, endet der Durchgang."""
         if not self.running:
             return
         if self._time_up():
@@ -609,6 +631,8 @@ class SequenceModeFrame(DailyModeMixin):
         # Feld geleert, um eine neue Zahl einzutippen), ist der Wert kurzzeitig
         # ungültig; dann den zuletzt bekannten Wert weiterverwenden statt
         # abzustürzen.
+        """(WpM, Tonhöhe) aus der Kopfleiste; ist ein Feld gerade ungültig, der
+        zuletzt bekannte Wert."""
         try:
             wpm = self.wpm_var.get()
         except tk.TclError:
@@ -703,6 +727,8 @@ class SequenceModeFrame(DailyModeMixin):
         return True
 
     def on_playback_done(self):
+        """Ton zu Ende: Eingabe öffnen (beim Kopfhören die Knöpfe zum Auflösen bzw.
+        Bewerten) und ein schon gedrücktes Enter jetzt werten."""
         self.waiting_for_input = True
         if self.style == HEAD:
             # Nach dem Auflösen noch einmal gehört: weiter mit der Bewertung.
@@ -727,6 +753,8 @@ class SequenceModeFrame(DailyModeMixin):
         # Während die Lösung vorgespielt wird oder die Rückmeldung steht, ist
         # die Eingabe zu; dann gibt es auch nichts zu wiederholen. Im festen
         # Durchgang gibt es wie im Contest kein „nochmal“.
+        """Leertaste: die aktuelle Sequenz noch einmal (nicht im festen Durchgang,
+        nicht während Lösung oder Rückmeldung)."""
         if self._fixed_run():
             return
         if self.running and self.current_sequence and (self.input_open or self.waiting_for_input):
@@ -753,6 +781,8 @@ class SequenceModeFrame(DailyModeMixin):
         return elapsed / max(len(self.current_sequence), 1), None
 
     def on_submit(self, event=None):
+        """Enter im Eingabefeld: die Antwort werten (während des Tons erst nach
+        dessen Ende); richtig, falsch oder nach zu vielen Versuchen die Lösung."""
         if not self.running or self.style == HEAD:
             return
         if not self.waiting_for_input:
@@ -926,6 +956,8 @@ class SequenceModeFrame(DailyModeMixin):
         # Eingabe erfolgt über das Entry-Feld (self.entry), nicht über eine
         # globale Tastenbindung; nur die Leertaste wirkt auch außerhalb, beim
         # Kopfhören außerdem Enter, J und N.
+        """Tasten außerhalb des Eingabefelds: Leertaste wiederholt, beim Kopfhören
+        löst Enter auf, J und N bewerten."""
         if event.keysym == "space":
             self.repeat_sequence()
         elif self.style == HEAD and self.running:

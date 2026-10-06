@@ -96,6 +96,8 @@ class RetryQueue:
         self.waiting = {}  # Zeichen -> Anzahl anderer Zeichen, die noch davor kommen
 
     def add(self, ch: str) -> None:
+        """Merkt `ch` zur erneuten Abfrage nach zufällig RETRY_AFTER anderen Zeichen
+        vor."""
         self.waiting[ch] = self.rng.randint(*RETRY_AFTER)
 
     def next_due(self):
@@ -110,10 +112,16 @@ class RetryQueue:
         return None
 
     def discard(self, ch: str) -> None:
+        """Nimmt `ch` aus der Warteliste (etwa weil es zufällig schon wieder dran
+        war)."""
         self.waiting.pop(ch, None)
 
 
 class SingleModeFrame(DailyModeMixin):
+    """Reiter Einzelzeichen: ein Zeichen hören, sofort die Taste drücken. Mit
+    Zeitlimit (ICR) wird das Limit nach jeder Antwort enger oder weiter;
+    falsche Zeichen kommen bald wieder und werden mit dem Getippten zum
+    Vergleich vorgespielt."""
     uses_vary = True
     # Das Limit gehört dazu: die Tagesübung beginnt mit eigenem Startwert
     # (daily_runner.py), danach gilt wieder das Limit des Reiters.
@@ -156,6 +164,8 @@ class SingleModeFrame(DailyModeMixin):
         self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
+        """Baut den Reiter: Erklärung, Zeitlimit, Start und Wiederholen, Anzeige von
+        Zeichen und Rückmeldung, Verlauf und Statistik."""
         options = self.options_card = theme.card(parent, tr("Einstellungen"))
         icr = ttk.Frame(options)
         icr.pack(fill="x")
@@ -211,9 +221,11 @@ class SingleModeFrame(DailyModeMixin):
         self._show_limit()
 
     def settings(self) -> dict:
+        """Einstellungen zum Speichern: Zeitlimit an/aus und sein aktueller Wert."""
         return {"icr": self.icr_var.get(), "icr_limit": self.limit}
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); das Limit wird auf ICR_RANGE begrenzt."""
         if isinstance(data.get("icr"), bool):
             self.icr_var.set(data["icr"])
         limit = data.get("icr_limit")
@@ -223,12 +235,15 @@ class SingleModeFrame(DailyModeMixin):
         self._show_limit()
 
     def toggle_running(self):
+        """Durchgang starten bzw. beenden (Start/Stop-Knopf)."""
         if self.running:
             self.stop()
         else:
             self.start()
 
     def start(self):
+        """Beginnt einen Durchgang mit dem Zeichensatz der Kopfleiste (nur gültige
+        Zeichen) und spielt das erste Zeichen."""
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
             self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
@@ -254,6 +269,7 @@ class SingleModeFrame(DailyModeMixin):
         self.next_char()
 
     def stop(self):
+        """Beendet den Durchgang, speichert die Statistik und gibt die Reiter frei."""
         self.running = False
         self.waiting_for_input = False
         self.timeout_token += 1
@@ -276,9 +292,12 @@ class SingleModeFrame(DailyModeMixin):
         self.session_stats = None
 
     def on_close(self):
+        """Programmende: laufenden Durchgang abschließen und speichern."""
         self._finalize_session()
 
     def next_char(self):
+        """Wählt das nächste Zeichen (vorgemerkte Fehler zuerst, sonst gewichtet
+        zufällig) und spielt es; endet ein Block der Tagesübung, ist hier Schluss."""
         if not self.running:
             return
         if self.block_end is not None and time.time() >= self.block_end:
@@ -323,6 +342,9 @@ class SingleModeFrame(DailyModeMixin):
             self.root.after(FEEDBACK_MS, self._after_correction, token)
 
     def _play_correction(self, token):
+        """Nach einem Fehler: das richtige Zeichen vorspielen, bei einer
+        Verwechslung zum Vergleich auch das getippte und zum Schluss noch einmal
+        das richtige."""
         if not self.running or token != self.timeout_token:
             return
         wpm, freq = self.voice
@@ -355,6 +377,8 @@ class SingleModeFrame(DailyModeMixin):
         # Feld geleert, um eine neue Zahl einzutippen), ist der Wert kurzzeitig
         # ungültig; dann den zuletzt bekannten Wert weiterverwenden statt
         # abzustürzen.
+        """(WpM, Tonhöhe) für das nächste Zeichen: aus der Kopfleiste (bei
+        ungültigem Feld der letzte Wert), mit „variieren“ leicht gestreut."""
         try:
             wpm = self.wpm_var.get()
         except tk.TclError:
@@ -369,6 +393,8 @@ class SingleModeFrame(DailyModeMixin):
         return wpm, freq
 
     def play_current(self):
+        """Spielt das aktuelle Zeichen und merkt den hörbaren Beginn für die
+        Reaktionszeit; ohne Tonausgabe endet der Durchgang mit Meldung."""
         self.timeout_token += 1
         wpm, freq = self.voice
         samples = build_samples(self.current_char, wpm, freq)
@@ -385,6 +411,8 @@ class SingleModeFrame(DailyModeMixin):
         self.root.after(dur_ms, self.on_playback_done)
 
     def on_playback_done(self):
+        """Ton zu Ende: Eingabe freigeben und, mit Zeitlimit, die Frist ab dem
+        ersten Hören setzen."""
         if not self.running:
             return
         self.waiting_for_input = True
@@ -398,6 +426,8 @@ class SingleModeFrame(DailyModeMixin):
             self.root.after(max(int((self.deadline - time.time()) * 1000), 50), self._on_timeout, token)
 
     def _on_timeout(self, token):
+        """Zeitlimit abgelaufen: als verpasst werten, das Limit lockern (nur beim
+        ersten Hören), Fehlerton und Korrektur."""
         if not self.running or not self.waiting_for_input or token != self.timeout_token:
             return
         self.waiting_for_input = False
@@ -431,6 +461,8 @@ class SingleModeFrame(DailyModeMixin):
     def repeat_char(self):
         # Nur solange eine Antwort erwartet wird; in der Pause nach einer
         # Antwort würde sonst dasselbe Zeichen ein zweites Mal gewertet.
+        """Leertaste: das aktuelle Zeichen noch einmal (zählt danach als nicht auf
+        Anhieb erkannt)."""
         if self.running and self.current_char and self.waiting_for_input and not self.correcting:
             self.first_hearing = False
             self.replayed = True
@@ -439,6 +471,8 @@ class SingleModeFrame(DailyModeMixin):
             self.play_current()
 
     def on_key(self, event):
+        """Taste im Reiter: Leertaste wiederholt, ein Zeichen ist die Antwort
+        (gewertet nach richtig, Zeit und Wiederholung)."""
         if event.keysym == "space":
             self.repeat_char()
             return

@@ -110,6 +110,7 @@ BAND_CACHE_SIZE = 4
 
 
 def make_pin() -> str:
+    """Zufällige vierstellige PIN für eine neue Sitzung."""
     return f"{random.randint(0, 9999):04d}"
 
 
@@ -164,18 +165,26 @@ class PaperSheet:
         self.order = order
 
     def focus(self, index: int = 0):
+        """Setzt den Fokus auf das Feld an Stelle `index` (in Eingabereihenfolge)."""
         if 0 <= index < len(self.order):
             self.order[index].focus_set()
 
     def values(self) -> dict:
+        """Eingetragene Zeilen: {Nummer: Text}."""
         return {n: entry.get() for n, entry in self.entries.items()}
 
     def clear(self):
+        """Leert alle Felder für den nächsten Bogen."""
         for entry in self.order:
             entry.delete(0, "end")
 
 
 class NetworkModeFrame:
+    """Reiter Netzwerk: gemeinsames Üben im lokalen Netz. Der Trainer öffnet
+    eine Sitzung und schickt Sequenzen (warten, fester Takt oder
+    kontinuierlich), die Teilnehmer hören sie an ihrem Rechner (oder über den
+    Lautsprecher des Trainers) und tippen mit; der Trainer sieht die
+    Ergebnisse aller in einer Tabelle."""
     session_mode = "network"
 
     # Bekommt vom Hauptfenster practice_start und practice_stop
@@ -273,6 +282,8 @@ class NetworkModeFrame:
 
     # --- Widgets ------------------------------------------------------------------
     def _build_widgets(self, parent):
+        """Baut den Reiter: Rollenwahl oben, darunter die Ansicht für Trainer oder
+        Teilnehmer."""
         theme.hint(parent, wrap=560, text=tr(
             "Üben in der Gruppe im lokalen Netz (Kursraum, Clubheim): Der Trainer gibt vor, alle hören "
             "dieselbe Sequenz über den eigenen Kopfhörer und tippen mit. Übertragen wird nur Text, der "
@@ -297,6 +308,8 @@ class NetworkModeFrame:
         self._build_trainee(self.trainee_frame)
 
     def _build_trainer(self, parent):
+        """Baut die Ansicht des Trainers: Sitzung, Inhalt und Ablauf, Knöpfe für
+        den Durchgang, Teilnehmertabelle und Auswertung."""
         box = theme.card(parent, tr("Sitzung"))
         row = ttk.Frame(box)
         row.pack(fill="x", pady=1)
@@ -563,6 +576,8 @@ class NetworkModeFrame:
         self._refresh_table(selected)
 
     def _build_trainee(self, parent):
+        """Baut die Ansicht des Teilnehmers: Name, PIN, Adresse (mit Suche),
+        Antwortfeld, Verlauf und Statistik."""
         box = theme.card(parent, tr("Verbinden"))
         row = ttk.Frame(box)
         row.pack(fill="x", pady=1)
@@ -722,6 +737,8 @@ class NetworkModeFrame:
         return self.run_active and (self.run_paced or self.run_continuous)
 
     def _show_content_options(self):
+        """Zeigt nur die Felder, die zum gewählten Inhalt passen (Gruppenlänge,
+        eigener Text), und beschriftet die Anzahl als Sequenzen bzw. QSOs."""
         kind = CONTENTS.get(self.content_var.get())
         # QSO-Klartext kommt in Abschnitten; gezählt werden ganze QSOs.
         self.count_label.config(text=tr("Anzahl QSOs:") if kind == "qso" else tr("Anzahl Sequenzen:"))
@@ -750,6 +767,8 @@ class NetworkModeFrame:
             self.poll_id = self.root.after(POLL_MS, self._poll)
 
     def _poll(self):
+        """Regelmäßiger Abruf (POLL_MS): Suchergebnisse anzeigen, Eingänge von
+        Server bzw. Verbindung verarbeiten, Fristen prüfen; plant sich neu ein."""
         self.poll_id = None
         if self.found is not None:
             found, self.found = self.found, None
@@ -776,16 +795,21 @@ class NetworkModeFrame:
 
     @property
     def searching(self):
+        """Läuft gerade die Suche nach Trainern im Netz?"""
         return str(self.search_button.cget("state")) == "disabled"
 
     # --- Trainer ------------------------------------------------------------------
     def toggle_session(self):
+        """Trainer: Sitzung öffnen bzw. schließen (Knopf)."""
         if self.server is None:
             self.open_session()
         else:
             self.close_session()
 
     def open_session(self):
+        """Trainer: öffnet die Sitzung auf dem eingestellten Port mit neuer PIN und
+        zeigt Adresse und PIN an. Bei ungültigem oder belegtem Port nur eine
+        Meldung."""
         try:
             port = self.port_var.get()
         except tk.TclError:
@@ -818,6 +842,8 @@ class NetworkModeFrame:
         self._ensure_polling()
 
     def close_session(self):
+        """Trainer: beendet einen laufenden Durchgang, schließt die Sitzung (alle
+        Teilnehmer werden getrennt) und meldet das dem Hauptfenster (Diplome)."""
         if self.run_active:
             self.stop_run()
         if self.server is not None:
@@ -840,6 +866,8 @@ class NetworkModeFrame:
         self._after_server_events()
 
     def _handle_server_event(self, event):
+        """Trainer: ein Ereignis vom Server verarbeiten (Anmeldung, Antwort,
+        Papierzeile, gesperrte PIN-Versuche)."""
         kind, name = event[0], event[1]
         if kind == "locked":
             self.notice_var.set(tr("Zu oft falsche PIN von {host} – 1 Minute gesperrt.").format(host=name))
@@ -879,12 +907,16 @@ class NetworkModeFrame:
                    for result in (self.board.answers.get(name, {}).get(n) for name in self.board.expected[n]))
 
     def toggle_run(self):
+        """Trainer: Durchgang starten bzw. beenden (F5)."""
         if self.run_active:
             self.stop_run()
         else:
             self.start_run()
 
     def start_run(self):
+        """Trainer: prüft die Einstellungen und beginnt einen Durchgang mit dem
+        gewählten Inhalt und Ablauf; Zeichensatz, Tempo und Bandbedingungen gehen
+        an alle Teilnehmer."""
         if self.server is None:
             return
         kind = CONTENTS.get(self.content_var.get(), "groups")
@@ -967,6 +999,8 @@ class NetworkModeFrame:
                     and self.next_item())
 
     def next_item(self):
+        """Trainer: schickt die nächste Sequenz (bzw. startet den kontinuierlichen
+        Text); ist die geplante Anzahl erreicht, endet der Durchgang."""
         if not self.run_active:
             return
         if self.run_continuous:
@@ -1067,6 +1101,9 @@ class NetworkModeFrame:
             self.trainer_status_var.set(str(exc))
 
     def close_item(self):
+        """Trainer: schließt die laufende Sequenz. Die Teilnehmer bekommen die
+        Lösung (im festen Takt erst am Ende), danach kommt bei „automatisch
+        weiter“ die nächste."""
         if not self.item_open:
             return
         self.item_open = False
@@ -1101,6 +1138,8 @@ class NetworkModeFrame:
         self.next_item()
 
     def replay_for_all(self):
+        """Trainer: spielt die laufende Sequenz für alle noch einmal und verlängert
+        die Antwortzeit; danach eingehende Antworten gelten als nach Wiederholung."""
         if not self.item_open:
             return
         # Schon eingegangene Antworten zählen noch zum ersten Hören.
@@ -1115,6 +1154,8 @@ class NetworkModeFrame:
             self._play_here(self.item)
 
     def stop_run(self):
+        """Trainer: beendet den Durchgang, schickt allen das Ende samt Schlusszeichen
+        und protokolliert ihn."""
         self.close_item()
         if self.run_continuous:
             self._stop_stream()
@@ -1152,6 +1193,8 @@ class NetworkModeFrame:
                          duration_s=duration_s)
 
     def _show_progress(self):
+        """Trainer: Statuszeile mit dem Stand des Durchgangs (Nummer, Antworten,
+        Restzeit) bzw. der Zahl der verbundenen Teilnehmer."""
         if not self.run_active or self.item is None:
             if self.server is not None and not self.run_active and self.item is None:
                 count = len(self.server.names())
@@ -1180,6 +1223,8 @@ class NetworkModeFrame:
         self.trainer_status_var.set(text)
 
     def _refresh_table(self, selected=None):
+        """Trainer: baut die Teilnehmertabelle neu auf (Zustand, Ergebnisse,
+        leiser gestellte Störungen) und behält die Auswahl `selected` bei."""
         selected = selected or self._selected_name()
         for row in self.tree.get_children():
             self.tree.delete(row)
@@ -1308,6 +1353,8 @@ class NetworkModeFrame:
             self.advice_button.pack(side="right")
 
     def apply_advice(self):
+        """Trainer: übernimmt die Tempo-Empfehlung in die Kopfleiste (gilt ab der
+        nächsten Sequenz)."""
         if not self.advice_step or self.adjust_tempo is None:
             return
         change = self.adjust_tempo(self.advice_step)
@@ -1317,6 +1364,8 @@ class NetworkModeFrame:
         self._show_advice()
 
     def _group_text(self) -> str:
+        """Trainer: Auswertung der ganzen Gruppe (Anteil richtiger Zeichen und
+        flüssiger Sequenzen, häufigste Fehler, schwächste Zeichen)."""
         accuracy = self.board.accuracy()
         if accuracy is None:
             return ""
@@ -1377,6 +1426,7 @@ class NetworkModeFrame:
         window.focus_force()
 
     def close_solution(self):
+        """Schließt das Auflösungsfenster."""
         if self.solution_window is not None:
             self.solution_window.destroy()
         self.solution_window = None
@@ -1385,6 +1435,8 @@ class NetworkModeFrame:
         return solution_cells(self.board) if self.board is not None else []
 
     def _refresh_solution(self):
+        """Aktualisiert das Auflösungsfenster: während des Durchgangs nur die
+        laufende Nummer, danach alle Sequenzen mit Lösung."""
         if self.solution_window is None:
             return
         self.copy_button.config(state="disabled" if self.run_active else "normal")
@@ -1434,6 +1486,8 @@ class NetworkModeFrame:
             self._play_here({"text": self.board.items[n], "wpm": wpm or 20, "fw": fw, "band": None}, solution=True)
 
     def _on_solution_key(self, event):
+        """Tasten im Auflösungsfenster: F5–F7 wie im Reiter, Plus/Minus für die
+        Schrift, Pfeile wählen eine Sequenz, Leertaste/Enter spielt sie vor."""
         key = event.keysym
         if key in ("F5", "F6", "F7"):
             self.on_function_key(key)
@@ -1457,12 +1511,15 @@ class NetworkModeFrame:
             self.select_solution(numbers[index])
 
     def zoom_solution(self, direction: int):
+        """Schrift im Auflösungsfenster um eine Stufe größer (1) oder kleiner (−1)."""
         size, low, high, step = SOLUTION_FONT
         size = min(max(self.solution_font.cget("size") + direction * step, low), high)
         self.solution_font.configure(size=size)
         self.solution_big_font.configure(size=3 * size)
 
     def copy_solution(self):
+        """Kopiert die Auflösung als Text in die Zwischenablage (nicht während eines
+        Durchgangs)."""
         cells = self._solution_cells()
         if not cells or self.run_active:
             return
@@ -1507,11 +1564,14 @@ class NetworkModeFrame:
         name_entry.focus_set()
 
     def close_paper(self):
+        """Schließt das Fenster zum Eintragen von Papierbögen."""
         if self.paper_window is not None:
             self.paper_window.destroy()
         self.paper_window = None
 
     def apply_paper(self):
+        """Übernimmt den eingetragenen Papierbogen unter dem angegebenen Namen in die
+        Ergebnisse und leert die Felder für den nächsten."""
         name = protocol.clean_name(self.paper_name_var.get())
         if not name:
             self.paper_note_var.set(tr("Bitte Name oder Rufzeichen eingeben."))
@@ -1558,6 +1618,8 @@ class NetworkModeFrame:
         self.sheet_var.set(tr("Im Browser geöffnet, dort drucken: {path}").format(path=path))
 
     def export_csv(self):
+        """Speichert die Ergebnisse aller Teilnehmer als CSV im Datenordner
+        (Excel-tauglich mit BOM) und zeigt den Pfad an."""
         if self.board is None or not self.board.items:
             return
         headers = (tr("Name"), tr("Zeichen richtig (%)"), tr("Sequenzen richtig"), tr("Sequenzen flüssig"),
@@ -1599,12 +1661,15 @@ class NetworkModeFrame:
         self.trainee_status_var.set(tr("Gefunden: {names}").format(names=names))
 
     def toggle_connection(self):
+        """Teilnehmer: verbinden bzw. trennen (Knopf)."""
         if self.client is None:
             self.connect()
         else:
             self.disconnect()
 
     def connect(self):
+        """Teilnehmer: verbindet sich mit Name und PIN mit dem Trainer an der
+        eingegebenen Adresse; die Antwort kommt über die Abfrage der Eingänge."""
         name = protocol.clean_name(self.name_var.get())
         address = protocol.parse_address(self.address_var.get())
         if not name:
@@ -1623,6 +1688,8 @@ class NetworkModeFrame:
         self._ensure_polling()
 
     def disconnect(self, status=None):
+        """Teilnehmer: trennt die Verbindung, beendet einen laufenden Durchgang und
+        zeigt `status` (Standard: „Getrennt.“)."""
         if self.client is not None:
             self.client.close()
         self.client = None
@@ -1648,6 +1715,8 @@ class NetworkModeFrame:
         return self.trainer_status_var if self.role_var.get() == TRAINER else self.trainee_status_var
 
     def _on_client_event(self, event):
+        """Teilnehmer: ein Ereignis der Verbindung verarbeiten (angenommen,
+        abgelehnt, Fehler, Nachricht des Trainers, Verbindung weg)."""
         kind = event[0]
         if kind == "welcome":
             self.connected = True
@@ -1775,6 +1844,8 @@ class NetworkModeFrame:
         self.stats_panel.reset()
 
     def _end_client_run(self):
+        """Teilnehmer: beendet den eigenen Durchgang – offene Sequenz als verpasst
+        werten, Statistik abschließen und speichern."""
         if self.stream is not None:
             self._finish_stream(stopped_at=time.time())
         if self.session_stats is None:
@@ -1792,6 +1863,9 @@ class NetworkModeFrame:
         self.practice_stop()
 
     def _on_item(self, item, received=None):
+        """Teilnehmer: neue Sequenz vom Trainer prüfen und vorspielen (bzw. bei
+        Papier oder Lautsprecher nur anzeigen); ungültige Nachrichten werden
+        übergangen."""
         text = item.get("text")
         text = normalize(text) if isinstance(text, str) else ""
         wpm, fw = item.get("wpm"), item.get("fw")
@@ -2074,6 +2148,8 @@ class NetworkModeFrame:
             self.entry.focus_set()
 
     def on_submit(self, event=None):
+        """Teilnehmer: Enter im Antwortfeld. Läuft der Ton noch, wird nach seinem
+        Ende gewertet, sonst sofort."""
         if self.current is None or self.answered:
             return "break"
         if self.playing:
@@ -2253,7 +2329,7 @@ class NetworkModeFrame:
 
     # --- Schnittstelle zum Hauptfenster ---------------------------------------------
     def on_key(self, event):
-        pass
+        """Tasten gehen hier in die Eingabefelder; nichts weiter zu tun."""
 
     def on_function_key(self, key: str):
         """Nur beim Trainer: F5 Start/Stop, F6 für alle wiederholen, F7
@@ -2268,6 +2344,8 @@ class NetworkModeFrame:
             self.advance()
 
     def on_close(self):
+        """Programmende: Sitzung schließen bzw. Verbindung trennen und alle
+        geplanten Aufrufe abbrechen."""
         if self.server is not None:
             self.close_session()
         if self.client is not None:
@@ -2281,6 +2359,8 @@ class NetworkModeFrame:
         self.poll_id, self.after_ids = None, set()
 
     def settings(self) -> dict:
+        """Einstellungen des Reiters zum Speichern (Rolle, Sitzungsname, Inhalt,
+        Ablauf, Schalter, Name, Adresse …)."""
         data = {
             "role": self.role_var.get(),
             "session": self.session_var.get(),
@@ -2308,6 +2388,8 @@ class NetworkModeFrame:
         return data
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); unbekannte oder ungültige Werte werden
+        übergangen."""
         if data.get("role") in (TRAINER, TRAINEE):
             self.role_var.set(data["role"])
             self._show_role()

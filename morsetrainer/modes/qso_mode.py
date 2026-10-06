@@ -113,6 +113,9 @@ def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
 
 
 class QsoModeFrame:
+    """Reiter QSO: ein erzeugtes QSO oder ein Contest-Run hören, auf Wunsch mit
+    Abfrage der Inhalte, Mittippen oder Kopfhören mit Fragen; mit mehreren
+    Stationen, Pile-ups und Bandbedingungen."""
     uses_tempo_adjust = True
     uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
 
@@ -154,6 +157,8 @@ class QsoModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
+        """Baut den Reiter: Einstellungen, Knöpfe, Notizen, Mittippen, Abfrage,
+        Klartext und Statistik (die Bereiche ordnet _update_layout())."""
         theme.hint(
             parent, wrap=560,
             text=tr("Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine "
@@ -218,6 +223,8 @@ class QsoModeFrame:
         self.stats_panel = StatsPanel(self.stats_box, tree_height=5)
 
     def _build_qso_settings(self, parent):
+        """Einstellungen des QSOs: Art (normal oder Contest), Auswertung, Länge,
+        Pile-ups, Tempo automatisch anpassen und Bandbedingungen."""
         box = theme.card(parent, "QSO")
         box.columnconfigure(1, weight=1)
         row_pad = {"padx": (0, 8), "pady": 2}
@@ -275,6 +282,8 @@ class QsoModeFrame:
             self._update_layout()
 
     def _update_length_hint(self):
+        """Hinweis neben der Länge: Zahl der QSOs im Contest und ungefähre Dauer
+        beim aktuellen Tempo."""
         length = LENGTH_LABELS.index(self.length_var.get())
         parts = []
         if self._kind() != qso_text.RAGCHEW:
@@ -301,6 +310,8 @@ class QsoModeFrame:
         self._update_reveal_button()
 
     def _update_layout(self):
+        """Zeigt nur die Bereiche, die zur Auswertung passen (Notizen, Mittippen,
+        Abfrage, Klartext, Statistik), in fester Reihenfolge."""
         mode = self._eval_mode()
         # Im Contest wird direkt ins Log geschrieben, schon während des Hörens.
         contest = self.qso.is_contest if self.qso is not None else self._kind() != qso_text.RAGCHEW
@@ -322,6 +333,8 @@ class QsoModeFrame:
     def _update_reveal_button(self):
         # Während des ersten Durchlaufs nur im reinen Hörmodus aufdeckbar,
         # sonst wäre die Abfrage bzw. das Mittippen witzlos.
+        """Knopf „Text zeigen“ nur freigeben, wenn das nichts verrät: bei Abfrage
+        erst nach dem Prüfen, beim Mittippen erst nach dem Durchlauf."""
         if self._eval_mode() in QUIZ_MODES:
             # Bei der Abfrage erst nach „Prüfen“, sonst ließe sich abschreiben.
             allowed = self.qso is not None and self.quiz_checked
@@ -336,12 +349,15 @@ class QsoModeFrame:
 
     # --- Ablauf -----------------------------------------------------------
     def toggle_running(self):
+        """QSO starten bzw. beenden (Knopf, F5)."""
         if self.running:
             self._finish(stopped=True)
         else:
             self.start_new()
 
     def start_new(self):
+        """Erzeugt ein neues QSO nach Art, Länge und Pile-up-Stufe, verteilt Tempo
+        und Tonhöhe auf die Stationen und spielt es ab."""
         try:
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
@@ -404,6 +420,8 @@ class QsoModeFrame:
             self._play(tracking=False)
 
     def _play(self, tracking: bool):
+        """Startet die Wiedergabe des QSOs im Audio-Thread; mit `tracking` wird
+        mitgetippt und als Durchgang aufgezeichnet."""
         self.tracking = tracking
         self.sent_log = []
         self.typed_log = []
@@ -455,6 +473,8 @@ class QsoModeFrame:
             raise  # ins Fehlerprotokoll (threading.excepthook)
 
     def _play_qso(self):
+        """Audio-Thread: spielt alle Durchgänge der Stationen in einem Strom, mit
+        Pausen dazwischen, Pile-up-Anrufern und Bandbedingungen."""
         with audio.output_stream() as stream:
             lead_in = NOISE_LEAD_IN_SECONDS if self.band.has_background else LEAD_IN_SECONDS
             if not self._write(stream, silence(lead_in)):
@@ -531,6 +551,8 @@ class QsoModeFrame:
         return True
 
     def _tick(self, session_id):
+        """Regelmäßig während der Wiedergabe: Fehler melden, Eingabe und Stand
+        („Durchgang 3 von 8“) zeigen, am Ende _finish()."""
         if not self.running or session_id != self.session_id:
             return
         if self.audio_error:
@@ -557,6 +579,8 @@ class QsoModeFrame:
             self._finish()
 
     def _finish(self, stopped: bool = False):
+        """QSO zu Ende oder gestoppt: Knöpfe zurücksetzen, beim Mittippen auswerten,
+        sonst Abfrage freigeben; sagt an, was jetzt zu tun ist."""
         self.running = False
         if self.play_thread is not None:
             self.play_thread.join(timeout=2)
@@ -640,6 +664,7 @@ class QsoModeFrame:
 
     # --- Klartext -----------------------------------------------------------
     def toggle_reveal(self):
+        """Klartext des QSOs zeigen bzw. verbergen (F7)."""
         if self.qso is None:
             return
         self.revealed = not self.revealed
@@ -648,6 +673,8 @@ class QsoModeFrame:
         self._update_reveal_button()
 
     def _render_reveal(self):
+        """Füllt den Klartext: Durchgänge je Station farbig, Pile-up-Anrufer
+        markiert, beim Mittippen die Fehler hervorgehoben."""
         if not self.revealed or self.qso is None:
             return
         pileups = dict(self.qso.pileups)
@@ -679,6 +706,9 @@ class QsoModeFrame:
 
     # --- Abfrage ------------------------------------------------------------
     def _on_quiz_checked(self, correct: int, total: int):
+        """Abfrage geprüft: Ergebnis protokollieren, Klartext zeigen und, wenn
+        eingeschaltet, das Tempo anpassen (nicht nach „Nochmal“ oder beim
+        Kopfhören)."""
         head = self.qso_eval == EVAL_HEAD
         mode = "qso_head" if head else "qso_quiz"
         stats.log_result(mode, correct, total, tempo.effective(self.voices[0][0], self.fw), kind=self.qso.kind,
@@ -718,6 +748,8 @@ class QsoModeFrame:
 
     # --- Schnittstelle zur App ------------------------------------------------
     def on_function_key(self, key: str):
+        """F5 startet bzw. beendet, F6 spielt nochmal, F7 zeigt den Klartext, F8
+        prüft die Abfrage."""
         if key == "F5":
             self.toggle_running()
         elif key == "F6" and str(self.replay_button["state"]) != "disabled":
@@ -757,6 +789,7 @@ class QsoModeFrame:
             self.band_var.set(toggle_value(data["band"]))
 
     def on_close(self):
+        """Programmende: Wiedergabe beenden und den Durchgang speichern."""
         if self.running:
             self.running = False
             if self.play_thread is not None:
@@ -764,6 +797,7 @@ class QsoModeFrame:
         self._finalize_session()
 
     def on_key(self, event):
+        """Beim Mittippen: jedes Morsezeichen mit Zeitpunkt mitschreiben."""
         if not (self.running and self.tracking):
             return
         typed = event.char.upper()

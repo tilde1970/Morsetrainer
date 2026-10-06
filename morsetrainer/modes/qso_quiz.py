@@ -39,6 +39,8 @@ def normalize(text: str, kind: str = qso_text.TEXT) -> str:
 
 
 def is_correct(entered: str, expected: str, kind: str) -> bool:
+    """Stimmt `entered` mit `expected` überein, nach den Regeln der Art `kind`
+    (Kurzzahlen, führende Nullen, Leistung mit oder ohne W …)?"""
     return normalize(entered, kind) == normalize(expected, kind)
 
 
@@ -68,6 +70,8 @@ class QuizPanel:
                   justify="left").pack(anchor="w", pady=(4, 0))
 
     def reset(self, qso) -> None:
+        """Baut die Abfragetabelle für `qso` neu auf (leere Felder, keine
+        Bewertung)."""
         self.qso = qso
         for child in self.grid.winfo_children():
             child.destroy()
@@ -120,9 +124,12 @@ class QuizPanel:
         return text
 
     def set_check_enabled(self, enabled: bool) -> None:
+        """Knopf „Prüfen“ freigeben bzw. sperren (nach dem Prüfen bleibt er gesperrt)."""
         self.check_button.config(state="normal" if enabled and not self.checked else "disabled")
 
     def check(self) -> None:
+        """Bewertet alle Felder (grün/rot mit ✓/✗), zeigt die richtigen Werte der
+        falschen und meldet das Ergebnis dem Reiter."""
         if self.qso is None or self.checked or str(self.check_button["state"]) == "disabled":
             return
         correct, fixes = 0, []

@@ -85,6 +85,8 @@ MESSAGES = {  # Taste -> (Nachrichtentyp, Beschriftung)
 
 @dataclass
 class Caller:
+    """Ein Anrufer im Contest: Rufzeichen und Austausch, Tempo, Tonhöhe und
+    Stärke, wie lange er es versucht, und sein Zustand im Ablauf."""
     call: str
     exchange: str
     exchange_kind: str
@@ -115,11 +117,13 @@ class Mixer:
         self.error = None  # Fehlermeldung, falls die Tonausgabe scheitert
 
     def start(self):
+        """Startet den Audio-Thread."""
         self.running = True
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
     def stop(self):
+        """Beendet den Audio-Thread und wartet kurz auf ihn."""
         self.running = False
         if self.thread is not None:
             self.thread.join(timeout=2)
@@ -132,6 +136,8 @@ class Mixer:
         return start + len(samples)
 
     def cancel(self, station) -> None:
+        """Nimmt alle geplanten Signale von `station` heraus (z. B. wenn ein
+        Anrufer abbricht, weil du schon sendest)."""
         with self.lock:
             self.sources = [s for s in self.sources if s[2] != station]
 
@@ -145,6 +151,9 @@ class Mixer:
             raise  # ins Fehlerprotokoll (threading.excepthook)
 
     def _mix(self):
+        """Schleife des Audio-Threads: schneidet aus allen geplanten Signalen den
+        nächsten Block, mischt ihn mit den Bandbedingungen und schreibt ihn; die
+        Uhr `clock` zählt die geschriebenen Samples."""
         n = int(SAMPLE_RATE * MIX_CHUNK_SECONDS)
         with audio.output_stream() as stream:
             while self.running:
@@ -184,6 +193,9 @@ def call_matches(sent: str, call: str) -> str:
 
 
 class RunModeFrame:
+    """Reiter Contest: du bist die Run-Station. Du rufst CQ über die
+    Funktionstasten, Anrufer melden sich (auch mehrere zugleich), du loggst
+    Rufzeichen und Austausch; am Ende zählen Rate und Fehler wie im Contest."""
     uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
@@ -216,6 +228,8 @@ class RunModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
+        """Baut den Reiter: Contest-Einstellungen, eigener Austausch, Knöpfe der
+        Funktionstasten, Eingabefelder, Log und Auswertung."""
         theme.hint(
             parent, wrap=560,
             text=tr("Du bist die Run-Station: F1 ruft CQ, nimm ein Rufzeichen auf, gib mit Enter den "
@@ -391,12 +405,15 @@ class RunModeFrame:
 
     # --- Ablauf -----------------------------------------------------------
     def toggle_running(self):
+        """Contest starten bzw. beenden (Knopf, F10)."""
         if self.running:
             self.stop()
         else:
             self.start()
 
     def start(self):
+        """Prüft eigenes Rufzeichen und Austausch und beginnt den Contest mit der
+        eingestellten Art, Aktivität und Dauer."""
         kind, my_call = self._kind(), self._my_call()
         if not my_call or not all(ch in MORSE_CODE for ch in my_call):
             self.status_var.set(tr("Bitte ein gültiges eigenes Rufzeichen eintragen."))
@@ -448,6 +465,8 @@ class RunModeFrame:
         self.root.after(TICK_MS, self._tick, self.session_id)
 
     def stop(self):
+        """Beendet den Contest, wertet das Log aus (Rate, Fehler) und protokolliert
+        das Ergebnis."""
         self.running = False
         if self.mixer is not None:
             self.mixer.stop()
@@ -482,6 +501,8 @@ class RunModeFrame:
         self.on_stop_cb()
 
     def _tick(self, session_id):
+        """Regelmäßig: Fehler der Tonausgabe melden, fällige Ereignisse der Anrufer
+        nach der Audio-Uhr ausführen und nach Ablauf der Dauer beenden."""
         if not self.running or session_id != self.session_id:
             return
         if self.mixer.error:
@@ -615,6 +636,9 @@ class RunModeFrame:
         return "break"
 
     def _log_qso(self):
+        """Loggt das QSO aus den Eingabefeldern und bewertet es gegen die Station,
+        die den Austausch bekommen hat: richtig, Busted (falsches Rufzeichen), NIL
+        (niemand gearbeitet) oder falscher Austausch."""
         call = self.call_var.get().strip()
         exch = self.exch_var.get().strip()
         worked = next((c for c in self.callers if c.state == "worked"), None)
@@ -660,6 +684,8 @@ class RunModeFrame:
         return [c for c in self.callers if c.state != "done"]
 
     def _new_caller(self) -> Caller:
+        """Neuer Anrufer mit Rufzeichen und Austausch passend zum Contest, Tempo und
+        Tonhöhe gestreut um deine, zufälliger Stärke und Geduld."""
         call, exchange, exchange_kind = qso_text.contest_caller(
             self.kind, self.my_call_str, {c.call for c in self.callers}
         )
@@ -788,6 +814,8 @@ class RunModeFrame:
 
     # --- Schnittstelle zur App ------------------------------------------------
     def on_function_key(self, key: str):
+        """Funktionstasten wie in Contest-Programmen: F1–F8 senden die
+        Nachrichten (MESSAGES), F10 startet bzw. beendet."""
         if key == "F10":
             self.toggle_running()
             return
@@ -797,9 +825,11 @@ class RunModeFrame:
                 self.exch_entry.focus_set()
 
     def on_key(self, event):
-        pass  # Eingabe über die Felder und Funktionstasten
+        """Eingabe nur über die Felder und Funktionstasten; hier nichts zu tun."""
 
     def settings(self) -> dict:
+        """Einstellungen des Reiters zum Speichern (Contest-Art, Rufzeichen,
+        Austausch je Contest, Aktivität, Dauer, Streuung, Bandbedingungen an/aus)."""
         exchange = self.my_exchange_var.get().strip().upper()
         if exchange and not qso_text.uses_serial(self._kind(), self._my_call()):
             self.my_exchanges[self._kind()] = exchange
@@ -826,6 +856,7 @@ class RunModeFrame:
             return default
 
     def restore_settings(self, data: dict) -> None:
+        """Gegenstück zu settings(); ungültige Werte werden übergangen."""
         exchanges = data.get("my_exchanges")
         if isinstance(exchanges, dict):
             self.my_exchanges = {k: v for k, v in exchanges.items() if isinstance(v, str)}
@@ -845,5 +876,6 @@ class RunModeFrame:
         self._on_setup_change()
 
     def on_close(self):
+        """Programmende: Audio-Thread beenden."""
         if self.mixer is not None:
             self.mixer.stop()
