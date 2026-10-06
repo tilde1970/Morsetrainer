@@ -6,6 +6,10 @@
   deiner Tonhöhe und deinem Tempo unter den eingestellten Bedingungen,
   ohne in einen Reiter zu wechseln. Änderungen sind sofort zu hören; zählt
   für nichts. Gesperrt während eines Durchgangs und im Netzwerk.
+- **Sprachansage:** Kommt eine neue Ansage, während eine andere noch
+  spricht, geht der Ablauf erst nach der neuen weiter. Bisher konnte der
+  nächste Morseton sie abschneiden (etwa beim Reiterwechsel mitten in
+  einer Ansage).
 - **Netzwerk: alle hören dasselbe QRM.** Mit CW-QRM hörte bisher jeder
   Teilnehmer ein anderes Nachbar-QSO und dazu andere Gewitter, Träger und
   Knacker. Jetzt ist alles gleich (Trainer und Teilnehmer ab 2.39).

@@ -30,6 +30,9 @@ from morsetrainer.i18n import N_, number, tr
 # Pause nach einer Ansage, bevor es weitergeht.
 AFTER_SPEECH_MS = 250
 POLL_MS = 20
+# Verdrängte Ansage: ihr Ablauf wartet, bis die neue zu Ende ist – höchstens
+# so lange, damit nichts hängen bleibt, falls immer neue kommen.
+SUPERSEDED_MAX_WAIT_S = 30
 CACHE_SIZE = 64
 # Lange Ansagen (Statistik) satzweise: der erste Satz klingt sofort, die
 # übrigen entstehen, während er läuft. Kurze bleiben ein Stück.
@@ -46,6 +49,7 @@ class Announcer:
         self.var = tk.BooleanVar(value=False)
         self.token = 0
         self.speaking_until = 0.0  # time.time(), zu der die laufende Ansage endet
+        self.done_token = 0  # token der zuletzt ganz abgespielten Ansage
         self._cache = {}
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
@@ -73,8 +77,9 @@ class Announcer:
     def say(self, text: str, then=None, force: bool = False) -> None:
         """`text` ansagen, danach `then()` aufrufen. Ist die Ansage aus (und
         nicht `force`) oder keine Stimme da, kommt `then` sofort. Eine neue
-        Ansage verdrängt eine noch nicht begonnene ältere; deren `then` wird
-        trotzdem aufgerufen, damit kein Ablauf hängen bleibt."""
+        Ansage verdrängt die ältere, auch eine schon sprechende; deren `then`
+        kommt trotzdem, aber erst wenn die neue zu Ende ist – sonst schnitte
+        etwa der nächste Morseton die neue Ansage ab."""
         text = speakable(text)
         if not text or not (force or self.enabled()) or self.available() is not None:
             if force and text and self.available() is not None:
@@ -97,12 +102,13 @@ class Announcer:
         state = {"next": 0, "free_at": 0.0}  # nächstes Stück; wann das laufende zu Ende ist
 
         def poll():
-            if token != self.token:  # verdrängt: Ablauf trotzdem freigeben
+            if token != self.token:  # verdrängt: Ablauf nach der neuen Ansage freigeben
                 if then is not None:
-                    then()
+                    self._when_idle(then, time.time() + SUPERSEDED_MAX_WAIT_S)
                 return
             index = state["next"]
             if index >= len(chunks):
+                self.done_token = token
                 if then is not None:
                     wait = max(state["free_at"] - time.time(), 0.0)
                     self._after(int(wait * 1000) + AFTER_SPEECH_MS, then)
@@ -117,6 +123,16 @@ class Announcer:
             self._after(POLL_MS, poll)
 
         poll()
+
+    def _when_idle(self, then, deadline: float) -> None:
+        """`then()`, sobald keine Ansage mehr läuft (die neueste ganz
+        abgespielt und verklungen), spätestens zu `deadline`."""
+        now = time.time()
+        idle = self.done_token == self.token and now >= self.speaking_until
+        if idle or now >= deadline:
+            self._after(AFTER_SPEECH_MS if idle else 0, then)
+        else:
+            self._after(POLL_MS, self._when_idle, then, deadline)
 
     def render(self, text: str, deliver) -> None:
         """Sprache für `text` im Hintergrund erzeugen und `deliver(samples)`

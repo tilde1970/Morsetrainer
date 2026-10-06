@@ -140,6 +140,25 @@ class AnnouncerTest(AppTestCase):
             self.assertTrue(self.pump_until(lambda: done, timeout=4))
         self.assertGreaterEqual(done[0] - start, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
 
+    def test_superseded_announcement_waits_for_the_new_one(self):
+        # Bis 2.38 gab eine schon sprechende, verdrängte Ansage ihren Ablauf
+        # sofort frei; der nächste Morseton schnitt dann die neue ab.
+        import time
+        import numpy as np
+        from morsetrainer.core import speech
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)  # Reiter-Ansage beim Aufbau ausklingen lassen
+        done = {}
+        with mock.patch.object(speech.speaker, "synth",
+                               lambda text: np.zeros(self.announcer.SAMPLE_RATE, dtype=np.float32)):
+            self.app.announcer.say("Erste.", then=lambda: done.setdefault("first", time.monotonic()))
+            self.assertTrue(self.pump_until(lambda: self.app.announcer.speaking_until > time.time()))
+            second = time.monotonic()
+            self.app.announcer.say("Zweite.", then=lambda: done.setdefault("second", time.monotonic()))
+            self.assertTrue(self.pump_until(lambda: len(done) == 2, timeout=5))
+        self.assertGreaterEqual(done["first"] - second, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
+        self.assertLessEqual(abs(done["first"] - done["second"]), 0.2)
+
     def test_long_announcement_starts_with_the_first_sentence(self):
         from morsetrainer.widgets import announcer
         self.assertEqual(announcer._chunks("Richtig."), ["Richtig."])
@@ -186,6 +205,10 @@ class AnnouncerTest(AppTestCase):
     def test_single_char_error_is_named(self):
         import time
         self.app.announcer.var.set(True)
+        # Reiter-Ansage beim Aufbau ausklingen lassen: sie käme sonst
+        # dazwischen, und der Ablauf wartet zu Recht, bis sie zu Ende ist.
+        self.pump_until(lambda: False, timeout=0.5)
+        self.said.clear()
         single = self.mode("Einzelzeichen")
         single.start()
         single.current_char, single.voice, single.waiting_for_input, single.replayed = "K", (20, 600), True, False

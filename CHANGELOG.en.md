@@ -6,6 +6,10 @@
   your pitch and speed under the conditions set, without switching to a
   tab. Changes can be heard at once; it counts for nothing. Disabled
   during a run and on the network.
+- **Announcements:** if a new announcement comes while another is still
+  speaking, the run continues only after the new one. Until now the next
+  Morse tone could cut it off (e.g. when switching tabs in the middle of
+  an announcement).
 - **Network: everyone hears the same QRM.** With CW QRM, each participant
   used to hear a different neighbouring QSO and different thunderstorms,
   carriers and crashes. Now it is all the same (trainer and participants
