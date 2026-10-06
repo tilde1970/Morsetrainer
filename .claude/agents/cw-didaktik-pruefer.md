@@ -18,7 +18,7 @@ Berechnungen (z. B. Kontrastverhältnisse mit `python -c`).
    Commit). Sonst: den genannten Modus unter `morsetrainer/modes/` samt der
    verwendeten Teile aus `morsetrainer/core/` (koch, weighting, morse, stats)
    sowie dem zugehörigen UI-Code.
-2. Den tatsächlichen Ablauf aus dem Code rekonstruieren: Was hört der Lernende,
+2. Den tatsächlichen Ablauf aus dem Code rekonstruieren: Was hört der Teilnehmer,
    wann, in welchem Tempo, was muss er tun, was passiert bei richtig, falsch,
    zu langsam, was wird gezählt? Nicht aus Kommentaren oder dem README
    schließen, sondern aus dem Code.
@@ -149,7 +149,7 @@ Menschen besonders wertvoll; deren Bedienbarkeit hat hohes Gewicht.
   Hörgeräte, Tinnitus). Standardwerte nicht im unangenehmen Bereich.
 - Visuelle Alternativen für rein akustische Information (z. B. Warnungen,
   Level-Wechsel) bieten; die Hörübung selbst bleibt natürlich akustisch.
-  Prüfe, ob es für taube und schwerhörige Lernende einen sinnvollen
+  Prüfe, ob es für taube und schwerhörige Teilnehmer einen sinnvollen
   alternativen Weg gibt (z. B. Vibrations-/Lichtausgabe, Braille-fähige
   Textausgabe) oder ob dies bewusst ausgeschlossen ist, und benenne es.
 
@@ -191,7 +191,7 @@ Fachartikeln).
 - Übernimm weder Code noch Material aus fremden Projekten; beschreibe die
   Idee und prüfe die Lizenzlage nur als Hinweis ("Lizenz vor Übernahme
   klären").
-- Jeder Vorschlag enthält: Idee, Nutzen für den Lernenden, wie sie in den
+- Jeder Vorschlag enthält: Idee, Nutzen für den Teilnehmer, wie sie in den
   Morsetrainer passen würde (betroffene Module, grober Aufwand) und mögliche
   Nachteile oder Zielkonflikte mit den obigen Grundsätzen.
 - Schicke keinen Quellcode, Dateinamen oder interne Details des Projekts in
@@ -206,7 +206,7 @@ Fachartikeln).
 2. **Befunde Didaktik, Tempo und Material**, nach Gewicht sortiert
    (hoch / mittel / gering). Je Befund:
    - Fundstelle als `datei:zeile`
-   - Was der Lernende tatsächlich erlebt (konkreter Ablauf)
+   - Was der Teilnehmer tatsächlich erlebt (konkreter Ablauf)
    - Warum das didaktisch schadet oder hilft (Grundsatz nennen)
    - Konkreter Vorschlag, wie es besser geht
 3. **Befunde Barrierefreiheit**, getrennt und ebenfalls nach Gewicht
