@@ -11,6 +11,7 @@ from morsetrainer.core import band
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_preview import PREVIEW_SECONDS, BandPreview
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
@@ -42,6 +43,8 @@ DEFAULT_PRESET = "light"
 # Gespeicherte Einstellungen tragen diese Fassung; ohne sie stammen sie aus
 # Version 2.37 oder älter, als QSB auch die Stärkeunterschiede enthielt.
 SETTINGS_VERSION = 2
+# Höchstens dieser Anteil der Bildschirmhöhe; was nicht passt, wird gescrollt.
+WINDOW_MAX_SCREEN_SHARE = 0.85
 # So oft schaut das Fenster, ob das Probehören zu Ende ist.
 PREVIEW_POLL_MS = 200
 # Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
@@ -248,10 +251,12 @@ class BandSettings:
         window.title(tr("Bandbedingungen"))
         window.transient(self.root)  # bleibt über dem Hauptfenster
         window.configure(background=theme.BG)
-        window.resizable(True, False)
         window.protocol("WM_DELETE_WINDOW", self.close_window)
         window.bind("<Escape>", lambda e: self.close_window())
-        frame = ttk.Frame(window, padding=10)
+        # Mit Scrollleiste: Bei großer Schrift oder kleinem Bildschirm passt
+        # das Fenster nicht ganz auf den Bildschirm.
+        self.scroller = ScrollableFrame(window)
+        frame = self.content = ttk.Frame(self.scroller.inner, padding=10)
         frame.pack(fill="both", expand=True)
         theme.hint(frame, wrap=460, text=tr(
             "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken "
@@ -350,6 +355,15 @@ class BandSettings:
                 window.bind(f"<{modifier}-p>", lambda e: self.toggle_preview() or "break")
         self._update_window()
         self._show_preview()
+        self._fit_window()
+
+    def _fit_window(self) -> None:
+        """So groß wie der Inhalt, aber nicht höher als der Bildschirm
+        erlaubt; der Rest ist mit der Scrollleiste erreichbar."""
+        self.window.update_idletasks()
+        limit = int(self.window.winfo_screenheight() * WINDOW_MAX_SCREEN_SHARE)
+        self.scroller.canvas.config(width=self.content.winfo_reqwidth(),
+                                    height=min(self.content.winfo_reqheight(), limit))
 
     def close_window(self) -> None:
         """Schließt das Fenster und gibt den Fokus zurück, etwa an das
@@ -385,6 +399,7 @@ class BandSettings:
     def _toggle_extras(self) -> None:
         self.extras_open = not self.extras_open
         self._show_extras()
+        self._fit_window()
 
     def _show_extras(self) -> None:
         self.extra_button.config(text=("▾ " if self.extras_open else "▸ ") + tr("Weitere Störungen"))

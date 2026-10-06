@@ -10,6 +10,15 @@
   speaking, the run continues only after the new one. Until now the next
   Morse tone could cut it off (e.g. when switching tabs in the middle of
   an announcement).
+- **Band conditions window with a scroll bar:** with a large font or a
+  small screen it no longer fits completely; what is missing can now be
+  reached.
+- **Continuous:** the evaluation after stopping shows the last 90
+  characters instead of 30 (in lines of 30), “Your input” the last 120;
+  the number is in the heading.
+- **Smaller font sizes too:** 90 % and 75 % for small screens.
+- **Search the help** with Ctrl+F: Enter jumps to the next match,
+  Shift+Enter to the previous one; all matches are highlighted.
 - **Network: everyone hears the same QRM.** With CW QRM, each participant
   used to hear a different neighbouring QSO and different thunderstorms,
   carriers and crashes. Now it is all the same (trainer and participants

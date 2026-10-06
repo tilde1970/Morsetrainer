@@ -70,7 +70,9 @@ _fonts = []
 # Schriftgröße im Programm (Barrierefreiheit): Prozent der Größe bei
 # apply(). Alle Tk- und benannten Schriften wachsen mit, ebenso die
 # Zeilenhöhe der Tabellen und die Umbruchbreite mehrzeiliger Texte.
-ZOOM_STEPS = (100, 110, 125, 150, 175, 200)
+# Unter 100 % für kleine Bildschirme (Netbook, Beamer mit wenig Auflösung).
+ZOOM_STEPS = (75, 90, 100, 110, 125, 150, 175, 200)
+NORMAL_ZOOM = 100  # Grundeinstellung, Strg+0
 _STD_FONTS = ("TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont",
               "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont")
 _base_sizes = {}  # Schriftname -> Größe bei 100 %

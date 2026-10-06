@@ -16,7 +16,7 @@ takes effect after a restart.
 | **Groups** | Copy groups of characters. The group length can grow: start short, one longer after 5 correct groups, one shorter after 2 wrong groups (each on the first attempt). |
 | **Words** | CW abbreviations, Q codes and QSO words, only from characters you already know. The default is “Listen first”: hear the whole word, then type; a slow answer is noted. R, K and the prosigns KN and SK also appear (but do not count as words for the minimum). A weak character comes up more often, but in changing words. The meaning is shown after the answer. You can add your own words (see Data). |
 | **Callsigns** | Real callsigns from the Super Check Partial list, by default only from characters you have already learned (from Koch lesson 23 with the first digit). Occasionally with /P, /M, OE/… as in contests. Optionally as a **RufZ run** (modelled on RufzXP): 50 callsigns, one attempt each, the speed grows, score = length × effective speed, best score (with starting speed) and history; afterwards you can replay the missed and slowly recognised callsigns (F6): first just listen, then again with the solution, at the original speed. |
-| **Continuous** | The audio keeps running without waiting, you type along (as when listening on the air); characters come in groups (default 5) with a word gap in between. Instead of random characters also as **plain text**: words, typical QSO phrases (“TNX FER CALL”, “UR RST 599”), callsigns or complete QSOs in one go (plain text does not count for the lesson). Optionally with **band conditions** running under the whole session. After stopping (F5 or Esc) a comparison shows the last characters; **Everything in a separate window** shows the whole session, split into the groups as sent (without groups in blocks of 5), errors in red, larger/smaller font, copyable – or only the sent text, to check against your paper. A key only counts if it fits the character: not guessed in advance and at most 5 s after it; typing too much counts as an error. |
+| **Continuous** | The audio keeps running without waiting, you type along (as when listening on the air); characters come in groups (default 5) with a word gap in between. Instead of random characters also as **plain text**: words, typical QSO phrases (“TNX FER CALL”, “UR RST 599”), callsigns or complete QSOs in one go (plain text does not count for the lesson). Optionally with **band conditions** running under the whole session. After stopping (F5 or Esc) a comparison shows the last 90 characters (in lines of 30); **Everything in a separate window** shows the whole session, split into the groups as sent (without groups in blocks of 5), errors in red, larger/smaller font, copyable – or only the sent text, to check against your paper. A key only counts if it fits the character: not guessed in advance and at most 5 s after it; typing too much counts as an error. |
 | **Speak** | Listen & say without a keyboard (like Morse Code Ninja): Morse code, a thinking pause in which you say out loud what you heard, then a voice announces the solution – characters, groups and callsigns spelled (German letter names or phonetic alphabet), words and phrases as a whole or with their meaning – and the code comes once more. The thinking pause is deliberately short (default 1 s plus 0.3 s per character). Content: characters, groups, words, phrases, callsigns. **Save as MP3** for on the go (phone, car). Counts only for practice time. *The voice is German.* |
 | **QSO** | Listen to complete QSOs: normal QSO or contest runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) with adjustable pile-ups (default off). Evaluation via log check, by typing along, as **head copy + questions** (no notes, afterwards content questions about name, QTH, rig, weather … or exchange) or listen only. Next to the length the estimated duration is shown; how often you used “Again” before checking is noted. |
 | **Contest** | You are the running station (similar to Morse Runner): call CQ, pick up callers, send the exchange, log. As in a real contest, callers sometimes answer to an almost correct call – if you notice the mistake, correct the call and confirm with Enter (“Call TU”), otherwise “Busted” appears in the log. “?” in the call field asks back (DL1?, DL?ABC). Speed and pitch spread of the callers are adjustable, at the end there is a summary by type of error; F10 starts and ends. |
@@ -221,8 +221,8 @@ Also helpful:
   Farnsworth, weak characters, vary, band conditions.
 - **Font size:** under “Settings …” → “Font size”, or with
   **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0** (normal), the whole
-  interface gets larger, up to 200 %; the window grows with it. The
-  setting is saved.
+  interface gets larger, up to 200 %; the window grows with it. For small
+  screens it also goes smaller, to 90 % and 75 %. The setting is saved.
 - **Callsign and name:** enter them once under “Settings …”. They
   appear on the awards and are the default for “My callsign” in Contest and
   “Name/callsign” in Network (there the callsign if there is no name).
@@ -536,7 +536,7 @@ versions (CHANGELOG) and this manual.
   Alt+1 … Alt+9 and Alt+0 switch to tab 1 … 10, Ctrl+Tab cycles through
   the tabs (on the Mac Cmd+1 … Cmd+9); Ctrl+B opens the band conditions,
   in which Ctrl+P listens to them, Ctrl+Comma the settings (on the Mac also
-  Cmd+Comma).
+  Cmd+Comma). In the help, Ctrl+F searches.
 - **On the Mac** F9, F11 and F12 are media keys or taken by the system
   (Fn+F11 shows the desktop). Use Cmd+Shift+A (announcements on/off),
   Cmd+Shift+W (where am I) and Cmd+Shift+T (daily practice) instead.

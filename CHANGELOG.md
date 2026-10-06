@@ -10,6 +10,15 @@
   spricht, geht der Ablauf erst nach der neuen weiter. Bisher konnte der
   nächste Morseton sie abschneiden (etwa beim Reiterwechsel mitten in
   einer Ansage).
+- **Fenster Bandbedingungen mit Scrollleiste:** Bei großer Schrift oder
+  kleinem Bildschirm passt es nicht mehr ganz hinein; was fehlt, ist
+  jetzt erreichbar.
+- **Kontinuierlich:** Die Auswertung nach dem Stoppen zeigt die letzten
+  90 Zeichen statt 30 (in Zeilen zu 30), „Deine Eingabe“ die letzten 120;
+  die Anzahl steht in der Überschrift.
+- **Schriftgröße auch kleiner:** 90 % und 75 % für kleine Bildschirme.
+- **Hilfe durchsuchen** mit Strg+F: Enter springt zum nächsten Treffer,
+  Umschalt+Enter zum vorigen; alle Treffer sind markiert.
 - **Netzwerk: alle hören dasselbe QRM.** Mit CW-QRM hörte bisher jeder
   Teilnehmer ein anderes Nachbar-QSO und dazu andere Gewitter, Träger und
   Knacker. Jetzt ist alles gleich (Trainer und Teilnehmer ab 2.39).

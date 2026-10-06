@@ -76,8 +76,12 @@ MAX_LAG_SECONDS = 5.0
 # Beim Stoppen von Hand: so kurz vor dem Stopp gesendete Zeichen, die noch
 # nicht getippt sind, zählen nicht als verpasst.
 STOP_GRACE_SECONDS = 2.0
-# So viele der letzten Zeichen zeigt die Gegenüberstellung nach dem Stopp.
-DIFF_TAIL = 30
+# So viele der letzten Zeichen zeigt die Gegenüberstellung nach dem Stopp,
+# in Zeilen zu DIFF_LINE (gesendet, getippt, Markierung untereinander).
+DIFF_TAIL = 90
+DIFF_LINE = 30
+# So viele der zuletzt getippten Zeichen zeigt „Deine Eingabe“.
+TYPED_TAIL = 120
 # Die ganze Auswertung (eigenes Fenster) ist nach den gesendeten Gruppen
 # bzw. Wörtern gegliedert; ohne Gruppen (durchgehend) in Blöcken zu 5.
 FULL_GROUP_LEN = 5
@@ -217,14 +221,14 @@ class ContinuousModeFrame(DailyModeMixin):
         self.live_var = tk.StringVar(value="")
         ttk.Label(parent, textvariable=self.live_var).pack(anchor="w", padx=10)
 
-        self.diff_box = theme.card(parent, tr("Auswertung (letzte Zeichen)"))
+        self.diff_box = theme.card(parent, tr("Auswertung (letzte {n} Zeichen)").format(n=DIFF_TAIL))
         self.diff_var = tk.StringVar(value=tr("Erscheint nach dem Stoppen."))
         ttk.Label(self.diff_box, textvariable=self.diff_var, font=theme.MONO, justify="left").pack(anchor="w")
         self.full_button = ttk.Button(self.diff_box, text=tr("Alles in eigenem Fenster"), command=self.show_full,
                                       state="disabled")
         self.full_button.pack(anchor="w", pady=(6, 0))
 
-        typed = theme.card(parent, tr("Deine Eingabe (letzte Zeichen)"))
+        typed = theme.card(parent, tr("Deine Eingabe (letzte {n} Zeichen)").format(n=TYPED_TAIL))
         self.typed_preview_var = tk.StringVar(value="")
         ttk.Label(typed, textvariable=self.typed_preview_var, font=theme.MONO, wraplength=540).pack(anchor="w")
 
@@ -465,7 +469,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.finishing = True
             self.status_var.set(tr("Zeit abgelaufen – tippe die letzten Zeichen noch ein…"))
             self.root.after(FINISH_GRACE_SECONDS * 1000, self._auto_stop, self.session_id)
-        self.typed_preview_var.set("".join(e["char"] for e in typed_log[-60:]))
+        self.typed_preview_var.set("".join(e["char"] for e in typed_log[-TYPED_TAIL:]))
         self.root.after(1000, self._tick)
 
     def stop(self):
@@ -535,12 +539,15 @@ class ContinuousModeFrame(DailyModeMixin):
         self._render_full()
         tail = rows[-DIFF_TAIL:]
         if tail:
-            self.diff_var.set(
-                f"{tr('gesendet'):<10}" + " ".join(r[0] for r in tail)
-                + f"\n{tr('getippt'):<10}" + " ".join(r[1] for r in tail)
-                + "\n" + " " * 10 + " ".join(r[2] for r in tail).rstrip()
-                + "\n" + " " * 10 + tr("– fehlt/zu viel, ^ falsch oder nicht rechtzeitig")
-            )
+            blocks = []
+            for start in range(0, len(tail), DIFF_LINE):
+                line = tail[start:start + DIFF_LINE]
+                blocks.append(
+                    f"{tr('gesendet'):<10}" + " ".join(r[0] for r in line)
+                    + f"\n{tr('getippt'):<10}" + " ".join(r[1] for r in line)
+                    + "\n" + (" " * 10 + " ".join(r[2] for r in line)).rstrip())
+            self.diff_var.set("\n\n".join(blocks)
+                              + "\n" + " " * 10 + tr("– fehlt/zu viel, ^ falsch oder nicht rechtzeitig"))
         summary = self.session_stats.summary()
         if getattr(self, "content", "chars") == "chars":  # Klartext ist vorhersagbarer
             self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])

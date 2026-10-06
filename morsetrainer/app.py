@@ -361,10 +361,10 @@ class MorseTrainerApp:
         zoom = ttk.Frame(access_card)
         zoom.pack(fill="x", pady=2)
         ttk.Label(zoom, text=tr("Schriftgröße")).pack(side="left")
-        self.font_scale_var = tk.IntVar(value=theme.ZOOM_STEPS[0])
+        self.font_scale_var = tk.IntVar(value=theme.NORMAL_ZOOM)
         self.zoom_box = ttk.Combobox(zoom, values=[f"{step} %" for step in theme.ZOOM_STEPS], state="readonly",
                                      width=7)
-        self.zoom_box.set(f"{theme.ZOOM_STEPS[0]} %")
+        self.zoom_box.set(f"{theme.NORMAL_ZOOM} %")
         self.zoom_box.pack(side="left", padx=(6, 8))
         self.zoom_box.bind("<<ComboboxSelected>>", lambda e: self.set_font_scale(int(self.zoom_box.get().split()[0])))
         theme.hint(zoom, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal")).pack(side="left")
@@ -618,7 +618,7 @@ class MorseTrainerApp:
     def zoom(self, direction: int) -> None:
         """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal)."""
         current = self.font_scale_var.get()
-        self.set_font_scale(theme.ZOOM_STEPS[0] if direction == 0 else theme.zoom_step(current, direction))
+        self.set_font_scale(theme.NORMAL_ZOOM if direction == 0 else theme.zoom_step(current, direction))
 
     def set_font_scale(self, percent: int) -> None:
         self.font_scale_var.set(min(max(percent, theme.ZOOM_STEPS[0]), theme.ZOOM_STEPS[-1]))

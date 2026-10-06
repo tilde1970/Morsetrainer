@@ -19,7 +19,7 @@ from tkinter import ttk
 
 from morsetrainer import i18n
 from morsetrainer.i18n import N_, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "docs/Anleitung.md"))
 
@@ -156,10 +156,13 @@ class HelpWindow:
 
     @classmethod
     def show(cls, root) -> None:
-        if cls._open is not None and cls._open.top.winfo_exists():
-            cls._open.top.deiconify()
-            cls._open.top.lift()
-            return
+        try:
+            if cls._open is not None and cls._open.top.winfo_exists():
+                cls._open.top.deiconify()
+                cls._open.top.lift()
+                return
+        except tk.TclError:
+            pass  # gehörte zu einem schon zerstörten Hauptfenster
         cls._open = cls(root)
 
     def __init__(self, root):
@@ -167,8 +170,26 @@ class HelpWindow:
         self.top.title(tr("Morsetrainer – Hilfe"))
         self.top.configure(background=theme.BG)
         self.top.geometry("760x640")
-        notebook = ttk.Notebook(self.top)
+        # Suchen (Strg+F): im gerade gezeigten Reiter; Enter springt zum
+        # nächsten Treffer, Umschalt+Enter zum vorigen.
+        bar = ttk.Frame(self.top)
+        bar.pack(fill="x", padx=8, pady=(8, 0))
+        ttk.Label(bar, text=tr("Suchen:")).pack(side="left")
+        self.search_var = tk.StringVar(value="")
+        self.search_entry = ttk.Entry(bar, textvariable=self.search_var, width=28)
+        self.search_entry.pack(side="left", padx=(6, 8))
+        announcer.name(self.search_entry, tr("Suchen in der Hilfe"))
+        self.search_info_var = tk.StringVar(value=tr("Strg+F, Enter: nächster Treffer"))
+        theme.hint(bar, textvariable=self.search_info_var).pack(side="left")
+        self.search_entry.bind("<Return>", lambda e: self.find(1) or "break")
+        self.search_entry.bind("<KP_Enter>", lambda e: self.find(1) or "break")
+        self.search_entry.bind("<Shift-Return>", lambda e: self.find(-1) or "break")
+        self.search_var.trace_add("write", lambda *_: self._new_search())
+        self.matches = []  # Anfangspositionen der Treffer im gezeigten Text
+        self.match_index = -1
+        notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
+        notebook.bind("<<NotebookTabChanged>>", lambda e: self._new_search(), add="+")
         self.texts = {}
         for title, name in DOCS:
             frame = ttk.Frame(notebook)
@@ -179,6 +200,8 @@ class HelpWindow:
             scroll.pack(side="right", fill="y")
             text.pack(side="left", fill="both", expand=True)
             _setup_tags(text)
+            text.tag_configure("match", background=theme.SELECT)
+            text.tag_configure("match_current", background=theme.ACCENT, foreground=theme.SURFACE)
             try:
                 content = doc_path(name).read_text(encoding="utf-8")
             except OSError:
@@ -186,4 +209,62 @@ class HelpWindow:
             render(text, content)
             self.texts[name] = text
         ttk.Button(self.top, text=tr("Schließen"), command=self.top.destroy).pack(anchor="e", padx=8, pady=(0, 8))
-        self.top.bind("<Escape>", lambda e: self.top.destroy())
+        self.top.bind("<Escape>", self._escape)
+        for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
+            self.top.bind(f"<{modifier}-f>", lambda e: self.focus_search() or "break")
+
+    def _current_text(self) -> tk.Text:
+        return self.texts[DOCS[self.notebook.index("current")][1]]
+
+    def focus_search(self) -> None:
+        self.search_entry.focus_set()
+        self.search_entry.select_range(0, "end")
+
+    def _escape(self, event) -> None:
+        """Esc im Suchfeld mit Text leert die Suche, sonst schließt es."""
+        if event.widget is self.search_entry and self.search_var.get():
+            self.search_var.set("")
+        else:
+            self.top.destroy()
+
+    def _new_search(self) -> None:
+        """Suchtext oder Reiter geändert: alle Treffer markieren, den
+        ersten zeigen."""
+        for text in self.texts.values():
+            text.tag_remove("match", "1.0", "end")
+            text.tag_remove("match_current", "1.0", "end")
+        self.matches, self.match_index = [], -1
+        needle = self.search_var.get().strip()
+        if not needle:
+            self.search_info_var.set(tr("Strg+F, Enter: nächster Treffer"))
+            return
+        text = self._current_text()
+        start = "1.0"
+        while True:
+            pos = text.search(needle, start, stopindex="end", nocase=True)
+            if not pos:
+                break
+            end = f"{pos}+{len(needle)}c"
+            text.tag_add("match", pos, end)
+            self.matches.append(pos)
+            start = end
+        self.find(1)
+
+    def find(self, direction: int) -> None:
+        """Zum nächsten (1) oder vorigen (−1) Treffer springen."""
+        if not self.matches:
+            if self.search_var.get().strip():
+                self._say_result(tr("nicht gefunden"))
+            return
+        text = self._current_text()
+        needle = len(self.search_var.get().strip())
+        text.tag_remove("match_current", "1.0", "end")
+        self.match_index = (self.match_index + direction) % len(self.matches)
+        pos = self.matches[self.match_index]
+        text.tag_add("match_current", pos, f"{pos}+{needle}c")
+        text.see(pos)
+        self._say_result(tr("Treffer {n} von {total}").format(n=self.match_index + 1, total=len(self.matches)))
+
+    def _say_result(self, message: str) -> None:
+        self.search_info_var.set(message)
+        announcer.say(message)

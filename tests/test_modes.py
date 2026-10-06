@@ -1070,6 +1070,38 @@ class HelpWindowTest(AppTestCase):
         self.assertIs(help_window.HelpWindow._open, window)
 
 
+    def test_search_with_ctrl_f(self):
+        from morsetrainer.widgets import help_window
+        help_window.HelpWindow.show(self.root)
+        window = help_window.HelpWindow._open
+        try:
+            window.notebook.select(1)  # Anleitung
+            self.root.update()
+            self.assertTrue(window.top.bind("<Control-f>"))
+            window.focus_search()
+            window.search_var.set("KOCH-LEKTION")  # Groß-/Kleinschreibung egal
+            text = window.texts["docs/Anleitung.md"]
+            total = len(window.matches)
+            self.assertGreater(total, 1)
+            self.assertEqual(len(text.tag_ranges("match")), 2 * total)
+            first = text.index("match_current.first")
+            self.assertEqual(text.get(first, f"{first}+12c").lower(), "koch-lektion")
+            self.assertEqual(window.search_info_var.get(), f"Treffer 1 von {total}")
+            window.find(1)
+            self.assertNotEqual(text.index("match_current.first"), first)
+            window.find(-1)
+            self.assertEqual(text.index("match_current.first"), first)
+            window.search_var.set("gibtesnichtxyz")
+            self.assertEqual(window.search_info_var.get(), "nicht gefunden")
+            self.assertEqual(text.tag_ranges("match"), ())
+            # Esc im Suchfeld mit Text leert die Suche, das Fenster bleibt.
+            window._escape(type("E", (), {"widget": window.search_entry})())
+            self.assertEqual(window.search_var.get(), "")
+            self.assertTrue(window.top.winfo_exists())
+        finally:
+            window.top.destroy()
+
+
 class DecimalTest(AppTestCase):
     def test_statistics_use_the_decimal_comma(self):
         panel = self.mode("Einzelzeichen").stats_panel

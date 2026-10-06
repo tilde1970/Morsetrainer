@@ -29,6 +29,15 @@ class FontScaleTest(AppTestCase):
         for _ in range(10):
             self.app.zoom(1)
         self.assertEqual(theme.scale(), theme.ZOOM_STEPS[-1])  # nicht über die größte Stufe
+        self.app.zoom(0)
+        self.app.zoom(-1)
+        self.assertEqual(theme.scale(), 90)
+        for _ in range(10):
+            self.app.zoom(-1)
+        self.assertEqual(theme.scale(), 75)  # kleinste Stufe
+        self.assertEqual(self.size("TkDefaultFont"), round(default * 0.75))
+        self.app.zoom(0)
+        self.assertEqual(theme.scale(), 100)
 
     def test_tables_and_wrapped_texts_grow(self):
         row = int(ttk.Style(self.root).lookup("Treeview", "rowheight"))
@@ -64,7 +73,8 @@ class FontScaleTest(AppTestCase):
     def test_zoom_steps(self):
         self.assertEqual(theme.zoom_step(100, 1), 110)
         self.assertEqual(theme.zoom_step(130, -1), 125)
-        self.assertEqual(theme.zoom_step(100, -1), 100)
+        self.assertEqual(theme.zoom_step(100, -1), 90)
+        self.assertEqual(theme.zoom_step(75, -1), 75)
 
 
 class AnnouncerTest(AppTestCase):
