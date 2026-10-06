@@ -68,11 +68,6 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      # get_voice.sh braucht bash 4 (declare -A) und GNU sha256sum (das von
-      # macOS kennt --status nicht).
-      - run: |
-          brew install bash coreutils
-          echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> "$GITHUB_PATH"
       # Pillow wandelt das .ico in das .icns der App um.
       - run: pip install -r requirements.txt pyinstaller pillow
       - run: bash packaging/get_voice.sh

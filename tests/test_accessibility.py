@@ -266,6 +266,22 @@ class KeyboardTest(AppTestCase):
         self.assertTrue(self.root.bind_all("<Alt-Key-1>"))
         self.assertTrue(self.root.bind_all("<Control-b>"))
 
+    def test_mac_quit_preferences_and_function_key_substitutes(self):
+        # Mac (H1–H3 der Plattformprüfung 2.38): Cmd+Q ohne ::tk::mac::Quit
+        # beendete ohne Speichern; F9/F11/F12 sind dort Medientasten.
+        calls = []
+        with mock.patch.object(self.app, "on_close", lambda: calls.append("close")), \
+                mock.patch.object(self.app, "open_settings", lambda: calls.append("settings")), \
+                mock.patch.object(self.app, "toggle_announce", lambda: calls.append("announce")), \
+                mock.patch.object(self.app, "read_status", lambda: calls.append("status")), \
+                mock.patch.object(self.app, "_start_daily", lambda: calls.append("daily")):
+            self.app._bind_mac_keys()
+        self.root.tk.call("::tk::mac::Quit")
+        self.root.tk.call("::tk::mac::ShowPreferences")
+        self.assertEqual(calls, ["close", "settings"])
+        for letter in "AWT":
+            self.assertTrue(self.root.bind_all(f"<Command-Shift-{letter}>"), letter)
+
     def test_footer_comes_last_in_tab_order(self):
         # Tab folgt der Stapelreihenfolge (winfo children von unten nach oben).
         order = [str(w) for w in self.root.winfo_children()]

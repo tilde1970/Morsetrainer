@@ -144,13 +144,30 @@ class MorseTrainerApp:
         # Alt+1 … Alt+9, Alt+0: Reiter 1 … 10 (auf dem Mac Cmd, Option+Ziffer
         # schreibt dort Sonderzeichen); Strg+B: Bandbedingungen.
         tab_modifier = "Command" if sys.platform == "darwin" else "Alt"
-        for number in range(10):
+        # Cmd+0 bleibt auf dem Mac der Schrift (normal groß), wie in
+        # Mac-Programmen üblich; einen zehnten Reiter gibt es nicht.
+        for number in range(1, 10) if sys.platform == "darwin" else range(10):
             root.bind_all(f"<{tab_modifier}-Key-{number}>",
                           lambda e, n=(number - 1) % 10: self.select_tab(n) or "break")
         root.bind_all("<Control-b>", lambda e: self.band_settings.open_window() or "break")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             root.bind_all(f"<{modifier}-comma>", lambda e: self.open_settings() or "break")
         root.protocol("WM_DELETE_WINDOW", self.on_close)
+        if sys.platform == "darwin":
+            self._bind_mac_keys()
+
+    def _bind_mac_keys(self):
+        """Mac: Cmd+Q und „Einstellungen …“ im App-Menü laufen über Tk
+        selbst (ohne ::tk::mac::Quit beendet Tk ohne on_close, also ohne zu
+        speichern). F9, F11 und F12 sind dort Medientasten bzw. vom System
+        belegt (Fn+F11 zeigt den Schreibtisch): zusätzlich Cmd+Umschalt+A
+        (Ansage), W (wo bin ich) und T (Tagesübung)."""
+        self.root.createcommand("::tk::mac::Quit", self.on_close)
+        self.root.createcommand("::tk::mac::ShowPreferences", self.open_settings)
+        for letter, action in (("A", self.toggle_announce), ("W", self.read_status),
+                               ("T", self._start_daily)):
+            for key in (letter, letter.lower()):
+                self.root.bind_all(f"<Command-Shift-{key}>", lambda e, a=action: a() or "break")
 
     def _set_icon(self):
         """Fenstericon, auch für das Hilfefenster (default=True). Fehlt die
@@ -1329,8 +1346,7 @@ class MorseTrainerApp:
         if event.keysym == STATUS_KEY:
             self.read_status()
             return
-        if event.keysym == DAILY_KEY and not self.running_mode and not self.daily.active:
-            self.daily.start()
+        if event.keysym == DAILY_KEY and self._start_daily():
             return
         if event.keysym in FUNCTION_KEYS:
             mode = self._active_mode()
@@ -1351,6 +1367,13 @@ class MorseTrainerApp:
         mode = self._active_mode()
         if mode is not None:
             mode.on_key(event)
+
+    def _start_daily(self) -> bool:
+        """Tagesübung starten, wenn gerade nichts läuft; True, wenn gestartet."""
+        if self.running_mode or self.daily.active:
+            return False
+        self.daily.start()
+        return True
 
     def check_for_update(self):
         """Beim Start im Hintergrund: Gibt es auf GitHub ein neueres

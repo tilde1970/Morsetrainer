@@ -6,8 +6,8 @@ Vom Lernen einzelner Zeichen nach der Koch-Methode bis zum eigenen
 Contest-Pile-up unter realistischen Kurzwellenbedingungen – allein am
 eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
-**English:** The program can be switched to English under „▸ Weitere
-Optionen“ → „Sprache / Language“. English overview: [README.en.md](README.en.md).
+**English:** The program can be switched to English under
+„Einstellungen …“ (or Ctrl+Comma) → „Sprache / Language“. English overview: [README.en.md](README.en.md).
 
 ## Was er kann
 

@@ -535,8 +535,11 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - **Überall:** Strg+Plus/Strg+Minus Schrift größer/kleiner, Strg+0 normal
   (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist;
   Alt+1 … Alt+9 und Alt+0 wechseln zu Reiter 1 … 10, Strg+Tab blättert
-  durch die Reiter (auf dem Mac Cmd+Ziffer); Strg+B öffnet die
-  Bandbedingungen, Strg+Komma die Einstellungen.
+  durch die Reiter (auf dem Mac Cmd+1 … Cmd+9); Strg+B öffnet die
+  Bandbedingungen, Strg+Komma die Einstellungen (auf dem Mac auch Cmd+Komma).
+- **Auf dem Mac** sind F9, F11 und F12 Medientasten oder vom System belegt
+  (Fn+F11 zeigt den Schreibtisch). Dafür gibt es Cmd+Umschalt+A (Ansage
+  an/aus), Cmd+Umschalt+W (wo bin ich) und Cmd+Umschalt+T (Tagesübung).
 - **Ohne Maus:** Tab und Umschalt+Tab gehen durch alle Felder, Knöpfe und
   Schalter (der Fokus ist farbig markiert), Leertaste drückt den Knopf
   bzw. schaltet um, Pfeiltasten wählen in Listen, Reglern und Reitern.
@@ -615,7 +618,11 @@ Quelltext:
    python3 -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
+   bash packaging/get_voice.sh
    ```
+
+   Der letzte Befehl lädt die Stimmen für Ansage und Reiter Sprechen
+   (gut 120 MB); ohne ihn läuft alles andere, nur gesprochen wird nicht.
 
 4. Starten mit `python main.py`. Später reichen
    `source .venv/bin/activate` und `python main.py` im selben Ordner.

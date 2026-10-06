@@ -524,8 +524,11 @@ versions (CHANGELOG) and this manual.
 - **Everywhere:** Ctrl+Plus/Ctrl+Minus larger/smaller font, Ctrl+0 normal
   (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are;
   Alt+1 … Alt+9 and Alt+0 switch to tab 1 … 10, Ctrl+Tab cycles through
-  the tabs (on the Mac Cmd+digit); Ctrl+B opens the band conditions,
-  Ctrl+Comma the settings.
+  the tabs (on the Mac Cmd+1 … Cmd+9); Ctrl+B opens the band conditions,
+  Ctrl+Comma the settings (on the Mac also Cmd+Comma).
+- **On the Mac** F9, F11 and F12 are media keys or taken by the system
+  (Fn+F11 shows the desktop). Use Cmd+Shift+A (announcements on/off),
+  Cmd+Shift+W (where am I) and Cmd+Shift+T (daily practice) instead.
 - **Without a mouse:** Tab and Shift+Tab go through all fields, buttons and
   check boxes (the focus is highlighted in colour), the space bar presses
   the button or toggles, arrow keys choose in lists, sliders and tabs.
@@ -601,7 +604,12 @@ approval again.
    python3 -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
+   bash packaging/get_voice.sh
    ```
+
+   The last command downloads the voices for announcements and the Speak
+   tab (a good 120 MB); without it everything else works, only nothing is
+   spoken.
 
 4. Start with `python main.py`. Later, `source .venv/bin/activate` and
    `python main.py` in the same folder are enough.

@@ -59,6 +59,16 @@
 - **Weitere Störungen** (aufklappbar im Bandfenster, nicht Teil der
   Stufen): Gewitter (QRN in Schüben), AGC-Pumpen nach Knackern,
   Flatterfading (Aurora), Träger (jemand stimmt ab).
+- **Mac:** Cmd+Q speichert jetzt Einstellungen wie Sprache, Schriftgröße
+  und Kontrast; Cmd+Komma und „Einstellungen …“ im App-Menü öffnen die
+  Einstellungen; Cmd+0 setzt die Schrift zurück. Weil F9, F11 und F12 dort
+  Medientasten sind: Cmd+Umschalt+A (Ansage), W (wo bin ich), T
+  (Tagesübung).
+- **Start aus dem Quelltext:** Die Anleitung nennt jetzt den Schritt, der
+  die Stimmen lädt (`packaging/get_voice.sh`); das Skript läuft auch mit
+  dem bash von macOS.
+- Die Pakete sind durch die englische Stimme gut 60 MB größer; die
+  Windows-exe startet dadurch etwas langsamer.
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

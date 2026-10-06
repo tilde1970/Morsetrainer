@@ -57,6 +57,15 @@
 - **More interference** (expandable in the band window, not part of the
   levels): thunderstorm (QRN in bursts), AGC pumping after crashes,
   flutter (aurora), carrier (someone tuning up).
+- **Mac:** Cmd+Q now saves settings such as language, font size and
+  contrast; Cmd+Comma and “Settings …” in the app menu open the settings;
+  Cmd+0 resets the font. Because F9, F11 and F12 are media keys there:
+  Cmd+Shift+A (announcements), W (where am I), T (daily practice).
+- **Running from source:** the manual now lists the step that downloads
+  the voices (`packaging/get_voice.sh`); the script also runs with the
+  bash shipped with macOS.
+- The English voice makes the packages a good 60 MB larger; the Windows
+  exe starts a little more slowly because of it.
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 
