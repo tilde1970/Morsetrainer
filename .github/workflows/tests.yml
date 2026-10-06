@@ -1,0 +1,26 @@
+# Unit-Tests bei jedem Push auf main und bei Pull-Requests; vom Release
+# (release.yml) ebenfalls aufgerufen: ohne grüne Tests kein Release.
+# Ohne Soundkarte (tests/__init__.py ersetzt sounddevice) und ohne Stimmen
+# (die Sprachausgabe wird in den Tests vorgetäuscht); die Fenster laufen
+# auf einem virtuellen Bildschirm (xvfb).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - run: pip install -r requirements.txt
+      - run: xvfb-run -a python -m unittest discover -s tests -t .
