@@ -224,8 +224,9 @@ class FilterAndQrmTest(unittest.TestCase):
             loop = conditions.cw_qrm
             spectrum = np.abs(np.fft.rfft(loop))
             peak = np.fft.rfftfreq(len(loop), 1 / band.SAMPLE_RATE)[np.argmax(spectrum)]
-            self.assertLessEqual(abs(peak - 600), high + 5, key)
-            self.assertGreaterEqual(abs(peak - 600), low - 5, key)
+            # Die Tastung (und gelegentlich Chirp) verschiebt die Spitze um einige Hz.
+            self.assertLessEqual(abs(peak - 600), high + 10, key)
+            self.assertGreaterEqual(abs(peak - 600), low - 10, key)
         # Abstand im laufenden Durchgang umgestellt: neues QRM.
         before = conditions.cw_qrm
         band.apply_spec(conditions, {"levels": {"cw_qrm": 1.0}, "gain": 1.0, "qrm_offset": "far"})
@@ -263,6 +264,83 @@ class FilterAndQrmTest(unittest.TestCase):
         self.assertNotEqual(band.spec_key(plain), band.spec_key(plain | {"qrm_offset": "near"}))
 
 
+class ExtraInterferenceTest(unittest.TestCase):
+    """Weitere Störungen: Gewitter, AGC-Pumpen, Flattern, Träger."""
+
+    @staticmethod
+    def run_band(spec, seconds, signal=None, seed=5):
+        import numpy as np
+        conditions = band.conditions(spec | {"seed": seed}, 600)
+        block = 960
+        out = [conditions.mix([] if signal is None else [(signal[i * block:(i + 1) * block], 0)], block)
+               for i in range(int(seconds * band.SAMPLE_RATE / block))]
+        return np.concatenate(out), conditions
+
+    @staticmethod
+    def tone(seconds):
+        import numpy as np
+        t = np.arange(int(seconds * band.SAMPLE_RATE)) / band.SAMPLE_RATE
+        return (0.3 * np.sin(2 * np.pi * 600 * t)).astype(np.float32)
+
+    def test_storm_comes_in_bursts(self):
+        import numpy as np
+        x, _ = self.run_band({"levels": {"storm": 1.0}, "gain": 1.0}, 60)
+        second = band.SAMPLE_RATE
+        loud = [bool((np.abs(x[i * second:(i + 1) * second]) > 0.05).any()) for i in range(60)]
+        self.assertTrue(5 <= sum(loud) <= 40, loud)
+        # In Schüben: eine Sekunde mit Knackern hat meist eine Nachbarin mit Knackern.
+        neighbours = sum(1 for i in range(1, 59) if loud[i] and (loud[i - 1] or loud[i + 1]))
+        self.assertGreater(neighbours, sum(loud) / 2)
+        self.assertFalse(any(loud[:3]))  # nicht gleich zu Beginn
+
+    def test_agc_pumps_after_crashes(self):
+        import numpy as np
+        tone = self.tone(20)
+        pumped, _ = self.run_band({"levels": {"qrn": 1.0, "agc": 1.0}, "gain": 1.0}, 20, tone)
+        plain, _ = self.run_band({"levels": {"qrn": 1.0}, "gain": 1.0}, 20, tone)
+        window = 480
+
+        def lowest(x):
+            return min(float(np.max(np.abs(x[i:i + window]))) for i in range(0, len(x) - window, window))
+        self.assertLess(lowest(pumped), 0.15)
+        self.assertGreater(lowest(plain), 0.25)
+        # Ohne Knacker regelt nichts.
+        quiet, _ = self.run_band({"levels": {"agc": 1.0}, "gain": 1.0}, 5, self.tone(5))
+        self.assertGreater(lowest(quiet), 0.29)
+
+    def test_flutter_trembles_at_a_few_hertz(self):
+        import numpy as np
+        x, _ = self.run_band({"levels": {"flutter": 1.0}, "gain": 1.0}, 10, self.tone(10))
+        envelope = np.array([np.max(np.abs(x[i:i + 480])) for i in range(0, len(x), 480)])
+        spectrum = np.abs(np.fft.rfft(envelope - envelope.mean()))
+        peak = np.fft.rfftfreq(len(envelope), 0.01)[np.argmax(spectrum)]
+        self.assertTrue(4 <= peak <= 16, peak)
+        self.assertLess(float(envelope.min()), 0.15)
+
+    def test_carrier_near_the_frequency_comes_and_goes(self):
+        import numpy as np
+        x, conditions = self.run_band({"levels": {"carrier": 1.0}, "gain": 1.0}, 60)
+        low, high = band.CARRIER_OFFSET_HZ
+        self.assertTrue(low <= abs(conditions.carrier_offset) <= high)
+        spectrum = np.abs(np.fft.rfft(x))
+        peak = np.fft.rfftfreq(len(x), 1 / band.SAMPLE_RATE)[np.argmax(spectrum)]
+        self.assertLessEqual(abs(peak - (600 + conditions.carrier_offset)), band.CARRIER_DRIFT_HZ + 2)
+        second = band.SAMPLE_RATE
+        on = [float(np.max(np.abs(x[i * second:(i + 1) * second]))) > 0.1 for i in range(60)]
+        self.assertTrue(any(on) and not all(on), on)
+        # Ein schmales Filter nimmt einen Träger weit daneben weg.
+        filtered, _ = self.run_band({"levels": {"carrier": 1.0}, "gain": 1.0, "filter": 250}, 60)
+        self.assertLess(float(np.max(np.abs(filtered))), float(np.max(np.abs(x))) / 3)
+
+    def test_extras_are_not_part_of_the_levels(self):
+        spec = band.spec_from_preset("medium")
+        spec["levels"].update(storm=1.0, agc=1.0, flutter=1.0, carrier=1.0)
+        self.assertEqual(band.preset_rank(spec), "medium")
+        self.assertEqual(band.clean_spec(spec)["levels"]["carrier"], 1.0)
+        conditions = band.conditions({"levels": {"carrier": 0.5}, "gain": 1.0}, 600)
+        self.assertTrue(conditions.has_background)
+
+
 class CentralSettingsTest(AppTestCase):
     def test_saved_and_restored_with_shared_settings(self):
         settings = self.app.band_settings
@@ -273,7 +351,7 @@ class CentralSettingsTest(AppTestCase):
         self.app.saved_state = {"shared": {"band": saved}}
         self.app._restore_shared_settings()
         self.assertEqual(settings.spec(), {"levels": {"noise": 0.7, "ssb": 0.2}, "gain": 0.8})
-        self.assertIn("SSB 20 %", self.app.band_summary_var.get())
+        self.assertIn("SSB-QRM 20 %", self.app.band_summary_var.get())
 
     def test_migrates_qso_panel_or_group_preset(self):
         settings = self.app.band_settings
@@ -338,6 +416,25 @@ class CentralSettingsTest(AppTestCase):
         # Grundeinstellung: nicht in der Spec (ältere Versionen kennen sie nicht).
         settings.set_spec({"levels": {"noise": 0.6}, "gain": 1.0})
         self.assertEqual(settings.spec(), {"levels": {"noise": 0.6}, "gain": 1.0})
+
+    def test_extra_group_opens_when_something_is_on(self):
+        settings = self.app.band_settings
+        settings.open_window()
+        try:
+            self.assertFalse(settings.extras_open)
+            self.assertEqual(settings.extra_box.winfo_manager(), "")
+            settings._toggle_extras()
+            self.assertEqual(settings.extra_box.winfo_manager(), "pack")
+        finally:
+            settings.close_window()
+        settings.set_spec({"levels": {"noise": 0.6, "storm": 0.5, "carrier": 0.4}, "gain": 1.0})
+        settings.open_window()
+        try:
+            self.assertTrue(settings.extras_open)
+            self.assertIn("Gewitter 50 %", settings.summary())
+            self.assertIn("Träger 40 %", settings.summary())
+        finally:
+            settings.close_window()
 
     def test_tabs_only_save_on_or_off(self):
         for title in ("Gruppen", "Kontinuierlich", "QSO", "Contest", "Netzwerk"):

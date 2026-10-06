@@ -21,7 +21,7 @@ mitprotokolliert; dann passt die Tempo-Automatik das Tempo nicht an.
 Pile-ups (gleichzeitige Anrufer im Contest) sind einstellbar, Standard aus.
 
 Zuschaltbar sind Kurzwellen-Bandbedingungen (Rauschen mit Knackstörungen,
-QSB, Chirp, SSB-Gebrabbel und CW-QRM auf der Nachbarfrequenz), siehe band.py.
+QSB, Chirp, SSB-QRM und CW-QRM auf der Nachbarfrequenz), siehe band.py.
 
 Unabhängig vom oben eingestellten Zeichensatz."""
 import dataclasses

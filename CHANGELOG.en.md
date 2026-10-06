@@ -3,7 +3,7 @@
 ## Unreleased
 
 - **Selectable CW filter:** 2.4 kHz (as before), 500 Hz or 250 Hz around
-  your pitch. Signals, noise, QRM and SSB babble pass through it, your own
+  your pitch. Signals, noise, QRM and SSB QRM pass through it, your own
   sidetone in the contest does not. The narrow filter rings slightly and
   removes noise and distant QRM; the window shows the S/N inside the
   filter, and levels and the award use it.
@@ -51,6 +51,12 @@
   name, language, accessibility and data are now there; “More options”
   keeps only the practice options, so the area above the tabs is half as
   tall.
+- Band conditions with radio terms: “band noise” instead of “noise”, “SSB
+  QRM (detuned speech)” instead of “SSB babble”, “chirp (chirpy
+  transmitter)”.
+- **More interference** (expandable in the band window, not part of the
+  levels): thunderstorm (QRN in bursts), AGC pumping after crashes,
+  flutter (aurora), carrier (someone tuning up).
 - A network test depended on the clock and occasionally failed under
   load; it now sets the key times itself.
 

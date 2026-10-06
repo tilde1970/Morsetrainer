@@ -3,7 +3,7 @@
 ## Unveröffentlicht
 
 - **CW-Filter wählbar:** 2,4 kHz (wie bisher), 500 Hz oder 250 Hz um die
-  eigene Tonhöhe. Zeichen, Rauschen, QRM und SSB-Gebrabbel laufen
+  eigene Tonhöhe. Zeichen, Rauschen, QRM und SSB-QRM laufen
   hindurch, der eigene Mithörton im Contest nicht. Das schmale Filter
   klingelt leicht, nimmt Rauschen und weit entferntes QRM weg; das
   Fenster zeigt den Rauschabstand im Filter, und Stufen und Diplom
@@ -53,6 +53,12 @@
   und Name, Sprache, Barrierefreiheit und Daten stehen jetzt dort; unter
   „Weitere Optionen“ bleiben nur die Übungsoptionen, der Bereich über den
   Reitern ist halb so hoch.
+- Bandbedingungen mit Funkbegriffen: „Bandrauschen“ statt „Rauschen“,
+  „SSB-QRM (verstimmte Sprache)“ statt „SSB-Gebrabbel“, „Chirp
+  (zwitschernder Sender)“.
+- **Weitere Störungen** (aufklappbar im Bandfenster, nicht Teil der
+  Stufen): Gewitter (QRN in Schüben), AGC-Pumpen nach Knackern,
+  Flatterfading (Aurora), Träger (jemand stimmt ab).
 - Ein Netzwerktest hing an der Uhr und kippte unter Last gelegentlich;
   er setzt die Tastenzeiten jetzt selbst.
 

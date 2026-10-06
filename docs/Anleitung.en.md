@@ -234,9 +234,9 @@ Also helpful:
 ## Band conditions
 
 They are set in one place: **More options → Band conditions → Adjust …**
-or “Adjust …” in a tab. Each can be switched on and adjusted: noise,
-static crashes (QRN), QSB, chirp, SSB babble, CW QRM on the adjacent
-frequency and **strength differences** (how differently loud the stations
+or “Adjust …” in a tab. Each can be switched on and adjusted: band noise,
+static crashes (QRN), QSB, chirp (chirpy transmitter), SSB QRM (detuned
+speech), CW QRM on the adjacent frequency and **strength differences** (how differently loud the stations
 arrive in QSO and contest – part of QSB up to 2.37, now separate from
 fading); plus the **noise volume** relative to the signals. The buttons
 **light**, **medium** and **heavy** set the levels that the QRN-proof

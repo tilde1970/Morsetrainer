@@ -238,8 +238,9 @@ Außerdem hilfreich:
 
 Eingestellt wird an einer Stelle: **Weitere Optionen → Bandbedingungen
 → Einstellen …** oder „Einstellen …“ in einem Reiter. Einzeln zuschaltbar
-und regelbar sind Rauschen, Knackstörungen (QRN), QSB, Chirp, SSB-Gebrabbel,
-CW-QRM auf der Nachbarfrequenz und **Stärkeunterschiede** (wie
+und regelbar sind Bandrauschen, Knackstörungen (QRN), QSB, Chirp
+(zwitschernder Sender), SSB-QRM (verstimmte Sprache), CW-QRM auf der
+Nachbarfrequenz und **Stärkeunterschiede** (wie
 unterschiedlich laut die Stationen in QSO und Contest ankommen – bis 2.37
 ein Teil von QSB, jetzt getrennt vom Fading); dazu die **Lautstärke der
 Störgeräusche** gegenüber den Zeichen. Die Knöpfe **leicht**, **mittel**

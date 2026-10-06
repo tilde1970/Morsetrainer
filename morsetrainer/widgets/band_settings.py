@@ -12,16 +12,24 @@ from morsetrainer.widgets import announcer, theme
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
-    ("noise", N_("Rauschen"), 60),
+    ("noise", N_("Bandrauschen"), 60),
     ("qrn", N_("Knackstörungen (QRN)"), 30),
     ("qsb", N_("QSB (Fading)"), 50),
     ("strength", N_("Stärkeunterschiede (QSO, Contest)"), 50),
-    ("chirp", N_("Chirp"), 50),
-    ("ssb", N_("SSB-Gebrabbel"), 40),
+    ("chirp", N_("Chirp (zwitschernder Sender)"), 50),
+    ("ssb", N_("SSB-QRM (verstimmte Sprache)"), 40),
     ("cw_qrm", N_("CW-QRM (Nachbar-Run)"), 30),
 )
-SHORT_NAMES = {"noise": N_("Rauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": N_("Chirp"),
-               "ssb": "SSB", "cw_qrm": "CW-QRM", "strength": N_("Stärke")}
+# Weitere Störungen: eigene, aufklappbare Gruppe; gehören zu keiner Stufe.
+EXTRA_OPTIONS = (
+    ("storm", N_("Gewitter (QRN in Schüben)"), 50),
+    ("agc", N_("AGC-Pumpen nach Knackern"), 50),
+    ("flutter", N_("Flatterfading (Aurora)"), 40),
+    ("carrier", N_("Träger (jemand stimmt ab)"), 40),
+)
+SHORT_NAMES = {"noise": N_("Bandrauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": "Chirp",
+               "ssb": "SSB-QRM", "cw_qrm": "CW-QRM", "strength": N_("Stärke"), "storm": N_("Gewitter"),
+               "agc": N_("AGC-Pumpen"), "flutter": N_("Flattern"), "carrier": N_("Träger")}
 PRESET_NAMES = {"light": N_("leicht"), "medium": N_("mittel"), "heavy": N_("stark")}
 FILTER_NAMES = {2400: N_("2,4 kHz"), 500: N_("500 Hz"), 250: N_("250 Hz")}
 QRM_OFFSET_NAMES = {"far": N_("weit (300–500 Hz)"), "near": N_("nah (50–200 Hz)"), "zero": N_("Zero-Beat")}
@@ -72,7 +80,7 @@ class BandSettings:
     def __init__(self, root):
         self.root = root
         self.controls = {}  # Schlüssel -> (an/aus, Pegel in %)
-        for key, _, default in BAND_OPTIONS:
+        for key, _, default in BAND_OPTIONS + EXTRA_OPTIONS:
             self.controls[key] = (tk.BooleanVar(value=False), tk.DoubleVar(value=default))
         self.gain_var = tk.DoubleVar(value=100)
         self.filter_var = tk.IntVar(value=band.DEFAULT_FILTER)
@@ -209,16 +217,7 @@ class BandSettings:
         box.columnconfigure(1, weight=1)
         self.widgets = {}
         for row, (key, label, _) in enumerate(BAND_OPTIONS):
-            on, level = self.controls[key]
-            ttk.Checkbutton(box, text=tr(label), variable=on, command=self._changed).grid(
-                row=row, column=0, sticky="w", padx=(0, 12), pady=1)
-            scale = ttk.Scale(box, from_=0, to=100, variable=level, length=200, command=lambda _: self._changed())
-            scale.grid(row=row, column=1, sticky="we", pady=1)
-            announcer.name(scale, tr(label), value=lambda k=key, v=level: level_text(
-                k, round(v.get()) / 100, round(self.gain_var.get()) / 100))
-            shown = ttk.Label(box, width=11, anchor="e")
-            shown.grid(row=row, column=2, padx=(6, 0))
-            self.widgets[key] = (scale, shown)
+            self._option_row(box, row, key, label)
         offsets = ttk.Frame(box)
         offsets.grid(row=len(BAND_OPTIONS), column=0, columnspan=3, sticky="w", padx=(22, 0), pady=(0, 2))
         theme.hint(offsets, text=tr("CW-QRM-Abstand:")).pack(side="left", padx=(0, 6))
@@ -233,7 +232,21 @@ class BandSettings:
         ttk.Button(buttons, text=tr("Alle aus"), command=lambda: self._set_all(False)).pack(side="right")
         ttk.Button(buttons, text=tr("Alle an"), command=lambda: self._set_all(True)).pack(side="right", padx=4)
 
+        # Weitere Störungen, aufklappbar; offen, sobald darin etwas an ist.
+        self.extra_button = ttk.Button(frame, style="Flat.TButton", command=self._toggle_extras)
+        self.extra_button.pack(anchor="w", padx=10)
+        self.extra_box = ttk.Frame(frame, padding=(10, 0, 10, 4))
+        self.extra_box.columnconfigure(1, weight=1)
+        for row, (key, label, _) in enumerate(EXTRA_OPTIONS):
+            self._option_row(self.extra_box, row, key, label)
+        theme.hint(self.extra_box, wrap=440, text=tr(
+            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest.")).grid(
+            row=len(EXTRA_OPTIONS), column=0, columnspan=3, sticky="w", pady=(4, 0))
+        self.extras_open = any(self.controls[key][0].get() for key, _, _ in EXTRA_OPTIONS)
+        self._show_extras()
+
         receiver = theme.card(frame, tr("CW-Filter"), padx=0)
+        self.receiver_card = receiver
         row = ttk.Frame(receiver)
         row.pack(fill="x")
         for width, name in FILTER_NAMES.items():
@@ -285,6 +298,30 @@ class BandSettings:
                 focus.focus_set()
         except tk.TclError:
             pass
+
+    def _option_row(self, box, row: int, key: str, label: str) -> None:
+        """Schalter, Regler und angezeigter Wert einer Störung."""
+        on, level = self.controls[key]
+        ttk.Checkbutton(box, text=tr(label), variable=on, command=self._changed).grid(
+            row=row, column=0, sticky="w", padx=(0, 12), pady=1)
+        scale = ttk.Scale(box, from_=0, to=100, variable=level, length=200, command=lambda _: self._changed())
+        scale.grid(row=row, column=1, sticky="we", pady=1)
+        announcer.name(scale, tr(label), value=lambda k=key, v=level: level_text(
+            k, round(v.get()) / 100, round(self.gain_var.get()) / 100))
+        shown = ttk.Label(box, width=11, anchor="e")
+        shown.grid(row=row, column=2, padx=(6, 0))
+        self.widgets[key] = (scale, shown)
+
+    def _toggle_extras(self) -> None:
+        self.extras_open = not self.extras_open
+        self._show_extras()
+
+    def _show_extras(self) -> None:
+        self.extra_button.config(text=("▾ " if self.extras_open else "▸ ") + tr("Weitere Störungen"))
+        if self.extras_open:
+            self.extra_box.pack(fill="x", after=self.extra_button)
+        else:
+            self.extra_box.pack_forget()
 
     def _set_all(self, enabled: bool) -> None:
         for on, _ in self.controls.values():

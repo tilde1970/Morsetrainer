@@ -487,7 +487,7 @@ class FocusAnnounceTest(AnnouncerTest):
         try:
             texts.clear()
             walk(self.app.band_settings.window)
-            self.assertTrue(any(t.startswith("Rauschen, Regler, S/N") for t in texts), texts)
+            self.assertTrue(any(t.startswith("Bandrauschen, Regler, S/N") for t in texts), texts)
             self.assertIn("Lautstärke der Störgeräusche, Regler, 100 %.", texts)
         finally:
             self.app.band_settings.close_window()

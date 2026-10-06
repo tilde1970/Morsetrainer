@@ -9,18 +9,27 @@ und mit eigenem Pegel (0..1, siehe EFFECTS):
   2.37 ein Teil von QSB).
 - Chirp: einige Stationen haben einen schlecht stabilisierten Sender, der
   beim Tasten kurz neben der Frequenz liegt („zwitschert“).
-- SSB-Gebrabbel: eine verstimmte SSB-Station auf der Nachbarfrequenz.
+- SSB-QRM (bis 2.37 „SSB-Gebrabbel“): eine verstimmte SSB-Station auf der Nachbarfrequenz.
   Synthetisch erzeugt (Sägezahn-Stimme durch wechselnde Vokal-Formanten,
   Silben, Wörter, Sprecherwechsel), also unverständlich, klingt aber nach
   Sprache.
 - CW-QRM: ein Contest-Run auf der Nachbarfrequenz, weit daneben, nah dran
   oder fast auf der eigenen Frequenz (Zero-Beat); mit eigenem QSB.
 
+Weitere Störungen (seit 2.38, nicht Teil der Stufen):
+
+- Gewitter: Knackstörungen in Schüben, wie ein Sommergewitter auf 80/160 m.
+- AGC-Pumpen: nach einem starken Knacker regelt der Empfänger kurz
+  herunter, das Signal bricht 100–300 ms ein.
+- Flatterfading: schnelles Zittern (5–15 Hz), wie bei Aurora oder auf dem
+  Polarweg.
+- Träger: jemand stimmt nahe der Frequenz ab, ein Dauerton kommt und geht.
+
 Dazu ein wählbares CW-Filter (2,4 kHz wie bisher, 500 Hz, 250 Hz) um die
 eigene Tonhöhe: Signale, Rauschen und QRM laufen hindurch, der eigene
 Mithörton nicht.
 
-Rauschen und SSB-Gebrabbel werden einmal als Schleife per FFT geformt. Weil
+Rauschen und SSB-QRM werden einmal als Schleife per FFT geformt. Weil
 die FFT-Synthese periodisch ist, geht das Ende nahtlos in den Anfang über;
 so kostet das laufende Mischen fast nichts."""
 import functools
@@ -34,7 +43,7 @@ from morsetrainer.core.morse import AMPLITUDE, SAMPLE_RATE, build_text, silence
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
 # indiziert.
-EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm", "strength")
+EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm", "strength", "storm", "agc", "flutter", "carrier")
 
 NOISE_LOOP_SECONDS = 20
 PASSBAND_HZ = (300, 2700)
@@ -79,7 +88,7 @@ CHIRP_PROBABILITY = 0.4
 CHIRP_DELTA_HZ = (15, 60)
 CHIRP_TAU_SECONDS = (0.01, 0.04)
 
-# SSB-Gebrabbel: Länge der Schleife, Verstimmung und Pegel (Effektivwert)
+# SSB-QRM: Länge der Schleife, Verstimmung und Pegel (Effektivwert)
 # bei Regler auf 100 %.
 SSB_LOOP_SECONDS = 40
 SSB_SHIFT_HZ = (200, 900)
@@ -98,8 +107,31 @@ DEFAULT_QRM_OFFSET = "far"
 CW_QRM_WPM = (22, 32)
 CW_QRM_PAUSE_SECONDS = (1.0, 2.5)  # dort, wo seine (nicht hörbaren) Anrufer senden
 
+# Gewitter: Pausen zwischen den Schüben, ihre Länge und wie dicht es darin
+# knackt (Knacker pro Sekunde bei Regler auf 100 %).
+STORM_PAUSE_SECONDS = (4.0, 15.0)
+STORM_BURST_SECONDS = (1.0, 4.0)
+STORM_RATE_PER_SECOND = 6.0
+# AGC-Pumpen: ab diesem Spitzenwert eines Knackers regelt der Empfänger
+# herunter, höchstens um AGC_PUMP_MAX_DEPTH (Regler 100 %), und erholt sich
+# mit der Zeitkonstante AGC_PUMP_RELEASE_SECONDS (nach rund 0,3 s fast ganz).
+AGC_PUMP_THRESHOLD = 0.15
+AGC_PUMP_MAX_DEPTH = 0.9
+AGC_PUMP_RELEASE_SECONDS = 0.1
+# Flatterfading: drei überlagerte Schwingungen in diesem Bereich, Tiefe bei
+# Regler 100 %.
+FLUTTER_HZ = (5.0, 15.0)
+FLUTTER_MAX_DEPTH = 0.8
+# Träger: Abstand zur eigenen Tonhöhe, langsames Wandern, an und aus.
+CARRIER_OFFSET_HZ = (30, 250)
+CARRIER_DRIFT_HZ = 15
+CARRIER_ON_SECONDS = (3.0, 10.0)
+CARRIER_OFF_SECONDS = (5.0, 20.0)
+CARRIER_RAMP_SECONDS = 0.05
+MAX_CARRIER_AMPLITUDE = AMPLITUDE * 0.8
+
 # CW-Filter: Bandbreite (-3 dB) um die eigene Tonhöhe. 2400 ist das
-# SSB-Filter, das Rauschen und SSB-Gebrabbel ohnehin schon formt; dann wird
+# SSB-Filter, das Rauschen und SSB-QRM ohnehin schon formt; dann wird
 # nichts zusätzlich gefiltert. Steile Flanken (Butterworth-Ordnung) und
 # minimale Phase: kausal wie ein echtes Filter, das schmale klingelt leicht.
 FILTER_WIDTHS = (2400, 500, 250)
@@ -140,7 +172,7 @@ def _shaped_noise_loop() -> np.ndarray:
     return _noise_loop
 
 
-# --- SSB-Gebrabbel -------------------------------------------------------------
+# --- SSB-QRM -------------------------------------------------------------
 def _syllable(rng, length: int, pitch: float) -> np.ndarray:
     """Eine Silbe: stimmhaft (Sägezahn mit Tonhöhenverlauf durch
     Vokal-Formanten) oder stimmlos (gefiltertes Rauschen, wie „s“, „f“)."""
@@ -320,11 +352,18 @@ class BandConditions:
         freq = 1 / self.rng.uniform(*QSB_PERIOD_SECONDS)
         self.qrm_qsb = (freq, self.rng.uniform(0, 2 * np.pi), freq * self.rng.uniform(*QSB_SECOND_RATIO),
                         self.rng.uniform(0, 2 * np.pi), self.rng.uniform(*QSB_DEPTH_SPREAD))
+        # Flatterfading je Station (letzter Eintrag: CW-QRM): drei Schwingungen.
+        self.flutter = [[(self.rng.uniform(*FLUTTER_HZ), self.rng.uniform(0, 2 * np.pi)) for _ in range(3)]
+                        for _ in range(station_count + 1)]
+        self.carrier_offset = self.rng.uniform(*CARRIER_OFFSET_HZ) * self.rng.choice((-1, 1))
+        self.carrier_drift_hz = 1 / self.rng.uniform(8.0, 20.0)  # so schnell wandert er hin und her
+        self.freq = 600
         self.rewind()
 
     def prepare(self, freq: int) -> None:
         """Erzeugt die Störsignale, die gerade eingeschaltet sind (einmalig,
         neu bei anderem QRM-Abstand), und das CW-Filter um `freq`."""
+        self.freq = freq
         if self.enabled["ssb"] and self.ssb is None:
             self.ssb = _ssb_babble_loop()
         if self.enabled["cw_qrm"] and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset):
@@ -347,7 +386,7 @@ class BandConditions:
     @property
     def has_background(self) -> bool:
         """Ist auch ohne die eigenen Stationen etwas zu hören?"""
-        return any(self._on(effect) for effect in ("noise", "qrn", "ssb", "cw_qrm"))
+        return any(self._on(effect) for effect in ("noise", "qrn", "ssb", "cw_qrm", "storm", "carrier"))
 
     def chirp_for(self, station: int):
         """Chirp-Parameter für morse.build_samples, oder None."""
@@ -365,6 +404,14 @@ class BandConditions:
         self.ssb_pos = int(self.rng.integers(SSB_LOOP_SECONDS * SAMPLE_RATE))
         self.cw_qrm_pos = 0
         self.crash = np.zeros(0, dtype=np.float32)  # Rest einer laufenden Knackstörung
+        self.storm_crash = np.zeros(0, dtype=np.float32)
+        self.storm_start = self.sample_pos + int(self.rng.uniform(*STORM_PAUSE_SECONDS) * SAMPLE_RATE)
+        self.storm_end = self.storm_start + int(self.rng.uniform(*STORM_BURST_SECONDS) * SAMPLE_RATE)
+        self.pump = 0.0  # wie weit die AGC gerade heruntergeregelt hat (0 … 1)
+        self.carrier_phase = 0.0
+        self.carrier_on = False
+        self.carrier_edge = self.sample_pos - SAMPLE_RATE  # letzter Wechsel an/aus (für die Flanke)
+        self.carrier_switch = self.sample_pos + int(self.rng.uniform(*CARRIER_OFF_SECONDS) * SAMPLE_RATE / 3)
         self.filter_tail = np.zeros(0)  # Nachklingen des Filters in den nächsten Block
         self.clock = None  # time.time() zu sample_pos 0, ab dem ersten catch_up()
 
@@ -385,6 +432,8 @@ class BandConditions:
         if self.cw_qrm is not None:
             self.cw_qrm_pos = (self.cw_qrm_pos + gap) % len(self.cw_qrm)
         self.crash = np.zeros(0, dtype=np.float32)
+        self.storm_crash = np.zeros(0, dtype=np.float32)
+        self.pump = 0.0
         self.filter_tail = np.zeros(0)
 
     def process(self, block: np.ndarray, station: int) -> np.ndarray:
@@ -413,6 +462,9 @@ class BandConditions:
         background = np.zeros(n, dtype=np.float64)
         if self._on("qrn"):
             background += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
+        if self._on("storm"):
+            background += self._storm(n) * (MAX_QRN_RMS * levels["storm"])
+        crashes = np.abs(background) if self._on("agc") else None  # Knacker, auf die die AGC reagiert
         ssb, cw_qrm = self.ssb, self.cw_qrm  # können parallel in prepare() entstehen
         if self._on("ssb") and ssb is not None:
             self.ssb_pos, part = _loop_slice(ssb, self.ssb_pos, n)
@@ -420,8 +472,12 @@ class BandConditions:
         if self._on("cw_qrm") and cw_qrm is not None:
             self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos % len(cw_qrm), n)
             fading = self._fading(self.qrm_qsb, n) if self._on("qsb") else 1.0
-            background += part * fading * levels["cw_qrm"]
+            background += part * fading * self._flutter(len(self.flutter) - 1, n) * levels["cw_qrm"]
+        if self._on("carrier"):
+            background += self._carrier(n) * (MAX_CARRIER_AMPLITUDE * levels["carrier"])
         out += background * (self.background_gain * agc)
+        if crashes is not None:
+            out *= self._pump(crashes * self.background_gain, n)
         out = self._filtered(out)
         self.sample_pos += n
         return soft_limit(out + sidetone).astype(np.float32)
@@ -470,7 +526,68 @@ class BandConditions:
             gain = max(1 - (1 - self.strengths[station]) * 2 * self.levels["strength"], 0.05)
         if self._on("qsb"):
             gain = gain * self._fading(self.qsb[station], n)
+        if self._on("flutter"):
+            gain = gain * self._flutter(station, n)
         return gain
+
+    def _flutter(self, index: int, n: int):
+        """Flatterfading (0 … 1) über die nächsten `n` Samples; 1 ohne."""
+        if not self._on("flutter"):
+            return 1.0
+        t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
+        wave = sum(np.sin(2 * np.pi * freq * t + phase) for freq, phase in self.flutter[index % len(self.flutter)])
+        dip = 0.5 * (1 + wave / 3)  # 0 … 1
+        return 1 - FLUTTER_MAX_DEPTH * self.levels["flutter"] * dip
+
+    def _storm(self, n: int) -> np.ndarray:
+        """Gewitter: zwischen Pausen ein Schub dichter Knacker."""
+        start = self.sample_pos
+        if start >= self.storm_end:
+            # Schub vorbei (oder nach einer Pause, catch_up): den nächsten planen.
+            self.storm_start = start + int(self.rng.uniform(*STORM_PAUSE_SECONDS) * SAMPLE_RATE)
+            self.storm_end = self.storm_start + int(self.rng.uniform(*STORM_BURST_SECONDS) * SAMPLE_RATE)
+        in_burst = self.storm_start <= start < self.storm_end
+        if in_burst and self.rng.random() < STORM_RATE_PER_SECOND * n / SAMPLE_RATE:
+            crash = self._make_crash()
+            if len(self.storm_crash) < len(crash):
+                self.storm_crash = np.concatenate([self.storm_crash, np.zeros(len(crash) - len(self.storm_crash),
+                                                                              dtype=np.float32)])
+            self.storm_crash[:len(crash)] += crash
+        out = np.zeros(n, dtype=np.float32)
+        part = self.storm_crash[:n]
+        out[:len(part)] = part
+        self.storm_crash = self.storm_crash[n:]
+        return out
+
+    def _pump(self, crashes: np.ndarray, n: int) -> np.ndarray:
+        """AGC-Pumpen: Verstärkung über den Block (1 = ungeregelt). Ein Knacker
+        über AGC_PUMP_THRESHOLD drückt sie sofort herunter, danach erholt sie
+        sich langsam."""
+        before = self.pump
+        peak = float(np.max(crashes)) if len(crashes) else 0.0
+        if peak > AGC_PUMP_THRESHOLD:
+            self.pump = max(self.pump, AGC_PUMP_MAX_DEPTH * self.levels["agc"] * min(peak / (2 * AGC_PUMP_THRESHOLD), 1))
+        else:
+            self.pump *= math.exp(-n / SAMPLE_RATE / AGC_PUMP_RELEASE_SECONDS)
+        return 1 - np.linspace(before, self.pump, n)
+
+    def _carrier(self, n: int) -> np.ndarray:
+        """Träger nahe der eigenen Frequenz: wandert langsam, kommt und geht
+        mit weichen Flanken; die Phase läuft über die Blöcke durch."""
+        start = self.sample_pos
+        if start >= self.carrier_switch:
+            self.carrier_on = not self.carrier_on
+            seconds = self.rng.uniform(*(CARRIER_ON_SECONDS if self.carrier_on else CARRIER_OFF_SECONDS))
+            self.carrier_switch = start + int(seconds * SAMPLE_RATE)
+            self.carrier_edge = start
+        t = start / SAMPLE_RATE
+        freq = self.freq + self.carrier_offset + CARRIER_DRIFT_HZ * math.sin(2 * math.pi * self.carrier_drift_hz * t)
+        phases = self.carrier_phase + 2 * math.pi * freq * np.arange(1, n + 1) / SAMPLE_RATE
+        self.carrier_phase = float(phases[-1] % (2 * math.pi))
+        since = (start + np.arange(n) - self.carrier_edge) / SAMPLE_RATE
+        ramp = np.clip(since / CARRIER_RAMP_SECONDS, 0, 1)
+        envelope = ramp if self.carrier_on else 1 - ramp
+        return np.sin(phases) * envelope
 
     def _fading(self, params, n: int) -> np.ndarray:
         """Fading-Verlauf (0 … 1) über die nächsten `n` Samples."""
