@@ -65,7 +65,7 @@ class ReviewTest(unittest.TestCase):
     def test_koch_completed_instead_of_lesson_number(self):
         review = {"days": 3, "stars": 5, "lesson_from": 40, "lesson_to": daily.POST_KOCH}
         self.assertEqual(daily_panel.review_line(review), "Letzte Woche: 3 Tage, 5 ★, Lektion 40 → Koch geschafft")
-        review.update(lesson_from=44, lesson_to=45)  # Stand von vor 2.23: schon nach Koch
+        review.update(lesson_from=44, lesson_to=45)  # alte Daten: Lektion 45 heißt schon nach Koch
         self.assertEqual(daily_panel.review_line(review), "Letzte Woche: 3 Tage, 5 ★")
         self.assertEqual(daily_panel.outlook_line({"lesson": 41, "missing": 3}),
                          "Noch 3 % beim ersten Versuch bis Lektion 41")

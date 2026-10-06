@@ -1,18 +1,17 @@
-"""Session statistics for the Morsetrainer: per-character results and
-effective copying speed, persisted in the database (core/db.py), each line
-committed immediately so a crash doesn't lose the session — inspired by
-the JsonlLogger in WZab/morse_trainer's morse_trainer_cont.py).
+"""Statistik je Durchgang: Ergebnis je Zeichen und effektives Mitschreibtempo,
+gespeichert in der Datenbank (core/db.py). Jede Zeile wird sofort geschrieben,
+damit ein Absturz den Durchgang nicht verliert (nach dem Vorbild des
+JsonlLogger in morse_trainer_cont.py aus WZab/morse_trainer).
 
-A session consists of (as JSON, one database row each):
+Ein Durchgang besteht aus (als JSON, je eine Datenbankzeile):
     {"type": "config", ...}
     {"type": "char", "char": "A", "typed": "A", "correct": true, ...}
-    {"type": "group", "sent": "KMU", "typed": "KMU", ...}   (group mode only)
+    {"type": "group", "sent": "KMU", "typed": "KMU", ...}   (nur Gruppen-Modi)
     {"type": "summary", "total": 12, "correct": 10, "per_char": {...}}
 
-The state "all_time" in the database (core/db.py) accumulates per-character
-totals across all sessions, including which characters were typed instead
-("confusions"; "" = missed).
-"""
+Der Zustand "all_time" in der Datenbank summiert je Zeichen über alle
+Durchgänge, auch welche Zeichen stattdessen getippt wurden ("confusions";
+"" = verpasst)."""
 import statistics
 from datetime import datetime, timedelta
 
@@ -65,7 +64,7 @@ class SessionStats:
         self.wpm = wpm
         self.freq = freq
         self.group_len = group_len
-        self.rounds = []  # flat list of per-character results, across the whole session
+        self.rounds = []  # Ergebnisse je Zeichen, flach über den ganzen Durchgang
         self.per_char = {}
 
         # Lässt sich das Protokoll nicht schreiben (Platte voll, keine
@@ -105,14 +104,14 @@ class SessionStats:
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
                     latency=None, assumed=False) -> None:
-        """Record the result for a single character and flush it to disk.
+        """Ergebnis für ein einzelnes Zeichen festhalten und sofort speichern.
 
-        `latency` is the time from the end of the character's playback to the
-        keypress, independent of character length and WPM. Only modes that
-        can attribute it to a single character pass it (not the group modes,
-        where only the whole group's time is known). `assumed`: not measured
-        but set for a correct but unsure answer (2 × the usual latency); it
-        counts for that character's weight, not for the usual latency."""
+        `latency` ist die Zeit vom Ende des Tons bis zum Tastendruck, unabhängig
+        von Zeichenlänge und Tempo. Nur Modi, die sie einem einzelnen Zeichen
+        zuordnen können, geben sie mit (nicht die Gruppen-Modi, die nur die Zeit
+        der ganzen Gruppe kennen). `assumed`: nicht gemessen, sondern für eine
+        richtige, aber unsichere Antwort gesetzt (2 × die übliche Latenz); zählt
+        für die Gewichtung dieses Zeichens, nicht für die übliche Latenz."""
         entry = {
             "char": char,
             "typed": typed,
@@ -147,11 +146,11 @@ class SessionStats:
         agg["effective_wpms"].append(effective_wpm)
 
     def record_group(self, sent: str, typed: str, wpm=None, first=None) -> None:
-        """Log a group-mode commit at the group level (in addition to the
-        per-character record_char calls the caller makes for it). `wpm` is
-        the speed it was sent at, if that differs from the session's.
-        `first`: beim ersten Versuch flüssig richtig (ohne Wiederholen, im
-        Zeitfenster) – für die Diplome WPX und Q-Gruppen-Kenner."""
+        """Eine abgeschickte Gruppe festhalten (zusätzlich zu den record_char-
+        Aufrufen, die der Aufrufer je Zeichen macht). `wpm`: Tempo, mit dem sie
+        gesendet wurde, falls es von dem des Durchgangs abweicht. `first`: beim
+        ersten Versuch flüssig richtig (ohne Wiederholen, im Zeitfenster) – für die
+        Diplome WPX und Q-Gruppen-Kenner."""
         entry = {"type": "group", "sent": sent, "typed": typed}
         if wpm is not None:
             entry["wpm"] = wpm
@@ -201,12 +200,12 @@ class SessionStats:
         return out
 
     def finalize(self, extra=None):
-        """Write the closing summary, merge into the all-time totals and the
-        review boxes — all in one transaction, so a crash can't leave them
-        out of step. Returns the session's number (database id), or None if
-        it wasn't saved or nothing was ever recorded (in which case the
-        empty session is removed). `extra` adds fields to the summary
-        (e.g. "wpm_effective_reached")."""
+        """Zusammenfassung schreiben und in Gesamtstatistik und Lernkartei
+        übernehmen, alles in einer Transaktion, damit ein Absturz sie nicht
+        auseinanderbringt. Gibt die Nummer des Durchgangs (Datenbank-id) zurück,
+        oder None, wenn er nicht gespeichert wurde oder nie etwas aufgezeichnet hat
+        (der leere Durchgang wird dann entfernt). `extra` ergänzt Felder der
+        Zusammenfassung (z. B. "wpm_effective_reached")."""
         self.duration_s = round((datetime.now() - self.start_time).total_seconds(), 1)
         if not self.rounds:
             if self.session_id is not None:
@@ -250,12 +249,12 @@ def _merge_all_time(session: "SessionStats") -> None:
         x["total_effective_wpm"] += sum(e["effective_wpms"])
         x["correct_effective_wpm_total"] += sum(e["correct_effective_wpms"])
         x["attempts"] += e["good"] + e["wrong"]
-        # Für die gemessenen Zeichen pro Minute; ältere Einträge ohne diese
-        # Felder zählen erst ab jetzt mit.
+        # Für die gemessenen Zeichen pro Minute. Einträge ohne diese Felder
+        # (ältere Daten) beginnen hier bei null.
         correct_times = e.get("correct_reaction_times", [])
         x["correct_reaction_time_s"] = x.get("correct_reaction_time_s", 0.0) + sum(correct_times)
         x["correct_timed_count"] = x.get("correct_timed_count", 0) + len(correct_times)
-        # Ältere Einträge der Gesamtstatistik kennen die Latenz-Felder noch nicht.
+        # Latenz-Felder fehlen in älteren Einträgen der Gesamtstatistik: bei null beginnen.
         x["total_latency_s"] = x.get("total_latency_s", 0.0) + sum(e["latencies"])
         x["latency_count"] = x.get("latency_count", 0) + len(e["latencies"])
         # Davon angenommen statt gemessen (siehe record_char, `assumed`).
@@ -272,15 +271,15 @@ RESET_KEY = "reset"
 
 
 def load_all_time() -> dict:
-    """Cumulative per-character totals across all past sessions. A broken
-    entry is set aside (see db.load_state) instead of crashing."""
+    """Summen je Zeichen über alle bisherigen Durchgänge. Ein beschädigter
+    Eintrag wird beiseitegelegt (siehe db.load_state), statt abzustürzen."""
     return db.load_state(ALL_TIME_KEY, {})
 
 
 def reset_all_time() -> None:
-    """Wipe the cumulative statistics. Individual session logs are
-    untouched — only the running totals are cleared. The reset time is
-    remembered so that recent_char_data() ignores older logs."""
+    """Gesamtstatistik löschen. Die Protokolle der einzelnen Durchgänge
+    bleiben, nur die laufenden Summen werden geleert. Der Zeitpunkt wird
+    gemerkt, damit recent_char_data() ältere Protokolle übergeht."""
     from morsetrainer.core import review
     try:
         with db.transaction():
@@ -325,8 +324,8 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
 
 
 def all_time_char_rows(all_time: dict):
-    """Same shape as SessionStats.char_rows(), computed from the persisted
-    cumulative totals instead of an in-memory session."""
+    """Zeilen wie SessionStats.char_rows(), aber aus den gespeicherten
+    Gesamtsummen statt aus einem laufenden Durchgang."""
     rows = []
     for char, e in all_time.items():
         total = e["good"] + e["wrong"]
@@ -338,8 +337,8 @@ def all_time_char_rows(all_time: dict):
 
 
 def all_time_summary(all_time: dict):
-    """Same shape as SessionStats.summary(), computed from the persisted
-    cumulative totals instead of an in-memory session."""
+    """Zusammenfassung wie SessionStats.summary(), aber aus den gespeicherten
+    Gesamtsummen statt aus einem laufenden Durchgang."""
     total = sum(e["good"] + e["wrong"] for e in all_time.values())
     correct = sum(e["good"] for e in all_time.values())
     accuracy = (correct / total * 100) if total else 0.0

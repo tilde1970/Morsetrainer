@@ -5,7 +5,7 @@ und viele Contest-Logger verwenden). Zum Aktualisieren einfach die
 aktuelle MASTER.SCP von dort als callsigns.scp ablegen.
 
 Optional lässt sich die Liste per Präfix-Filter einschränken (z. B. nur
-DL/DK/DJ). Fehlt die Datei, werden wie früher zufällige Rufzeichen nach
+DL/DK/DJ). Fehlt die Datei, werden zufällige Rufzeichen nach
 dem Muster Präfix + Ziffer + Suffix erzeugt. Auf Wunsch bekommt ein kleiner
 Teil der Rufzeichen einen Anhang (/P, /M, selten /QRP, /MM, /AM) oder ein
 Gast-Präfix (OE/DL4YM), etwa so häufig wie im Contest.

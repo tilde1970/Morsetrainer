@@ -40,8 +40,9 @@ QRM_OFFSET_SHORT = {"far": N_("weit"), "near": N_("nah"), "zero": N_("Zero-Beat"
 # Startwerte, solange nichts gespeichert ist: wer zum ersten Mal zuschaltet,
 # soll nicht gleich im tiefen Fading landen.
 DEFAULT_PRESET = "light"
-# Gespeicherte Einstellungen tragen diese Fassung; ohne sie stammen sie aus
-# Version 2.37 oder älter, als QSB auch die Stärkeunterschiede enthielt.
+# Formatkennung der gespeicherten Einstellungen. Fehlt sie, sind es alte
+# Einstellungen, in denen QSB die Stärkeunterschiede mit einschloss
+# (restore() schaltet sie dann mit ein).
 SETTINGS_VERSION = 2
 # Höchstens dieser Anteil der Bildschirmhöhe; was nicht passt, wird gescrollt.
 WINDOW_MAX_SCREEN_SHARE = 0.85
@@ -68,9 +69,10 @@ def level_text(key: str, level: float, gain: float = 1.0) -> str:
 
 
 def toggle_value(value):
-    """An/aus aus einer gespeicherten Reiter-Einstellung, auch aus älteren
-    Versionen (Stufe als Text, Schalter je Störung als dict); None, wenn
-    der Wert nichts aussagt. None selbst heißt aus (Tagesübung)."""
+    """An/aus aus einer gespeicherten Reiter-Einstellung: True/False, in
+    alten Einstellungen auch eine Stufe als Text oder Schalter je Störung
+    als dict. None, wenn der Wert nichts aussagt; None selbst heißt aus
+    (Tagesübung)."""
     if value is None or isinstance(value, bool):
         return bool(value)
     if isinstance(value, str):
@@ -144,8 +146,9 @@ class BandSettings:
 
     def restore(self, data) -> bool:
         """Gegenstück zu settings(); False, wenn nichts Brauchbares dabei war.
-        Aus älteren Versionen: Wer QSB an hatte, hatte auch die
-        Stärkeunterschiede – sie bleiben mit demselben Pegel an."""
+        Alte Einstellungen ohne Formatkennung (SETTINGS_VERSION): Ist QSB an,
+        werden auch die Stärkeunterschiede mit demselben Pegel eingeschaltet,
+        denn dort gehörten sie zu QSB."""
         spec = band.clean_spec(data)
         if spec is None:
             return False
@@ -155,8 +158,9 @@ class BandSettings:
         return True
 
     def restore_panel(self, data) -> bool:
-        """Übernimmt die frühere Einstellung des QSO- oder Contest-Reiters
-        ({Störung: {"enabled", "level"}}), wenn dort etwas an war."""
+        """Übernimmt die eigene Einstellung, die der QSO- oder Contest-Reiter
+        in alten Einstellungsdateien hat ({Störung: {"enabled", "level"}}),
+        wenn dort etwas an war."""
         if toggle_value(data) is not True:
             return False
         levels = {}

@@ -7,10 +7,9 @@ Player reimplementiert) ordnet am Ende jedem gesendeten Zeichen zu, ob es
 richtig, falsch oder gar nicht getippt wurde – auch wenn zwischendurch
 Zeichen übersprungen wurden.
 
-Vereinfachung gegenüber dem Original: die Live-Anzeige während der Session
-ist nur eine grobe, alle 1s neu berechnete Vorschau; die für die Statistik
-verwendete, endgültige Zuordnung passiert erst beim Stop in einem einzigen
-Alignment-Durchlauf über die komplette Session.
+Die Live-Anzeige während der Session ist nur eine grobe, jede Sekunde neu
+berechnete Vorschau. Die endgültige Zuordnung für die Statistik passiert erst
+beim Stop in einem einzigen Alignment-Durchlauf über die ganze Session.
 
 Die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen, wie
 bei Koch-Kursen und im Funkbetrieb; das gibt dem Ohr Wortgrenzen, und mit

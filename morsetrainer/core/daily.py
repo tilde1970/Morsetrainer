@@ -45,8 +45,8 @@ DABEI_TOLERANCE_MIN = 0.25
 # Betriebszeichen-Lektionen 42–45 gibt es nur von Hand, nicht hier.
 POST_KOCH = koch.FINAL_LESSON + 1
 EARLY, WORDS, MIXED, POST = "early", "words", "mixed", "post"
-WORDS_FROM_LESSON = 10   # vorher zu wenige Wörter (core/words.py)
-CALLS_FROM_LESSON = 30   # vorher zu wenige Rufzeichen aus gelernten Zeichen
+WORDS_FROM_LESSON = 10   # Wörter ab dieser Lektion; davor gibt es zu wenige (core/words.py)
+CALLS_FROM_LESSON = 30   # Rufzeichen ab dieser Lektion; davor zu wenige aus gelernten Zeichen
 
 # Aufwärmen: fällige Zeichen brauchen je MIN_ATTEMPTS Versuche für die
 # Tagesentscheidung der Lernkartei; ab MANY_DUE wird der Block länger.
@@ -161,8 +161,8 @@ def plan(lesson: int, due_count: int, today: date) -> list:
 
 def current_lesson(state: dict, fallback: int) -> int:
     """Gespeicherte Lektion, beim ersten Mal `fallback` (Lektion aus der
-    Kopfleiste). Vor 2.23 ging es bis Lektion 45 (nach 44); alles über
-    POST_KOCH ist jetzt „nach Koch“."""
+    Kopfleiste). Höhere Werte aus alten Daten werden auf POST_KOCH („nach
+    Koch“) begrenzt."""
     lesson = state.get("lesson")
     if isinstance(lesson, int) and not isinstance(lesson, bool) and lesson >= 1:
         return min(lesson, POST_KOCH)

@@ -122,7 +122,7 @@ class LessonTest(unittest.TestCase):
         self.assertEqual(daily.current_lesson({}, 7), 7)
         self.assertEqual(daily.current_lesson({"lesson": 20}, 7), 20)
         self.assertEqual(daily.current_lesson({"lesson": "x"}, 99), daily.POST_KOCH)
-        # Stand von vor 2.23 (nach Koch = 45) gilt weiter als „nach Koch“.
+        # Höhere gespeicherte Lektion aus alten Daten (45) gilt als „nach Koch“.
         self.assertEqual(daily.current_lesson({"lesson": 45}, 7), daily.POST_KOCH)
         state = {"lesson": 41, "pending_lesson": 45, "pending_since": "2026-01-01"}
         daily.apply_pending_lesson(state, TODAY)

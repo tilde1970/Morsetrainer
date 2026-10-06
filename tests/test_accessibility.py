@@ -151,8 +151,8 @@ class AnnouncerTest(AppTestCase):
         self.assertGreaterEqual(done[0] - start, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
 
     def test_superseded_announcement_waits_for_the_new_one(self):
-        # Bis 2.38 gab eine schon sprechende, verdrängte Ansage ihren Ablauf
-        # sofort frei; der nächste Morseton schnitt dann die neue ab.
+        # Eine schon sprechende, verdrängte Ansage darf ihren Ablauf erst nach
+        # der neuen freigeben, sonst schneidet der nächste Morseton sie ab.
         import time
         import numpy as np
         from morsetrainer.core import speech
@@ -283,7 +283,7 @@ class KeyboardTest(AppTestCase):
     Reiter und Bandbedingungen."""
 
     def test_tab_reaches_buttons_and_check_boxes(self):
-        # Bis 2.37 hatten Knöpfe und Schalter takefocus 0 (per Tab nicht erreichbar).
+        # Knöpfe und Schalter dürfen nicht takefocus 0 haben, sonst erreicht Tab sie nicht.
         mode = self.mode("Gruppen")
         for widget in (mode.start_button, self.app.more_button,
                        ttk.Checkbutton(self.root), ttk.Radiobutton(self.root)):

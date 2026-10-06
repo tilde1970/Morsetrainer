@@ -135,8 +135,9 @@ class WordModeFrame(SequenceModeFrame):
 
     def restore_settings(self, data: dict) -> None:
         super().restore_settings(data)
-        # Einstellungen von vor dem neuen Standard: einmalig auf „Erst merken“
-        # umstellen; danach gilt wieder, was gespeichert ist.
+        # Gespeicherte Einstellungen ohne „memorize_default“ stammen aus der
+        # Zeit, als „Mitschreiben“ Standard war: einmalig auf „Erst merken“
+        # umstellen, danach gilt wieder, was gespeichert ist.
         if data and not data.get("memorize_default") and self.style_var.get() == COPY:
             self.style_var.set(MEMORIZE)
             self.status_var.set(tr("Neu: Wörter jetzt mit „Erst merken“ – erst das ganze Wort hören, "

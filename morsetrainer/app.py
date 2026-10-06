@@ -46,12 +46,14 @@ __version__ = "2.38"
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
 DEFAULT_GEOMETRY = "720x900"
-# Schmaler passen die Beschriftungen aller Reiter nicht nebeneinander; eine
-# gespeicherte kleinere Breite (von vor dem Reiter Netzwerk) wird angehoben.
+# Mindestbreite des Hauptfensters: Schmaler passen die Beschriftungen aller
+# Reiter nicht nebeneinander. Eine kleinere gespeicherte Breite wird angehoben.
 MIN_WIDTH = 720
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
-# Bis 2.21 Vorgabe im Contest-Reiter; wer es dort stehen ließ, hat es nicht selbst eingetragen.
-LEGACY_DEFAULT_CALL = "DL4YM"
+# Platzhalter-Rufzeichen, das in alten Einstellungsdateien im Contest-Reiter
+# stehen kann. Beim Übernehmen in die zentralen Einstellungen gilt es nicht
+# als eigenes Rufzeichen und wird verworfen (siehe _follow_station).
+OLD_CONTEST_PLACEHOLDER_CALL = "DL4YM"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # Startet die Tagesübung; von keinem Reiter belegt.
 DAILY_KEY = "F12"
@@ -83,8 +85,8 @@ class MorseTrainerApp:
     def __init__(self, root):
         self.root = root
         # Eingabemethode (ibus u. a., XIM) aus: Unter X11 kostet sie jedes
-        # Fenster eine Rundreise zum IM-Server – das Hauptfenster brauchte
-        # 9 s statt unter 1 s, und antwortet der Server nicht, hängt Tk.
+        # Fenster eine Rundreise zum IM-Server, das Hauptfenster bräuchte
+        # dann mehrere Sekunden, und antwortet der Server nicht, hängt Tk.
         # Umlaute der Tastatur gehen weiter, nur Tottasten/Compose nicht.
         if root.tk.call("tk", "windowingsystem") == "x11":
             root.tk.call("tk", "useinputmethods", "0")
@@ -140,7 +142,9 @@ class MorseTrainerApp:
             for key in keys:
                 for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
                     root.bind_all(f"<{modifier}-{key}>", lambda e, d=direction: self.zoom(d) or "break")
-        theme.scale_wraps(root)  # Reiter sind nach dem Einlesen der Schriftgröße entstanden
+        # Die Reiter sind erst nach dem Einlesen der Schriftgröße entstanden:
+        # ihre Umbruchbreiten jetzt an die Schriftgröße anpassen.
+        theme.scale_wraps(root)
         # Alt+1 … Alt+9, Alt+0: Reiter 1 … 10 (auf dem Mac Cmd, Option+Ziffer
         # schreibt dort Sonderzeichen); Strg+B: Bandbedingungen.
         tab_modifier = "Command" if sys.platform == "darwin" else "Alt"
@@ -772,7 +776,8 @@ class MorseTrainerApp:
         except tk.TclError:
             wpm = koch.RECOMMENDED_WPM
         if wpm < koch.SLOW_CHAR_WPM:
-            # Geschafft mit gedehnten Zeichen heißt womöglich: mitgezählt.
+            # So langsame Zeichen lassen sich mitzählen statt als Klangbild
+            # erkennen; darauf hinweisen.
             text += "\n\n" + tr(
                 "Hinweis: Die Zeichen kamen mit {wpm} WPM, so langsam lassen sie sich mitzählen. Besser mit "
                 "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt. Für das Koch-Diplom "
@@ -918,9 +923,10 @@ class MorseTrainerApp:
                 var.set(value)
 
     def _migrate_band_settings(self) -> None:
-        """Bis Version 2.35 hatte jeder Reiter seine eigenen Bandbedingungen:
-        QSO und Contest je Störung, die übrigen eine Stufe (Gruppen usw. mit
-        eigener Lautstärke). Die erste Einstellung, die an war, wird zentral."""
+        """Übernimmt Bandbedingungen aus alten Einstellungsdateien, in denen
+        jeder Reiter eigene hatte (QSO und Contest je Störung, die übrigen
+        eine Stufe, Gruppen, Wörter und Rufzeichen dazu eine Lautstärke).
+        Die erste eingeschaltete Einstellung wird die zentrale."""
         if not any(self.band_settings.restore_panel(self._saved_mode_settings(title).get("band"))
                    for title in ("QSO", "Contest")):
             for title in ("Gruppen", "Wörter", "Rufzeichen", "Kontinuierlich", "Netzwerk"):
@@ -1032,16 +1038,16 @@ class MorseTrainerApp:
         Vorgabe: Sie ziehen mit, solange sie leer sind oder noch den
         vorigen zentralen Wert zeigen.
 
-        Ältere Fassungen kannten nur die beiden Felder: Beim ersten Start
-        werden sie übernommen, das Rufzeichen aber nicht, wenn es noch der
-        frühere Vorgabewert des Contest-Reiters ist."""
+        Fehlen die zentralen Werte in den gespeicherten Einstellungen, werden
+        sie aus den beiden Feldern übernommen – außer dem Platzhalter
+        OLD_CONTEST_PLACEHOLDER_CALL."""
         contest = self.modes[self.mode_titles.index("Contest")].my_call_var
         network = self.modes[self.mode_titles.index("Netzwerk")].name_var
         shared = self.saved_state.get("shared")
         shared = shared if isinstance(shared, dict) else {}
         if "station_call" not in shared:
             call = contest.get().strip().upper()
-            if call == LEGACY_DEFAULT_CALL:
+            if call == OLD_CONTEST_PLACEHOLDER_CALL:
                 contest.set("")
             else:
                 self.station_call_var.set(call)
@@ -1081,7 +1087,7 @@ class MorseTrainerApp:
     def _check_awards_at_start(self):
         """Beim allerersten Start still nachtragen, mit einem Hinweis."""
         if self.running_mode:
-            return  # Prüfung folgt nach der Übung
+            return  # nach der Übung prüft _handle_mode_stop
         seeded = self._check_awards()
         if seeded:
             messagebox.showinfo(tr("Diplome"), tr(
@@ -1137,7 +1143,8 @@ class MorseTrainerApp:
             return
         charset = self.charset_var.get()
         if self.drill_restore is not None and charset == self.drill_restore[1]:
-            charset = self.drill_restore[0]  # zweimal gedrückt: vom ursprünglichen aus
+            # Zweimal gedrückt: vom Zeichensatz vor dem ersten Druck ausgehen.
+            charset = self.drill_restore[0]
         extended = charset.upper() + "".join(ch for ch in due if ch not in charset.upper())
         self.drill_restore = (charset, extended) if extended != charset else None
         self.charset_var.set(extended)
@@ -1479,17 +1486,17 @@ class MorseTrainerApp:
 
 
 def main():
-    # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
-    # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
     sys.excepthook = lambda *exc: errorlog.record(*exc, version=__version__)
     update.cleanup()
-    # Bis 2.27 lagen die Übungsdaten als JSON-Dateien in stats/. Scheitert
-    # die Übernahme, bleiben die Dateien liegen (neuer Versuch beim nächsten
-    # Start); das Fehlerprotokoll meldet es.
+    # Übungsdaten aus alten JSON-Dateien in die Datenbank übernehmen
+    # (core/migration.py). Scheitert das, bleiben die Dateien liegen und es
+    # gibt beim nächsten Start einen neuen Versuch; das Fehlerprotokoll meldet es.
     try:
         migration.run()
     except Exception:
         errorlog.record(*sys.exc_info(), version=__version__)
+    # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
+    # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
     root = tk.Tk(className="Morsetrainer")
     app = MorseTrainerApp(root)
     root.report_callback_exception = app.report_callback_exception

@@ -381,16 +381,15 @@ def _qrn_runs(data: Data) -> list:
         c, summary = s.config, s.summary
         mode, rank = c.get("mode"), BAND_RANK.get(_text(c.get("band")))
         if "band_min" in summary:
-            # Ab 2.36 gelten die Bandbedingungen auch mitten im Durchgang:
+            # Die Bandbedingungen lassen sich mitten im Durchgang ändern: Es
             # zählt die schwächste Stufe darin (None: zwischendurch aus).
             rank = min(rank or 0, BAND_RANK.get(_text(summary.get("band_min")), 0)) or None
         if mode not in ("group", "continuous") or rank is None:
             continue
         if mode == "continuous" and c.get("content", "chars") != "chars":
             continue  # Klartext ist im Störnebel viel leichter (Zusammenhang); wie bei QRQ
-        # Lautstärke der Störungen: der kleinste Wert im Durchgang (ältere
-        # Sitzungen: der beim Start; Kontinuierlich hatte bis 2.35 keinen
-        # Regler, also 100 %).
+        # Lautstärke der Störungen: der kleinste Wert im Durchgang. Fehlt er
+        # (ältere Daten), gilt der beim Start, fehlt auch der, 100 %.
         gain = min(_num(c.get("band_gain"), 100), _num(summary.get("band_gain_min"), 100))
         if (gain < 100 or _num(summary.get("total")) < 200 or _char_wpm(c) < 20 or _effective_wpm(s) < 12
                 or not _contains(c.get("charset"), koch.lesson_charset(25))):
@@ -433,7 +432,7 @@ def _rufz(data: Data) -> list:
         if r.get("mode") != "rufz" or _num(r.get("total")) < 50 or r.get("prefixes"):
             continue
         if r.get("start_wpm") is not None and _num(r["start_wpm"]) < 20:
-            continue  # ältere Einträge kennen das Starttempo nicht
+            continue  # Einträge ohne Starttempo (ältere Daten) zählen
         events.append((r["day"], _num(r.get("score"))))
     return events
 
@@ -527,12 +526,12 @@ def _wpx(data: Data) -> list:
     for s in data.sessions:
         if s.config.get("mode") == "callsign" and _char_wpm(s.config) >= MIN_CHAR_WPM:
             for sent, typed, first in s.groups:
-                # Ältere Dateien kennen den ersten Versuch nicht: richtig getippt zählt.
+                # Ohne Angabe zum ersten Versuch (ältere Daten) zählt richtig getippt.
                 if first or (first is None and sent == typed):
                     add(sent, s.day)
     for r in data.results:
         if r.get("mode") == "contest" and _num(r.get("wpm")) >= MIN_CHAR_WPM:
-            # Nur Calls ohne Rückfrage; ältere Einträge kennen das nicht.
+            # Nur Calls ohne Rückfrage (ältere Daten kennen den Unterschied nicht).
             for call in r.get("calls") or ():
                 add(call, r["day"])
     return _cumulative((day, 1) for day in first_day.values())
@@ -540,7 +539,8 @@ def _wpx(data: Data) -> list:
 
 def _qso_understood(r: dict) -> bool:
     """Alles richtig, ohne „Nochmal“ und mit Zeichen ≥ 18 WPM; Ergebnisse
-    von vor 2.26 haben kein Zeichentempo und zählen ohne diese Bedingung."""
+    ohne gespeichertes Zeichentempo (ältere Daten) zählen ohne diese
+    Bedingung."""
     if r.get("char_wpm") is not None and _num(r["char_wpm"]) < MIN_CHAR_WPM:
         return False
     return bool(_num(r.get("total"))) and r.get("correct") == r.get("total") and not r.get("replays")
@@ -701,8 +701,8 @@ def _all_contests(data: Data) -> list:
 
 def _club(data: Data) -> list:
     """Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder geleitet.
-    Protokolle von vor 2.22 haben keine Dauer; ihr Tag zählt wie früher
-    schon durch die Teilnahme."""
+    Protokolle ohne Dauer (ältere Daten): Der Tag zählt schon durch die
+    Teilnahme."""
     seconds = {}
     for s in data.sessions:
         if s.config.get("mode") == "network":

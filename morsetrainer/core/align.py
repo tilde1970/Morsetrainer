@@ -1,23 +1,26 @@
-"""Levenshtein-based alignment between an expected and a received character
-sequence, used by the continuous training mode to figure out which sent
-characters were copied correctly, misheard, or missed entirely, even if the
-trainee falls behind or skips a character (analogous to align_chars in
-WZab/morse_trainer's morse_trainer_cont.py, reimplemented directly on plain
-strings)."""
+"""Zuordnung (Alignment nach Levenshtein) zwischen erwarteter und empfangener
+Zeichenfolge. Der Modus Kontinuierlich ermittelt damit, welche gesendeten
+Zeichen richtig mitgeschrieben, verhört oder ganz verpasst wurden, auch wenn
+man zurückfällt oder ein Zeichen auslässt (nach dem Vorbild von align_chars
+in morse_trainer_cont.py aus WZab/morse_trainer, hier direkt auf Strings
+umgesetzt)."""
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
 
 class OpKind(Enum):
-    MATCH = "match"
-    SUBSTITUTE = "substitute"
-    DELETE = "delete"   # in `expected` but missing from `received` (missed)
-    INSERT = "insert"   # in `received` but not in `expected` (stray keystroke)
+    """Art eines Schritts der Zuordnung."""
+    MATCH = "match"            # gleiches Zeichen
+    SUBSTITUTE = "substitute"  # anderes Zeichen getippt (verhört)
+    DELETE = "delete"          # gesendet, aber nicht getippt (verpasst)
+    INSERT = "insert"          # getippt, aber nicht gesendet (überzählige Taste)
 
 
 @dataclass
 class AlignOp:
+    """Ein Schritt der Zuordnung: die beteiligten Zeichen und ihre Position
+    in `expected` bzw. `received` (None, wo es auf einer Seite keins gibt)."""
     kind: OpKind
     expected_char: Optional[str]
     received_char: Optional[str]

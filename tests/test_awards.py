@@ -204,7 +204,8 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("first_qso", data(results=slow)), [None])
         fast = [result("qso_head", 1, char_wpm=20, **good)] * 3
         self.assertEqual(dates("headphones", data(results=slow + fast))[0], day(1))
-        self.assertEqual(dates("first_qso", data(results=[result("qso_quiz", 2, **good)])), [day(2)])  # vor 2.26
+        # ohne gespeichertes Zeichentempo (ältere Daten)
+        self.assertEqual(dates("first_qso", data(results=[result("qso_quiz", 2, **good)])), [day(2)])
 
     def test_skipped_head_copy_breaks_the_run(self):
         good = dict(kind="ragchew", correct=3, total=3, replays=0, wpm=16)
@@ -241,7 +242,7 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("club", data(evening))[0], day(3))  # Durchgänge eines Abends zählen zusammen
         led_long = result("network", 4, role="trainer", duration_s=660)
         self.assertEqual(dates("club", data(results=[led_long]))[0], day(4))
-        old_log = session("network", 5)  # Protokoll ohne Dauer (vor 2.22): Teilnahme genügt
+        old_log = session("network", 5)  # Protokoll ohne Dauer (ältere Daten): Teilnahme genügt
         self.assertEqual(dates("club", data([old_log]))[0], day(5))
 
     def test_club_levels_count_evenings(self):

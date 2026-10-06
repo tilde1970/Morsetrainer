@@ -249,9 +249,10 @@ class FilterAndQrmTest(unittest.TestCase):
         self.assertEqual(conditions.cw_qrm_offset, "far")
 
     def test_same_seed_same_qrm_and_storms(self):
-        # Netzwerk: Mit CW-QRM hörten Teilnehmer bis 2.38 anderes QRM und
-        # andere Gewitter, Träger und Knacker (das QRM verbrauchte je nach
-        # Text verschieden viele Zufallszahlen und nahm den Text aus random).
+        # Netzwerk: Gleicher Startwert ergibt auf jedem Rechner dasselbe
+        # CW-QRM und dieselben Gewitter, Träger und Knacker – auch wenn das
+        # Modul random dort anders steht und der QRM-Text verschieden viele
+        # Zufallszahlen braucht.
         import random
         import numpy as np
         spec = {"levels": {"cw_qrm": 1.0, "storm": 1.0, "carrier": 1.0, "qrn": 0.5}, "gain": 1.0, "seed": 7}
@@ -420,7 +421,8 @@ class CentralSettingsTest(AppTestCase):
 
     def test_strength_differences_from_older_versions(self):
         settings = self.app.band_settings
-        # Bis 2.37 gehörten sie zu QSB: bleiben mit demselben Pegel an.
+        # Alte Einstellungen ohne Formatkennung: Mit QSB werden die
+        # Stärkeunterschiede mit demselben Pegel eingeschaltet.
         self.assertTrue(settings.restore({"levels": {"qsb": 0.8, "noise": 0.5}, "gain": 1.0}))
         self.assertEqual(settings.spec()["levels"]["strength"], 0.8)
         self.assertTrue(settings.restore({"levels": {"noise": 0.5}, "gain": 1.0}))

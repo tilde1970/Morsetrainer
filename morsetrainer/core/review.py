@@ -24,11 +24,11 @@ gezielten Üben FOCUS_FACTOR (core/weighting.py).
 Gespeichert in der Datenbank unter "review": {Zeichen: {"box", "due", "day", Zähler,
 "best_box", "best_day"}}. "best_box" ist das höchste je erreichte Fach (für
 Fortschritt und Diplome: ein späteres Zurückstufen nimmt es nicht weg);
-ältere Einträge ohne das Feld gelten mit ihrem aktuellen Fach.
+Einträge ohne das Feld (ältere Daten) gelten mit ihrem aktuellen Fach.
 "award_box" und "award_day" ebenso, aber nur aus Sitzungen mit
 Zeichentempo ab koch.SLOW_CHAR_WPM: Diese Fächer zählen für die Diplome,
-weil sich langsamere Zeichen mitzählen lassen. Einträge von vor diesem
-Feld übernehmen beim ersten Entscheiden ihr bisheriges "best_box"."""
+weil sich langsamere Zeichen mitzählen lassen. Einträge ohne diese Felder
+übernehmen beim ersten Entscheiden ihr "best_box"."""
 from datetime import date, timedelta
 
 from morsetrainer.core import db

@@ -10,9 +10,9 @@ Tabellen:
               Tagesübung, Diplome, Lernkartei, Übungszeit)
     meta      Verwaltung (z. B. Übernahme der alten JSON-Dateien)
 
-Die Inhalte bleiben JSON, so wie sie bisher in den Dateien standen: Die
-Auswertungen arbeiten weiter mit denselben Dictionaries, die Datenbank
-filtert nur nach Zeitraum und Modus vor.
+Die Inhalte sind JSON im selben Aufbau wie in den früheren Einzeldateien:
+Die Auswertungen arbeiten mit denselben Dictionaries, die Datenbank filtert
+nur nach Zeitraum und Modus vor.
 
 Jeder Schreibvorgang wird sofort festgeschrieben (ein Absturz kostet
 höchstens die laufende Zeile); mehrere zusammengehörige Änderungen

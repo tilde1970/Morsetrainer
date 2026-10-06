@@ -5,18 +5,18 @@ und mit eigenem Pegel (0..1, siehe EFFECTS):
   ca. 300–2700 Hz begrenzt, leicht zu den Höhen abfallend).
 - QRN: vereinzelte Knackstörungen, z. B. von Gewittern.
 - QSB: jede Station schwankt langsam in der Lautstärke (Fading).
-- Stärkeunterschiede: jede Station kommt unterschiedlich stark an (bis
-  2.37 ein Teil von QSB).
+- Stärkeunterschiede: jede Station kommt unterschiedlich stark an,
+  unabhängig vom QSB.
 - Chirp: einige Stationen haben einen schlecht stabilisierten Sender, der
   beim Tasten kurz neben der Frequenz liegt („zwitschert“).
-- SSB-QRM (bis 2.37 „SSB-Gebrabbel“): eine verstimmte SSB-Station auf der Nachbarfrequenz.
+- SSB-QRM: eine verstimmte SSB-Station auf der Nachbarfrequenz.
   Synthetisch erzeugt (Sägezahn-Stimme durch wechselnde Vokal-Formanten,
   Silben, Wörter, Sprecherwechsel), also unverständlich, klingt aber nach
   Sprache.
 - CW-QRM: ein Contest-Run auf der Nachbarfrequenz, weit daneben, nah dran
   oder fast auf der eigenen Frequenz (Zero-Beat); mit eigenem QSB.
 
-Weitere Störungen (seit 2.38, nicht Teil der Stufen):
+Weitere Störungen (nicht Teil der Stufen):
 
 - Gewitter: Knackstörungen in Schüben, wie ein Sommergewitter auf 80/160 m.
 - AGC-Pumpen: nach einem starken Knacker regelt der Empfänger kurz
@@ -25,7 +25,7 @@ Weitere Störungen (seit 2.38, nicht Teil der Stufen):
   Polarweg.
 - Träger: jemand stimmt nahe der Frequenz ab, ein Dauerton kommt und geht.
 
-Dazu ein wählbares CW-Filter (2,4 kHz wie bisher, 500 Hz, 250 Hz) um die
+Dazu ein wählbares CW-Filter (2,4 kHz = nur das SSB-Filter, 500 Hz, 250 Hz) um die
 eigene Tonhöhe: Signale, Rauschen und QRM laufen hindurch, der eigene
 Mithörton nicht.
 
@@ -700,7 +700,7 @@ def apply_preset(band: BandConditions, samples: np.ndarray) -> tuple[np.ndarray,
 # verschickt wird: {"levels": {Störung: Pegel 0..1, nur eingeschaltete},
 # "gain": Lautstärke der Störgeräusche (background_gain)}, optional "filter"
 # (aus FILTER_WIDTHS) und "qrm_offset" (Schlüssel aus QRM_OFFSETS); fehlen
-# sie, gelten 2,4 kHz und „weit“ (Versionen bis 2.37 kennen sie nicht).
+# sie (etwa von einem älteren Trainer im Netzwerk), gelten 2,4 kHz und „weit“.
 GAIN_RANGE = (0.1, 1.5)
 # Optional "seed" (0 … SEED_LIMIT − 1): Zufallswert für BandConditions, im
 # Netzwerk vom Trainer je Durchgang gewählt.

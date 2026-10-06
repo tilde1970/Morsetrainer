@@ -218,7 +218,7 @@ class SingleModeFrame(DailyModeMixin):
             self.icr_var.set(data["icr"])
         limit = data.get("icr_limit")
         if isinstance(limit, (int, float)) and not isinstance(limit, bool) and limit > 0:
-            # Ältere Stände durften kürzer sein als die heutige Untergrenze.
+            # Gespeicherte Werte können außerhalb von ICR_RANGE liegen: begrenzen.
             self.limit = min(max(float(limit), ICR_RANGE[0]), ICR_RANGE[1])
         self._show_limit()
 

@@ -123,22 +123,21 @@ def char_gap_seconds(wpm: int, farnsworth_wpm=None) -> float:
 
 
 def build_samples(char: str, wpm: int, freq: int, farnsworth_wpm=None, chirp=None) -> np.ndarray:
-    """Render a single character to a mono float32 waveform.
+    """Ein einzelnes Zeichen als Mono-Signal (float32).
 
-    Timing follows the standard Morse convention where one dit = 1.2/wpm
-    seconds; inter-element gap = 1 dit, inter-character gap = 3 dits
-    (appended at the end so consecutive characters sound natural), or the
-    stretched Farnsworth gap when `farnsworth_wpm` is given. `chirp` is
-    passed on to shaped_tone.
-    """
+    Zeitmaß nach der üblichen Morse-Regel: ein Punkt dauert 1,2/WpM Sekunden,
+    die Pause zwischen den Elementen 1 Punkt, die Pause nach dem Zeichen 3 Punkte
+    (hinten angehängt, damit aufeinanderfolgende Zeichen natürlich klingen) bzw.
+    die gestreckte Farnsworth-Pause, wenn `farnsworth_wpm` angegeben ist. `chirp`
+    geht an shaped_tone weiter."""
     code = MORSE_CODE.get(char.upper())
     if code is None:
         return np.zeros(0, dtype=np.float32)
 
     dit = 1.2 / wpm
     dah = dit * 3
-    gap = dit  # gap between elements within a character
-    char_gap = char_gap_seconds(wpm, farnsworth_wpm)  # gap after the character
+    gap = dit  # Pause zwischen den Elementen eines Zeichens
+    char_gap = char_gap_seconds(wpm, farnsworth_wpm)  # Pause nach dem Zeichen
 
     tone_dit = shaped_tone(freq, dit, chirp=chirp)
     tone_dah = shaped_tone(freq, dah, chirp=chirp)
@@ -188,20 +187,18 @@ def duration_seconds(char: str, wpm: int, farnsworth_wpm=None) -> float:
 
 
 def code_units(char: str) -> float:
-    """Length of a character in dit-units (dot=1, dash=3, inter-element
-    gap=1, trailing inter-character gap=3), independent of WPM.
+    """Länge eines Zeichens in Punkt-Einheiten (Punkt 1, Strich 3, Pause
+    zwischen den Elementen 1, Pause nach dem Zeichen 3), unabhängig vom Tempo.
 
-    Used to translate a measured real-world response time back into an
-    "effective WPM": effective_wpm = code_units(char) * 1.2 / elapsed_seconds.
-    This mirrors the standard PARIS timing formula (dit = 1.2 / wpm) but
-    applied per character instead of per standard word.
-    """
+    Damit wird eine gemessene Antwortzeit in ein „effektives WpM“ umgerechnet:
+    effective_wpm = code_units(char) * 1.2 / elapsed_seconds. Das ist die übliche
+    PARIS-Formel (Punkt = 1,2 / WpM), nur je Zeichen statt je Normwort."""
     code = MORSE_CODE.get(char.upper())
     if code is None:
         return 0.0
-    units = 3.0  # trailing inter-character gap
+    units = 3.0  # Pause nach dem Zeichen
     for i, symbol in enumerate(code):
         if i > 0:
-            units += 1  # inter-element gap
+            units += 1  # Pause zwischen den Elementen
         units += 1 if symbol == "." else 3
     return units

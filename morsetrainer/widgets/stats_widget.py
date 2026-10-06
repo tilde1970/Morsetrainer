@@ -1,7 +1,7 @@
-"""Shared Tk widget for displaying accuracy, effective speed, and a
-per-character error table. Used both for a single session's live stats
-and for the cumulative all-time stats, so the layout stays consistent
-and isn't duplicated."""
+"""Gemeinsames Tk-Element für Trefferquote, effektives Tempo und die
+Fehlertabelle je Zeichen. Dient sowohl der Statistik eines laufenden
+Durchgangs als auch der Gesamtstatistik, damit das Layout einheitlich ist
+und nicht doppelt gebaut wird."""
 import tkinter as tk
 from tkinter import ttk
 
