@@ -63,6 +63,8 @@ DOK, POWER = "dok", "power"
 
 @dataclass(frozen=True)
 class Country:
+    """Ein Land für erzeugte QSOs: Rufzeichenmuster, Präfixe für erfundene
+    Rufzeichen, CQ-Zone sowie Namen und QTHs zur Auswahl."""
     key: str
     pattern: str            # Regex auf den Rufzeichenanfang
     sample_prefixes: tuple  # für erzeugte Rufzeichen, wenn callsigns.scp fehlt
@@ -169,6 +171,7 @@ DOK_LETTERS = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
 
 @dataclass(frozen=True)
 class Station:
+    """Eine erfundene Station mit allem, was in einem normalen QSO vorkommen kann."""
     call: str
     name: str
     qth: str
@@ -182,6 +185,8 @@ class Station:
 
 @dataclass(frozen=True)
 class Qso:
+    """Ein erzeugtes QSO oder ein Contest-Run: die Durchgänge der Stationen
+    samt allem, was der QSO-Reiter für Abfrage und Kopfhör-Fragen braucht."""
     kind: str                # Schlüssel aus QSO_TYPES
     calls: tuple             # Rufzeichen je Stationsindex (0 = ruft CQ bzw. Run-Station)
     transmissions: tuple     # ((Stationsindex, Text), …)
@@ -198,9 +203,11 @@ class Qso:
 
     @property
     def is_contest(self) -> bool:
+        """Ist es ein Contest-Run (und kein normales QSO)?"""
         return self.kind != RAGCHEW
 
     def text(self) -> str:
+        """Der ganze gesendete Text, alle Durchgänge hintereinander."""
         return " ".join(text for _, text in self.transmissions)
 
 
@@ -265,6 +272,8 @@ def _district(call: str) -> str:
 
 
 def cq_zone(call: str, country: Country) -> int:
+    """CQ-Zone der Station `call`; in USA und Russland nach der Ziffer im
+    Rufzeichen (Hawaii und Alaska eigens)."""
     district = _district(call)
     if country.key == "W":
         if call.startswith(("KH6", "NH6", "WH6", "AH6")):
@@ -278,6 +287,8 @@ def cq_zone(call: str, country: Country) -> int:
 
 
 def itu_zone(call: str, country: Country) -> int:
+    """ITU-Zone der Station `call`; in USA und Russland nach der Ziffer im
+    Rufzeichen (Hawaii und Alaska eigens)."""
     district = _district(call)
     if country.key == "W":
         if call.startswith(("KH6", "NH6", "WH6", "AH6")):
@@ -350,6 +361,8 @@ def _station_info(st: Station, length: int) -> list:
 
 
 def _generate_ragchew(length: int) -> Qso:
+    """Normales QSO zwischen zwei erfundenen Stationen; `length` bestimmt, was
+    alles ausgetauscht wird (siehe LENGTH_*). Mit Abfrage und Kopfhör-Fragen."""
     a = _make_station()
     b = _make_station(exclude={a.call})
     rst_a, rst_b = _pick_rst(), _pick_rst()
@@ -466,6 +479,8 @@ class _Exchange:
             self.fixed = None
 
     def next(self):
+        """Nächster Austausch als (Text, Art): fester Wert (Zone, DOK, Bundesstaat,
+        Leistung) oder die nächste Seriennummer."""
         if self.fixed is not None:
             return self.fixed
         value = (_cut_serial(self.serial), NUMBER)
@@ -486,6 +501,9 @@ def _pick_contest_call(kind: str, exclude, countries, hq_probability: float):
 
 def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) -> Qso:
     # WAG: DL arbeitet alle; ARRL DX: der Rest der Welt arbeitet W/VE.
+    """Contest-Run der Art `kind` mit `count` QSOs; mit `pileup_probability`
+    rufen bei einem Teil der Anrufe weitere Stationen gleichzeitig. Mit Abfrage
+    der Rufzeichen und des Austauschs."""
     run_countries = {"wag": {"DL"}, "arrldx": {c.key for c in COUNTRIES} - {"W"}}.get(kind)
     caller_countries = {"arrldx": {"W"}}.get(kind)
     test = "WAG" if kind == "wag" else "TEST"
@@ -560,6 +578,7 @@ def cut_number(number: int) -> str:
 
 
 def contest_test_word(kind: str) -> str:
+    """Wort im CQ-Ruf des Contests: „WAG“ im WAG, sonst „TEST“."""
     return "WAG" if kind == "wag" else "TEST"
 
 

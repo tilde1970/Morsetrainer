@@ -49,6 +49,8 @@ FLOW_WORDS_MAX = 21.9  # mit Wörtern höchstens Silber (Gold: 22 WPM)
 
 @dataclass(frozen=True)
 class Award:
+    """Beschreibung eines Diploms: Schlüssel, Name, Bedingung als Text, Schwellen
+    je Stufe und wie der Fortschritt angezeigt wird (Felder siehe unten)."""
     key: str
     name: str
     condition: str
@@ -135,6 +137,8 @@ BY_KEY = {award.key: award for award in AWARDS}
 # --- Daten ----------------------------------------------------------------------
 @dataclass
 class Session:
+    """Ein gespeicherter Durchgang, aufbereitet für die Diplome: Tag, config und
+    summary sowie die Ergebnisse je Zeichen und je Gruppe."""
     day: date
     config: dict
     summary: dict
@@ -144,6 +148,8 @@ class Session:
 
 @dataclass
 class Data:
+    """Alles, was die Diplome auswerten: Durchgänge, Ergebnisse der Modi ohne
+    Zeichenprotokoll (QSO, Contest, Rufz …), Lernkartei und Übungszeit."""
     sessions: list
     results: list   # Ergebnisse (stats.log_result) mit "day"
     review: dict
@@ -156,6 +162,8 @@ _session_cache = {}
 
 
 def _make_session(config: dict, summary: dict, events: list):
+    """Session aus config, summary und den Zeilen eines Durchgangs; None, wenn
+    die Startzeit fehlt oder ungültig ist."""
     chars, groups = [], []
     for obj in events:
         kind = obj.get("type")
@@ -185,6 +193,8 @@ def _load_sessions() -> list:
 
 
 def load_data() -> Data:
+    """Liest alle Daten für die Diplome aus der Datenbank; Ergebnisse ohne
+    gültige Zeit fallen weg, die übrigen sind nach Zeit sortiert."""
     sessions = _load_sessions()
     results = []
     for obj in db.results():
@@ -265,6 +275,8 @@ def level_dates(events, targets, two_days=False) -> list:
 
 @dataclass
 class Status:
+    """Stand eines Diploms: an welchem Tag welche Stufe erreicht wurde und wie
+    nah die nächste ist."""
     dates: list           # Tag je Stufe oder None
     value: float          # aktueller Stand (bester Wert bzw. Summe; bei `stepped` die erreichte Stufe)
     progress: tuple = None  # (erreicht, nötig) zur nächsten Stufe, wenn sich das zählen lässt
@@ -292,6 +304,8 @@ def _status(award: Award, dates: list, value: float) -> Status:
 
 # --- Die einzelnen Diplome ---------------------------------------------------------
 def _koch(data: Data) -> list:
+    """Koch-Diplom: [(Tag, Lektion)] je bestandenem Aufstiegslauf (Gruppen oder
+    Kontinuierlich mit Zufallszeichen, Zeichen ≥ MIN_CHAR_WPM)."""
     events = []
     for s in data.sessions:
         mode, lesson = s.config.get("mode"), s.config.get("lesson")
@@ -345,6 +359,8 @@ def wal_progress(data: Data) -> tuple:
 
 
 def _flow(data: Data) -> list:
+    """Mitschreiben im Fluss: [(Tag, effektives WPM)] je voller Klartext-Lauf in
+    Kontinuierlich mit mindestens 90 % sauber; mit Wörtern höchstens Silber."""
     events = []
     for s in data.sessions:
         c = s.config
@@ -438,6 +454,8 @@ def _rufz(data: Data) -> list:
 
 
 def contest_errors(r: dict) -> int:
+    """Fehler eines Contest-Ergebnisses: falsche Rufzeichen (busted), nicht im
+    Log der Gegenstation (nil) und falscher Austausch zusammen."""
     return int(sum(_num(r.get(kind)) for kind in ("busted", "nil", "exchange")))
 
 
@@ -516,6 +534,8 @@ def wpx_prefix(call: str):
 
 
 def _wpx(data: Data) -> list:
+    """WPX: laufende Zahl verschiedener Präfixe [(Tag, Anzahl)], aus Rufzeichen
+    beim ersten Versuch richtig und Contest-Calls ohne Rückfrage."""
     first_day = {}
 
     def add(call, day):
@@ -547,6 +567,9 @@ def _qso_understood(r: dict) -> bool:
 
 
 def _headphones(data: Data) -> list:
+    """Kopfhörer: [(Tag, WPM)] nach je drei verstandenen normalen QSOs in Folge
+    (Kopfhören mit Fragen); das langsamste der drei zählt, mit kurzen QSOs
+    höchstens Bronze."""
     events, run = [], []
     for r in data.results:
         if r.get("mode") != "qso_head" or r.get("kind") != RAGCHEW:
@@ -650,6 +673,8 @@ def _confusion_state(data: Data):
 
 
 def _confusion_hint(state, today: date):
+    """Hinweis für „Verwechslung überwunden“: das offene Paar, das dem Ziel am
+    nächsten ist, als (Text mit Platzhaltern, Werte)."""
     _, open_pairs, attempts, confusions = state
     if not open_pairs:
         return (N_("Noch kein Paar unter deinen häufigsten Verwechslungen"), {})
@@ -715,6 +740,8 @@ def _club(data: Data) -> list:
 
 
 def _q_groups(data: Data) -> list:
+    """Q-Gruppen-Kenner: laufende Zahl der Q-Gruppen [(Tag, Anzahl)], die je
+    dreimal beim ersten Hören richtig waren, an mindestens zwei Tagen."""
     hits = {}
     for s in data.sessions:
         if s.config.get("mode") != "word" or _char_wpm(s.config) < MIN_CHAR_WPM:
@@ -793,12 +820,16 @@ def _guarded(key: str, compute, default):
 
 # --- Protokoll ---------------------------------------------------------------------
 def load() -> dict:
+    """Gespeicherter Stand der Siegel: {"seals": {Diplom: {Stufe: Tag}},
+    "seeded": schon einmal nachgetragen}; Ungültiges fällt weg."""
     data = db.load_state(STATE_KEY, {})
     seals = data.get("seals") if isinstance(data.get("seals"), dict) else {}
     return {"seals": {k: v for k, v in seals.items() if isinstance(v, dict)}, "seeded": bool(data.get("seeded"))}
 
 
 def save(state: dict) -> None:
+    """Speichert den Stand der Siegel; scheitert das, bleibt es beim alten Stand
+    ohne Fehlermeldung."""
     try:
         db.save_state(STATE_KEY, state)
     except (db.Error, OSError):

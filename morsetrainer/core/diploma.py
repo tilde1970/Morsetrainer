@@ -27,6 +27,8 @@ UMLAUTS = {"Ä": "AE", "Ö": "OE", "Ü": "UE", "ß": "SS"}
 
 
 def seal_colors(level, levels: bool = True) -> tuple:
+    """(Fläche, Rand) des Siegels für Stufe `level`; Diplome ohne Stufen
+    (`levels` False) haben eine eigene Farbe."""
     return SEAL_COLORS[level] if levels else SEAL_PLAIN
 
 

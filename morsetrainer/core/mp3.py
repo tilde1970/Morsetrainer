@@ -12,7 +12,7 @@ BITRATE_KBPS = 96
 
 
 class Mp3Error(Exception):
-    pass
+    """MP3 lässt sich nicht schreiben; die Meldung ist schon für die Anzeige formuliert."""
 
 
 def available():
@@ -45,11 +45,13 @@ class Mp3Writer:
         self.seconds = 0.0
 
     def write(self, samples: np.ndarray) -> None:
+        """Hängt `samples` (float32, −1 … 1) an die MP3-Datei an."""
         pcm = (np.clip(samples, -1.0, 1.0) * 32767).astype("<i2").tobytes()
         self.file.write(self.encoder.encode(pcm))
         self.seconds += len(samples) / SAMPLE_RATE
 
     def close(self) -> None:
+        """Schreibt den Rest aus dem Encoder und schließt die Datei."""
         try:
             self.file.write(self.encoder.flush())
         finally:

@@ -395,6 +395,8 @@ class BandConditions:
 
     @property
     def active(self) -> bool:
+        """Ist irgendeine Störung hörbar eingeschaltet? Chirp zählt nicht, er
+        verändert nur die Stationen selbst."""
         return any(self._on(effect) for effect in EFFECTS if effect != "chirp")
 
     @property
@@ -708,6 +710,8 @@ SEED_LIMIT = 2 ** 31
 
 
 def spec_from_preset(preset: str) -> dict:
+    """Spec für eine Stufe aus PRESETS ("light", "medium", "heavy") mit
+    normaler Lautstärke der Störgeräusche."""
     return {"levels": dict(PRESETS[preset]), "gain": 1.0}
 
 
@@ -753,6 +757,9 @@ def apply_spec(band: BandConditions, spec) -> None:
 
 
 def conditions(spec, freq: int, stations: int = 1) -> BandConditions:
+    """Fertige BandConditions für `stations` Stationen nach `spec` (None: ohne
+    Störungen), mit dem Zufallswert aus der Spec und den Störsignalen für die
+    Tonhöhe `freq` schon erzeugt."""
     band = BandConditions(stations, spec.get("seed") if spec else None)
     apply_spec(band, spec)
     band.prepare(freq)

@@ -1,5 +1,5 @@
-"""Sicheres Schreiben und Lesen der Datendateien (all_time.json,
-practice.json, window_state.json).
+"""Sicheres Schreiben und Lesen von JSON-Dateien (window_state.json; beim
+Übernehmen alter Daten auch die früheren Dateien in stats/).
 
 Geschrieben wird erst in eine Nachbardatei, die dann per os.replace die
 alte ersetzt: Bricht das Schreiben ab (Absturz, Stromausfall, volle
@@ -34,6 +34,8 @@ def write_text_atomic(path: Path, text: str) -> None:
 
 
 def write_json_atomic(path: Path, data, **dump_options) -> None:
+    """Schreibt `data` als JSON nach `path`, sicher gegen Abbruch
+    (write_text_atomic); `dump_options` gehen an json.dumps."""
     write_text_atomic(path, json.dumps(data, ensure_ascii=False, **dump_options))
 
 

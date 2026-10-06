@@ -115,6 +115,8 @@ def spoken_words(text: str, alphabet: str = "de", lang: str = "de") -> str:
 
 
 def voice_dirs() -> list:
+    """Ordner, in denen die Stimmen gesucht werden: im gepackten Programm
+    zuerst der mitgelieferte, dann voices/ im Datenordner."""
     dirs = [DATA_DIR / "voices"]
     base = getattr(sys, "_MEIPASS", None)
     if base:
@@ -123,6 +125,8 @@ def voice_dirs() -> list:
 
 
 def voice_path(lang: str = "de"):
+    """Pfad zur Stimme für `lang` (.onnx, dazu muss die .onnx.json daneben
+    liegen), oder None, wenn sie fehlt."""
     name = VOICES.get(lang, VOICE_NAME)
     for directory in voice_dirs():
         path = directory / f"{name}.onnx"
@@ -132,6 +136,8 @@ def voice_path(lang: str = "de"):
 
 
 def resample(samples: np.ndarray, rate: int, target: int = SAMPLE_RATE) -> np.ndarray:
+    """`samples` von `rate` auf `target` Hz umrechnen (lineare Interpolation,
+    für Sprache genau genug)."""
     if rate == target or not len(samples):
         return samples.astype(np.float32)
     n = int(round(len(samples) * target / rate))
@@ -162,6 +168,8 @@ class Speaker:
         return self.error
 
     def load(self) -> bool:
+        """Lädt die Stimme, falls noch nicht geschehen (dauert knapp eine Sekunde).
+        False, wenn das nicht geht; der Grund steht dann in available()."""
         with self._lock:
             if self.voice is not None:
                 return True
@@ -176,6 +184,7 @@ class Speaker:
             return True
 
     def preload(self) -> None:
+        """Lädt die Stimme im Hintergrund, damit die erste Ansage nicht warten muss."""
         threading.Thread(target=self.load, daemon=True).start()
 
     def synth(self, text: str) -> np.ndarray:

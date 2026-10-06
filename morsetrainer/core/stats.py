@@ -39,6 +39,9 @@ def format_confusions(confusions: dict) -> str:
 
 
 class SessionStats:
+    """Zeichnet einen Durchgang auf: jedes Zeichen sofort in die Datenbank, am
+    Ende die Zusammenfassung samt Übernahme in Gesamtstatistik und Lernkartei
+    (finalize)."""
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
                  self_assessed=False, in_history=True, review_promote=False, char_stats=True, config_extra=None):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
@@ -171,6 +174,8 @@ class SessionStats:
         return rows
 
     def summary(self):
+        """Zusammenfassung des Durchgangs: Anzahl, richtige, Trefferquote in %,
+        mittleres effektives Tempo der richtigen Zeichen und Zeichen pro Minute."""
         total = len(self.rounds)
         correct = sum(1 for r in self.rounds if r["correct"])
         accuracy = (correct / total * 100) if total else 0.0
@@ -186,6 +191,8 @@ class SessionStats:
         }
 
     def _per_char_summary(self):
+        """Je Zeichen: richtig, falsch, mittlere Reaktionszeit, mittleres
+        effektives Tempo und Verwechslungen (für die Zusammenfassung)."""
         out = {}
         for char, e in self.per_char.items():
             out[char] = {
@@ -233,6 +240,8 @@ class SessionStats:
 
 
 def _merge_all_time(session: "SessionStats") -> None:
+    """Addiert die Ergebnisse je Zeichen aus `session` zur Gesamtstatistik und
+    speichert sie (aufgerufen innerhalb der Transaktion von finalize)."""
     all_time = load_all_time()
     for char, e in session.per_char.items():
         x = all_time.setdefault(

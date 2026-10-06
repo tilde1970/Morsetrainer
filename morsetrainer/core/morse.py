@@ -94,6 +94,7 @@ def shaped_tone(freq: float, duration: float, amplitude: float = AMPLITUDE, harm
 
 
 def silence(duration: float) -> np.ndarray:
+    """Stille von `duration` Sekunden."""
     return np.zeros(int(round(SAMPLE_RATE * duration)), dtype=np.float32)
 
 
@@ -172,6 +173,8 @@ def build_text(text: str, wpm: int, freq: int, farnsworth_wpm=None, chirp=None) 
 
 
 def duration_seconds(char: str, wpm: int, farnsworth_wpm=None) -> float:
+    """Dauer eines Zeichens samt Pause danach in Sekunden (wie build_samples,
+    ohne das Signal zu erzeugen); 0 für unbekannte Zeichen."""
     code = MORSE_CODE.get(char.upper())
     if code is None:
         return 0.0

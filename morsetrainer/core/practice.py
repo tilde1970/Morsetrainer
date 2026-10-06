@@ -12,11 +12,15 @@ STATE_KEY = "practice"
 
 
 def load() -> dict:
+    """Übungszeit je Tag aus der Datenbank: {"JJJJ-MM-TT": Sekunden}.
+    Ungültige Einträge fallen weg."""
     data = db.load_state(STATE_KEY, {})
     return {k: float(v) for k, v in data.items() if isinstance(v, (int, float)) and not isinstance(v, bool)}
 
 
 def add(seconds: float, day: date = None) -> None:
+    """Zählt `seconds` zur Übungszeit von `day` (Standard: heute) hinzu.
+    Scheitert das Speichern, geht die Übung ohne Fehlermeldung weiter."""
     if seconds <= 0:
         return
     data = load()
@@ -29,5 +33,6 @@ def add(seconds: float, day: date = None) -> None:
 
 
 def seconds_on(data: dict, day: date) -> float:
+    """Übungszeit in Sekunden an `day` aus den Daten von load()."""
     return data.get(day.isoformat(), 0.0)
 

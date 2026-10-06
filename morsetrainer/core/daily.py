@@ -82,6 +82,8 @@ WARMUP, MAIN, OUTRO = "warmup", "main", "outro"
 
 @dataclass
 class Block:
+    """Ein Abschnitt der Tagesübung: Art (Aufwärmen, Hauptteil, Ausklang), Modus
+    (Reiter), Dauer in Minuten und feste Einstellungen für den Reiter."""
     kind: str       # WARMUP, MAIN, OUTRO
     mode: str       # "single", "group", "word", "callsign", "continuous"
     minutes: float
@@ -89,6 +91,8 @@ class Block:
 
 
 def load() -> dict:
+    """Gespeicherter Stand der Tagesübung (Tempo, Lektion, je Tag Sterne, Blöcke
+    und Fortschritt); "days" ist immer ein dict."""
     data = db.load_state(STATE_KEY, {})
     if not isinstance(data.get("days"), dict):
         data["days"] = {}
@@ -96,6 +100,8 @@ def load() -> dict:
 
 
 def save(state: dict) -> None:
+    """Speichert den Stand der Tagesübung; scheitert das, geht es ohne
+    Fehlermeldung weiter."""
     try:
         db.save_state(STATE_KEY, state)
     except (db.Error, OSError):
@@ -105,6 +111,8 @@ def save(state: dict) -> None:
 # --- Stufe und Ablauf ---------------------------------------------------------
 
 def stage(lesson: int) -> str:
+    """Stufe der Tagesübung nach der Lektion: EARLY (nur Zeichen und Gruppen),
+    WORDS (auch Wörter), MIXED (auch Rufzeichen), POST (nach Koch)."""
     if lesson >= POST_KOCH:
         return POST
     if lesson >= CALLS_FROM_LESSON:
@@ -126,6 +134,8 @@ def lesson_charset(lesson: int, learned: str = "") -> str:
 
 
 def warmup_minutes(lesson: int, due_count: int) -> float:
+    """Länge des Aufwärmens: länger bei vielen fälligen Zeichen (bis
+    WARMUP_MAX_MINUTES), nach Koch fest WARMUP_POST_MINUTES."""
     if stage(lesson) == POST:
         return WARMUP_POST_MINUTES
     extra = max(due_count - MANY_DUE + 1, 0) * WARMUP_PER_EXTRA_DUE
@@ -225,6 +235,9 @@ def initial_tempo(wpm: int, fw) -> dict:
 
 
 def current_tempo(state: dict, wpm: int, fw) -> dict:
+    """Tempo der Tagesübung {"wpm", "effective"}: das gespeicherte, wenn es
+    gültig ist, sonst ein Startwert aus den Einstellungen (`wpm`, Farnsworth
+    `fw`)."""
     saved = state.get("tempo")
     if (isinstance(saved, dict) and all(isinstance(saved.get(k), int) for k in ("wpm", "effective"))
             and tempo.LIMITS[0] <= saved["effective"] <= saved["wpm"] <= tempo.LIMITS[1]):
@@ -261,6 +274,8 @@ def _first_try(result: dict):
 
 
 def day_entry(state: dict, today: date) -> dict:
+    """Eintrag des Tages `today` im Stand, bei Bedarf angelegt; fehlende oder
+    ungültige Felder werden mit leeren Werten ergänzt."""
     entry = state["days"].setdefault(today.isoformat(), {})
     for key, default in (("stars", []), ("blocks", []), ("progress", []), ("minutes", 0.0)):
         if not isinstance(entry.get(key), type(default)):
@@ -336,6 +351,7 @@ def finish_day(state: dict, today: date, completed: bool) -> list:
 
 
 def stars_on(state: dict, day: date) -> list:
+    """Sterne der Tagesübung an `day`, in fester Reihenfolge (STAR_ORDER)."""
     entry = state.get("days", {}).get(day.isoformat(), {})
     stars = entry.get("stars", []) if isinstance(entry, dict) else []
     return [s for s in STAR_ORDER if isinstance(stars, list) and s in stars]

@@ -3,10 +3,10 @@
 
 Drei Linien, die nur steigen oder stehen bleiben – Rückschritte zeigen
 schon der Fortschritt im Statistik-Reiter und der Wochenrückblick:
-- Sterne gesamt aus der Tagesübung (stats/daily.json), aufsummiert.
+- Sterne gesamt aus der Tagesübung (core/daily.py), aufsummiert.
 - Koch-Lektion: die höchste bis dahin geübte (nicht bestandene: wer mit
   Lektion 40 einsteigt, soll nicht monatelang bei null stehen), aus den
-  Sitzungsdateien und der Tagesübung. Die Betriebszeichen-Lektionen 42–45
+  gespeicherten Durchgängen und der Tagesübung. Die Betriebszeichen-Lektionen 42–45
   sind freiwillig; die Linie endet bei der Abschlusslektion 41. „Koch
   geschafft“ heißt dagegen bestanden: der Tag des Gold-Siegels im
   Koch-Diplom ("koch_done"), nicht schon ein Durchgang in Lektion 41.
@@ -91,4 +91,6 @@ def build(state: dict, sessions: list, awards_state: dict, practice_data: dict, 
 
 
 def load(today: date = None) -> dict:
+    """Lebenslinie aus allen gespeicherten Daten bis `today` (Standard: heute),
+    fertig für die Anzeige; siehe build()."""
     return build(daily.load(), awards.load_data().sessions, awards.load(), practice.load(), today or date.today())

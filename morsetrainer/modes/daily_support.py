@@ -53,7 +53,7 @@ class DailyModeMixin:
         return time.time() + self.daily_minutes * 60 if self.daily_minutes else None
 
     def _daily_config(self) -> dict:
-        """Kennzeichen für die config-Zeile der Sitzungsdatei."""
+        """Kennzeichen für die config-Zeile des gespeicherten Durchgangs."""
         return {"daily": True} if self.daily_minutes else {}
 
     def set_options_visible(self, visible: bool) -> None:

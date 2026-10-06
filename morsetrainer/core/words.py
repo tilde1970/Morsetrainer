@@ -190,6 +190,7 @@ MIN_WORDS = 10
 
 
 def enough_words(found) -> bool:
+    """Genug echte Wörter (mehr als ein Zeichen) zum Üben, mindestens MIN_WORDS?"""
     return sum(1 for w in found if len(w) > 1) >= MIN_WORDS
 
 
@@ -248,6 +249,9 @@ class WordPicker:
         return self.picks >= self.MIN_PICKS and self.counts.get(word, 0) > self.MAX_WORD_SHARE * self.picks
 
     def pick(self) -> str:
+        """Nächstes Wort: nie zweimal dasselbe hintereinander, bevorzugt Wörter mit
+        schwachen Zeichen bzw. dem neuen Zeichen, kürzlich oder zu oft gekommene
+        seltener."""
         last = self.recent[-1:]
         pool = [w for w in self.words if w not in last] or self.words
         favored = [w for w in self.favored if w not in last]

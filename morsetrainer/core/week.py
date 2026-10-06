@@ -20,6 +20,7 @@ FUTURE, NONE, PRACTICED = "future", "none", "practiced"
 
 
 def monday(day: date) -> date:
+    """Der Montag der Woche, in der `day` liegt."""
     return day - timedelta(days=day.weekday())
 
 
@@ -48,6 +49,8 @@ def strip(state: dict, practice_data: dict, goal_seconds: float, today: date) ->
 
 
 def stars_in_week(state: dict, any_day: date) -> int:
+    """Sterne der Tagesübung in der Woche (Montag bis Sonntag), in der
+    `any_day` liegt."""
     first = monday(any_day)
     return sum(len(daily.stars_on(state, first + timedelta(days=offset))) for offset in range(7))
 

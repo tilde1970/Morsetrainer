@@ -72,6 +72,9 @@ def _start_from_name(path: Path):
 
 
 def _import_session(path: Path) -> None:
+    """Übernimmt eine alte Sitzungsdatei als Durchgang in die Datenbank. Fehlt
+    die config-Zeile, werden Startzeit und Modus aus dem Dateinamen genommen;
+    ohne Startzeit wird die Datei übergangen."""
     config = summary = None
     events = []
     for obj in _lines(path):

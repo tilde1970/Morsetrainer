@@ -26,18 +26,22 @@ ERRORS = (getattr(sd, "PortAudioError", OSError), OSError, ValueError)
 
 
 class AudioError(Exception):
-    pass
+    """Tonausgabe gescheitert; die Meldung ist schon für die Anzeige formuliert."""
 
 
 def describe(exc: Exception) -> str:
+    """Lesbare Meldung für einen Fehler der Tonausgabe (`exc` aus ERRORS)."""
     return tr("Keine Tonausgabe möglich: {error}").format(error=exc)
 
 
 def unexpected(exc: Exception) -> str:
+    """Lesbare Meldung für einen unerwarteten Fehler im Audio-Thread."""
     return tr("Durchgang abgebrochen, unerwarteter Fehler: {error}").format(error=str(exc) or type(exc).__name__)
 
 
 def play(samples) -> None:
+    """Spielt `samples` ab, ohne zu warten. Wirft AudioError, wenn es keine
+    Tonausgabe gibt."""
     try:
         sd.play(samples, SAMPLE_RATE, latency=AUDIO_LATENCY)
     except ERRORS as exc:
@@ -45,6 +49,8 @@ def play(samples) -> None:
 
 
 def play_quietly(samples) -> None:
+    """Wie play(), aber Fehler werden still übergangen (für Nebensächliches
+    wie den Quittungston)."""
     try:
         sd.play(samples, SAMPLE_RATE, latency=AUDIO_LATENCY)
     except ERRORS:
@@ -52,6 +58,7 @@ def play_quietly(samples) -> None:
 
 
 def stop() -> None:
+    """Bricht eine laufende Wiedergabe von play()/play_quietly() ab."""
     try:
         sd.stop()
     except ERRORS:
@@ -59,6 +66,8 @@ def stop() -> None:
 
 
 def output_stream():
+    """Neuer Ausgabestrom (mono, float32) für Modi mit eigenem Audio-Thread;
+    als Kontextmanager verwenden."""
     return sd.OutputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency=AUDIO_LATENCY)
 
 
@@ -84,6 +93,7 @@ def keep_awake() -> None:
 
 
 def release() -> None:
+    """Schließt den stillen Strom von keep_awake() (beim Programmende)."""
     global _keepalive
     if _keepalive is None:
         return

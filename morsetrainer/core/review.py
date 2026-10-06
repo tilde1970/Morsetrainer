@@ -57,6 +57,8 @@ DAY_FIELDS = ("n", "fluent", "pn", "pfluent")
 
 
 def load() -> dict:
+    """Lernkartei aus der Datenbank: {Zeichen: Eintrag}, jeder Eintrag bereinigt
+    (fehlende oder ungültige Zähler auf null)."""
     data = db.load_state(STATE_KEY, {})
     return {ch: _clean(e) for ch, e in data.items() if isinstance(e, dict)}
 
@@ -93,6 +95,8 @@ def _due_date(entry) -> date:
 
 
 def is_due(entry, today=None) -> bool:
+    """Ist das Zeichen mit `entry` an `today` (Standard: heute) zur Wiederholung
+    fällig?"""
     return _due_date(entry) <= (today or date.today())
 
 
@@ -106,6 +110,9 @@ def fluent_count(e: dict) -> int:
 
 
 def can_promote(charset: str) -> bool:
+    """Darf ein Durchgang mit `charset` Zeichen hochstufen? Erst ab
+    PROMOTE_MIN_CHARSET verschiedenen Zeichen, darunter ist die Antwort zu oft
+    zu erraten."""
     return len({ch for ch in charset.upper() if ch in MORSE_CODE}) >= PROMOTE_MIN_CHARSET
 
 
@@ -204,6 +211,8 @@ def next_due(data=None, today=None):
 
 
 def reset() -> None:
+    """Lernkartei löschen (alle Zeichen wieder neu); Fehler beim Löschen werden
+    übergangen."""
     try:
         db.delete_state(STATE_KEY)
     except (db.Error, OSError):

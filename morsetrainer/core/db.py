@@ -18,7 +18,7 @@ Jeder Schreibvorgang wird sofort festgeschrieben (ein Absturz kostet
 höchstens die laufende Zeile); mehrere zusammengehörige Änderungen
 fasst transaction() zusammen. Zwei Programmfenster auf einem Rechner
 dürfen gleichzeitig schreiben (WAL, Wartezeit bei Sperre). Ist die Datei
-kaputt, wird sie wie die JSON-Dateien als "<Name>.defekt-<Zeitstempel>"
+kaputt, wird sie wie eine kaputte JSON-Datei (core/storage.py) als "<Name>.defekt-<Zeitstempel>"
 beiseitegelegt und eine neue begonnen.
 
 Schreibfunktionen werfen bei Fehlern db.Error (Datenbank) oder OSError
@@ -93,6 +93,8 @@ _heads_generation = [None]
 
 @dataclass
 class Session:
+    """Ein gespeicherter Durchgang: Nummer (id), config, summary und auf Wunsch
+    seine Zeilen (events)."""
     id: int
     config: dict
     summary: dict    # None, solange der Durchgang läuft (oder abgebrochen ist)
@@ -134,6 +136,9 @@ def close() -> None:
 
 
 def _open(file: Path) -> sqlite3.Connection:
+    """Öffnet `file` als Datenbank (WAL, Fremdschlüssel an), legt fehlende
+    Tabellen an und prüft die Datei kurz. Wirft Error, wenn sie keine gültige
+    Datenbank ist."""
     conn = sqlite3.connect(file, timeout=BUSY_TIMEOUT_MS / 1000, check_same_thread=False,
                            isolation_level=None)
     try:
@@ -161,6 +166,10 @@ def _set_aside(file: Path) -> None:
 
 
 def _connection() -> sqlite3.Connection:
+    """Die offene Verbindung zur aktuellen Datei (path()), bei Bedarf geöffnet.
+    Ist die Datei kaputt, wird sie beiseitegelegt und eine neue begonnen; ist
+    sie nur gesperrt oder nicht lesbar, bleibt sie unberührt und der Fehler
+    geht weiter."""
     global _conn, _conn_path, generation
     file = path()
     if _conn is not None and file != _conn_path:
@@ -259,11 +268,14 @@ def load_state(key: str, default):
 
 
 def save_state(key: str, data) -> None:
+    """Speichert `data` als JSON unter `key` in der Tabelle state (ersetzt
+    einen vorhandenen Eintrag)."""
     _write("INSERT INTO state (key, data) VALUES (?, ?) "
            "ON CONFLICT (key) DO UPDATE SET data = excluded.data", (key, _dump(data)))
 
 
 def delete_state(key: str) -> None:
+    """Löscht den Eintrag `key` aus der Tabelle state."""
     _write("DELETE FROM state WHERE key = ?", (key,))
 
 
@@ -283,6 +295,7 @@ def add_event(session_id: int, entry: dict) -> None:
 
 
 def finish_session(session_id: int, summary: dict) -> None:
+    """Schließt den Durchgang `session_id` mit seiner Zusammenfassung ab."""
     _heads.pop(session_id, None)
     _write("UPDATE sessions SET summary = ? WHERE id = ?", (_dump(summary), session_id))
 
@@ -386,10 +399,12 @@ def results() -> list:
 # --- Verwaltung ---------------------------------------------------------------
 
 def get_meta(key: str):
+    """Verwaltungswert `key` aus der Tabelle meta, oder None."""
     rows = _read("SELECT value FROM meta WHERE key = ?", (key,))
     return rows[0][0] if rows else None
 
 
 def set_meta(key: str, value: str) -> None:
+    """Setzt den Verwaltungswert `key` in der Tabelle meta."""
     _write("INSERT INTO meta (key, value) VALUES (?, ?) "
            "ON CONFLICT (key) DO UPDATE SET value = excluded.value", (key, value))

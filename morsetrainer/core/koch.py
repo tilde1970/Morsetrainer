@@ -35,6 +35,9 @@ SLOW_CHAR_WPM = RECOMMENDED_WPM - 2
 
 
 def lesson_charset(lesson: int) -> str:
+    """Zeichensatz einer Koch-Lektion (1 … MAX_LESSON): Lektion n bringt
+    n + 1 Zeichen, die Abschlusslektion alle sortiert, die Lektionen danach
+    die Betriebszeichen dazu."""
     lesson = min(max(lesson, 1), MAX_LESSON)
     if lesson == FINAL_LESSON:
         return FINAL_CHARSET

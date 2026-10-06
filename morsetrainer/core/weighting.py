@@ -1,6 +1,6 @@
 """Gewichtete Zeichenauswahl: Zeichen, die du oft falsch oder nur langsam
 erkennst, kommen häufiger dran. Grundlage sind die Werte pro Zeichen aus
-der Gesamtstatistik (stats/all_time.json) plus der laufenden Sitzung.
+der Gesamtstatistik (core/stats.py) plus der laufenden Sitzung.
 
 Fehler: Die Fehlerquote wird mit (falsch + 1) / (gesamt + 2) geglättet,
 damit neue oder selten geübte Zeichen nicht bei 0 % oder 100 % landen –
@@ -31,9 +31,12 @@ MIN_LATENCY_SAMPLES = 3
 
 
 class CharPicker:
+    """Wählt das nächste Zeichen aus `charset`: gleichverteilt oder, mit
+    `weighted`, schwache Zeichen öfter (Fehlerquote, langsame Antworten, fällig
+    in der Lernkartei)."""
     def __init__(self, charset: str, weighted: bool, session=None):
         """`session` ist die laufende SessionStats; deren Ergebnisse fließen
-        sofort mit ein (sie landen erst beim Beenden in all_time.json)."""
+        sofort mit ein (in die Gesamtstatistik kommen sie erst beim Beenden)."""
         self.charset = charset
         self.weighted = weighted
         self.session = session
@@ -83,6 +86,9 @@ class CharPicker:
         return statistics.median(known) if known else None
 
     def weights(self):
+        """Gewicht je Zeichen in der Reihenfolge von `charset`: Grundgewicht plus
+        Fehlerquote, plus Zuschlag für Antworten langsamer als der Median, mal
+        Faktor für fällige bzw. gezielt geübte Zeichen."""
         latencies = {ch: self._mean_latency(ch) for ch in self.charset}
         median = self.median_latency() or 0.0
 

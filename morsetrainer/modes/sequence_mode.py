@@ -92,7 +92,7 @@ BAND_ORDER = (None, *band.PRESETS)
 
 
 def band_config(spec) -> dict:
-    """Bandbedingungen für die config-Zeile der Sitzungsdatei: die erreichte
+    """Bandbedingungen für die config-Zeile des gespeicherten Durchgangs: die erreichte
     Stufe (für das Diplom QRN-fest; "custom", wenn schwächer als die
     leichteste) und die Lautstärke; ohne Bandbedingungen band None."""
     if spec is None:
@@ -444,7 +444,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.next_sequence()
 
     def _config_extra(self, spec) -> dict:
-        """Bedingungen des Durchgangs für die config-Zeile der Sitzungsdatei."""
+        """Bedingungen des Durchgangs für seine gespeicherte config-Zeile."""
         return {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
                 **band_config(spec), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
                 **self._daily_config()}
