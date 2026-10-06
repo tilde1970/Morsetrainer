@@ -17,7 +17,8 @@ en_US-lessac-medium.onnx en/en_US/lessac/medium 5efe09e69902187827af646e1a6e9d26
 en_US-lessac-medium.onnx.json en/en_US/lessac/medium efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0
 "
 
-if sha256sum --version >/dev/null 2>&1; then
+# Das sha256sum von macOS kennt --version auch, darum auf GNU prüfen.
+if sha256sum --version 2>/dev/null | grep -q GNU; then
     check() { sha256sum -c "$@"; }
 else
     check() { shasum -a 256 -c "$@"; }
