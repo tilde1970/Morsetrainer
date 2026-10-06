@@ -188,6 +188,18 @@ class FilterAndQrmTest(unittest.TestCase):
         wide = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0}, 600)
         self.assertIsNone(wide.filter)
 
+    def test_switching_band_off_resets_the_filter(self):
+        # QSO und Contest: Bandbedingungen im laufenden Durchgang abgeschaltet
+        # (apply_spec(None)) – ein 250-Hz-Filter darf nicht stehen bleiben.
+        conditions = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0, "filter": 250,
+                                      "qrm_offset": "zero"}, 600)
+        self.assertIsNotNone(conditions.filter)
+        band.apply_spec(conditions, None)
+        conditions.prepare(600)
+        self.assertIsNone(conditions.filter)
+        self.assertEqual(conditions.filter_width, 2400)
+        self.assertEqual(conditions.qrm_offset, "far")
+
     def test_own_sidetone_bypasses_the_filter(self):
         import numpy as np
         conditions = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0, "filter": 250}, 600)
@@ -218,7 +230,9 @@ class FilterAndQrmTest(unittest.TestCase):
 
     def test_qrm_lies_in_the_chosen_offset(self):
         import numpy as np
-        for key, (low, high) in band.QRM_OFFSETS.items():
+        # Feste Erwartungen, nicht band.QRM_OFFSETS: sonst wandert ein falscher
+        # Wert dort unbemerkt in den Test mit.
+        for key, (low, high) in {"far": (300, 500), "near": (50, 200), "zero": (0, 15)}.items():
             conditions = band.conditions({"levels": {"cw_qrm": 1.0}, "gain": 1.0, "qrm_offset": key, "seed": 3},
                                          600)
             loop = conditions.cw_qrm

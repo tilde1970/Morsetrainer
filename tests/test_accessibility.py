@@ -122,6 +122,24 @@ class AnnouncerTest(AppTestCase):
         self.assertTrue(self.pump_until(lambda: len(self.played) > played))
         self.assertEqual(self.said.count("Richtig."), 1)
 
+    def test_flow_waits_until_the_speech_has_ended(self):
+        # Kernversprechen für Blinde: Der nächste Morseton schneidet die Ansage
+        # nicht ab. Eine Sekunde Sprache: `then` frühestens nach ihrem Ende.
+        import time
+        import numpy as np
+        from morsetrainer.core import speech
+        self.app.announcer.var.set(True)
+        # Erst die Ansage des Reiters beim Fensteraufbau ausklingen lassen,
+        # sonst verdrängt sie die hier geprüfte.
+        self.pump_until(lambda: False, timeout=0.5)
+        done = []
+        with mock.patch.object(speech.speaker, "synth",
+                               lambda text: np.zeros(self.announcer.SAMPLE_RATE, dtype=np.float32)):
+            start = time.monotonic()
+            self.app.announcer.say("Eine Sekunde lang.", then=lambda: done.append(time.monotonic()))
+            self.assertTrue(self.pump_until(lambda: done, timeout=4))
+        self.assertGreaterEqual(done[0] - start, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
+
     def test_long_announcement_starts_with_the_first_sentence(self):
         from morsetrainer.widgets import announcer
         self.assertEqual(announcer._chunks("Richtig."), ["Richtig."])

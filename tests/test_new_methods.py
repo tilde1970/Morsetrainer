@@ -245,11 +245,15 @@ class ListenModeTest(AppTestCase):
             patch.start()
 
     def test_item_flow_hides_solution_until_answer(self):
-        from morsetrainer.modes import listen_mode
+        from morsetrainer.modes import callsign_mode, listen_mode
         m = self.listen
         m.content_var.set("Rufzeichen")
         m.count_var.set(2)
-        with mock.patch.object(listen_mode.audio, "play") as play:
+        # Feste Liste: callsigns.scp liegt nicht im Repo, ein frischer Klon hat sie nicht.
+        calls = ([f"DL{n}ABC" for n in range(10)] + [f"DK{n}XY" for n in range(10)]
+                 + [f"OE{n}RR" for n in range(10)] + ["DL4YM"], "")
+        with mock.patch.object(listen_mode.audio, "play") as play, \
+                mock.patch.object(callsign_mode, "load_callsigns", lambda *a, **k: calls):
             m.start()
             self.assertTrue(m.running)
             self.assertIn("Hör zu", m.status_var.get())
