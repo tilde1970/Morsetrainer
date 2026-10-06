@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Netzwerk: alle hören dasselbe QRM.** Mit CW-QRM hörte bisher jeder
+  Teilnehmer ein anderes Nachbar-QSO und dazu andere Gewitter, Träger und
+  Knacker. Jetzt ist alles gleich (Trainer und Teilnehmer ab 2.39).
+
 ## 2.38
 
 - **CW-Filter wählbar:** 2,4 kHz (wie bisher), 500 Hz oder 250 Hz um die

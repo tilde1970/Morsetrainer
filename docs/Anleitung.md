@@ -293,8 +293,10 @@ Lautstärke wirken sofort, auch im laufenden Durchgang; für das Diplom
 zählt dann das Schwächste im Durchgang. An und aus geht in Gruppen,
 Wörtern, Rufzeichen, Kontinuierlich und Netzwerk nur zwischen zwei
 Durchgängen, in QSO und Contest jederzeit. Im Netzwerk hören alle
-Teilnehmer die Einstellung des Trainers, mit demselben Fading und
-denselben Stationen.
+Teilnehmer die Einstellung des Trainers, mit demselben Fading,
+denselben Stationen und demselben Nachbar-QRM, Gewitter und Träger
+(Trainer und Teilnehmer ab Version 2.39). Nur wer eine eigene
+`callsigns.scp` hat, hört im QRM womöglich andere Rufzeichen.
 
 Wie auf dem Band laufen Fading, Rauschen und das Nachbar-QRM auch während
 deiner Antwortpause weiter; jede Sequenz trifft eine andere Stelle.

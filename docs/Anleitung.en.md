@@ -287,7 +287,10 @@ effect immediately, even during a run; the award then counts the weakest
 setting of the run. In Groups, Words, Callsigns, Continuous and Network
 you can switch them on or off only between runs, in QSO and Contest at
 any time. On the network all participants hear the trainer's setting,
-with the same fading and the same stations.
+with the same fading, the same stations and the same neighbouring QRM,
+thunderstorm and carrier (trainer and participants from version 2.39).
+Only someone with their own `callsigns.scp` may hear other callsigns in
+the QRM.
 
 As on the air, fading, noise and the neighbouring QRM keep running during
 your answer pause; each sequence hits a different spot.

@@ -248,6 +248,29 @@ class FilterAndQrmTest(unittest.TestCase):
         self.assertIsNot(conditions.cw_qrm, before)
         self.assertEqual(conditions.cw_qrm_offset, "far")
 
+    def test_same_seed_same_qrm_and_storms(self):
+        # Netzwerk: Mit CW-QRM hörten Teilnehmer bis 2.38 anderes QRM und
+        # andere Gewitter, Träger und Knacker (das QRM verbrauchte je nach
+        # Text verschieden viele Zufallszahlen und nahm den Text aus random).
+        import random
+        import numpy as np
+        spec = {"levels": {"cw_qrm": 1.0, "storm": 1.0, "carrier": 1.0, "qrn": 0.5}, "gain": 1.0, "seed": 7}
+        heard = []
+        for disturb in (0, 1000):
+            for _ in range(disturb):  # anderer Rechner: random steht woanders
+                random.random()
+            conditions = band.conditions(spec, 600)
+            conditions.rewind()
+            silent = np.zeros(band.SAMPLE_RATE * 3, dtype=np.float32)
+            heard.append((conditions.cw_qrm, conditions.storm_start, conditions.carrier_switch,
+                          conditions.noise_pos, self.blockwise(conditions, silent)))
+        first, second = heard
+        np.testing.assert_array_equal(first[0], second[0])
+        self.assertEqual(first[1:4], second[1:4])
+        np.testing.assert_array_equal(first[4], second[4])
+        other = band.conditions(spec | {"seed": 8}, 600)
+        self.assertFalse(len(other.cw_qrm) == len(first[0]) and np.array_equal(other.cw_qrm, first[0]))
+
     def test_strength_and_fading_are_separate(self):
         import numpy as np
         conditions = band.conditions({"levels": {"strength": 1.0}, "gain": 1.0, "seed": 2}, 600, stations=4)

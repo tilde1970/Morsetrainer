@@ -253,8 +253,15 @@ def _cw_qrm_loop(rng, freq: int, offset_range=QRM_OFFSETS[DEFAULT_QRM_OFFSET]) -
         offset = -offset
     wpm = int(rng.integers(*CW_QRM_WPM))
     chirp = (rng.uniform(*CHIRP_DELTA_HZ), rng.uniform(*CHIRP_TAU_SECONDS)) if rng.random() < 0.3 else None
-    kind = random.choice([k for k in qso_text.QSO_TYPES if k != qso_text.RAGCHEW])
-    qso = qso_text.generate_qso(kind, qso_text.LENGTH_LONG)
+    # qso_text würfelt mit dem Modul random: für den Text kurz aus `rng`
+    # gesät, damit gleicher Startwert gleiches QRM ergibt (Netzwerk).
+    state = random.getstate()
+    random.seed(int(rng.integers(2 ** 63)))
+    try:
+        kind = random.choice([k for k in qso_text.QSO_TYPES if k != qso_text.RAGCHEW])
+        qso = qso_text.generate_qso(kind, qso_text.LENGTH_LONG)
+    finally:
+        random.setstate(state)
     parts = [
         build_text(text, wpm, freq + offset, chirp=chirp) if station == 0
         else silence(rng.uniform(*CW_QRM_PAUSE_SECONDS))
@@ -357,6 +364,11 @@ class BandConditions:
                         for _ in range(station_count + 1)]
         self.carrier_offset = self.rng.uniform(*CARRIER_OFFSET_HZ) * self.rng.choice((-1, 1))
         self.carrier_drift_hz = 1 / self.rng.uniform(8.0, 20.0)  # so schnell wandert er hin und her
+        # Das CW-QRM würfelt aus einem eigenen Strom: Wie viele Zufallszahlen
+        # sein Text braucht, verschiebt sonst Gewitter, Träger und Knacker
+        # (im Netzwerk hörte dann jeder Teilnehmer andere).
+        self.qrm_seed = int(self.rng.integers(2 ** 63))
+        self.qrm_builds = 0
         self.freq = 600
         self.rewind()
 
@@ -368,7 +380,9 @@ class BandConditions:
             self.ssb = _ssb_babble_loop()
         if self.enabled["cw_qrm"] and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset):
             offset = self.qrm_offset
-            self.cw_qrm = _cw_qrm_loop(self.rng, freq, QRM_OFFSETS[offset])
+            qrm_rng = np.random.default_rng([self.qrm_seed, self.qrm_builds])
+            self.qrm_builds += 1
+            self.cw_qrm = _cw_qrm_loop(qrm_rng, freq, QRM_OFFSETS[offset])
             self.cw_qrm_pos %= len(self.cw_qrm)
             self.cw_qrm_offset = offset
         if self.filter_width == DEFAULT_FILTER:

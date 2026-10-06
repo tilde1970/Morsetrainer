@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+- **Network: everyone hears the same QRM.** With CW QRM, each participant
+  used to hear a different neighbouring QSO and different thunderstorms,
+  carriers and crashes. Now it is all the same (trainer and participants
+  from 2.39).
+
 ## 2.38
 
 - **Selectable CW filter:** 2.4 kHz (as before), 500 Hz or 250 Hz around
