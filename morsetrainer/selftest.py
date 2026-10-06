@@ -12,6 +12,8 @@ from morsetrainer.core.morse import build_text
 
 
 def run(path: str) -> int:
+    """Erzeugt mit beiden Stimmen eine kurze Übung als MP3 nach `path`; 0 bei
+    Erfolg, sonst 1 (Grund auf stderr)."""
     speakers = [speech.speaker_for(lang) for lang in speech.VOICES]  # deutsch und englisch (Ansage)
     for reason in [speaker.available() for speaker in speakers] + [mp3.available()]:
         if reason:

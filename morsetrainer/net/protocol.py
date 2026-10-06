@@ -82,14 +82,17 @@ KEEPALIVE_COUNT = 3
 
 
 class ProtocolError(Exception):
-    pass
+    """Ungültige Nachricht oder zu lange Zeile von der Gegenseite."""
 
 
 def encode(message: dict) -> bytes:
+    """Nachricht als eine JSON-Zeile (UTF-8, mit Zeilenende)."""
     return (json.dumps(message, ensure_ascii=False) + "\n").encode("utf-8")
 
 
 def decode(line: bytes) -> dict:
+    """Eine empfangene Zeile als Nachricht (dict mit "type"); wirft
+    ProtocolError bei allem anderen."""
     try:
         message = json.loads(line.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as exc:
@@ -108,6 +111,8 @@ class LineReader:
         self.buffer = b""
 
     def read(self):
+        """Nächste Nachricht, oder None, wenn die Gegenseite die Verbindung
+        geschlossen hat; wirft ProtocolError bei zu langen oder ungültigen Zeilen."""
         while b"\n" not in self.buffer:
             if len(self.buffer) > MAX_LINE:
                 raise ProtocolError("Zeile zu lang")

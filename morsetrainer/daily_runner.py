@@ -43,6 +43,9 @@ TICK_MS = 1000
 
 
 class DailyRunner:
+    """Führt die Tagesübung durch: stellt die Blöcke zusammen (core/daily.py),
+    schaltet nacheinander die passenden Reiter mit festen Einstellungen ein,
+    zeigt dazwischen die Zwischenkarte und am Ende die Abendbilanz."""
     def __init__(self, app, bar):
         self.app = app
         self.bar = bar
@@ -95,6 +98,8 @@ class DailyRunner:
 
     # --- Start ---------------------------------------------------------------------
     def start(self) -> None:
+        """Beginnt die Tagesübung (nicht während eines Durchgangs): Lektion und
+        Tempo für heute bestimmen, Blöcke planen, ersten Block starten."""
         if self.active or self.app.running_mode:
             return
         app = self.app
@@ -189,6 +194,9 @@ class DailyRunner:
 
     # --- Blöcke --------------------------------------------------------------------
     def _next_block(self) -> None:
+        """Startet den nächsten Block oder beendet die Übung nach dem letzten;
+        reicht der Zeichensatz für Wörter oder Rufzeichen nicht, wird es ein
+        Gruppen-Block."""
         self.card_open = False
         self.bar.hide_card()
         if not self.active:
@@ -206,6 +214,8 @@ class DailyRunner:
             self._finish(completed=False)
 
     def _start_block(self, block) -> bool:
+        """Wechselt zum Reiter des Blocks, setzt seine festen Einstellungen und
+        startet ihn; False, wenn der Reiter nicht starten konnte."""
         app = self.app
         title = MODE_TITLES[block.mode]
         mode = app.modes[app.mode_titles.index(title)]
@@ -267,6 +277,8 @@ class DailyRunner:
 
     # --- Zwischenkarte -----------------------------------------------------------
     def _show_block_card(self, block, result: dict, new_stars) -> None:
+        """Zwischenkarte nach einem Block: Ergebnis, neue Sterne, Fortschritte
+        einzelner Zeichen und was als Nächstes kommt."""
         summary = daily.block_summary(block, result, self.due if block.kind == daily.WARMUP else "")
         lines = block_lines(summary)
         strong = []
@@ -309,6 +321,10 @@ class DailyRunner:
             self._finish(completed=False)
 
     def _finish(self, completed: bool) -> None:
+        """Beendet die Tagesübung (fertig oder abgebrochen): Reiter-Einstellungen
+        zurück, Tag mit Sternen speichern, Ende ansagen und die Abendbilanz
+        zeigen (nach einer Zugabe nur neue Siegel; beim stillen Abbruch, etwa
+        am Programmende, nichts davon)."""
         if not self.active:
             return
         self.active = False
@@ -345,6 +361,8 @@ class DailyRunner:
             self._show_summary(stars, completed)
 
     def _show_summary(self, stars, completed: bool) -> None:
+        """Öffnet die Abendbilanz, nach einer vollständigen Übung mit dem Angebot
+        „Noch 5 Min“."""
         offer = None
         if completed:
             app = self.app

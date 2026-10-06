@@ -42,7 +42,8 @@ SHA256_RE = re.compile(r"[0-9a-f]{64}")
 
 
 class UpdateError(Exception):
-    pass
+    """Update gescheitert (Download, Prüfsumme oder Ersetzen); die Meldung ist
+    lesbar."""
 
 
 # Netzfehler: http.client meldet einen abgerissenen Download (IncompleteRead)
@@ -58,6 +59,8 @@ def parse_version(text):
 
 
 def is_newer(theirs, mine) -> bool:
+    """Ist Version `theirs` neuer als `mine`? False, wenn eine keine
+    Versionsnummer ist."""
     a, b = parse_version(theirs), parse_version(mine)
     return a is not None and b is not None and a > b
 
@@ -94,10 +97,12 @@ def latest_version(timeout: float = CHECK_TIMEOUT_S):
 
 
 def release_url(version: str) -> str:
+    """Seite des Releases `version` auf GitHub."""
     return f"https://github.com/{REPO}/releases/tag/v{version}"
 
 
 def download_url(version: str, asset: str) -> str:
+    """Download-Adresse der Datei `asset` im Release `version`."""
     return f"https://github.com/{REPO}/releases/download/v{version}/{asset}"
 
 

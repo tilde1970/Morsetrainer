@@ -64,9 +64,11 @@ class Connection:
         threading.Thread(target=self._write_loop, daemon=True).start()
 
     def send(self, message: dict) -> None:
+        """Schickt `message` an diesen Teilnehmer (über den Sende-Thread)."""
         self.outbox.put(protocol.encode(message))
 
     def close(self) -> None:
+        """Beendet den Sende-Thread und schließt die Verbindung."""
         self.outbox.put(None)
         _close(self.sock)
 
@@ -83,6 +85,8 @@ class Connection:
 
 
 class TrainerServer:
+    """Die Sitzung des Trainers im Netz: Anmeldung mit Name und PIN, Verteilen
+    der Nachrichten, Eingänge für die Oberfläche (siehe Modulbeschreibung)."""
     def __init__(self, session: str, pin: str, version=None):
         self.session = session
         self.pin = pin
@@ -135,6 +139,8 @@ class TrainerServer:
         threading.Thread(target=self._discovery_loop, args=(sock,), daemon=True).start()
 
     def stop(self) -> None:
+        """Schließt die Sitzung: keine neuen Verbindungen und Suchanfragen mehr,
+        alle Teilnehmer werden getrennt."""
         self.running = False
         self.stopped.set()
         for sock in (self.listener, self.discovery):
@@ -152,6 +158,8 @@ class TrainerServer:
 
     # --- Threads ------------------------------------------------------------------
     def _accept_loop(self) -> None:
+        """Thread: nimmt neue Verbindungen an, solange Grenzen und Sperren es
+        erlauben, und startet für jede einen _serve-Thread."""
         listener = self.listener
         listener.settimeout(IDLE_TIMEOUT_S)
         while self.running:
@@ -184,6 +192,8 @@ class TrainerServer:
                 conn.send(protocol.PING)
 
     def _discovery_loop(self, sock) -> None:
+        """Thread: beantwortet Suchanfragen im lokalen Netz (UDP) mit Sitzungsname
+        und Port."""
         reply = json.dumps({"session": self.session, "port": self.port}).encode("utf-8")
         sock.settimeout(IDLE_TIMEOUT_S)
         while self.running:
@@ -200,6 +210,9 @@ class TrainerServer:
                     pass
 
     def _serve(self, sock, host=None) -> None:
+        """Thread je Verbindung: prüft die Anmeldung (Name, PIN, Sperren), meldet
+        den Teilnehmer an und reicht danach seine Nachrichten an die Oberfläche
+        weiter, mit Grenze für Nachrichtenfluten; am Ende „leave“."""
         name = conn = None
         pending = True
         try:
@@ -309,6 +322,7 @@ class TrainerServer:
 
     # --- Für die Oberfläche -------------------------------------------------------
     def names(self) -> list:
+        """Namen der verbundenen Teilnehmer."""
         with self.lock:
             return list(self.connections)
 
@@ -326,6 +340,7 @@ class TrainerServer:
         return True
 
     def broadcast(self, message: dict) -> None:
+        """Schickt `message` an alle verbundenen Teilnehmer."""
         with self.lock:
             connections = list(self.connections.values())
         for conn in connections:

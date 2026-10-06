@@ -23,6 +23,8 @@ DISCOVER_TIMEOUT_S = 1.0
 
 
 class TraineeClient:
+    """Verbindung eines Teilnehmers zum Trainer; die Ereignisse holt die
+    Oberfläche mit poll() ab (siehe Modulbeschreibung)."""
     def __init__(self):
         self.events = queue.Queue()
         self.outbox = queue.Queue()
@@ -36,6 +38,9 @@ class TraineeClient:
         threading.Thread(target=self._run, args=(host, port, name, pin, version), daemon=True).start()
 
     def _run(self, host, port, name, pin, version) -> None:
+        """Thread: verbindet, meldet sich an (hello), wertet welcome/reject aus und
+        liest danach die Nachrichten des Trainers, bis die Verbindung endet;
+        mit Lebenszeichen in beide Richtungen."""
         try:
             sock = socket.create_connection((host, port), timeout=CONNECT_TIMEOUT_S)
         except OSError as exc:
@@ -103,9 +108,12 @@ class TraineeClient:
             self.send(protocol.PING)
 
     def send(self, message: dict) -> None:
+        """Schickt `message` an den Trainer (über die Warteschlange des
+        Sende-Threads)."""
         self.outbox.put(protocol.encode(message))
 
     def close(self) -> None:
+        """Beendet die Verbindung und alle Threads."""
         self.closing = True
         self.stopped.set()
         self.outbox.put(None)
@@ -113,6 +121,7 @@ class TraineeClient:
             _close(self.sock)
 
     def poll(self):
+        """Alle seit dem letzten Aufruf eingegangenen Ereignisse, ohne zu warten."""
         events = []
         while True:
             try:

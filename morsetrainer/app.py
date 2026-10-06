@@ -82,6 +82,10 @@ UPDATE_POLL_MS = 500
 
 
 class MorseTrainerApp:
+    """Das Hauptfenster: Kopfleiste mit den gemeinsamen Einstellungen
+    (Zeichensatz, Tempo, Tonhöhe, Lektion), Tagesübung, die Übungs-Reiter und
+    der Reiter Statistik, Fußzeile, Einstellungsfenster und Tastenkürzel.
+    Speichert beim Schließen alles in window_state.json."""
     def __init__(self, root):
         self.root = root
         # Eingabemethode (ibus u. a., XIM) aus: Unter X11 kostet sie jedes
@@ -625,6 +629,8 @@ class MorseTrainerApp:
         self.set_font_scale(theme.NORMAL_ZOOM if direction == 0 else theme.zoom_step(current, direction))
 
     def set_font_scale(self, percent: int) -> None:
+        """Schriftgröße in Prozent setzen, begrenzt auf die Stufen in
+        theme.ZOOM_STEPS (wirkt sofort)."""
         self.font_scale_var.set(min(max(percent, theme.ZOOM_STEPS[0]), theme.ZOOM_STEPS[-1]))
 
     def _apply_font_scale(self) -> None:
@@ -700,6 +706,9 @@ class MorseTrainerApp:
         self.charset_var.set(koch.lesson_charset(lesson))
 
     def _sync_lesson(self):
+        """Lektion und Knopf „Neues Zeichen“ an den Zeichensatz anpassen; ein
+        eigener Zeichensatz zeigt „(eigene Zeichen)“ und den Weg zurück zur
+        Lektion."""
         lesson = koch.lesson_of(self.charset_var.get().strip().upper())
         if lesson is None:
             self.lesson_info_var.set(tr("(eigene Zeichen)"))
@@ -814,6 +823,8 @@ class MorseTrainerApp:
 
     def _build_footer(self):
         # Vor dem Notebook gepackt, damit es bei kleinem Fenster nicht verdrängt wird.
+        """Fußzeile: Übungszeit heute, Hinweis auf Updates, Version und Autor,
+        Knopf Hilfe."""
         footer = self.footer = ttk.Frame(self.root, padding=(10, 4))
         footer.pack(side="bottom", fill="x")
         self.practice_var = tk.StringVar(value="")
@@ -834,6 +845,7 @@ class MorseTrainerApp:
         self._update_practice()
 
     def daily_goal_minutes(self) -> int:
+        """Tagesziel in Minuten aus dem Reiter Statistik (0 bei ungültigem Feld)."""
         try:
             return max(self.daily_goal_var.get(), 0)
         except tk.TclError:
@@ -1030,6 +1042,8 @@ class MorseTrainerApp:
         return self.station_name_var.get().strip() or self.station_call()
 
     def station_call(self) -> str:
+        """Eigenes Rufzeichen aus den Einstellungen, in Großbuchstaben (leer, wenn
+        keins eingetragen ist)."""
         return self.station_call_var.get().strip().upper()
 
     def _follow_station(self):
@@ -1097,6 +1111,8 @@ class MorseTrainerApp:
             self.show_pending_seals()
 
     def show_pending_seals(self):
+        """Zeigt vorgemerkte neue Siegel im Diplom-Fenster, sobald keine Übung
+        mehr läuft."""
         if self.pending_seals and not self.running_mode:
             seals, self.pending_seals = self.pending_seals, []
             self._show_diplomas(seals)
@@ -1118,6 +1134,8 @@ class MorseTrainerApp:
 
     @staticmethod
     def _review_text(data: dict, today=None) -> str:
+        """Zeile der Lernkartei im Reiter Statistik: heute fällige Zeichen, sonst
+        wann die nächsten kommen."""
         due = review.due_chars(data, today)
         if due:
             return tr("Heute fällig ({n}): ").format(n=len(due)) + " ".join(display_text(ch) for ch in due)
@@ -1192,6 +1210,8 @@ class MorseTrainerApp:
         self.notebook.select(self.tab_ids[self.mode_titles.index("Einzelzeichen")])
 
     def _reset_all_time(self):
+        """Gesamtstatistik und Lernkartei nach Rückfrage löschen; Durchgänge,
+        Lektion, Diplome und Einstellungen bleiben."""
         if messagebox.askyesno(
             tr("Gesamtstatistik zurücksetzen"),
             tr("Gesamtstatistik wirklich zurücksetzen?\n\n"
@@ -1206,6 +1226,9 @@ class MorseTrainerApp:
             self._refresh_all_time()
 
     def _build_notebook(self):
+        """Legt die Übungs-Reiter an (mit den Extras, die jeder bestellt, siehe
+        modes/__init__.py) und stellt ihre gespeicherten Einstellungen wieder
+        her. Den Reiter Statistik baut danach _build_all_time_tab()."""
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True, padx=6, pady=(6, 4))
 
@@ -1254,6 +1277,8 @@ class MorseTrainerApp:
     def _lock_tabs(self):
         # Fokus aus Eingabefeldern oben (Zeichen, WPM …) nehmen, sonst
         # landen die Antworten dort; Modi mit eigenem Feld setzen ihn danach.
+        """Ein Durchgang beginnt (on_start der Reiter): andere Reiter, Knöpfe der
+        Kopfleiste, Tagesübung und Probehören sperren, Übungszeit starten."""
         self.root.focus_set()
         current = self.notebook.select()
         for tab_id in self.notebook.tabs():
@@ -1311,6 +1336,9 @@ class MorseTrainerApp:
         self._sync_lesson()
 
     def _handle_mode_stop(self):
+        """Ein Durchgang ist zu Ende (on_stop der Reiter): Übungszeit buchen, in der
+        Tagesübung zum nächsten Block, sonst Reiter freigeben, Statistik,
+        Lektionsaufstieg und Diplome prüfen."""
         review.focus = set()  # gezieltes Üben der Fälligen endet mit dem Durchgang
         self._restore_drill_charset()
         self._record_practice()
@@ -1355,6 +1383,10 @@ class MorseTrainerApp:
     def _dispatch_key(self, event):
         # Funktionstasten sind Kürzel des aktiven Reiters und gelten auch in
         # Eingabefeldern (dort haben sie sonst keine Bedeutung).
+        """Jede Taste im Hauptfenster: Tagesübung (Esc, Enter), Ansage (F9, F11),
+        Tagesübung starten (F12), Funktionstasten an den aktiven Reiter, sonst
+        an dessen on_key – außer die Taste gehört einem Eingabefeld oder dem
+        Bedienelement mit dem Fokus."""
         if event.keysym == "Escape" and self.daily.active:
             self.daily.abort()
             return
@@ -1414,6 +1446,8 @@ class MorseTrainerApp:
         self._await_update_check(result)
 
     def _await_update_check(self, result):
+        """Wartet auf das Ergebnis der Updateprüfung beim Start; bei neuerer
+        Version Hinweis in der Fußzeile bzw. Frage, ob geladen werden soll."""
         if "version" not in result:
             self.root.after(UPDATE_POLL_MS, lambda: self._await_update_check(result))
             return
@@ -1453,6 +1487,8 @@ class MorseTrainerApp:
         # zurück, bevor sie gespeichert werden.
         # keep_files: nach dem Einlesen einer Sicherung; Übungszeit und
         # Einstellungen dieses Laufs würden die eingelesenen überschreiben.
+        """Programmende: Tagesübung abbrechen, Übungszeit und Einstellungen
+        speichern (außer `keep_files`), alle Reiter schließen, Fenster zu."""
         saving = () if keep_files else (self._record_practice, self._save_state)
         for step in (lambda: self.daily.abort(quiet=True), *saving,
                      *(mode.on_close for mode in self.modes), audio.release):
@@ -1486,6 +1522,8 @@ class MorseTrainerApp:
 
 
 def main():
+    """Startet das Programm: Fehlerprotokoll einrichten, Reste eines Updates
+    entfernen, alte Daten übernehmen, Hauptfenster öffnen."""
     sys.excepthook = lambda *exc: errorlog.record(*exc, version=__version__)
     update.cleanup()
     # Übungsdaten aus alten JSON-Dateien in die Datenbank übernehmen

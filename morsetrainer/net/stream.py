@@ -116,6 +116,8 @@ def kept_groups(entries, start: float, stopped_at: float):
 
 
 def effective_wpm(char: str, reaction: float) -> float:
+    """Effektives Tempo für ein Zeichen aus der Reaktionszeit (wie
+    morse.code_units)."""
     return code_units(char) * 1.2 / max(reaction, 0.001)
 
 
@@ -125,6 +127,8 @@ def lead_seconds(band) -> float:
 
 
 def tail_seconds(band) -> float:
+    """Nachlauf der Störgeräusche nach dem letzten Zeichen (nur mit
+    Bandbedingungen)."""
     return band_mod.PRESET_LEAD_SECONDS[1] if band else 0.0
 
 
@@ -143,11 +147,14 @@ class Player:
         self.thread.start()
 
     def stop(self):
+        """Beendet die Wiedergabe und wartet kurz auf den Thread."""
         self.stopped = True
         if self.thread.is_alive() and self.thread is not threading.current_thread():
             self.thread.join(timeout=2)
 
     def _run(self):
+        """Thread: spielt Vorlauf, die Gruppen mit Wortpausen und den Nachlauf in
+        einem Strom und merkt, wann das erste Zeichen hörbar beginnt."""
         try:
             if self.band is not None:
                 self.band.rewind()

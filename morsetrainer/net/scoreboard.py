@@ -50,6 +50,8 @@ def normalize(text: str) -> str:
 
 @dataclass
 class Result:
+    """Antwort eines Teilnehmers auf eine Sequenz: gesendet, getippt, richtig,
+    richtige Zeichen von allen, Zeit bis Enter und ob erst nach Wiederholung."""
     sent: str
     typed: str
     correct: bool
@@ -60,6 +62,7 @@ class Result:
 
     @property
     def slow(self) -> bool:
+        """Zu langsam für „flüssig“ (länger als das Zeitfenster der Sequenz)?"""
         return self.latency is not None and self.latency > answer_limit(self.total)
 
     @property
@@ -70,6 +73,7 @@ class Result:
 
     @property
     def char_results(self):
+        """Ergebnis je Zeichen (align.char_results): gesendet, getippt, richtig."""
         return align.char_results(self.sent, self.typed)
 
 
@@ -87,6 +91,8 @@ def _typed(typed) -> str:
 
 
 class Scoreboard:
+    """Alle Sequenzen und Antworten einer Sitzung beim Trainer, mit Auswertung
+    je Teilnehmer und für die Gruppe (siehe Modulbeschreibung)."""
     def __init__(self):
         self.names = []     # Teilnehmer in der Reihenfolge der Anmeldung
         self.items = {}     # Nr. -> gesendeter Text
@@ -98,11 +104,15 @@ class Scoreboard:
         self.quieter = {}   # Name -> Nummern, bei denen die Störungen leiser waren
 
     def add_participant(self, name: str) -> None:
+        """Nimmt `name` auf (nichts, wenn schon dabei)."""
         if name not in self.answers:
             self.names.append(name)
             self.answers[name] = {}
 
     def add_item(self, n: int, text: str, present, wpm=None, fw=None) -> None:
+        """Merkt die gesendete Sequenz Nr. `n` mit Tempo und den Teilnehmern, die
+        beim Senden verbunden waren (`present`, von ihnen wird eine Antwort
+        erwartet)."""
         self.items[n] = text
         self.tempos[n] = (wpm, fw)
         self.expected[n] = set(present)
@@ -161,6 +171,8 @@ class Scoreboard:
         return result
 
     def paper_allowed(self, name: str) -> bool:
+        """Darf für `name` ein Papierbogen eingetragen werden? Nur, wenn er nicht
+        schon am Rechner geantwortet hat."""
         return name in self.paper or not self.answers.get(name)
 
     def add_paper(self, name: str, sheet: dict) -> bool:
@@ -356,6 +368,8 @@ def solution_cells(board: Scoreboard):
 
 
 def solution_columns(count: int) -> int:
+    """Spalten der Auflösung für `count` Sequenzen (höchstens SOLUTION_ROWS je
+    Spalte, höchstens SOLUTION_MAX_COLUMNS)."""
     return max(1, min(SOLUTION_MAX_COLUMNS, -(-count // SOLUTION_ROWS)))
 
 
