@@ -23,6 +23,10 @@
   used to hear a different neighbouring QSO and different thunderstorms,
   carriers and crashes. Now it is all the same (trainer and participants
   from 2.39).
+- Internal: the tests now run automatically on GitHub with every push, and
+  a release is only built when they pass. Comments and descriptions in the
+  source code have been revised (what the code does instead of version
+  history).
 
 ## 2.38
 

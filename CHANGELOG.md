@@ -22,6 +22,9 @@
 - **Netzwerk: alle hören dasselbe QRM.** Mit CW-QRM hörte bisher jeder
   Teilnehmer ein anderes Nachbar-QSO und dazu andere Gewitter, Träger und
   Knacker. Jetzt ist alles gleich (Trainer und Teilnehmer ab 2.39).
+- Intern: Die Tests laufen jetzt bei jedem Push automatisch auf GitHub,
+  ein Release entsteht nur mit grünen Tests. Kommentare und Beschreibungen
+  im Quelltext sind überarbeitet (was der Code tut statt Versionsgeschichte).
 
 ## 2.38
 
