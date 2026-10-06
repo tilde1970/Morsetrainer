@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.38
 
 - **Selectable CW filter:** 2.4 kHz (as before), 500 Hz or 250 Hz around
   your pitch. Signals, noise, QRM and SSB QRM pass through it, your own

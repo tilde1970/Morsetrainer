@@ -41,7 +41,7 @@ from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 __author__ = "DL4YM"
-__version__ = "2.37"
+__version__ = "2.38"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)

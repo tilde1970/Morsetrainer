@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.38
 
 - **CW-Filter wählbar:** 2,4 kHz (wie bisher), 500 Hz oder 250 Hz um die
   eigene Tonhöhe. Zeichen, Rauschen, QRM und SSB-QRM laufen
