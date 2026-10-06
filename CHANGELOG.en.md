@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Listen in the band conditions window** (Ctrl+P): a 15-second CQ at
+  your pitch and speed under the conditions set, without switching to a
+  tab. Changes can be heard at once; it counts for nothing. Disabled
+  during a run and on the network.
 - **Network: everyone hears the same QRM.** With CW QRM, each participant
   used to hear a different neighbouring QSO and different thunderstorms,
   carriers and crashes. Now it is all the same (trainer and participants

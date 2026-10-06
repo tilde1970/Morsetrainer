@@ -482,6 +482,132 @@ class CentralSettingsTest(AppTestCase):
             self.assertIs(mode.band_var.get(), False)
 
 
+class FakeStream:
+    """Statt der Soundkarte: sammelt die Blöcke; `gate` hält das erste
+    write() an, bis der Test es freigibt."""
+
+    def __init__(self, gate=None):
+        import threading
+        self.blocks = []
+        self.gate = gate
+        self.writing = threading.Event()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def write(self, block):
+        self.writing.set()
+        if self.gate is not None:
+            self.gate.wait(5)
+        self.blocks.append(block)
+
+
+class PreviewTest(AppTestCase):
+    """Probehören im Bandfenster: CQ unter den eingestellten Bedingungen,
+    Änderungen gleich hörbar, gesperrt während eines Durchgangs und im
+    Netzwerk."""
+
+    def setUp(self):
+        super().setUp()
+        from morsetrainer.widgets import band_preview
+        self.band_preview = band_preview
+        self.settings = self.app.band_settings
+        self.settings.set_spec({"levels": {"noise": 0.5}, "gain": 1.0})
+        self.patches = [mock.patch.object(band_preview, "PREVIEW_SECONDS", 1)]
+        for patch in self.patches:
+            patch.start()
+        self.settings.open_window()
+
+    def tearDown(self):
+        self.settings.close_window()
+        if self.settings.preview.thread is not None:
+            self.settings.preview.thread.join(5)
+        for patch in self.patches:
+            patch.stop()
+        super().tearDown()
+
+    def wait_done(self):
+        import time
+        end = time.monotonic() + 5
+        while self.settings.preview.running and time.monotonic() < end:
+            self.root.update()
+            time.sleep(0.01)
+        self.settings.preview.thread.join(5)
+        end = time.monotonic() + 1  # bis die Abfrage im Fenster das Ende bemerkt
+        while self.settings.preview_poll is not None and time.monotonic() < end:
+            self.root.update()
+            time.sleep(0.01)
+
+    def test_plays_cq_and_counts_for_nothing(self):
+        import numpy as np
+        from morsetrainer.core import db
+        self.app.freq_var.set(700)
+        self.app.station_call_var.set("dl4ym")
+        self.assertEqual(self.band_preview.cq_text(self.app.station_call()), "CQ CQ DE DL4YM DL4YM K")
+        self.assertEqual(self.band_preview.cq_text(""), "CQ CQ DE DL1ABC DL1ABC K")
+        stream = FakeStream()
+        sessions = len(db.sessions())
+        with mock.patch.object(self.band_preview.audio, "output_stream", lambda: stream):
+            self.settings.toggle_preview()
+            self.assertEqual(self.settings.preview_button.cget("text"), "Probehören beenden")
+            self.wait_done()
+        out = np.concatenate(stream.blocks)
+        self.assertEqual(len(out), self.band_preview.SAMPLE_RATE)  # PREVIEW_SECONDS, hier 1 s
+        spectrum = np.abs(np.fft.rfft(out))
+        peak = np.fft.rfftfreq(len(out), 1 / self.band_preview.SAMPLE_RATE)[np.argmax(spectrum)]
+        self.assertAlmostEqual(peak, 700, delta=15)  # eigene Tonhöhe
+        self.assertGreater(float(np.std(out[-2400:])), 0.001)  # Rauschen auch in der Pause
+        self.assertEqual(self.settings.preview_button.cget("text"), "Probehören")
+        self.assertEqual(len(db.sessions()), sessions)  # kein Durchgang in der Statistik
+
+    def test_changes_are_heard_at_once(self):
+        import threading
+        gate = threading.Event()
+        stream = FakeStream(gate)
+        with mock.patch.object(self.band_preview.audio, "output_stream", lambda: stream):
+            self.settings.toggle_preview()
+            self.assertTrue(stream.writing.wait(5))
+            self.assertIsNone(self.settings.preview.band.filter)
+            self.settings.set_spec({"levels": {"noise": 0.5, "qrn": 0.4}, "gain": 1.0, "filter": 250})
+            self.assertIsNotNone(self.settings.preview.band.filter)
+            self.assertTrue(self.settings.preview.band.enabled["qrn"])
+            # Zweiter Druck stoppt.
+            self.settings.toggle_preview()
+            gate.set()
+            self.wait_done()
+        self.assertLess(len(stream.blocks), 5)
+
+    def test_blocked_during_a_run_and_in_the_network(self):
+        stream = FakeStream()
+        with mock.patch.object(self.band_preview.audio, "output_stream", lambda: stream):
+            self.app.running_mode = True
+            self.settings.toggle_preview()
+            self.assertFalse(self.settings.preview.running)
+            self.assertIn("erst nach dem Durchgang", self.settings.preview_var.get())
+            self.assertIn("disabled", self.settings.preview_button.state())
+            self.app.running_mode = False
+            network = self.mode("Netzwerk")
+            with mock.patch.object(network, "client", object()):
+                self.settings.toggle_preview()
+                self.assertFalse(self.settings.preview.running)
+                self.assertIn("Netzwerk-Sitzung", self.settings.preview_var.get())
+            # Ein Durchgang beginnt: Probehören hört auf.
+            gate_free = FakeStream()
+            with mock.patch.object(self.band_preview.audio, "output_stream", lambda: gate_free):
+                self.settings.toggle_preview()
+                self.assertTrue(self.settings.preview.running)
+                self.app._lock_tabs()
+                self.assertFalse(self.settings.preview.running)
+                self.wait_done()
+                self.app._unlock_tabs()
+        self.assertEqual(self.settings.preview_button.cget("text"), "Probehören")
+        self.assertNotIn("disabled", self.settings.preview_button.state())
+        self.assertTrue(self.settings.window.bind("<Control-p>"))
+
+
 class StatisticsTest(AppTestCase):
     def test_runs_with_band_conditions_do_not_feed_the_character_statistics(self):
         g = self.mode("Gruppen")

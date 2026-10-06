@@ -3,12 +3,14 @@ die Störgeräusche insgesamt sind. Eingestellt in einem eigenen Fenster
 (erreichbar über „Weitere Optionen“ und jeden Reiter), die Reiter schalten
 sie nur an oder aus (BandToggle). Änderungen wirken sofort, auch in einem
 laufenden Durchgang."""
+import sys
 import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import band
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets.band_preview import PREVIEW_SECONDS, BandPreview
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
@@ -40,6 +42,8 @@ DEFAULT_PRESET = "light"
 # Gespeicherte Einstellungen tragen diese Fassung; ohne sie stammen sie aus
 # Version 2.37 oder älter, als QSB auch die Stärkeunterschiede enthielt.
 SETTINGS_VERSION = 2
+# So oft schaut das Fenster, ob das Probehören zu Ende ist.
+PREVIEW_POLL_MS = 200
 # Lautstärke der Störgeräusche gegenüber den Zeichen, in Prozent.
 GAIN_RANGE = (round(band.GAIN_RANGE[0] * 100), round(band.GAIN_RANGE[1] * 100))
 
@@ -88,6 +92,9 @@ class BandSettings:
         self.listeners = []
         self.window = None
         self.focus_before = None  # Fokus im Hauptfenster vor dem Öffnen
+        self.preview = None  # BandPreview, sobald attach_preview() gerufen ist
+        self.preview_blocked = lambda: None  # Grund, warum gerade nicht, sonst None
+        self.preview_poll = None  # after-ID der Abfrage, ob das Probehören zu Ende ist
         self.set_preset(DEFAULT_PRESET, notify=False)
         self.controls["strength"][0].set(True)
 
@@ -174,6 +181,53 @@ class BandSettings:
         if rank:
             text += " · " + tr("Stufe {name}").format(name=tr(PRESET_NAMES[rank]))
         return text
+
+    def attach_preview(self, params, blocked) -> None:
+        """Probehören einrichten: `params()` liefert (WpM, Tonhöhe,
+        Rufzeichen), `blocked()` den Grund, warum es gerade nicht geht
+        (Durchgang läuft, Netzwerk), sonst None."""
+        self.preview = BandPreview(self, params)
+        self.preview_blocked = blocked
+
+    def toggle_preview(self) -> None:
+        if self.preview is None:
+            return
+        if self.preview.running:
+            self.preview.stop()
+        elif self.preview_blocked() is None:
+            self.preview.start()
+            self._poll_preview()
+        self._show_preview()
+
+    def stop_preview(self) -> None:
+        """Ein Durchgang beginnt oder das Fenster geht zu."""
+        if self.preview is not None and self.preview.running:
+            self.preview.stop()
+        self._show_preview()
+
+    def _poll_preview(self) -> None:
+        self.preview_poll = None
+        self._show_preview()
+        if self.preview.running and self.window is not None:
+            self.preview_poll = self.root.after(PREVIEW_POLL_MS, self._poll_preview)
+
+    def _show_preview(self) -> None:
+        if self.window is None or not hasattr(self, "preview_button"):
+            return
+        running = self.preview is not None and self.preview.running
+        blocked = self.preview_blocked() if self.preview is not None else None
+        self.preview_button.config(text=tr("Probehören beenden") if running else tr("Probehören"))
+        self.preview_button.state(["disabled"] if blocked and not running else ["!disabled"])
+        if running:
+            text = tr("CQ mit diesen Bedingungen, {seconds} s; Änderungen sind gleich zu hören.").format(
+                seconds=PREVIEW_SECONDS)
+        elif blocked:
+            text = blocked
+        elif self.preview is not None and self.preview.error:
+            text = self.preview.error
+        else:
+            text = tr("Zählt nicht für Statistik, Übungszeit und Diplome.")
+        self.preview_var.set(text)
 
     def subscribe(self, callback) -> None:
         self.listeners.append(callback)
@@ -283,12 +337,28 @@ class BandSettings:
 
         self.rank_var = tk.StringVar(value="")
         theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(4, 0))
-        ttk.Button(frame, text=tr("Schließen"), command=self.close_window).pack(anchor="e", pady=(8, 0))
+        bottom = ttk.Frame(frame)
+        bottom.pack(fill="x", pady=(8, 0))
+        ttk.Button(bottom, text=tr("Schließen"), command=self.close_window).pack(side="right")
+        self.preview_var = tk.StringVar(value="")
+        if self.preview is not None:
+            # Strg+P (auf dem Mac auch Cmd+P): die Bedingungen gleich hören.
+            self.preview_button = ttk.Button(bottom, command=self.toggle_preview, width=18)
+            self.preview_button.pack(side="left")
+            theme.hint(frame, textvariable=self.preview_var, wrap=460).pack(anchor="w", pady=(4, 0))
+            for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
+                window.bind(f"<{modifier}-p>", lambda e: self.toggle_preview() or "break")
         self._update_window()
+        self._show_preview()
 
     def close_window(self) -> None:
         """Schließt das Fenster und gibt den Fokus zurück, etwa an das
         Eingabefeld eines laufenden Durchgangs."""
+        if self.preview is not None:
+            self.preview.stop()
+        if self.preview_poll is not None:
+            self.root.after_cancel(self.preview_poll)
+            self.preview_poll = None
         if self.window is not None:
             self.window.destroy()
             self.window = None

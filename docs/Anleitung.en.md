@@ -281,6 +281,13 @@ is about “light”.
 conditions pay off once the character set is solid without them (90 % or
 more); then start with “light”.
 
+**Listen** (button at the bottom of the window, Ctrl+P): plays a CQ for
+15 seconds at your pitch and speed under the conditions currently set,
+with your callsign from the settings. Whatever you change meanwhile can
+be heard at once; a second press stops. It counts for nothing
+(statistics, practice time, awards). During a run and in a network
+session the button is disabled.
+
 In the tabs (Groups, Words, Callsigns, Continuous, QSO, Contest, Network)
 you only switch band conditions on or off. Strength and volume take
 effect immediately, even during a run; the award then counts the weakest
@@ -528,7 +535,8 @@ versions (CHANGELOG) and this manual.
   (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are;
   Alt+1 … Alt+9 and Alt+0 switch to tab 1 … 10, Ctrl+Tab cycles through
   the tabs (on the Mac Cmd+1 … Cmd+9); Ctrl+B opens the band conditions,
-  Ctrl+Comma the settings (on the Mac also Cmd+Comma).
+  in which Ctrl+P listens to them, Ctrl+Comma the settings (on the Mac also
+  Cmd+Comma).
 - **On the Mac** F9, F11 and F12 are media keys or taken by the system
   (Fn+F11 shows the desktop). Use Cmd+Shift+A (announcements on/off),
   Cmd+Shift+W (where am I) and Cmd+Shift+T (daily practice) instead.

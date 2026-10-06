@@ -287,6 +287,13 @@ Filter: „mittel“ mit 500-Hz-Filter entspricht etwa „leicht“.
 lohnen sich, wenn der Zeichensatz ohne Störungen sicher sitzt (90 % und
 mehr); dann mit „leicht“ beginnen.
 
+**Probehören** (Knopf unten im Fenster, Strg+P): spielt 15 Sekunden ein
+CQ in deiner Tonhöhe und deinem Tempo unter den gerade eingestellten
+Bedingungen, mit deinem Rufzeichen aus den Einstellungen. Was du
+währenddessen verstellst, hörst du sofort; ein zweiter Druck hört auf.
+Zählt für nichts (Statistik, Übungszeit, Diplome). Während eines
+Durchgangs und in einer Netzwerk-Sitzung ist der Knopf gesperrt.
+
 In den Reitern (Gruppen, Wörter, Rufzeichen, Kontinuierlich, QSO, Contest,
 Netzwerk) schaltest du die Bandbedingungen nur an oder aus. Stärke und
 Lautstärke wirken sofort, auch im laufenden Durchgang; für das Diplom
@@ -538,7 +545,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist;
   Alt+1 … Alt+9 und Alt+0 wechseln zu Reiter 1 … 10, Strg+Tab blättert
   durch die Reiter (auf dem Mac Cmd+1 … Cmd+9); Strg+B öffnet die
-  Bandbedingungen, Strg+Komma die Einstellungen (auf dem Mac auch Cmd+Komma).
+  Bandbedingungen (darin Strg+P: Probehören), Strg+Komma die Einstellungen
+  (auf dem Mac auch Cmd+Komma).
 - **Auf dem Mac** sind F9, F11 und F12 Medientasten oder vom System belegt
   (Fn+F11 zeigt den Schreibtisch). Dafür gibt es Cmd+Umschalt+A (Ansage
   an/aus), Cmd+Umschalt+W (wo bin ich) und Cmd+Umschalt+T (Tagesübung).

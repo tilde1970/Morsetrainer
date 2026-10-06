@@ -389,6 +389,8 @@ class MorseTrainerApp:
 
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)
+        self.band_settings.attach_preview(
+            lambda: (self.wpm_var.get(), self.freq_var.get(), self.station_call()), self._preview_blocked)
         band_row = ttk.Frame(self.more_frame)
         band_row.pack(fill="x", pady=2)
         ttk.Label(band_row, text=tr("Bandbedingungen")).pack(side="left")
@@ -1252,6 +1254,7 @@ class MorseTrainerApp:
                 self.notebook.tab(tab_id, state="disabled")
         # Eigene Tonausgabe würde die des laufenden Modus abbrechen.
         self.running_mode = True
+        self.band_settings.stop_preview()
         self.new_char_button.config(state="disabled")
         self.confusion_button.config(state="disabled")
         self.review_button.config(state="disabled")
@@ -1280,10 +1283,21 @@ class MorseTrainerApp:
         self._check_awards()
         self.show_pending_seals()
 
+    def _preview_blocked(self):
+        """Grund, warum das Probehören der Bandbedingungen gerade nicht geht."""
+        if self.running_mode:
+            return tr("Probehören erst nach dem Durchgang.")
+        network = self.modes[self.mode_titles.index("Netzwerk")]
+        if network.server is not None or network.client is not None:
+            return tr("Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die "
+                      "Bedingungen.")
+        return None
+
     def _unlock_tabs(self):
         for tab_id in self.notebook.tabs():
             self.notebook.tab(tab_id, state="normal")
         self.running_mode = False
+        self.band_settings.stop_preview()  # Knopf wieder frei
         self.confusion_button.config(state="normal")
         self.review_button.config(state="normal")
         self.daily_bar.set_enabled(True)

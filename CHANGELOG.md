@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- **Probehören im Fenster Bandbedingungen** (Strg+P): 15 Sekunden CQ in
+  deiner Tonhöhe und deinem Tempo unter den eingestellten Bedingungen,
+  ohne in einen Reiter zu wechseln. Änderungen sind sofort zu hören; zählt
+  für nichts. Gesperrt während eines Durchgangs und im Netzwerk.
 - **Netzwerk: alle hören dasselbe QRM.** Mit CW-QRM hörte bisher jeder
   Teilnehmer ein anderes Nachbar-QSO und dazu andere Gewitter, Träger und
   Knacker. Jetzt ist alles gleich (Trainer und Teilnehmer ab 2.39).

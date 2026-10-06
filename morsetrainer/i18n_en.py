@@ -422,6 +422,14 @@ EN.update({
     "Flattern": "Flutter",
     "Träger": "Carrier",
     "Weitere Störungen": "More interference",
+    "Probehören": "Listen",
+    "Probehören beenden": "Stop listening",
+    "CQ mit diesen Bedingungen, {seconds} s; Änderungen sind gleich zu hören.":
+        "CQ under these conditions, {seconds} s; changes can be heard at once.",
+    "Zählt nicht für Statistik, Übungszeit und Diplome.": "Does not count for statistics, practice time or awards.",
+    "Probehören erst nach dem Durchgang.": "Listening only after the run.",
+    "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":
+        "No listening during a network session; there the trainer sets the conditions.",
     "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest.":
         "Not part of any level and do not count for the QRN-proof award.",
     "Knackstörungen (QRN)": "Static crashes (QRN)",
