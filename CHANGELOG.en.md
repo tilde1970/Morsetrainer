@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.39
 
 - **Listen in the band conditions window** (Ctrl+P): a 15-second CQ at
   your pitch and speed under the conditions set, without switching to a

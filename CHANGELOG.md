@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.39
 
 - **Probehören im Fenster Bandbedingungen** (Strg+P): 15 Sekunden CQ in
   deiner Tonhöhe und deinem Tempo unter den eingestellten Bedingungen,
