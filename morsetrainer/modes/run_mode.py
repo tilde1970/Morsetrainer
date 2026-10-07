@@ -255,6 +255,7 @@ class RunModeFrame:
         self.my_call_entry = ttk.Entry(call_row, textvariable=self.my_call_var, width=12)
         self.my_call_entry.pack(side="left")
         announcer.echo(self.my_call_entry)
+        announcer.nato(self.my_call_entry)
         # Nicht jeder, der übt, hat schon ein Rufzeichen; vorgegeben wird
         # keins, weil ein erfundenes jemandem gehören könnte.
         self.call_hint_var = tk.StringVar(value="")
@@ -329,6 +330,7 @@ class RunModeFrame:
         self.exch_var = tk.StringVar()
         self.call_entry = ttk.Entry(fields, textvariable=self.call_var, width=12, font=theme.MONO_ENTRY)
         self.call_entry.grid(row=1, column=0)
+        announcer.nato(self.call_entry)  # beim Hineinspringen; getippt wird hier nicht angesagt (Mischer läuft)
         self.exch_entry = ttk.Entry(fields, textvariable=self.exch_var, width=8, font=theme.MONO_ENTRY)
         self.exch_entry.grid(row=1, column=1, padx=(12, 0))
         for var in (self.call_var, self.exch_var):
@@ -363,6 +365,7 @@ class RunModeFrame:
             self.log_tree.heading(col, text=heading)
             self.log_tree.column(col, width=width, anchor=anchor)
         self.log_tree.tag_configure("wrong", foreground=theme.ERROR)
+        announcer.nato(self.log_tree)
         self.log_tree.tag_configure("ok", foreground=theme.OK)
         self.log_tree.pack(fill="x")
 

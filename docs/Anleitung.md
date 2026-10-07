@@ -541,7 +541,13 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   Inhalt Zeichen für Zeichen vor.
 - **Fenster:** Öffnet sich ein Fenster (Bandbedingungen, Einstellungen,
   Hilfe …), sagt es seinen Namen: „Fenster Bandbedingungen“. Spricht das
-  Fenster selbst (Diplom, Tagesübung), kommt der Name davor.
+  Fenster selbst (Diplom, Tagesübung), kommt der Name davor. Schließt du
+  ein Fenster, sagt sie, wo du gelandet bist („Zurück im Hauptfenster.
+  Reiter Gruppen.“).
+- **Contest:** Rufzeichen in „Mein Rufzeichen“, im Call-Feld und im Log
+  werden im Funkalphabet buchstabiert.
+- **Netzwerk (Trainer):** Beim Öffnen der Sitzung werden Adresse und PIN
+  angesagt, F11 wiederholt sie.
 - **Bedienelemente:** Springst du mit Tab in ein Feld, einen Knopf oder
   Schalter, sagt es, was es ist und wie es steht („Sprache / Language,
   Auswahl, Deutsch“, „Hoher Kontrast, Schalter, aus“, „Tempo, Zahlenfeld,

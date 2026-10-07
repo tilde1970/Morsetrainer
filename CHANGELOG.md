@@ -19,12 +19,22 @@
   als „Hertz“, „Kilohertz“, „Minuten“ und „Sekunden“ gesprochen statt
   buchstabiert; „Fading“, „Pile-up“ und die Contest-Arten (CQ WW, WPX,
   WAG, ARRL DX, IARU HF) klingen wie bei Funkamateuren, Abkürzungen
-  buchstabiert wie Rufzeichen. Klammern werden nicht mehr mitgelesen,
+  buchstabiert wie Rufzeichen (auch mit der englischen Stimme). In der
+  Statistik werden einzelne Zeichen wie „?“ genannt, Verwechslungen als
+  „Be gleich 9 mal“ bzw. „gleich einmal“ gelesen und Spaltenköpfe wie
+  „Ø Zeit (s)“ als „Durchschnittszeit in Sekunden“. Klammern werden nicht mehr mitgelesen,
   sondern zur Pause; „Staat/Leistung“ heißt „Staat oder Leistung“.
   Zahlenfelder sagen ihre Einheit mit („Lösung zeigen nach, 3
   Fehlversuchen“, „Dauer, 5 Minuten“).
 - **Statistik:** Unter „verwechselt mit“ steht kein „–“ mehr für ein
   Zeichen, das gar nicht erkannt wurde; es zählt nur als falsch.
+- **Netzwerk:** Der Trainer hört beim Öffnen der Sitzung Adresse und PIN
+  (auch mit F11), die Adresse Zahl für Zahl mit „Punkt“, die PIN als
+  „PIN-Nummer“ Ziffer für Ziffer.
+- **Contest:** Rufzeichen in den Feldern und im Log werden im
+  Funkalphabet angesagt (Delta, Lima, Eins …).
+- **Fenster schließen:** Die Ansage sagt, wo du gelandet bist („Zurück im
+  Hauptfenster. Reiter Gruppen.“).
 - **Tabellen** (Diplome, Statistik, Contest-Log): Springst du mit Tab
   hinein, ist die erste Zeile gewählt und die Pfeiltasten gehen sofort. Öffnet sich ein Fenster, sagt die Ansage
   seinen Namen („Fenster Bandbedingungen“); spricht das Fenster selbst,

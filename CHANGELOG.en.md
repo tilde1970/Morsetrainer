@@ -19,12 +19,22 @@
   spoken as “hertz”, “kilohertz”, “minutes” and “seconds” instead of being
   spelled out; the German voice pronounces “Fading”, “Pile-up” and the
   contest types (CQ WW, WPX, WAG, ARRL DX, IARU HF) the way hams say them,
-  abbreviations spelled like callsigns. Brackets are no longer read out
+  abbreviations spelled like callsigns (also with the English voice). In
+  the statistics single characters such as “?” are named, confusions read
+  as “B 9 times” or “once”, and headings such as “Ø time (s)” as “average
+  time in seconds”. Brackets are no longer read out
   but become a pause; “state/power” is read as “state or power”.
   Number fields say their unit (“Show solution after, 3 failed attempts”,
   “Duration, 5 minutes”).
 - **Statistics:** “confused with” no longer lists “–” for a character
   that was not recognised at all; it only counts as wrong.
+- **Network:** when the session opens, the trainer hears address and PIN
+  (also with F11), the address number by number with “dot”, the PIN digit
+  by digit.
+- **Contest:** callsigns in the fields and in the log are announced in the
+  phonetic alphabet (Delta, Lima, One …).
+- **Closing a window:** the announcement says where you are now (“Back in
+  the main window. Tab Groups.”).
 - **Tables** (awards, statistics, contest log): when you Tab into one, the
   first row is selected and the arrow keys work right away. When a window opens, the announcement says
   its name (“Window Band conditions”); if the window speaks itself, the

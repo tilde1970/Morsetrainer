@@ -261,6 +261,50 @@ class AnnouncerTest(AppTestCase):
         self.pump_until(lambda: False, timeout=0.3)
         self.assertEqual(len(self.said), said)
 
+    def test_contest_calls_in_the_phonetic_alphabet(self):
+        from morsetrainer.widgets import announcer
+        contest = self.mode("Contest")
+        contest.my_call_var.set("DL1ABC")
+        self.assertIn("Delta, Lima, Eins, Alfa, Bravo", announcer.describe(contest.my_call_entry))
+        self.assertEqual(announcer.change_text("DL", "DL1", "nato"), "Eins")
+        self.assertEqual(announcer.change_text("DL1", "DL1A", "nato"), "Alfa")
+        self.assertIn("Delta, Lima", announcer.describe(self.mode("Contest").call_entry) if contest.call_var.set("DL")
+                      is None else "")
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        tree = contest.log_tree
+        item = tree.insert("", "end", values=(1, "OE3XYZ", "599 15", "✓"))
+        self.app.select_tab(self.app.mode_titles.index("Contest"))
+        self.root.deiconify()
+        tree.focus_force()
+        self.root.update()
+        tree.selection_set(item)
+        self.assertTrue(self.pump_until(lambda: any("Call: Oskar, Ekko, Drei" in text for text in self.said)))
+        self.assertTrue(any("599 15" in text for text in self.said))  # Austausch nicht buchstabiert
+        self.root.withdraw()
+
+    def test_statistics_cells_are_spoken_clearly(self):
+        # „?“ allein spräche die Stimme nicht; Verwechslungen als „B gleich 9 mal“.
+        from morsetrainer.widgets import announcer
+        self.assertEqual(announcer._cell_spoken("?"), "Fragezeichen")
+        self.assertEqual(announcer._cell_spoken("K"), "Ka")
+        self.assertEqual(announcer._cell_spoken("B (9), 5 (2)"), "Be gleich 9 mal, Fünf gleich 2 mal")
+        self.assertEqual(announcer._cell_spoken("? (3)"), "Fragezeichen gleich 3 mal")
+        self.assertEqual(announcer._cell_spoken("N (1)"), "Enn gleich einmal")  # nicht „1 mal“
+        # Spaltenköpfe der Statistik.
+        self.assertEqual(announcer.speakable("Ø Zeit (s)"), "Durchschnittszeit in Sekunden")
+        self.assertEqual(announcer.speakable("Ø effektive Geschwindigkeit: 18 WPM"),
+                         "durchschnittliche effektive Geschwindigkeit: 18 WPM")
+        self.assertEqual(announcer.speakable("Median Zeit (s)"), "Median Zeit in Sekunden")
+        self.assertEqual(announcer._cell_spoken("92 %"), "92 %")  # sonst unverändert
+        self.assertEqual(announcer._cell_spoken("OE3XYZ", nato_calls=True)[:11], "Oskar, Ekko")
+
+    def test_pin_field_says_pin_number_digit_by_digit(self):
+        from morsetrainer.widgets import announcer
+        network = self.mode("Netzwerk")
+        network.pin_var.set("4711")
+        self.assertEqual(announcer.describe(network.pin_entry), "PIN-Nummer, Eingabefeld, Vier, Sieben, Eins, Eins.")
+
     def test_new_window_says_its_name(self):
         # Sonst merkt ein Sehbehinderter nicht, dass er in einem neuen Fenster ist.
         self.app.announcer.var.set(True)
@@ -280,6 +324,35 @@ class AnnouncerTest(AppTestCase):
         self.pump_until(lambda: False, timeout=0.3)
         self.assertNotIn("Fenster Still.", self.said)
         other.destroy()
+
+    def test_closing_a_window_says_where_you_are(self):
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        self.root.deiconify()
+        tab = self.app._tab_name()
+        window = tk.Toplevel(self.root)
+        window.title("Bandbedingungen")
+        window.event_generate("<Map>")
+        self.pump_until(lambda: False, timeout=0.3)
+        self.root.focus_force()
+        window.destroy()  # meldet Unmap und Destroy: nur eine Ansage
+        expected = f"Zurück im Hauptfenster. Reiter {tab}."
+        self.assertTrue(self.pump_until(lambda: expected in self.said))
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertEqual(self.said.count(expected), 1)
+        # Liegt noch ein Fenster dahinter, heißt es dieses.
+        # Den Fokus setzt hier der Test selbst: wann der Fenstermanager ihn
+        # zurückgibt, schwankt unter Last.
+        outer = tk.Toplevel(self.root)
+        outer.title("Einstellungen")
+        inner = tk.Toplevel(outer)
+        inner.title("Diplome")
+        self.root.update()
+        with mock.patch.object(self.root, "focus_get", lambda: outer):
+            inner.withdraw()
+            self.assertTrue(self.pump_until(lambda: "Zurück im Fenster Einstellungen." in self.said))
+        outer.destroy()
+        self.root.withdraw()
 
     def test_window_name_joins_the_windows_own_announcement(self):
         # Fenster, die beim Öffnen selbst sprechen (Diplom, Abendbilanz):
@@ -819,6 +892,14 @@ class EveningSummaryAnnounceTest(AnnouncerTest):
                                   "I, A, Err, U Ha, Eff, I, Te, U Zone oder Ha, Ku"])
         self.assertEqual(announcer.speakable("CQ-Zone, DXCC, WWA"), "Ze, Ku Zone, DXCC, WWA")  # nur ganze Wörter
         self.assertEqual(announcer.speakable("TU/Log"), "TU/Log")  # kein „oder“ hinter einer Abkürzung
+        # Englische Oberfläche: dieselben Abkürzungen mit englischen Buchstabennamen.
+        from morsetrainer import i18n
+        with mock.patch.object(i18n, "LANG", "en"):
+            self.assertEqual(announcer.speakable("WAG (DOK)"), "double you, ay, gee, dee, oh, kay")
+            self.assertEqual(announcer.speakable("IARU HF"), "eye, ay, ar, you aitch, eff")
+        # Trainer: Adresse Zahl für Zahl, PIN Ziffer für Ziffer.
+        self.assertEqual(announcer.speakable("Adresse 192.168.1.20:7400 · PIN 0815"),
+                         "I, Pe Adresse 192 Punkt 168 Punkt 1 Punkt 20, Port 7400, PIN-Nummer Null, Acht, Eins, Fünf")
         self.assertEqual(announcer.speakable("≥ 50 Zeichen, ≤ 3 Fehler"), "mindestens 50 Zeichen, höchstens 3 Fehler")
         self.assertEqual(announcer.speakable("Warte auf den Trainer…"), "Warte auf den Trainer")
 

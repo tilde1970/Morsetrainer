@@ -117,6 +117,7 @@ class MorseTrainerApp:
         theme.set_palette("contrast" if self.contrast_at_start else "light")
         theme.apply(root)
         self.announcer = announcer.install(root)
+        announcer.set_main_place(lambda: tr("Reiter {name}.").format(name=self._tab_name()))
         self._build_settings()
         self._restore_shared_settings()
         self._update_more()
@@ -578,7 +579,8 @@ class MorseTrainerApp:
             return
         parts = [self._tab_name()]
         mode = self._active_mode()
-        for attr in ("status_var", "feedback_var", "remaining_var", "progress_var"):
+        # session_info_var: Adresse und PIN des Trainers im Netzwerk.
+        for attr in ("status_var", "session_info_var", "feedback_var", "remaining_var", "progress_var"):
             var = getattr(mode, attr, None)
             text = var.get().strip() if var is not None else ""
             if attr == "progress_var":  # „3/20“ im Reiter Sprechen
@@ -608,13 +610,15 @@ class MorseTrainerApp:
             weak = [row for row in stats.all_time_char_rows(data) if row[2]][:3]
             if weak:
                 parts.append(tr("Die meisten Fehler: ") + ", ".join(
-                    tr("{char} {count} mal").format(char=spell(char), count=wrong) for char, _, wrong, *_ in weak))
+                    tr("{char} {times}").format(char=spell(char), times=announcer.times(wrong))
+                    for char, _, wrong, *_ in weak))
         else:
             parts.append(tr("Noch keine Durchgänge"))
         pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
         if pairs:
             parts.append(tr("Häufigste Verwechslungen: ") + ", ".join(
-                tr("{sent} als {typed} getippt, {count} mal").format(sent=spell(sent), typed=spell(typed), count=count)
+                tr("{sent} als {typed} getippt, {times}").format(sent=spell(sent), typed=spell(typed),
+                                                                 times=announcer.times(count))
                 for sent, typed, count, _ in pairs))
         due = review.due_chars()
         parts.append((tr("Heute in der Lernkartei fällig: ") + ", ".join(spell(ch) for ch in due)) if due

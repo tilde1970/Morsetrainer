@@ -45,6 +45,9 @@ CHUNK_CHARS = 150
 # etwa die Ansage eines eben gewechselten Reiters nicht dazukommt.
 WINDOW_JOIN_BEFORE_S = 0.25
 WINDOW_JOIN_AFTER_S = 0.4
+# Nach dem Schließen eines Fensters so lange warten, bis der Fokus
+# zurückgegeben ist, dann sagen, wo man gelandet ist.
+WINDOW_BACK_MS = 120
 
 _instance = None
 _synth_lock = threading.Lock()  # Piper nicht aus zwei Threads zugleich
@@ -63,6 +66,9 @@ class Announcer:
         self.recent = None  # (Text, time.time(), token) der letzten Ansage
         self.window_intro = None  # (Fenstername als Satz, time.time(), token)
         self.last_window = None  # (Fenster, time.time()): nicht doppelt ansagen
+        self.main_place = None  # Funktion: Ort im Hauptfenster („Reiter Gruppen.“), set_main_place()
+        self.last_closed = None  # (Fenster, time.time()): nicht doppelt ansagen
+        self.window_token = 0  # token der letzten Fensteransage (wird nicht mit angehängt)
         self._cache = {}
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
@@ -159,12 +165,52 @@ class Announcer:
         except tk.TclError:
             return
         intro = speakable(tr("Fenster {title}.").format(title=title) if title else tr("Neues Fenster."))
-        recent = self.recent
         text = intro
-        if recent is not None and recent[2] == self.token and now - recent[1] < WINDOW_JOIN_BEFORE_S:
-            text = recent[0] if recent[0].startswith(intro) else f"{intro} {recent[0]}"
+        if self._recent_content(now):
+            text = f"{intro} {self.recent[0]}"
+        self.window_intro = None  # Fensteransagen bekommen nichts vorangestellt
         self.say(text)
+        self.window_token = self.token
         self.window_intro = (intro, time.time(), self.token)
+
+    def _recent_content(self, now: float) -> bool:
+        """Kam gerade eben eine Ansage, die keine Fensteransage war (etwa die
+        eines Fensters beim Aufbau)? Dann gehört sie zu diesem Fenster."""
+        recent = self.recent
+        return (recent is not None and recent[2] == self.token and recent[2] != self.window_token
+                and now - recent[1] < WINDOW_JOIN_BEFORE_S)
+
+    def window_closed(self, window) -> None:
+        """Ein Fenster ist zu oder versteckt: kurz danach sagen, wo der Fokus
+        jetzt ist („Zurück im Hauptfenster, Reiter Gruppen.“ bzw. „Zurück im
+        Fenster Einstellungen.“)."""
+        if not self.enabled() or self.available() is not None:
+            return
+        now = time.time()
+        # Zerstören meldet oft Unmap und Destroy: nur einmal.
+        if self.last_closed is not None and self.last_closed[0] == str(window) and now - self.last_closed[1] < 1.0:
+            return
+        self.last_closed = (str(window), now)
+        self._after(WINDOW_BACK_MS, self._say_back)
+
+    def _say_back(self) -> None:
+        try:
+            if not self.root.winfo_exists():
+                return
+            focus = self.root.focus_get()
+            top = focus.winfo_toplevel() if focus is not None else self.root
+            if top is not self.root and top.winfo_viewable():
+                text = tr("Zurück im Fenster {title}.").format(title=top.title())
+            else:
+                place = self.main_place() if self.main_place is not None else ""
+                text = f"{tr('Zurück im Hauptfenster.')} {place}".strip()
+        except (tk.TclError, KeyError, AttributeError):
+            return
+        if self._recent_content(time.time()):
+            text = f"{self.recent[0]} {text}"  # was das Schließen selbst ansagte, nicht abschneiden
+        self.window_intro = None
+        self.say(text)
+        self.window_token = self.token
 
     def _when_idle(self, then, deadline: float) -> None:
         """`then()`, sobald keine Ansage mehr läuft (die neueste ganz
@@ -250,6 +296,7 @@ _names = {}  # str(Widget) -> fester Name (name())
 _values = {}  # str(Widget) -> Funktion, die den angezeigten Wert liefert (z. B. S/N statt Zahl)
 _echo_widgets = set()  # str(Widget): Eingabefelder, in denen das Tippen angesagt wird (echo())
 _echo_last = {}  # str(Widget) -> Inhalt beim letzten Blick (Fokus oder Taste)
+_nato_widgets = set()  # str(Widget): Rufzeichen im Funkalphabet buchstabieren (nato())
 # Tasten, deren Wirkung ein Zahlenfeld schon selbst ansagt (<<Increment>>).
 _ECHO_SKIP_KEYS = {"Up", "Down", "Prior", "Next", "Tab", "ISO_Left_Tab"}
 
@@ -267,12 +314,35 @@ def _window_shown(widget) -> None:
         _instance.window_shown(widget)
 
 
+def _window_closed(widget) -> None:
+    if _instance is not None and isinstance(widget, tk.Toplevel):
+        _instance.window_closed(widget)
+
+
+def set_main_place(place) -> None:
+    """`place()` sagt, wo man im Hauptfenster ist (z. B. „Reiter Gruppen.“),
+    für die Ansage nach dem Schließen eines Fensters."""
+    if _instance is not None:
+        _instance.main_place = place
+
+
 def echo(widget) -> None:
     """Tippen in diesem Eingabefeld ansagen, wie ein Screenreader: jedes
     neue Zeichen buchstabiert, Gelöschtes mit „gelöscht“. Für Felder der
     Einstellungen (Zahlenfelder immer); nicht für Antwortfelder, dort bräche
     die Ansage den laufenden Morseton ab."""
     _echo_widgets.add(str(widget))
+
+
+def nato(widget) -> None:
+    """In diesem Feld bzw. dieser Tabelle Rufzeichen im Funkalphabet
+    buchstabieren (Delta, Lima, Eins …), wie im Contest üblich – beim
+    Hineinspringen, beim Tippen und beim Vorlesen einer Zeile."""
+    _nato_widgets.add(str(widget))
+
+
+def _alphabet(widget) -> str:
+    return "nato" if str(widget) in _nato_widgets else "de"
 
 
 def _echoes(widget) -> bool:
@@ -299,21 +369,22 @@ def _echo_key(event) -> None:
     _echo_last[str(widget)] = after
     if before is None or before == after or event.keysym in _ECHO_SKIP_KEYS or not active():
         return
-    _instance.say(change_text(before, after))
+    _instance.say(change_text(before, after, _alphabet(widget)))
 
 
-def spell_chars(text: str) -> str:
-    """Jedes Zeichen einzeln gesprochen, auch Leerzeichen und Satzzeichen."""
+def spell_chars(text: str, alphabet: str = "de") -> str:
+    """Jedes Zeichen einzeln gesprochen, auch Leerzeichen und Satzzeichen;
+    `alphabet` "nato" für das Funkalphabet."""
     names = []
     for ch in text:
         if ch.isspace():
             names.append(tr("Leerzeichen"))
         else:
-            names.append(speech.spoken(ch, lang=i18n.LANG) or ch)
+            names.append(speech.spoken(ch, alphabet, lang=i18n.LANG) or ch)
     return ", ".join(names)
 
 
-def change_text(before: str, after: str) -> str:
+def change_text(before: str, after: str, alphabet: str = "de") -> str:
     """Was sich in einem Feld geändert hat, zum Ansagen: Neues buchstabiert,
     Gelöschtes mit „gelöscht“ (bei einer ersetzten Auswahl das Neue)."""
     start = 0
@@ -324,12 +395,14 @@ def change_text(before: str, after: str) -> str:
         end += 1
     removed, added = before[start:len(before) - end], after[start:len(after) - end]
     if removed and not added:
-        return tr("{chars} gelöscht").format(chars=spell_chars(removed))
-    return spell_chars(added)
+        return tr("{chars} gelöscht").format(chars=spell_chars(removed, alphabet))
+    return spell_chars(added, alphabet)
 
 
 def _install_focus(root) -> None:
     root.bind_class("Toplevel", "<Map>", lambda e: _window_shown(e.widget), add="+")
+    for sequence in ("<Unmap>", "<Destroy>"):
+        root.bind_class("Toplevel", sequence, lambda e: _window_closed(e.widget), add="+")
     for cls in ("TEntry", "TSpinbox"):
         root.bind_class(cls, "<FocusIn>", lambda e: _echo_start(e.widget), add="+")
         root.bind_class(cls, "<KeyRelease>", _echo_key, add="+")
@@ -404,6 +477,8 @@ def _value(widget) -> str:
         unit = _unit_after(widget)
         if unit:
             return f"{text} {unit}"
+        if str(widget) in _nato_widgets:
+            return spell_nato(text)
         # Zeichensätze und Rufzeichen buchstabieren, Zahlen und Wörter nicht.
         if cls == "TEntry" and len(text) <= 12 and text.isalnum() and text.upper() == text and not text.isdigit():
             return spell(text)
@@ -524,11 +599,33 @@ def _read_row(event) -> None:
             return
         values = tree.item(tree.selection()[0], "values")
         columns = tree["columns"]
-        parts = [f"{tree.heading(column, 'text')}: {value}"
+        nato_calls = str(tree) in _nato_widgets
+        parts = [f"{tree.heading(column, 'text')}: {_cell_spoken(str(value), nato_calls)}"
                  for column, value in zip(columns, values) if str(value).strip()]
     except tk.TclError:
         return
     _instance.say(". ".join(parts) + ".")
+
+
+def times(count: int) -> str:
+    """„einmal“, „9 mal“ zum Sprechen (nicht „1 mal“)."""
+    return tr("einmal") if count == 1 else tr("{count} mal").format(count=count)
+
+
+def _cell_spoken(value: str, nato_calls: bool = False) -> str:
+    """Eine Tabellenzelle zum Vorlesen: ein einzelnes Zeichen buchstabiert
+    („Fragezeichen“, sonst spräche die Stimme „?“ gar nicht), Verwechslungen
+    „B (9), N (1)“ als „Be gleich 9 mal, Enn gleich einmal“, Rufzeichen
+    (`nato_calls`) im Funkalphabet."""
+    value = value.strip()
+    if len(value) == 1:
+        return spell_chars(value)
+    if _CONFUSIONS.match(value):
+        return ", ".join(tr("{char} gleich {times}").format(char=spell_chars(char), times=times(int(count)))
+                         for char, count in _CONFUSION.findall(value))
+    if nato_calls and _CALLSIGN.match(value):
+        return spell_nato(value)
+    return value
 
 
 def get():
@@ -561,7 +658,7 @@ def render(text: str, deliver) -> None:
 # (oder falsch) liest.
 _SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("±", N_(" plus minus ")),
             ("✓", N_("richtig")), ("✗", N_("falsch")), ("★", N_(" Stern ")), ("☆", ""), ("…", ""),
-            ("%", N_(" Prozent")), ("≥", N_("mindestens")), ("≤", N_("höchstens")), ("–", ","))
+            ("%", N_(" Prozent")), ("≥", N_("mindestens")), ("≤", N_("höchstens")), ("–", ","), ("·", ","))
 # Einheiten, die die Stimme sonst buchstabiert („HaZet“); nur als ganzes Wort.
 _UNITS = ((re.compile(r"\bkHz\b"), N_("Kilohertz")), (re.compile(r"\bHz\b"), N_("Hertz")))
 # Englische Lehnwörter, die die deutsche Stimme deutsch ausspricht
@@ -570,15 +667,28 @@ _UNITS = ((re.compile(r"\bkHz\b"), N_("Kilohertz")), (re.compile(r"\bHz\b"), N_(
 _PRONOUNCE_DE = ((re.compile(r"Fading"), "Fehding"), (re.compile(r"fading"), "fehding"),
                  (re.compile(r"\bpile-?up(s?)\b", re.IGNORECASE), r"Peil-app\1"))
 # Abkürzungen der Contest-Arten (qso_text.QSO_TYPES): buchstabiert mit den
-# Buchstabennamen wie bei Rufzeichen („We, A, Ge“); sonst liest die Stimme
-# „WAG“ oder „ARRL“ als Wort. Ein Bindestrich dahinter („CQ-Zone“) wird
+# Buchstabennamen wie bei Rufzeichen („We, A, Ge“ bzw. „double you, ay,
+# gee“); sonst liest die Stimme „WAG“ oder „ARRL“ als Wort. Ein Bindestrich dahinter („CQ-Zone“) wird
 # zur Pause.
-_ACRONYMS_DE = ("CQ", "WW", "WPX", "WAG", "DOK", "ARRL", "DX", "IARU", "HF", "ITU", "HQ")
+_ACRONYMS_DE = ("CQ", "WW", "WPX", "WAG", "DOK", "ARRL", "DX", "IARU", "HF", "ITU", "HQ", "IP")
 _ACRONYM_PATTERN = re.compile(r"\b(" + "|".join(_ACRONYMS_DE) + r")\b(-(?=\w))?")
 # Klammern und Schrägstrich hinter einem Wort liest die Stimme mit („in
 # Klammern“); gesprochen wird stattdessen eine Pause bzw. „oder“
 # („Staat/Leistung“, „Zone/HQ“; nicht „TU/Log“, das heißt „und“).
 _BRACKETS = re.compile(r"\s*\(([^()]*)\)")
+# Spaltenköpfe: „Zeit (s)“ heißt „Zeit in Sekunden“, „Ø Zeit“ „Durchschnittszeit“.
+_SECONDS_IN_BRACKETS = re.compile(r"\s*\(s\)")
+_AVERAGE = re.compile(r"Ø\s*(\S+)")
+# IP-Adresse (mit Port) Zahl für Zahl mit „Punkt“, sonst liest die Stimme
+# eine große Dezimalzahl; ein „Adresse“ davor geht im „IP-Adresse“ auf.
+_IP_ADDRESS = re.compile(r"(?:\b(?:Adresse|Address)\s+)?\b(\d{1,3}(?:\.\d{1,3}){3})(?::(\d{2,5}))?\b")
+# PIN Ziffer für Ziffer („Vier, Sieben, Eins, Eins“ statt einer Zahl).
+_PIN = re.compile(r"\bPIN:?\s+(\d+)\b")
+# Verwechslungen in der Statistik („B (9), 5 (2)“, stats.format_confusions).
+_CONFUSION = re.compile(r"(\S+) \((\d+)\)")
+_CONFUSIONS = re.compile(r"^\S+ \(\d+\)(, \S+ \(\d+\))*$")
+# Rufzeichen in einer Tabellenzelle (Buchstaben und Ziffern, ggf. mit /).
+_CALLSIGN = re.compile(r"^(?=.*\d)(?=.*[A-Z])[A-Z0-9/]{3,}$")
 _WORD_SLASH = re.compile(r"(?<=[a-zäöüß]{2})/(?=[^\W\d_]{2})")
 # Zeiteinheiten nur direkt hinter einer Zahl (sonst ist „s“ ein Buchstabe);
 # (Muster, Einzahl, Mehrzahl).
@@ -596,15 +706,21 @@ def speakable(text: str) -> str:
     for symbol, word in _SYMBOLS:
         if symbol in text:
             text = text.replace(symbol, tr(word) if word else "")
+    text = _SECONDS_IN_BRACKETS.sub(" " + tr("in Sekunden"), text)
+    text = _AVERAGE.sub(_average, text)
     text = _BRACKETS.sub(r", \1,", text)
+    text = _IP_ADDRESS.sub(lambda m: f"{tr('IP-Adresse')} " + f" {tr('Punkt')} ".join(m.group(1).split("."))
+                           + (f", {tr('Port')} {m.group(2)}" if m.group(2) else ""), text)
+    text = _PIN.sub(lambda m: f"{tr('PIN-Nummer')} {spell_chars(m.group(1))}", text)
     text = _WORD_SLASH.sub(" " + tr("oder") + " ", text)
     for pattern, word in _UNITS:
         text = pattern.sub(tr(word), text)
     if i18n.LANG == "de":
         for pattern, sounds in _PRONOUNCE_DE:
             text = pattern.sub(sounds, text)
-        text = _ACRONYM_PATTERN.sub(lambda m: speech.spoken(m.group(1), lang="de") + (" " if m.group(2) else ""),
-                                    text)
+    # Abkürzungen in beiden Sprachen, mit den Buchstabennamen der Stimme.
+    text = _ACRONYM_PATTERN.sub(lambda m: speech.spoken(m.group(1), lang=i18n.LANG) + (" " if m.group(2) else ""),
+                                text)
     for pattern, one, many in _NUMBER_UNITS:
         text = pattern.sub(lambda m, one=one, many=many: f"{m.group(1)} {tr(one if m.group(1) == '1' else many)}",
                            text)
@@ -612,6 +728,19 @@ def speakable(text: str) -> str:
     text = re.sub(r",(\s*,)+", ",", text)  # Pausen nicht doppelt
     text = re.sub(r",\s*([.!?:])", r"\1", text)
     return re.sub(r" {2,}", " ", text).strip().rstrip(",").strip()
+
+
+def _average(match) -> str:
+    """„Ø Zeit“ → „Durchschnittszeit“, „Ø effektive …“ → „durchschnittliche
+    effektive …“, „Ø WPM“ → „Durchschnitts-WPM“; englisch „average …“."""
+    word = match.group(1)
+    if i18n.LANG != "de":
+        return f"average {word}"
+    if word[:1].islower():
+        return f"durchschnittliche {word}"
+    if word.isupper():
+        return f"Durchschnitts-{word}"
+    return f"Durchschnitts{word[:1].lower()}{word[1:]}"
 
 
 def remaining() -> float:

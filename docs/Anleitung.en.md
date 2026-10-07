@@ -529,7 +529,12 @@ versions (CHANGELOG) and this manual.
   character.
 - **Windows:** when a window opens (band conditions, settings, help …),
   it says its name: “Window Band conditions”. If the window speaks itself
-  (award, daily practice), the name comes first.
+  (award, daily practice), the name comes first. When you close a window,
+  it says where you are (“Back in the main window. Tab Groups.”).
+- **Contest:** callsigns in “My callsign”, the call field and the log are
+  spelled in the phonetic alphabet.
+- **Network (trainer):** when the session opens, address and PIN are
+  announced; F11 repeats them.
 - **Controls:** when you Tab into a field, button or check box, it says
   what it is and how it is set (“Sprache / Language, list, English”, “High contrast,
   check box, off”, “Speed, number field, 20 WPM”); changes with the space

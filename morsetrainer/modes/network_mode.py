@@ -592,6 +592,8 @@ class NetworkModeFrame:
         self.pin_entry.pack(side="left")
         announcer.echo(self.name_entry)
         announcer.echo(self.pin_entry)
+        announcer.name(self.pin_entry, tr("PIN-Nummer"),
+                       value=lambda: announcer.spell_chars(self.pin_var.get().strip()) or tr("leer"))
 
         row = ttk.Frame(box)
         row.pack(fill="x", pady=(4, 1))
@@ -833,6 +835,7 @@ class NetworkModeFrame:
         if port != protocol.DEFAULT_PORT:
             address += f":{port}"
         self.session_info_var.set(tr("Adresse {address} · PIN {pin}").format(address=address, pin=server.pin))
+        announcer.say(tr("Sitzung offen.") + " " + self.session_info_var.get())
         self.open_button.config(text=tr("Sitzung schließen"))
         self.start_button.config(state="normal")
         self.solution_button.config(state="normal")
