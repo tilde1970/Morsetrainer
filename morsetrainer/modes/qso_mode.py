@@ -362,7 +362,7 @@ class QsoModeFrame:
         try:
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
-            self.status_var.set(tr("Ungültige Geschwindigkeit oder Tonhöhe!"))
+            announcer.problem(self.status_var, tr("Ungültige Geschwindigkeit oder Tonhöhe!"))
             return
         self._log_skipped_head()
         self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()),
@@ -558,7 +558,7 @@ class QsoModeFrame:
             return
         if self.audio_error:
             self._finish(stopped=True)
-            self.status_var.set(self.audio_error)
+            announcer.problem(self.status_var, self.audio_error)
             return
         if self.tracking:
             self.typed_preview_var.set("".join(e["char"] for e in self.typed_log)[-60:])

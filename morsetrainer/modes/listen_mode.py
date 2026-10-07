@@ -8,9 +8,9 @@ erkannt und nicht über die Finger übersetzt, und man kann dabei spazieren
 gehen oder Auto fahren.
 
 Inhalte: Zeichen, Gruppen, Wörter, Wendungen und Rufzeichen, jeweils nur
-aus dem eingestellten Zeichensatz. Die Ansage buchstabiert (deutsche
-Buchstabennamen oder Buchstabieralphabet) und nennt bei Wörtern und
-Wendungen auf Wunsch die Bedeutung.
+aus dem eingestellten Zeichensatz. Die Ansage buchstabiert im
+Buchstabieralphabet (Alfa, Bravo …) und nennt bei Wörtern und Wendungen
+auf Wunsch die Bedeutung.
 
 Derselbe Ablauf lässt sich als MP3 speichern (core/mp3.py), zum Hören
 unterwegs. Weil es keine Eingabe gibt, zählt Hören & Sagen nicht für
@@ -36,7 +36,9 @@ from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
 
 CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Wörter"): "words", N_("Wendungen"): "phrases",
             N_("Rufzeichen"): "calls"}
-ALPHABET_LABELS = {N_("Buchstaben (A, Be, Ce)"): "de", N_("Buchstabieralphabet (Alfa, Bravo)"): "nato"}
+# Buchstabiert wird immer im Buchstabieralphabet: Es ist eindeutig (B und D,
+# M und N klingen als Buchstabennamen ähnlich) und wie im Funkbetrieb.
+ALPHABET = "nato"
 DEFAULT_COUNT = 50
 COUNT_RANGE = (5, 500)
 # Knapp: Wer länger hat, zählt Punkte und Striche, statt das Klangbild zu erkennen.
@@ -119,12 +121,6 @@ class ListenModeFrame:
 
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
-        ttk.Label(row, text=tr("Ansage:")).pack(side="left", padx=(0, 4))
-        self.alphabet_var = tk.StringVar(value=next(iter(ALPHABET_LABELS)))
-        ChoiceBox(row, self.alphabet_var, ALPHABET_LABELS, width=32).pack(side="left")
-
-        row = ttk.Frame(options)
-        row.pack(fill="x", pady=1)
         self.whole_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(row, text=tr("Wörter und Wendungen als Ganzes ansagen"), variable=self.whole_var).pack(
             side="left")
@@ -156,11 +152,10 @@ class ListenModeFrame:
 
     # --- Einstellungen --------------------------------------------------
     def settings(self) -> dict:
-        """Einstellungen zum Speichern: Inhalt, Alphabet, Bedeutung ansagen,
+        """Einstellungen zum Speichern: Inhalt, Bedeutung ansagen,
         nochmal spielen, als Ganzes ansagen, Anzahl, Pause, Gruppenlänge."""
         data = {
             "content": CONTENTS.get(self.content_var.get()),
-            "alphabet": ALPHABET_LABELS.get(self.alphabet_var.get()),
             "meaning": self.meaning_var.get(),
             "replay": self.replay_var.get(),
             "whole": self.whole_var.get(),
@@ -177,9 +172,6 @@ class ListenModeFrame:
         for label, key in CONTENTS.items():
             if data.get("content") == key:
                 self.content_var.set(label)
-        for label, key in ALPHABET_LABELS.items():
-            if data.get("alphabet") == key:
-                self.alphabet_var.set(label)
         for key, var in (("meaning", self.meaning_var), ("replay", self.replay_var), ("whole", self.whole_var)):
             if isinstance(data.get(key), bool):
                 var.set(data[key])
@@ -198,21 +190,21 @@ class ListenModeFrame:
             group_len = min(max(self.group_len_var.get(), GROUP_LEN_RANGE[0]), GROUP_LEN_RANGE[1])
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except (tk.TclError, ValueError):
-            self.status_var.set(tr("Ungültige Anzahl, Pause, Geschwindigkeit oder Tonhöhe!"))
+            announcer.problem(self.status_var, tr("Ungültige Anzahl, Pause, Geschwindigkeit oder Tonhöhe!"))
             return None
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         source = ItemSource(CONTENTS.get(self.content_var.get(), "chars"), charset, group_len,
                             self.weighted_var.get())
         problem = source.problem()
         if problem:
-            self.status_var.set(problem)
+            announcer.problem(self.status_var, problem)
             return None
         reason = speech.speaker.available()
         if reason:
             self.status_var.set(reason)
             return None
         return {"count": count, "pause": pause, "wpm": wpm, "freq": freq, "fw": self.farnsworth_wpm(),
-                "source": source, "alphabet": ALPHABET_LABELS.get(self.alphabet_var.get(), "de"),
+                "source": source, "alphabet": ALPHABET,
                 "meaning": self.meaning_var.get(), "replay": self.replay_var.get(),
                 "whole": self.whole_var.get(), "kind": source.kind,
                 "vary": self.vary_var is not None and self.vary_var.get()}
@@ -344,7 +336,7 @@ class ListenModeFrame:
             audio.play(samples)
         except audio.AudioError as exc:
             self.stop()
-            self.status_var.set(str(exc))
+            announcer.problem(self.status_var, str(exc))
             return False
         return True
 
@@ -377,7 +369,7 @@ class ListenModeFrame:
             return
         reason = mp3.available()
         if reason:
-            self.status_var.set(reason)
+            announcer.problem(self.status_var, reason)
             return
         opts = self._options()
         if opts is None:

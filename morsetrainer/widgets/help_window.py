@@ -24,7 +24,54 @@ from morsetrainer.widgets import announcer, theme
 DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "docs/Anleitung.md"))
 
 _IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>")
+# Andere Wörter für dasselbe, wie man sie sucht, aber wie es in der
+# Anleitung nicht steht (klein geschrieben).
+SEARCH_SYNONYMS = {
+    "tastaturkürzel": ("tastenkürzel", "kürzel"), "tastenkombination": ("tastenkürzel",),
+    "shortcut": ("tastenkürzel", "kürzel", "shortcuts"), "hotkey": ("tastenkürzel", "shortcuts"),
+    "tastatur": ("taste", "ohne maus"), "maus": ("ohne maus",), "screenreader": ("sprachansage",),
+    "vorlesen": ("sprachansage", "ansage"), "blind": ("sprachansage", "barriere"),
+    "lautstärke": ("leiser", "lauter"), "geschwindigkeit": ("tempo", "wpm"), "tempo": ("wpm",),
+    "keyboard shortcut": ("shortcuts",), "keyboard": ("shortcuts", "without a mouse"),
+    "speed": ("wpm",), "screen reader": ("announcement",), "volume": ("quieter", "louder"),
+}
+# Kürzester Wortteil, mit dem notfalls gesucht wird (zusammengesetzte Wörter).
+SEARCH_MIN_PART = 5
 _INLINE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`|\*(.+?)\*|\[([^\]]+)\]\([^)]*\)")
+
+
+def _loose(word: str) -> str:
+    """Regulärer Ausdruck für `word`, bei dem Umlaut-Schreibweise (ü/ue,
+    ß/ss), Groß-/Kleinschreibung und Bindestrich oder Leerzeichen zwischen
+    Wortteilen nicht zählen."""
+    word = word.lower().replace("ae", "ä").replace("oe", "ö").replace("ue", "ü").replace("ss", "ß")
+    variants = {"ä": "(?:ä|ae)", "ö": "(?:ö|oe)", "ü": "(?:ü|ue)", "ß": "(?:ß|ss)"}
+    parts = []
+    for ch in word:
+        if ch in "- ":
+            parts.append(r"[-\s]*")
+        else:
+            parts.append(variants.get(ch, re.escape(ch)))
+    return "".join(parts)
+
+
+def search_patterns(needle: str):
+    """Suchmuster für die Hilfe, vom genauen zum ungefähren, je (regulärer
+    Ausdruck, gezeigtes Ersatzwort oder None, Wortteil ja/nein): wörtlich
+    (Umlaute und Bindestriche egal), andere Wörter für dasselbe
+    (SEARCH_SYNONYMS), dann Teile zusammengesetzter Wörter
+    („Tastaturkürzel“ → „kürzel“, vom längsten Teil an)."""
+    needle = needle.strip()
+    yield re.escape(needle), None, False
+    yield _loose(needle), None, False
+    key = needle.lower()
+    for synonym in SEARCH_SYNONYMS.get(key, ()):
+        yield _loose(synonym), synonym, False
+    words = [word for word in re.split(r"[\s-]+", key) if len(word) > SEARCH_MIN_PART]
+    for word in words:
+        for length in range(len(word) - 1, SEARCH_MIN_PART - 1, -1):
+            yield _loose(word[-length:]), word[-length:], True  # Ende: „…kürzel“
+            yield _loose(word[:length]), word[:length], True  # Anfang: „Tastatur…“
 
 
 def doc_path(name: str, lang: str = None) -> Path:
@@ -191,8 +238,9 @@ class HelpWindow:
         self.search_entry.bind("<KP_Enter>", lambda e: self.find(1) or "break")
         self.search_entry.bind("<Shift-Return>", lambda e: self.find(-1) or "break")
         self.search_var.trace_add("write", lambda *_: self._new_search())
-        self.matches = []  # Anfangspositionen der Treffer im gezeigten Text
+        self.matches = []  # (Anfang, Länge) der Treffer im gezeigten Text
         self.match_index = -1
+        self.search_note = ""  # „… nicht gefunden, dafür …“ bei ungefähren Treffern
         notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
         notebook.bind("<<NotebookTabChanged>>", lambda e: self._new_search(), add="+")
@@ -243,35 +291,71 @@ class HelpWindow:
             text.tag_remove("match_current", "1.0", "end")
         self.matches, self.match_index = [], -1
         needle = self.search_var.get().strip()
+        self.search_note = ""
         if not needle:
             self.search_info_var.set(tr("Strg+F, Enter: nächster Treffer"))
             return
         text = self._current_text()
-        start = "1.0"
-        while True:
-            pos = text.search(needle, start, stopindex="end", nocase=True)
-            if not pos:
+        exact_elsewhere = None
+        for pattern, shown, part in search_patterns(needle):
+            if part:
+                if exact_elsewhere is None:
+                    exact_elsewhere = self._found_elsewhere(needle, exact=True)
+                if exact_elsewhere:
+                    break  # genau im anderen Reiter geht vor einem Wortteil in diesem
+            self.matches = self._matches(text, pattern)
+            if self.matches:
+                if shown is not None:
+                    self.search_note = tr("„{needle}“ nicht gefunden, dafür „{shown}“: ").format(
+                        needle=needle, shown=shown)
                 break
-            end = f"{pos}+{len(needle)}c"
-            text.tag_add("match", pos, end)
-            self.matches.append(pos)
-            start = end
+        for pos, length in self.matches:
+            text.tag_add("match", pos, f"{pos}+{length}c")
         self.find(1)
+
+    @staticmethod
+    def _matches(text: tk.Text, pattern: str) -> list:
+        """Alle Treffer des regulären Ausdrucks `pattern` als (Anfang, Länge)."""
+        found, start, count = [], "1.0", tk.IntVar(text)
+        while True:
+            pos = text.search(pattern, start, stopindex="end", nocase=True, regexp=True, count=count)
+            if not pos or count.get() == 0:
+                return found
+            found.append((pos, count.get()))
+            start = f"{pos}+{count.get()}c"
 
     def find(self, direction: int) -> None:
         """Zum nächsten (1) oder vorigen (−1) Treffer springen."""
         if not self.matches:
-            if self.search_var.get().strip():
-                self._say_result(tr("nicht gefunden"))
+            needle = self.search_var.get().strip()
+            if needle:
+                elsewhere = self._found_elsewhere(needle)
+                self._say_result(tr("nicht gefunden") + (" – " + elsewhere if elsewhere else ""))
             return
         text = self._current_text()
-        needle = len(self.search_var.get().strip())
         text.tag_remove("match_current", "1.0", "end")
         self.match_index = (self.match_index + direction) % len(self.matches)
-        pos = self.matches[self.match_index]
-        text.tag_add("match_current", pos, f"{pos}+{needle}c")
+        pos, length = self.matches[self.match_index]
+        text.tag_add("match_current", pos, f"{pos}+{length}c")
         text.see(pos)
-        self._say_result(tr("Treffer {n} von {total}").format(n=self.match_index + 1, total=len(self.matches)))
+        self._say_result(self.search_note + tr("Treffer {n} von {total}").format(
+            n=self.match_index + 1, total=len(self.matches)))
+
+    def _found_elsewhere(self, needle: str, exact=False) -> str:
+        """„im Reiter Änderungen: 3 Treffer“, wenn der andere Reiter etwas hat
+        (mit `exact` nur wörtlich, Umlaute und Bindestriche egal)."""
+        current = self._current_text()
+        for title, name in DOCS:
+            text = self.texts[name]
+            if text is current:
+                continue
+            for pattern, shown, part in search_patterns(needle):
+                if exact and shown is not None:
+                    break
+                hits = len(self._matches(text, pattern))
+                if hits:
+                    return tr("im Reiter {title}: {n} Treffer").format(title=tr(title), n=hits)
+        return ""
 
     def _say_result(self, message: str) -> None:
         self.search_info_var.set(message)

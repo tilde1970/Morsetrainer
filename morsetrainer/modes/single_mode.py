@@ -234,6 +234,12 @@ class SingleModeFrame(DailyModeMixin):
             self.limit = min(max(float(limit), ICR_RANGE[0]), ICR_RANGE[1])
         self._show_limit()
 
+    def on_function_key(self, key: str):
+        """F5 startet bzw. beendet den Durchgang, wie der Knopf (nicht, wenn
+        er gerade gesperrt ist, etwa in der Tagesübung)."""
+        if key == "F5" and not self.start_button.instate(["disabled"]):
+            self.toggle_running()
+
     def toggle_running(self):
         """Durchgang starten bzw. beenden (Start/Stop-Knopf)."""
         if self.running:
@@ -363,7 +369,7 @@ class SingleModeFrame(DailyModeMixin):
             audio.play(samples)
         except audio.AudioError as exc:
             self.stop()
-            self.status_var.set(str(exc))
+            announcer.problem(self.status_var, str(exc))
             return
         dur_ms = int(len(samples) / SAMPLE_RATE * 1000) + int(AUDIO_LATENCY * 1000)
         self.root.after(dur_ms + AFTER_CORRECTION_MS, self._after_correction, token)
@@ -405,7 +411,7 @@ class SingleModeFrame(DailyModeMixin):
             audio.play(samples)
         except audio.AudioError as exc:
             self.stop()
-            self.status_var.set(str(exc))
+            announcer.problem(self.status_var, str(exc))
             return
         # Die Eingabe öffnet mit dem hörbaren Ende des letzten Elements: die
         # Reflexantwort, um die es beim Zeitlimit geht, darf nicht verfallen.

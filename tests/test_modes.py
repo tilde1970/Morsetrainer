@@ -594,6 +594,18 @@ class ContinuousStopTest(AppTestCase):
             stop.assert_called_once()
 
 
+    def test_f5_starts_and_stops_in_one_by_one(self):
+        for title in ("Einzelzeichen", "Gruppen", "Wörter", "Rufzeichen"):
+            m = self.mode(title)
+            with mock.patch.object(m, "toggle_running") as toggle:
+                m.on_function_key("F5")
+                toggle.assert_called_once()
+                m.start_button.state(["disabled"])  # etwa in der Tagesübung
+                m.on_function_key("F5")
+                toggle.assert_called_once()
+                m.start_button.state(["!disabled"])
+
+
 class ContinuousGroupingTest(AppTestCase):
     def test_word_gap_after_each_group(self):
         import contextlib
@@ -1063,7 +1075,7 @@ class HelpWindowTest(AppTestCase):
         changelog = window.texts["CHANGELOG.md"].get("1.0", "end")
         readme = window.texts["docs/Anleitung.md"].get("1.0", "end")
         self.assertIn(app_module.__version__, changelog)  # aktuelle Version steht drin
-        self.assertIn("Trainingsmodi", readme)
+        self.assertIn("Die Reiter", readme)
         self.assertNotIn("**", readme)
         self.assertNotIn("<img", readme)
         help_window.HelpWindow.show(self.root)  # zweiter Aufruf: dasselbe Fenster
@@ -1094,6 +1106,20 @@ class HelpWindowTest(AppTestCase):
             window.search_var.set("gibtesnichtxyz")
             self.assertEqual(window.search_info_var.get(), "nicht gefunden")
             self.assertEqual(text.tag_ranges("match"), ())
+            # Anderes Wort für dasselbe: „Hotkey“ findet „Tastenkürzel“.
+            window.search_var.set("Hotkey")
+            self.assertTrue(window.matches)
+            self.assertTrue(window.search_info_var.get().startswith("„Hotkey“ nicht gefunden, dafür"))
+            first = text.index("match_current.first")
+            self.assertIn("kürzel", text.get(first, "match_current.last").lower())
+            # Umlaut-Schreibweise und Bindestrich egal.
+            window.search_var.set("Tastenkuerzel")
+            self.assertEqual(text.get("match_current.first", "match_current.last"), "Tastenkürzel")
+            window.search_var.set("Koch Lektion")
+            self.assertGreater(len(window.matches), 1)
+            # Nur im anderen Reiter: sagt, wo.
+            window.search_var.set("Intern:")
+            self.assertRegex(window.search_info_var.get(), r"^nicht gefunden – im Reiter Änderungen: \d+ Treffer$")
             # Esc im Suchfeld mit Text leert die Suche, das Fenster bleibt.
             window._escape(type("E", (), {"widget": window.search_entry})())
             self.assertEqual(window.search_var.get(), "")

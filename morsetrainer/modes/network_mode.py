@@ -821,7 +821,7 @@ class NetworkModeFrame:
         except tk.TclError:
             port = -1
         if not 1024 <= port <= 65535:
-            self.trainer_status_var.set(tr("Ungültiger Port (1024–65535)."))
+            announcer.problem(self.trainer_status_var, tr("Ungültiger Port (1024–65535)."))
             return
         name = protocol.clean_name(self.session_var.get()) or tr("Morsekurs")
         server = TrainerServer(name, make_pin(), self.version)
@@ -933,13 +933,13 @@ class NetworkModeFrame:
             self.wpm_var.get()
             duration = self.duration_var.get()
         except tk.TclError:
-            self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
+            announcer.problem(self.trainer_status_var, tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         if not (COUNT_RANGE[0] <= count <= COUNT_RANGE[1] and ANSWER_RANGE[0] <= self.answer_s <= ANSWER_RANGE[1]
                 and GROUP_LEN_RANGE[0] <= group_len <= GROUP_LEN_RANGE[1]
                 and PAUSE_RANGE[0] <= pause_s <= PAUSE_RANGE[1]
                 and net_stream.DURATION_RANGE[0] <= duration <= net_stream.DURATION_RANGE[1]):
-            self.trainer_status_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
+            announcer.problem(self.trainer_status_var, tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         charset = normalize(self.charset_var.get())
         continuous = self.flow_var.get() == CONTINUOUS
@@ -959,7 +959,7 @@ class NetworkModeFrame:
             self.source = ItemSource(kind, charset, group_len)
             problem = self.source.problem()
             if problem:
-                self.trainer_status_var.set(problem)
+                announcer.problem(self.trainer_status_var, problem)
                 return
             self.custom_items = []
             self.planned = count
@@ -1074,7 +1074,7 @@ class NetworkModeFrame:
         if self.stream_player is not None:
             self.stream_player.stop()
             if self.stream_player.error:
-                self.trainer_status_var.set(self.stream_player.error)
+                announcer.problem(self.trainer_status_var, self.stream_player.error)
             self.stream_player = None
         if self.stream_timing is not None and self.board is not None:
             entries, start = self.stream_timing
@@ -1105,7 +1105,7 @@ class NetworkModeFrame:
         except audio.AudioError as exc:
             if not solution and not self.run_speaker:
                 self.listen_var.set(False)
-            self.trainer_status_var.set(str(exc))
+            announcer.problem(self.trainer_status_var, str(exc))
 
     def close_item(self):
         """Trainer: schließt die laufende Sequenz. Die Teilnehmer bekommen die
@@ -1605,7 +1605,7 @@ class NetworkModeFrame:
             count, group_len = self.count_var.get(), self.group_len_var.get()
             wpm = self.wpm_var.get()
         except tk.TclError:
-            self.sheet_var.set(tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
+            announcer.problem(self.sheet_var, tr("Ungültige Anzahl, Antwortzeit, Schreibpause oder Gruppenlänge!"))
             return
         if kind == "custom":
             count = sum(1 for line in self.custom_text.get("1.0", "end").splitlines() if normalize(line))
@@ -2000,7 +2000,7 @@ class NetworkModeFrame:
                 share=hits / sent))
             self.feedback_label.config(foreground=theme.TEXT)
         if player is not None and player.error:
-            self.trainee_status_var.set(player.error)
+            announcer.problem(self.trainee_status_var, player.error)
         else:
             self.trainee_status_var.set(tr("Warte auf den Trainer…"))
         if self.session_stats is not None:
@@ -2104,7 +2104,7 @@ class NetworkModeFrame:
             try:
                 audio.play(samples)
             except audio.AudioError as exc:
-                self.trainee_status_var.set(str(exc))
+                announcer.problem(self.trainee_status_var, str(exc))
         if solution:
             return
         self.play_start = start

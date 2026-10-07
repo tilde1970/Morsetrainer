@@ -217,7 +217,8 @@ class AnnouncerTest(AppTestCase):
                     return found
             return None
         give_up = spinbox_for(self.mode("Wörter").give_up_var)
-        self.assertTrue(announcer.describe(give_up).endswith("Fehlversuchen."))
+        self.mode("Wörter").give_up_var.set(1)
+        self.assertTrue(announcer.describe(give_up).endswith("einem Fehlversuch."))  # nicht „eins Fehlversuchen“
         self.mode("Wörter").give_up_var.set(4)
         self.assertEqual(announcer._value(give_up), "4 Fehlversuchen")  # auch beim Hoch-/Runterzählen
         boxes = []
@@ -671,6 +672,56 @@ class KeyboardTest(AppTestCase):
             button.state(["!disabled"])
         self.app._unlock_tabs()
 
+    def test_start_problem_is_announced(self):
+        # Wendungen mit Lektion 1: zu wenige Zeichen, der Hinweis wird auch gesprochen.
+        from morsetrainer.widgets import announcer
+        from morsetrainer.core import koch
+        m = self.mode("Kontinuierlich")
+        self.app.charset_var.set(koch.lesson_charset(1))
+        m.content_var.set("Wendungen")
+        with mock.patch.object(announcer, "say") as say:
+            m.start()
+        self.assertFalse(m.running)
+        self.assertTrue(m.status_var.get())
+        say.assert_called_with(m.status_var.get())
+
+    def test_one_before_a_unit_is_spoken_as_a_word(self):
+        from morsetrainer.widgets import announcer
+        m = self.mode("Kontinuierlich")
+        spinboxes = []
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                if child.winfo_class() == "TSpinbox":
+                    spinboxes.append(child)
+                walk(child)
+        walk(m.options_card)
+        units = {announcer._unit_after(box): box for box in spinboxes}
+        m.duration_var.set(1)
+        self.assertEqual(announcer.speakable(announcer.describe(units["Min."])), "Dauer, Zahlenfeld, eine Minute.")
+        m.group_len_var.set(1)
+        self.assertIn("ein Zeichen", announcer.describe(units["Zeichen"]))
+        m.group_len_var.set(5)
+        self.assertIn("5 Zeichen", announcer.describe(units["Zeichen"]))
+
+    def test_content_of_non_stop_as_option_buttons(self):
+        from morsetrainer.widgets import announcer
+        m = self.mode("Kontinuierlich")
+        row = m.content_buttons
+        self.assertEqual(len(row.buttons), 5)
+        self.assertNotEqual(row.master.master, m.options_card)  # oben im Reiter, nicht in den Einstellungen
+        m.content_var.set("Wörter")
+        self.assertIn("Inhalt Wörter", announcer.describe(row.buttons[1]))
+        self.assertTrue(row.buttons[1].bind("<Right>"))
+        with mock.patch.object(announcer, "say") as say:
+            row.step(1)
+        self.assertEqual(m.content_var.get(), "Wendungen")
+        self.assertEqual(say.call_args.args[0], "Inhalt Wendungen.")
+        row.state(["disabled"])
+        row.step(1)
+        self.assertEqual(m.content_var.get(), "Wendungen")  # gesperrt
+        row.state(["!disabled"])
+
     def test_alt_zero_goes_to_statistics_and_missing_tabs_are_announced(self):
         from morsetrainer.widgets import announcer
         self.app.select_tab(-1)  # Alt+0
@@ -968,7 +1019,9 @@ class EveningSummaryAnnounceTest(AnnouncerTest):
         self.assertEqual(announcer.speakable("Filter 2,4 kHz, 500 Hz"), "Filter 2,4 Kilohertz, 500 Hertz")
         self.assertEqual(announcer.speakable("Hzx HzHz"), "Hzx HzHz")  # nur ganze Wörter
         self.assertEqual(announcer.speakable("▶ Tagesübung (10 Min)"), "▶ Tagesübung, 10 Minuten")
-        self.assertEqual(announcer.speakable("Noch 1 Min"), "Noch 1 Minute")
+        self.assertEqual(announcer.speakable("Noch 1 Min"), "Noch eine Minute")  # nicht „eins Minute“
+        self.assertEqual(announcer.speakable("Dauer, 1 Min."), "Dauer, eine Minute")
+        self.assertEqual(announcer.speakable("Pause 1 s"), "Pause eine Sekunde")
         self.assertEqual(announcer.speakable("Tage mit ≥ 10 Min. Übung"), "Tage mit mindestens 10 Minuten Übung")
         self.assertEqual(announcer.speakable("K kommt schneller: 0,8 s → 0,6 s"),
                          "K kommt schneller: 0,8 Sekunden auf 0,6 Sekunden")

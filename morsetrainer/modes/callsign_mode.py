@@ -260,7 +260,7 @@ class CallsignModeFrame(SequenceModeFrame):
             audio.play(samples)
         except audio.AudioError as exc:
             self.review_token += 1
-            self.status_var.set(str(exc))
+            announcer.problem(self.status_var, str(exc))
             return 0
         return int(len(samples) / SAMPLE_RATE * 1000)
 
@@ -307,8 +307,12 @@ class CallsignModeFrame(SequenceModeFrame):
     def on_function_key(self, key: str):
         # Wie im QSO-Reiter: F6 = nochmal (das aktuelle, erst hören, dann
         # Lösung); ohne laufendes Nachhören fängt es an. F7 = von vorn.
-        """Nach einem Rufz-Durchgang: F6 spielt das aktuelle verpasste Rufzeichen
-        noch einmal, F7 beginnt das Nachhören von vorn."""
+        """F5 startet bzw. beendet; nach einem Rufz-Durchgang spielt F6 das
+        aktuelle verpasste Rufzeichen noch einmal, F7 beginnt das Nachhören
+        von vorn."""
+        if key == "F5":
+            super().on_function_key(key)
+            return
         if self.running or not self.rufz_missed or not self.review_button.winfo_viewable():
             return
         if key == "F6":

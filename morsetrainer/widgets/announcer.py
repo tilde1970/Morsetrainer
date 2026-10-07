@@ -501,6 +501,11 @@ def _value(widget) -> str:
             return tr("leer")
         unit = _unit_after(widget)
         if unit:
+            if text == "1":
+                # „1 Fehlversuchen“ läse die Stimme „eins Fehlversuchen“.
+                for plural, singular in _ONE_UNITS:
+                    if unit == tr(plural, context="Einheit" if plural == "Zeichen" else ""):
+                        return tr(singular)
             return f"{text} {unit}"
         if str(widget) in _nato_widgets:
             return spell_nato(text)
@@ -561,6 +566,11 @@ def _nearby(widget, depth: int = 0) -> str:
 
 # Längere Texte hinter einem Zahlenfeld sind Erklärungen, keine Einheit.
 UNIT_MAX_CHARS = 25
+
+
+# Einheiten hinter Zahlenfeldern, die bei 1 eine eigene Form brauchen
+# (Minuten und Sekunden erledigt speakable).
+_ONE_UNITS = ((N_("Fehlversuchen"), N_("einem Fehlversuch")), (N_("Zeichen"), N_("ein Zeichen")))
 
 
 def _unit_after(widget) -> str:
@@ -674,6 +684,14 @@ def say(text: str, then=None) -> None:
     _instance.say(text, then)
 
 
+def problem(variable, text: str) -> None:
+    """Fehler in die Statuszeile `variable` schreiben und ansagen: Wer nicht
+    hinsieht, merkt sonst nur, dass nichts passiert (ungültige Eingabe, zu
+    wenige Zeichen für den Inhalt, keine Tonausgabe)."""
+    variable.set(text)
+    say(text)
+
+
 def render(text: str, deliver) -> None:
     """Sprache erzeugen und `deliver(samples)` übergeben, falls die Ansage an
     ist (für Reiter mit eigenem Tonstrom)."""
@@ -719,9 +737,11 @@ _CALLSIGN = re.compile(r"^(?=.*\d)(?=.*[A-Z])[A-Z0-9/]{3,}$")
 _WORD_SLASH = re.compile(r"(?<=[a-zäöüß]{2})/(?=[^\W\d_]{2})")
 # Zeiteinheiten nur direkt hinter einer Zahl (sonst ist „s“ ein Buchstabe);
 # (Muster, Einzahl, Mehrzahl).
+# Bei 1 das Zahlwort samt Einheit („eine Minute“): Die Stimme läse die
+# einzelne Ziffer sonst als „eins“.
 _NUMBER_UNITS = (
-    (re.compile(r"(\d+(?:[.,]\d+)?)\s*[Mm]in\.?(?!\w)"), N_("Minute"), N_("Minuten")),
-    (re.compile(r"(\d+(?:[.,]\d+)?)\s+s(?!\w)"), N_("Sekunde"), N_("Sekunden")),
+    (re.compile(r"(\d+(?:[.,]\d+)?)\s*[Mm]in\.?(?!\w)"), N_("eine Minute"), N_("Minuten")),
+    (re.compile(r"(\d+(?:[.,]\d+)?)\s+s(?!\w)"), N_("eine Sekunde"), N_("Sekunden")),
 )
 
 
@@ -749,7 +769,7 @@ def speakable(text: str) -> str:
     text = _ACRONYM_PATTERN.sub(lambda m: speech.spoken(m.group(1), lang=i18n.LANG) + (" " if m.group(2) else ""),
                                 text)
     for pattern, one, many in _NUMBER_UNITS:
-        text = pattern.sub(lambda m, one=one, many=many: f"{m.group(1)} {tr(one if m.group(1) == '1' else many)}",
+        text = pattern.sub(lambda m, one=one, many=many: tr(one) if m.group(1) == "1" else f"{m.group(1)} {tr(many)}",
                            text)
     text = re.sub(r" +([,.])", r"\1", text)
     text = re.sub(r",(\s*,)+", ",", text)  # Pausen nicht doppelt

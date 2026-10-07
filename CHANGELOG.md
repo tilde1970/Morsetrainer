@@ -1,5 +1,28 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Am Stück:** Den Inhalt (Zufallszeichen, Wörter, Wendungen, Rufzeichen,
+  QSO-Klartext) wählen Optionsfelder statt einer Klappliste, wie im Reiter
+  Einzeln, oben im Reiter; alle Möglichkeiten auf einen Blick, Pfeiltasten
+  wechseln, die Ansage nennt „Inhalt …“. Während des Durchgangs gesperrt.
+- **Sprachansage:** Bei 1 heißt es „eine Minute“, „eine Sekunde“, „nach
+  einem Fehlversuch“ und „ein Zeichen“ statt „eins Minute“ usw. Hinweise,
+  warum ein Durchgang nicht startet (etwa zu wenige Zeichen für Wendungen
+  in Lektion 1, ungültige Eingabe) oder abbricht (keine Tonausgabe), werden
+  jetzt auch gesprochen statt nur angezeigt.
+- **Hilfe durchsuchen:** findet auch, was anders geschrieben ist:
+  Umlaute und Bindestriche egal („Tastenkuerzel“, „Koch Lektion“), andere
+  Wörter für dasselbe („Tastaturkürzel“ findet „Tastenkürzel“) und Teile
+  zusammengesetzter Wörter; das wird dazugesagt. Steht es nur im anderen
+  Reiter (Anleitung oder Änderungen), sagt die Suche, wie oft dort.
+- **Sprechen:** buchstabiert immer im Buchstabieralphabet (Alfa, Bravo …);
+  die Auswahl „Buchstaben (A, Be, Ce)“ entfällt.
+- **Anleitung** neu gegliedert: Erste Schritte, je Reiter ein Abschnitt,
+  Tastenkürzel als Tabelle, nummerierte Kapitel mit Inhaltsverzeichnis.
+- **Einzeln:** F5 startet und stoppt jetzt auch bei Zeichen, Gruppen,
+  Wörtern und Rufzeichen, wie in den anderen Reitern.
+
 ## 2.40
 
 - **Neue Reiter:** Zeichen, Gruppen, Wörter und Rufzeichen stehen

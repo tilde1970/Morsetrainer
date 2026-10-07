@@ -316,14 +316,22 @@ class ListenModeTest(AppTestCase):
     def test_settings_roundtrip(self):
         m = self.listen
         m.content_var.set("Wendungen")
-        m.alphabet_var.set("Buchstabieralphabet (Alfa, Bravo)")
         m.pause_var.set(3.5)
         data = m.settings()
         m.content_var.set("Zeichen")
         m.restore_settings(data)
         self.assertEqual(m.content_var.get(), "Wendungen")
-        self.assertEqual(data["alphabet"], "nato")
         self.assertEqual(m.pause_var.get(), 3.5)
+
+    def test_always_spelled_in_the_phonetic_alphabet(self):
+        m = self.listen
+        m.content_var.set("Rufzeichen")
+        with mock.patch.object(speech.speaker, "available", lambda: None):
+            opts = m._options()
+        self.assertEqual(opts["alphabet"], "nato")
+        self.assertFalse(hasattr(m, "alphabet_var"))  # keine Auswahl mehr
+        opts["kind"] = "calls"
+        self.assertTrue(m.announcement("DL1A", "", opts).startswith("Delta"))
 
 
 class ContinuousContentTest(AppTestCase):

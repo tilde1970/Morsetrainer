@@ -436,7 +436,7 @@ class RunModeFrame:
             activity, minutes = self.activity_var.get(), self.duration_var.get()
             wpm_spread, freq_spread = self.wpm_spread_var.get(), self.freq_spread_var.get()
         except tk.TclError:
-            self.status_var.set(tr("Ungültige Einstellung (WPM, Tonhöhe, Aktivität, Dauer oder Anrufer)."))
+            announcer.problem(self.status_var, tr("Ungültige Einstellung (WPM, Tonhöhe, Aktivität, Dauer oder Anrufer)."))
             return
         self.wpm_spread = min(max(wpm_spread, CALLER_WPM_SPREAD_RANGE[0]), CALLER_WPM_SPREAD_RANGE[1])
         self.freq_spread = min(max(freq_spread, CALLER_FREQ_SPREAD_RANGE[0]), CALLER_FREQ_SPREAD_RANGE[1])
@@ -515,7 +515,7 @@ class RunModeFrame:
         if self.mixer.error:
             error = self.mixer.error
             self.stop()
-            self.status_var.set(f"{error} – {self.status_var.get()}")
+            announcer.problem(self.status_var, f"{error} – {self.status_var.get()}")
             return
         now = self.mixer.clock
         due = [e for e in self.events if e[0] <= now]

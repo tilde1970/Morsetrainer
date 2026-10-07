@@ -1,10 +1,10 @@
-"""Wiederverwendbare Tk-Bausteine: scrollbarer Bereich und übersetzte
-Klappliste."""
+"""Wiederverwendbare Tk-Bausteine: scrollbarer Bereich, übersetzte
+Klappliste und Optionsfelder in einer Reihe."""
 import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.i18n import tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 
 class ChoiceBox(ttk.Combobox):
@@ -38,6 +38,46 @@ class ChoiceBox(ttk.Combobox):
         shown = self._shown.get()
         if shown in labels and self.variable.get() != self.keys[labels.index(shown)]:
             self.variable.set(self.keys[labels.index(shown)])
+
+
+class ChoiceButtons(ttk.Frame):
+    """Optionsfelder nebeneinander für deutsche Werte (wie ChoiceBox, aber
+    alle Möglichkeiten auf einen Blick): `variable` hält den deutschen Wert,
+    angezeigt wird die Übersetzung. Pfeiltasten wählen den Nachbarn, die
+    Ansage nennt `role` mit („Inhalt Wörter“)."""
+
+    def __init__(self, parent, variable, values, role: str, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.variable = variable
+        self.keys = list(values)
+        self.buttons = []
+        self.role = role
+        for key in self.keys:
+            button = ttk.Radiobutton(self, text=tr(key), value=key, variable=variable)
+            button.pack(side="left", padx=(0, 10))
+            announcer.name(button, f"{role} {tr(key)}")
+            for arrow, step in (("Left", -1), ("Up", -1), ("Right", 1), ("Down", 1)):
+                button.bind(f"<{arrow}>", lambda e, d=step: self.step(d) or "break")
+            self.buttons.append(button)
+
+    def step(self, step: int) -> None:
+        """Den nächsten (1) bzw. vorigen (−1) Wert wählen, Fokus mitnehmen
+        und ansagen; nicht, solange die Felder gesperrt sind."""
+        if not self.buttons or self.buttons[0].instate(["disabled"]):
+            return
+        current = self.variable.get()
+        index = (self.keys.index(current) + step) % len(self.keys) if current in self.keys else 0
+        self.variable.set(self.keys[index])
+        self.buttons[index].focus_set()
+        announcer.say(f"{self.role} {tr(self.keys[index])}.")
+
+    def state(self, statespec=None):
+        """Sperren bzw. freigeben wie ein einzelnes ttk-Element."""
+        if statespec is None:
+            return super().state()
+        for button in self.buttons:
+            button.state(statespec)
+        return None
 
 
 class ScrollableFrame:

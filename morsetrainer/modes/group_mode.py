@@ -10,7 +10,7 @@ from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import tr
 from morsetrainer.modes.sequence_mode import SequenceModeFrame
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 # So viele Gruppen in Folge beim ersten Versuch richtig -> eine länger.
 LONGER_AFTER = 5
@@ -101,7 +101,7 @@ class GroupModeFrame(SequenceModeFrame):
         try:
             low, high = self.min_len_var.get(), self.max_len_var.get()
         except tk.TclError:
-            self.status_var.set(tr("Ungültige Gruppenlänge!"))
+            announcer.problem(self.status_var, tr("Ungültige Gruppenlänge!"))
             return False
         if low > high:
             self.status_var.set(tr("Gruppenlänge „von“ darf nicht größer als „bis“ sein!"))

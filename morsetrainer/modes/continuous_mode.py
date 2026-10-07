@@ -41,10 +41,10 @@ from morsetrainer.core.morse import (
 )
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.i18n import N_, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
-from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ChoiceButtons, ScrollableFrame
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
 from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.modes.sequence_mode import BAND_ORDER, band_config
@@ -177,14 +177,22 @@ class ContinuousModeFrame(DailyModeMixin):
         self._build_widgets(ScrollableFrame(parent).inner)
 
     def _build_widgets(self, parent):
-        """Baut den Reiter: Einstellungen, Start, Statuszeile, Live-Anzeige,
-        Auswertung, eigene Eingabe und Statistik."""
+        """Baut den Reiter: oben die Wahl des Inhalts (wie im Reiter Einzeln),
+        Einstellungen, Start, Statuszeile, Live-Anzeige, Auswertung, eigene
+        Eingabe und Statistik."""
+        content = ttk.Frame(parent, padding=(8, 6, 8, 0))
+        content.pack(fill="x")
+        ttk.Label(content, text=tr("Inhalt:")).pack(side="left", padx=(0, 8))
+        self.content_var = tk.StringVar(value="Zufallszeichen")
+        self.content_buttons = ChoiceButtons(content, self.content_var, CONTENTS, tr("Inhalt"))
+        self.content_buttons.pack(side="left")
+        theme.hint(parent, text=tr("(Klartext zählt nicht für die Lektion)")).pack(anchor="w", padx=8)
         theme.hint(
             parent, wrap=560,
             text=tr("Der Ton läuft durch, ohne auf dich zu warten. Tippe mit, was du erkennst "
                     "– auch wenn du mal hinterherhinkst. Auswertung erfolgt beim Stoppen. "
                     "F5 startet und stoppt, Esc stoppt."),
-        ).pack(anchor="w", padx=10, pady=(8, 2))
+        ).pack(anchor="w", padx=8, pady=(2, 2))
 
         options = self.options_card = theme.card(parent, tr("Einstellungen"))
         duration = ttk.Frame(options)
@@ -194,12 +202,6 @@ class ContinuousModeFrame(DailyModeMixin):
         ttk.Spinbox(duration, from_=0, to=120, textvariable=self.duration_var, width=4).pack(side="left")
         ttk.Label(duration, text=tr("Min.")).pack(side="left", padx=(4, 0))
         theme.hint(duration, text=tr("(0 = ohne Limit)")).pack(side="left", padx=(4, 0))
-        content = ttk.Frame(options)
-        content.pack(fill="x", pady=(2, 0))
-        ttk.Label(content, text=tr("Inhalt:")).pack(side="left", padx=(0, 4))
-        self.content_var = tk.StringVar(value="Zufallszeichen")
-        ChoiceBox(content, self.content_var, CONTENTS, width=17).pack(side="left")
-        theme.hint(content, text=tr("(Klartext zählt nicht für die Lektion)")).pack(side="left", padx=(6, 0))
         grouping = ttk.Frame(options)
         grouping.pack(fill="x", pady=(2, 0))
         ttk.Label(grouping, text=tr("Gruppen zu")).pack(side="left", padx=(0, 4))
@@ -300,7 +302,7 @@ class ContinuousModeFrame(DailyModeMixin):
         except tk.TclError:
             minutes = -1
         if minutes < 0:
-            self.status_var.set(tr("Ungültige Dauer!"))
+            announcer.problem(self.status_var, tr("Ungültige Dauer!"))
             return
         self.deadline = time.time() + minutes * 60 if minutes else None
         if self.daily_minutes:
@@ -335,7 +337,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.source = ItemSource(self.content, charset, weighted=self.weighted_var.get())
         problem = self.source.problem()
         if problem:
-            self.status_var.set(problem)
+            announcer.problem(self.status_var, problem)
             return
         self.session_stats = SessionStats("continuous", charset, self.wpm, self.freq, farnsworth_wpm=self.fw,
                                           review_promote=self.content == "chars",
@@ -356,6 +358,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.running = True
         self.band_toggle.set_locked(True)
         self.start_button.config(text=tr("Stop"))
+        self.content_buttons.state(["disabled"])
         self.status_var.set(tr("Läuft – höre zu und tippe mit…"))
         self.on_start_cb()
 
@@ -459,7 +462,7 @@ class ContinuousModeFrame(DailyModeMixin):
             return
         if self.audio_error:
             self.stop()
-            self.status_var.set(self.audio_error)
+            announcer.problem(self.status_var, self.audio_error)
             return
         sent_log, typed_log = list(self.sent_log), list(self.typed_log)  # Audio-Thread hängt weiter an
         window = sent_log[-PREVIEW_CHARS:]
@@ -505,6 +508,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.end_sent = True
             audio.play_quietly(build_text(END_TEXT, self.wpm, self.freq))
         self.start_button.config(text=tr("Start"))
+        self.content_buttons.state(["!disabled"])
         self.status_var.set(tr("Werte aus…"))
         self._finalize_session(stopped_at=None if self.finishing else time.time())
         self.status_var.set(tr("Gestoppt."))

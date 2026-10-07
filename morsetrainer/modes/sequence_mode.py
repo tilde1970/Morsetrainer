@@ -383,6 +383,12 @@ class SequenceModeFrame(DailyModeMixin):
                 callback(*args)
         self.root.after(ms, run)
 
+    def on_function_key(self, key: str):
+        """F5 startet bzw. beendet den Durchgang, wie der Knopf (nicht, wenn
+        er gerade gesperrt ist, etwa in der Tagesübung)."""
+        if key == "F5" and not self.start_button.instate(["disabled"]):
+            self.toggle_running()
+
     def toggle_running(self):
         """Durchgang starten bzw. beenden (Start/Stop-Knopf)."""
         if self.running:
@@ -400,10 +406,10 @@ class SequenceModeFrame(DailyModeMixin):
             minutes = self.duration_var.get()
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
-            self.status_var.set(tr("Ungültige Dauer, Geschwindigkeit oder Tonhöhe!"))
+            announcer.problem(self.status_var, tr("Ungültige Dauer, Geschwindigkeit oder Tonhöhe!"))
             return
         if minutes < 0:
-            self.status_var.set(tr("Ungültige Dauer!"))
+            announcer.problem(self.status_var, tr("Ungültige Dauer!"))
             return
         self.deadline = time.time() + minutes * 60 if minutes and not self._fixed_run() else None
         if self.daily_minutes and not self._fixed_run():
@@ -734,7 +740,7 @@ class SequenceModeFrame(DailyModeMixin):
             audio.play(samples)
         except audio.AudioError as exc:
             self.stop()
-            self.status_var.set(str(exc))
+            announcer.problem(self.status_var, str(exc))
             return False
         return True
 

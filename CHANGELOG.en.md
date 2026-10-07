@@ -1,5 +1,29 @@
 # Changes
 
+## Unreleased
+
+- **Non-stop:** the content (random characters, words, phrases, callsigns,
+  QSO plain text) is chosen with option buttons instead of a drop-down
+  list, as in the One by one tab, at the top of the tab; all choices at a
+  glance, the arrow keys switch, the announcement says “Content …”. Locked
+  during a run.
+- **Announcements:** for 1 it says “one minute”, “one second”, “one failed
+  attempt” and “one character” instead of “1 minute” etc. Messages why a
+  run does not start (e.g. too few characters for phrases in lesson 1,
+  invalid input) or stops (no sound output) are now spoken as well as
+  shown.
+- **Searching the help:** also finds what is written differently: umlaut
+  spelling and hyphens do not matter, other words for the same thing
+  (“shortcut” finds “shortcuts”, “keyboard” finds the keyboard section) and
+  parts of compound words; this is said along with the result. If it is
+  only in the other tab (manual or changes), the search says how often.
+- **Speak:** always spells in the phonetic alphabet (Alfa, Bravo …); the
+  choice “German letter names (A, Be, Ce)” is gone.
+- **Manual** restructured: getting started, one section per tab, keyboard
+  shortcuts as a table, numbered chapters with a table of contents.
+- **One by one:** F5 now starts and stops Characters, Groups, Words and
+  Callsigns too, as in the other tabs.
+
 ## 2.40
 
 - **New tabs:** Characters, Groups, Words and Callsigns now share the
