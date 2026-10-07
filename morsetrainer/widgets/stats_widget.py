@@ -34,6 +34,10 @@ class StatsPanel:
             self.char_tree.heading(col, text=headings[col])
             self.char_tree.column(col, width=widths[col], anchor="w" if col == "confusions" else "center")
         self.char_tree.pack(fill="x", pady=(2, 0))
+        theme.hint(box, wrap=520, text=tr(
+            "Ø Reaktion: Zeit vom letzten Punkt oder Strich bis zu deiner Taste, Ø WPM: Tempo ab Beginn des "
+            "Zeichens (beides nur richtige Antworten). „–“: nicht gemessen, etwa beim Kopfhören.")).pack(
+            anchor="w", pady=(2, 0))
 
         self.save_var = tk.StringVar(value="")
         if show_save_label:

@@ -309,13 +309,38 @@ def name(widget, text: str, value=None) -> None:
         _values[str(widget)] = value
 
 
+def value_of(widget, value) -> None:
+    """Funktion für den angesagten Wert vergeben, ohne den Namen zu ändern
+    (z. B. Reiter samt gewähltem Inhalt)."""
+    _values[str(widget)] = value
+
+
+_iconified = set()  # str(Toplevel): nur minimiert, nicht geschlossen
+
+
+def _minimized(widget) -> bool:
+    """Ist das Fenster (oder das Hauptfenster, mit dem es verschwindet) bloß
+    minimiert?"""
+    try:
+        return widget.wm_state() == "iconic" or _instance.root.wm_state() == "iconic"
+    except tk.TclError:
+        return False
+
+
 def _window_shown(widget) -> None:
     if _instance is not None and isinstance(widget, tk.Toplevel):
+        if str(widget) in _iconified:  # wiederhergestellt, nicht neu geöffnet
+            _iconified.discard(str(widget))
+            return
         _instance.window_shown(widget)
 
 
 def _window_closed(widget) -> None:
     if _instance is not None and isinstance(widget, tk.Toplevel):
+        if _minimized(widget):  # Minimieren oder Arbeitsfläche gewechselt: nichts ansagen
+            _iconified.add(str(widget))
+            return
+        _iconified.discard(str(widget))
         _instance.window_closed(widget)
 
 

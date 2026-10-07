@@ -33,7 +33,10 @@ class PauseNoise:
     def __init__(self):
         self.lock = threading.Lock()
         self.thread = None
-        self.running = False
+        # Stoppsignal des laufenden Threads; jeder Thread hat sein eigenes,
+        # damit ein close() mit gleich folgendem start() den alten sicher
+        # beendet und kein zweiter Strom mitläuft.
+        self.stop_event = None
         self.source = None  # BandConditions-Kopie, die gerade klingt
         self.pending = None  # (Kopie, time.time(), ab der sie klingen soll)
         self.gain = 0.0
@@ -46,10 +49,16 @@ class PauseNoise:
         twin = conditions.fork()
         with self.lock:
             self.pending = (twin, time.time() + max(delay, 0.0))
-        if not self.running:
-            self.running = True
-            self.thread = threading.Thread(target=self._run, daemon=True)
-            self.thread.start()
+            if self.stop_event is not None:
+                return
+            self.stop_event = threading.Event()
+            self.thread = threading.Thread(target=self._run, args=(self.stop_event,), daemon=True)
+        self.thread.start()
+
+    @property
+    def running(self) -> bool:
+        """Läuft gerade ein Strom (oder wird gleich geöffnet)?"""
+        return self.stop_event is not None
 
     def fade_out(self) -> None:
         """Die nächste Sequenz beginnt: ausblenden, nichts Neues mehr starten."""
@@ -62,18 +71,23 @@ class PauseNoise:
         with self.lock:
             self.pending = None
             self.target = 0.0
-            self.running = False
+            stop_event, self.stop_event = self.stop_event, None
+        if stop_event is not None:
+            stop_event.set()
 
-    def _run(self) -> None:
+    def _run(self, stop_event) -> None:
         try:
             with audio.output_stream() as stream:
                 n = int(SAMPLE_RATE * BLOCK_SECONDS)
-                while self.running:
+                while not stop_event.is_set():
                     stream.write(self.block(n))
         except audio.ERRORS:
             pass
         finally:
-            self.running = False
+            with self.lock:
+                # Ohne Tonausgabe beendet: der nächste start() versucht es neu.
+                if self.stop_event is stop_event:
+                    self.stop_event = None
 
     def block(self, n: int) -> np.ndarray:
         """Die nächsten `n` Samples (still, solange nichts klingen soll)."""

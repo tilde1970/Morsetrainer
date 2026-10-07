@@ -19,7 +19,7 @@ from morsetrainer.core.morse import MORSE_CODE
 USER_WORDS_FILE = DATA_DIR / "woerter.txt"
 
 USER_WORDS_TEMPLATE = N_("""\
-# Eigene Wörter für den Reiter „Wörter“ im Morsetrainer.
+# Eigene Wörter für „Wörter“ (Reiter Einzeln) und „Am Stück“ im Morsetrainer.
 #
 # Ein Wort pro Zeile, optional mit Bedeutung nach dem ersten „=“, die nach
 # der Antwort angezeigt wird. Zeilen mit # sind Kommentare. Groß- und

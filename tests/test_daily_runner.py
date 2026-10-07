@@ -82,7 +82,9 @@ class DailyRunnerTest(AppTestCase):
         entry = daily.load()["days"][date.today().isoformat()]
         self.assertEqual([b["kind"] for b in entry["blocks"]], [daily.WARMUP, daily.MAIN, daily.OUTRO])
         self.assertEqual(self.app.charset_var.get(), koch.lesson_charset(12))  # zurückgestellt
-        self.assertEqual(self.app.notebook.index("current"), self.app.mode_titles.index("Wörter"))
+        # Auch die Inhaltswahl im Reiter Einzeln ist wieder wie vorher.
+        self.assertEqual(self.app.one_by_one_var.get(), "Einzelzeichen")
+        self.assertEqual(self.app._tab_name(), "Einzeln, Zeichen")
 
     def test_block_that_cannot_start_falls_back_to_groups(self):
         self.app.charset_var.set(koch.lesson_charset(3))  # zu wenige Wörter

@@ -117,7 +117,7 @@ class WordModeFrame(SequenceModeFrame):
             when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
             count = sum(1 for w in self.words if len(w) > 1)
             self.status_var.set(tr("Nur {count} Wörter mit diesen Zeichen").format(count=count) + when + ".\n"
-                                + tr("Übe bis dahin im Reiter Gruppen."))
+                                + tr("Übe bis dahin mit Gruppen."))
             return False
         self.charset = charset
         return True

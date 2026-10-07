@@ -17,8 +17,9 @@ import time
 
 from morsetrainer.core import align, audio, band as band_mod
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, silence, word_gap_extra_seconds,
+    AUDIO_LATENCY, SAMPLE_RATE, build_samples, char_gap_seconds, silence, word_gap_extra_seconds,
 )
+from morsetrainer.core.latency import char_latency
 from morsetrainer.modes.continuous_mode import STOP_GRACE_SECONDS, WRITE_CHUNK_SECONDS, plausible
 
 DURATION_RANGE = (1, 30)  # Minuten
@@ -68,8 +69,9 @@ def evaluate(entries, start: float, typed: str, key_times, stopped_at=None):
     die bis dahin nicht angefangen hatten, fehlen im Ergebnis, und kurz
     davor gesendete Zeichen zählen nicht als verpasst.
 
-    Ergebnis: je Zeichen (gesendet, getippt, richtig, Reaktionszeit oder
-    None) für die eigene Statistik, und je Gruppe {Nr.: (getippt, Zeit vom
+    Ergebnis: je Zeichen (gesendet, getippt, richtig, Latenz oder None)
+    für die eigene Statistik – getippt ist leer bei einem verpassten
+    Zeichen, die Latenz wie core/latency.char_latency –, und je Gruppe {Nr.: (getippt, Zeit vom
     Tonende des letzten Zeichens bis zu dessen Taste, oder None)}."""
     ends = [start + end for _, end, _ in entries]
     kept = {group for _, _, group in entries} if stopped_at is None else kept_groups(entries, start, stopped_at)
@@ -94,7 +96,9 @@ def evaluate(entries, start: float, typed: str, key_times, stopped_at=None):
             chars.append((op.expected_char, "", False, None))  # vorausgeraten oder viel zu spät
             continue
         reaction = max(key_time - end, 0.001)
-        chars.append((op.expected_char, op.received_char, op.kind == align.OpKind.MATCH, reaction))
+        previous_key = key_times[op.received_index - 1] if op.received_index else None
+        chars.append((op.expected_char, op.received_char, op.kind == align.OpKind.MATCH,
+                      char_latency(key_time, end, previous_key)))
         typed_in[group] += op.received_char
         last_latency[group] = (op.expected_index, reaction)
     last_index = {}
@@ -115,10 +119,6 @@ def kept_groups(entries, start: float, stopped_at: float):
     return {group for group, end in first.items() if end <= stopped_at}
 
 
-def effective_wpm(char: str, reaction: float) -> float:
-    """Effektives Tempo für ein Zeichen aus der Reaktionszeit (wie
-    morse.code_units)."""
-    return code_units(char) * 1.2 / max(reaction, 0.001)
 
 
 def lead_seconds(band) -> float:

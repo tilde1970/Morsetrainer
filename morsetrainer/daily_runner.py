@@ -59,6 +59,7 @@ class DailyRunner:
         self.block_started = None
         self.done_minutes = 0.0
         self.saved_shared = None
+        self.saved_content = None  # Inhalt im Reiter „Einzeln“ vor der Tagesübung
         self.tick_id = None
         self.card_open = False
         self.card_shown = 0.0
@@ -161,6 +162,7 @@ class DailyRunner:
         """Gemeinsame Einstellungen sichern und für die Tagesübung setzen."""
         app = self.app
         self.saved_shared = {key: var.get() for key, var in self._shared().items()}
+        self.saved_content = app.one_by_one_var.get()
         app.charset_var.set(charset)
         self._apply_tempo(self.state["tempo"])
         app.weighted_var.set(True)
@@ -223,7 +225,7 @@ class DailyRunner:
         # sperrt sie beim Start wieder.
         for tab_id in app.notebook.tabs():
             app.notebook.tab(tab_id, state="normal")
-        app.notebook.select(app.tab_ids[app.mode_titles.index(title)])
+        app.show_mode(title)
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
         settings = {**MODE_SETTINGS[block.mode], **block.params}
         if block.mode == "single":
@@ -342,6 +344,11 @@ class DailyRunner:
             for key, var in self._shared().items():
                 var.set(self.saved_shared[key])
             self.saved_shared = None
+        if self.saved_content is not None:
+            # Die Inhaltswahl wird gespeichert; sonst stünde „Einzeln“ beim
+            # nächsten Start auf dem Inhalt des letzten Blocks.
+            self.app.show_content(self.saved_content)
+            self.saved_content = None
         self.bar.set_enabled(True)
         stars = daily.stars_on(self.state, self.today)
         if self.extra:

@@ -6,18 +6,23 @@ Diese Anleitung steht auch im Programm unter **Hilfe**. Einen kurzen
 
 ## Trainingsmodi
 
+Die vier Übungen, die einzeln abfragen (hören, antworten, das nächste),
+stehen gemeinsam im Reiter **Einzeln**; oben unter „Inhalt“ wählst du
+**Zeichen**, **Gruppen**, **Wörter** oder **Rufzeichen**. Die Wahl bleibt gespeichert.
+Ohne Pause fortlaufend mitschreiben kannst du im Reiter **Am Stück**.
+
 | Reiter | Was du übst |
 |---|---|
-| **Einzelzeichen** | Einzelne Zeichen erkennen; nach jeder Antwort steht deine Zeit und das aktuelle Limit, z. B. „0,38 s, Limit 1,20 s“. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist, und länger, wenn du Zeichen verpasst; eine Verwechslung ändert es nicht. Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen direkt nacheinander. |
-| **Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
-| **Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Standard ist „Erst merken“: erst das ganze Wort hören, dann tippen; eine zu langsame Antwort wird vermerkt. Auch R, K und die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden Wörtern. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
-| **Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert (mit Starttempo) und Verlauf; danach lassen sich die verpassten und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören, dann mit Lösung noch einmal, im Originaltempo. |
-| **Kontinuierlich** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Auf Wunsch mit **Bandbedingungen**, die durchgehend unter dem ganzen Durchgang liegen. Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten 90 Zeichen (in Zeilen zu 30); **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
+| **Einzeln: Zeichen** | Einzelne Zeichen erkennen; nach jeder Antwort steht deine Zeit und das aktuelle Limit, z. B. „0,38 s, Limit 1,20 s“. Mit Zeitlimit (Instant Character Recognition): Das Limit wird kürzer, solange du sicher bist, und länger, wenn du Zeichen verpasst; eine Verwechslung ändert es nicht. Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen direkt nacheinander. |
+| **Einzeln: Gruppen** | Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2 falschen Gruppen (jeweils beim ersten Versuch) eine kürzer. |
+| **Einzeln: Wörter** | CW-Abkürzungen, Q-Gruppen und QSO-Wörter, nur aus den Zeichen, die du schon kannst. Standard ist „Erst merken“: erst das ganze Wort hören, dann tippen; eine zu langsame Antwort wird vermerkt. Auch R, K und die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden Wörtern. Nach der Antwort wird die Bedeutung angezeigt. Eigene Wörter lassen sich ergänzen (siehe Daten). |
+| **Einzeln: Rufzeichen** | Echte Rufzeichen aus der Super-Check-Partial-Liste, standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion 23 mit der ersten Ziffer). Gelegentlich mit /P, /M, OE/… wie im Contest. Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo, Bestwert (mit Starttempo) und Verlauf; danach lassen sich die verpassten und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören, dann mit Lösung noch einmal, im Originaltempo. |
+| **Am Stück** | Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); die Zeichen kommen in Gruppen (Standard 5) mit Wortpause dazwischen. Statt Zufallszeichen auch als **Klartext**: Wörter, typische QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs am Stück (Klartext zählt nicht für die Lektion). Auf Wunsch mit **Bandbedingungen**, die durchgehend unter dem ganzen Durchgang liegen. Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten 90 Zeichen (in Zeilen zu 30); **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot, Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text zum Vergleichen mit dem Zettel. Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler. |
 | **Sprechen** | Hören & Sagen ohne Tastatur (wie Morse Code Ninja): Morsezeichen, Denkpause, in der du laut sagst, was du gehört hast, dann sagt eine Stimme die Lösung an – Zeichen, Gruppen und Rufzeichen buchstabiert (deutsche Buchstabennamen oder Buchstabieralphabet), Wörter und Wendungen als Ganzes bzw. mit ihrer Bedeutung („TNX“ → „danke“) – und das Zeichen kommt noch einmal. Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen). Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen. **Als MP3 speichern** für unterwegs (Handy, Auto). Zählt nur für die Übungszeit. |
 | **QSO** | Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Auswertung per Abfrage/Log, durch Mittippen, als **Kopfhören + Fragen** (ohne Notizen, danach Inhaltsfragen zu Name, QTH, Rig, Wetter … bzw. Austausch) oder nur zum Hören. Neben der Länge steht die geschätzte Dauer; wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. |
 | **Contest** | Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer aufnehmen, Austausch geben, loggen. Wie im echten Contest antworten Anrufer manchmal auch auf ein fast richtiges Rufzeichen – wer den Fehler bemerkt, korrigiert das Call und bestätigt mit Enter („Call TU“), sonst steht „Busted“ im Log. „?“ im Call-Feld fragt nach (DL1?, DL?ABC). Tempo- und Tonhöhen-Streuung der Anrufer sind einstellbar, am Ende gibt es eine Zusammenfassung nach Fehlerart; F10 startet und beendet. |
 | **Netzwerk** | Üben in der Gruppe im lokalen Netz (Kurs, Clubabend): Ein Trainer gibt vor, alle hören dieselbe Sequenz über den eigenen Kopfhörer und tippen mit; der Trainer sieht live, wer was getippt hat. Siehe unten. |
-| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen). „Ø Reaktion“ ist die Zeit vom letzten Punkt oder Strich bis zu deiner Eingabe, gemittelt über die richtigen Antworten – unabhängig von Zeichenlänge und Tempo; gemessen bei Einzelzeichen und beim Mitschreiben ohne Wiederholung, sonst „–“. „Ø WPM“ ist das effektive Tempo der richtigen Antworten: die Länge des Zeichens geteilt durch die Zeit ab seinem Beginn bis zur Eingabe, umgerechnet in WPM (höchstens so schnell, wie gesendet wurde). Dazu **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel, **Diplome** und **Lebenslinie** (siehe unten) und Fortschrittsverlauf je Modus. |
+| **Statistik** | Gesamtstatistik je Zeichen (nur aus Zufallszeichen und Rufzeichen; bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen). „Ø Reaktion“ ist die Zeit vom letzten Punkt oder Strich bis zu deiner Eingabe, gemittelt über die richtigen Antworten – unabhängig von Zeichenlänge und Tempo; gemessen bei Zeichen, beim Mitschreiben ohne Wiederholung, in Am Stück, beim QSO-Mittippen und im Netzwerk, sonst „–“. Beim Mitschreiben zählt sie ab dem Tonende oder ab deiner vorigen Taste, je nachdem was später kommt – wer hinterherschreibt oder erst die Gruppe hört, gilt nicht als langsam. Als Richtwert für Erkennen ohne Nachdenken gilt eine Reaktion unter etwa 0,6 s. „Ø WPM“ ist das effektive Tempo der richtigen Antworten: die Länge des Zeichens geteilt durch die Zeit ab seinem Beginn bis zur Eingabe, umgerechnet in WPM (höchstens so schnell, wie gesendet wurde). Dazu **Lernkartei** (Wiederholung über Tage: sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten Tag; entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus Zufallszeichen; fällige kommen mit „schwache bevorzugt“ öfter und lassen sich gezielt üben), häufigste Verwechslungen (mit Knopf, um sie gezielt zu üben), Tagesziel, **Diplome** und **Lebenslinie** (siehe unten) und Fortschrittsverlauf je Modus. |
 
 In **Gruppen, Wörter und Rufzeichen** kannst du wählen:
 
@@ -44,10 +49,10 @@ dran ist, und schaltet die Reiter selbst um:
 
 | Stand | Aufwärmen | Hauptteil | Ausklang |
 |---|---|---|---|
-| Lektion 1–9 | Einzelzeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Kontinuierlich, Gruppen von 3, 2 Min |
+| Lektion 1–9 | Zeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Am Stück, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
 | Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
-| nach Koch (Lektion 41 bestanden) | Einzelzeichen, 2 Min | Kontinuierlich, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
+| nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
 
 - **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
   der Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
@@ -124,11 +129,11 @@ dem Stempel „VORSCHAU“, ohne Datum und Nummer.
 
 | Diplom | Stufen | ab Lektion | Bedingung |
 |---|---|---|---|
-| Koch | Lektion 10 / 25 / 41 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Kontinuierlich) |
+| Koch | Lektion 10 / 25 / 41 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Am Stück) |
 | Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach, erreicht mit Zeichen ≥ 18 WPM |
-| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Kontinuierlich mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
-| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
-| QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Kontinuierlich mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
+| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Am Stück mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
+| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Am Stück mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
+| QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
 | Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
 | WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM |
@@ -170,7 +175,7 @@ bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
    herstellbar): Die Zeichen kommen schnell genug, dass du sie als Klangbild
    hörst statt Punkte und Striche zu zählen, dafür mit längeren Pausen
    dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
-2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen. Das **Zeitlimit**
+2. Im Reiter **Einzeln** unter **Zeichen** die Zeichen kennenlernen. Das **Zeitlimit**
    ist von Anfang an eingeschaltet: Es bleibt keine Zeit zum Zählen von
    Punkten und Strichen, das Zeichen muss als Klangbild kommen. Ein falsch
    erkanntes Zeichen hörst du gleich noch einmal, während die Lösung
@@ -180,13 +185,13 @@ bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
    Nach einem Durchgang mit mindestens 50 Zeichen und 90 % richtig – mit
    Zeitlimit von Anfang bis Ende, am Schluss höchstens 1,5 s – schlägt die
    App vor, bei den Gruppen weiterzumachen.
-3. Im Reiter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
+3. Im Reiter **Einzeln** unter **Gruppen** üben. Schreib mit, während der Ton läuft, wie beim
    Einzelzeichen. Nach einem Fehler siehst und hörst du die Lösung, dann
    geht es weiter wie im Funkbetrieb; schwache Zeichen kommen über die
    Gewichtung später wieder. Unter „Lösung zeigen nach“ lassen sich bis zu
    3 Fehlversuche einstellen: Dann werden erst nur die falschen Stellen
    markiert und die Gruppe kommt noch einmal.
-4. Wer in den Gruppen (oder im Modus Kontinuierlich) in einem Durchgang mit
+4. Wer in den Gruppen (oder im Reiter **Am Stück**) in einem Durchgang mit
    mindestens 50 Zeichen 90 % beim ersten Versuch schafft, bekommt die
    nächste Lektion angeboten. Für die Lektion zählt ein erster Versuch nur,
    wenn du die Gruppe nicht mit der Leertaste wiederholt hast und zügig
@@ -199,9 +204,9 @@ bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
    BK (`#`). Dorthin wird nicht von selbst weitergeschaltet, die Lektion
    stellst du oben ein; danach wird dir das nächste Betriebszeichen wieder
    angeboten. Gelernte Betriebszeichen wiederholt auch die Tagesübung.
-5. Ab Lektion 6 gibt es genug Wörter für den Reiter **Wörter** (Wörter mit
-   dem neuesten Zeichen kommen bevorzugt), danach
-   **Kontinuierlich** und **QSO**.
+5. Ab Lektion 6 gibt es genug Wörter für **Wörter** im Reiter **Einzeln**
+   (Wörter mit dem neuesten Zeichen kommen bevorzugt), danach
+   **Am Stück** und **QSO**.
 6. Im Reiter **Statistik** (Verwechslungen der letzten 30 Tage) zeigt „Die 4 häufigsten gezielt üben“, welche
    Zeichen du verwechselst, und übt genau diese gegeneinander. „↩ Lektion“
    oben führt zurück zu deiner Lektion.
@@ -226,7 +231,7 @@ Außerdem hilfreich:
   **Strg+Plus**, **Strg+Minus** und **Strg+0** (normal) wird die ganze
   Oberfläche größer, bis 200 %; das Fenster wächst mit. Für kleine
   Bildschirme geht es auch kleiner, auf 90 % und 75 %. Pfeile, Rollbalken
-  und Schieberegler wachsen mit; die ganze Auswertung in Kontinuierlich
+  und Schieberegler wachsen mit; die ganze Auswertung in Am Stück
   und die Auflösung im Netzwerk beginnen in dieser Größe. Die Einstellung
   bleibt gespeichert.
 - **Rufzeichen und Name:** Unter „Einstellungen …“ einmal eintragen.
@@ -288,8 +293,9 @@ zwar unabhängig von deinen Stationen.
 **CW-Filter:** 2,4 kHz (wie ein SSB-Filter, die Grundeinstellung),
 500 Hz oder 250 Hz um deine Tonhöhe. Zeichen, Rauschen und Störungen
 laufen hindurch, dein eigener Mithörton im Contest nicht. Ein schmales
-Filter nimmt Rauschen weg (500 Hz rund 6 dB, 250 Hz rund 9 dB) und
-QRM, das weit daneben liegt; es klingelt aber leicht, und Stationen
+Filter nimmt Rauschen weg (500 Hz rund 6 dB, 250 Hz rund 9 dB, bei
+jeder Tonhöhe gleich: es wandert mit ihr wie ein ZF-Filter) und QRM, das
+weit daneben liegt; es klingelt aber leicht, und Stationen
 neben deiner Tonhöhe (Anrufer im Contest, die Gegenstation im QSO)
 werden leiser. Gegen QRM nah oder auf Zero-Beat hilft es nicht. Der
 S/N-Wert bezieht sich weiter auf 2,4 kHz; das Fenster zeigt zusätzlich
@@ -298,7 +304,10 @@ Filter: „mittel“ mit 500-Hz-Filter entspricht etwa „leicht“.
 
 **Wann zuschalten?** Neue Zeichen ohne Störungen lernen. Bandbedingungen
 lohnen sich, wenn der Zeichensatz ohne Störungen sicher sitzt (90 % und
-mehr); dann mit „leicht“ beginnen.
+mehr); dann mit „leicht“ beginnen. Geübt wird am besten bei „leicht“ bis
+„mittel“: Wer mit mäßigem Rauschen übt, hört nach Studien (mit Sprache,
+nicht Morse) danach auch ohne Störungen besser als nach Training in sehr
+starkem Rauschen. „Stark“ ist für den Feinschliff.
 
 **Probehören** (Knopf unten im Fenster, Strg+P): spielt CQ-Rufe in deiner
 Tonhöhe und deinem Tempo unter den gerade eingestellten Bedingungen, mit
@@ -308,11 +317,11 @@ Schließen des Fensters) hört auf.
 Zählt für nichts (Statistik, Übungszeit, Diplome). Während eines
 Durchgangs und in einer Netzwerk-Sitzung ist der Knopf gesperrt.
 
-In den Reitern (Gruppen, Wörter, Rufzeichen, Kontinuierlich, QSO, Contest,
-Netzwerk) schaltest du die Bandbedingungen nur an oder aus. Stärke und
+In den Reitern (Einzeln – außer bei Zeichen, die ohne Störungen gelernt
+werden –, Am Stück, QSO, Contest, Netzwerk) schaltest du die Bandbedingungen nur an oder aus. Stärke und
 Lautstärke wirken sofort, auch im laufenden Durchgang; für das Diplom
 zählt dann das Schwächste im Durchgang. An und aus geht in Gruppen,
-Wörtern, Rufzeichen, Kontinuierlich und Netzwerk nur zwischen zwei
+Wörtern, Rufzeichen, Am Stück und Netzwerk nur zwischen zwei
 Durchgängen, in QSO und Contest jederzeit. Im Netzwerk hören alle
 Teilnehmer die Einstellung des Trainers, mit demselben Fading,
 denselben Stationen und demselben Nachbar-QRM, Gewitter und Träger
@@ -324,7 +333,11 @@ deiner Antwortpause weiter; jede Sequenz trifft eine andere Stelle. In
 Gruppen, Wörtern und Rufzeichen hörst du das Band in der Antwortpause
 auch, 6 dB leiser, damit das Ohr beim Tippen etwas Ruhe hat; mit der
 nächsten Sequenz wird es wieder lauter. Mit Sprachansage (F9) wird es vor
-der Rückmeldung ausgeblendet.
+der Rückmeldung ausgeblendet. Wer zwischen den Sequenzen Stille braucht
+(etwa bei Tinnitus), schaltet „Band in der Antwortpause“ im Fenster
+Bandbedingungen aus; für Stufe und Diplom ändert das nichts. Die Lösung
+nach zu vielen Fehlversuchen kommt immer ohne Störungen, damit du Klang
+und Lösung sicher zusammen hörst.
 
 Durchgänge mit Bandbedingungen erscheinen im Verlauf, zählen aber nicht
 für die Zeichenstatistik, die Gewichtung, die Verwechslungen und die
@@ -359,8 +372,8 @@ richtiger Zeichen, wie viele Sequenzen **flüssig** richtig waren und die
 typische Zeit vom Tonende bis Enter, darunter die Gruppe: Trefferquote,
 Anteil flüssiger Sequenzen, häufigste Fehler, schwächste Zeichen. Flüssig
 heißt: richtig beim ersten Hören und schnell genug, dass nicht gezählt
-wurde – im selben Zeitfenster wie in den Reitern Gruppen, Wörter und
-Rufzeichen (1,5 s plus 0,6 s je Zeichen nach dem Ton). Die Antwortzeit ist
+wurde – im selben Zeitfenster wie bei Gruppen, Wörtern und Rufzeichen im
+Reiter Einzeln (1,5 s plus 0,6 s je Zeichen nach dem Ton). Die Antwortzeit ist
 nur die harte Grenze. Ein Klick auf einen Teilnehmer zeigt seine Fehler und
 schwächsten Zeichen. Bei vielen Teilnehmern lässt sich die Tabelle **in ein
 eigenes Fenster** auskoppeln (etwa für einen zweiten Bildschirm oder den
@@ -415,9 +428,9 @@ spaltenweise wie in der Auflösung – bei Gruppen und Einzelzeichen mit
 einem Kästchen je Zeichen, sonst mit freier Linie; so viele Zeilen wie
 eingestellt (bei „bis Stop“ und QSOs 25).
 
-**Kontinuierlich:** Unter *Ablauf* „Kontinuierlich“ wählen und die
+**Am Stück:** Unter *Ablauf* „Am Stück“ wählen und die
 **Dauer** in Minuten einstellen. Dann kommen Gruppen (oder Wörter,
-Rufzeichen …) ohne Pause wie im Reiter *Kontinuierlich*, bis die Zeit um
+Rufzeichen …) ohne Pause wie im Reiter *Am Stück*, bis die Zeit um
 ist; alle tippen fortlaufend mit, ohne Enter. Ausgewertet wird am Ende wie
 dort: Eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Jeder
 Teilnehmer meldet sein Ergebnis je Gruppe, damit gelten Tabelle,
@@ -543,7 +556,7 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   Hilfe …), sagt es seinen Namen: „Fenster Bandbedingungen“. Spricht das
   Fenster selbst (Diplom, Tagesübung), kommt der Name davor. Schließt du
   ein Fenster, sagt sie, wo du gelandet bist („Zurück im Hauptfenster.
-  Reiter Gruppen.“).
+  Reiter Einzeln, Gruppen.“).
 - **Contest:** Rufzeichen in „Mein Rufzeichen“, im Call-Feld und im Log
   werden im Funkalphabet buchstabiert.
 - **Netzwerk (Trainer):** Beim Öffnen der Sitzung werden Adresse und PIN
@@ -576,8 +589,9 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 
 - **Überall:** Strg+Plus/Strg+Minus Schrift größer/kleiner, Strg+0 normal
   (auf dem Mac auch Cmd); F9 Ansage an/aus, F11 vorlesen, wo du bist;
-  Alt+1 … Alt+9 und Alt+0 wechseln zu Reiter 1 … 10, Strg+Tab blättert
-  durch die Reiter (auf dem Mac Cmd+1 … Cmd+9); Strg+B öffnet die
+  Alt+1 … Alt+7 wechseln zu Reiter 1 … 7 (Einzeln, Am Stück, Sprechen,
+  QSO, Contest, Netzwerk, Statistik), Alt+0 ebenfalls zur Statistik,
+  Strg+Tab blättert durch die Reiter (auf dem Mac Cmd+1 … Cmd+7); Strg+B öffnet die
   Bandbedingungen (darin Strg+P: Probehören), Strg+Komma die Einstellungen
   (auf dem Mac auch Cmd+Komma). In der Hilfe sucht Strg+F.
 - **Auf dem Mac** sind F9, F11 und F12 Medientasten oder vom System belegt
@@ -589,7 +603,10 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   Esc schließt die Nebenfenster.
 - **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
   beendet.
-- **Einzelzeichen, Gruppen, Wörter, Rufzeichen:** Leertaste wiederholt.
+- **Einzeln (Zeichen, Gruppen, Wörter, Rufzeichen):** Leertaste wiederholt.
+  Den Inhalt wählen die Pfeiltasten in der Zeile „Inhalt“, oder Alt+1
+  noch einmal drücken: Zeichen → Gruppen → Wörter → Rufzeichen (wird
+  angesagt).
   Beim Kopfhören: Enter löst auf, J = gewusst, N = nicht gewusst.
 - **Rufz (nach dem Durchgang):** F6 verpasste Rufzeichen nachhören bzw. das aktuelle nochmal, F7 von vorn, Esc anhalten.
 - **Sprechen:** F5 Start/Stop, Leertaste spielt den aktuellen Eintrag noch einmal, Esc stoppt.
@@ -650,9 +667,14 @@ Austausch will macOS die Freigabe noch einmal.
 **Ältere Macs mit Intel-Prozessor** starten den Morsetrainer aus dem
 Quelltext:
 
-1. Python 3.10 oder neuer von [python.org](https://www.python.org/downloads/macos/)
-   installieren. Dieses Python bringt ein funktionierendes Tk mit; mit dem
-   Python aus Homebrew bleibt das Fenster oft leer oder es fehlt `tkinter`.
+1. Python 3.10 bis 3.13 von [python.org](https://www.python.org/downloads/macos/)
+   installieren, auf macOS 13 oder neuer. Dieses Python bringt ein
+   funktionierendes Tk mit; mit dem Python aus Homebrew bleibt das Fenster
+   oft leer oder es fehlt `tkinter`. Mit Python 3.14 läuft der Trainer auf
+   Intel-Macs ohne Sprachausgabe (Ansage, Reiter Sprechen). Unter macOS 12
+   und älter scheitert die Einrichtung an der Sprachausgabe; dann
+   `pip install numpy sounddevice lameenc` statt der Zeile mit
+   `requirements.txt` (ebenfalls ohne Sprachausgabe).
 2. Unter [Releases](https://github.com/tilde1970/Morsetrainer/releases) beim
    neuesten Release „Source code (zip)“ laden und entpacken.
 3. Im Terminal in den entpackten Ordner wechseln und einmalig einrichten:
@@ -719,7 +741,7 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   [supercheckpartial.com](https://www.supercheckpartial.com) herunter und
   lege sie als `callsigns.scp` in das Datenverzeichnis. Ohne die Datei
   erzeugt der Trainer Rufzeichen nach Landesmuster.
-- `woerter.txt`: eigene Wörter für den Reiter „Wörter“, eins pro Zeile,
+- `woerter.txt`: eigene Wörter für „Wörter“ (Reiter Einzeln) und Am Stück, eins pro Zeile,
   optional mit Bedeutung: `DOK = Distrikts-Ortsverbandskenner`. Der Knopf
   „Eigene Wörter bearbeiten“ legt die Datei mit Anleitung an und öffnet sie.
   Die Wörter kommen zu den eingebauten dazu.

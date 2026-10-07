@@ -2,9 +2,23 @@
 
 ## Unveröffentlicht
 
+- **Neue Reiter:** Zeichen, Gruppen, Wörter und Rufzeichen stehen
+  gemeinsam im Reiter **Einzeln** (oben die Wahl unter „Inhalt“, wie in
+  den anderen Reitern; sie bleibt gespeichert): eins nach dem anderen, mit Antwort. „Kontinuierlich“ heißt
+  jetzt **Am Stück**: ohne Pause fortlaufend mitschreiben. Aus zehn
+  Reitern werden sieben; Alt+1 … Alt+7 wählen sie (1 Einzeln, 2 Am Stück,
+  3 Sprechen, 4 QSO, 5 Contest, 6 Netzwerk, 7 Statistik), Alt+0 führt wie
+  bisher zur Statistik, und Alt+8 oder Alt+9 sagt an, dass es nur sieben
+  gibt. Im Reiter Einzeln schaltet Alt+1 noch einmal den Inhalt weiter,
+  in der Zeile „Inhalt“ gehen die Pfeiltasten, und die Ansage nennt den
+  Inhalt mit („Reiter Einzeln, Gruppen“, „Inhalt Wörter, Optionsfeld“).
+  Einstellungen, Statistik und Verlauf bleiben erhalten.
 - **Band in der Antwortpause:** In Gruppen, Wörtern und Rufzeichen läuft
   das Band nach jeder Sequenz 6 dB leiser weiter, statt zu verstummen;
   mit der nächsten Sequenz wird es wieder lauter (weich übergeblendet).
+  Abschaltbar mit „Band in der Antwortpause“ im Fenster Bandbedingungen
+  (zählt für Stufe und Diplom gleich). Die Lösung nach zu vielen
+  Fehlversuchen kommt jetzt ohne Störungen.
 - **Neue Störungen** unter „Weitere Störungen“: Schaltnetzteil (Brumm mit
   wanderndem Pfeifton), PLC (Datenrauschen aus der Steckdose), Weidezaun
   (Ticken etwa jede Sekunde) und Tastklicks (der Nachbar-Run tastet hart;
@@ -22,7 +36,7 @@
   buchstabiert wie Rufzeichen (auch mit der englischen Stimme). In der
   Statistik werden einzelne Zeichen wie „?“ genannt, Verwechslungen als
   „Be gleich 9 mal“ bzw. „gleich einmal“ gelesen und Spaltenköpfe wie
-  „Ø Zeit (s)“ als „Durchschnittszeit in Sekunden“. Klammern werden nicht mehr mitgelesen,
+  „Ø Reaktion (s)“ als „Durchschnittsreaktion in Sekunden“. Klammern werden nicht mehr mitgelesen,
   sondern zur Pause; „Staat/Leistung“ heißt „Staat oder Leistung“.
   Zahlenfelder sagen ihre Einheit mit („Lösung zeigen nach, 3
   Fehlversuchen“, „Dauer, 5 Minuten“).
@@ -34,12 +48,22 @@
 - **Contest:** Rufzeichen in den Feldern und im Log werden im
   Funkalphabet angesagt (Delta, Lima, Eins …).
 - **Fenster schließen:** Die Ansage sagt, wo du gelandet bist („Zurück im
-  Hauptfenster. Reiter Gruppen.“).
+  Hauptfenster. Reiter Einzeln, Gruppen.“).
 - **Statistik:** Die Spalte „Ø Zeit“ heißt jetzt „Ø Reaktion“ und zeigt
   die Zeit vom letzten Punkt oder Strich bis zur Eingabe (richtige
-  Antworten, gemessene Werte). Bisher war es die Zeit ab Beginn des
-  Zeichens; lange Zeichen und langsames Tempo sahen dadurch schlechter aus.
-  „Ø WPM“ je Zeichen zählt wie die Zeile darüber nur richtige Antworten.
+  Antworten, gemessene Werte), in allen Übungen gleich. Bisher war es die
+  Zeit ab Beginn des Zeichens; lange Zeichen und langsames Tempo sahen
+  dadurch schlechter aus. Beim Mitschreiben zählt sie ab dem Tonende oder
+  ab deiner vorigen Taste, je nachdem was später kommt: Hinterherschreiben
+  oder erst die Gruppe hören, dann tippen gilt nicht mehr als „langsam
+  erkannt“ (auch für Lernkartei und Gewichtung). „Ø WPM“ je Zeichen zählt
+  nur richtige Antworten, ab Beginn des Zeichens und höchstens so schnell,
+  wie gesendet wurde; in Am Stück, QSO-Mittippen und im Netzwerk kamen
+  bisher unsinnig hohe Werte heraus (etwa 66 WPM bei 20 gesendeten).
+- **Einzeln, Zeichen:** Die Antwort zählt ab dem Ende des letzten Punkts
+  oder Strichs. Bisher wurde eine sehr schnelle Taste in der Pause nach
+  dem Zeichen verworfen und lief dann als „zu langsam“ ab; auch das
+  Zeitlimit zählt jetzt ab dem Tonende, wie beschrieben.
 - **Tabellen** (Diplome, Statistik, Contest-Log): Springst du mit Tab
   hinein, ist die erste Zeile gewählt und die Pfeiltasten gehen sofort. Öffnet sich ein Fenster, sagt die Ansage
   seinen Namen („Fenster Bandbedingungen“); spricht das Fenster selbst,
@@ -47,19 +71,56 @@
   Zahlenfeldern wird angesagt (Zeichen buchstabiert, Gelöschtes mit
   „gelöscht“), das Feld „Zeichen“ liest seinen Inhalt Zeichen für Zeichen.
 - **Schriftgröße:** Pfeile von Zahlenfeldern und Klapplisten, Rollbalken
-  und Schieberegler wachsen mit; die ganze Auswertung (Kontinuierlich) und
+  und Schieberegler wachsen mit; die ganze Auswertung (Am Stück) und
   die Auflösung (Netzwerk) beginnen in der eingestellten Größe.
-- **Bandbedingungen bei tiefer Tonhöhe:** Wie viel Rauschen ein schmales
-  Filter wegnimmt, hängt von der eigenen Tonhöhe ab (bei 300 Hz rund 3 dB
-  mehr als bei 600 Hz). Stufe, Diplom QRN-fest und „S/N im Filter“ rechnen
-  jetzt mit der eigenen Tonhöhe statt fest mit 600 Hz.
+- **Schmales Filter bei tiefer Tonhöhe:** Das Filter wandert mit der
+  eigenen Tonhöhe wie ein ZF-Filter im Gerät und nimmt bei jeder Tonhöhe
+  gleich viel Rauschen weg. Bisher stieß es bei tiefem Ton an die untere
+  Flanke des SSB-Filters und nahm mehr Rauschen weg als angezeigt; Stufe
+  und Diplom QRN-fest hängen so nicht an der gewählten Tonhöhe.
 - **Mac:** Die Anleitung nennt die Mindestversion macOS 14 (Sonoma).
 - Fehlt im fertigen Programm eine Stimme, rät die Meldung jetzt zum
   erneuten Herunterladen statt auf ein Skript zu verweisen.
 - **Probehören ohne Zeitgrenze:** läuft, bis du es beendest (Knopf, Strg+P
   oder Fenster schließen).
+- **Statistik:** Unter der Tabelle steht, was „Ø Reaktion“, „Ø WPM“ und
+  „–“ bedeuten.
+- **Contest:** Stationen aus W8 (Ohio, Michigan) nennen CQ-Zone 4, aus W9
+  ITU-Zone 8; im WAG geben manche DL-Stationen „NM“ (Nicht-Mitglied)
+  statt eines DOK.
+- **Sprachansage:** „Quebec“ klingt wie vorgeschrieben „Kebeck“. Minimieren
+  eines Fensters (oder ein Wechsel der Arbeitsfläche) wird nicht mehr als
+  „Zurück im Hauptfenster“ angesagt.
+- **Tastatur:** Strg+B, Strg+P und Strg+F gehen auch mit Feststelltaste,
+  auf dem Mac auch Cmd+B.
+- **Weidezaun:** tickt höchstens einmal je Sekunde, wie es die Norm für
+  Weidezaungeräte vorgibt.
+- **Fehlermeldungen:** Kann der Morsetrainer kein Fenster öffnen, sagt er
+  es auf der Konsole (unter Windows in einem Meldungsfenster) und nennt
+  das Fehlerprotokoll, statt wortlos zu verschwinden. Fehlt der Ton,
+  steht dabei, was zu tun ist (Gerät belegt, keins gefunden, abgezogen).
+  `--help` und `--version` zeigen Aufruf und Version.
+- **Nach dem Update** sagt ein Hinweis einmal, wo Gruppen, Wörter und
+  Rufzeichen jetzt stehen.
+- **Kopfhörer gewechselt:** Ist das Audiogerät weg (abgezogen, keins
+  gefunden), liest der Trainer die Geräte neu ein und versucht es noch
+  einmal, statt bis zum Neustart stumm zu bleiben (vor allem auf dem Mac).
+- **Einstellungen**, die sich beim Beenden nicht speichern lassen (etwa in
+  einem schreibgeschützten Ordner), werden gemeldet statt still verloren.
+- **Bandbedingungen:** Das Fenster rät, bei „leicht“ bis „mittel“ zu üben;
+  „stark“ ist für den Feinschliff.
+- **Ältere Intel-Macs:** Die Anleitung nennt Python 3.10 bis 3.13 und
+  macOS 13; mit Python 3.14 lässt sich der Trainer dort ohne Sprachausgabe
+  einrichten statt gar nicht. Die Entwickleranleitung nennt die nötigen
+  Linux-Pakete.
 - Intern: Mindestversionen der Abhängigkeiten, Stimmen-Download auf festem
-  Stand, drei weitere Tests.
+  Stand, Release-Builds mit festen Versionen (packaging/constraints.txt),
+  der Selbsttest der Builds prüft auch Ton- und Fensterbibliothek. Öffnen
+  und Schließen der Tonausgabe sind gegen gleichzeitige Zugriffe
+  gesichert; Stopp und sofortiger Neustart können das Pausengeräusch
+  nicht mehr doppelt laufen lassen. Die Tests laufen auch mit Python 3.10,
+  dazu eine Probeinstallation auf Windows und macOS. Neues Bild im README.
+  Weitere Tests.
 
 ## 2.39
 

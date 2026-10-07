@@ -167,6 +167,8 @@ IARU_HQ_RUN_PROBABILITY = 0.25
 IARU_HQ_CALLER_PROBABILITY = 0.1
 # Buchstaben, mit denen DOKs beginnen (Distrikte des DARC).
 DOK_LETTERS = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
+# Nicht-Mitglieder in DL geben im WAG „NM“ statt eines DOK.
+WAG_NM_PROBABILITY = 0.1
 
 
 @dataclass(frozen=True)
@@ -280,7 +282,8 @@ def cq_zone(call: str, country: Country) -> int:
             return 31
         if call.startswith(("KL7", "NL7", "WL7", "AL7")):
             return 1
-        return {"6": 3, "7": 3, "5": 4, "9": 4, "0": 4}.get(district, 5)
+        # Zone 4 umfasst auch W8 (außer West Virginia, dem kleineren Teil).
+        return {"6": 3, "7": 3, "5": 4, "8": 4, "9": 4, "0": 4}.get(district, 5)
     if country.key == "UA":
         return {"9": 17, "0": 19}.get(district, 16)
     return country.zone
@@ -295,7 +298,8 @@ def itu_zone(call: str, country: Country) -> int:
             return 61
         if call.startswith(("KL7", "NL7", "WL7", "AL7")):
             return 1
-        return {"6": 6, "7": 6, "5": 7, "9": 7, "0": 7}.get(district, 8)
+        # IL, IN und WI (W9) liegen überwiegend östlich von 90° W, in Zone 8.
+        return {"6": 6, "7": 6, "5": 7, "0": 7}.get(district, 8)
     if country.key == "UA":
         return {"9": 30, "0": 32}.get(district, 29)
     return ITU_ZONES[country.key]
@@ -464,7 +468,9 @@ class _Exchange:
         self.country = country
         self.serial = first_serial
         if kind == "wag" and country.key == "DL":
-            self.fixed = (f"{random.choice(DOK_LETTERS)}{random.randint(1, 60):02d}", DOK)
+            dok = ("NM" if random.random() < WAG_NM_PROBABILITY
+                   else f"{random.choice(DOK_LETTERS)}{random.randint(1, 60):02d}")
+            self.fixed = (dok, DOK)
         elif kind == "cqww":
             self.fixed = (str(cq_zone(call, country)), NUMBER)
         elif kind == "arrldx" and country.key == "W":

@@ -217,7 +217,8 @@ class HelpWindow:
         ttk.Button(self.top, text=tr("Schließen"), command=self.top.destroy).pack(anchor="e", padx=8, pady=(0, 8))
         self.top.bind("<Escape>", self._escape)
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
-            self.top.bind(f"<{modifier}-f>", lambda e: self.focus_search() or "break")
+            for key in ("f", "F"):  # auch mit Feststelltaste
+                self.top.bind(f"<{modifier}-{key}>", lambda e: self.focus_search() or "break")
 
     def _current_text(self) -> tk.Text:
         return self.texts[DOCS[self.notebook.index("current")][1]]

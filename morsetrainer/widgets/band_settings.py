@@ -104,6 +104,10 @@ class BandSettings:
         self.gain_var = tk.DoubleVar(value=100)
         self.filter_var = tk.IntVar(value=band.DEFAULT_FILTER)
         self.qrm_offset_var = tk.StringVar(value=band.DEFAULT_QRM_OFFSET)
+        # Band in der Antwortpause leiser weiter (Gruppen, Wörter, Rufzeichen);
+        # abschaltbar, wer zwischen den Sequenzen Ruhe braucht (Tinnitus,
+        # Ermüdung). Gehört nicht zur Spec: zählt für keine Stufe.
+        self.pause_var = tk.BooleanVar(value=True)
         self.listeners = []
         self.window = None
         self.focus_before = None  # Fokus im Hauptfenster vor dem Öffnen
@@ -154,7 +158,7 @@ class BandSettings:
 
     def settings(self) -> dict:
         """Zum Speichern (window_state.json, Abschnitt shared)."""
-        return self.spec() | {"version": SETTINGS_VERSION}
+        return self.spec() | {"version": SETTINGS_VERSION} | ({} if self.pause_var.get() else {"pause_band": False})
 
     def restore(self, data) -> bool:
         """Gegenstück zu settings(); False, wenn nichts Brauchbares dabei war.
@@ -167,6 +171,7 @@ class BandSettings:
         if data.get("version") is None and "qsb" in spec["levels"]:
             spec["levels"].setdefault("strength", spec["levels"]["qsb"])
         self.set_spec(spec, notify=False)
+        self.pause_var.set(data.get("pause_band") is not False)
         return True
 
     def restore_panel(self, data) -> bool:
@@ -197,22 +202,10 @@ class BandSettings:
         if "filter" in spec:
             text += " · " + tr("Filter {width}").format(width=tr(FILTER_NAMES[spec["filter"]]))
         text += " · " + tr("Lautstärke {gain} %").format(gain=round(spec["gain"] * 100))
-        rank = band.preset_rank(spec, self.pitch())
+        rank = band.preset_rank(spec)
         if rank:
             text += " · " + tr("Stufe {name}").format(name=tr(PRESET_NAMES[rank]))
         return text
-
-    def pitch(self) -> float:
-        """Eigene Tonhöhe für S/N im Filter und Stufe (aus der Kopfleiste über
-        attach_preview, sonst 600 Hz)."""
-        try:
-            return float(self.preview.params()[1]) if self.preview is not None else 600.0
-        except (tk.TclError, TypeError, ValueError):
-            return 600.0
-
-    def pitch_changed(self) -> None:
-        """Tonhöhe in der Kopfleiste geändert: Kurzfassung und Fenster neu."""
-        self._changed()
 
     def attach_preview(self, params, blocked) -> None:
         """Probehören einrichten: `params()` liefert (WpM, Tonhöhe,
@@ -300,10 +293,14 @@ class BandSettings:
             anchor="w", pady=(0, 2))
         theme.hint(frame, wrap=460, text=tr(
             "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
-            "(90 % und mehr), und mit „leicht“ beginnen.")).pack(anchor="w", pady=(0, 2))
+            "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "
+            "ist für den Feinschliff.")).pack(anchor="w", pady=(0, 2))
+        pause = ttk.Checkbutton(frame, text=tr("Band in der Antwortpause"), variable=self.pause_var)
+        pause.pack(anchor="w")
         theme.hint(frame, wrap=460, text=tr(
-            "In Gruppen, Wörtern und Rufzeichen läuft das Band in deiner Antwortpause 6 dB leiser weiter; "
-            "wird es wieder lauter, kommt die nächste Sequenz.")).pack(anchor="w", pady=(0, 6))
+            "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
+            "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
+            "zählt für Stufe und Diplom gleich.")).pack(anchor="w", pady=(0, 6))
 
         presets = ttk.Frame(frame)
         presets.pack(fill="x", pady=(0, 4))
@@ -329,7 +326,9 @@ class BandSettings:
         buttons = ttk.Frame(box)
         buttons.grid(row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="e", pady=(6, 0))
         ttk.Button(buttons, text=tr("Alle aus"), command=lambda: self._set_all(False)).pack(side="right")
-        ttk.Button(buttons, text=tr("Alle an"), command=lambda: self._set_all(True)).pack(side="right", padx=4)
+        all_on = ttk.Button(buttons, text=tr("Alle an"), command=lambda: self._set_all(True))
+        all_on.pack(side="right", padx=4)
+        announcer.name(all_on, tr("Alle an, ohne die weiteren Störungen"))
 
         # Weitere Störungen, aufklappbar; offen, sobald darin etwas an ist.
         self.extra_button = ttk.Button(frame, style="Flat.TButton", command=self._toggle_extras)
@@ -339,8 +338,9 @@ class BandSettings:
         for row, (key, label, _) in enumerate(EXTRA_OPTIONS):
             self._option_row(self.extra_box, row, key, label)
         theme.hint(self.extra_box, wrap=440, text=tr(
-            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Tastklicks: Klicks eines hart "
-            "tastenden Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.")).grid(
+            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest; „Alle an“ schaltet sie nicht mit "
+            "ein. Tastklicks: Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der "
+            "CW-QRM-Abstand gilt für sie.")).grid(
             row=len(EXTRA_OPTIONS), column=0, columnspan=3, sticky="w", pady=(4, 0))
         self.extras_open = any(self.controls[key][0].get() for key, _, _ in EXTRA_OPTIONS)
         self._show_extras()
@@ -393,7 +393,8 @@ class BandSettings:
             self.preview_button.pack(side="left")
             theme.hint(frame, textvariable=self.preview_var, wrap=460).pack(anchor="w", pady=(4, 0))
             for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
-                window.bind(f"<{modifier}-p>", lambda e: self.toggle_preview() or "break")
+                for key in ("p", "P"):  # auch mit Feststelltaste
+                    window.bind(f"<{modifier}-{key}>", lambda e: self.toggle_preview() or "break")
         self._update_window()
         self._show_preview()
         self._fit_window()
@@ -479,11 +480,11 @@ class BandSettings:
         spec = self.spec()
         if "filter" in spec and "noise" in spec["levels"]:
             snr = (band.noise_snr_db(spec["levels"]["noise"], spec["gain"])
-                   + band.filter_noise_db(spec["filter"], self.pitch()))
+                   + band.filter_noise_db(spec["filter"]))
             self.filter_shown.config(text=tr("im Filter S/N {db}").format(db=signed_db(snr)))
         else:
             self.filter_shown.config(text="")
-        rank = band.preset_rank(spec, self.pitch())
+        rank = band.preset_rank(spec)
         if rank:
             text = tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank]))
         else:

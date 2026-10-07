@@ -87,7 +87,7 @@ class ItemSource:
         if not self.charset:
             return tr("Kein gültiges Zeichen im Zeichensatz!")
         if self.kind == "words" and not words.enough_words(self.items):
-            return tr("Zu wenige Wörter mit diesen Zeichen – erst im Reiter Gruppen üben.")
+            return tr("Zu wenige Wörter mit diesen Zeichen – erst mit Gruppen üben.")
         if self.kind == "phrases" and len(self.items) < MIN_ITEMS:
             first = first_lesson_with_phrases()
             when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""

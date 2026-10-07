@@ -100,6 +100,17 @@ class QsoTextTest(unittest.TestCase):
         self.assertEqual(qso_text.cq_zone("W6ABC", w6), 3)
         self.assertEqual(qso_text.itu_zone("W6ABC", w6), 6)
         self.assertEqual(qso_text.cq_zone("UA9XX", ua9), 17)
+        w8 = qso_text._country_of("W8ABC")
+        self.assertEqual(qso_text.cq_zone("W8ABC", w8), 4)  # OH, MI
+        self.assertEqual(qso_text.itu_zone("W9ABC", qso_text._country_of("W9ABC")), 8)  # IL, IN, WI
+
+    def test_wag_non_members_send_nm(self):
+        from unittest import mock
+        dl = qso_text._country_of("DL4YM")
+        with mock.patch.object(qso_text.random, "random", lambda: 0.0):
+            self.assertEqual(qso_text._Exchange("wag", "DL4YM", dl, 1).fixed[0], "NM")
+        from morsetrainer.modes.qso_quiz import normalize
+        self.assertEqual(normalize("nm", qso_text.DOK), normalize("NM", qso_text.DOK))
 
     def test_cut_number(self):
         self.assertEqual(qso_text.cut_number(7), "TT7")

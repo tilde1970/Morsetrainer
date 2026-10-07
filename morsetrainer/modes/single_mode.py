@@ -45,7 +45,7 @@ import numpy as np
 
 from morsetrainer.core import audio, koch, review, sfx
 from morsetrainer.core.morse import (
-    AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, code_units, duration_seconds, silence,
+    AUDIO_LATENCY, MORSE_CODE, display_text, SAMPLE_RATE, build_samples, effective_wpm, silence, tone_seconds,
     vary_voice,
 )
 from morsetrainer.core.stats import SessionStats
@@ -407,7 +407,9 @@ class SingleModeFrame(DailyModeMixin):
             self.stop()
             self.status_var.set(str(exc))
             return
-        dur_ms = int(duration_seconds(self.current_char, wpm) * 1000) + 150 + int(AUDIO_LATENCY * 1000)
+        # Die Eingabe öffnet mit dem hörbaren Ende des letzten Elements: die
+        # Reflexantwort, um die es beim Zeitlimit geht, darf nicht verfallen.
+        dur_ms = int((tone_seconds(self.current_char, wpm) + AUDIO_LATENCY) * 1000)
         self.root.after(dur_ms, self.on_playback_done)
 
     def on_playback_done(self):
@@ -421,7 +423,7 @@ class SingleModeFrame(DailyModeMixin):
             # Das Limit zählt ab dem gleichen Zeitpunkt wie die Latenz, und
             # zwar ab dem ersten Hören: Wiederholen verschafft keine Zeit.
             if self.deadline is None:
-                self.deadline = self.play_start_time + duration_seconds(self.current_char, self.voice[0]) + self.limit
+                self.deadline = self.play_start_time + tone_seconds(self.current_char, self.voice[0]) + self.limit
             token = self.timeout_token
             self.root.after(max(int((self.deadline - time.time()) * 1000), 50), self._on_timeout, token)
 
@@ -432,9 +434,9 @@ class SingleModeFrame(DailyModeMixin):
             return
         self.waiting_for_input = False
         wpm = self.voice[0]
-        reaction_time = duration_seconds(self.current_char, wpm) + self.limit
+        reaction_time = tone_seconds(self.current_char, wpm) + self.limit
         self.session_stats.record_char(
-            self.current_char, "", False, reaction_time, code_units(self.current_char) * 1.2 / reaction_time
+            self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)
         )
         if self.first_hearing:
             self.limit = next_limit(self.limit, False, self._limit_max())
@@ -489,13 +491,13 @@ class SingleModeFrame(DailyModeMixin):
         self.last_typed = typed
 
         reaction_time = max(time.time() - self.play_start_time, 0.001)
-        effective_wpm = code_units(self.current_char) * 1.2 / reaction_time
-        latency = reaction_time - duration_seconds(self.current_char, self.voice[0])
+        measured_wpm = effective_wpm(self.current_char, reaction_time, self.voice[0])
+        latency = max(reaction_time - tone_seconds(self.current_char, self.voice[0]), 0.0)
         if helped:
-            self.session_stats.record_char(self.current_char, "", False, reaction_time, effective_wpm)
+            self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm)
         else:
             self.session_stats.record_char(
-                self.current_char, typed, correct, reaction_time, effective_wpm, latency=latency
+                self.current_char, typed, correct, reaction_time, measured_wpm, latency=latency
             )
         if self.icr_var.get() and self.first_hearing and correct:
             self.limit = next_limit(self.limit, True, self._limit_max())

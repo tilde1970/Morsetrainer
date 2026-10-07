@@ -2,9 +2,23 @@
 
 ## Unreleased
 
+- **New tabs:** Characters, Groups, Words and Callsigns now share the
+  **One by one** tab (choose under “Content” at the top, as in the other
+  tabs; the choice is saved): one at a time, with an answer. “Continuous” is now **Non-stop**:
+  copy continuously without pauses. Ten tabs become seven; Alt+1 … Alt+7
+  select them (1 One by one, 2 Non-stop, 3 Speak, 4 QSO, 5 Contest,
+  6 Network, 7 Statistics), Alt+0 still goes to Statistics, and Alt+8 or
+  Alt+9 announces that there are only seven. In the One by one tab,
+  pressing Alt+1 again moves on to the next content, the arrow keys work in
+  the “Content” row, and the announcement names the content (“Tab One by
+  one, Groups”, “Content Words, option button”). Settings, statistics and
+  history are kept.
 - **Band in the answer pause:** in Groups, Words and Callsigns the band
   keeps running 6 dB quieter after each sequence instead of falling
   silent; it comes back up with the next sequence (smooth crossfade).
+  It can be switched off with “Band in the answer pause” in the band
+  conditions window (counts the same for level and award). The solution
+  after too many failed attempts now comes without interference.
 - **New interference** under “More interference”: switching power supply
   (buzz with a wandering whistle), PLC (powerline data noise), electric
   fence (a tick about every second) and key clicks (the neighbouring run
@@ -21,8 +35,8 @@
   contest types (CQ WW, WPX, WAG, ARRL DX, IARU HF) the way hams say them,
   abbreviations spelled like callsigns (also with the English voice). In
   the statistics single characters such as “?” are named, confusions read
-  as “B 9 times” or “once”, and headings such as “Ø time (s)” as “average
-  time in seconds”. Brackets are no longer read out
+  as “B 9 times” or “once”, and headings such as “Ø reaction (s)” as
+  “average reaction in seconds”. Brackets are no longer read out
   but become a pause; “state/power” is read as “state or power”.
   Number fields say their unit (“Show solution after, 3 failed attempts”,
   “Duration, 5 minutes”).
@@ -34,12 +48,22 @@
 - **Contest:** callsigns in the fields and in the log are announced in the
   phonetic alphabet (Delta, Lima, One …).
 - **Closing a window:** the announcement says where you are now (“Back in
-  the main window. Tab Groups.”).
+  the main window. Tab One by one, Groups.”).
 - **Statistics:** the column “Ø time” is now “Ø reaction” and shows the
   time from the last dot or dash to your input (correct answers, measured
-  values). Before, it was the time from the start of the character, so long
-  characters and slow speeds looked worse. “Ø WPM” per character, like the
-  line above it, counts only correct answers.
+  values), the same in every exercise. Before, it was the time from the
+  start of the character, so long characters and slow speeds looked worse.
+  When copying along it counts from the end of the tone or from your
+  previous key, whichever is later: writing behind or listening to the
+  whole group first no longer counts as “recognised slowly” (also for the
+  review box and the weighting). “Ø WPM” per character counts only correct
+  answers, from the start of the character and at most as fast as it was
+  sent; in Non-stop, QSO type-along and on the network it used to show
+  absurdly high values (around 66 WPM at 20 sent).
+- **One by one, Characters:** the answer counts from the end of the last
+  dot or dash. Before, a very quick key in the gap after the character was
+  dropped and then ran out as “too slow”; the time limit now also counts
+  from the end of the tone, as described.
 - **Tables** (awards, statistics, contest log): when you Tab into one, the
   first row is selected and the arrow keys work right away. When a window opens, the announcement says
   its name (“Window Band conditions”); if the window speaks itself, the
@@ -47,19 +71,55 @@
   announced (characters spelled out, deletions with “deleted”); the
   “Characters” field reads its content character by character.
 - **Font size:** arrows of number fields and drop-down lists, scrollbars
-  and sliders grow with it; the full result (Continuous) and the solution
+  and sliders grow with it; the full result (Non-stop) and the solution
   (Network) start at the size set.
-- **Band conditions at a low pitch:** how much noise a narrow filter
-  removes depends on your pitch (at 300 Hz about 3 dB more than at
-  600 Hz). The level, the QRN-proof award and “S/N in filter” now use your
-  pitch instead of a fixed 600 Hz.
+- **Narrow filter at a low pitch:** the filter moves with your pitch like
+  an IF filter in a rig and removes the same amount of noise at every
+  pitch. Before, at a low pitch it ran into the lower edge of the SSB
+  filter and removed more noise than shown; this way the level and the
+  QRN-proof award do not depend on the pitch you choose.
 - **Mac:** the manual states the minimum version macOS 14 (Sonoma).
 - If a voice is missing from the packaged program, the message now
   suggests downloading the program again instead of pointing to a script.
 - **Listening without a time limit:** it runs until you stop it (button,
   Ctrl+P or closing the window).
+- **Statistics:** below the table it says what “Ø reaction”, “Ø WPM” and
+  “–” mean.
+- **Contest:** stations from W8 (Ohio, Michigan) send CQ zone 4, from W9
+  ITU zone 8; in the WAG some DL stations send “NM” (non-member) instead
+  of a DOK.
+- **Announcements:** the German voice says “Quebec” as prescribed
+  (“Keh-beck”). Minimising a window (or switching workspaces) is no longer
+  announced as “Back in the main window”.
+- **Keyboard:** Ctrl+B, Ctrl+P and Ctrl+F also work with Caps Lock, on the
+  Mac also Cmd+B.
+- **Electric fence:** ticks at most once a second, as the standard for
+  fence energisers requires.
+- **Error messages:** if the Morsetrainer cannot open a window, it says so
+  on the console (on Windows in a message box) and names the error log
+  instead of vanishing silently. If there is no sound, the message says
+  what to do (device busy, none found, unplugged). `--help` and
+  `--version` show usage and version.
+- **After the update** a note says once where Groups, Words and Callsigns
+  are now.
+- **Headphones changed:** if the audio device is gone (unplugged, none
+  found), the trainer reads the devices again and tries once more instead
+  of staying silent until a restart (especially on the Mac).
+- **Settings** that cannot be saved on exit (e.g. in a read-only folder)
+  are reported instead of being lost silently.
+- **Band conditions:** the window advises practising at “light” to
+  “medium”; “heavy” is for polishing.
+- **Older Intel Macs:** the manual states Python 3.10 to 3.13 and macOS 13;
+  with Python 3.14 the trainer can be set up there without speech instead
+  of not at all. The development guide lists the Linux packages needed.
 - Internal: minimum versions of the dependencies, voice download pinned to
-  a fixed revision, three more tests.
+  a fixed revision, release builds with fixed versions
+  (packaging/constraints.txt), the build self-test also checks the sound
+  and window libraries. Opening and closing the sound output are guarded
+  against simultaneous access; stopping and restarting at once can no
+  longer make the pause noise run twice. The tests also run with Python
+  3.10, plus a trial installation on Windows and macOS. New picture in the
+  README. More tests.
 
 ## 2.39
 

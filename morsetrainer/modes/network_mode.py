@@ -40,9 +40,10 @@ from tkinter import messagebox, ttk
 from morsetrainer.core import align, answer_sheet, audio, band, stats, tempo
 import numpy as np
 
+from morsetrainer.core.latency import copy_timing
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
-    code_units, display_text, duration_seconds, silence, word_gap_extra_seconds,
+    display_text, duration_seconds, effective_wpm, silence, tone_seconds, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
@@ -382,7 +383,7 @@ class NetworkModeFrame:
         self.flow_var = tk.StringVar(value=WAIT)
         for row, (value, label) in enumerate(((WAIT, tr("Warten auf Antworten")),
                                               (PACED, tr("Fester Takt (Mitschreiben auf Papier)")),
-                                              (CONTINUOUS, tr("Kontinuierlich (ohne Pause, feste Dauer)")))):
+                                              (CONTINUOUS, tr("Am Stück (ohne Pause, feste Dauer)")))):
             ttk.Radiobutton(self.flow_row, text=label, value=value, variable=self.flow_var,
                             command=self._on_flow_change).grid(row=row, column=1, sticky="w")
         self.duration_frame = ttk.Frame(options)
@@ -394,7 +395,7 @@ class NetworkModeFrame:
                     textvariable=self.duration_var, width=4).pack(side="left")
         ttk.Label(duration, text=tr("Min.")).pack(side="left", padx=(4, 0))
         theme.hint(self.duration_frame, wrap=540, text=tr(
-            "Die Gruppen kommen ohne Pause wie im Reiter „Kontinuierlich“, alle tippen fortlaufend mit, ohne "
+            "Die Gruppen kommen ohne Pause wie im Reiter „Am Stück“, alle tippen fortlaufend mit, ohne "
             "Enter. Ausgewertet wird am Ende; eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Die "
             "Lösungen stehen danach nummeriert unter „Auflösung“.")).pack(
             anchor="w", pady=(0, 2))
@@ -943,7 +944,7 @@ class NetworkModeFrame:
         charset = normalize(self.charset_var.get())
         continuous = self.flow_var.get() == CONTINUOUS
         if continuous and kind == "custom":
-            self.trainer_status_var.set(tr("Kontinuierlich geht nicht mit eigenem Text – Gruppen wählen."))
+            self.trainer_status_var.set(tr("Am Stück geht nicht mit eigenem Text – Gruppen wählen."))
             return
         if kind == "custom":
             lines = [" ".join(line.upper().split()) for line in self.custom_text.get("1.0", "end").splitlines()]
@@ -1210,7 +1211,7 @@ class NetworkModeFrame:
             return
         if self.run_continuous:
             remaining = max(int(self.stream_end - time.time()), 0) if self.stream_end else 0
-            self.trainer_status_var.set(tr("Kontinuierlich – noch {time}").format(
+            self.trainer_status_var.set(tr("Am Stück – noch {time}").format(
                 time=f"{remaining // 60}:{remaining % 60:02d}") if remaining else tr("Nachtippen…"))
             return
         n = self.item["n"]
@@ -1968,12 +1969,14 @@ class NetworkModeFrame:
         chars, groups = net_stream.evaluate(stream["entries"], start, typed, self.key_times[:len(typed)],
                                             stopped_at)
         if self.session_stats is not None:
-            for expected, got, correct, reaction in chars:
-                if reaction is None:
+            for expected, got, correct, latency in chars:
+                if not got:
                     self.session_stats.record_char(expected, "", False, 0.0, 0.0)
                 else:
-                    self.session_stats.record_char(expected, got, correct, reaction,
-                                                   net_stream.effective_wpm(expected, reaction), latency=reaction)
+                    since_start = tone_seconds(expected, stream["wpm"]) + (latency or 0.0)
+                    self.session_stats.record_char(expected, got, correct, since_start,
+                                                   effective_wpm(expected, since_start, stream["wpm"]),
+                                                   latency=latency)
         self.paced_results = []
         for index, (typed_group, latency) in sorted(groups.items()):
             item = {"n": index + 1, "text": stream["groups"][index], "wpm": stream["wpm"], "fw": stream["fw"],
@@ -2308,13 +2311,13 @@ class NetworkModeFrame:
     def _char_timing(self, index: int, typed_index, answer_time):
         """(Reaktionszeit, Latenz oder None) für das gesendete Zeichen an
         `index`, wie in sequence_mode: eindeutig nur ohne Wiederholung und
-        wenn die Taste nach dem Tonende kam, sonst gleichmäßig verteilt."""
+        wenn die Taste nach dem Tonende kam (core/latency), sonst gleichmäßig
+        verteilt."""
         if (typed_index is not None and not self.replayed and typed_index < len(self.key_times)
                 and index < len(self.tone_ends)):
-            key_time = self.key_times[typed_index]
-            latency = key_time - self.tone_ends[index]
-            if latency >= 0:
-                return key_time - self.tone_starts[index], latency
+            timing = copy_timing(index, typed_index, self.key_times, self.tone_starts, self.tone_ends)
+            if timing is not None:
+                return timing
         return max(answer_time - self.play_start, 0.001) / max(len(self.tone_ends), 1), None
 
     def _record(self, result, answer_time):
@@ -2330,7 +2333,7 @@ class NetworkModeFrame:
             if assumed:
                 latency = self.unsure_latency
             self.session_stats.record_char(expected, got, got == expected, reaction_time,
-                                           code_units(expected) * 1.2 / max(reaction_time, 0.001),
+                                           effective_wpm(expected, reaction_time, self.current["wpm"]),
                                            latency=latency, assumed=assumed)
         self.session_stats.record_group(result.sent, result.typed, wpm=self.current["wpm"])
         if not self.current["paced"]:

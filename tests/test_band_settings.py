@@ -229,15 +229,20 @@ class FilterAndQrmTest(unittest.TestCase):
         heavy = band.spec_from_preset("heavy") | {"filter": 500}
         self.assertEqual(band.preset_rank(heavy), "medium")  # −4 dB im Filter rund +2 dB
 
-    def test_filter_rank_depends_on_own_pitch(self):
-        # Bei tiefem Ton nimmt das schmale Filter mehr Rauschen weg (die Flanke
-        # des SSB-Filters liegt näher): „stark“ im 500-Hz-Filter ist bei 600 Hz
-        # noch „mittel“, bei 300 Hz nur noch „leicht“.
-        self.assertGreater(band.filter_noise_db(500, 300), band.filter_noise_db(500, 600) + 2)
+    def test_filter_takes_away_the_same_noise_at_every_pitch(self):
+        # Das Filter wandert mit der Tonhöhe (wie ein ZF-CW-Filter): Bei tiefem
+        # Ton fällt keine Stufe weg, auch nicht mit „Tonhöhe variieren“.
+        import numpy as np
+        silent = np.zeros(band.SAMPLE_RATE, dtype=np.float32)
+        for pitch in (300, 450, 900):
+            rms = {}
+            for width in (2400, 500):
+                spec = {"levels": {"noise": 0.5}, "gain": 1.0, "filter": width}
+                out = self.blockwise(band.conditions(spec, pitch), silent)
+                rms[width] = float(np.sqrt(np.mean(out[4800:] ** 2)))
+            self.assertAlmostEqual(20 * np.log10(rms[2400] / rms[500]), band.filter_noise_db(500), delta=1.0)
         heavy = band.spec_from_preset("heavy") | {"filter": 500}
         self.assertEqual(band.preset_rank(heavy), "medium")
-        self.assertEqual(band.preset_rank(heavy, 600), "medium")
-        self.assertEqual(band.preset_rank(heavy, 300), "light")
 
     def test_qrm_lies_in_the_chosen_offset(self):
         import numpy as np
@@ -542,6 +547,31 @@ class PauseNoiseTest(unittest.TestCase):
             self.noise.thread.join(5)
         self.assertFalse(self.noise.thread.is_alive())
         self.assertGreater(self.rms(stream.blocks[10:20]), 0.0)
+
+    def test_close_and_start_at_once_never_runs_two_streams(self):
+        import threading
+        streams = []
+        opened = threading.Semaphore(0)
+
+        def output_stream():
+            stream = FakeStream(target=1)
+            streams.append(stream)
+            opened.release()
+            return stream
+        with mock.patch.object(self.pause_noise.audio, "output_stream", output_stream):
+            self.noise.start(self.band, 0.0)
+            self.assertTrue(opened.acquire(timeout=5))
+            first = self.noise.thread
+            self.noise.close()
+            self.noise.start(self.band, 0.0)  # sofort wieder, ehe der alte Thread es merkt
+            self.assertTrue(opened.acquire(timeout=5))
+            first.join(5)
+            self.assertFalse(first.is_alive())
+            self.assertTrue(self.noise.running)
+            self.noise.close()
+            self.noise.thread.join(5)
+        self.assertEqual(len(streams), 2)
+        self.assertFalse(self.noise.running)
 
     def test_audio_error_is_quiet(self):
         def broken():
@@ -900,11 +930,43 @@ class SequenceBandTrackingTest(AppTestCase):
                 g._quiet_for_announcement()
             fade_out.assert_not_called()
             start.reset_mock()
+            self.app.band_settings.pause_var.set(False)  # eigener Schalter: Stille in der Pause
+            g.play_current()
+            start.assert_not_called()
+            self.app.band_settings.pause_var.set(True)
+            g.play_current(listen_only=True)  # die Lösung kommt ohne Band
+            start.assert_not_called()
             g.band_var.set(False)  # ohne Bandbedingungen: Stille in der Pause
             g.play_current()
             start.assert_not_called()
             g.stop()
             close.assert_called_once()
+
+    def test_solution_after_a_mistake_is_played_clean(self):
+        g = self.mode("Gruppen")
+        self.app.band_settings.set_preset("heavy")
+        g.band_var.set(True)
+        g.current_sequence, g.voice = "KM", (20, 600)
+        played = []
+        with mock.patch.object(g, "_play", side_effect=lambda samples: played.append(samples) or False):
+            g.play_current()
+            g.play_current(listen_only=True)
+        noisy, clean = played
+        self.assertGreater(len(noisy), len(clean))  # ohne Vorlauf mit Rauschen
+        import numpy as np
+        self.assertEqual(float(np.abs(clean[-200:]).max()), 0.0)  # nach dem Ton Stille, kein Rauschen
+
+    def test_pause_switch_is_saved_only_when_off(self):
+        settings = self.app.band_settings
+        self.assertNotIn("pause_band", settings.settings())
+        settings.pause_var.set(False)
+        saved = settings.settings()
+        self.assertIs(saved["pause_band"], False)
+        settings.pause_var.set(True)
+        settings.restore(saved)
+        self.assertFalse(settings.pause_var.get())
+        settings.restore({"levels": {}, "gain": 1.0, "version": 2})
+        self.assertTrue(settings.pause_var.get())
 
 
 if __name__ == "__main__":

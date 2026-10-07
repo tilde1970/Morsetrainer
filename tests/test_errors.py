@@ -49,6 +49,18 @@ class ErrorLogTest(unittest.TestCase):
         with mock.patch("builtins.open", side_effect=PermissionError("nein")):
             self.assertFalse(errorlog.record(ValueError, ValueError("x"), None))
 
+    def test_no_window_is_reported_on_the_console(self):
+        import io
+        console = io.StringIO()
+        with mock.patch.object(app_module.tk, "Tk", side_effect=app_module.tk.TclError("no display name")), \
+                mock.patch.object(app_module.update, "cleanup"), mock.patch.object(app_module.migration, "run"), \
+                mock.patch.object(sys, "__stderr__", console), mock.patch.object(sys, "excepthook"):
+            with self.assertRaises(SystemExit):
+                app_module.main()
+        self.assertIn("kein Fenster öffnen: no display name", console.getvalue())
+        self.assertIn(str(self.log), console.getvalue())
+        self.assertIn("TclError", self.log.read_text(encoding="utf-8"))
+
 
 class AppErrorTest(AppTestCase):
     def setUp(self):
@@ -60,6 +72,26 @@ class AppErrorTest(AppTestCase):
     def tearDown(self):
         self.log_patch.stop()
         super().tearDown()
+
+    def test_whats_new_once_after_an_update(self):
+        with mock.patch.object(app_module, "WHATS_NEW", {"2.10": "alt", "9.0": "Zukunft", "2.39": "Reiter neu"}), \
+                mock.patch.object(app_module, "__version__", "2.39"), \
+                mock.patch.object(app_module.messagebox, "showinfo") as shown:
+            self.app.saved_state = {"seen_version": "2.20"}
+            self.app.show_whats_new()
+            self.assertEqual(shown.call_args.args[1], "Reiter neu")  # nur Neues bis zur eigenen Version
+            shown.reset_mock()
+            self.app.saved_state = {"seen_version": "2.39"}  # schon gesehen
+            self.app.show_whats_new()
+            self.app.saved_state = {}  # frische Installation
+            self.app.show_whats_new()
+            shown.assert_not_called()
+
+    def test_settings_that_cannot_be_saved_are_reported(self):
+        with mock.patch.object(app_module.storage, "write_json_atomic", side_effect=PermissionError("schreibgeschützt")), \
+                mock.patch.object(app_module.messagebox, "showwarning") as warned:
+            self.app._save_state_or_warn()
+        self.assertIn("schreibgeschützt", warned.call_args.args[1])
 
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.messagebox, "showerror") as shown:
@@ -121,6 +153,73 @@ class SmallRobustnessTest(unittest.TestCase):
     def test_item_with_text_that_is_no_string_is_ignored(self):
         for text in (5, None, ["KMR"], {"a": 1}):
             self.assertIsNone(NetworkModeFrame._on_item(object(), {"type": "item", "n": 1, "text": text, "wpm": 20}))
+
+
+
+class AudioLockTest(unittest.TestCase):
+    """Öffnen und Schließen von Strömen nur unter der gemeinsamen Sperre
+    (PortAudio ist dabei nicht threadsicher)."""
+
+    def test_stream_opens_and_closes_under_the_lock(self):
+        from morsetrainer.core import audio
+        seen = []
+
+        class Stream:
+            def __init__(self, **kwargs):
+                seen.append(("open", audio._lock._is_owned()))
+
+            def start(self):
+                pass
+
+            def stop(self):
+                seen.append(("stop", audio._lock._is_owned()))
+
+            def close(self):
+                seen.append(("close", audio._lock._is_owned()))
+
+            def write(self, block):
+                seen.append(("write", audio._lock._is_owned()))
+
+        with mock.patch.object(audio.sd, "OutputStream", Stream, create=True):
+            with audio.output_stream() as stream:
+                stream.write(b"")
+        self.assertEqual(seen, [("open", True), ("write", False), ("stop", False), ("close", True)])
+
+    def test_known_errors_say_what_to_do(self):
+        from morsetrainer.core import audio
+        busy = audio.describe(OSError("Error opening OutputStream: Device unavailable [PaErrorCode -9985]"))
+        self.assertIn("belegt", busy)
+        self.assertIn("PaErrorCode -9985", busy)  # roher Text für Fehlerberichte
+        self.assertIn("kein Gerät", audio.describe(OSError("kein Gerät")))
+        self.assertIn("Kein Audiogerät gefunden", audio.describe(OSError("No Default Output Device", -9996)))
+
+    def test_lost_device_is_retried_with_fresh_devices(self):
+        from morsetrainer.core import audio
+        calls = []
+
+        def play(*args, **kwargs):
+            calls.append("play")
+            if len(calls) == 1:
+                raise OSError("Device unavailable", -9986)
+        with mock.patch.object(audio.sd, "play", play), \
+                mock.patch.object(audio.sd, "_terminate", lambda: calls.append("terminate"), create=True), \
+                mock.patch.object(audio.sd, "_initialize", lambda: calls.append("initialize"), create=True):
+            audio.play([0.0])
+        self.assertEqual(calls, ["play", "terminate", "initialize", "play"])
+        with mock.patch.object(audio.sd, "play", side_effect=OSError("busy", -9985)), \
+                mock.patch.object(audio.sd, "_terminate", create=True) as terminate:
+            with self.assertRaises(audio.AudioError):
+                audio.play([0.0])
+        terminate.assert_not_called()  # belegt: kein Neustart, das hilft nicht
+
+    def test_play_and_stop_use_the_lock(self):
+        from morsetrainer.core import audio
+        owned = []
+        with mock.patch.object(audio.sd, "play", lambda *a, **k: owned.append(audio._lock._is_owned())), \
+                mock.patch.object(audio.sd, "stop", lambda *a, **k: owned.append(audio._lock._is_owned())):
+            audio.play_quietly([0.0])
+            audio.stop()
+        self.assertEqual(owned, [True, True])
 
 
 if __name__ == "__main__":

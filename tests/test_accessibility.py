@@ -274,7 +274,7 @@ class AnnouncerTest(AppTestCase):
         self.pump_until(lambda: False, timeout=0.5)
         tree = contest.log_tree
         item = tree.insert("", "end", values=(1, "OE3XYZ", "599 15", "✓"))
-        self.app.select_tab(self.app.mode_titles.index("Contest"))
+        self.app.show_mode("Contest")
         self.root.deiconify()
         tree.focus_force()
         self.root.update()
@@ -332,6 +332,20 @@ class AnnouncerTest(AppTestCase):
         self.pump_until(lambda: False, timeout=0.3)
         self.assertNotIn("Fenster Still.", self.said)
         other.destroy()
+
+    def test_minimizing_a_window_is_not_announced(self):
+        from morsetrainer.widgets import announcer
+        window = tk.Toplevel(self.root)
+        try:
+            with mock.patch.object(self.app.announcer, "window_closed") as closed, \
+                    mock.patch.object(self.app.announcer, "window_shown") as shown, \
+                    mock.patch.object(window, "wm_state", return_value="iconic"):
+                announcer._window_closed(window)  # minimiert
+                announcer._window_shown(window)  # wiederhergestellt
+            closed.assert_not_called()
+            shown.assert_not_called()
+        finally:
+            window.destroy()
 
     def test_closing_a_window_says_where_you_are(self):
         self.app.announcer.var.set(True)
@@ -437,7 +451,7 @@ class AnnouncerTest(AppTestCase):
     def test_f11_reads_tab_and_status_even_when_off(self):
         self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
         self.assertTrue(self.pump_until(lambda: self.said))
-        self.assertTrue(self.said[0].startswith("Einzelzeichen. Bereit"), self.said)
+        self.assertTrue(self.said[0].startswith("Einzeln, Zeichen. Bereit"), self.said)
 
     def test_group_answers_are_spelled(self):
         from tests.test_modes import GroupEvaluationTest
@@ -583,16 +597,88 @@ class KeyboardTest(AppTestCase):
             self.app._dispatch_key(mock.Mock(keysym="k", char="k", widget=notes))
             on_key.assert_not_called()  # Tippen ins Notizfeld ist keine Antwort
 
+    def test_one_by_one_tab_holds_four_exercises(self):
+        # Zeichen, Gruppen, Wörter, Rufzeichen teilen sich „Einzeln“; „Kontinuierlich“ heißt „Am Stück“.
+        names = [self.app.notebook.tab(tab, "text") for tab in self.app.notebook.tabs()]
+        self.assertEqual(names[:2], ["Einzeln", "Am Stück"])
+        self.assertNotIn("Gruppen", names)
+        self.app.show_mode("Wörter")
+        self.assertEqual(self.app.one_by_one_var.get(), "Wörter")
+        self.assertIs(self.app._active_mode(), self.mode("Wörter"))
+        self.assertEqual(self.app.one_by_one_frames["Wörter"].winfo_manager(), "pack")
+        self.assertEqual(self.app.one_by_one_frames["Gruppen"].winfo_manager(), "")  # nur die gewählte sichtbar
+        self.app._lock_tabs()  # während eines Durchgangs keine andere Übung
+        self.assertTrue(all(b.instate(["disabled"]) for b in self.app.one_by_one_buttons))
+        self.app._unlock_tabs()
+        self.assertFalse(any(b.instate(["disabled"]) for b in self.app.one_by_one_buttons))
+        self.app.one_by_one_var.set("Rufzeichen")  # Auswahl per Knopf
+        self.app._show_one_by_one()
+        self.assertIs(self.app._active_mode(), self.mode("Rufzeichen"))
+        self.assertEqual(self.app._tab_name(), "Einzeln, Rufzeichen")
+
+    def test_one_by_one_choice_is_kept_after_restart(self):
+        import json
+        from morsetrainer import app as app_module
+        self.app.show_mode("Wörter")
+        self.app._save_state()
+        self.assertEqual(json.loads(app_module.WINDOW_STATE_FILE.read_text())["one_by_one"], "Wörter")
+        root = tk.Tk()
+        root.withdraw()
+        try:
+            again = app_module.MorseTrainerApp(root)
+            self.assertEqual(again.one_by_one_var.get(), "Wörter")
+            self.assertIs(again._active_mode(), again.modes[again.mode_titles.index("Wörter")])
+        finally:
+            from morsetrainer.widgets import announcer
+            announcer._instance = self.app.announcer
+            root.destroy()
+
     def test_alt_number_selects_tab_unless_locked(self):
         self.app.select_tab(1)
-        self.assertEqual(self.app._tab_name(), "Gruppen")
-        self.app.select_tab(8)
+        self.assertEqual(self.app._tab_name(), "Am Stück")
+        self.app.select_tab(5)
         self.assertEqual(self.app._tab_name(), "Netzwerk")
         self.app._lock_tabs()
         self.app.select_tab(0)
         self.assertEqual(self.app._tab_name(), "Netzwerk")  # gesperrt während eines Durchgangs
+        self.app._unlock_tabs()
         self.assertTrue(self.root.bind_all("<Alt-Key-1>"))
         self.assertTrue(self.root.bind_all("<Control-b>"))
+
+    def test_content_of_one_by_one_by_keyboard(self):
+        from morsetrainer.widgets import announcer
+        self.app.select_tab(0)
+        self.app.show_content("Einzelzeichen")
+        # Reiterleiste mit Fokus nennt auch den Inhalt.
+        self.assertIn("Einzeln, Zeichen", announcer.describe(self.app.notebook))
+        with mock.patch.object(announcer, "say") as say:
+            self.app.select_tab(0)  # Alt+1 noch einmal: nächster Inhalt
+        self.assertEqual(self.app.one_by_one_var.get(), "Gruppen")
+        self.assertEqual(say.call_args.args[0], "Reiter Einzeln, Gruppen.")
+        buttons = self.app.one_by_one_buttons
+        self.assertIn("Inhalt Gruppen", announcer.describe(buttons[1]))
+        self.assertTrue(buttons[1].bind("<Right>"))  # Pfeiltaste rechts:
+        with mock.patch.object(announcer, "say") as say:
+            self.app._step_content(1, focus=True)
+        self.assertEqual(self.app.one_by_one_var.get(), "Wörter")
+        self.assertEqual(say.call_args.args[0], "Inhalt Wörter.")
+        self.app._lock_tabs()
+        for button in buttons:
+            button.state(["disabled"])
+        self.app.select_tab(0)
+        self.assertEqual(self.app.one_by_one_var.get(), "Wörter")  # nicht während eines Durchgangs
+        for button in buttons:
+            button.state(["!disabled"])
+        self.app._unlock_tabs()
+
+    def test_alt_zero_goes_to_statistics_and_missing_tabs_are_announced(self):
+        from morsetrainer.widgets import announcer
+        self.app.select_tab(-1)  # Alt+0
+        self.assertEqual(self.app._tab_name(), "Statistik")
+        with mock.patch.object(announcer, "say") as say:
+            self.app.select_tab(8)
+        self.assertEqual(say.call_args.args[0], "Es gibt nur 7 Reiter.")
+        self.assertEqual(self.app._tab_name(), "Statistik")
 
     def test_mac_quit_preferences_and_function_key_substitutes(self):
         # Mac (H1–H3 der Plattformprüfung 2.38): Cmd+Q ohne ::tk::mac::Quit
@@ -953,7 +1039,7 @@ class ListenAnnounceTest(AnnouncerTest):
             listen.start()
         self.assertTrue(self.pump_until(lambda: "Kein Zeichensatz" in self.said))
         # Fortschritt für F11 als „3 von 20“
-        self.app.select_tab(self.app.mode_titles.index("Sprechen"))
+        self.app.show_mode("Sprechen")
         listen.status_var.set("Hör zu …")
         listen.progress_var.set("3/20")
         self.app._dispatch_key(mock.Mock(keysym="F11", char=""))

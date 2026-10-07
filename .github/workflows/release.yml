@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: sudo apt-get update && sudo apt-get install -y libportaudio2 libtk8.6
-      - run: pip install -r requirements.txt pyinstaller
+      - run: pip install -r requirements.txt -c packaging/constraints.txt pyinstaller
       - name: appimagetool
         run: |
           curl -sSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt pyinstaller
+      - run: pip install -r requirements.txt -c packaging/constraints.txt pyinstaller
       - run: bash packaging/get_voice.sh
       - run: pyinstaller --noconfirm --onefile --windowed --name Morsetrainer --add-data "CHANGELOG.md:." --add-data "CHANGELOG.en.md:." --add-data "docs/Anleitung.md:docs" --add-data "docs/Anleitung.en.md:docs" --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
       # Stimme und MP3 in der exe prüfen (ohne Fenster, ohne Ton).
@@ -72,7 +72,7 @@ jobs:
         with:
           python-version: "3.12"
       # Pillow wandelt das .ico in das .icns der App um.
-      - run: pip install -r requirements.txt pyinstaller pillow
+      - run: pip install -r requirements.txt -c packaging/constraints.txt pyinstaller pillow
       - run: bash packaging/get_voice.sh
       - run: pyinstaller --noconfirm --windowed --name Morsetrainer --osx-bundle-identifier io.github.tilde1970.morsetrainer --add-data "CHANGELOG.md:." --add-data "CHANGELOG.en.md:." --add-data "docs/Anleitung.md:docs" --add-data "docs/Anleitung.en.md:docs" --add-data "morsetrainer/assets:morsetrainer/assets" --add-data "voices:voices" --additional-hooks-dir packaging/hooks --icon packaging/morsetrainer.ico main.py
       # Der sounddevice-Hook packt die PortAudio-DLLs für Windows mit ein. Nach

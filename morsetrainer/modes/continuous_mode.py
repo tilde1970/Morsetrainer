@@ -34,9 +34,10 @@ from tkinter import ttk
 import numpy as np
 
 from morsetrainer.core import align, audio, band, koch
+from morsetrainer.core.latency import char_latency
 from morsetrainer.core.morse import (
     END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
-    char_gap_seconds, code_units, silence, word_gap_extra_seconds,
+    char_gap_seconds, effective_wpm, silence, tone_seconds, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.i18n import N_, tr
@@ -123,6 +124,7 @@ def grouped_lines(rows, width: int):
 def plausible(typed_time: float, tone_end: float) -> bool:
     """Passt ein Tastendruck zeitlich zu einem Zeichen mit diesem Tonende?"""
     return tone_end - EARLY_TOLERANCE_SECONDS <= typed_time <= tone_end + MAX_LAG_SECONDS
+
 
 # Die vorläufige Trefferquote während der Sitzung bezieht sich auf die
 # zuletzt gesendeten Zeichen; die ganze Sitzung wird erst beim Stop
@@ -277,7 +279,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.band.prepare(self.freq)
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
-            self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec, self.freq), key=BAND_ORDER.index)
+            self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec), key=BAND_ORDER.index)
 
     def toggle_running(self):
         """Durchgang starten bzw. beenden (Knopf, F5)."""
@@ -318,7 +320,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.band = band.conditions(spec, self.freq) if spec else None
         self.band_tracked = spec is not None
         self.band_gain_min = round(spec["gain"] * 100) if spec else 0
-        self.band_rank_min = band.preset_rank(spec, self.freq)
+        self.band_rank_min = band.preset_rank(spec)
         self.sent_log = []
         self.typed_log = []
         try:
@@ -342,7 +344,7 @@ class ContinuousModeFrame(DailyModeMixin):
                                           char_stats=self.content not in PLAIN_TEXT and spec is None,
                                           group_len=self.group_len or None,
                                           config_extra={"lesson": koch.lesson_of(charset),
-                                                        **band_config(spec, self.freq),
+                                                        **band_config(spec),
                                                         "content": self.content,
                                                         "user_words": self.source.has_user_words(),
                                                         **self._daily_config()})
@@ -541,10 +543,12 @@ class ContinuousModeFrame(DailyModeMixin):
                     self.session_stats.record_char(expected_char, "", False, 0.0, 0.0)
                     extra += 1
                     continue
-                reaction_time = max(typed_time - play_end, 0.001)
-                effective_wpm = code_units(expected_char) * 1.2 / reaction_time
+                previous_key = self.typed_log[op.received_index - 1]["time"] if op.received_index else None
+                latency = char_latency(typed_time, play_end, previous_key)
+                since_start = tone_seconds(expected_char, self.wpm) + (latency or 0.0)
                 self.session_stats.record_char(
-                    expected_char, typed_char, correct, reaction_time, effective_wpm, latency=reaction_time
+                    expected_char, typed_char, correct, since_start,
+                    effective_wpm(expected_char, since_start, self.wpm), latency=latency
                 )
             elif op.kind == align.OpKind.DELETE:
                 self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
@@ -589,7 +593,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.full_window.lift()
             return
         window = tk.Toplevel(self.root)
-        window.title(tr("Kontinuierlich – ganze Auswertung"))
+        window.title(tr("Am Stück – ganze Auswertung"))
         window.geometry(theme.scaled_geometry(window, 900, 600))
         window.configure(background=theme.BG)
         family = tkfont.nametofont("TkFixedFont", root=window).actual("family")

@@ -9,6 +9,7 @@ import re
 import sys
 import threading
 import time
+import traceback
 from datetime import date, timedelta
 from pathlib import Path
 import tkinter as tk
@@ -46,8 +47,8 @@ __version__ = "2.39"
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
 DEFAULT_GEOMETRY = "720x900"
-# Mindestbreite des Hauptfensters: Schmaler passen die Beschriftungen aller
-# Reiter nicht nebeneinander. Eine kleinere gespeicherte Breite wird angehoben.
+# Mindestbreite des Hauptfensters (Kopfleiste und Reiter haben Platz, auch
+# englisch); eine kleinere gespeicherte Breite wird angehoben.
 MIN_WIDTH = 720
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
 # Platzhalter-Rufzeichen, das in alten Einstellungsdateien im Contest-Reiter
@@ -76,9 +77,24 @@ ICON_SIZES = (128, 64, 32)
 # Updateprüfung beim Start: so lange nach dem Öffnen, Abfrage alle
 # UPDATE_POLL_MS (die Anfrage selbst gibt ohne Internet nach 5 s auf).
 UPDATE_CHECK_DELAY_MS = 1500
+WHATS_NEW_DELAY_MS = 800  # Hinweis nach einem Update, wenn das Fenster steht
 # So oft wird nachgesehen, ob ein Hintergrund-Thread einen Fehler protokolliert hat.
 ERROR_POLL_MS = 1000
 UPDATE_POLL_MS = 500
+# Übungen, die einzeln abfragen (hören, antworten, das nächste), teilen sich
+# den Reiter „Einzeln“; oben wählt man, welche. Die Titel bleiben Schlüssel
+# der gespeicherten Einstellungen.
+ONE_BY_ONE = (N_("Einzelzeichen"), N_("Gruppen"), N_("Wörter"), N_("Rufzeichen"))
+ONE_BY_ONE_LABELS = {"Einzelzeichen": N_("Zeichen")}  # sonst wie der Titel
+# Angezeigter Reitername, wo er vom Schlüssel abweicht.
+TAB_NAMES = {"Kontinuierlich": N_("Am Stück")}
+# Einmaliger Hinweis nach einem Update auf (mindestens) diese Version, für
+# Änderungen, bei denen man sonst etwas Gewohntes nicht wiederfindet.
+WHATS_NEW = {
+    "2.40": N_("Zeichen, Gruppen, Wörter und Rufzeichen stehen jetzt gemeinsam im Reiter „Einzeln“; den "
+               "Inhalt wählst du dort oben unter „Inhalt“ (oder Alt+1 noch einmal drücken). „Kontinuierlich“ "
+               "heißt jetzt „Am Stück“. Alles Weitere steht unter Hilfe, Änderungen."),
+}
 
 
 class MorseTrainerApp:
@@ -150,15 +166,19 @@ class MorseTrainerApp:
         # Die Reiter sind erst nach dem Einlesen der Schriftgröße entstanden:
         # ihre Umbruchbreiten jetzt an die Schriftgröße anpassen.
         theme.scale_wraps(root)
-        # Alt+1 … Alt+9, Alt+0: Reiter 1 … 10 (auf dem Mac Cmd, Option+Ziffer
-        # schreibt dort Sonderzeichen); Strg+B: Bandbedingungen.
+        # Alt+1 … Alt+7: die Reiter, Alt+0 zusätzlich der letzte (Statistik,
+        # wie vor dem Zusammenlegen der Reiter); auf dem Mac Cmd, Option+Ziffer
+        # schreibt dort Sonderzeichen. Strg+B: Bandbedingungen.
         tab_modifier = "Command" if sys.platform == "darwin" else "Alt"
         # Cmd+0 bleibt auf dem Mac der Schrift (normal groß), wie in
-        # Mac-Programmen üblich; einen zehnten Reiter gibt es nicht.
+        # Mac-Programmen üblich.
         for number in range(1, 10) if sys.platform == "darwin" else range(10):
             root.bind_all(f"<{tab_modifier}-Key-{number}>",
-                          lambda e, n=(number - 1) % 10: self.select_tab(n) or "break")
-        root.bind_all("<Control-b>", lambda e: self.band_settings.open_window() or "break")
+                          lambda e, n=number: self.select_tab(n - 1 if n else -1) or "break")
+        # Groß und klein, damit es auch mit Feststelltaste geht; auf dem Mac auch Cmd+B.
+        for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
+            for key in ("b", "B"):
+                root.bind_all(f"<{modifier}-{key}>", lambda e: self.band_settings.open_window() or "break")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             root.bind_all(f"<{modifier}-comma>", lambda e: self.open_settings() or "break")
         root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -231,11 +251,27 @@ class MorseTrainerApp:
             "modes": self._mode_settings(),
             i18n.SETTING_KEY: self.language_var.get(),
             "update_declined": self.update_declined,
+            "one_by_one": self.one_by_one_var.get(),
+            "seen_version": __version__,
         }
         try:
             storage.write_json_atomic(WINDOW_STATE_FILE, state, indent=2)
-        except OSError:
-            pass
+        except OSError as exc:
+            return str(exc)
+        return None
+
+    def show_whats_new(self) -> None:
+        """Nach einem Update einmal zeigen, was sich an der Bedienung geändert
+        hat (WHATS_NEW); bei einer frischen Installation nichts."""
+        if not self.saved_state:
+            return
+        seen = self.saved_state.get("seen_version")
+        versions = sorted(WHATS_NEW, key=update.parse_version)
+        notes = [tr(WHATS_NEW[version]) for version in versions
+                 if (seen is None or update.is_newer(version, seen)) and not update.is_newer(version, __version__)]
+        if notes:
+            messagebox.showinfo(tr("Neu in Version {version}").format(version=__version__), "\n\n".join(notes),
+                                parent=self.root)
 
     def _build_settings(self):
         """Kopfleiste: Koch-Lektion, Tempo, Tonhöhe und Zeichensatz immer
@@ -407,8 +443,6 @@ class MorseTrainerApp:
         self.band_settings = BandSettings(self.root)
         self.band_settings.attach_preview(
             lambda: (self.wpm_var.get(), self.freq_var.get(), self.station_call()), self._preview_blocked)
-        # S/N im Filter und Stufe hängen von der eigenen Tonhöhe ab.
-        self.freq_var.trace_add("write", lambda *_: self.band_settings.pitch_changed())
         band_row = ttk.Frame(self.more_frame)
         band_row.pack(fill="x", pady=2)
         ttk.Label(band_row, text=tr("Bandbedingungen")).pack(side="left")
@@ -543,7 +577,7 @@ class MorseTrainerApp:
             fw = tr("WPM ≈ {cpm} ZpM").format(cpm=tempo.cpm(self.farnsworth_wpm_var.get()))
         except tk.TclError:
             fw = "WPM"
-        self.farnsworth_cpm_var.set(tr("{wpm} (alle außer Einzelzeichen)").format(wpm=fw))
+        self.farnsworth_cpm_var.set(tr("{wpm} (nicht bei einzelnen Zeichen)").format(wpm=fw))
 
     def _contrast_toggled(self) -> None:
         changed = self.contrast_var.get() != self.contrast_at_start
@@ -591,10 +625,20 @@ class MorseTrainerApp:
         self.announcer.say(". ".join(parts) + ".", force=True)
 
     def select_tab(self, index: int) -> None:
-        """Reiter Nr. `index` (ab 0) zeigen, wenn er nicht gesperrt ist
-        (während eines Durchgangs sind die anderen Reiter gesperrt)."""
+        """Reiter Nr. `index` (ab 0, −1 der letzte) zeigen, wenn er nicht
+        gesperrt ist (während eines Durchgangs sind die anderen Reiter
+        gesperrt). Eine Ziffer ohne Reiter sagt, wie viele es gibt; die des
+        Reiters „Einzeln“ schaltet dort den Inhalt weiter."""
         tabs = self.notebook.tabs()
-        if index < len(tabs) and str(self.notebook.tab(tabs[index], "state")) == "normal":
+        if index >= len(tabs):
+            announcer.say(tr("Es gibt nur {n} Reiter.").format(n=len(tabs)))
+            return
+        if self.one_by_one_tab is not None and tabs[index] == str(self.one_by_one_tab) \
+                and self.notebook.select() == tabs[index]:
+            # Schon in „Einzeln“: dieselbe Taste noch einmal schaltet den Inhalt weiter.
+            self._step_content(1)
+            return
+        if str(self.notebook.tab(tabs[index], "state")) == "normal":
             self.notebook.select(tabs[index])
 
     def statistics_spoken(self) -> str:
@@ -630,7 +674,11 @@ class MorseTrainerApp:
 
     def _tab_name(self) -> str:
         """Name des sichtbaren Reiters, wie er angezeigt (und angesagt) wird."""
-        return self.notebook.tab("current", "text")
+        name = self.notebook.tab("current", "text")
+        if self.one_by_one_tab is not None and self.notebook.select() == str(self.one_by_one_tab):
+            current = self.one_by_one_var.get()
+            name += ", " + tr(ONE_BY_ONE_LABELS.get(current, current))
+        return name
 
     def _announce_tab(self, event=None) -> None:
         hint = " " + tr("F11 liest die Übersicht vor.") if self._active_mode() is None else ""
@@ -827,12 +875,13 @@ class MorseTrainerApp:
             tr("Weiter mit Gruppen"),
             tr("Die Zeichen von Lektion {lesson} sitzen: {correct} von {total} richtig ({share:.0%}), "
                "mit Zeitlimit.\n\n"
-               "Im Reiter Gruppen kommen sie ohne Pause hintereinander, wie im Funkbetrieb. "
+               "Bei den Gruppen (Reiter Einzeln) hörst du mehrere Zeichen direkt hintereinander, wie im Funkbetrieb, "
+               "und tippst sie dann. "
                "Dort wird dir auch die nächste Lektion angeboten.\n\n"
-               "Zum Reiter Gruppen wechseln?").format(lesson=lesson, correct=correct, total=total,
+               "Zu den Gruppen wechseln?").format(lesson=lesson, correct=correct, total=total,
                                                      share=correct / total),
         ):
-            self.notebook.select(self.tab_ids[self.mode_titles.index("Gruppen")])
+            self.show_mode("Gruppen")
 
     def _build_footer(self):
         # Vor dem Notebook gepackt, damit es bei kleinem Fenster nicht verdrängt wird.
@@ -1023,7 +1072,7 @@ class MorseTrainerApp:
             review_box, wrap=520,
             text=tr("Sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, "
                     "unsichere schon am nächsten Tag. Mit „schwache bevorzugt“ kommen fällige Zeichen öfter "
-                    "dran. Hochgestuft wird nur aus Zufallszeichen (Einzelzeichen, Gruppen, Kontinuierlich), "
+                    "dran. Hochgestuft wird nur aus Zufallszeichen (Zeichen und Gruppen im Reiter Einzeln, Am Stück), "
                     "entschieden einmal am Tag ab 5 Versuchen."),
         ).pack(anchor="w", pady=(0, 6))
         self.review_button = ttk.Button(review_box, text=tr("Fällige gezielt üben"), command=self._drill_due)
@@ -1181,7 +1230,7 @@ class MorseTrainerApp:
         self.charset_var.set(extended)
         review.focus = set(due)
         self.weighted_var.set(True)
-        self.notebook.select(self.tab_ids[self.mode_titles.index("Einzelzeichen")])
+        self.show_mode("Einzelzeichen")
 
     @staticmethod
     def _confusion_text(data: dict) -> str:
@@ -1220,7 +1269,7 @@ class MorseTrainerApp:
             self.confusion_var.set(tr("Noch zu wenige Verwechslungen zum gezielten Üben."))
             return
         self.charset_var.set(chars)
-        self.notebook.select(self.tab_ids[self.mode_titles.index("Einzelzeichen")])
+        self.show_mode("Einzelzeichen")
 
     def _reset_all_time(self):
         """Gesamtstatistik und Lernkartei nach Rückfrage löschen; Durchgänge,
@@ -1244,6 +1293,8 @@ class MorseTrainerApp:
         her. Den Reiter Statistik baut danach _build_all_time_tab()."""
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True, padx=6, pady=(6, 4))
+        # Mit Tab auf die Reiterleiste: „Reiter, Einzeln, Gruppen“ statt nur „Einzeln“.
+        announcer.value_of(self.notebook, self._tab_name)
 
         # Die deutschen Titel sind zugleich die Schlüssel der gespeicherten
         # Einstellungen (window_state.json); angezeigt wird die Übersetzung.
@@ -1261,10 +1312,21 @@ class MorseTrainerApp:
 
         self.modes = []
         self.mode_titles = []
-        self.tab_ids = []
+        self.tab_ids = []  # je Modus der Reiter, in dem er steht (bei „Einzeln“ derselbe)
+        self.one_by_one_tab = None
+        self.one_by_one_frames = {}
+        saved = self.saved_state.get("one_by_one")
+        self.one_by_one_var = tk.StringVar(value=saved if saved in ONE_BY_ONE else ONE_BY_ONE[0])
         for title, frame_cls in mode_classes:
-            tab = ttk.Frame(self.notebook)
-            self.notebook.add(tab, text=tr(title))
+            if title in ONE_BY_ONE:
+                if self.one_by_one_tab is None:
+                    self._build_one_by_one_tab()
+                tab = self.one_by_one_frames[title] = ttk.Frame(self.one_by_one_body)
+                tab_id = str(self.one_by_one_tab)
+            else:
+                tab = ttk.Frame(self.notebook)
+                self.notebook.add(tab, text=tr(TAB_NAMES.get(title, title)))
+                tab_id = str(tab)
             extra = {"vary_var": self.vary_var} if getattr(frame_cls, "uses_vary", False) else {}
             if getattr(frame_cls, "uses_band", False):
                 extra["band_settings"] = self.band_settings
@@ -1282,10 +1344,75 @@ class MorseTrainerApp:
                 mode.restore_settings(self._saved_mode_settings(title))
             self.modes.append(mode)
             self.mode_titles.append(title)
-            self.tab_ids.append(str(tab))
+            self.tab_ids.append(tab_id)
+        self._show_one_by_one()
         self.notebook.bind("<<NotebookTabChanged>>", self._announce_tab, add="+")
         # Tastatur: Strg+Tab / Strg+Umschalt+Tab blättern durch die Reiter.
         self.notebook.enable_traversal()
+
+    def _build_one_by_one_tab(self):
+        """Reiter „Einzeln“: oben die Wahl des Inhalts (Zeichen, Gruppen, Wörter,
+        Rufzeichen), darunter die gewählte Übung; die anderen sind ausgeblendet."""
+        tab = self.one_by_one_tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=tr("Einzeln"))
+        bar = ttk.Frame(tab, padding=(8, 6, 8, 0))
+        bar.pack(fill="x")
+        # „Inhalt:“ wie in Am Stück, Sprechen und Netzwerk.
+        ttk.Label(bar, text=tr("Inhalt:")).pack(side="left", padx=(0, 8))
+        self.one_by_one_buttons = []
+        for title in ONE_BY_ONE:
+            label = tr(ONE_BY_ONE_LABELS.get(title, title))
+            button = ttk.Radiobutton(bar, text=label, value=title,
+                                     variable=self.one_by_one_var, command=self._show_one_by_one)
+            button.pack(side="left", padx=(0, 12))
+            announcer.name(button, tr("Inhalt {name}").format(name=label))
+            # Pfeiltasten wie in einer Optionsgruppe üblich: der Nachbar wird gewählt.
+            for key, step in (("Left", -1), ("Up", -1), ("Right", 1), ("Down", 1)):
+                button.bind(f"<{key}>", lambda e, d=step: self._step_content(d, focus=True) or "break")
+            self.one_by_one_buttons.append(button)
+        theme.hint(tab, wrap=640, text=tr(
+            "Eins nach dem anderen: hören, antworten, das nächste. Ohne Pause fortlaufend mitschreiben: "
+            "Reiter „Am Stück“.")).pack(anchor="w", padx=8)
+        self.one_by_one_body = ttk.Frame(tab)
+        self.one_by_one_body.pack(fill="both", expand=True)
+
+    def _show_one_by_one(self):
+        """Im Reiter „Einzeln“ nur die gewählte Übung zeigen."""
+        current = self.one_by_one_var.get()
+        for title, frame in self.one_by_one_frames.items():
+            if title == current:
+                frame.pack(fill="both", expand=True)
+            else:
+                frame.pack_forget()
+
+    def _step_content(self, step: int, focus=False) -> bool:
+        """Im Reiter „Einzeln“ den nächsten (1) oder vorigen (−1) Inhalt
+        wählen und ansagen; nicht während eines Durchgangs. `focus`: auch den
+        Fokus auf dessen Optionsfeld setzen (Pfeiltasten)."""
+        if not self.one_by_one_buttons or self.one_by_one_buttons[0].instate(["disabled"]):
+            return False
+        index = (ONE_BY_ONE.index(self.one_by_one_var.get()) + step) % len(ONE_BY_ONE)
+        self.show_content(ONE_BY_ONE[index])
+        if focus:
+            self.one_by_one_buttons[index].focus_set()
+            announcer.say(tr("Inhalt {name}.").format(name=tr(ONE_BY_ONE_LABELS.get(ONE_BY_ONE[index],
+                                                                                   ONE_BY_ONE[index]))))
+        else:
+            announcer.say(tr("Reiter {name}.").format(name=self._tab_name()))
+        return True
+
+    def show_content(self, title: str) -> None:
+        """Im Reiter „Einzeln“ den Inhalt `title` wählen, ohne den Reiter zu
+        wechseln."""
+        if title in ONE_BY_ONE:
+            self.one_by_one_var.set(title)
+            self._show_one_by_one()
+
+    def show_mode(self, title: str) -> None:
+        """Die Übung `title` (Schlüssel aus mode_classes) zeigen: ihren Reiter
+        wählen, in „Einzeln“ auch die Übung."""
+        self.show_content(title)
+        self.notebook.select(self.tab_ids[self.mode_titles.index(title)])
 
     def _lock_tabs(self):
         # Fokus aus Eingabefeldern oben (Zeichen, WPM …) nehmen, sonst
@@ -1297,6 +1424,8 @@ class MorseTrainerApp:
         for tab_id in self.notebook.tabs():
             if tab_id != current:
                 self.notebook.tab(tab_id, state="disabled")
+        for button in self.one_by_one_buttons:
+            button.state(["disabled"])
         # Eigene Tonausgabe würde die des laufenden Modus abbrechen.
         self.running_mode = True
         self.band_settings.stop_preview()
@@ -1341,6 +1470,8 @@ class MorseTrainerApp:
     def _unlock_tabs(self):
         for tab_id in self.notebook.tabs():
             self.notebook.tab(tab_id, state="normal")
+        for button in self.one_by_one_buttons:
+            button.state(["!disabled"])
         self.running_mode = False
         self.band_settings.stop_preview()  # Knopf wieder frei
         self.confusion_button.config(state="normal")
@@ -1388,6 +1519,8 @@ class MorseTrainerApp:
 
     def _active_mode(self):
         current = self.notebook.select()
+        if self.one_by_one_tab is not None and current == str(self.one_by_one_tab):
+            return self.modes[self.mode_titles.index(self.one_by_one_var.get())]
         for tab_id, mode in zip(self.tab_ids, self.modes):
             if tab_id == current:
                 return mode
@@ -1488,9 +1621,9 @@ class MorseTrainerApp:
     def join_network(self, pin: str):
         """Nach dem Neustart durch ein Update (--join PIN): Reiter Netzwerk,
         wieder als Teilnehmer verbinden."""
-        for tab_id, mode in zip(self.tab_ids, self.modes):
+        for title, mode in zip(self.mode_titles, self.modes):
             if hasattr(mode, "rejoin"):
-                self.notebook.select(tab_id)
+                self.show_mode(title)
                 mode.rejoin(pin)
 
     def on_close(self, keep_files=False):
@@ -1502,7 +1635,7 @@ class MorseTrainerApp:
         # Einstellungen dieses Laufs würden die eingelesenen überschreiben.
         """Programmende: Tagesübung abbrechen, Übungszeit und Einstellungen
         speichern (außer `keep_files`), alle Reiter schließen, Fenster zu."""
-        saving = () if keep_files else (self._record_practice, self._save_state)
+        saving = () if keep_files else (self._record_practice, self._save_state_or_warn)
         for step in (lambda: self.daily.abort(quiet=True), *saving,
                      *(mode.on_close for mode in self.modes), audio.release):
             try:
@@ -1510,6 +1643,15 @@ class MorseTrainerApp:
             except Exception:
                 errorlog.record(*sys.exc_info(), version=__version__)
         self.root.destroy()
+
+    def _save_state_or_warn(self) -> None:
+        """Einstellungen speichern; geht das nicht (etwa ein schreibgeschützter
+        Ordner beim Start aus dem Quelltext), es sagen statt still zu verlieren."""
+        error = self._save_state()
+        if error:
+            messagebox.showwarning(tr("Einstellungen nicht gespeichert"),
+                                   tr("Die Einstellungen ließen sich nicht speichern: {error}").format(error=error),
+                                   parent=self.root)
 
     # --- Unerwartete Fehler -------------------------------------------------
     def report_callback_exception(self, exc_type, exc, tb):
@@ -1534,10 +1676,34 @@ class MorseTrainerApp:
             self.root.after(ERROR_POLL_MS, self._check_errors)
 
 
+def _excepthook(*exc) -> None:
+    """Unerwarteter Fehler außerhalb von Tk: ins Protokoll und, wenn es eine
+    Konsole gibt, auch dorthin (exe und App haben keine; dort hilft das
+    Meldungsfenster von _fatal)."""
+    errorlog.record(*exc, version=__version__)
+    if sys.__stderr__ is not None:
+        traceback.print_exception(*exc, file=sys.__stderr__)
+
+
+def _fatal(text: str) -> None:
+    """Der Start scheitert vor dem ersten Fenster: Meldung samt Ort des
+    Fehlerprotokolls auf die Konsole, unter Windows (ohne Konsole) auch als
+    Meldungsfenster – sonst verschwände das Programm wortlos."""
+    message = text + "\n" + tr("Einzelheiten stehen in {path}").format(path=errorlog.LOG_FILE)
+    if sys.__stderr__ is not None:
+        print(message, file=sys.__stderr__)
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, message, "Morsetrainer", 0x10)
+        except (AttributeError, OSError):
+            pass
+
+
 def main():
     """Startet das Programm: Fehlerprotokoll einrichten, Reste eines Updates
     entfernen, alte Daten übernehmen, Hauptfenster öffnen."""
-    sys.excepthook = lambda *exc: errorlog.record(*exc, version=__version__)
+    sys.excepthook = _excepthook
     update.cleanup()
     # Übungsdaten aus alten JSON-Dateien in die Datenbank übernehmen
     # (core/migration.py). Scheitert das, bleiben die Dateien liegen und es
@@ -1548,7 +1714,12 @@ def main():
         errorlog.record(*sys.exc_info(), version=__version__)
     # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
     # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
-    root = tk.Tk(className="Morsetrainer")
+    try:
+        root = tk.Tk(className="Morsetrainer")
+    except tk.TclError as exc:  # kein Bildschirm, kaputtes Tk
+        errorlog.record(*sys.exc_info(), version=__version__)
+        _fatal(tr("Der Morsetrainer kann kein Fenster öffnen: {error}").format(error=exc))
+        sys.exit(1)
     app = MorseTrainerApp(root)
     root.report_callback_exception = app.report_callback_exception
     threading.excepthook = app.thread_exception
@@ -1557,6 +1728,7 @@ def main():
         root.after(300, lambda: app.join_network(sys.argv[2]))
     else:
         root.after(UPDATE_CHECK_DELAY_MS, app.check_for_update)
+        root.after(WHATS_NEW_DELAY_MS, app.show_whats_new)
     root.mainloop()
     found = update.installed()
     if app.restart_args is not None and found is not None:

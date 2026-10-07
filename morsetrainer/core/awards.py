@@ -81,15 +81,15 @@ AWARDS = (
           (1, 2, 3), N_("Zeichen"), 1, stepped=True,
           steps=(N_("10 Buchstaben in Fach 3"), N_("alle 26 Buchstaben in Fach 3"),
                  N_("alle Buchstaben in Fach 6 und alle Ziffern in Fach 4"))),
-    Award("flow", N_("Mitschreiben im Fluss"), N_("Kontinuierlich mit Klartext ohne eigene Wörter, Zeichensatz "
+    Award("flow", N_("Mitschreiben im Fluss"), N_("Am Stück mit Klartext ohne eigene Wörter, Zeichensatz "
                                                  "mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich "
                                                  "überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen "
                                                  "oder QSO"),
           (10, 15, 22), N_("WPM eff."), 15, two_days=True),
-    Award("qrq", N_("QRQ"), N_("Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne "
+    Award("qrq", N_("QRQ"), N_("Am Stück mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne "
                                "Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten"),
           (20, 25, 30, 35), N_("WPM"), 40, two_days=True),
-    Award("qrn", N_("QRN-fest"), N_("Gruppen oder Kontinuierlich mit Zufallszeichen, ≥ 200 Zeichen, "
+    Award("qrn", N_("QRN-fest"), N_("Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, "
                                     "Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, "
                                     "Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen "
                                     "der rechtzeitige erste Versuch"),

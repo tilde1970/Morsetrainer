@@ -158,7 +158,7 @@ PLC_BEACON_SECONDS = 0.002
 MAX_PLC_RMS = 0.2
 # Weidezaun: Abstand der Ticker (je Band fest, kaum Schwankung), Länge und
 # Pegel bei Regler 100 %.
-FENCE_PERIOD_SECONDS = (0.9, 1.5)
+FENCE_PERIOD_SECONDS = (1.0, 1.5)
 FENCE_JITTER_SECONDS = 0.01
 FENCE_TICK_SECONDS = 0.012
 MAX_FENCE_RMS = 0.3
@@ -182,6 +182,7 @@ FILTER_FFT_SIZE = 2 ** 15
 VOICE = "voice"
 
 _noise_loop = None
+_flat_noise_loop = None
 _ssb_loop = None
 _smps_loop = None
 _plc_loop = None
@@ -209,6 +210,29 @@ def _shaped_noise_loop() -> np.ndarray:
         gain[0] = 0.0
         _noise_loop = _normalized(np.fft.irfft(spectrum * gain, n))
     return _noise_loop
+
+
+def _noise_bandwidth(gain: np.ndarray, f: np.ndarray) -> float:
+    """Rauschbandbreite in Hz einer Verstärkung über den Frequenzen `f`."""
+    return float(np.sum(gain ** 2) * (f[1] - f[0]))
+
+
+def _filter_noise_loop() -> np.ndarray:
+    """Rauschen für das schmale CW-Filter: flach statt durch die Flanken des
+    SSB-Filters, mit derselben Dichte wie _shaped_noise_loop in der Mitte
+    des Durchlassbereichs. Wie bei einem Gerät mit ZF-CW-Filter liegt das
+    Filter so um die eigene Tonhöhe, ohne an die untere Flanke bei 300 Hz zu
+    stoßen: Es nimmt bei jeder Tonhöhe gleich viel Rauschen weg."""
+    global _flat_noise_loop
+    if _flat_noise_loop is None:
+        n = NOISE_LOOP_SECONDS * SAMPLE_RATE
+        f = np.fft.rfftfreq(n, 1 / SAMPLE_RATE)
+        spectrum = np.fft.rfft(np.random.default_rng().standard_normal(n))
+        spectrum[0] = 0.0
+        flat = _normalized(np.fft.irfft(spectrum, n))
+        scale = np.sqrt(_noise_bandwidth(np.ones_like(f), f) / _noise_bandwidth(_passband_gain(f), f))
+        _flat_noise_loop = (flat * scale).astype(np.float32)
+    return _flat_noise_loop
 
 
 # --- SSB-QRM -------------------------------------------------------------
@@ -419,14 +443,15 @@ def filter_ir(width: int, freq: float) -> np.ndarray:
 
 
 @functools.lru_cache(maxsize=None)
-def filter_noise_db(width: int, freq: float = 600) -> float:
+def filter_noise_db(width: int) -> float:
     """So viel weniger Bandrauschen lässt das Filter durch als das
-    SSB-Filter allein (2,4 kHz)."""
+    SSB-Filter allein (2,4 kHz); unabhängig von der Tonhöhe, weil das
+    Filter mit ihr wandert (siehe _filter_noise_loop)."""
     if width == DEFAULT_FILTER:
         return 0.0
     f = np.fft.rfftfreq(FILTER_FFT_SIZE, 1 / SAMPLE_RATE)
-    wide = _passband_gain(f) ** 2
-    return float(10 * np.log10(np.sum(wide) / np.sum(wide * filter_response(width, freq, f) ** 2)))
+    narrow = filter_response(width, f[-1] / 2, f)
+    return float(10 * np.log10(_noise_bandwidth(_passband_gain(f), f) / _noise_bandwidth(narrow, f)))
 
 
 def soft_limit(x: np.ndarray, knee: float = 0.8) -> np.ndarray:
@@ -528,8 +553,11 @@ class BandConditions:
             self.cw_qrm_offset = offset
         if self.filter_width == DEFAULT_FILTER:
             self.filter = None
-        elif self.filter is None or self.filter[0] != (self.filter_width, freq):
-            self.filter = ((self.filter_width, freq), filter_ir(self.filter_width, freq).astype(np.float64))
+            self.noise = _shaped_noise_loop()
+        else:
+            self.noise = _filter_noise_loop()
+            if self.filter is None or self.filter[0] != (self.filter_width, freq):
+                self.filter = ((self.filter_width, freq), filter_ir(self.filter_width, freq).astype(np.float64))
 
     def _on(self, effect: str) -> bool:
         return self.enabled[effect] and self.levels[effect] > 0
@@ -978,15 +1006,15 @@ def spec_key(spec) -> tuple:
             spec.get("filter", DEFAULT_FILTER), spec.get("qrm_offset", DEFAULT_QRM_OFFSET))
 
 
-def preset_rank(spec, freq: float = 600):
+def preset_rank(spec):
     """Schwerste Stufe aus PRESETS, die die Spec mindestens erreicht (jede
     Störung der Stufe mindestens so stark), oder None. Die Lautstärke zählt
     hier nicht; das Diplom prüft sie getrennt. Ein schmales Filter nimmt
-    Rauschen weg; das Rauschen zählt dann um so viel schwächer, gemessen um
-    die eigene Tonhöhe `freq` (bei tiefem Ton nimmt das Filter mehr weg)."""
+    Rauschen weg; das Rauschen zählt dann um so viel schwächer, bei jeder
+    Tonhöhe gleich."""
     levels = dict(spec["levels"]) if spec else {}
     if spec and "noise" in levels:
-        levels["noise"] -= filter_noise_db(spec.get("filter", DEFAULT_FILTER), freq) / abs(
+        levels["noise"] -= filter_noise_db(spec.get("filter", DEFAULT_FILTER)) / abs(
             SNR_DB_RANGE[0] - SNR_DB_RANGE[1])
     rank = None
     for preset, wanted in PRESETS.items():  # leicht -> stark

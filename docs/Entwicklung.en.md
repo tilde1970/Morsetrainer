@@ -5,15 +5,24 @@ How to use the program is described in the [manual](Anleitung.en.md).
 
 ## Running from source
 
-Requires Python 3.10 or newer with Tk.
+Requires Python 3.10 or newer with Tk, plus PortAudio for sound. On
+Linux these packages are often missing:
+
+```bash
+sudo apt install python3-venv python3-tk libportaudio2   # Debian, Ubuntu, Mint
+sudo dnf install python3-tkinter portaudio               # Fedora
+```
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-packaging/get_voice.sh           # voice for the Speak tab (about 63 MB)
+packaging/get_voice.sh           # voices for announcements and the Speak tab (about 120 MB)
 python main.py
 ```
+
+On Windows, `get_voice.sh` runs in Git Bash (comes with Git for Windows).
+Without the voices everything except speech works.
 
 Tests:
 

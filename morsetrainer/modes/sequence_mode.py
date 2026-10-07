@@ -49,10 +49,11 @@ from tkinter import ttk
 import numpy as np
 
 from morsetrainer.core import align, audio, band, koch, sfx, tempo
+from morsetrainer.core.latency import copy_timing
 from morsetrainer.core.pause_noise import PauseNoise
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
-    code_units, display_text, vary_voice,
+    display_text, effective_wpm, vary_voice,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
@@ -92,14 +93,13 @@ def answer_limit(length: int) -> float:
 BAND_ORDER = (None, *band.PRESETS)
 
 
-def band_config(spec, freq: float = 600) -> dict:
+def band_config(spec) -> dict:
     """Bandbedingungen für die config-Zeile des gespeicherten Durchgangs: die erreichte
-    Stufe bei der Tonhöhe `freq` (für das Diplom QRN-fest; "custom", wenn
-    schwächer als die leichteste) und die Lautstärke; ohne Bandbedingungen
-    band None."""
+    Stufe (für das Diplom QRN-fest; "custom", wenn schwächer als die
+    leichteste) und die Lautstärke; ohne Bandbedingungen band None."""
     if spec is None:
         return {"band": None}
-    return {"band": band.preset_rank(spec, freq) or "custom", "band_gain": round(spec["gain"] * 100)}
+    return {"band": band.preset_rank(spec) or "custom", "band_gain": round(spec["gain"] * 100)}
 
 
 def clean_input(text: str) -> str:
@@ -429,7 +429,7 @@ class SequenceModeFrame(DailyModeMixin):
         # Störungen geht.
         self.band_tracked = spec is not None
         self.band_gain_min = round(spec["gain"] * 100) if spec else 0
-        self.band_rank_min = band.preset_rank(spec, freq)
+        self.band_rank_min = band.preset_rank(spec)
         self.band = None
         self._band_for_play(freq)
         self.start_button.config(text=tr("Stop"))
@@ -463,7 +463,7 @@ class SequenceModeFrame(DailyModeMixin):
     def _config_extra(self, spec, freq: float) -> dict:
         """Bedingungen des Durchgangs für seine gespeicherte config-Zeile."""
         return {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
-                **band_config(spec, freq), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
+                **band_config(spec), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
                 **self._daily_config()}
 
     def _band_for_play(self, freq):
@@ -480,7 +480,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.band.prepare(freq)
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
-            rank = band.preset_rank(spec, freq)
+            rank = band.preset_rank(spec)
             self.band_rank_min = min(self.band_rank_min, rank, key=BAND_ORDER.index)
         return self.band
 
@@ -684,22 +684,25 @@ class SequenceModeFrame(DailyModeMixin):
 
     def play_current(self, listen_only=False, on_done=None):
         """Spielt die aktuelle Sequenz. Beim Mitschreiben ist die Eingabe
-        dabei schon offen, außer bei `listen_only` (Lösung vorspielen)."""
+        dabei schon offen, außer bei `listen_only` (Lösung vorspielen): die
+        kommt ohne Bandbedingungen, damit Klang und Lösung sicher
+        zusammenfinden und nicht in einem QSB-Loch untergehen."""
         wpm, freq = self.voice
         # Farnsworth streckt nur die Pausen zwischen den Zeichen; nach dem
         # letzten Zeichen bleibt die normale Pause, damit die Eingabe nicht
         # unnötig spät freigegeben wird.
         fw = self._farnsworth()
         last = len(self.current_sequence) - 1
-        chirp = self.band.chirp_for(0) if self._band_for_play(freq) is not None else None
+        conditions = None if listen_only else self._band_for_play(freq)
+        chirp = conditions.chirp_for(0) if conditions is not None else None
         parts = [
             build_samples(ch, wpm, freq, fw if i < last else None, chirp)
             for i, ch in enumerate(self.current_sequence)
         ]
         samples = np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
         lead = 0.0
-        if self.band is not None:
-            samples, lead = band.apply_preset(self.band, samples)
+        if conditions is not None:
+            samples, lead = band.apply_preset(conditions, samples)
         # Hörbar wird der Ton erst nach der Ausgabelatenz; ab dann zählt die
         # Reaktionszeit, und erst danach ist er zu Ende.
         self.play_start_time = time.time() + AUDIO_LATENCY
@@ -712,10 +715,10 @@ class SequenceModeFrame(DailyModeMixin):
         if not self._play(samples):
             return
         self.pause_noise.fade_out()
-        if self.band is not None:
+        if conditions is not None and self.band_settings.pause_var.get():
             # Danach läuft das Band leiser weiter, übergeblendet mit dem
             # Ausklang der Sequenz.
-            self.pause_noise.start(self.band, len(samples) / SAMPLE_RATE - band.PRESET_FADE_SECONDS)
+            self.pause_noise.start(conditions, len(samples) / SAMPLE_RATE - band.PRESET_FADE_SECONDS)
         self._set_input_open(self.style == COPY and not listen_only)
         if self.style == HEAD:
             # Tasten (Enter, J, N) sollen beim Fenster ankommen, nicht im Eingabefeld.
@@ -775,17 +778,17 @@ class SequenceModeFrame(DailyModeMixin):
             self.play_current()
 
     def _char_timing(self, index: int, typed_index):
-        """(Reaktionszeit, Latenz oder None) für das gesendete Zeichen an
+        """(Zeit ab Tonbeginn, Latenz oder None) für das gesendete Zeichen an
         `index`. Die Latenz ist nur beim Mitschreiben ohne Wiederholung
-        eindeutig; sonst wird die Gesamtzeit gleichmäßig verteilt."""
+        eindeutig (siehe core/latency); sonst wird die Gesamtzeit gleichmäßig
+        verteilt."""
         if (
             typed_index is not None and self.style == COPY and not self.replayed
             and typed_index < len(self.key_times)
         ):
-            key_time = self.key_times[typed_index]
-            latency = key_time - self.tone_ends[index]
-            if latency >= 0:
-                return key_time - self.tone_starts[index], latency
+            timing = copy_timing(index, typed_index, self.key_times, self.tone_starts, self.tone_ends)
+            if timing is not None:
+                return timing
         elapsed = max(time.time() - self.play_start_time, 0.001)
         return elapsed / max(len(self.current_sequence), 1), None
 
@@ -819,15 +822,15 @@ class SequenceModeFrame(DailyModeMixin):
             unsure = slow and self.style != COPY
             for index, (expected, got, typed_index) in enumerate(results):
                 reaction_time, latency = self._char_timing(index, typed_index)
-                effective_wpm = code_units(expected) * 1.2 / max(reaction_time, 0.001)
+                measured_wpm = effective_wpm(expected, reaction_time, self.voice[0])
                 if self.replayed and got == expected:
-                    self.session_stats.record_char(expected, "", False, reaction_time, effective_wpm)
+                    self.session_stats.record_char(expected, "", False, reaction_time, measured_wpm)
                     continue
                 assumed = unsure and got == expected
                 if assumed:
                     latency = self.unsure_latency
                 self.session_stats.record_char(
-                    expected, got, got == expected, reaction_time, effective_wpm, latency=latency, assumed=assumed
+                    expected, got, got == expected, reaction_time, measured_wpm, latency=latency, assumed=assumed
                 )
         hits = sum(1 for expected, got, _ in results if got == expected)
         correct_chars = max(hits - align.extra_count(sent, typed), 0)
@@ -858,7 +861,7 @@ class SequenceModeFrame(DailyModeMixin):
         reaction_time = max(time.time() - self.play_start_time, 0.001) / max(len(sent), 1)
         for ch in sent:
             self.session_stats.record_char(
-                ch, ch if known else "", known, reaction_time, code_units(ch) * 1.2 / reaction_time
+                ch, ch if known else "", known, reaction_time, effective_wpm(ch, reaction_time, self.voice[0])
             )
         self._finish_attempt(sent if known else "", known, len(sent) if known else 0, head=True)
 

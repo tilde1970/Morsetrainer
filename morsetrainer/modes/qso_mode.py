@@ -42,9 +42,10 @@ from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
+from morsetrainer.core.latency import char_latency
 from morsetrainer.core.morse import (
-    MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, code_units, duration_seconds, silence,
-    word_gap_extra_seconds,
+    MORSE_CODE, PROSIGNS, SAMPLE_RATE, build_samples, char_gap_seconds, duration_seconds, effective_wpm, silence,
+    tone_seconds, word_gap_extra_seconds,
 )
 from morsetrainer.core import stats
 from morsetrainer.core.stats import SessionStats
@@ -500,7 +501,7 @@ class QsoModeFrame:
                         # Wie im Kontinuierlich-Modus: hörbar endet der Ton erst
                         # nach stream.latency, die Zeichenpause zählt nicht mit.
                         tone_end = time.time() + stream.latency - char_gap_seconds(wpm, self.fw)
-                        self.sent_log.append({"char": ch, "end_time": tone_end})
+                        self.sent_log.append({"char": ch, "end_time": tone_end, "wpm": wpm})
                 # Pile-up-Anrufer, die länger rufen, noch ausklingen lassen.
                 while self.overlays:
                     if not self._write(stream, silence(WRITE_CHUNK_SECONDS)):
@@ -640,11 +641,13 @@ class QsoModeFrame:
                     self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
                     missed.add(op.expected_index)
                     continue
-                reaction_time = max(typed_time - play_end, 0.001)
-                effective_wpm = code_units(op.expected_char) * 1.2 / reaction_time
+                previous_key = self.typed_log[op.received_index - 1]["time"] if op.received_index else None
+                latency = char_latency(typed_time, play_end, previous_key)
+                wpm = self.sent_log[op.expected_index].get("wpm")
+                since_start = (tone_seconds(op.expected_char, wpm) if wpm else 0.0) + (latency or 0.0)
                 self.session_stats.record_char(
-                    op.expected_char, op.received_char, correct, reaction_time, effective_wpm,
-                    latency=reaction_time,
+                    op.expected_char, op.received_char, correct, since_start,
+                    effective_wpm(op.expected_char, since_start, wpm), latency=latency,
                 )
                 if not correct:
                     missed.add(op.expected_index)

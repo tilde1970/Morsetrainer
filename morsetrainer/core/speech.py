@@ -41,7 +41,7 @@ GERMAN = {
 NATO = {
     "A": "Alfa", "B": "Bravo", "C": "Tschali", "D": "Delta", "E": "Ekko", "F": "Foxtrott", "G": "Golf",
     "H": "Hotell", "I": "India", "J": "Dschulijätt", "K": "Kilo", "L": "Lima", "M": "Maik",
-    "N": "November", "O": "Oskar", "P": "Papa", "Q": "Que-beck", "R": "Romeo", "S": "Siärra",
+    "N": "November", "O": "Oskar", "P": "Papa", "Q": "Ke-beck", "R": "Romeo", "S": "Siärra",
     "T": "Tango", "U": "Juni-form", "V": "Viktor", "W": "Wiski", "X": "Ex-Rehj", "Y": "Jäng-ki",
     "Z": "Suhlu",
 }

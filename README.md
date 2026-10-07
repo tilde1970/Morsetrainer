@@ -33,7 +33,7 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 ### Mitschreiben im Koch-Tempo
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Reiter Gruppen: Mitschreiben im Koch-Tempo 20/10, „Richtig: ESJ“">
+<img src="docs/bilder/gruppen.png" width="640" alt="Reiter Einzeln, Gruppen: Mitschreiben im Koch-Tempo 20/10, „Richtig: ESJ“">
 
 ### Diplom zum Ausdrucken
 
@@ -68,8 +68,8 @@ der Zeile in `SHA256SUMS.txt` vergleichen.
 
 1. Oben **Koch-Lektion 1** einstellen (K und M); „▶ anhören“ spielt das
    neue Zeichen vor.
-2. Im Reiter **Einzelzeichen** die Zeichen kennenlernen, dann im Reiter
-   **Gruppen** mitschreiben, während der Ton läuft.
+2. Im Reiter **Einzeln** unter **Zeichen** die Zeichen kennenlernen, dann
+   unter **Gruppen** mitschreiben, während der Ton läuft.
 3. Oder einfach **▶ Tagesübung (10 Min)** drücken (F12) – sie schaltet die
    Reiter selbst um.
 4. Unter „Einstellungen …“ (oben rechts) Rufzeichen und Name eintragen; sie stehen

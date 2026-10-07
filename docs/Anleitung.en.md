@@ -10,18 +10,23 @@ takes effect after a restart.
 
 ## Training modes
 
+The four exercises that ask one at a time (listen, answer, the next one)
+share the **One by one** tab; at the top under “Content” you choose
+**Characters**, **Groups**, **Words** or **Callsigns**. The choice is saved. To copy
+continuously without pauses, use the **Non-stop** tab.
+
 | Tab | What you practise |
 |---|---|
-| **Characters** | Recognise single characters; after each answer you see your time and the current limit, e.g. “0.38 s, limit 1.20 s”. With time limit (Instant Character Recognition): the limit gets shorter while you answer reliably and longer when you miss characters; a confusion leaves it unchanged. After a confusion you hear the correct character and the one you typed back to back. |
-| **Groups** | Copy groups of characters. The group length can grow: start short, one longer after 5 correct groups, one shorter after 2 wrong groups (each on the first attempt). |
-| **Words** | CW abbreviations, Q codes and QSO words, only from characters you already know. The default is “Listen first”: hear the whole word, then type; a slow answer is noted. R, K and the prosigns KN and SK also appear (but do not count as words for the minimum). A weak character comes up more often, but in changing words. The meaning is shown after the answer. You can add your own words (see Data). |
-| **Callsigns** | Real callsigns from the Super Check Partial list, by default only from characters you have already learned (from Koch lesson 23 with the first digit). Occasionally with /P, /M, OE/… as in contests. Optionally as a **RufZ run** (modelled on RufzXP): 50 callsigns, one attempt each, the speed grows, score = length × effective speed, best score (with starting speed) and history; afterwards you can replay the missed and slowly recognised callsigns (F6): first just listen, then again with the solution, at the original speed. |
-| **Continuous** | The audio keeps running without waiting, you type along (as when listening on the air); characters come in groups (default 5) with a word gap in between. Instead of random characters also as **plain text**: words, typical QSO phrases (“TNX FER CALL”, “UR RST 599”), callsigns or complete QSOs in one go (plain text does not count for the lesson). Optionally with **band conditions** running under the whole session. After stopping (F5 or Esc) a comparison shows the last 90 characters (in lines of 30); **Everything in a separate window** shows the whole session, split into the groups as sent (without groups in blocks of 5), errors in red, larger/smaller font, copyable – or only the sent text, to check against your paper. A key only counts if it fits the character: not guessed in advance and at most 5 s after it; typing too much counts as an error. |
+| **One by one: Characters** | Recognise single characters; after each answer you see your time and the current limit, e.g. “0.38 s, limit 1.20 s”. With time limit (Instant Character Recognition): the limit gets shorter while you answer reliably and longer when you miss characters; a confusion leaves it unchanged. After a confusion you hear the correct character and the one you typed back to back. |
+| **One by one: Groups** | Copy groups of characters. The group length can grow: start short, one longer after 5 correct groups, one shorter after 2 wrong groups (each on the first attempt). |
+| **One by one: Words** | CW abbreviations, Q codes and QSO words, only from characters you already know. The default is “Listen first”: hear the whole word, then type; a slow answer is noted. R, K and the prosigns KN and SK also appear (but do not count as words for the minimum). A weak character comes up more often, but in changing words. The meaning is shown after the answer. You can add your own words (see Data). |
+| **One by one: Callsigns** | Real callsigns from the Super Check Partial list, by default only from characters you have already learned (from Koch lesson 23 with the first digit). Occasionally with /P, /M, OE/… as in contests. Optionally as a **RufZ run** (modelled on RufzXP): 50 callsigns, one attempt each, the speed grows, score = length × effective speed, best score (with starting speed) and history; afterwards you can replay the missed and slowly recognised callsigns (F6): first just listen, then again with the solution, at the original speed. |
+| **Non-stop** | The audio keeps running without waiting, you type along (as when listening on the air); characters come in groups (default 5) with a word gap in between. Instead of random characters also as **plain text**: words, typical QSO phrases (“TNX FER CALL”, “UR RST 599”), callsigns or complete QSOs in one go (plain text does not count for the lesson). Optionally with **band conditions** running under the whole session. After stopping (F5 or Esc) a comparison shows the last 90 characters (in lines of 30); **Everything in a separate window** shows the whole session, split into the groups as sent (without groups in blocks of 5), errors in red, larger/smaller font, copyable – or only the sent text, to check against your paper. A key only counts if it fits the character: not guessed in advance and at most 5 s after it; typing too much counts as an error. |
 | **Speak** | Listen & say without a keyboard (like Morse Code Ninja): Morse code, a thinking pause in which you say out loud what you heard, then a voice announces the solution – characters, groups and callsigns spelled (German letter names or phonetic alphabet), words and phrases as a whole or with their meaning – and the code comes once more. The thinking pause is deliberately short (default 1 s plus 0.3 s per character). Content: characters, groups, words, phrases, callsigns. **Save as MP3** for on the go (phone, car). Counts only for practice time. *The voice is German.* |
 | **QSO** | Listen to complete QSOs: normal QSO or contest runs (CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) with adjustable pile-ups (default off). Evaluation via log check, by typing along, as **head copy + questions** (no notes, afterwards content questions about name, QTH, rig, weather … or exchange) or listen only. Next to the length the estimated duration is shown; how often you used “Again” before checking is noted. |
 | **Contest** | You are the running station (similar to Morse Runner): call CQ, pick up callers, send the exchange, log. As in a real contest, callers sometimes answer to an almost correct call – if you notice the mistake, correct the call and confirm with Enter (“Call TU”), otherwise “Busted” appears in the log. “?” in the call field asks back (DL1?, DL?ABC). Speed and pitch spread of the callers are adjustable, at the end there is a summary by type of error; F10 starts and ends. |
 | **Network** | Practise as a group on the local network (class, club evening): a trainer sets the pace, everyone hears the same sequence on their own headphones and copies it; the trainer sees live who typed what. See below. |
-| **Statistics** | Overall statistics per character (only from random characters and callsigns; in words, phrases and QSOs the context gives away too many characters). “Ø reaction” is the time from the last dot or dash to your input, averaged over the correct answers – independent of character length and speed; measured in Characters and when copying without repeating, otherwise “–”. “Ø WPM” is the effective speed of the correct answers: the length of the character divided by the time from its start to your input, converted to WPM (at most as fast as it was sent). Also **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal, **awards** and **lifeline** (see below) and progress history per mode. |
+| **Statistics** | Overall statistics per character (only from random characters and callsigns; in words, phrases and QSOs the context gives away too many characters). “Ø reaction” is the time from the last dot or dash to your input, averaged over the correct answers – independent of character length and speed; measured in Characters, when copying without repeating, in Non-stop, in QSO type-along and on the network, otherwise “–”. When copying along it counts from the end of the tone or from your previous key, whichever is later – writing behind or listening to the whole group first does not count as slow. A reaction under about 0.6 s is a common guide for recognising without thinking. “Ø WPM” is the effective speed of the correct answers: the length of the character divided by the time from its start to your input, converted to WPM (at most as fast as it was sent). Also **spaced repetition** (review over days: characters recognised reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones the next day; decided once a day from 5 attempts, promoted only from random characters; due ones come up more often with “weak favoured” and can be practised specifically), most frequent confusions (with a button to practise them), daily goal, **awards** and **lifeline** (see below) and progress history per mode. |
 
 In **Groups, Words and Callsigns** you can choose:
 
@@ -47,10 +52,10 @@ due and switches the tabs by itself:
 
 | Level | Warm-up | Main part | Wind-down |
 |---|---|---|---|
-| Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Continuous, groups of 3, 2 min |
+| Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Non-stop, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
 | Lesson 30–41 | as above | as above | Words or callsigns on alternate days, 2 min |
-| after Koch (lesson 41 passed) | Characters, 2 min | Continuous, groups of 5, 4 min | Callsigns, 4 min |
+| after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | Callsigns, 4 min |
 
 - **Warm-up** with all characters of the lesson; those due today in the
   review box come more often, or, if nothing is due, your most frequent
@@ -126,11 +131,11 @@ level will look like – stamped “PREVIEW”, without date and number.
 
 | Award | Levels | From lesson | Condition |
 |---|---|---|---|
-| Koch | Lesson 10 / 25 / 41 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or continuous) |
+| Koch | Lesson 10 / 25 / 41 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or non-stop) |
 | Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts, reached with characters ≥ 18 WPM |
-| Copying in flow | 10 / 15 / 22 WPM effective | 15 | Continuous with plain text (words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “words” does not count |
-| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Continuous with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
-| QRN-proof | conditions light 90 % / medium 90 % / heavy 85 % | 25 | Groups or continuous with random characters, ≥ 200 characters, band conditions on for the whole run and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
+| Copying in flow | 10 / 15 / 22 WPM effective | 15 | Non-stop with plain text (words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “words” does not count |
+| QRQ | 20 / 25 / 30 / 35 WPM | 40 | Non-stop with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
+| QRN-proof | conditions light 90 % / medium 90 % / heavy 85 % | 25 | Groups or non-stop with random characters, ≥ 200 characters, band conditions on for the whole run and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
 | Contest | see right | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
 | WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for the call again), characters ≥ 18 WPM |
@@ -172,7 +177,7 @@ complete after “Reset overall statistics”.
    characters come fast enough that you hear them as a sound pattern
    instead of counting dits and dahs, with longer gaps in between.
    “▶ listen” plays the new character.
-2. Get to know the characters in the **Characters** tab. The **time limit**
+2. Get to know the characters in the **One by one** tab under **Characters**. The **time limit**
    is on from the start: there is no time to count dits and dahs, the
    character has to come as a sound pattern. A wrongly recognised character
    is played again right away while the solution is shown; it is asked
@@ -181,14 +186,14 @@ complete after “Reset overall statistics”.
    repeat counts as not recognised. After a session with at least 50
    characters and 90 % correct – with time limit from start to finish, at
    most 1.5 s at the end – the app suggests continuing with groups.
-3. Practise in the **Groups** tab. Copy while the audio plays, as with
+3. Practise in the **One by one** tab under **Groups**. Copy while the audio plays, as with
    single characters. After an error you see and hear the solution, then
    it goes on as on the air; weak characters come back later through the
    weighting. Under “Show solution after” you can allow up to 3 failed
    attempts: then only the wrong positions are marked at first and the
    group comes again.
 4. If you get 90 % on the first attempt in a session of at least 50
-   characters in groups (or in Continuous mode), the next lesson is
+   characters in groups (or in the **Non-stop** tab), the next lesson is
    offered. A first attempt only counts for the lesson if you did not repeat
    the group with the space bar and answered quickly (1.5 s plus 0.6 s per
    character after the end of the tone); typing too much counts as an
@@ -200,8 +205,8 @@ complete after “Reset overall statistics”.
    move there by itself; set the lesson at the top. After that, the next
    prosign is offered again. The daily practice also repeats prosigns you
    have learned.
-5. From lesson 6 there are enough words for the **Words** tab (words with
-   the newest character are favoured), then **Continuous** and **QSO**.
+5. From lesson 6 there are enough words for **Words** in the **One by one**
+   tab (words with the newest character are favoured), then **Non-stop** and **QSO**.
 6. In the **Statistics** tab (confusions of the last 30 days), “Practise the
    4 most frequent” shows which characters you confuse and practises exactly
    those against each other. “↩ Lesson” at the top takes you back to your
@@ -223,7 +228,7 @@ Also helpful:
   **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0** (normal), the whole
   interface gets larger, up to 200 %; the window grows with it. For small
   screens it also goes smaller, to 90 % and 75 %. Arrows, scrollbars and
-  sliders grow with it; the full result in Continuous and the solution
+  sliders grow with it; the full result in Non-stop and the solution
   window in Network start at this size. The setting is saved.
 - **Callsign and name:** enter them once under “Settings …”. They
   appear on the awards and are the default for “My callsign” in Contest and
@@ -266,8 +271,8 @@ chance.
 count for the award: thunderstorm (QRN in bursts), AGC pumping after
 crashes, flutter (aurora), carrier (someone tuning up) and the
 interference that troubles many hams most today: **switching power
-supply** (rough 100 Hz buzz with a wandering whistle), **PLC** (powerline
-data noise, in packets), **electric fence** (a tick about every second)
+supply** (rough 100 Hz buzz – 120 Hz on 60 Hz mains – with a wandering
+whistle), **PLC** (powerline data noise, in packets), **electric fence** (a tick about every second)
 and **key clicks** (the neighbouring run keys hard; its clicks get
 through even a narrow filter when its tone stays outside).
 
@@ -280,7 +285,8 @@ of your stations.
 **CW filter:** 2.4 kHz (like an SSB filter, the default), 500 Hz or
 250 Hz around your pitch. Signals, noise and interference pass through
 it, your own sidetone in the contest does not. A narrow filter removes
-noise (500 Hz about 6 dB, 250 Hz about 9 dB) and QRM that is far away;
+noise (500 Hz about 6 dB, 250 Hz about 9 dB, the same at every pitch:
+it moves with your pitch like an IF filter) and QRM that is far away;
 but it rings slightly, and stations off your pitch (callers in the
 contest, the other station in a QSO) get quieter. It does not help
 against close or zero-beat QRM. The S/N value still refers to 2.4 kHz;
@@ -290,7 +296,10 @@ is about “light”.
 
 **When to switch on?** Learn new characters without interference. Band
 conditions pay off once the character set is solid without them (90 % or
-more); then start with “light”.
+more); then start with “light”. Practice works best at “light” to
+“medium”: according to studies (with speech, not Morse), practising in
+moderate noise carries over to quiet conditions better than practising in
+very heavy noise. “Heavy” is for polishing.
 
 **Listen** (button at the bottom of the window, Ctrl+P): plays CQ calls
 at your pitch and speed under the conditions currently set, with your
@@ -300,10 +309,10 @@ stops. It counts for nothing
 (statistics, practice time, awards). During a run and in a network
 session the button is disabled.
 
-In the tabs (Groups, Words, Callsigns, Continuous, QSO, Contest, Network)
-you only switch band conditions on or off. Strength and volume take
+In the tabs (One by one – except Characters, which are learned without
+interference –, Non-stop, QSO, Contest, Network) you only switch band conditions on or off. Strength and volume take
 effect immediately, even during a run; the award then counts the weakest
-setting of the run. In Groups, Words, Callsigns, Continuous and Network
+setting of the run. In Groups, Words, Callsigns, Non-stop and Network
 you can switch them on or off only between runs, in QSO and Contest at
 any time. On the network all participants hear the trainer's setting,
 with the same fading, the same stations and the same neighbouring QRM,
@@ -316,7 +325,11 @@ your answer pause; each sequence hits a different spot. In Groups, Words
 and Callsigns you also hear the band during the answer pause, 6 dB
 quieter so your ear gets some rest while typing; it comes back up with
 the next sequence. With announcements (F9) it fades out before the
-feedback.
+feedback. If you need silence between sequences (with tinnitus, for
+example), switch off “Band in the answer pause” in the band conditions
+window; it makes no difference to the level or the award. The solution
+after too many failed attempts always comes without interference, so you
+hear sound and solution together clearly.
 
 Runs with band conditions appear in the history but do not count for the
 character statistics, the weighting, the confusions or the review box: a
@@ -349,7 +362,7 @@ sequences were **fluently** correct and typical time from the end of the
 tone to Enter, and below it the group: accuracy, share of fluent
 sequences, most common errors, weakest characters. Fluent means correct
 on the first hearing and fast enough that nobody counted – within the
-same window as in the Groups, Words and Callsigns tabs (1.5 s plus 0.6 s
+same window as for Groups, Words and Callsigns in the One by one tab (1.5 s plus 0.6 s
 per character after the tone). The answer time is only the hard limit.
 Clicking a participant shows their errors and weakest characters. With
 many participants the table can be moved **into a separate window** (for a
@@ -415,9 +428,9 @@ for everyone over the speakers as soon as someone did not have it
 fluently correct. This works in both flows and suits the fixed pace when
 paper and computers are mixed.
 
-**Continuous:** under *Flow* choose “Continuous” and set the
+**Non-stop:** under *Flow* choose “Non-stop” and set the
 **duration** in minutes. Groups (or words, callsigns …) then come without
-pauses as in the *Continuous* tab until the time is up; everyone types
+pauses as in the *Non-stop* tab until the time is up; everyone types
 along continuously, without Enter. Scoring happens at the end as there: a
 key only counts if it fits the character in time. Each participant
 reports their result per group, so the table, solutions (numbered groups)
@@ -530,7 +543,7 @@ versions (CHANGELOG) and this manual.
 - **Windows:** when a window opens (band conditions, settings, help …),
   it says its name: “Window Band conditions”. If the window speaks itself
   (award, daily practice), the name comes first. When you close a window,
-  it says where you are (“Back in the main window. Tab Groups.”).
+  it says where you are (“Back in the main window. Tab One by one, Groups.”).
 - **Contest:** callsigns in “My callsign”, the call field and the log are
   spelled in the phonetic alphabet.
 - **Network (trainer):** when the session opens, address and PIN are
@@ -563,8 +576,9 @@ versions (CHANGELOG) and this manual.
 
 - **Everywhere:** Ctrl+Plus/Ctrl+Minus larger/smaller font, Ctrl+0 normal
   (on the Mac also Cmd); F9 announcements on/off, F11 read out where you are;
-  Alt+1 … Alt+9 and Alt+0 switch to tab 1 … 10, Ctrl+Tab cycles through
-  the tabs (on the Mac Cmd+1 … Cmd+9); Ctrl+B opens the band conditions,
+  Alt+1 … Alt+7 switch to tab 1 … 7 (One by one, Non-stop, Speak, QSO,
+  Contest, Network, Statistics), Alt+0 also to Statistics, Ctrl+Tab
+  cycles through the tabs (on the Mac Cmd+1 … Cmd+7); Ctrl+B opens the band conditions,
   in which Ctrl+P listens to them, Ctrl+Comma the settings (on the Mac also
   Cmd+Comma). In the help, Ctrl+F searches.
 - **On the Mac** F9, F11 and F12 are media keys or taken by the system
@@ -576,7 +590,9 @@ versions (CHANGELOG) and this manual.
   Esc closes the secondary windows.
 - **Daily practice:** F12 starts, Enter skips the card between blocks, Esc
   stops.
-- **Characters, Groups, Words, Callsigns:** the space bar repeats.
+- **One by one (Characters, Groups, Words, Callsigns):** the space bar
+  repeats. Choose the content with the arrow keys in the “Content” row, or
+  press Alt+1 again: Characters → Groups → Words → Callsigns (announced).
   Head copy: Enter reveals, J = knew it, N = didn't.
 - **RufZ (after the run):** F6 replay missed callsigns or the current one again, F7 from the start, Esc stop.
 - **Speak:** F5 start/stop, the space bar plays the current item again, Esc stops.
@@ -634,9 +650,14 @@ approval again.
 
 **Older Macs with an Intel processor** run the Morsetrainer from source:
 
-1. Install Python 3.10 or newer from [python.org](https://www.python.org/downloads/macos/).
-   This Python comes with a working Tk; with Homebrew's Python the window
-   often stays empty or `tkinter` is missing.
+1. Install Python 3.10 to 3.13 from [python.org](https://www.python.org/downloads/macos/),
+   on macOS 13 or newer. This Python comes with a working Tk; with
+   Homebrew's Python the window often stays empty or `tkinter` is missing.
+   With Python 3.14 the trainer runs on Intel Macs without speech
+   (announcements, Speak tab). On macOS 12 and older the setup fails
+   because of the speech output; then use
+   `pip install numpy sounddevice lameenc` instead of the line with
+   `requirements.txt` (also without speech).
 2. On the [Releases](https://github.com/tilde1970/Morsetrainer/releases)
    page, download “Source code (zip)” of the latest release and unpack it.
 3. In the Terminal, change into the unpacked folder and set it up once:
@@ -703,7 +724,7 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   [supercheckpartial.com](https://www.supercheckpartial.com) and save it as
   `callsigns.scp` in the data directory. Without the file, the trainer
   generates callsigns from country patterns.
-- `woerter.txt`: your own words for the Words tab, one per line, optionally
+- `woerter.txt`: your own words for Words (One by one tab) and Non-stop, one per line, optionally
   with a meaning: `POTA = Parks on the Air`. The “Edit own words” button
   creates the file with instructions and opens it. The words are added to
   the built-in ones.

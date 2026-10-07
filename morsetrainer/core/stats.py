@@ -112,12 +112,15 @@ class SessionStats:
                     latency=None, assumed=False) -> None:
         """Ergebnis für ein einzelnes Zeichen festhalten und sofort speichern.
 
-        `latency` ist die Zeit vom Ende des Tons bis zum Tastendruck, unabhängig
-        von Zeichenlänge und Tempo. Nur Modi, die sie einem einzelnen Zeichen
-        zuordnen können, geben sie mit (nicht die Gruppen-Modi, die nur die Zeit
-        der ganzen Gruppe kennen). `assumed`: nicht gemessen, sondern für eine
-        richtige, aber unsichere Antwort gesetzt (2 × die übliche Latenz); zählt
-        für die Gewichtung dieses Zeichens, nicht für die übliche Latenz."""
+        `latency` ist die Zeit vom Ende des Tons (des letzten Punkts oder
+        Strichs) bis zum Tastendruck, unabhängig von Zeichenlänge und Tempo;
+        beim fortlaufenden Mitschreiben ab der vorigen Taste, wenn die später
+        kam. Nur wo sie sich einem einzelnen Zeichen zuordnen lässt, sonst
+        None (siehe core/latency). `reaction_time` ist die Zeit ab Tonbeginn,
+        `effective_wpm` das daraus gerechnete Tempo (morse.effective_wpm).
+        `assumed`: nicht gemessen, sondern für eine richtige, aber unsichere
+        Antwort gesetzt (2 × die übliche Latenz); zählt für die Gewichtung
+        dieses Zeichens, nicht für die übliche Latenz."""
         entry = {
             "char": char,
             "typed": typed,
@@ -404,12 +407,12 @@ def top_confusions(all_time: dict, limit=10):
 # --- Verlauf -------------------------------------------------------------------
 # Beschriftungen deutsch; übersetzt wird bei der Anzeige (progress_widget).
 HISTORY_MODES = {
-    "single": N_("Einzelzeichen"),
+    "single": N_("Zeichen"),  # wie der Inhalt im Reiter Einzeln
     "group": N_("Gruppen"),
     "word": N_("Wörter"),
     "callsign": N_("Rufzeichen"),
     "rufz": N_("Rufz-Durchgang"),
-    "continuous": N_("Kontinuierlich"),
+    "continuous": N_("Am Stück"),
     "qso": N_("QSO mittippen"),
     "qso_quiz": N_("QSO-Abfrage"),
     "qso_head": N_("QSO-Kopfhören"),

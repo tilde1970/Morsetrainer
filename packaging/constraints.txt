@@ -1,0 +1,17 @@
+# Feste Versionen für die Release-Builds (.github/workflows/release.yml):
+# Eine neue Hauptversion einer Abhängigkeit am Tag des Tags landet so nicht
+# ungeprüft im Release. Zum Aktualisieren: frische venv,
+# pip install -r requirements.txt, pip freeze, Tests und Selbsttest.
+cffi==2.1.1
+flatbuffers==25.12.19
+lameenc==1.8.4
+numpy==2.5.3
+onnxruntime==1.30.0
+packaging==26.3
+pathvalidate==3.3.1
+piper-tts==1.8.0
+protobuf==7.36.2
+pycparser==3.0
+sounddevice==0.5.6
+pyinstaller==6.22.3
+pillow==12.3.0

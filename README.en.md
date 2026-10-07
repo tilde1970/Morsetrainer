@@ -35,7 +35,7 @@ restart. The screenshots show the German interface.
 
 ### Copying at Koch speed
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Groups tab: copying at Koch speed 20/10, “Richtig: ESJ” (correct)">
+<img src="docs/bilder/gruppen.png" width="640" alt="One by one tab, Groups: copying at Koch speed 20/10, “Richtig: ESJ” (correct)">
 
 ### Award to print
 
@@ -69,8 +69,8 @@ PowerShell and compare with the line in `SHA256SUMS.txt`.
 
 1. Set **Koch lesson 1** at the top (K and M); “▶ listen” plays the new
    character.
-2. Get to know the characters in the **Characters** tab, then copy in the
-   **Groups** tab while the audio plays.
+2. Get to know the characters in the **One by one** tab under
+   **Characters**, then copy under **Groups** while the audio plays.
 3. Or simply press **▶ Daily practice (10 min)** (F12) – it switches the
    tabs by itself.
 4. Enter your callsign and name under “Settings …” (top right); they appear on the

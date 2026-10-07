@@ -143,7 +143,7 @@ EN.update({
         "Data restored. The program quits now; the restored settings apply from the next start.",
     "{wpm} WPM ≈ {cpm} ZpM": "{wpm} WPM ≈ {cpm} CPM",
     "WPM ≈ {cpm} ZpM": "WPM ≈ {cpm} CPM",
-    "{wpm} (alle außer Einzelzeichen)": "{wpm} (all tabs except Characters)",
+    "{wpm} (nicht bei einzelnen Zeichen)": "{wpm} (not for single characters)",
     "▾ Weitere Optionen": "▾ More options",
     "▸ Weitere Optionen": "▸ More options",
     "Farnsworth {wpm}": "Farnsworth {wpm}",
@@ -167,17 +167,54 @@ EN.update({
         "come evenly (weak ones still more often). You can add the prosigns AR, KN, SK and BK afterwards in "
         "lessons {first}–{last}.",
     "alle Zeichen, keins bevorzugt": "all characters, none favoured",
+    "Es gibt nur {n} Reiter.": "There are only {n} tabs.",
+    "Neu in Version {version}": "New in version {version}",
+    "Zeichen, Gruppen, Wörter und Rufzeichen stehen jetzt gemeinsam im Reiter „Einzeln“; den "
+    "Inhalt wählst du dort oben unter „Inhalt“ (oder Alt+1 noch einmal drücken). „Kontinuierlich“ "
+    "heißt jetzt „Am Stück“. Alles Weitere steht unter Hilfe, Änderungen.":
+        "Characters, Groups, Words and Callsigns now share the “One by one” tab; choose the content at the "
+        "top under “Content” (or press Alt+1 again). “Continuous” is now “Non-stop”. Everything else is under "
+        "Help, Changes.",
+    "Einstellungen nicht gespeichert": "Settings not saved",
+    "Die Einstellungen ließen sich nicht speichern: {error}": "The settings could not be saved: {error}",
+    "Ø Reaktion: Zeit vom letzten Punkt oder Strich bis zu deiner Taste, Ø WPM: Tempo ab Beginn des "
+    "Zeichens (beides nur richtige Antworten). „–“: nicht gemessen, etwa beim Kopfhören.":
+        "Ø reaction: time from the last dot or dash to your key, Ø WPM: speed from the start of the character "
+        "(both correct answers only). “–”: not measured, e.g. with head copy.",
+    "Keine Tonausgabe möglich. {hint} ({error})": "No sound output possible. {hint} ({error})",
+    "Das Audiogerät ist belegt. Gibt ein anderes Programm (etwa SDR- oder Audio-Software im "
+    "Exklusivmodus) es frei, geht es weiter.":
+        "The audio device is busy. Once another program (such as SDR or audio software in exclusive mode) "
+        "releases it, it works again.",
+    "Kein Audiogerät gefunden. Kopfhörer oder Lautsprecher anschließen, im System als "
+    "Standardausgabe wählen und noch einmal starten.":
+        "No audio device found. Connect headphones or speakers, choose them as the default output in the "
+        "system and start again.",
+    "Das Audiogerät kann die Abtastrate von 48 kHz nicht. Im System ein anderes Gerät als "
+    "Standardausgabe wählen.":
+        "The audio device does not support the 48 kHz sample rate. Choose another default output device in "
+        "the system.",
+    "Das Audiogerät ist nicht mehr verfügbar (abgezogen?). Wieder anschließen oder im System ein "
+    "anderes wählen und noch einmal starten.":
+        "The audio device is no longer available (unplugged?). Plug it in again or choose another one in the "
+        "system and start again.",
+    "Einzelheiten stehen in {path}": "Details are in {path}",
+    "Der Morsetrainer kann kein Fenster öffnen: {error}": "The Morsetrainer cannot open a window: {error}",
+    "Inhalt {name}": "Content {name}",
+    "Inhalt {name}.": "Content {name}.",
     "Weiter mit Gruppen": "Continue with groups",
     "Die Zeichen von Lektion {lesson} sitzen: {correct} von {total} richtig ({share:.0%}), "
     "mit Zeitlimit.\n\n"
-    "Im Reiter Gruppen kommen sie ohne Pause hintereinander, wie im Funkbetrieb. "
+    "Bei den Gruppen (Reiter Einzeln) hörst du mehrere Zeichen direkt hintereinander, wie im Funkbetrieb, "
+    "und tippst sie dann. "
     "Dort wird dir auch die nächste Lektion angeboten.\n\n"
-    "Zum Reiter Gruppen wechseln?":
+    "Zu den Gruppen wechseln?":
         "You know the characters of lesson {lesson}: {correct} of {total} correct ({share:.0%}), "
         "with time limit.\n\n"
-        "In the Groups tab they come back to back without a pause, as on the air. "
+        "In the groups (One by one tab) you hear several characters back to back, as on the air, "
+        "and then type them. "
         "That is also where the next lesson is offered.\n\n"
-        "Switch to the Groups tab?",
+        "Switch to groups?",
     "Hilfe": "Help",
     "Morsetrainer {version} · entwickelt von {author} · 73!": "Morsetrainer {version} · developed by {author} · 73!",
     "Heute {minutes} von {goal} Min": "Today {minutes} of {goal} min",
@@ -190,11 +227,11 @@ EN.update({
     "Wiederholung über Tage (Lernkartei)": "Review over days (spaced repetition)",
     "Sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, "
     "unsichere schon am nächsten Tag. Mit „schwache bevorzugt“ kommen fällige Zeichen öfter "
-    "dran. Hochgestuft wird nur aus Zufallszeichen (Einzelzeichen, Gruppen, Kontinuierlich), "
+    "dran. Hochgestuft wird nur aus Zufallszeichen (Zeichen und Gruppen im Reiter Einzeln, Am Stück), "
     "entschieden einmal am Tag ab 5 Versuchen.":
         "Characters recognised reliably and quickly come back after 1, 2, 4, 8, 16 and 32 days, "
         "uncertain ones the next day. With “weak favoured” due characters come up more often. "
-        "Only random characters promote a character (tabs Characters, Groups, Continuous); "
+        "Only random characters promote a character (characters and groups in the One by one tab, Non-stop); "
         "decided once a day from 5 attempts.",
     "Fällige gezielt üben": "Practise due characters",
     "Häufigste Verwechslungen (letzte {days} Tage)": "Most frequent confusions (last {days} days)",
@@ -233,6 +270,12 @@ EN.update({
     "Wörter": "Words",
     "Rufzeichen": "Callsigns",
     "Kontinuierlich": "Continuous",
+    "Am Stück": "Non-stop",
+    "Einzeln": "One by one",
+    "Eins nach dem anderen: hören, antworten, das nächste. Ohne Pause fortlaufend mitschreiben: "
+    "Reiter „Am Stück“.":
+        "One at a time: listen, answer, the next one. To copy continuously without pauses: "
+        "“Non-stop” tab.",
     "Sprechen": "Speak",
     "QSO": "QSO",
     "Contest": "Contest",
@@ -443,16 +486,22 @@ EN.update({
     "Probehören erst nach dem Durchgang.": "Listening only after the run.",
     "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":
         "No listening during a network session; there the trainer sets the conditions.",
-    "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Tastklicks: Klicks eines hart tastenden "
-    "Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.":
-        "Not part of any level and do not count for the QRN-proof award. Key clicks: clicks of a neighbour "
-        "keying hard, even when its tone is off; the CW QRM offset applies to them.",
+    "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest; „Alle an“ schaltet sie nicht mit "
+    "ein. Tastklicks: Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der "
+    "CW-QRM-Abstand gilt für sie.":
+        "Not part of any level and do not count for the QRN-proof award; “All on” does not switch them on. "
+        "Key clicks: clicks of a neighbour keying hard, even when its tone is off; the CW QRM offset "
+        "applies to them.",
+    "Alle an, ohne die weiteren Störungen": "All on, without the extra interference",
     "Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.":
         "Clicks of a neighbour keying hard, even when its tone is off; the CW QRM offset applies to them.",
-    "In Gruppen, Wörtern und Rufzeichen läuft das Band in deiner Antwortpause 6 dB leiser weiter; wird es "
-    "wieder lauter, kommt die nächste Sequenz.":
-        "In Groups, Words and Callsigns the band keeps running 6 dB quieter during your answer pause; when it "
-        "gets louder again, the next sequence is coming.",
+    "Band in der Antwortpause": "Band in the answer pause",
+    "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
+    "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
+    "zählt für Stufe und Diplom gleich.":
+        "In Groups, Words and Callsigns the band keeps running a little quieter (6 dB) while you type; "
+        "when it gets louder again, the next group is coming. Off: silence between the groups; "
+        "counts the same for level and award.",
     "Abstand {name}": "offset {name}",
     "Kilohertz": "kilohertz",
     "Fenster {title}.": "Window {title}.",
@@ -741,12 +790,12 @@ EN.update({
     "{file} lässt sich nicht öffnen: {error}": "Cannot open {file}: {error}",
     " – genug gibt es ab Koch-Lektion {lesson}": " – there are enough from Koch lesson {lesson}",
     "Nur {count} Wörter mit diesen Zeichen": "Only {count} words with these characters",
-    "Übe bis dahin im Reiter Gruppen.": "Until then, practise in the Groups tab.",
+    "Übe bis dahin mit Gruppen.": "Until then, practise with groups.",
     "Neu: Wörter jetzt mit „Erst merken“ – erst das ganze Wort hören, "
     "dann tippen. Umstellbar unter Eingabe.":
         "New: words now use “Listen first” – hear the whole word first, "
         "then type. You can change this under Input.",
-    "# Eigene Wörter für den Reiter „Wörter“ im Morsetrainer.\n"
+    "# Eigene Wörter für „Wörter“ (Reiter Einzeln) und „Am Stück“ im Morsetrainer.\n"
     "#\n"
     "# Ein Wort pro Zeile, optional mit Bedeutung nach dem ersten „=“, die nach\n"
     "# der Antwort angezeigt wird. Zeilen mit # sind Kommentare. Groß- und\n"
@@ -761,7 +810,7 @@ EN.update({
     "# DARC = Deutscher Amateur-Radio-Club\n"
     "# OV = Ortsverband\n"
     "# SOTA = Summits on the Air\n":
-        "# Your own words for the “Words” tab in Morsetrainer.\n"
+        "# Your own words for “Words” (One by one tab) and “Non-stop” in Morsetrainer.\n"
         "#\n"
         "# One word per line, optionally with a meaning after the first “=”, which\n"
         "# is shown after the answer. Lines starting with # are comments. Upper and\n"
@@ -827,8 +876,8 @@ EN.update({
 
 # --- modes/content.py, modes/continuous_mode.py ---
 EN.update({
-    "Zu wenige Wörter mit diesen Zeichen – erst im Reiter Gruppen üben.":
-        "Too few words with these characters – practise in the Groups tab first.",
+    "Zu wenige Wörter mit diesen Zeichen – erst mit Gruppen üben.":
+        "Too few words with these characters – practise with groups first.",
     "Zu wenige Wendungen mit diesen Zeichen": "Too few phrases with these characters",
     "Rufzeichen brauchen eine Ziffer im Zeichensatz (ab Koch-Lektion 23).":
         "Callsigns need a digit in the character set (from Koch lesson 23).",
@@ -840,16 +889,16 @@ EN.update({
     "Wendungen": "Phrases",
     "QSO-Klartext": "QSO plain text",
     "Anzahl QSOs:": "Number of QSOs:",
-    "Kontinuierlich (ohne Pause, feste Dauer)": "Continuous (no pauses, fixed duration)",
-    "Die Gruppen kommen ohne Pause wie im Reiter „Kontinuierlich“, alle tippen fortlaufend mit, ohne "
+    "Am Stück (ohne Pause, feste Dauer)": "Non-stop (no pauses, fixed duration)",
+    "Die Gruppen kommen ohne Pause wie im Reiter „Am Stück“, alle tippen fortlaufend mit, ohne "
     "Enter. Ausgewertet wird am Ende; eine Taste zählt nur, wenn sie zeitlich zum Zeichen passt. Die "
     "Lösungen stehen danach nummeriert unter „Auflösung“.":
-        "The groups come without pauses as in the “Continuous” tab, everyone types along continuously, "
+        "The groups come without pauses as in the “Non-stop” tab, everyone types along continuously, "
         "without Enter. Scoring happens at the end; a key only counts if it fits the character in time. "
         "Afterwards the solutions are listed by number under “Solutions”.",
-    "Kontinuierlich geht nicht mit eigenem Text – Gruppen wählen.":
-        "Continuous does not work with own text – choose groups.",
-    "Kontinuierlich – noch {time}": "Continuous – {time} left",
+    "Am Stück geht nicht mit eigenem Text – Gruppen wählen.":
+        "Non-stop does not work with own text – choose groups.",
+    "Am Stück – noch {time}": "Non-stop – {time} left",
     "Nachtippen…": "Finishing typing…",
     "Läuft – höre zu und tippe mit, ohne Enter…": "Running – listen and type along, without Enter…",
     "{correct} von {total} Gruppen richtig, {share:.0%} der Zeichen":
@@ -867,7 +916,7 @@ EN.update({
     "(mit Wortpause dazwischen; 0 = durchgehend)": "(with a word gap in between; 0 = continuous)",
     "Auswertung (letzte {n} Zeichen)": "Evaluation (last {n} characters)",
     "Alles in eigenem Fenster": "Everything in a separate window",
-    "Kontinuierlich – ganze Auswertung": "Continuous – full evaluation",
+    "Am Stück – ganze Auswertung": "Non-stop – full evaluation",
     "Nur gesendeter Text": "Sent text only",
     "Erscheint nach dem Stoppen.": "Appears after stopping.",
     "Gesendet: {n} Zeichen": "Sent: {n} characters",
@@ -1233,20 +1282,20 @@ EN.update({
     "alle 26 Buchstaben in Fach 3": "all 26 letters in box 3",
     "alle Buchstaben in Fach 6 und alle Ziffern in Fach 4": "all letters in box 6 and all digits in box 4",
     "Mitschreiben im Fluss": "Copying in flow",
-    "Kontinuierlich mit Klartext ohne eigene Wörter, Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, "
+    "Am Stück mit Klartext ohne eigene Wörter, Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, "
     "≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen oder QSO":
-        "Continuous with plain text without your own words, character set at least lesson 15, full 3-min run, "
+        "Non-stop with plain text without your own words, character set at least lesson 15, full 3-min run, "
         "≥ 90 % minus extra keys, characters ≥ 18 WPM; Gold only with phrases or QSO",
     "WPM eff.": "WPM eff.",
-    "Kontinuierlich mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne Farnsworth, voller "
+    "Am Stück mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne Farnsworth, voller "
     "3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten":
-        "Continuous with random groups (≥ 5 characters), full character set, no Farnsworth, full 3-min "
+        "Non-stop with random groups (≥ 5 characters), full character set, no Farnsworth, full 3-min "
         "run, ≥ 90 % minus extra keys",
     "QRN-fest": "QRN-proof",
-    "Gruppen oder Kontinuierlich mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und "
+    "Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und "
     "nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen der "
     "rechtzeitige erste Versuch":
-        "Groups or continuous with random characters, ≥ 200 characters, band conditions on for the whole run "
+        "Groups or non-stop with random characters, ≥ 200 characters, band conditions on for the whole run "
         "and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM, in groups the "
         "first attempt in time",
     "Band leicht, ≥ 90 %": "conditions light, ≥ 90 %",
@@ -1365,9 +1414,11 @@ EN.update({
     "Stufe {name}": "level {name}",
     "Stufe:": "Level:",
     "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
-    "(90 % und mehr), und mit „leicht“ beginnen.":
+    "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "
+    "ist für den Feinschliff.":
         "Learn new characters without interference. Switch it on once the character set is solid without "
-        "interference (90 % or more), and start with “light”.",
+        "interference (90 % or more), and start with “light”. Practice works best at light to medium; "
+        "“heavy” is for polishing.",
     "an/aus erst nach dem Durchgang": "on/off only after the run",
     "Entspricht mindestens Stufe {name}.": "Matches at least level {name}.",
     "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken sofort, "

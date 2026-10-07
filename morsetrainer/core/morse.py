@@ -205,3 +205,21 @@ def code_units(char: str) -> float:
             units += 1  # Pause zwischen den Elementen
         units += 1 if symbol == "." else 3
     return units
+
+def tone_seconds(char: str, wpm: int) -> float:
+    """Hörbare Dauer eines Zeichens ohne die Pause danach: vom ersten bis zum
+    Ende des letzten Punkts oder Strichs; 0 für unbekannte Zeichen."""
+    if char.upper() not in MORSE_CODE:
+        return 0.0
+    return duration_seconds(char, wpm) - char_gap_seconds(wpm)
+
+
+def effective_wpm(char: str, since_start: float, wpm=None) -> float:
+    """Effektives Tempo einer Antwort: Länge des Zeichens (code_units) geteilt
+    durch die Zeit vom Beginn des Tons bis zur Taste. Mit `wpm` (gesendetes
+    Zeichentempo) höchstens so schnell wie gesendet – wer gleich nach dem
+    letzten Element tippt, hat das Zeichen in dessen Tempo erkannt."""
+    units = code_units(char)
+    if wpm:
+        since_start = max(since_start, units * 1.2 / wpm)
+    return units * 1.2 / max(since_start, 0.001)

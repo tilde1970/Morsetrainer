@@ -1,5 +1,6 @@
 """Selbsttest für die Release-Builds: prüft ohne Fenster und Soundkarte,
-ob beide Stimmen und der MP3-Export im gepackten Programm funktionieren.
+ob beide Stimmen, der MP3-Export, PortAudio (Ton) und Tcl/Tk (Oberfläche)
+im gepackten Programm vorhanden sind.
 
     morsetrainer --selftest ziel.mp3
 
@@ -11,9 +12,30 @@ from morsetrainer.core import mp3, speech
 from morsetrainer.core.morse import build_text
 
 
+def _libraries() -> str:
+    """Leer, wenn PortAudio und Tcl/Tk geladen werden können, sonst der Grund.
+    Beides geht ohne Soundkarte und ohne Bildschirm."""
+    try:
+        import sounddevice
+        portaudio = sounddevice.get_portaudio_version()[1]
+    except Exception as exc:  # fehlende Bibliothek: OSError, im Paket auch ImportError
+        return f"PortAudio fehlt: {exc}"
+    try:
+        import tkinter
+        tk_version = tkinter.Tcl().eval("info patchlevel")
+    except Exception as exc:
+        return f"Tcl/Tk fehlt: {exc}"
+    print(f"{portaudio}, Tcl/Tk {tk_version}")
+    return ""
+
+
 def run(path: str) -> int:
-    """Erzeugt mit beiden Stimmen eine kurze Übung als MP3 nach `path`; 0 bei
-    Erfolg, sonst 1 (Grund auf stderr)."""
+    """Prüft PortAudio und Tcl/Tk und erzeugt mit beiden Stimmen eine kurze
+    Übung als MP3 nach `path`; 0 bei Erfolg, sonst 1 (Grund auf stderr)."""
+    missing = _libraries()
+    if missing:
+        print(missing, file=sys.stderr)
+        return 1
     speakers = [speech.speaker_for(lang) for lang in speech.VOICES]  # deutsch und englisch (Ansage)
     for reason in [speaker.available() for speaker in speakers] + [mp3.available()]:
         if reason:
