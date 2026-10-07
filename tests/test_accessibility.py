@@ -297,6 +297,7 @@ class AnnouncerTest(AppTestCase):
                          "durchschnittliche effektive Geschwindigkeit: 18 WPM")
         self.assertEqual(announcer.speakable("Median Zeit (s)"), "Median Zeit in Sekunden")
         self.assertEqual(announcer._cell_spoken("92 %"), "92 %")  # sonst unverändert
+        self.assertEqual(announcer._cell_spoken("–"), "keine")  # keine Messung
         self.assertEqual(announcer._cell_spoken("OE3XYZ", nato_calls=True)[:11], "Oskar, Ekko")
 
     def test_pin_field_says_pin_number_digit_by_digit(self):

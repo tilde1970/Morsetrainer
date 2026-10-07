@@ -35,6 +35,11 @@
   phonetic alphabet (Delta, Lima, One …).
 - **Closing a window:** the announcement says where you are now (“Back in
   the main window. Tab Groups.”).
+- **Statistics:** the column “Ø time” is now “Ø reaction” and shows the
+  time from the last dot or dash to your input (correct answers, measured
+  values). Before, it was the time from the start of the character, so long
+  characters and slow speeds looked worse. “Ø WPM” per character, like the
+  line above it, counts only correct answers.
 - **Tables** (awards, statistics, contest log): when you Tab into one, the
   first row is selected and the arrow keys work right away. When a window opens, the announcement says
   its name (“Window Band conditions”); if the window speaks itself, the

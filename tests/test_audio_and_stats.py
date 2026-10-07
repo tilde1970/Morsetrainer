@@ -166,6 +166,34 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(tempo.cpm(20), 100)
         self.assertEqual(tempo.cpm(12), 60)
 
+    def test_speed_column_counts_only_correct_answers(self):
+        session = stats.SessionStats("single", "K", 20, 600)
+        session.record_char("K", "K", True, 1.0, 18.0)
+        session.record_char("K", "R", False, 3.0, 4.0)  # langsamer Fehlversuch zählt nicht
+        rows = {row[0]: row for row in session.char_rows()}
+        self.assertEqual(rows["K"][5], 18.0)
+
+    def test_reaction_column_is_time_after_the_tone(self):
+        # Gezeigt wird die gemessene Zeit vom Ende des Tons bis zur Eingabe
+        # (nur richtige, ohne angenommene Werte), nicht die Zeit ab Beginn.
+        session = stats.SessionStats("single", "KE", 20, 600)
+        session.record_char("K", "K", True, 1.2, 20.0, latency=0.4)
+        session.record_char("K", "K", True, 1.4, 20.0, latency=0.6)
+        session.record_char("K", "K", True, 2.0, 20.0, latency=1.6, assumed=True)
+        session.record_char("E", "S", False, 0.9, 20.0)
+        rows = {row[0]: row for row in session.char_rows()}
+        self.assertAlmostEqual(rows["K"][4], 0.5)
+        self.assertIsNone(rows["E"][4])  # nur falsch: keine Messung
+        self.assertEqual(rows["K"][5], 20.0)  # Tempo nur aus richtigen Antworten
+        self.assertIsNone(rows["E"][5])
+        session.finalize()
+        rows = {row[0]: row for row in stats.all_time_char_rows(stats.load_all_time())}
+        self.assertAlmostEqual(rows["K"][4], 0.5)
+        self.assertIsNone(rows["E"][4])
+        self.assertAlmostEqual(rows["K"][5], 20.0)
+        self.assertIsNone(rows["E"][5])
+        self.assertIsNone(stats.measured_latency(1.0, 1, 1.0, 1))  # nur angenommene
+
     def test_old_all_time_without_confusions_still_works(self):
         db.save_state("all_time", {"K": {
             "good": 3, "wrong": 1, "total_reaction_time_s": 2.0, "total_effective_wpm": 80.0,
@@ -173,6 +201,7 @@ class StatsTest(unittest.TestCase):
         }})
         rows = stats.all_time_char_rows(stats.load_all_time())
         self.assertEqual(rows[0][6], "")
+        self.assertIsNone(rows[0][4])  # alte Daten ohne Latenz: „–“
         self._session([("K", "R")]).finalize()
         self.assertEqual(stats.load_all_time()["K"]["confusions"], {"R": 1})
 

@@ -165,14 +165,17 @@ class SessionStats:
         self._write_line(entry)
 
     def char_rows(self):
-        """Per-character rows (char, good, wrong, total, avg_reaction_s, avg_wpm,
-        confusions text), sorted by error count descending, for display."""
+        """Zeilen je Zeichen (Zeichen, richtig, falsch, gesamt, Reaktionszeit,
+        effektives Tempo, Verwechslungen), für die Anzeige; die Reaktionszeit
+        siehe measured_latency(). Tempo und Reaktion nur aus richtigen
+        Antworten (None, solange es keine gibt); Fehler zählt „falsch“."""
         rows = []
         for char, e in self.per_char.items():
             total = e["good"] + e["wrong"]
-            avg_rt = statistics.mean(e["reaction_times"]) if e["reaction_times"] else 0.0
-            avg_wpm = statistics.mean(e["effective_wpms"]) if e["effective_wpms"] else 0.0
-            rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm, format_confusions(e["confusions"])))
+            reaction = measured_latency(sum(e["latencies"]), len(e["latencies"]),
+                                        sum(e["assumed_latencies"]), len(e["assumed_latencies"]))
+            avg_wpm = statistics.mean(e["correct_effective_wpms"]) if e["correct_effective_wpms"] else None
+            rows.append((char, e["good"], e["wrong"], total, reaction, avg_wpm, format_confusions(e["confusions"])))
         rows.sort(key=lambda r: (-r[2], r[0]))
         return rows
 
@@ -335,14 +338,26 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     return data
 
 
+def measured_latency(total_s: float, count: int, assumed_s: float, assumed_count: int):
+    """Mittlere Reaktionszeit: vom Ende des Tons (letzter Punkt oder Strich)
+    bis zum Tastendruck, nur richtige Antworten und nur gemessene Werte (ohne
+    die für „richtig, aber unsicher“ angenommenen); None ohne Messung. Anders
+    als die Zeit ab Beginn des Zeichens hängt sie nicht von Zeichenlänge und
+    Tempo ab."""
+    count -= assumed_count
+    return (total_s - assumed_s) / count if count > 0 else None
+
+
 def all_time_char_rows(all_time: dict):
     """Zeilen wie SessionStats.char_rows(), aber aus den gespeicherten
     Gesamtsummen statt aus einem laufenden Durchgang."""
     rows = []
     for char, e in all_time.items():
         total = e["good"] + e["wrong"]
-        avg_rt = e["total_reaction_time_s"] / total if total else 0.0
-        avg_wpm = e["total_effective_wpm"] / total if total else 0.0
+        avg_rt = measured_latency(e.get("total_latency_s", 0.0), e.get("latency_count", 0),
+                                  e.get("assumed_latency_s", 0.0), e.get("assumed_latency_count", 0))
+        # Nur richtige Antworten (wie die Zeile darüber, all_time_summary).
+        avg_wpm = e.get("correct_effective_wpm_total", 0.0) / e["good"] if e["good"] else None
         rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm, format_confusions(e.get("confusions", {}))))
     rows.sort(key=lambda r: (-r[2], r[0]))
     return rows

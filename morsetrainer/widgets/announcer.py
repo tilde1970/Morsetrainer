@@ -618,6 +618,8 @@ def _cell_spoken(value: str, nato_calls: bool = False) -> str:
     „B (9), N (1)“ als „Be gleich 9 mal, Enn gleich einmal“, Rufzeichen
     (`nato_calls`) im Funkalphabet."""
     value = value.strip()
+    if value == "–":  # keine Messung
+        return tr("keine")
     if len(value) == 1:
         return spell_chars(value)
     if _CONFUSIONS.match(value):

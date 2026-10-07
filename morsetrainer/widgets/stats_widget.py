@@ -27,7 +27,7 @@ class StatsPanel:
         self.char_tree = ttk.Treeview(box, columns=columns, show="headings", height=tree_height)
         headings = {
             "char": tr("Zeichen", context="Spalte"), "good": tr("Richtig"), "wrong": tr("Falsch"),
-            "avg_rt": tr("Ø Zeit (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),
+            "avg_rt": tr("Ø Reaktion (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),
         }
         widths = {"char": 60, "good": 60, "wrong": 55, "avg_rt": 75, "avg_wpm": 60, "confusions": 140}
         for col in columns:
@@ -57,8 +57,13 @@ class StatsPanel:
         self.speed_var.set(speed)
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
-        for char, good, wrong, _total, avg_rt, avg_wpm, confusions in rows:
-            self.char_tree.insert("", "end", values=(display_text(char), good, wrong, number(avg_rt, 2), number(avg_wpm, 1), confusions))
+        # Reaktion: vom Ende des Zeichens bis zur Eingabe (stats.measured_latency);
+        # Reaktion und Tempo nur aus richtigen Antworten. „–“, solange es dafür
+        # keinen Wert gibt (Kopfhören, nur Fehler …).
+        for char, good, wrong, _total, reaction, avg_wpm, confusions in rows:
+            reaction = number(reaction, 2) if reaction is not None else "–"
+            avg_wpm = number(avg_wpm, 1) if avg_wpm is not None else "–"
+            self.char_tree.insert("", "end", values=(display_text(char), good, wrong, reaction, avg_wpm, confusions))
 
     def show_saved(self, session_number, error=None):
         """`session_number`: Nummer des gespeicherten Durchgangs (SessionStats.finalize)."""

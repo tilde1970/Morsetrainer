@@ -35,6 +35,11 @@
   Funkalphabet angesagt (Delta, Lima, Eins …).
 - **Fenster schließen:** Die Ansage sagt, wo du gelandet bist („Zurück im
   Hauptfenster. Reiter Gruppen.“).
+- **Statistik:** Die Spalte „Ø Zeit“ heißt jetzt „Ø Reaktion“ und zeigt
+  die Zeit vom letzten Punkt oder Strich bis zur Eingabe (richtige
+  Antworten, gemessene Werte). Bisher war es die Zeit ab Beginn des
+  Zeichens; lange Zeichen und langsames Tempo sahen dadurch schlechter aus.
+  „Ø WPM“ je Zeichen zählt wie die Zeile darüber nur richtige Antworten.
 - **Tabellen** (Diplome, Statistik, Contest-Log): Springst du mit Tab
   hinein, ist die erste Zeile gewählt und die Pfeiltasten gehen sofort. Öffnet sich ein Fenster, sagt die Ansage
   seinen Namen („Fenster Bandbedingungen“); spricht das Fenster selbst,
