@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Band in the answer pause:** in Groups, Words and Callsigns the band
+  keeps running 6 dB quieter after each sequence instead of falling
+  silent; it comes back up with the next sequence (smooth crossfade).
+- **New interference** under “More interference”: switching power supply
+  (buzz with a wandering whistle), PLC (powerline data noise), electric
+  fence (a tick about every second) and key clicks (the neighbouring run
+  keys hard; the clicks get through even a narrow filter). On the network,
+  participants from this version on hear them too.
+- **Font size:** arrows of number fields and drop-down lists, scrollbars
+  and sliders grow with it; the full result (Continuous) and the solution
+  (Network) start at the size set.
 - **Band conditions at a low pitch:** how much noise a narrow filter
   removes depends on your pitch (at 300 Hz about 3 dB more than at
   600 Hz). The level, the QRN-proof award and “S/N in filter” now use your

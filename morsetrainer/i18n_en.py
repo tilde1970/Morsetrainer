@@ -423,6 +423,13 @@ EN.update({
     "AGC-Pumpen": "AGC pumping",
     "Flattern": "Flutter",
     "Träger": "Carrier",
+    "Schaltnetzteil (Brumm, Pfeifton)": "Switching power supply (buzz, whistle)",
+    "PLC (Datenrauschen aus der Steckdose)": "PLC (powerline data noise)",
+    "Weidezaun (Ticken)": "Electric fence (ticking)",
+    "Tastklicks (Nachbar tastet hart)": "Key clicks (neighbour with hard keying)",
+    "Netzteil": "Power supply",
+    "Weidezaun": "Fence",
+    "Tastklicks": "Key clicks",
     "Weitere Störungen": "More interference",
     "Probehören": "Listen",
     "Probehören beenden": "Stop listening",
@@ -432,8 +439,11 @@ EN.update({
     "Probehören erst nach dem Durchgang.": "Listening only after the run.",
     "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":
         "No listening during a network session; there the trainer sets the conditions.",
-    "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest.":
-        "Not part of any level and do not count for the QRN-proof award.",
+    "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Die Tastklicks kommen vom Nachbar-Run "
+    "(CW-QRM-Abstand gilt) und sind auch zu hören, wenn sein Ton aus ist oder draußen vor dem Filter bleibt.":
+        "Not part of any level and do not count for the QRN-proof award. The key clicks come from the "
+        "neighbouring run (the CW QRM offset applies) and can be heard even when its tone is off or stays "
+        "outside the filter.",
     "Knackstörungen (QRN)": "Static crashes (QRN)",
     "QSB (Fading)": "QSB (fading)",
     "Chirp (zwitschernder Sender)": "Chirp (chirpy transmitter)",

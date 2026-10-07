@@ -222,7 +222,9 @@ Also helpful:
 - **Font size:** under “Settings …” → “Font size”, or with
   **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0** (normal), the whole
   interface gets larger, up to 200 %; the window grows with it. For small
-  screens it also goes smaller, to 90 % and 75 %. The setting is saved.
+  screens it also goes smaller, to 90 % and 75 %. Arrows, scrollbars and
+  sliders grow with it; the full result in Continuous and the solution
+  window in Network start at this size. The setting is saved.
 - **Callsign and name:** enter them once under “Settings …”. They
   appear on the awards and are the default for “My callsign” in Contest and
   “Name/callsign” in Network (there the callsign if there is no name).
@@ -259,6 +261,15 @@ the signal down like an AGC instead of clipping. Chirp is shown in Hz
 Fading changes irregularly (two overlaid variations); its depth follows
 the slider and varies only a little – the level sets the difficulty, not
 chance.
+
+**More interference** (expandable) is not part of any level and does not
+count for the award: thunderstorm (QRN in bursts), AGC pumping after
+crashes, flutter (aurora), carrier (someone tuning up) and the
+interference that troubles many hams most today: **switching power
+supply** (rough 100 Hz buzz with a wandering whistle), **PLC** (powerline
+data noise, in packets), **electric fence** (a tick about every second)
+and **key clicks** (the neighbouring run keys hard; its clicks get
+through even a narrow filter when its tone stays outside).
 
 **CW QRM offset:** the adjacent run is **far** (300–500 Hz) away,
 **close** (50–200 Hz) or at **zero beat** (almost on your frequency).
@@ -301,7 +312,10 @@ Only someone with their own `callsigns.scp` may hear other callsigns in
 the QRM.
 
 As on the air, fading, noise and the neighbouring QRM keep running during
-your answer pause; each sequence hits a different spot.
+your answer pause; each sequence hits a different spot. In Groups, Words
+and Callsigns you also hear the band during the answer pause, 6 dB
+quieter so your ear gets some rest while typing; it comes back up with
+the next sequence.
 
 Runs with band conditions appear in the history but do not count for the
 character statistics, the weighting, the confusions or the review box: a

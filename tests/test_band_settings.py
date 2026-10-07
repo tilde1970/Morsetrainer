@@ -400,6 +400,155 @@ class ExtraInterferenceTest(unittest.TestCase):
         self.assertEqual(band.clean_spec(spec)["levels"]["carrier"], 1.0)
         conditions = band.conditions({"levels": {"carrier": 0.5}, "gain": 1.0}, 600)
         self.assertTrue(conditions.has_background)
+        for key in ("smps", "plc", "fence", "clicks"):
+            spec["levels"][key] = 1.0
+            self.assertEqual(band.preset_rank(spec), "medium", key)
+            self.assertTrue(band.conditions({"levels": {key: 0.5}, "gain": 1.0}, 600).has_background, key)
+
+    def test_power_supply_buzzes_at_twice_the_mains(self):
+        # Gleichgerichtete Netzspannung: Der Brumm pulst mit 100 Hz, nicht mit 50 Hz.
+        import numpy as np
+        x, _ = self.run_band({"levels": {"smps": 1.0}, "gain": 1.0}, 10)
+        power = np.abs(np.fft.rfft(x ** 2))
+        f = np.fft.rfftfreq(len(x), 1 / band.SAMPLE_RATE)
+
+        def at(hz):
+            return power[np.argmin(np.abs(f - hz))]
+        self.assertGreater(at(100), 20 * at(50))
+        self.assertGreater(at(100), 20 * at(150))
+
+    def test_plc_comes_in_packets(self):
+        # An- und ausgetastet: viele Millisekunden fast still, viele laut –
+        # anders als gleichmäßiges Rauschen.
+        import numpy as np
+        x, _ = self.run_band({"levels": {"plc": 1.0}, "gain": 1.0}, 12)
+        ms = np.sqrt(np.mean(x[:len(x) // 48 * 48].reshape(-1, 48) ** 2, axis=1))
+        self.assertGreater(np.mean(ms < 0.02), 0.15)
+        self.assertGreater(np.mean(ms > 0.1), 0.3)
+        noise, _ = self.run_band({"levels": {"noise": 0.5}, "gain": 1.0}, 12)
+        ms = np.sqrt(np.mean(noise[:len(noise) // 48 * 48].reshape(-1, 48) ** 2, axis=1))
+        self.assertLess(np.mean(ms < 0.02), 0.01)
+
+    def test_fence_ticks_regularly(self):
+        import numpy as np
+        x, conditions = self.run_band({"levels": {"fence": 1.0}, "gain": 1.0}, 15)
+        low, high = band.FENCE_PERIOD_SECONDS
+        self.assertTrue(low <= conditions.fence_period <= high)
+        loud = np.flatnonzero(np.abs(x) > 0.1)
+        onsets = loud[np.concatenate([[True], np.diff(loud) > band.SAMPLE_RATE // 10])]
+        gaps = np.diff(onsets) / band.SAMPLE_RATE
+        self.assertGreaterEqual(len(gaps), 8)
+        self.assertTrue(np.all(np.abs(gaps - conditions.fence_period) < 0.03), gaps)
+        # Gleicher Startwert, gleicher Takt (Netzwerk).
+        again, _ = self.run_band({"levels": {"fence": 1.0}, "gain": 1.0}, 15)
+        np.testing.assert_array_equal(x, again)
+
+    def test_key_clicks_get_through_a_narrow_filter(self):
+        # Der Nachbar liegt weit daneben: Ein 250-Hz-Filter nimmt seinen Ton
+        # fast ganz weg, seine Klicks nicht.
+        import numpy as np
+        tone, conditions = self.run_band({"levels": {"cw_qrm": 0.5}, "gain": 1.0, "filter": 250}, 20)
+        clicks, with_clicks = self.run_band({"levels": {"clicks": 0.5}, "gain": 1.0, "filter": 250}, 20)
+        self.assertLess(float(np.max(np.abs(tone))), 0.01)
+        self.assertGreater(float(np.max(np.abs(clicks))), 0.05)
+        # Ohne CW-QRM entsteht der Nachbar trotzdem, mit denselben Klicks an
+        # seinen Tastflanken.
+        self.assertEqual(len(with_clicks.key_clicks), len(with_clicks.cw_qrm))
+        loop = with_clicks.cw_qrm
+        clicked = np.flatnonzero(np.abs(with_clicks.key_clicks) > 0.5)
+        starts = clicked[np.concatenate([[True], np.diff(clicked) > 100])]
+        window = int(0.005 * band.SAMPLE_RATE)
+        for start in starts[:50]:
+            before = np.max(np.abs(loop[max(start - 3 * window, 0):start - window]), initial=0)
+            after = np.max(np.abs(loop[start + window:start + 3 * window]), initial=0)
+            self.assertNotEqual(before > 0.1, after > 0.1, start)  # an einer Flanke
+        np.testing.assert_array_equal(conditions.cw_qrm, loop)  # derselbe Nachbar
+
+    def test_fork_runs_on_alone(self):
+        # Die Kopie (Pausengeräusch) läuft weiter, ohne das Original zu
+        # verschieben; sie beginnt dort, wo das Original steht.
+        import numpy as np
+        spec = {"levels": {"noise": 0.5, "fence": 1.0, "storm": 1.0}, "gain": 1.0, "seed": 9}
+        original = band.conditions(spec, 600)
+        original.mix([], 960)
+        state = (original.sample_pos, original.noise_pos, original.fence_next)
+        twin = original.fork()
+        self.assertEqual((twin.sample_pos, twin.noise_pos), state[:2])
+        for _ in range(100):
+            twin.mix([], 960)
+        self.assertEqual((original.sample_pos, original.noise_pos, original.fence_next), state)
+        self.assertEqual(twin.sample_pos, state[0] + 100 * 960)
+        band.apply_spec(original, {"levels": {"noise": 0.9}, "gain": 1.0})
+        self.assertEqual(twin.levels["noise"], 0.9)  # Pegel gelten für beide
+        self.assertFalse(np.shares_memory(twin.fence_buf, original.fence_buf))
+
+
+class PauseNoiseTest(unittest.TestCase):
+    """Bandgeräusch in der Antwortpause der Abfragemodi."""
+
+    def setUp(self):
+        from morsetrainer.core import pause_noise
+        self.pause_noise = pause_noise
+        self.noise = pause_noise.PauseNoise()
+        self.band = band.conditions({"levels": {"noise": 0.5}, "gain": 1.0, "seed": 1}, 600)
+
+    def rms(self, blocks):
+        import numpy as np
+        return float(np.sqrt(np.mean(np.concatenate(blocks) ** 2)))
+
+    def test_fades_in_quieter_and_out_again(self):
+        n = 960
+        with self.noise.lock:
+            self.noise.pending = (self.band.fork(), 0.0)
+        quiet = [self.noise.block(n) for _ in range(50)]
+        rms_full, _ = self.band.noise_and_agc()
+        self.assertAlmostEqual(self.rms(quiet[10:]), rms_full * self.pause_noise.PAUSE_GAIN, delta=rms_full * 0.1)
+        self.assertLess(self.rms(quiet[:1]), self.rms(quiet[10:11]))  # weich eingeblendet
+        self.noise.fade_out()
+        out = [self.noise.block(n) for _ in range(10)]
+        self.assertEqual(self.rms(out[5:]), 0.0)
+        self.assertGreater(self.rms(out[:1]), 0.0)  # nicht abgeschnitten
+        self.assertIsNone(self.noise.source)
+
+    def test_waits_for_its_time_and_until_the_old_one_is_gone(self):
+        import time
+        with self.noise.lock:
+            self.noise.pending = (self.band.fork(), time.time() + 60)
+        self.assertEqual(self.rms([self.noise.block(960)]), 0.0)
+        with self.noise.lock:
+            self.noise.pending = (self.band.fork(), 0.0)
+        self.noise.block(960)
+        first = self.noise.source
+        newer = self.band.fork()
+        with self.noise.lock:
+            self.noise.pending = (newer, 0.0)
+        self.noise.block(960)
+        self.assertIs(self.noise.source, first)  # erst ausblenden …
+        self.noise.target = 0.0
+        while self.noise.gain > 0:
+            self.noise.block(960)
+        with self.noise.lock:
+            self.noise.pending = (newer, 0.0)
+        self.noise.block(960)
+        self.assertIs(self.noise.source, newer)  # … dann wechseln
+
+    def test_plays_through_the_stream_until_closed(self):
+        stream = FakeStream(target=20)
+        with mock.patch.object(self.pause_noise.audio, "output_stream", lambda: stream):
+            self.noise.start(self.band, 0.0)
+            self.assertTrue(stream.reached.wait(10))
+            self.noise.close()
+            self.noise.thread.join(5)
+        self.assertFalse(self.noise.thread.is_alive())
+        self.assertGreater(self.rms(stream.blocks[10:20]), 0.0)
+
+    def test_audio_error_is_quiet(self):
+        def broken():
+            raise OSError("kein Gerät")
+        with mock.patch.object(self.pause_noise.audio, "output_stream", broken):
+            self.noise.start(self.band, 0.0)
+            self.noise.thread.join(5)
+        self.assertFalse(self.noise.running)
 
 
 class CentralSettingsTest(AppTestCase):
@@ -692,6 +841,30 @@ class SequenceBandTrackingTest(AppTestCase):
         extra = finalize.call_args[0][0]
         self.assertEqual((extra["band_min"], extra["band_gain_min"]), ("light", 100))
         g.running = False
+
+    def test_band_runs_on_in_the_answer_pause(self):
+        g = self.mode("Gruppen")
+        g.band_var.set(True)
+        with mock.patch.object(g, "_play", return_value=True), \
+                mock.patch.object(g.pause_noise, "start") as start, \
+                mock.patch.object(g.pause_noise, "fade_out") as fade_out, \
+                mock.patch.object(g.pause_noise, "close") as close:
+            g.start()
+            g.running = True
+            g.current_sequence, g.voice = "KM", (20, 600)
+            start.reset_mock()
+            fade_out.reset_mock()
+            g.play_current()
+            fade_out.assert_called_once()
+            conditions, delay = start.call_args[0]
+            self.assertIs(conditions, g.band)
+            self.assertGreater(delay, 0.5)  # erst gegen Ende der Sequenz
+            start.reset_mock()
+            g.band_var.set(False)  # ohne Bandbedingungen: Stille in der Pause
+            g.play_current()
+            start.assert_not_called()
+            g.stop()
+            close.assert_called_once()
 
 
 if __name__ == "__main__":

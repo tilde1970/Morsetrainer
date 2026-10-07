@@ -24,6 +24,14 @@ Weitere Störungen (nicht Teil der Stufen):
 - Flatterfading: schnelles Zittern (5–15 Hz), wie bei Aurora oder auf dem
   Polarweg.
 - Träger: jemand stimmt nahe der Frequenz ab, ein Dauerton kommt und geht.
+- Schaltnetzteil: rauer Brummteppich im Takt der gleichgerichteten
+  Netzspannung (100 Hz), dazu ein wandernder, brummender Pfeifton.
+- PLC (Powerline): breitbandiges Rauschen in Datenpaketen, in Pausen nur
+  ein kurzes Leuchtfeuer im festen Takt.
+- Weidezaun: ein harter Ticker etwa einmal pro Sekunde, sehr regelmäßig.
+- Tastklicks: der Nachbar-Run (CW-QRM) tastet hart; seine Klicks an jeder
+  Flanke sind breitbandig und gehen auch durch ein schmales Filter, selbst
+  wenn sein Ton draußen bleibt.
 
 Dazu ein wählbares CW-Filter (2,4 kHz = nur das SSB-Filter, 500 Hz, 250 Hz) um die
 eigene Tonhöhe: Signale, Rauschen und QRM laufen hindurch, der eigene
@@ -32,6 +40,7 @@ Mithörton nicht.
 Rauschen und SSB-QRM werden einmal als Schleife per FFT geformt. Weil
 die FFT-Synthese periodisch ist, geht das Ende nahtlos in den Anfang über;
 so kostet das laufende Mischen fast nichts."""
+import copy
 import functools
 import math
 import random
@@ -43,7 +52,8 @@ from morsetrainer.core.morse import AMPLITUDE, SAMPLE_RATE, build_text, silence
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
 # indiziert.
-EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm", "strength", "storm", "agc", "flutter", "carrier")
+EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm", "strength", "storm", "agc", "flutter", "carrier",
+           "smps", "plc", "fence", "clicks")
 
 NOISE_LOOP_SECONDS = 20
 PASSBAND_HZ = (300, 2700)
@@ -129,6 +139,33 @@ CARRIER_ON_SECONDS = (3.0, 10.0)
 CARRIER_OFF_SECONDS = (5.0, 20.0)
 CARRIER_RAMP_SECONDS = 0.05
 MAX_CARRIER_AMPLITUDE = AMPLITUDE * 0.8
+# Schaltnetzteil: Länge der Schleife, Netzfrequenz, Pfeifton (Bereich,
+# Wandern) und Pegel (Effektivwert) bei Regler 100 %.
+SMPS_LOOP_SECONDS = 10
+MAINS_HZ = 50
+SMPS_WHISTLE_HZ = (350, 1100)
+SMPS_WHISTLE_DRIFT_HZ = 40
+MAX_SMPS_RMS = 0.15
+# PLC: Datenverkehr in Schüben aus kurzen Rahmen, dazwischen nur das
+# Leuchtfeuer; Pegel bei Regler 100 %.
+PLC_LOOP_SECONDS = 12
+PLC_BUSY_SECONDS = (0.4, 2.5)
+PLC_IDLE_SECONDS = (0.3, 1.5)
+PLC_FRAME_SECONDS = (0.002, 0.012)
+PLC_FRAME_GAP_SECONDS = (0.0003, 0.002)
+PLC_BEACON_PERIOD_SECONDS = 0.04
+PLC_BEACON_SECONDS = 0.002
+MAX_PLC_RMS = 0.2
+# Weidezaun: Abstand der Ticker (je Band fest, kaum Schwankung), Länge und
+# Pegel bei Regler 100 %.
+FENCE_PERIOD_SECONDS = (0.9, 1.5)
+FENCE_JITTER_SECONDS = 0.01
+FENCE_TICK_SECONDS = 0.012
+MAX_FENCE_RMS = 0.3
+# Tastklicks: Länge eines Klicks und Spitzenpegel bei Regler 100 % (vor dem
+# Filter; ein schmales Filter lässt davon nur einen Teil durch).
+CLICK_SECONDS = 0.004
+MAX_CLICK_AMPLITUDE = AMPLITUDE * 1.5
 
 # CW-Filter: Bandbreite (-3 dB) um die eigene Tonhöhe. 2400 ist das
 # SSB-Filter, das Rauschen und SSB-QRM ohnehin schon formt; dann wird
@@ -146,6 +183,8 @@ VOICE = "voice"
 
 _noise_loop = None
 _ssb_loop = None
+_smps_loop = None
+_plc_loop = None
 
 
 def _passband_gain(f: np.ndarray) -> np.ndarray:
@@ -270,6 +309,91 @@ def _cw_qrm_loop(rng, freq: int, offset_range=QRM_OFFSETS[DEFAULT_QRM_OFFSET]) -
     return np.concatenate(parts).astype(np.float32)
 
 
+def _key_clicks(loop: np.ndarray, rng) -> np.ndarray:
+    """Tastklicks zum CW-QRM `loop`: an jeder Flanke seiner Tastung ein
+    kurzer, breitbandiger Klick (Spitze 1); gleich lang wie `loop`, damit
+    beide mit derselben Position laufen."""
+    window = int(0.005 * SAMPLE_RATE)
+    clicks = np.zeros(len(loop), dtype=np.float32)
+    if len(loop) <= window:
+        return clicks
+    total = np.cumsum(np.abs(loop), dtype=np.float64)
+    envelope = (total[window:] - total[:-window]) / window
+    if envelope.max() <= 0:
+        return clicks
+    keyed = (envelope > 0.3 * envelope.max()).astype(np.int8)
+    edges = np.flatnonzero(np.diff(keyed)) + window // 2
+    noise = _shaped_noise_loop()
+    length = int(CLICK_SECONDS * SAMPLE_RATE)
+    decay = np.exp(-np.arange(length) / (length / 5))
+    for edge in edges:
+        if edge + length > len(loop):
+            break
+        start = int(rng.integers(len(noise) - length))
+        click = noise[start:start + length] * decay
+        clicks[edge:edge + length] += click / np.max(np.abs(click)) * rng.uniform(0.7, 1.0)
+    return clicks
+
+
+# --- Menschengemachte Störungen ---------------------------------------------------
+def _in_passband(x: np.ndarray) -> np.ndarray:
+    """`x` durch das Empfängerfilter, auf Effektivwert 1 (periodisch, also
+    als nahtlose Schleife brauchbar)."""
+    n = len(x)
+    spectrum = np.fft.rfft(x) * _passband_gain(np.fft.rfftfreq(n, 1 / SAMPLE_RATE))
+    spectrum[0] = 0.0
+    return _normalized(np.fft.irfft(spectrum, n))
+
+
+def _smps_buzz_loop() -> np.ndarray:
+    """Schaltnetzteil: Rauschen, das im Takt der gleichgerichteten
+    Netzspannung pulst (rauer 100-Hz-Brumm), dazu ein Pfeifton, der langsam
+    wandert und mitbrummt. Wanderung und Ton gehen in der Schleife ganz auf,
+    damit sie nahtlos weiterläuft."""
+    global _smps_loop
+    if _smps_loop is None:
+        rng = np.random.default_rng()
+        n = SMPS_LOOP_SECONDS * SAMPLE_RATE
+        t = np.arange(n) / SAMPLE_RATE
+        pulse = np.abs(np.sin(2 * np.pi * MAINS_HZ * t)) ** 8
+        carpet = _normalized(rng.standard_normal(n) * pulse)
+        f0 = round(rng.uniform(*SMPS_WHISTLE_HZ) * SMPS_LOOP_SECONDS) / SMPS_LOOP_SECONDS
+        drift = SMPS_WHISTLE_DRIFT_HZ * SMPS_LOOP_SECONDS / (2 * np.pi) * (
+            1 - np.cos(2 * np.pi * t / SMPS_LOOP_SECONDS))
+        whistle = np.sin(2 * np.pi * (f0 * t + drift)) * (0.4 + 0.6 * pulse ** 0.25)
+        _smps_loop = _in_passband(0.8 * carpet + 1.4 * whistle)
+    return _smps_loop
+
+
+def _plc_data_loop() -> np.ndarray:
+    """PLC: breitbandiges Rauschen, an- und ausgetastet wie Datenpakete –
+    im Wechsel Verkehr (dicht gepackte Rahmen) und Ruhe (nur das
+    Leuchtfeuer im festen Takt)."""
+    global _plc_loop
+    if _plc_loop is None:
+        rng = np.random.default_rng()
+        n = PLC_LOOP_SECONDS * SAMPLE_RATE
+        gate = np.zeros(n)
+        pos, busy = 0, True
+        period, beacon = int(PLC_BEACON_PERIOD_SECONDS * SAMPLE_RATE), int(PLC_BEACON_SECONDS * SAMPLE_RATE)
+        while pos < n:
+            end = min(pos + int(rng.uniform(*(PLC_BUSY_SECONDS if busy else PLC_IDLE_SECONDS)) * SAMPLE_RATE), n)
+            if busy:
+                p = pos
+                while p < end:
+                    frame = int(rng.uniform(*PLC_FRAME_SECONDS) * SAMPLE_RATE)
+                    gate[p:min(p + frame, end)] = 1.0
+                    p += frame + int(rng.uniform(*PLC_FRAME_GAP_SECONDS) * SAMPLE_RATE)
+            else:
+                for p in range(pos, end, period):
+                    gate[p:min(p + beacon, end)] = 1.0
+            pos, busy = end, not busy
+        edge = int(0.0002 * SAMPLE_RATE)  # weiche Flanken statt harter Klicks
+        gate = np.convolve(gate, np.ones(edge) / edge, "same")
+        _plc_loop = _in_passband(rng.standard_normal(n) * gate)
+    return _plc_loop
+
+
 # --- CW-Filter -------------------------------------------------------------------
 def filter_response(width: int, freq: float, f: np.ndarray) -> np.ndarray:
     """Betrag des Filters bei den Frequenzen `f`: Butterworth-Flanken,
@@ -335,7 +459,10 @@ class BandConditions:
         self.filter_width = DEFAULT_FILTER
         self.qrm_offset = DEFAULT_QRM_OFFSET
         self.ssb = None
+        self.smps = None
+        self.plc = None
         self.cw_qrm = None
+        self.key_clicks = None  # Tastklicks zu cw_qrm, gleich lang
         self.cw_qrm_offset = None  # QRM_OFFSETS-Schlüssel, mit dem cw_qrm entstand
         self.filter = None  # ((Breite, Tonhöhe), Impulsantwort) oder None
         self._filter_spectra = {}
@@ -369,6 +496,11 @@ class BandConditions:
         # (im Netzwerk hörte dann jeder Teilnehmer andere).
         self.qrm_seed = int(self.rng.integers(2 ** 63))
         self.qrm_builds = 0
+        # Ebenso Weidezaun und künftige Störungen: Ihr Strom hängt nur am
+        # Startwert und verschiebt die übrigen nicht (ältere Teilnehmer im
+        # Netzwerk hören dann noch dieselben Gewitter und Träger).
+        self.extra_rng = np.random.default_rng([self.qrm_seed, 1 << 40])
+        self.fence_period = self.extra_rng.uniform(*FENCE_PERIOD_SECONDS)
         self.freq = 600
         self.rewind()
 
@@ -378,11 +510,20 @@ class BandConditions:
         self.freq = freq
         if self.enabled["ssb"] and self.ssb is None:
             self.ssb = _ssb_babble_loop()
-        if self.enabled["cw_qrm"] and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset):
+        if self.enabled["smps"] and self.smps is None:
+            self.smps = _smps_buzz_loop()
+        if self.enabled["plc"] and self.plc is None:
+            self.plc = _plc_data_loop()
+        neighbour = self.enabled["cw_qrm"] or self.enabled["clicks"]
+        if neighbour and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset):
             offset = self.qrm_offset
             qrm_rng = np.random.default_rng([self.qrm_seed, self.qrm_builds])
             self.qrm_builds += 1
-            self.cw_qrm = _cw_qrm_loop(qrm_rng, freq, QRM_OFFSETS[offset])
+            loop = _cw_qrm_loop(qrm_rng, freq, QRM_OFFSETS[offset])
+            # Erst die Klicks, dann die Schleife: mix() nimmt beide nur, wenn
+            # sie zusammenpassen.
+            self.key_clicks = _key_clicks(loop, qrm_rng)
+            self.cw_qrm = loop
             self.cw_qrm_pos %= len(self.cw_qrm)
             self.cw_qrm_offset = offset
         if self.filter_width == DEFAULT_FILTER:
@@ -402,7 +543,8 @@ class BandConditions:
     @property
     def has_background(self) -> bool:
         """Ist auch ohne die eigenen Stationen etwas zu hören?"""
-        return any(self._on(effect) for effect in ("noise", "qrn", "ssb", "cw_qrm", "storm", "carrier"))
+        return any(self._on(effect) for effect in ("noise", "qrn", "ssb", "cw_qrm", "storm", "carrier", "smps",
+                                                    "plc", "fence", "clicks"))
 
     def chirp_for(self, station: int):
         """Chirp-Parameter für morse.build_samples, oder None."""
@@ -419,6 +561,10 @@ class BandConditions:
         self.noise_pos = int(self.rng.integers(len(self.noise)))
         self.ssb_pos = int(self.rng.integers(SSB_LOOP_SECONDS * SAMPLE_RATE))
         self.cw_qrm_pos = 0
+        self.smps_pos = int(self.extra_rng.integers(SMPS_LOOP_SECONDS * SAMPLE_RATE))
+        self.plc_pos = int(self.extra_rng.integers(PLC_LOOP_SECONDS * SAMPLE_RATE))
+        self.fence_next = self.sample_pos + int(self.extra_rng.uniform(0, self.fence_period) * SAMPLE_RATE)
+        self.fence_buf = np.zeros(0, dtype=np.float32)  # Rest eines laufenden Tickers
         self.crash = np.zeros(0, dtype=np.float32)  # Rest einer laufenden Knackstörung
         self.storm_crash = np.zeros(0, dtype=np.float32)
         self.storm_start = self.sample_pos + int(self.rng.uniform(*STORM_PAUSE_SECONDS) * SAMPLE_RATE)
@@ -445,12 +591,30 @@ class BandConditions:
         self.sample_pos += gap
         self.noise_pos = (self.noise_pos + gap) % len(self.noise)
         self.ssb_pos = (self.ssb_pos + gap) % (SSB_LOOP_SECONDS * SAMPLE_RATE)
+        self.smps_pos = (self.smps_pos + gap) % (SMPS_LOOP_SECONDS * SAMPLE_RATE)
+        self.plc_pos = (self.plc_pos + gap) % (PLC_LOOP_SECONDS * SAMPLE_RATE)
+        self.fence_buf = np.zeros(0, dtype=np.float32)
         if self.cw_qrm is not None:
             self.cw_qrm_pos = (self.cw_qrm_pos + gap) % len(self.cw_qrm)
         self.crash = np.zeros(0, dtype=np.float32)
         self.storm_crash = np.zeros(0, dtype=np.float32)
         self.pump = 0.0
         self.filter_tail = np.zeros(0)
+
+    def fork(self) -> "BandConditions":
+        """Kopie, die von hier an eigenständig weiterläuft (eigene
+        Positionen, laufende Knacker und Ticker, eigener Zufall), etwa für das
+        Bandgeräusch in der Antwortpause in einem anderen Thread. Schalter und
+        Pegel teilt sie mit dem Original; Änderungen daran wirken auf beide."""
+        twin = copy.copy(self)
+        twin.rng = np.random.default_rng(self.rng.integers(2 ** 63))
+        twin.extra_rng = np.random.default_rng(self.rng.integers(2 ** 63))
+        twin.crash = self.crash.copy()
+        twin.storm_crash = self.storm_crash.copy()
+        twin.fence_buf = self.fence_buf.copy()
+        twin.filter_tail = np.zeros(0)
+        twin._filter_spectra = {}
+        return twin
 
     def process(self, block: np.ndarray, station: int) -> np.ndarray:
         """Ein Block einer einzelnen Station, mit QSB und Hintergrund."""
@@ -480,15 +644,29 @@ class BandConditions:
             background += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
         if self._on("storm"):
             background += self._storm(n) * (MAX_QRN_RMS * levels["storm"])
+        if self._on("fence"):
+            background += self._fence(n) * (MAX_FENCE_RMS * levels["fence"])
         crashes = np.abs(background) if self._on("agc") else None  # Knacker, auf die die AGC reagiert
-        ssb, cw_qrm = self.ssb, self.cw_qrm  # können parallel in prepare() entstehen
+        # Können parallel in prepare() entstehen.
+        ssb, smps, plc, cw_qrm, clicks = self.ssb, self.smps, self.plc, self.cw_qrm, self.key_clicks
         if self._on("ssb") and ssb is not None:
             self.ssb_pos, part = _loop_slice(ssb, self.ssb_pos, n)
             background += part * (MAX_SSB_RMS * levels["ssb"])
-        if self._on("cw_qrm") and cw_qrm is not None:
-            self.cw_qrm_pos, part = _loop_slice(cw_qrm, self.cw_qrm_pos % len(cw_qrm), n)
+        if self._on("smps") and smps is not None:
+            self.smps_pos, part = _loop_slice(smps, self.smps_pos, n)
+            background += part * (MAX_SMPS_RMS * levels["smps"])
+        if self._on("plc") and plc is not None:
+            self.plc_pos, part = _loop_slice(plc, self.plc_pos, n)
+            background += part * (MAX_PLC_RMS * levels["plc"])
+        if (self._on("cw_qrm") or self._on("clicks")) and cw_qrm is not None:
+            pos = self.cw_qrm_pos % len(cw_qrm)
+            self.cw_qrm_pos, part = _loop_slice(cw_qrm, pos, n)
             fading = self._fading(self.qrm_qsb, n) if self._on("qsb") else 1.0
-            background += part * fading * self._flutter(len(self.flutter) - 1, n) * levels["cw_qrm"]
+            neighbour = fading * self._flutter(len(self.flutter) - 1, n)
+            if self._on("cw_qrm"):
+                background += part * neighbour * levels["cw_qrm"]
+            if self._on("clicks") and clicks is not None and len(clicks) == len(cw_qrm):
+                background += _loop_slice(clicks, pos, n)[1] * neighbour * (MAX_CLICK_AMPLITUDE * levels["clicks"])
         if self._on("carrier"):
             background += self._carrier(n) * (MAX_CARRIER_AMPLITUDE * levels["carrier"])
         out += background * (self.background_gain * agc)
@@ -574,6 +752,34 @@ class BandConditions:
         out[:len(part)] = part
         self.storm_crash = self.storm_crash[n:]
         return out
+
+    def _fence(self, n: int) -> np.ndarray:
+        """Weidezaun: ein Ticker je fence_period, kaum schwankend; ein Ticker
+        kann in den nächsten Block reichen."""
+        start = self.sample_pos
+        if self.fence_next < start:  # nach einer Pause (catch_up): neu einreihen
+            self.fence_next = start + int(self.extra_rng.uniform(0, self.fence_period) * SAMPLE_RATE)
+        buf = self.fence_buf
+        while self.fence_next < start + n:
+            offset = self.fence_next - start
+            tick = self._make_tick()
+            if len(buf) < offset + len(tick):
+                buf = np.concatenate([buf, np.zeros(offset + len(tick) - len(buf), dtype=np.float32)])
+            buf[offset:offset + len(tick)] += tick
+            jitter = self.extra_rng.uniform(-FENCE_JITTER_SECONDS, FENCE_JITTER_SECONDS)
+            self.fence_next += int((self.fence_period + jitter) * SAMPLE_RATE)
+        out = np.zeros(n, dtype=np.float32)
+        part = buf[:n]
+        out[:len(part)] = part
+        self.fence_buf = buf[n:]
+        return out
+
+    def _make_tick(self) -> np.ndarray:
+        """Ein Ticker des Weidezauns: harter Einsatz, sehr kurzes Abklingen."""
+        length = int(FENCE_TICK_SECONDS * SAMPLE_RATE)
+        start = int(self.extra_rng.integers(len(self.noise) - length))
+        envelope = np.exp(-np.arange(length) / (length / 8))
+        return (self.noise[start:start + length] * envelope * self.extra_rng.uniform(1.0, 1.2)).astype(np.float32)
 
     def _pump(self, crashes: np.ndarray, n: int) -> np.ndarray:
         """AGC-Pumpen: Verstärkung über den Block (1 = ungeregelt). Ein Knacker

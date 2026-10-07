@@ -29,10 +29,15 @@ EXTRA_OPTIONS = (
     ("agc", N_("AGC-Pumpen nach Knackern"), 50),
     ("flutter", N_("Flatterfading (Aurora)"), 40),
     ("carrier", N_("Träger (jemand stimmt ab)"), 40),
+    ("smps", N_("Schaltnetzteil (Brumm, Pfeifton)"), 40),
+    ("plc", N_("PLC (Datenrauschen aus der Steckdose)"), 30),
+    ("fence", N_("Weidezaun (Ticken)"), 40),
+    ("clicks", N_("Tastklicks (Nachbar tastet hart)"), 50),
 )
 SHORT_NAMES = {"noise": N_("Bandrauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": "Chirp",
                "ssb": "SSB-QRM", "cw_qrm": "CW-QRM", "strength": N_("Stärke"), "storm": N_("Gewitter"),
-               "agc": N_("AGC-Pumpen"), "flutter": N_("Flattern"), "carrier": N_("Träger")}
+               "agc": N_("AGC-Pumpen"), "flutter": N_("Flattern"), "carrier": N_("Träger"),
+               "smps": N_("Netzteil"), "plc": "PLC", "fence": N_("Weidezaun"), "clicks": N_("Tastklicks")}
 PRESET_NAMES = {"light": N_("leicht"), "medium": N_("mittel"), "heavy": N_("stark")}
 FILTER_NAMES = {2400: N_("2,4 kHz"), 500: N_("500 Hz"), 250: N_("250 Hz")}
 QRM_OFFSET_NAMES = {"far": N_("weit (300–500 Hz)"), "near": N_("nah (50–200 Hz)"), "zero": N_("Zero-Beat")}
@@ -179,7 +184,8 @@ class BandSettings:
         Stufe mittel“."""
         spec = self.spec()
         parts = [f"{tr(SHORT_NAMES[key])} {level_text(key, level, spec['gain'])}"
-                 + (f" {tr(QRM_OFFSET_SHORT[spec['qrm_offset']])}" if key == "cw_qrm" and "qrm_offset" in spec
+                 + (f" {tr(QRM_OFFSET_SHORT[spec['qrm_offset']])}"
+                    if key in ("cw_qrm", "clicks") and "qrm_offset" in spec
                     else "")
                  for key, level in spec["levels"].items()]
         text = ", ".join(parts) if parts else tr("keine Störung eingeschaltet")
@@ -324,7 +330,9 @@ class BandSettings:
         for row, (key, label, _) in enumerate(EXTRA_OPTIONS):
             self._option_row(self.extra_box, row, key, label)
         theme.hint(self.extra_box, wrap=440, text=tr(
-            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest.")).grid(
+            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Die Tastklicks kommen vom "
+            "Nachbar-Run (CW-QRM-Abstand gilt) und sind auch zu hören, wenn sein Ton aus ist oder draußen "
+            "vor dem Filter bleibt.")).grid(
             row=len(EXTRA_OPTIONS), column=0, columnspan=3, sticky="w", pady=(4, 0))
         self.extras_open = any(self.controls[key][0].get() for key, _, _ in EXTRA_OPTIONS)
         self._show_extras()
@@ -450,8 +458,9 @@ class BandSettings:
             shown.config(text=level_text(key, round(level.get()) / 100, round(self.gain_var.get()) / 100),
                          foreground="" if on.get() else theme.DISABLED)
         self.gain_shown.config(text=f"{round(self.gain_var.get())} %")
+        neighbour = self.controls["cw_qrm"][0].get() or self.controls["clicks"][0].get()
         for button in self.offset_buttons:
-            button.state(["!disabled"] if self.controls["cw_qrm"][0].get() else ["disabled"])
+            button.state(["!disabled"] if neighbour else ["disabled"])
         spec = self.spec()
         if "filter" in spec and "noise" in spec["levels"]:
             snr = (band.noise_snr_db(spec["levels"]["noise"], spec["gain"])

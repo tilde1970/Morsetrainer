@@ -77,6 +77,8 @@ _STD_FONTS = ("TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHea
               "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont")
 _base_sizes = {}  # Schriftname -> Größe bei 100 %
 INDICATOR_SIZE = 10  # Kästchen von Schaltern bei 100 % (wie clam)
+ARROW_SIZE = 14  # Pfeile, Breite der Rollbalken, Dicke der Schieberegler bei 100 % (wie clam)
+SLIDER_LENGTH = 30  # Griff der Schieberegler bei 100 % (wie clam)
 _scale = 100
 
 
@@ -123,6 +125,19 @@ def scaled(pixels: int) -> int:
     return round(pixels * _scale / 100)
 
 
+def scaled_size(size: int, low: int, high: int) -> int:
+    """Startgröße einer eigenen Schrift (Fenster mit eigenem A−/A+) für die
+    aktuelle Schriftgröße, begrenzt auf `low` … `high`."""
+    return min(max(scaled(size), low), high)
+
+
+def scaled_geometry(window, width: int, height: int) -> str:
+    """Fenstergröße „BxH“ für die aktuelle Schriftgröße, höchstens so groß
+    wie der Bildschirm erlaubt."""
+    return (f"{min(scaled(width), window.winfo_screenwidth() - 40)}"
+            f"x{min(scaled(height), window.winfo_screenheight() - 80)}")
+
+
 def set_scale(root, percent: int) -> None:
     """Schriftgröße für das ganze Programm (ZOOM_STEPS[0] … [-1] Prozent)."""
     global _scale
@@ -157,12 +172,16 @@ def scale_wraps(widget) -> None:
 
 
 def _row_height(style, root) -> None:
-    """Maße, die nicht von selbst mit der Schrift wachsen: Tabellenzeilen
-    und die Kästchen von Schaltern."""
+    """Maße, die nicht von selbst mit der Schrift wachsen: Tabellenzeilen,
+    die Kästchen von Schaltern, Pfeile von Zahlenfeldern und Klapplisten,
+    Rollbalken und Schieberegler."""
     row_height = tkfont.nametofont("TkDefaultFont", root=root).metrics("linespace") + 8
     style.configure("Treeview", rowheight=row_height)
     for widget in ("TCheckbutton", "TRadiobutton"):
         style.configure(widget, indicatorsize=scaled(INDICATOR_SIZE))
+    for widget in ("TSpinbox", "TCombobox", "TScrollbar", "TScale"):
+        style.configure(widget, arrowsize=scaled(ARROW_SIZE))
+    style.configure("TScale", sliderlength=scaled(SLIDER_LENGTH))
 
 
 def apply(root) -> None:

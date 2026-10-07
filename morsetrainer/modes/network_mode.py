@@ -1389,11 +1389,13 @@ class NetworkModeFrame:
             return
         window = tk.Toplevel(self.root)
         window.title(tr("Auflösung – {session}").format(session=self.session_var.get()))
-        window.geometry("900x600")
+        window.geometry(theme.scaled_geometry(window, 900, 600))
         window.configure(background=theme.BG)
         family = tkfont.nametofont("TkFixedFont", root=window).actual("family")
-        self.solution_font = tkfont.Font(root=window, family=family, size=SOLUTION_FONT[0])
-        self.solution_big_font = tkfont.Font(root=window, family=family, size=3 * SOLUTION_FONT[0], weight="bold")
+        size, low, high, _ = SOLUTION_FONT
+        size = theme.scaled_size(size, low, high)
+        self.solution_font = tkfont.Font(root=window, family=family, size=size)
+        self.solution_big_font = tkfont.Font(root=window, family=family, size=3 * size, weight="bold")
         frame = ttk.Frame(window, padding=10)
         frame.pack(fill="both", expand=True)
         bar = ttk.Frame(frame)

@@ -590,10 +590,11 @@ class ContinuousModeFrame(DailyModeMixin):
             return
         window = tk.Toplevel(self.root)
         window.title(tr("Kontinuierlich – ganze Auswertung"))
-        window.geometry("900x600")
+        window.geometry(theme.scaled_geometry(window, 900, 600))
         window.configure(background=theme.BG)
         family = tkfont.nametofont("TkFixedFont", root=window).actual("family")
-        self.full_font = tkfont.Font(root=window, family=family, size=FULL_FONT[0])
+        size, low, high, _ = FULL_FONT
+        self.full_font = tkfont.Font(root=window, family=family, size=theme.scaled_size(size, low, high))
         frame = ttk.Frame(window, padding=10)
         frame.pack(fill="both", expand=True)
         bar = ttk.Frame(frame)

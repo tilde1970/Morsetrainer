@@ -48,6 +48,35 @@ class FontScaleTest(AppTestCase):
         self.app.set_font_scale(100)
         self.assertEqual(int(float(str(label.cget("wraplength")))), 400)
 
+    def test_arrows_scrollbars_and_sliders_grow(self):
+        style = ttk.Style(self.root)
+
+        def size(widget, option="arrowsize"):
+            return int(style.lookup(widget, option))
+        self.assertEqual(size("TScrollbar"), theme.ARROW_SIZE)
+        self.app.set_font_scale(200)
+        for widget in ("TSpinbox", "TCombobox", "TScrollbar", "TScale"):
+            self.assertEqual(size(widget), 2 * theme.ARROW_SIZE, widget)
+        self.assertEqual(size("TScale", "sliderlength"), 2 * theme.SLIDER_LENGTH)
+        self.app.set_font_scale(100)
+        self.assertEqual(size("TScale", "sliderlength"), theme.SLIDER_LENGTH)
+
+    def test_windows_with_own_font_start_at_the_program_size(self):
+        # Ganze Auswertung (Kontinuierlich) und Auflösung (Netzwerk) haben
+        # eigenes A−/A+, beginnen aber in der eingestellten Schriftgröße.
+        self.assertEqual(theme.scaled_size(18, 10, 60), 18)
+        self.app.set_font_scale(200)
+        self.assertEqual(theme.scaled_size(18, 10, 60), 36)
+        self.assertEqual(theme.scaled_size(40, 10, 60), 60)  # nicht über die Obergrenze
+        mode = self.mode("Kontinuierlich")
+        mode.full_rows = []
+        mode.show_full()
+        try:
+            self.assertEqual(int(mode.full_font.cget("size")), 36)
+        finally:
+            mode.close_full()
+        self.app.set_font_scale(100)
+
     def test_later_windows_get_wider_wrapping(self):
         self.app.set_font_scale(200)
         window = tk.Toplevel(self.root)

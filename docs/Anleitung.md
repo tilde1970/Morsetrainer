@@ -225,7 +225,9 @@ Außerdem hilfreich:
 - **Schriftgröße:** Unter „Einstellungen …“ → „Schriftgröße“ oder mit
   **Strg+Plus**, **Strg+Minus** und **Strg+0** (normal) wird die ganze
   Oberfläche größer, bis 200 %; das Fenster wächst mit. Für kleine
-  Bildschirme geht es auch kleiner, auf 90 % und 75 %. Die Einstellung
+  Bildschirme geht es auch kleiner, auf 90 % und 75 %. Pfeile, Rollbalken
+  und Schieberegler wachsen mit; die ganze Auswertung in Kontinuierlich
+  und die Auflösung im Netzwerk beginnen in dieser Größe. Die Einstellung
   bleibt gespeichert.
 - **Rufzeichen und Name:** Unter „Einstellungen …“ einmal eintragen.
   Sie stehen auf den Diplomen und sind die Vorgabe für „Mein
@@ -266,6 +268,16 @@ statt zu übersteuern. Chirp steht in Hz (größte Ablage beim Tasten).
 Das Fading wechselt unregelmäßig (zwei überlagerte Schwankungen), seine
 Tiefe folgt dem Regler und streut nur wenig – die Stufe bestimmt die
 Schwierigkeit, nicht der Zufall.
+
+**Weitere Störungen** (aufklappbar) gehören zu keiner Stufe und zählen
+nicht für das Diplom: Gewitter (QRN in Schüben), AGC-Pumpen nach
+Knackern, Flatterfading (Aurora), Träger (jemand stimmt ab) und die
+Störungen, die heute vielen OMs am meisten zu schaffen machen:
+**Schaltnetzteil** (rauer 100-Hz-Brumm mit wanderndem Pfeifton), **PLC**
+(Datenrauschen aus der Steckdose, in Paketen), **Weidezaun** (ein Ticker
+etwa jede Sekunde) und **Tastklicks** (der Nachbar-Run tastet hart; seine
+Klicks gehen auch durch ein schmales Filter, selbst wenn sein Ton draußen
+bleibt).
 
 **CW-QRM-Abstand:** Der Nachbar-Run liegt **weit** (300–500 Hz) daneben,
 **nah** (50–200 Hz) oder auf **Zero-Beat** (fast auf deiner Frequenz).
@@ -308,7 +320,10 @@ denselben Stationen und demselben Nachbar-QRM, Gewitter und Träger
 `callsigns.scp` hat, hört im QRM womöglich andere Rufzeichen.
 
 Wie auf dem Band laufen Fading, Rauschen und das Nachbar-QRM auch während
-deiner Antwortpause weiter; jede Sequenz trifft eine andere Stelle.
+deiner Antwortpause weiter; jede Sequenz trifft eine andere Stelle. In
+Gruppen, Wörtern und Rufzeichen hörst du das Band in der Antwortpause
+auch, 6 dB leiser, damit das Ohr beim Tippen etwas Ruhe hat; mit der
+nächsten Sequenz wird es wieder lauter.
 
 Durchgänge mit Bandbedingungen erscheinen im Verlauf, zählen aber nicht
 für die Zeichenstatistik, die Gewichtung, die Verwechslungen und die

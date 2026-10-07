@@ -49,6 +49,7 @@ from tkinter import ttk
 import numpy as np
 
 from morsetrainer.core import align, audio, band, koch, sfx, tempo
+from morsetrainer.core.pause_noise import PauseNoise
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
     code_units, display_text, vary_voice,
@@ -172,6 +173,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.tempo = None        # mitwachsendes Zeichentempo, None = aus
         self.tempo_best = None   # höchstes effektives Tempo mit einer beim ersten Versuch richtigen Sequenz
         self.band = None         # BandConditions, None = ohne Störungen
+        self.pause_noise = PauseNoise()  # Band leiser weiter in der Antwortpause
         self.band_tracked = False  # Durchgang begann mit Bandbedingungen
         self.repeat_pending = False
         self.deadline = None   # time.time(), ab der keine neue Sequenz mehr kommt
@@ -512,6 +514,7 @@ class SequenceModeFrame(DailyModeMixin):
         self._set_input_open(False)
         self._set_head_buttons()
         audio.stop()
+        self.pause_noise.close()
         if self.send_prosigns:
             wpm, freq = self._audio_settings()
             audio.play_quietly(self._with_band(build_text(END_TEXT, wpm, freq)))
@@ -708,6 +711,11 @@ class SequenceModeFrame(DailyModeMixin):
             self.tone_ends.append(offset - char_gap_seconds(wpm, fw if i < last else None))
         if not self._play(samples):
             return
+        self.pause_noise.fade_out()
+        if self.band is not None:
+            # Danach läuft das Band leiser weiter, übergeblendet mit dem
+            # Ausklang der Sequenz.
+            self.pause_noise.start(self.band, len(samples) / SAMPLE_RATE - band.PRESET_FADE_SECONDS)
         self._set_input_open(self.style == COPY and not listen_only)
         if self.style == HEAD:
             # Tasten (Enter, J, N) sollen beim Fenster ankommen, nicht im Eingabefeld.

@@ -2,6 +2,17 @@
 
 ## Unveröffentlicht
 
+- **Band in der Antwortpause:** In Gruppen, Wörtern und Rufzeichen läuft
+  das Band nach jeder Sequenz 6 dB leiser weiter, statt zu verstummen;
+  mit der nächsten Sequenz wird es wieder lauter (weich übergeblendet).
+- **Neue Störungen** unter „Weitere Störungen“: Schaltnetzteil (Brumm mit
+  wanderndem Pfeifton), PLC (Datenrauschen aus der Steckdose), Weidezaun
+  (Ticken etwa jede Sekunde) und Tastklicks (der Nachbar-Run tastet hart;
+  die Klicks gehen auch durch ein schmales Filter). Im Netzwerk hören
+  Teilnehmer ab dieser Version sie mit.
+- **Schriftgröße:** Pfeile von Zahlenfeldern und Klapplisten, Rollbalken
+  und Schieberegler wachsen mit; die ganze Auswertung (Kontinuierlich) und
+  die Auflösung (Netzwerk) beginnen in der eingestellten Größe.
 - **Bandbedingungen bei tiefer Tonhöhe:** Wie viel Rauschen ein schmales
   Filter wegnimmt, hängt von der eigenen Tonhöhe ab (bei 300 Hz rund 3 dB
   mehr als bei 600 Hz). Stufe, Diplom QRN-fest und „S/N im Filter“ rechnen
