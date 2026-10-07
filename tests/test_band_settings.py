@@ -179,7 +179,8 @@ class FilterAndQrmTest(unittest.TestCase):
         import numpy as np
         half = band.SAMPLE_RATE // 2
         for width, far_db in ((500, -6), (250, -25)):
-            spec = {"levels": {"qrn": 0.01}, "gain": 1.0, "filter": width}
+            # Ohne Störung: Ein zufälliger Knacker hob sonst ab und zu die Spitze an.
+            spec = {"levels": {}, "gain": 1.0, "filter": width}
             own = self.blockwise(band.conditions(spec, 600), self.tone(600))
             far = self.blockwise(band.conditions(spec, 600), self.tone(950))
             self.assertAlmostEqual(float(np.max(np.abs(own[half:]))), 0.3, delta=0.01)
@@ -202,7 +203,7 @@ class FilterAndQrmTest(unittest.TestCase):
 
     def test_own_sidetone_bypasses_the_filter(self):
         import numpy as np
-        conditions = band.conditions({"levels": {"qrn": 0.01}, "gain": 1.0, "filter": 250}, 600)
+        conditions = band.conditions({"levels": {}, "gain": 1.0, "filter": 250}, 600)  # ohne zufällige Knacker
         out = self.blockwise(conditions, self.tone(1000), station=None)
         self.assertAlmostEqual(float(np.max(np.abs(out))), 0.3, delta=0.01)
 
