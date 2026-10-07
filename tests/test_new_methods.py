@@ -325,7 +325,7 @@ class ListenModeTest(AppTestCase):
 
     def test_always_spelled_in_the_phonetic_alphabet(self):
         m = self.listen
-        m.content_var.set("Rufzeichen")
+        m.content_var.set("Zeichen")  # geht mit jedem Zeichensatz, auch ohne callsigns.scp
         with mock.patch.object(speech.speaker, "available", lambda: None):
             opts = m._options()
         self.assertEqual(opts["alphabet"], "nato")

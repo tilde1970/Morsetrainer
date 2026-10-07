@@ -241,6 +241,10 @@ class HelpWindow:
         self.matches = []  # (Anfang, Länge) der Treffer im gezeigten Text
         self.match_index = -1
         self.search_note = ""  # „… nicht gefunden, dafür …“ bei ungefähren Treffern
+        # Länge eines Treffers (text.search mit count=); eine für das Fenster,
+        # nicht je Suche neu: Tk-Variablen sollen nicht laufend entstehen und
+        # vergehen.
+        self.match_length = tk.IntVar(self.top)
         notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
         notebook.bind("<<NotebookTabChanged>>", lambda e: self._new_search(), add="+")
@@ -313,10 +317,9 @@ class HelpWindow:
             text.tag_add("match", pos, f"{pos}+{length}c")
         self.find(1)
 
-    @staticmethod
-    def _matches(text: tk.Text, pattern: str) -> list:
+    def _matches(self, text: tk.Text, pattern: str) -> list:
         """Alle Treffer des regulären Ausdrucks `pattern` als (Anfang, Länge)."""
-        found, start, count = [], "1.0", tk.IntVar(text)
+        found, start, count = [], "1.0", self.match_length
         while True:
             pos = text.search(pattern, start, stopindex="end", nocase=True, regexp=True, count=count)
             if not pos or count.get() == 0:
