@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.41
 
 - **Am Stück und Sprechen:** Den Inhalt wählen Optionsfelder statt einer
   Klappliste, wie im Reiter Einzeln, oben im Reiter; alle Möglichkeiten auf einen Blick, Pfeiltasten

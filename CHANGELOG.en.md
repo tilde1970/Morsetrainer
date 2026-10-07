@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.41
 
 - **Non-stop and Speak:** the content is chosen with option buttons
   instead of a drop-down list, as in the One by one tab, at the top of the
