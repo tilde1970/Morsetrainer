@@ -296,6 +296,8 @@ class RunModeFrame:
         self.wpm_spread_spin = ttk.Spinbox(spread_row, from_=CALLER_WPM_SPREAD_RANGE[0], to=CALLER_WPM_SPREAD_RANGE[1],
                                            textvariable=self.wpm_spread_var, width=3)
         self.wpm_spread_spin.pack(side="left", padx=(4, 4))
+        # Das Label dahinter („WPM, Tonhöhe ±“) beschriftet schon das nächste Feld.
+        announcer.name(self.wpm_spread_spin, tr("Tempo ±"), value=lambda: f"{self.wpm_spread_spin.get()} WPM")
         ttk.Label(spread_row, text=tr("WPM, Tonhöhe ±")).pack(side="left")
         self.freq_spread_var = tk.IntVar(value=CALLER_FREQ_OFFSET_HZ)
         self.freq_spread_spin = ttk.Spinbox(spread_row, from_=CALLER_FREQ_SPREAD_RANGE[0],

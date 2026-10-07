@@ -300,6 +300,13 @@ class AnnouncerTest(AppTestCase):
         self.assertEqual(announcer._cell_spoken("–"), "keine")  # keine Messung
         self.assertEqual(announcer._cell_spoken("OE3XYZ", nato_calls=True)[:11], "Oskar, Ekko")
 
+    def test_contest_spread_fields_say_their_unit(self):
+        from morsetrainer.widgets import announcer
+        contest = self.mode("Contest")
+        self.assertEqual(announcer.speakable(announcer.describe(contest.wpm_spread_spin)),
+                         f"Tempo plus minus, Zahlenfeld, {contest.wpm_spread_var.get()} WPM.")
+        self.assertIn("Hertz", announcer.speakable(announcer.describe(contest.freq_spread_spin)))
+
     def test_pin_field_says_pin_number_digit_by_digit(self):
         from morsetrainer.widgets import announcer
         network = self.mode("Netzwerk")
