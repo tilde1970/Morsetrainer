@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.40
 
 - **New tabs:** Characters, Groups, Words and Callsigns now share the
   **One by one** tab (choose under “Content” at the top, as in the other

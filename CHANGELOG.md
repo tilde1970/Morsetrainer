@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.40
 
 - **Neue Reiter:** Zeichen, Gruppen, Wörter und Rufzeichen stehen
   gemeinsam im Reiter **Einzeln** (oben die Wahl unter „Inhalt“, wie in
