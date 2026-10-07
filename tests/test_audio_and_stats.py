@@ -90,7 +90,8 @@ class StatsTest(unittest.TestCase):
         session = self._session([("H", "5"), ("H", "5"), ("H", "H"), ("S", ""), ("5", "H")])
         rows = {row[0]: row for row in session.char_rows()}
         self.assertEqual(rows["H"][6], "5 (2)")
-        self.assertEqual(rows["S"][6], "– (1)")
+        self.assertEqual(rows["S"][6], "")  # verpasst ist keine Verwechslung
+        self.assertEqual(rows["S"][2], 1)  # zählt aber als falsch
         session.finalize()
         self._session([("H", "5")]).finalize()
         data = stats.load_all_time()

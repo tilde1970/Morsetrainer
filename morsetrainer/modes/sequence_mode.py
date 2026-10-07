@@ -843,6 +843,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.feedback_label.config(foreground="")
         self.status_var.set(tr("Gewusst? J oder N"))
         self._set_head_buttons(assess=True)
+        self._quiet_for_announcement()
         announcer.say(tr("Lösung: {text}. Gewusst? J oder N.").format(text=announcer.spell(self.current_sequence)))
 
     def assess(self, known: bool):
@@ -948,7 +949,15 @@ class SequenceModeFrame(DailyModeMixin):
 
         self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
 
+        if spoken:
+            self._quiet_for_announcement()
         announcer.say(spoken, then=lambda: self._go_on(all_correct, give_up))
+
+    def _quiet_for_announcement(self):
+        """Eine Sprachansage folgt: das Band in der Antwortpause ausblenden,
+        damit die Rückmeldung gut zu verstehen ist (bis zur nächsten Sequenz)."""
+        if announcer.active():
+            self.pause_noise.fade_out()
 
     def _go_on(self, all_correct: bool, give_up: bool):
         """Nach Rückmeldung (und Ansage): Lösung noch einmal hören oder weiter."""

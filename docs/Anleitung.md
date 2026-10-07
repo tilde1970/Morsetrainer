@@ -323,7 +323,8 @@ Wie auf dem Band laufen Fading, Rauschen und das Nachbar-QRM auch während
 deiner Antwortpause weiter; jede Sequenz trifft eine andere Stelle. In
 Gruppen, Wörtern und Rufzeichen hörst du das Band in der Antwortpause
 auch, 6 dB leiser, damit das Ohr beim Tippen etwas Ruhe hat; mit der
-nächsten Sequenz wird es wieder lauter.
+nächsten Sequenz wird es wieder lauter. Mit Sprachansage (F9) wird es vor
+der Rückmeldung ausgeblendet.
 
 Durchgänge mit Bandbedingungen erscheinen im Verlauf, zählen aber nicht
 für die Zeichenstatistik, die Gewichtung, die Verwechslungen und die
@@ -532,6 +533,15 @@ Versionen (CHANGELOG.md) und diese Anleitung.
 - **Diplom-Fenster:** neue Siegel mit Bedingung und Datum, dann der
   Hinweis auf Tab und Escape; die Drucken-Knöpfe sagen, welches Diplom sie
   drucken. F11 im Fenster wiederholt.
+- **Tippen:** In den Feldern der Einstellungen (Zeichen, Rufzeichen,
+  Name, Präfix-Filter, Netzwerk, Suche in der Hilfe) und in allen
+  Zahlenfeldern wird jedes getippte Zeichen buchstabiert, Gelöschtes mit
+  „gelöscht“. In den Antwortfeldern der Übungen bewusst nicht: Dort würde
+  die Ansage den Morseton abbrechen. Das Feld „Zeichen“ liest seinen
+  Inhalt Zeichen für Zeichen vor.
+- **Fenster:** Öffnet sich ein Fenster (Bandbedingungen, Einstellungen,
+  Hilfe …), sagt es seinen Namen: „Fenster Bandbedingungen“. Spricht das
+  Fenster selbst (Diplom, Tagesübung), kommt der Name davor.
 - **Bedienelemente:** Springst du mit Tab in ein Feld, einen Knopf oder
   Schalter, sagt es, was es ist und wie es steht („Sprache / Language,
   Auswahl, Deutsch“, „Hoher Kontrast, Schalter, aus“, „Tempo, Zahlenfeld,
@@ -568,8 +578,8 @@ Versionen (CHANGELOG.md) und diese Anleitung.
   (Fn+F11 zeigt den Schreibtisch). Dafür gibt es Cmd+Umschalt+A (Ansage
   an/aus), Cmd+Umschalt+W (wo bin ich) und Cmd+Umschalt+T (Tagesübung).
 - **Ohne Maus:** Tab und Umschalt+Tab gehen durch alle Felder, Knöpfe und
-  Schalter (der Fokus ist farbig markiert), Leertaste drückt den Knopf
-  bzw. schaltet um, Pfeiltasten wählen in Listen, Reglern und Reitern.
+  Schalter (der Fokus ist farbig markiert), Leertaste oder Enter drückt
+  den Knopf, Leertaste schaltet um, Pfeiltasten wählen in Listen, Reglern und Reitern.
   Esc schließt die Nebenfenster.
 - **Tagesübung:** F12 startet, Enter überspringt die Zwischenkarte, Esc
   beendet.

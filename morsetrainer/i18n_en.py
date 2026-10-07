@@ -439,11 +439,29 @@ EN.update({
     "Probehören erst nach dem Durchgang.": "Listening only after the run.",
     "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":
         "No listening during a network session; there the trainer sets the conditions.",
-    "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Die Tastklicks kommen vom Nachbar-Run "
-    "(CW-QRM-Abstand gilt) und sind auch zu hören, wenn sein Ton aus ist oder draußen vor dem Filter bleibt.":
-        "Not part of any level and do not count for the QRN-proof award. The key clicks come from the "
-        "neighbouring run (the CW QRM offset applies) and can be heard even when its tone is off or stays "
-        "outside the filter.",
+    "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Tastklicks: Klicks eines hart tastenden "
+    "Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.":
+        "Not part of any level and do not count for the QRN-proof award. Key clicks: clicks of a neighbour "
+        "keying hard, even when its tone is off; the CW QRM offset applies to them.",
+    "Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.":
+        "Clicks of a neighbour keying hard, even when its tone is off; the CW QRM offset applies to them.",
+    "In Gruppen, Wörtern und Rufzeichen läuft das Band in deiner Antwortpause 6 dB leiser weiter; wird es "
+    "wieder lauter, kommt die nächste Sequenz.":
+        "In Groups, Words and Callsigns the band keeps running 6 dB quieter during your answer pause; when it "
+        "gets louder again, the next sequence is coming.",
+    "Abstand {name}": "offset {name}",
+    "Kilohertz": "kilohertz",
+    "Fenster {title}.": "Window {title}.",
+    "Neues Fenster.": "New window.",
+    "Leerzeichen": "space",
+    "oder": "or",
+    "{chars} gelöscht": "{chars} deleted",
+    "Hertz": "hertz",
+    "Minute": "minute",
+    "Minuten": "minutes",
+    "Sekunde": "second",
+    "Sekunden": "seconds",
+    "CW-QRM-Abstand": "CW QRM offset",
     "Knackstörungen (QRN)": "Static crashes (QRN)",
     "QSB (Fading)": "QSB (fading)",
     "Chirp (zwitschernder Sender)": "Chirp (chirpy transmitter)",

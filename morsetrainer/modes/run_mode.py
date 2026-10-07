@@ -254,6 +254,7 @@ class RunModeFrame:
         call_row.grid(row=1, column=1, columnspan=2, sticky="w", pady=2)
         self.my_call_entry = ttk.Entry(call_row, textvariable=self.my_call_var, width=12)
         self.my_call_entry.pack(side="left")
+        announcer.echo(self.my_call_entry)
         # Nicht jeder, der übt, hat schon ein Rufzeichen; vorgegeben wird
         # keins, weil ein erfundenes jemandem gehören könnte.
         self.call_hint_var = tk.StringVar(value="")
@@ -265,6 +266,7 @@ class RunModeFrame:
         self.my_exchange_var = tk.StringVar(value="")
         self.my_exchange_entry = ttk.Entry(exchange_row, textvariable=self.my_exchange_var, width=12)
         self.my_exchange_entry.pack(side="left")
+        announcer.echo(self.my_exchange_entry)
         self.exchange_hint_var = tk.StringVar(value="")
         theme.hint(exchange_row, textvariable=self.exchange_hint_var).pack(side="left", padx=6)
 

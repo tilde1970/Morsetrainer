@@ -10,6 +10,14 @@ from morsetrainer.widgets import theme
 from tests.test_modes import AppTestCase
 
 
+def announcer_targets(widget):
+    """Alle Eingabefelder unter `widget`."""
+    for child in widget.winfo_children():
+        if child.winfo_class() == "TEntry":
+            yield child
+        yield from announcer_targets(child)
+
+
 class FontScaleTest(AppTestCase):
     def size(self, name):
         return abs(int(tkfont.nametofont(name, root=self.root).cget("size")))
@@ -38,6 +46,22 @@ class FontScaleTest(AppTestCase):
         self.assertEqual(self.size("TkDefaultFont"), round(default * 0.75))
         self.app.zoom(0)
         self.assertEqual(theme.scale(), 100)
+
+    def test_arrow_keys_work_after_tabbing_into_a_table(self):
+        # Ohne aktuelle Zeile täten die Pfeiltasten nichts (Diplome, Statistik).
+        tree = ttk.Treeview(self.root, columns=("a",), show="headings")
+        tree.pack()
+        for i in range(3):
+            tree.insert("", "end", values=(i,))
+        self.root.deiconify()
+        tree.focus_force()
+        self.root.update()
+        first = tree.get_children()[0]
+        self.assertEqual((tree.focus(), tree.selection()), (first, (first,)))
+        tree.event_generate("<KeyPress-Down>", when="now")
+        self.assertEqual(tree.selection(), (tree.get_children()[1],))
+        tree.destroy()
+        self.root.withdraw()
 
     def test_tables_and_wrapped_texts_grow(self):
         row = int(ttk.Style(self.root).lookup("Treeview", "rowheight"))
@@ -178,6 +202,104 @@ class AnnouncerTest(AppTestCase):
             self.app.announcer.say("Eine Sekunde lang.", then=lambda: done.append(time.monotonic()))
             self.assertTrue(self.pump_until(lambda: done, timeout=4))
         self.assertGreaterEqual(done[0] - start, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
+
+    def test_number_fields_say_their_unit(self):
+        # „Lösung zeigen nach [3] Fehlversuchen“: die Einheit dahinter gehört
+        # zum Wert; „von [2] bis [5]“: „bis“ ist die Beschriftung des nächsten Feldes.
+        from morsetrainer.widgets import announcer
+
+        def spinbox_for(variable, widget=None):
+            for child in (widget or self.root).winfo_children():
+                if child.winfo_class() == "TSpinbox" and child.cget("textvariable") == str(variable):
+                    return child
+                found = spinbox_for(variable, child)
+                if found is not None:
+                    return found
+            return None
+        give_up = spinbox_for(self.mode("Wörter").give_up_var)
+        self.assertTrue(announcer.describe(give_up).endswith("Fehlversuchen."))
+        self.mode("Wörter").give_up_var.set(4)
+        self.assertEqual(announcer._value(give_up), "4 Fehlversuchen")  # auch beim Hoch-/Runterzählen
+        boxes = []
+
+        def collect(widget):
+            for child in widget.winfo_children():
+                if child.winfo_class() == "TSpinbox":
+                    boxes.append(child)
+                collect(child)
+        collect(self.root)
+        group_from = next(box for box in boxes if announcer._label(box) == "Gruppenlänge von")
+        self.assertEqual(announcer._unit_after(group_from), "")
+
+    def test_typing_in_settings_fields_is_spoken(self):
+        # Wie ein Screenreader: neue Zeichen buchstabiert, Gelöschtes mit
+        # „gelöscht“; im Antwortfeld still (sonst bräche der Morseton ab).
+        from morsetrainer.widgets import announcer
+        self.assertEqual(announcer.spell_chars("K.,/ 0"), "Ka, Punkt, Komma, Schrägstrich, Leerzeichen, Null")
+        self.assertEqual(announcer.change_text("KMR", "KMRS"), "Ess")
+        self.assertEqual(announcer.change_text("KMRS", "KMS"), "Err gelöscht")
+        self.assertEqual(announcer.change_text("650", "7"), "Sieben")  # Auswahl ersetzt
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        entry = next(w for w in announcer_targets(self.root) if str(w) in announcer._echo_widgets
+                     and w.cget("textvariable") == str(self.app.charset_var))
+        self.app.charset_var.set("KM")
+        announcer._echo_start(entry)
+        self.app.charset_var.set("KMR")
+        announcer._echo_key(mock.Mock(widget=entry, keysym="r"))
+        self.assertTrue(self.pump_until(lambda: "Err" in self.said))
+        self.assertIn("Zeichen", announcer.describe(entry))
+        self.assertIn("Ka, Emm, Err", announcer.describe(entry))  # beim Hineinspringen buchstabiert
+        answer = self.mode("Gruppen").entry
+        self.assertNotIn(str(answer), announcer._echo_widgets)
+        answer.state(["!disabled"])
+        answer.insert(0, "K")
+        announcer._echo_start(answer)
+        answer.insert("end", "M")
+        said = len(self.said)
+        announcer._echo_key(mock.Mock(widget=answer, keysym="m"))
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertEqual(len(self.said), said)
+
+    def test_new_window_says_its_name(self):
+        # Sonst merkt ein Sehbehinderter nicht, dass er in einem neuen Fenster ist.
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)  # Reiter-Ansage beim Aufbau ausklingen lassen
+        window = tk.Toplevel(self.root)
+        window.title("Bandbedingungen")
+        window.event_generate("<Map>")
+        self.assertTrue(self.pump_until(lambda: "Fenster Bandbedingungen." in self.said))
+        window.event_generate("<Map>")  # derselbe gleich noch einmal: nicht doppelt
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertEqual(self.said.count("Fenster Bandbedingungen."), 1)
+        window.destroy()
+        self.app.announcer.var.set(False)
+        other = tk.Toplevel(self.root)
+        other.title("Still")
+        other.event_generate("<Map>")  # Ansage aus: nichts
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertNotIn("Fenster Still.", self.said)
+        other.destroy()
+
+    def test_window_name_joins_the_windows_own_announcement(self):
+        # Fenster, die beim Öffnen selbst sprechen (Diplom, Abendbilanz):
+        # Name und Inhalt in einer Ansage, egal in welcher Reihenfolge.
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        first = tk.Toplevel(self.root)
+        first.title("Diplome")
+        self.app.announcer.say("Neues Siegel.")
+        first.event_generate("<Map>")
+        self.assertTrue(self.pump_until(lambda: "Fenster Diplome. Neues Siegel." in self.said))
+        self.pump_until(lambda: False, timeout=0.5)  # zweites Fenster später: gehört nicht zum ersten
+        second = tk.Toplevel(self.root)
+        second.title("Abendbilanz")
+        second.event_generate("<Map>")
+        self.app.announcer.say("Heute 20 Minuten.")
+        self.assertTrue(self.pump_until(lambda: "Fenster Abendbilanz. Heute 20 Minuten." in self.said))
+        self.assertFalse(any("Abendbilanz" in text and "Siegel" in text for text in self.said))
+        first.destroy()
+        second.destroy()
 
     def test_superseded_announcement_waits_for_the_new_one(self):
         # Eine schon sprechende, verdrängte Ansage darf ihren Ablauf erst nach
@@ -327,6 +449,41 @@ class KeyboardTest(AppTestCase):
         for widget in (mode.start_button, self.app.more_button,
                        ttk.Checkbutton(self.root), ttk.Radiobutton(self.root)):
             self.assertNotEqual(str(widget.cget("takefocus")), "0", widget)
+
+    def test_enter_presses_a_focused_button(self):
+        # ttk kennt von sich aus nur die Leertaste; Enter soll genauso gehen
+        # (z. B. „Schließen“ im Einstellungsfenster nach dem Durchtabben).
+        pressed = []
+        button = ttk.Button(self.root, command=lambda: pressed.append(1))
+        button.pack()
+        self.root.deiconify()
+        button.focus_force()  # Tasten gehen an das Element mit Fokus
+        self.root.update()
+        for key in ("<Return>", "<KP_Enter>"):
+            button.event_generate(key, when="now")
+        self.assertEqual(pressed, [1, 1])
+        button.state(["disabled"])
+        button.event_generate("<Return>", when="now")
+        self.assertEqual(pressed, [1, 1])  # gesperrt bleibt gesperrt
+        button.destroy()
+        window = self.app.settings_window
+        self.app.open_settings()
+
+        def buttons(widget):
+            for child in widget.winfo_children():
+                if isinstance(child, ttk.Button):
+                    yield child
+                yield from buttons(child)
+        [close] = [b for b in buttons(window) if b.cget("text") == "Schließen"]
+        end = time.monotonic() + 2  # bis der Fenstermanager es zeigt
+        while window.state() != "normal" and time.monotonic() < end:
+            self.root.update()
+            time.sleep(0.01)
+        close.focus_force()
+        self.root.update()
+        close.event_generate("<Return>", when="now")
+        self.assertEqual(window.state(), "withdrawn")
+        self.root.withdraw()
 
     def test_mouse_click_does_not_move_focus_to_buttons(self):
         body = self.root.tk.eval("info body ::ttk::clickToFocus")
@@ -639,6 +796,29 @@ class EveningSummaryAnnounceTest(AnnouncerTest):
         self.assertEqual(announcer.speakable("84 % → 90 %"), "84 Prozent auf 90 Prozent")
         self.assertEqual(announcer.speakable("Abgebrochen – deine Sterne bleiben."), "Abgebrochen, deine Sterne bleiben.")
         self.assertEqual(announcer.speakable("✓ KM"), "richtig KM")
+        # Einheiten als Wort, sonst buchstabiert die Stimme („HaZet“).
+        self.assertEqual(announcer.speakable("Tonhöhe, Zahlenfeld, 650 Hz"), "Tonhöhe, Zahlenfeld, 650 Hertz")
+        self.assertEqual(announcer.speakable("Filter 2,4 kHz, 500 Hz"), "Filter 2,4 Kilohertz, 500 Hertz")
+        self.assertEqual(announcer.speakable("Hzx HzHz"), "Hzx HzHz")  # nur ganze Wörter
+        self.assertEqual(announcer.speakable("▶ Tagesübung (10 Min)"), "▶ Tagesübung, 10 Minuten")
+        self.assertEqual(announcer.speakable("Noch 1 Min"), "Noch 1 Minute")
+        self.assertEqual(announcer.speakable("Tage mit ≥ 10 Min. Übung"), "Tage mit mindestens 10 Minuten Übung")
+        self.assertEqual(announcer.speakable("K kommt schneller: 0,8 s → 0,6 s"),
+                         "K kommt schneller: 0,8 Sekunden auf 0,6 Sekunden")
+        self.assertEqual(announcer.speakable("10 Minuten, s wie Siegfried"), "10 Minuten, s wie Siegfried")
+        # Englische Lehnwörter so, wie Funkamateure sie sprechen (nicht „Fäding“).
+        self.assertEqual(announcer.speakable("QSB (Fading), Flatterfading (Aurora)"),
+                         "QSB, Fehding, Flatterfehding, Aurora")
+        self.assertEqual(announcer.speakable("Pile-ups, ein Pileup, pile-up"), "Peil-apps, ein Peil-app, Peil-app")
+        # Contest-Arten buchstabiert wie unter Funkamateuren.
+        from morsetrainer.core import qso_text
+        spoken = [announcer.speakable(name) for name in qso_text.CONTEST_NAMES.values()]
+        # Buchstabennamen wie bei Rufzeichen; Klammern als Pause, nicht „in Klammern“.
+        self.assertEqual(spoken, ["Ze, Ku We, We, Zone", "Ze, Ku We, Pe, Ix, Nummer", "We, A, Ge, De, O, Ka",
+                                  "A, Err, Err, Ell De, Ix, Staat oder Leistung",
+                                  "I, A, Err, U Ha, Eff, I, Te, U Zone oder Ha, Ku"])
+        self.assertEqual(announcer.speakable("CQ-Zone, DXCC, WWA"), "Ze, Ku Zone, DXCC, WWA")  # nur ganze Wörter
+        self.assertEqual(announcer.speakable("TU/Log"), "TU/Log")  # kein „oder“ hinter einer Abkürzung
         self.assertEqual(announcer.speakable("≥ 50 Zeichen, ≤ 3 Fehler"), "mindestens 50 Zeichen, höchstens 3 Fehler")
         self.assertEqual(announcer.speakable("Warte auf den Trainer…"), "Warte auf den Trainer")
 

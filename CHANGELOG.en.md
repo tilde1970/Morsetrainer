@@ -9,7 +9,28 @@
   (buzz with a wandering whistle), PLC (powerline data noise), electric
   fence (a tick about every second) and key clicks (the neighbouring run
   keys hard; the clicks get through even a narrow filter). On the network,
-  participants from this version on hear them too.
+  participants from 2.40 on hear the new interference too, older versions
+  do not. “All on” now only switches on the interference in the upper
+  card, not the collapsed extra ones. With announcements (F9) the band
+  fades out before the feedback so it is easy to understand.
+- **Keyboard:** Enter presses a focused button, like the space bar (e.g.
+  “Close” after tabbing through).
+- **Announcements:** “Hz”, “kHz”, “min” and “s” (after a number) are
+  spoken as “hertz”, “kilohertz”, “minutes” and “seconds” instead of being
+  spelled out; the German voice pronounces “Fading”, “Pile-up” and the
+  contest types (CQ WW, WPX, WAG, ARRL DX, IARU HF) the way hams say them,
+  abbreviations spelled like callsigns. Brackets are no longer read out
+  but become a pause; “state/power” is read as “state or power”.
+  Number fields say their unit (“Show solution after, 3 failed attempts”,
+  “Duration, 5 minutes”).
+- **Statistics:** “confused with” no longer lists “–” for a character
+  that was not recognised at all; it only counts as wrong.
+- **Tables** (awards, statistics, contest log): when you Tab into one, the
+  first row is selected and the arrow keys work right away. When a window opens, the announcement says
+  its name (“Window Band conditions”); if the window speaks itself, the
+  name comes first. Typing in settings fields and number fields is
+  announced (characters spelled out, deletions with “deleted”); the
+  “Characters” field reads its content character by character.
 - **Font size:** arrows of number fields and drop-down lists, scrollbars
   and sliders grow with it; the full result (Continuous) and the solution
   (Network) start at the size set.

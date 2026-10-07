@@ -28,7 +28,7 @@ from morsetrainer import DATA_DIR
 from morsetrainer.core import audio, koch, stats, tempo
 from morsetrainer.core.morse import SAMPLE_RATE, build_text
 from morsetrainer.modes.sequence_mode import HEAD, SequenceModeFrame, clean_input
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
 
@@ -168,7 +168,9 @@ class CallsignModeFrame(SequenceModeFrame):
         settings.pack(fill="x", pady=1)
         ttk.Label(settings, text=tr("Präfix-Filter:")).pack(side="left", padx=(0, 4))
         self.prefix_var = tk.StringVar(value="")
-        ttk.Entry(settings, textvariable=self.prefix_var, width=24).pack(side="left")
+        prefix_entry = ttk.Entry(settings, textvariable=self.prefix_var, width=24)
+        prefix_entry.pack(side="left")
+        announcer.echo(prefix_entry)
         theme.hint(settings, text=tr("(leer = alle)")).pack(side="left", padx=(6, 0))
 
         self.learned_var = tk.BooleanVar(value=True)

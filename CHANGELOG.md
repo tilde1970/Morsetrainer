@@ -9,7 +9,28 @@
   wanderndem Pfeifton), PLC (Datenrauschen aus der Steckdose), Weidezaun
   (Ticken etwa jede Sekunde) und Tastklicks (der Nachbar-Run tastet hart;
   die Klicks gehen auch durch ein schmales Filter). Im Netzwerk hören
-  Teilnehmer ab dieser Version sie mit.
+  Teilnehmer ab 2.40 die neuen Störungen mit, mit älterer Version nicht.
+  „Alle an“ schaltet nur noch die Störungen der oberen Karte ein, nicht
+  die eingeklappten weiteren. Mit Sprachansage (F9) wird das Band vor der
+  Rückmeldung ausgeblendet, damit sie gut zu verstehen ist.
+- **Tastatur:** Enter löst einen Knopf mit Fokus aus, wie die Leertaste
+  (z. B. „Schließen“ nach dem Durchtabben).
+- **Sprachansage:** „Hz“, „kHz“, „Min“ und „s“ (hinter einer Zahl) werden
+  als „Hertz“, „Kilohertz“, „Minuten“ und „Sekunden“ gesprochen statt
+  buchstabiert; „Fading“, „Pile-up“ und die Contest-Arten (CQ WW, WPX,
+  WAG, ARRL DX, IARU HF) klingen wie bei Funkamateuren, Abkürzungen
+  buchstabiert wie Rufzeichen. Klammern werden nicht mehr mitgelesen,
+  sondern zur Pause; „Staat/Leistung“ heißt „Staat oder Leistung“.
+  Zahlenfelder sagen ihre Einheit mit („Lösung zeigen nach, 3
+  Fehlversuchen“, „Dauer, 5 Minuten“).
+- **Statistik:** Unter „verwechselt mit“ steht kein „–“ mehr für ein
+  Zeichen, das gar nicht erkannt wurde; es zählt nur als falsch.
+- **Tabellen** (Diplome, Statistik, Contest-Log): Springst du mit Tab
+  hinein, ist die erste Zeile gewählt und die Pfeiltasten gehen sofort. Öffnet sich ein Fenster, sagt die Ansage
+  seinen Namen („Fenster Bandbedingungen“); spricht das Fenster selbst,
+  kommt der Name davor. Tippen in den Feldern der Einstellungen und in
+  Zahlenfeldern wird angesagt (Zeichen buchstabiert, Gelöschtes mit
+  „gelöscht“), das Feld „Zeichen“ liest seinen Inhalt Zeichen für Zeichen.
 - **Schriftgröße:** Pfeile von Zahlenfeldern und Klapplisten, Rollbalken
   und Schieberegler wachsen mit; die ganze Auswertung (Kontinuierlich) und
   die Auflösung (Netzwerk) beginnen in der eingestellten Größe.

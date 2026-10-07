@@ -182,6 +182,7 @@ class HelpWindow:
         ttk.Label(bar, text=tr("Suchen:")).pack(side="left")
         self.search_var = tk.StringVar(value="")
         self.search_entry = ttk.Entry(bar, textvariable=self.search_var, width=28)
+        announcer.echo(self.search_entry)
         self.search_entry.pack(side="left", padx=(6, 8))
         announcer.name(self.search_entry, tr("Suchen in der Hilfe"))
         self.search_info_var = tk.StringVar(value=tr("Strg+F, Enter: nächster Treffer"))

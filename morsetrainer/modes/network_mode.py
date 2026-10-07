@@ -317,6 +317,7 @@ class NetworkModeFrame:
         self.session_var = tk.StringVar(value=tr("Morsekurs"))
         self.session_entry = ttk.Entry(row, textvariable=self.session_var, width=20)
         self.session_entry.pack(side="left")
+        announcer.echo(self.session_entry)
         ttk.Label(row, text=tr("Port:")).pack(side="left", padx=(12, 4))
         self.port_var = tk.IntVar(value=protocol.DEFAULT_PORT)
         self.port_spin = ttk.Spinbox(row, from_=1024, to=65535, textvariable=self.port_var, width=6)
@@ -589,6 +590,8 @@ class NetworkModeFrame:
         self.pin_var = tk.StringVar(value="")
         self.pin_entry = ttk.Entry(row, textvariable=self.pin_var, width=6)
         self.pin_entry.pack(side="left")
+        announcer.echo(self.name_entry)
+        announcer.echo(self.pin_entry)
 
         row = ttk.Frame(box)
         row.pack(fill="x", pady=(4, 1))
@@ -1549,6 +1552,7 @@ class NetworkModeFrame:
         self.paper_name_var = tk.StringVar(value="")
         name_entry = ttk.Entry(top, textvariable=self.paper_name_var, width=14)
         name_entry.pack(side="left")
+        announcer.echo(name_entry)
         ttk.Button(top, text=tr("Übernehmen"), style="Accent.TButton", command=self.apply_paper).pack(
             side="left", padx=(12, 0))
         theme.hint(frame, wrap=560, text=tr(

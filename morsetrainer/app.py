@@ -261,9 +261,12 @@ class MorseTrainerApp:
         freq_spin.lift()  # Tab wie auf dem Bildschirm: erst Tempo, dann Tonhöhe
 
         ttk.Label(header, text=tr("Zeichen")).grid(row=1, column=0, sticky="w", pady=(6, 0), padx=(0, 8))
-        ttk.Entry(header, textvariable=self.charset_var, font=theme.MONO).grid(
-            row=1, column=1, sticky="we", pady=(6, 0)
-        )
+        charset_entry = ttk.Entry(header, textvariable=self.charset_var, font=theme.MONO)
+        charset_entry.grid(row=1, column=1, sticky="we", pady=(6, 0))
+        # Zeichensatz Zeichen für Zeichen (mit Punkt, Komma … ist er kein Wort).
+        announcer.name(charset_entry, tr("Zeichen"),
+                       value=lambda: announcer.spell_chars(self.charset_var.get().strip()) or tr("leer"))
+        announcer.echo(charset_entry)
 
         toggle_row = ttk.Frame(header)
         toggle_row.grid(row=2, column=0, columnspan=2, sticky="we", pady=(4, 0))
@@ -347,9 +350,13 @@ class MorseTrainerApp:
         self.station_call_var = tk.StringVar(value="")
         self.station_name_var = tk.StringVar(value="")
         ttk.Label(station, text=tr("Rufzeichen", context="eigenes")).pack(side="left")
-        ttk.Entry(station, textvariable=self.station_call_var, width=12).pack(side="left", padx=(6, 12))
+        call_entry = ttk.Entry(station, textvariable=self.station_call_var, width=12)
+        call_entry.pack(side="left", padx=(6, 12))
         ttk.Label(station, text=tr("Name")).pack(side="left")
-        ttk.Entry(station, textvariable=self.station_name_var, width=14).pack(side="left", padx=(6, 8))
+        name_entry = ttk.Entry(station, textvariable=self.station_name_var, width=14)
+        name_entry.pack(side="left", padx=(6, 8))
+        announcer.echo(call_entry)
+        announcer.echo(name_entry)
         theme.hint(station, text=tr("falls vorhanden; für Diplome, Contest und Netzwerk")).pack(side="left")
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem

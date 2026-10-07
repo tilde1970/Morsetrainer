@@ -184,6 +184,22 @@ def _row_height(style, root) -> None:
     style.configure("TScale", sliderlength=scaled(SLIDER_LENGTH))
 
 
+def _tree_focus_row(event) -> None:
+    """Fokus in einer Tabelle ohne aktuelle Zeile: die gewählte, sonst die
+    erste wird aktuell (und gewählt), damit die Pfeiltasten gehen."""
+    tree = event.widget
+    try:
+        if tree.focus():
+            return
+        rows = tree.selection() or tree.get_children()
+        if rows:
+            tree.focus(rows[0])
+            if not tree.selection():
+                tree.selection_set(rows[0])
+    except tk.TclError:
+        pass
+
+
 def apply(root) -> None:
     """Wendet Farben, Schriften und Stile des gewählten Farbschemas auf das
     ganze Programm an (einmal beim Start, vor dem Aufbau der Fenster)."""
@@ -215,6 +231,14 @@ def apply(root) -> None:
             " if {[ttk::takesFocus $w]} { focus $w } }")
     except tk.TclError:
         pass
+    # Enter löst einen Knopf mit Tastaturfokus aus wie die Leertaste (ttk
+    # kennt von sich aus nur die Leertaste). „break“: Ein Enter des Fensters
+    # (etwa „Weiter“ in der Tagesübung) soll nicht zusätzlich greifen.
+    for key in ("<Return>", "<KP_Enter>"):
+        root.tk.eval(f"bind TButton {key} {{ ttk::button::activate %W; break }}")
+    # Tabellen: Die Pfeiltasten wandern von der aktuellen Zeile aus; ohne
+    # eine (mit Tab hineingesprungen) täten sie nichts.
+    root.bind_class("Treeview", "<FocusIn>", _tree_focus_row, add="+")
     # In Textfeldern (Notizen, eigener Text) führt Tab weiter, statt ein
     # Tabzeichen einzufügen; wie Tk selbst über tk::TabToWindow, damit das
     # Ziel <<TraverseIn>> bekommt (Fokus-Ansage).

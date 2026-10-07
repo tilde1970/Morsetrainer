@@ -34,6 +34,11 @@ EXTRA_OPTIONS = (
     ("fence", N_("Weidezaun (Ticken)"), 40),
     ("clicks", N_("Tastklicks (Nachbar tastet hart)"), 50),
 )
+# Zusätzliche Erklärung in der Ansage eines Schalters (Tab-Fokus).
+OPTION_HINTS = {
+    "clicks": N_("Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für "
+                 "sie."),
+}
 SHORT_NAMES = {"noise": N_("Bandrauschen"), "qrn": "QRN", "qsb": "QSB", "chirp": "Chirp",
                "ssb": "SSB-QRM", "cw_qrm": "CW-QRM", "strength": N_("Stärke"), "storm": N_("Gewitter"),
                "agc": N_("AGC-Pumpen"), "flutter": N_("Flattern"), "carrier": N_("Träger"),
@@ -184,7 +189,7 @@ class BandSettings:
         Stufe mittel“."""
         spec = self.spec()
         parts = [f"{tr(SHORT_NAMES[key])} {level_text(key, level, spec['gain'])}"
-                 + (f" {tr(QRM_OFFSET_SHORT[spec['qrm_offset']])}"
+                 + (" " + tr("Abstand {name}").format(name=tr(QRM_OFFSET_SHORT[spec['qrm_offset']]))
                     if key in ("cw_qrm", "clicks") and "qrm_offset" in spec
                     else "")
                  for key, level in spec["levels"].items()]
@@ -295,7 +300,10 @@ class BandSettings:
             anchor="w", pady=(0, 2))
         theme.hint(frame, wrap=460, text=tr(
             "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
-            "(90 % und mehr), und mit „leicht“ beginnen.")).pack(anchor="w", pady=(0, 6))
+            "(90 % und mehr), und mit „leicht“ beginnen.")).pack(anchor="w", pady=(0, 2))
+        theme.hint(frame, wrap=460, text=tr(
+            "In Gruppen, Wörtern und Rufzeichen läuft das Band in deiner Antwortpause 6 dB leiser weiter; "
+            "wird es wieder lauter, kommt die nächste Sequenz.")).pack(anchor="w", pady=(0, 6))
 
         presets = ttk.Frame(frame)
         presets.pack(fill="x", pady=(0, 4))
@@ -316,6 +324,7 @@ class BandSettings:
             button = ttk.Radiobutton(offsets, text=tr(name), value=key, variable=self.qrm_offset_var,
                                      command=self._changed)
             button.pack(side="left", padx=(0, 8))
+            announcer.name(button, tr("CW-QRM-Abstand") + " " + tr(name))
             self.offset_buttons.append(button)
         buttons = ttk.Frame(box)
         buttons.grid(row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="e", pady=(6, 0))
@@ -330,9 +339,8 @@ class BandSettings:
         for row, (key, label, _) in enumerate(EXTRA_OPTIONS):
             self._option_row(self.extra_box, row, key, label)
         theme.hint(self.extra_box, wrap=440, text=tr(
-            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Die Tastklicks kommen vom "
-            "Nachbar-Run (CW-QRM-Abstand gilt) und sind auch zu hören, wenn sein Ton aus ist oder draußen "
-            "vor dem Filter bleibt.")).grid(
+            "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest. Tastklicks: Klicks eines hart "
+            "tastenden Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.")).grid(
             row=len(EXTRA_OPTIONS), column=0, columnspan=3, sticky="w", pady=(4, 0))
         self.extras_open = any(self.controls[key][0].get() for key, _, _ in EXTRA_OPTIONS)
         self._show_extras()
@@ -419,8 +427,10 @@ class BandSettings:
     def _option_row(self, box, row: int, key: str, label: str) -> None:
         """Schalter, Regler und angezeigter Wert einer Störung."""
         on, level = self.controls[key]
-        ttk.Checkbutton(box, text=tr(label), variable=on, command=self._changed).grid(
-            row=row, column=0, sticky="w", padx=(0, 12), pady=1)
+        check = ttk.Checkbutton(box, text=tr(label), variable=on, command=self._changed)
+        check.grid(row=row, column=0, sticky="w", padx=(0, 12), pady=1)
+        if key in OPTION_HINTS:
+            announcer.name(check, f"{tr(label)}. {tr(OPTION_HINTS[key])}")
         scale = ttk.Scale(box, from_=0, to=100, variable=level, length=200, command=lambda _: self._changed())
         scale.grid(row=row, column=1, sticky="we", pady=1)
         announcer.name(scale, tr(label), value=lambda k=key, v=level: level_text(
@@ -442,8 +452,13 @@ class BandSettings:
             self.extra_box.pack_forget()
 
     def _set_all(self, enabled: bool) -> None:
-        for on, _ in self.controls.values():
-            on.set(enabled)
+        """„Alle an“ schaltet nur die Störungen der Karte ein (die weiteren
+        sind meist eingeklappt, man sähe nicht, woher es tickt); „Alle aus“
+        schaltet alles aus."""
+        main = {key for key, _, _ in BAND_OPTIONS}
+        for key, (on, _) in self.controls.items():
+            if key in main or not enabled:
+                on.set(enabled)
         self._changed()
 
     def _update_window(self) -> None:

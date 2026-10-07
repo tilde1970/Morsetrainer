@@ -5,7 +5,7 @@ from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import band
-from morsetrainer.modes import network_mode
+from morsetrainer.modes import network_mode, sequence_mode
 from morsetrainer.widgets.band_settings import toggle_value
 from tests.test_modes import AppTestCase
 
@@ -617,7 +617,7 @@ class CentralSettingsTest(AppTestCase):
         spec = settings.spec()
         self.assertEqual((spec["filter"], spec["qrm_offset"]), (500, "near"))
         summary = settings.summary()
-        self.assertIn("CW-QRM 30 % nah", summary)
+        self.assertIn("CW-QRM 30 % Abstand nah", summary)
         self.assertIn("Filter 500 Hz", summary)
         settings.open_window()
         try:
@@ -645,6 +645,36 @@ class CentralSettingsTest(AppTestCase):
             self.assertTrue(settings.extras_open)
             self.assertIn("Gewitter 50 %", settings.summary())
             self.assertIn("Träger 40 %", settings.summary())
+        finally:
+            settings.close_window()
+
+    def test_all_on_leaves_the_collapsed_extras_alone(self):
+        # Sonst tickte und brummte es plötzlich, ohne dass man sähe, woher.
+        from morsetrainer.widgets import band_settings
+        settings = self.app.band_settings
+        settings.set_spec({"levels": {"storm": 0.5}, "gain": 1.0})
+        settings.open_window()
+        try:
+            settings._set_all(True)
+            levels = settings.spec()["levels"]
+            for key, _, _ in band_settings.BAND_OPTIONS:
+                self.assertIn(key, levels)
+            self.assertNotIn("fence", levels)
+            self.assertNotIn("clicks", levels)
+            self.assertIn("storm", levels)  # war schon an, bleibt an
+            settings._set_all(False)
+            self.assertEqual(settings.spec()["levels"], {})  # „Alle aus“ schaltet alles aus
+        finally:
+            settings.close_window()
+
+    def test_key_clicks_explained_in_the_announcement(self):
+        from morsetrainer.widgets import announcer
+        settings = self.app.band_settings
+        settings.open_window()
+        try:
+            spoken = list(announcer._names.values())
+            self.assertTrue(any(text.startswith("Tastklicks") and "CW-QRM-Abstand gilt" in text for text in spoken))
+            self.assertIn("CW-QRM-Abstand nah (50–200 Hz)", spoken)
         finally:
             settings.close_window()
 
@@ -860,6 +890,15 @@ class SequenceBandTrackingTest(AppTestCase):
             conditions, delay = start.call_args[0]
             self.assertIs(conditions, g.band)
             self.assertGreater(delay, 0.5)  # erst gegen Ende der Sequenz
+            # Mit Sprachansage: Band vor der Rückmeldung ausblenden.
+            fade_out.reset_mock()
+            with mock.patch.object(sequence_mode.announcer, "active", return_value=True):
+                g._quiet_for_announcement()
+            fade_out.assert_called_once()
+            fade_out.reset_mock()
+            with mock.patch.object(sequence_mode.announcer, "active", return_value=False):
+                g._quiet_for_announcement()
+            fade_out.assert_not_called()
             start.reset_mock()
             g.band_var.set(False)  # ohne Bandbedingungen: Stille in der Pause
             g.play_current()

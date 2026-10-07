@@ -38,6 +38,13 @@ CACHE_SIZE = 64
 # übrigen entstehen, während er läuft. Kurze bleiben ein Stück.
 SPLIT_ABOVE_CHARS = 60
 CHUNK_CHARS = 150
+# Ein neues Fenster sagt seinen Namen an. Was kurz davor oder danach
+# angesagt wird, gehört zum Fenster und bekommt den Namen vorangestellt,
+# statt ihn zu verdrängen. Davor: Fenster wie Diplom und Tagesübung sprechen
+# schon beim Aufbau, Augenblicke bevor sie erscheinen; eng gefasst, damit
+# etwa die Ansage eines eben gewechselten Reiters nicht dazukommt.
+WINDOW_JOIN_BEFORE_S = 0.25
+WINDOW_JOIN_AFTER_S = 0.4
 
 _instance = None
 _synth_lock = threading.Lock()  # Piper nicht aus zwei Threads zugleich
@@ -53,6 +60,9 @@ class Announcer:
         self.token = 0
         self.speaking_until = 0.0  # time.time(), zu der die laufende Ansage endet
         self.done_token = 0  # token der zuletzt ganz abgespielten Ansage
+        self.recent = None  # (Text, time.time(), token) der letzten Ansage
+        self.window_intro = None  # (Fenstername als Satz, time.time(), token)
+        self.last_window = None  # (Fenster, time.time()): nicht doppelt ansagen
         self._cache = {}
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
@@ -91,8 +101,14 @@ class Announcer:
             if then is not None:
                 then()
             return
+        intro = self.window_intro
+        if (intro is not None and intro[2] == self.token and time.time() - intro[1] < WINDOW_JOIN_AFTER_S
+                and not text.startswith(intro[0])):
+            text = f"{intro[0]} {text}"
+        self.window_intro = None
         self.token += 1
         token = self.token
+        self.recent = (text, time.time(), token)
         chunks = _chunks(text)
         results = {}  # Nr. -> Samples (oder None), sobald erzeugt
 
@@ -127,6 +143,28 @@ class Announcer:
             self._after(POLL_MS, poll)
 
         poll()
+
+    def window_shown(self, window) -> None:
+        """Ein Fenster ist erschienen: seinen Namen ansagen („Fenster
+        Bandbedingungen.“). Kam gerade eben schon eine Ansage (etwa die des
+        Fensters selbst), wird sie mit dem Namen davor wiederholt."""
+        if not self.enabled() or self.available() is not None:
+            return
+        now = time.time()
+        if self.last_window is not None and self.last_window[0] == str(window) and now - self.last_window[1] < 1.0:
+            return
+        self.last_window = (str(window), now)
+        try:
+            title = window.title()
+        except tk.TclError:
+            return
+        intro = speakable(tr("Fenster {title}.").format(title=title) if title else tr("Neues Fenster."))
+        recent = self.recent
+        text = intro
+        if recent is not None and recent[2] == self.token and now - recent[1] < WINDOW_JOIN_BEFORE_S:
+            text = recent[0] if recent[0].startswith(intro) else f"{intro} {recent[0]}"
+        self.say(text)
+        self.window_intro = (intro, time.time(), self.token)
 
     def _when_idle(self, then, deadline: float) -> None:
         """`then()`, sobald keine Ansage mehr läuft (die neueste ganz
@@ -210,6 +248,10 @@ ROLES = {
 }
 _names = {}  # str(Widget) -> fester Name (name())
 _values = {}  # str(Widget) -> Funktion, die den angezeigten Wert liefert (z. B. S/N statt Zahl)
+_echo_widgets = set()  # str(Widget): Eingabefelder, in denen das Tippen angesagt wird (echo())
+_echo_last = {}  # str(Widget) -> Inhalt beim letzten Blick (Fokus oder Taste)
+# Tasten, deren Wirkung ein Zahlenfeld schon selbst ansagt (<<Increment>>).
+_ECHO_SKIP_KEYS = {"Up", "Down", "Prior", "Next", "Tab", "ISO_Left_Tab"}
 
 
 def name(widget, text: str, value=None) -> None:
@@ -220,7 +262,77 @@ def name(widget, text: str, value=None) -> None:
         _values[str(widget)] = value
 
 
+def _window_shown(widget) -> None:
+    if _instance is not None and isinstance(widget, tk.Toplevel):
+        _instance.window_shown(widget)
+
+
+def echo(widget) -> None:
+    """Tippen in diesem Eingabefeld ansagen, wie ein Screenreader: jedes
+    neue Zeichen buchstabiert, Gelöschtes mit „gelöscht“. Für Felder der
+    Einstellungen (Zahlenfelder immer); nicht für Antwortfelder, dort bräche
+    die Ansage den laufenden Morseton ab."""
+    _echo_widgets.add(str(widget))
+
+
+def _echoes(widget) -> bool:
+    return widget.winfo_class() == "TSpinbox" or str(widget) in _echo_widgets
+
+
+def _echo_start(widget) -> None:
+    try:
+        if _echoes(widget):
+            _echo_last[str(widget)] = widget.get()
+    except tk.TclError:
+        pass
+
+
+def _echo_key(event) -> None:
+    widget = event.widget
+    try:
+        if not _echoes(widget):
+            return
+        after = widget.get()
+    except tk.TclError:
+        return
+    before = _echo_last.get(str(widget))
+    _echo_last[str(widget)] = after
+    if before is None or before == after or event.keysym in _ECHO_SKIP_KEYS or not active():
+        return
+    _instance.say(change_text(before, after))
+
+
+def spell_chars(text: str) -> str:
+    """Jedes Zeichen einzeln gesprochen, auch Leerzeichen und Satzzeichen."""
+    names = []
+    for ch in text:
+        if ch.isspace():
+            names.append(tr("Leerzeichen"))
+        else:
+            names.append(speech.spoken(ch, lang=i18n.LANG) or ch)
+    return ", ".join(names)
+
+
+def change_text(before: str, after: str) -> str:
+    """Was sich in einem Feld geändert hat, zum Ansagen: Neues buchstabiert,
+    Gelöschtes mit „gelöscht“ (bei einer ersetzten Auswahl das Neue)."""
+    start = 0
+    while start < min(len(before), len(after)) and before[start] == after[start]:
+        start += 1
+    end = 0
+    while end < min(len(before), len(after)) - start and before[-1 - end] == after[-1 - end]:
+        end += 1
+    removed, added = before[start:len(before) - end], after[start:len(after) - end]
+    if removed and not added:
+        return tr("{chars} gelöscht").format(chars=spell_chars(removed))
+    return spell_chars(added)
+
+
 def _install_focus(root) -> None:
+    root.bind_class("Toplevel", "<Map>", lambda e: _window_shown(e.widget), add="+")
+    for cls in ("TEntry", "TSpinbox"):
+        root.bind_class(cls, "<FocusIn>", lambda e: _echo_start(e.widget), add="+")
+        root.bind_class(cls, "<KeyRelease>", _echo_key, add="+")
     for cls in ROLES:
         root.bind_class(cls, "<<TraverseIn>>", lambda e: _say_focus(e.widget), add="+")
     root.bind_class("TCheckbutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
@@ -289,6 +401,9 @@ def _value(widget) -> str:
         text = widget.get().strip()
         if not text:
             return tr("leer")
+        unit = _unit_after(widget)
+        if unit:
+            return f"{text} {unit}"
         # Zeichensätze und Rufzeichen buchstabieren, Zahlen und Wörter nicht.
         if cls == "TEntry" and len(text) <= 12 and text.isalnum() and text.upper() == text and not text.isdigit():
             return spell(text)
@@ -341,6 +456,41 @@ def _nearby(widget, depth: int = 0) -> str:
                     return text
     if depth < 2 and parent.winfo_class() == "TFrame":
         return _nearby(parent, depth + 1)
+    return ""
+
+
+# Längere Texte hinter einem Zahlenfeld sind Erklärungen, keine Einheit.
+UNIT_MAX_CHARS = 25
+
+
+def _unit_after(widget) -> str:
+    """Einheit gleich hinter einem Zahlenfeld („3 Fehlversuchen“, „10
+    Minuten“): das nächste schlichte Label in derselben Zeile. Erklärtexte
+    und Beschriftungen des nächsten Feldes (mit Doppelpunkt oder direkt vor
+    einem weiteren Feld, wie „von [3] bis [5]“) zählen nicht."""
+    parent = widget.master
+    if parent is None or widget.winfo_class() != "TSpinbox":
+        return ""
+    siblings = parent.winfo_children()
+    manager = widget.winfo_manager()
+    if manager == "grid":
+        info = widget.grid_info()
+        row, column = int(info["row"]), int(info["column"])
+        following = [s for s in siblings if s.winfo_manager() == "grid"
+                     and (int(s.grid_info()["row"]), int(s.grid_info()["column"])) == (row, column + 1)]
+    elif manager == "pack" and widget.pack_info().get("side") == "left" and widget in siblings:
+        packed = [s for s in siblings[siblings.index(widget) + 1:] if s.winfo_manager() == "pack"]
+        if len(packed) > 1 and packed[1].winfo_class() in ("TSpinbox", "TEntry", "TCombobox"):
+            return ""
+        following = packed[:1]
+    else:
+        return ""
+    for sibling in following:
+        if sibling.winfo_class() != "TLabel" or str(sibling.cget("style")) in ("Hint.TLabel", "Status.TLabel"):
+            continue
+        raw = str(sibling.cget("text")).strip()
+        if raw and not raw.endswith(":") and len(raw) <= UNIT_MAX_CHARS:
+            return raw
     return ""
 
 
@@ -412,16 +562,56 @@ def render(text: str, deliver) -> None:
 _SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("±", N_(" plus minus ")),
             ("✓", N_("richtig")), ("✗", N_("falsch")), ("★", N_(" Stern ")), ("☆", ""), ("…", ""),
             ("%", N_(" Prozent")), ("≥", N_("mindestens")), ("≤", N_("höchstens")), ("–", ","))
+# Einheiten, die die Stimme sonst buchstabiert („HaZet“); nur als ganzes Wort.
+_UNITS = ((re.compile(r"\bkHz\b"), N_("Kilohertz")), (re.compile(r"\bHz\b"), N_("Hertz")))
+# Englische Lehnwörter, die die deutsche Stimme deutsch ausspricht
+# („Fäding“): so geschrieben, wie sie klingen sollen (auch im Wortinnern,
+# etwa „Flatterfading“).
+_PRONOUNCE_DE = ((re.compile(r"Fading"), "Fehding"), (re.compile(r"fading"), "fehding"),
+                 (re.compile(r"\bpile-?up(s?)\b", re.IGNORECASE), r"Peil-app\1"))
+# Abkürzungen der Contest-Arten (qso_text.QSO_TYPES): buchstabiert mit den
+# Buchstabennamen wie bei Rufzeichen („We, A, Ge“); sonst liest die Stimme
+# „WAG“ oder „ARRL“ als Wort. Ein Bindestrich dahinter („CQ-Zone“) wird
+# zur Pause.
+_ACRONYMS_DE = ("CQ", "WW", "WPX", "WAG", "DOK", "ARRL", "DX", "IARU", "HF", "ITU", "HQ")
+_ACRONYM_PATTERN = re.compile(r"\b(" + "|".join(_ACRONYMS_DE) + r")\b(-(?=\w))?")
+# Klammern und Schrägstrich hinter einem Wort liest die Stimme mit („in
+# Klammern“); gesprochen wird stattdessen eine Pause bzw. „oder“
+# („Staat/Leistung“, „Zone/HQ“; nicht „TU/Log“, das heißt „und“).
+_BRACKETS = re.compile(r"\s*\(([^()]*)\)")
+_WORD_SLASH = re.compile(r"(?<=[a-zäöüß]{2})/(?=[^\W\d_]{2})")
+# Zeiteinheiten nur direkt hinter einer Zahl (sonst ist „s“ ein Buchstabe);
+# (Muster, Einzahl, Mehrzahl).
+_NUMBER_UNITS = (
+    (re.compile(r"(\d+(?:[.,]\d+)?)\s*[Mm]in\.?(?!\w)"), N_("Minute"), N_("Minuten")),
+    (re.compile(r"(\d+(?:[.,]\d+)?)\s+s(?!\w)"), N_("Sekunde"), N_("Sekunden")),
+)
 
 
 def speakable(text: str) -> str:
-    """Text für die Stimme: Symbole als Wort, doppelte Leerzeichen weg."""
+    """Text für die Stimme: Symbole und Einheiten als Wort, doppelte
+    Leerzeichen weg."""
     if not text:
         return ""
     for symbol, word in _SYMBOLS:
         if symbol in text:
             text = text.replace(symbol, tr(word) if word else "")
-    return re.sub(r" {2,}", " ", re.sub(r" +([,.])", r"\1", text)).strip()
+    text = _BRACKETS.sub(r", \1,", text)
+    text = _WORD_SLASH.sub(" " + tr("oder") + " ", text)
+    for pattern, word in _UNITS:
+        text = pattern.sub(tr(word), text)
+    if i18n.LANG == "de":
+        for pattern, sounds in _PRONOUNCE_DE:
+            text = pattern.sub(sounds, text)
+        text = _ACRONYM_PATTERN.sub(lambda m: speech.spoken(m.group(1), lang="de") + (" " if m.group(2) else ""),
+                                    text)
+    for pattern, one, many in _NUMBER_UNITS:
+        text = pattern.sub(lambda m, one=one, many=many: f"{m.group(1)} {tr(one if m.group(1) == '1' else many)}",
+                           text)
+    text = re.sub(r" +([,.])", r"\1", text)
+    text = re.sub(r",(\s*,)+", ",", text)  # Pausen nicht doppelt
+    text = re.sub(r",\s*([.!?:])", r"\1", text)
+    return re.sub(r" {2,}", " ", text).strip().rstrip(",").strip()
 
 
 def remaining() -> float:

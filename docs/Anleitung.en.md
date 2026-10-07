@@ -315,7 +315,8 @@ As on the air, fading, noise and the neighbouring QRM keep running during
 your answer pause; each sequence hits a different spot. In Groups, Words
 and Callsigns you also hear the band during the answer pause, 6 dB
 quieter so your ear gets some rest while typing; it comes back up with
-the next sequence.
+the next sequence. With announcements (F9) it fades out before the
+feedback.
 
 Runs with band conditions appear in the history but do not count for the
 character statistics, the weighting, the confusions or the review box: a
@@ -520,6 +521,15 @@ versions (CHANGELOG) and this manual.
 - **Award window:** new seals with condition and date, then the hint on
   Tab and Escape; the print buttons say which award they print. F11 in
   the window repeats.
+- **Typing:** in the settings fields (characters, callsign, name, prefix
+  filter, network, search in the help) and in all number fields each
+  typed character is spelled out, deleted ones with “deleted”. Not in the
+  answer fields of the exercises: there the announcement would cut off
+  the Morse tone. The “Characters” field reads its content character by
+  character.
+- **Windows:** when a window opens (band conditions, settings, help …),
+  it says its name: “Window Band conditions”. If the window speaks itself
+  (award, daily practice), the name comes first.
 - **Controls:** when you Tab into a field, button or check box, it says
   what it is and how it is set (“Sprache / Language, list, English”, “High contrast,
   check box, off”, “Speed, number field, 20 WPM”); changes with the space
@@ -556,8 +566,8 @@ versions (CHANGELOG) and this manual.
   (Fn+F11 shows the desktop). Use Cmd+Shift+A (announcements on/off),
   Cmd+Shift+W (where am I) and Cmd+Shift+T (daily practice) instead.
 - **Without a mouse:** Tab and Shift+Tab go through all fields, buttons and
-  check boxes (the focus is highlighted in colour), the space bar presses
-  the button or toggles, arrow keys choose in lists, sliders and tabs.
+  check boxes (the focus is highlighted in colour), the space bar or Enter
+  presses the button, the space bar toggles, arrow keys choose in lists, sliders and tabs.
   Esc closes the secondary windows.
 - **Daily practice:** F12 starts, Enter skips the card between blocks, Esc
   stops.

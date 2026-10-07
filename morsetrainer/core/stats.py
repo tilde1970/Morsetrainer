@@ -33,9 +33,12 @@ CONFUSIONS_SHOWN = 3
 
 
 def format_confusions(confusions: dict) -> str:
-    """{"5": 12, "S": 3, "": 2} -> "5 (12), S (3), – (2)"; "–" = verpasst."""
-    top = sorted(confusions.items(), key=lambda item: (-item[1], item[0]))[:CONFUSIONS_SHOWN]
-    return ", ".join(f"{display_text(typed) or '–'} ({count})" for typed, count in top)
+    """{"5": 12, "S": 3, "": 2} -> "5 (12), S (3)". Verpasste Zeichen ("")
+    sind keine Verwechslung (das Zeichen wurde gar nicht erkannt); sie
+    zählen nur als falsch."""
+    top = sorted(((typed, count) for typed, count in confusions.items() if typed),
+                 key=lambda item: (-item[1], item[0]))[:CONFUSIONS_SHOWN]
+    return ", ".join(f"{display_text(typed)} ({count})" for typed, count in top)
 
 
 class SessionStats:

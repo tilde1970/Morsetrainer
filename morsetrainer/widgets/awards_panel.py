@@ -191,9 +191,13 @@ class DiplomaWindow:
         self.call_var, self.name_var = call_var, name_var
         ttk.Label(line, text=tr("Auf dem Diplom:")).pack(side="left")
         ttk.Label(line, text=tr("Rufzeichen", context="eigenes")).pack(side="left", padx=(8, 0))
-        ttk.Entry(line, textvariable=call_var, width=12).pack(side="left", padx=(6, 12))
+        call_entry = ttk.Entry(line, textvariable=call_var, width=12)
+        call_entry.pack(side="left", padx=(6, 12))
         ttk.Label(line, text=tr("Name")).pack(side="left")
-        ttk.Entry(line, textvariable=name_var, width=14).pack(side="left", padx=(6, 0))
+        name_entry = ttk.Entry(line, textvariable=name_var, width=14)
+        name_entry.pack(side="left", padx=(6, 0))
+        announcer.echo(call_entry)
+        announcer.echo(name_entry)
         self.note_var = tk.StringVar(value="")
         theme.hint(frame, textvariable=self.note_var, wrap=480).pack(anchor="w", pady=(6, 0))
 
