@@ -203,13 +203,15 @@ die durchgehend unter dem ganzen Durchgang liegen.
 
 Hören und sagen ohne Tastatur (wie Morse Code Ninja): Morsezeichen, dann
 eine Denkpause, in der du laut sagst, was du gehört hast, dann sagt eine
-Stimme die Lösung an und das Zeichen kommt noch einmal.
+Stimme die Lösung an und das Zeichen kommt noch einmal. Den Inhalt wählst
+du oben unter **Inhalt**.
 
 - Zeichen, Gruppen und Rufzeichen werden im Buchstabieralphabet
   buchstabiert (Alfa, Bravo …), Wörter und Wendungen als Ganzes bzw. mit
   ihrer Bedeutung („TNX“ → „danke“).
 - Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen).
-- Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen.
+- Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen (bei Gruppen
+  mit einstellbarer Länge).
 - **Als MP3 speichern** für unterwegs (Handy, Auto).
 - Zählt nur für die Übungszeit. Die Stimme ist immer deutsch.
 
@@ -785,7 +787,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Überall | Strg+Komma | Einstellungen |
 | Überall | Tab, Umschalt+Tab | durch Felder, Knöpfe und Schalter (Fokus farbig markiert) |
 | Überall | Leertaste, Enter | Knopf drücken; Leertaste schaltet Schalter um |
-| Überall | Pfeiltasten | in Listen, Reglern, Reitern, Tabellen und in der Zeile „Inhalt“ wählen |
+| Überall | Pfeiltasten | in Listen, Reglern, Reitern, Tabellen und in der Zeile „Inhalt“ (Einzeln, Am Stück, Sprechen) wählen |
 | Überall | Esc | Nebenfenster schließen |
 | Tagesübung | Enter, Esc | Zwischenkarte überspringen, Tagesübung beenden |
 | Einzeln, Am Stück | F5 | Start/Stop |

@@ -204,13 +204,15 @@ Optionally with band conditions running under the whole session.
 
 Listen and say without a keyboard (like Morse Code Ninja): Morse code,
 then a thinking pause in which you say out loud what you heard, then a
-voice announces the solution and the code comes once more.
+voice announces the solution and the code comes once more. Choose the
+content at the top under **Content**.
 
 - Characters, groups and callsigns are spelled in the phonetic alphabet
   (Alfa, Bravo …), words and phrases as a whole or with their meaning.
 - The thinking pause is deliberately short (default 1 s plus 0.3 s per
   character).
-- Content: characters, groups, words, phrases, callsigns.
+- Content: characters, groups, words, phrases, callsigns (groups with an
+  adjustable length).
 - **Save as MP3** for on the go (phone, car).
 - Counts only for practice time. *The voice is always German.*
 
@@ -773,7 +775,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Everywhere | Ctrl+Comma | settings |
 | Everywhere | Tab, Shift+Tab | through fields, buttons and check boxes (focus highlighted in colour) |
 | Everywhere | Space, Enter | press a button; space toggles check boxes |
-| Everywhere | arrow keys | choose in lists, sliders, tabs, tables and the “Content” row |
+| Everywhere | arrow keys | choose in lists, sliders, tabs, tables and the “Content” row (One by one, Non-stop, Speak) |
 | Everywhere | Esc | close secondary windows |
 | Daily practice | Enter, Esc | skip the card between blocks, end daily practice |
 | One by one, Non-stop | F5 | start/stop |

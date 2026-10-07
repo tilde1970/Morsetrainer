@@ -2,9 +2,8 @@
 
 ## Unveröffentlicht
 
-- **Am Stück:** Den Inhalt (Zufallszeichen, Wörter, Wendungen, Rufzeichen,
-  QSO-Klartext) wählen Optionsfelder statt einer Klappliste, wie im Reiter
-  Einzeln, oben im Reiter; alle Möglichkeiten auf einen Blick, Pfeiltasten
+- **Am Stück und Sprechen:** Den Inhalt wählen Optionsfelder statt einer
+  Klappliste, wie im Reiter Einzeln, oben im Reiter; alle Möglichkeiten auf einen Blick, Pfeiltasten
   wechseln, die Ansage nennt „Inhalt …“. Während des Durchgangs gesperrt.
 - **Sprachansage:** Bei 1 heißt es „eine Minute“, „eine Sekunde“, „nach
   einem Fehlversuch“ und „ein Zeichen“ statt „eins Minute“ usw. Hinweise,

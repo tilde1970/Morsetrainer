@@ -722,6 +722,14 @@ class KeyboardTest(AppTestCase):
         self.assertEqual(m.content_var.get(), "Wendungen")  # gesperrt
         row.state(["!disabled"])
 
+    def test_content_of_speak_as_option_buttons_at_the_top(self):
+        m = self.mode("Sprechen")
+        self.assertEqual(len(m.content_buttons.buttons), 5)
+        self.assertNotIn(m.content_buttons.master, m.group_len_box.master.master.winfo_children())
+        m.content_buttons.buttons[1].invoke()
+        self.assertEqual(m.content_var.get(), "Gruppen")
+        self.assertTrue(m.group_len_box.instate(["!disabled"]))
+
     def test_alt_zero_goes_to_statistics_and_missing_tabs_are_announced(self):
         from morsetrainer.widgets import announcer
         self.app.select_tab(-1)  # Alt+0

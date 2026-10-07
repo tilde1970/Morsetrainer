@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- **Non-stop:** the content (random characters, words, phrases, callsigns,
-  QSO plain text) is chosen with option buttons instead of a drop-down
-  list, as in the One by one tab, at the top of the tab; all choices at a
+- **Non-stop and Speak:** the content is chosen with option buttons
+  instead of a drop-down list, as in the One by one tab, at the top of the
+  tab; all choices at a
   glance, the arrow keys switch, the announcement says “Content …”. Locked
   during a run.
 - **Announcements:** for 1 it says “one minute”, “one second”, “one failed

@@ -32,7 +32,7 @@ from morsetrainer.core.morse import (
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import ItemSource
 from morsetrainer.widgets import announcer, theme
-from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ChoiceButtons, ScrollableFrame
 
 CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Wörter"): "words", N_("Wendungen"): "phrases",
             N_("Rufzeichen"): "calls"}
@@ -80,23 +80,27 @@ class ListenModeFrame:
 
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
-        """Baut den Reiter: Inhalt und Ansage-Optionen, Start und MP3-Knopf,
-        Lösung, Bedeutung und Fortschritt."""
+        """Baut den Reiter: oben die Wahl des Inhalts (wie in Einzeln und Am
+        Stück), Ansage-Optionen, Start und MP3-Knopf, Lösung, Bedeutung und
+        Fortschritt."""
+        content = ttk.Frame(parent, padding=(8, 6, 8, 0))
+        content.pack(fill="x")
+        ttk.Label(content, text=tr("Inhalt:")).pack(side="left", padx=(0, 8))
+        self.content_var = tk.StringVar(value="Zeichen")
+        self.content_buttons = ChoiceButtons(content, self.content_var, CONTENTS, tr("Inhalt"))
+        self.content_buttons.pack(side="left")
         theme.hint(
             parent, wrap=560,
             text=tr("Ohne Tastatur üben: Du hörst das Morsezeichen und sagst in der Pause laut, was du "
                     "erkannt hast. Dann sagt eine Stimme die Lösung an. Sprechen statt tippen trainiert "
                     "das Klangbild – und geht auch beim Spazierengehen. Als MP3 gespeichert läuft die "
                     "Übung auf Handy oder im Auto. F5 startet und stoppt, Leertaste wiederholt."),
-        ).pack(anchor="w", padx=10, pady=(8, 2))
+        ).pack(anchor="w", padx=8, pady=(4, 2))
 
         options = theme.card(parent, tr("Einstellungen"))
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
-        ttk.Label(row, text=tr("Inhalt:")).pack(side="left", padx=(0, 4))
-        self.content_var = tk.StringVar(value="Zeichen")
-        ChoiceBox(row, self.content_var, CONTENTS, width=12).pack(side="left")
-        ttk.Label(row, text=tr("Gruppen zu")).pack(side="left", padx=(12, 4))
+        ttk.Label(row, text=tr("Gruppen zu")).pack(side="left", padx=(0, 4))
         self.group_len_var = tk.IntVar(value=5)
         self.group_len_box = ttk.Spinbox(row, from_=GROUP_LEN_RANGE[0], to=GROUP_LEN_RANGE[1],
                                          textvariable=self.group_len_var, width=3)
@@ -265,6 +269,7 @@ class ListenModeFrame:
         self.running = True
         self.done, self.total = 0, opts["count"]
         self.start_button.config(text=tr("Stop"))
+        self.content_buttons.state(["disabled"])
         self.export_button.config(state="disabled")
         self.solution_var.set("")
         self.meaning_text.set("")
@@ -355,6 +360,7 @@ class ListenModeFrame:
         self.session_id += 1
         audio.stop()
         self.start_button.config(text=tr("Start"))
+        self.content_buttons.state(["!disabled"])
         self.export_button.config(state="normal")
         self.progress_var.set("")
         self.status_var.set(tr("Gestoppt."))
@@ -385,6 +391,7 @@ class ListenModeFrame:
         self.exporting = True
         self.cancel_export = False
         self.start_button.config(state="disabled")
+        self.content_buttons.state(["disabled"])
         self.export_button.config(text=tr("Abbrechen"), command=self._cancel_export)
         self.export_result = None
         self.export_done = 0
@@ -437,6 +444,7 @@ class ListenModeFrame:
             return
         self.exporting = False
         self.start_button.config(state="normal")
+        self.content_buttons.state(["!disabled"])
         self.export_button.config(text=tr("Als MP3 speichern…"), command=self.export)
         self.progress_var.set("")
         self.status_var.set(self.export_result)
