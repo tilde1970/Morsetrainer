@@ -91,13 +91,14 @@ def answer_limit(length: int) -> float:
 BAND_ORDER = (None, *band.PRESETS)
 
 
-def band_config(spec) -> dict:
+def band_config(spec, freq: float = 600) -> dict:
     """Bandbedingungen für die config-Zeile des gespeicherten Durchgangs: die erreichte
-    Stufe (für das Diplom QRN-fest; "custom", wenn schwächer als die
-    leichteste) und die Lautstärke; ohne Bandbedingungen band None."""
+    Stufe bei der Tonhöhe `freq` (für das Diplom QRN-fest; "custom", wenn
+    schwächer als die leichteste) und die Lautstärke; ohne Bandbedingungen
+    band None."""
     if spec is None:
         return {"band": None}
-    return {"band": band.preset_rank(spec) or "custom", "band_gain": round(spec["gain"] * 100)}
+    return {"band": band.preset_rank(spec, freq) or "custom", "band_gain": round(spec["gain"] * 100)}
 
 
 def clean_input(text: str) -> str:
@@ -426,7 +427,7 @@ class SequenceModeFrame(DailyModeMixin):
         # Störungen geht.
         self.band_tracked = spec is not None
         self.band_gain_min = round(spec["gain"] * 100) if spec else 0
-        self.band_rank_min = band.preset_rank(spec)
+        self.band_rank_min = band.preset_rank(spec, freq)
         self.band = None
         self._band_for_play(freq)
         self.start_button.config(text=tr("Stop"))
@@ -440,7 +441,7 @@ class SequenceModeFrame(DailyModeMixin):
             # Unter Bandbedingungen geht manches Zeichen im Rauschen oder
             # QSB-Loch unter; das sagt nichts darüber, ob man es kann.
             review_promote=self.review_promotes, char_stats=self.char_stats and spec is None,
-            config_extra=self._config_extra(spec),
+            config_extra=self._config_extra(spec, freq),
         )
         self._setup_pickers(self.weighted_var.get())
         # Latenz für richtig, aber unsicher (siehe on_submit): doppelt so lang
@@ -457,10 +458,10 @@ class SequenceModeFrame(DailyModeMixin):
         else:
             self.next_sequence()
 
-    def _config_extra(self, spec) -> dict:
+    def _config_extra(self, spec, freq: float) -> dict:
         """Bedingungen des Durchgangs für seine gespeicherte config-Zeile."""
         return {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
-                **band_config(spec), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
+                **band_config(spec, freq), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
                 **self._daily_config()}
 
     def _band_for_play(self, freq):
@@ -477,7 +478,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.band.prepare(freq)
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
-            rank = band.preset_rank(spec)
+            rank = band.preset_rank(spec, freq)
             self.band_rank_min = min(self.band_rank_min, rank, key=BAND_ORDER.index)
         return self.band
 

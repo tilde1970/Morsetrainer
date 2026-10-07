@@ -288,10 +288,11 @@ Filter: „mittel“ mit 500-Hz-Filter entspricht etwa „leicht“.
 lohnen sich, wenn der Zeichensatz ohne Störungen sicher sitzt (90 % und
 mehr); dann mit „leicht“ beginnen.
 
-**Probehören** (Knopf unten im Fenster, Strg+P): spielt 15 Sekunden ein
-CQ in deiner Tonhöhe und deinem Tempo unter den gerade eingestellten
-Bedingungen, mit deinem Rufzeichen aus den Einstellungen. Was du
-währenddessen verstellst, hörst du sofort; ein zweiter Druck hört auf.
+**Probehören** (Knopf unten im Fenster, Strg+P): spielt CQ-Rufe in deiner
+Tonhöhe und deinem Tempo unter den gerade eingestellten Bedingungen, mit
+deinem Rufzeichen aus den Einstellungen, ohne Zeitgrenze. Was du
+währenddessen verstellst, hörst du sofort; ein zweiter Druck (oder das
+Schließen des Fensters) hört auf.
 Zählt für nichts (Statistik, Übungszeit, Diplome). Während eines
 Durchgangs und in einer Netzwerk-Sitzung ist der Knopf gesperrt.
 
@@ -588,7 +589,7 @@ PowerShell `Get-FileHash Morsetrainer.exe` und den Wert mit der Zeile in
 
 ### macOS
 
-Für Macs mit Apple-Prozessor (M1 und neuer) gibt es
+Für Macs mit Apple-Prozessor (M1 und neuer) ab macOS 14 (Sonoma) gibt es
 `Morsetrainer-macOS.zip`. Herunterladen, entpacken (Doppelklick, falls der
 Browser das nicht schon getan hat) und `Morsetrainer.app` in den Ordner
 „Programme“ ziehen. Die App ist bisher nicht auf einem Mac getestet –
@@ -602,7 +603,7 @@ Apple-Entwicklerkonto), blockiert macOS den ersten Start:
   „Systemeinstellungen“ → „Datenschutz & Sicherheit“, ganz unten bei
   „Morsetrainer wurde blockiert“ auf „Dennoch öffnen“ klicken und mit dem
   Passwort bestätigen.
-- **macOS 14 und älter:** Im Finder mit Rechtsklick (oder Ctrl-Klick) auf
+- **macOS 14 (Sonoma):** Im Finder mit Rechtsklick (oder Ctrl-Klick) auf
   `Morsetrainer.app` → „Öffnen“, dann in der Meldung noch einmal „Öffnen“.
 
 Danach startet die App ganz normal. Meldet macOS, die App sei

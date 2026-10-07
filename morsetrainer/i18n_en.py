@@ -246,6 +246,8 @@ EN.update({
         "Speech output not available: Piper is not installed (pip install piper-tts).",
     "Sprachausgabe nicht verfügbar: Stimme {voice} fehlt (packaging/get_voice.sh lädt sie nach {folder}).":
         "Speech output not available: voice {voice} is missing (packaging/get_voice.sh downloads it to {folder}).",
+    "Sprachausgabe nicht verfügbar: Stimme {voice} fehlt im Programm. Bitte das Programm neu herunterladen.":
+        "Speech output not available: voice {voice} is missing from the program. Please download the program again.",
     "Sprachausgabe nicht verfügbar: {error}": "Speech output not available: {error}",
     "Rufz-Durchgang": "RufZ run",
     "QSO mittippen": "QSO typing along",
@@ -424,8 +426,8 @@ EN.update({
     "Weitere Störungen": "More interference",
     "Probehören": "Listen",
     "Probehören beenden": "Stop listening",
-    "CQ mit diesen Bedingungen, {seconds} s; Änderungen sind gleich zu hören.":
-        "CQ under these conditions, {seconds} s; changes can be heard at once.",
+    "CQ mit diesen Bedingungen, bis du stoppst; Änderungen sind gleich zu hören.":
+        "CQ under these conditions until you stop; changes can be heard at once.",
     "Zählt nicht für Statistik, Übungszeit und Diplome.": "Does not count for statistics, practice time or awards.",
     "Probehören erst nach dem Durchgang.": "Listening only after the run.",
     "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":

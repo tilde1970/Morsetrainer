@@ -281,10 +281,11 @@ is about “light”.
 conditions pay off once the character set is solid without them (90 % or
 more); then start with “light”.
 
-**Listen** (button at the bottom of the window, Ctrl+P): plays a CQ for
-15 seconds at your pitch and speed under the conditions currently set,
-with your callsign from the settings. Whatever you change meanwhile can
-be heard at once; a second press stops. It counts for nothing
+**Listen** (button at the bottom of the window, Ctrl+P): plays CQ calls
+at your pitch and speed under the conditions currently set, with your
+callsign from the settings, without a time limit. Whatever you change
+meanwhile can be heard at once; a second press (or closing the window)
+stops. It counts for nothing
 (statistics, practice time, awards). During a run and in a network
 session the button is disabled.
 
@@ -576,7 +577,7 @@ Morsetrainer.exe` in PowerShell and compare the value with the line in
 
 ### macOS
 
-For Macs with Apple silicon (M1 and newer) there is
+For Macs with Apple silicon (M1 and newer) from macOS 14 (Sonoma) there is
 `Morsetrainer-macOS.zip`. Download it, unpack it (double-click, unless the
 browser has already done so) and drag `Morsetrainer.app` into the
 Applications folder. The app has not been tested on a Mac yet – feedback is
@@ -589,7 +590,7 @@ account), macOS blocks the first start:
   the message with “Done”. Then go to “System Settings” → “Privacy &
   Security”, scroll down to “Morsetrainer was blocked”, click “Open
   Anyway” and confirm with your password.
-- **macOS 14 and older:** In the Finder, right-click (or Ctrl-click)
+- **macOS 14 (Sonoma):** In the Finder, right-click (or Ctrl-click)
   `Morsetrainer.app` → “Open”, then “Open” again in the message.
 
 After that the app starts normally. If macOS says the app is “damaged”,

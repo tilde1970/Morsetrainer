@@ -399,6 +399,8 @@ class MorseTrainerApp:
         self.band_settings = BandSettings(self.root)
         self.band_settings.attach_preview(
             lambda: (self.wpm_var.get(), self.freq_var.get(), self.station_call()), self._preview_blocked)
+        # S/N im Filter und Stufe hängen von der eigenen Tonhöhe ab.
+        self.freq_var.trace_add("write", lambda *_: self.band_settings.pitch_changed())
         band_row = ttk.Frame(self.more_frame)
         band_row.pack(fill="x", pady=2)
         ttk.Label(band_row, text=tr("Bandbedingungen")).pack(side="left")

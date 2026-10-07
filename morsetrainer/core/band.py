@@ -772,14 +772,15 @@ def spec_key(spec) -> tuple:
             spec.get("filter", DEFAULT_FILTER), spec.get("qrm_offset", DEFAULT_QRM_OFFSET))
 
 
-def preset_rank(spec):
+def preset_rank(spec, freq: float = 600):
     """Schwerste Stufe aus PRESETS, die die Spec mindestens erreicht (jede
     Störung der Stufe mindestens so stark), oder None. Die Lautstärke zählt
     hier nicht; das Diplom prüft sie getrennt. Ein schmales Filter nimmt
-    Rauschen weg; das Rauschen zählt dann um so viel schwächer."""
+    Rauschen weg; das Rauschen zählt dann um so viel schwächer, gemessen um
+    die eigene Tonhöhe `freq` (bei tiefem Ton nimmt das Filter mehr weg)."""
     levels = dict(spec["levels"]) if spec else {}
     if spec and "noise" in levels:
-        levels["noise"] -= filter_noise_db(spec.get("filter", DEFAULT_FILTER)) / abs(
+        levels["noise"] -= filter_noise_db(spec.get("filter", DEFAULT_FILTER), freq) / abs(
             SNR_DB_RANGE[0] - SNR_DB_RANGE[1])
     rank = None
     for preset, wanted in PRESETS.items():  # leicht -> stark

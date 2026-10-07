@@ -162,6 +162,10 @@ class Speaker:
         except ImportError:
             return tr("Sprachausgabe nicht verfügbar: Piper ist nicht installiert (pip install piper-tts).")
         if voice_path(self.lang) is None:
+            if getattr(sys, "frozen", False):
+                # Im Paket gehört die Stimme dazu; fehlt sie, ist es unvollständig.
+                return tr("Sprachausgabe nicht verfügbar: Stimme {voice} fehlt im Programm. "
+                          "Bitte das Programm neu herunterladen.").format(voice=VOICES[self.lang])
             return tr("Sprachausgabe nicht verfügbar: Stimme {voice} fehlt "
                       "(packaging/get_voice.sh lädt sie nach {folder}).").format(
                 voice=VOICES[self.lang], folder=DATA_DIR / "voices")

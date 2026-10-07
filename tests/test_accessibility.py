@@ -169,6 +169,16 @@ class AnnouncerTest(AppTestCase):
         self.assertGreaterEqual(done["first"] - second, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
         self.assertLessEqual(abs(done["first"] - done["second"]), 0.2)
 
+    def test_speech_cache_is_limited(self):
+        # Der Zwischenspeicher wächst nicht unbegrenzt (Statistik-Ansagen sind
+        # lang und jedes Mal anders); der älteste Eintrag fällt heraus.
+        announcer = self.app.announcer
+        announcer._cache.clear()
+        with mock.patch.object(self.announcer, "CACHE_SIZE", 3):
+            for text in ("eins", "zwei", "drei", "vier", "fünf"):
+                announcer._synth(text)
+        self.assertEqual(list(announcer._cache), ["drei", "vier", "fünf"])
+
     def test_long_announcement_starts_with_the_first_sentence(self):
         from morsetrainer.widgets import announcer
         self.assertEqual(announcer._chunks("Richtig."), ["Richtig."])

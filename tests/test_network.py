@@ -66,6 +66,17 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(evaluate("KMRSU", "KRSU").correct_chars, 4)
         self.assertEqual(evaluate("KMR", "KMRX").correct_chars, 2)
 
+    def test_dropped_item_takes_its_quieter_mark_along(self):
+        # Kontinuierlich beim Stop: nicht gesendete Gruppen fallen aus der
+        # Wertung, samt der Markierung „Störungen leiser“.
+        board = Scoreboard()
+        board.add_item(1, "KMR", ["Anna"])
+        board.add_item(2, "SUA", ["Anna"])
+        board.record("Anna", 2, "SUA", 1.0, quieter=True)
+        self.assertTrue(board.heard_quieter("Anna"))
+        board.drop_items([2])
+        self.assertFalse(board.heard_quieter("Anna"))
+
     def test_record_only_first_answer_of_present_participants(self):
         board = Scoreboard()
         board.add_item(1, "KMR", {"A"})

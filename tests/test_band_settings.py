@@ -228,6 +228,16 @@ class FilterAndQrmTest(unittest.TestCase):
         heavy = band.spec_from_preset("heavy") | {"filter": 500}
         self.assertEqual(band.preset_rank(heavy), "medium")  # −4 dB im Filter rund +2 dB
 
+    def test_filter_rank_depends_on_own_pitch(self):
+        # Bei tiefem Ton nimmt das schmale Filter mehr Rauschen weg (die Flanke
+        # des SSB-Filters liegt näher): „stark“ im 500-Hz-Filter ist bei 600 Hz
+        # noch „mittel“, bei 300 Hz nur noch „leicht“.
+        self.assertGreater(band.filter_noise_db(500, 300), band.filter_noise_db(500, 600) + 2)
+        heavy = band.spec_from_preset("heavy") | {"filter": 500}
+        self.assertEqual(band.preset_rank(heavy), "medium")
+        self.assertEqual(band.preset_rank(heavy, 600), "medium")
+        self.assertEqual(band.preset_rank(heavy, 300), "light")
+
     def test_qrm_lies_in_the_chosen_offset(self):
         import numpy as np
         # Feste Erwartungen, nicht band.QRM_OFFSETS: sonst wandert ein falscher
@@ -271,6 +281,19 @@ class FilterAndQrmTest(unittest.TestCase):
         np.testing.assert_array_equal(first[4], second[4])
         other = band.conditions(spec | {"seed": 8}, 600)
         self.assertFalse(len(other.cw_qrm) == len(first[0]) and np.array_equal(other.cw_qrm, first[0]))
+
+    def test_cw_qrm_steady_without_qsb(self):
+        # Ohne QSB kommt das CW-QRM unverändert durch (kein eigenes Fading);
+        # mit QSB schwankt es.
+        import numpy as np
+        silent = np.zeros(band.SAMPLE_RATE * 2, dtype=np.float32)
+        steady = band.conditions({"levels": {"cw_qrm": 1.0}, "gain": 1.0, "seed": 4}, 600)
+        steady.rewind()
+        out = self.blockwise(steady, silent)
+        np.testing.assert_allclose(out, band.soft_limit(steady.cw_qrm[:len(silent)]), atol=1e-6)
+        fading = band.conditions({"levels": {"cw_qrm": 1.0, "qsb": 1.0}, "gain": 1.0, "seed": 4}, 600)
+        fading.rewind()
+        self.assertFalse(np.allclose(self.blockwise(fading, silent), out, atol=1e-3))
 
     def test_strength_and_fading_are_separate(self):
         import numpy as np
@@ -488,11 +511,15 @@ class FakeStream:
     """Statt der Soundkarte: sammelt die Blöcke; `gate` hält das erste
     write() an, bis der Test es freigibt."""
 
-    def __init__(self, gate=None):
+    def __init__(self, gate=None, target=None):
+        """`target`: nach so vielen Blöcken `reached` setzen (danach gebremst,
+        damit der Thread bis zum Stop nicht endlos Speicher füllt)."""
         import threading
         self.blocks = []
         self.gate = gate
+        self.target = target
         self.writing = threading.Event()
+        self.reached = threading.Event()
 
     def __enter__(self):
         return self
@@ -501,10 +528,14 @@ class FakeStream:
         return False
 
     def write(self, block):
+        import time
         self.writing.set()
         if self.gate is not None:
             self.gate.wait(5)
         self.blocks.append(block)
+        if self.target is not None and len(self.blocks) >= self.target:
+            self.reached.set()
+            time.sleep(0.01)
 
 
 class PreviewTest(AppTestCase):
@@ -518,18 +549,16 @@ class PreviewTest(AppTestCase):
         self.band_preview = band_preview
         self.settings = self.app.band_settings
         self.settings.set_spec({"levels": {"noise": 0.5}, "gain": 1.0})
-        self.patches = [mock.patch.object(band_preview, "PREVIEW_SECONDS", 1)]
-        for patch in self.patches:
-            patch.start()
         self.settings.open_window()
 
     def tearDown(self):
         self.settings.close_window()
         if self.settings.preview.thread is not None:
             self.settings.preview.thread.join(5)
-        for patch in self.patches:
-            patch.stop()
         super().tearDown()
+
+    def blocks_for(self, seconds: float) -> int:
+        return round(seconds / self.band_preview.BLOCK_SECONDS)
 
     def wait_done(self):
         import time
@@ -550,20 +579,35 @@ class PreviewTest(AppTestCase):
         self.app.station_call_var.set("dl4ym")
         self.assertEqual(self.band_preview.cq_text(self.app.station_call()), "CQ CQ DE DL4YM DL4YM K")
         self.assertEqual(self.band_preview.cq_text(""), "CQ CQ DE DL1ABC DL1ABC K")
-        stream = FakeStream()
+        stream = FakeStream(target=self.blocks_for(1))
         sessions = len(db.sessions())
         with mock.patch.object(self.band_preview.audio, "output_stream", lambda: stream):
             self.settings.toggle_preview()
             self.assertEqual(self.settings.preview_button.cget("text"), "Probehören beenden")
+            self.assertTrue(stream.reached.wait(10))
+            self.settings.toggle_preview()  # zweiter Druck stoppt
             self.wait_done()
-        out = np.concatenate(stream.blocks)
-        self.assertEqual(len(out), self.band_preview.SAMPLE_RATE)  # PREVIEW_SECONDS, hier 1 s
+        out = np.concatenate(stream.blocks[:self.blocks_for(1)])  # die erste Sekunde
+        self.assertEqual(len(out), self.band_preview.SAMPLE_RATE)
         spectrum = np.abs(np.fft.rfft(out))
         peak = np.fft.rfftfreq(len(out), 1 / self.band_preview.SAMPLE_RATE)[np.argmax(spectrum)]
         self.assertAlmostEqual(peak, 700, delta=15)  # eigene Tonhöhe
         self.assertGreater(float(np.std(out[-2400:])), 0.001)  # Rauschen auch in der Pause
         self.assertEqual(self.settings.preview_button.cget("text"), "Probehören")
         self.assertEqual(len(db.sessions()), sessions)  # kein Durchgang in der Statistik
+
+    def test_runs_without_time_limit(self):
+        # Keine Zeitgrenze: auch nach mehr als den früheren 15 Sekunden läuft
+        # es weiter, bis es beendet wird.
+        stream = FakeStream(target=self.blocks_for(20))
+        with mock.patch.object(self.band_preview.audio, "output_stream", lambda: stream):
+            self.settings.toggle_preview()
+            self.assertTrue(stream.reached.wait(30))
+            self.assertTrue(self.settings.preview.running)
+            self.settings.close_window()  # Fenster zu beendet es auch
+            self.wait_done()
+        self.assertFalse(self.settings.preview.running)
+        self.settings.open_window()  # für tearDown
 
     def test_changes_are_heard_at_once(self):
         import threading

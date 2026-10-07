@@ -42,6 +42,19 @@ class SpeechTextTest(unittest.TestCase):
         if reason is not None:  # ohne Piper steht dort das
             self.assertIn("nicht verfügbar", reason)
 
+    def test_missing_voice_in_package_asks_for_download(self):
+        # Im Paket hilft der Hinweis auf get_voice.sh niemandem.
+        import sys
+        with mock.patch.object(speech, "voice_path", lambda lang="de": None), \
+                mock.patch.dict(sys.modules, {"piper": object()}), \
+                mock.patch.object(sys, "frozen", True, create=True):
+            reason = speech.Speaker().available()
+        self.assertIn("neu herunterladen", reason)
+        self.assertNotIn("get_voice", reason)
+        with mock.patch.object(speech, "voice_path", lambda lang="de": None), \
+                mock.patch.dict(sys.modules, {"piper": object()}):
+            self.assertIn("get_voice.sh", speech.Speaker().available())
+
 
 class PhraseTest(unittest.TestCase):
     def test_phrases_use_morse_chars_and_charset(self):

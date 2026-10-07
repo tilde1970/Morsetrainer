@@ -1,7 +1,8 @@
 """Probehören im Fenster Bandbedingungen: ein CQ in eigener Tonhöhe und
 eigenem Tempo unter den gerade eingestellten Bedingungen, ohne in einen
-Reiter zu wechseln. Änderungen im Fenster wirken sofort. Zählt für nichts
-(keine Statistik, keine Übungszeit, kein Diplom)."""
+Reiter zu wechseln. Läuft ohne Zeitgrenze, bis es beendet wird (Knopf,
+Strg+P, Fenster zu, ein Durchgang beginnt). Änderungen im Fenster wirken
+sofort. Zählt für nichts (keine Statistik, keine Übungszeit, kein Diplom)."""
 import threading
 
 import numpy as np
@@ -9,7 +10,6 @@ import numpy as np
 from morsetrainer.core import audio, band
 from morsetrainer.core.morse import SAMPLE_RATE, build_text, silence
 
-PREVIEW_SECONDS = 15
 BLOCK_SECONDS = 0.05
 PAUSE_SECONDS = 1.5  # zwischen zwei CQ-Rufen
 FALLBACK_CALL = "DL1ABC"
@@ -72,16 +72,13 @@ class BandPreview:
             self.running = False
 
     def _play(self, conditions, wpm: int, text: str) -> None:
-        """Schreibt PREVIEW_SECONDS lang CQ-Rufe mit Pausen unter den
-        Bandbedingungen in den Ausgabestrom, blockweise, damit Änderungen und
-        Stop sofort wirken."""
+        """Schreibt CQ-Rufe mit Pausen unter den Bandbedingungen in den
+        Ausgabestrom, bis stop() kommt; blockweise, damit Änderungen und Stop
+        sofort wirken."""
         n = int(SAMPLE_RATE * BLOCK_SECONDS)
-        total = PREVIEW_SECONDS * SAMPLE_RATE
         signal, pos = np.zeros(0, dtype=np.float32), 0
         with audio.output_stream() as stream:
-            for _ in range(0, total, n):
-                if not self.running:
-                    break
+            while self.running:
                 if pos >= len(signal):
                     # Je Ruf neu gebaut: ein geänderter Chirp ist beim nächsten zu hören.
                     signal = np.concatenate([build_text(text, wpm, self.freq, chirp=conditions.chirp_for(0)),

@@ -1,5 +1,19 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Bandbedingungen bei tiefer Tonhöhe:** Wie viel Rauschen ein schmales
+  Filter wegnimmt, hängt von der eigenen Tonhöhe ab (bei 300 Hz rund 3 dB
+  mehr als bei 600 Hz). Stufe, Diplom QRN-fest und „S/N im Filter“ rechnen
+  jetzt mit der eigenen Tonhöhe statt fest mit 600 Hz.
+- **Mac:** Die Anleitung nennt die Mindestversion macOS 14 (Sonoma).
+- Fehlt im fertigen Programm eine Stimme, rät die Meldung jetzt zum
+  erneuten Herunterladen statt auf ein Skript zu verweisen.
+- **Probehören ohne Zeitgrenze:** läuft, bis du es beendest (Knopf, Strg+P
+  oder Fenster schließen).
+- Intern: Mindestversionen der Abhängigkeiten, Stimmen-Download auf festem
+  Stand, drei weitere Tests.
+
 ## 2.39
 
 - **Probehören im Fenster Bandbedingungen** (Strg+P): 15 Sekunden CQ in

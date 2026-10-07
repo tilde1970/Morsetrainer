@@ -10,7 +10,7 @@ from tkinter import ttk
 from morsetrainer.core import band
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import announcer, theme
-from morsetrainer.widgets.band_preview import PREVIEW_SECONDS, BandPreview
+from morsetrainer.widgets.band_preview import BandPreview
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
@@ -186,10 +186,22 @@ class BandSettings:
         if "filter" in spec:
             text += " · " + tr("Filter {width}").format(width=tr(FILTER_NAMES[spec["filter"]]))
         text += " · " + tr("Lautstärke {gain} %").format(gain=round(spec["gain"] * 100))
-        rank = band.preset_rank(spec)
+        rank = band.preset_rank(spec, self.pitch())
         if rank:
             text += " · " + tr("Stufe {name}").format(name=tr(PRESET_NAMES[rank]))
         return text
+
+    def pitch(self) -> float:
+        """Eigene Tonhöhe für S/N im Filter und Stufe (aus der Kopfleiste über
+        attach_preview, sonst 600 Hz)."""
+        try:
+            return float(self.preview.params()[1]) if self.preview is not None else 600.0
+        except (tk.TclError, TypeError, ValueError):
+            return 600.0
+
+    def pitch_changed(self) -> None:
+        """Tonhöhe in der Kopfleiste geändert: Kurzfassung und Fenster neu."""
+        self._changed()
 
     def attach_preview(self, params, blocked) -> None:
         """Probehören einrichten: `params()` liefert (WpM, Tonhöhe,
@@ -232,8 +244,7 @@ class BandSettings:
         self.preview_button.config(text=tr("Probehören beenden") if running else tr("Probehören"))
         self.preview_button.state(["disabled"] if blocked and not running else ["!disabled"])
         if running:
-            text = tr("CQ mit diesen Bedingungen, {seconds} s; Änderungen sind gleich zu hören.").format(
-                seconds=PREVIEW_SECONDS)
+            text = tr("CQ mit diesen Bedingungen, bis du stoppst; Änderungen sind gleich zu hören.")
         elif blocked:
             text = blocked
         elif self.preview is not None and self.preview.error:
@@ -443,11 +454,12 @@ class BandSettings:
             button.state(["!disabled"] if self.controls["cw_qrm"][0].get() else ["disabled"])
         spec = self.spec()
         if "filter" in spec and "noise" in spec["levels"]:
-            snr = band.noise_snr_db(spec["levels"]["noise"], spec["gain"]) + band.filter_noise_db(spec["filter"])
+            snr = (band.noise_snr_db(spec["levels"]["noise"], spec["gain"])
+                   + band.filter_noise_db(spec["filter"], self.pitch()))
             self.filter_shown.config(text=tr("im Filter S/N {db}").format(db=signed_db(snr)))
         else:
             self.filter_shown.config(text="")
-        rank = band.preset_rank(spec)
+        rank = band.preset_rank(spec, self.pitch())
         if rank:
             text = tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank]))
         else:

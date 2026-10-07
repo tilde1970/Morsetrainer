@@ -1,4 +1,5 @@
-numpy
-sounddevice
-piper-tts
-lameenc
+numpy>=1.24
+sounddevice>=0.4
+# synthesize() liefert Stücke mit audio_float_array erst ab 1.3
+piper-tts>=1.3,<2
+lameenc>=1.4

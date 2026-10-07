@@ -277,7 +277,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.band.prepare(self.freq)
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
-            self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec), key=BAND_ORDER.index)
+            self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec, self.freq), key=BAND_ORDER.index)
 
     def toggle_running(self):
         """Durchgang starten bzw. beenden (Knopf, F5)."""
@@ -318,7 +318,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.band = band.conditions(spec, self.freq) if spec else None
         self.band_tracked = spec is not None
         self.band_gain_min = round(spec["gain"] * 100) if spec else 0
-        self.band_rank_min = band.preset_rank(spec)
+        self.band_rank_min = band.preset_rank(spec, self.freq)
         self.sent_log = []
         self.typed_log = []
         try:
@@ -341,7 +341,8 @@ class ContinuousModeFrame(DailyModeMixin):
                                           # Zeichenstatistik (wie in sequence_mode).
                                           char_stats=self.content not in PLAIN_TEXT and spec is None,
                                           group_len=self.group_len or None,
-                                          config_extra={"lesson": koch.lesson_of(charset), **band_config(spec),
+                                          config_extra={"lesson": koch.lesson_of(charset),
+                                                        **band_config(spec, self.freq),
                                                         "content": self.content,
                                                         "user_words": self.source.has_user_words(),
                                                         **self._daily_config()})

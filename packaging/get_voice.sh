@@ -8,7 +8,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-BASE=https://huggingface.co/rhasspy/piper-voices/resolve/main
+# Fester Stand des Repos statt „main“: Ändert sich dort eine Datei, lädt
+# der Build weiter dieselbe (die Prüfsummen unten passen zu diesem Stand).
+REVISION=c10ece1aade47bb51c153c893d14e5bf8e5b7117
+BASE=https://huggingface.co/rhasspy/piper-voices/resolve/$REVISION
 # Datei, Ordner auf Hugging Face, SHA256
 FILES="
 de_DE-thorsten-medium.onnx de/de_DE/thorsten/medium 7e64762d8e5118bb578f2eea6207e1a35a8e0c30595010b666f983fc87bb7819

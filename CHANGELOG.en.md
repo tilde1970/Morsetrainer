@@ -1,5 +1,19 @@
 # Changes
 
+## Unreleased
+
+- **Band conditions at a low pitch:** how much noise a narrow filter
+  removes depends on your pitch (at 300 Hz about 3 dB more than at
+  600 Hz). The level, the QRN-proof award and “S/N in filter” now use your
+  pitch instead of a fixed 600 Hz.
+- **Mac:** the manual states the minimum version macOS 14 (Sonoma).
+- If a voice is missing from the packaged program, the message now
+  suggests downloading the program again instead of pointing to a script.
+- **Listening without a time limit:** it runs until you stop it (button,
+  Ctrl+P or closing the window).
+- Internal: minimum versions of the dependencies, voice download pinned to
+  a fixed revision, three more tests.
+
 ## 2.39
 
 - **Listen in the band conditions window** (Ctrl+P): a 15-second CQ at
