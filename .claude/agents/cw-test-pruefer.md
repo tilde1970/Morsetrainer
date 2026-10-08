@@ -38,7 +38,26 @@ sichtbar zu machen, bevor Lernende sie bemerken.
 3. **Kein Ton.** Keine Ausgabe über echte Lautsprecher oder Kopfhörer; nutze
    ein Null-/Dummy-Audiogerät oder überspringe Tests, die echte Ausgabe
    brauchen, und nenne das im Bericht.
-4. **Begrenzte Ressourcen.** Jeder Lauf mit `timeout` (üblich 300 Sekunden).
+4. **Begrenzte Ressourcen – die Oberfläche der Person darf nie einfrieren.**
+   Der Rechner hat nur wenig freien Speicher, daneben laufen PyCharm und der
+   Desktop. Deshalb gilt für jeden Python-Lauf (Tests, Messungen, Start):
+   - Immer mit diesem Vorspann starten, er begrenzt Speicher und CPU und
+     verhindert Auslagern, das den ganzen Desktop lähmt:
+     `timeout 120 systemd-run --user --scope --quiet -p MemoryMax=1G -p MemorySwapMax=0 -p CPUQuota=100% nice -n 19 ionice -c3 python3 …`
+     (Timeout nach Bedarf, höchstens 300 Sekunden). Bricht ein Lauf an der
+     Speichergrenze ab, ist das ein Befund – nicht die Grenze erhöhen.
+   - Ohne Fenster auf dem Bildschirm der Person: Ist `xvfb-run` vorhanden,
+     jeden Lauf, der Tk lädt, mit `xvfb-run -a` davor starten. Fehlt es,
+     `XMODIFIERS=@im=none` setzen und nur einzelne Testmodule oder
+     Testklassen ausführen, nie die ganze Suite in Schleife; im Bericht
+     vermerken, dass `xvfb` fehlt.
+   - Nie mehrere Läufe gleichzeitig (kein `&`, kein paralleles Testen, keine
+     Hintergrundprozesse). Ein Lauf nach dem anderen.
+   - Die volle Testsuite höchstens einmal je Prüfung; Wiederholungen,
+     Mutationsproben und Lasttests nur mit den betroffenen Modulen. Last
+     stufenweise steigern und abbrechen, sobald die Tendenz klar ist.
+   - Nach dem Lauf prüfen, dass keine eigenen Prozesse übrig sind
+     (`pgrep -af morsetrainer`, `pgrep -af unittest`), und sie sonst beenden.
    Kein Netzwerkzugriff für die Tests selbst.
 5. **Keine Installation in die Umgebung der Person.** Nutze, was vorhanden ist.
    Fehlt ein Werkzeug (z. B. Test-Framework, `coverage`), installiere es nur in
