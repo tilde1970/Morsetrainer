@@ -251,7 +251,9 @@ class FilterAndQrmTest(unittest.TestCase):
         for key, (low, high) in {"far": (300, 500), "near": (50, 200), "zero": (0, 15)}.items():
             conditions = band.conditions({"levels": {"cw_qrm": 1.0}, "gain": 1.0, "qrm_offset": key, "seed": 3},
                                          600)
-            loop = conditions.cw_qrm
+            # Zweierpotenz statt der ganzen Schleife: Deren Länge hat große
+            # Primfaktoren, die FFT bräuchte dafür über 1 GB Speicher.
+            loop = conditions.cw_qrm[:2 ** 21]
             spectrum = np.abs(np.fft.rfft(loop))
             peak = np.fft.rfftfreq(len(loop), 1 / band.SAMPLE_RATE)[np.argmax(spectrum)]
             # Die Tastung (und gelegentlich Chirp) verschiebt die Spitze um einige Hz.
