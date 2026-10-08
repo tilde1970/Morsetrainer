@@ -1,5 +1,25 @@
 # Changes
 
+## 2.42
+
+- **Update:** a window of its own shows what is new in the new version;
+  the announcement reads out the headings (F11 repeats). After “Update
+  now” the progress is shown in the window, after an error the reason and
+  the download link. After “Later” the button “Update …” in the footer
+  brings the window back at any time; by itself the Morsetrainer asks
+  again for this version after seven days.
+- **Speak in English:** with the English interface the tab uses the
+  English voice, spells with the English alphabet (Charlie, Mike, X-ray)
+  and says the English meaning.
+- **Prosigns** are announced by name instead of spelled: “=” separator,
+  “+” end of message, <SK> end of contact, <KN> over to you only, <BK>
+  break (German Trennung, Spruchende, Ende der Verbindung, bitte kommen,
+  Unterbrechung). Also in notes such as “New character: <SK> · key *”
+  (“… key asterisk”).
+- **Progress** (Statistics tab) gives the period (“19 sessions on
+  2026-09-30” or “from … to … on 6 days”) instead of “since”; sessions
+  with fewer than 5 characters (short tries) no longer count there.
+
 ## 2.41
 
 - **Non-stop and Speak:** the content is chosen with option buttons

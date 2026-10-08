@@ -1,5 +1,26 @@
 # Änderungen
 
+## 2.42
+
+- **Update:** Ein eigenes Fenster zeigt, was in der neuen Version neu ist;
+  die Ansage liest die Überschriften vor (F11 wiederholt). Nach „Jetzt
+  aktualisieren“ steht der Fortschritt im Fenster, bei einem Fehler der
+  Grund und der Link zum Herunterladen. Nach „Später“ holt der Knopf
+  „Aktualisieren …“ in der Fußzeile das Fenster jederzeit wieder; von
+  selbst fragt der Morsetrainer bei dieser Version nach sieben Tagen
+  wieder.
+- **Sprechen auf Englisch:** Bei englischer Oberfläche spricht der Reiter
+  mit der englischen Stimme, buchstabiert im englischen Alphabet (Charlie,
+  Mike, X-ray) und sagt die englische Bedeutung.
+- **Betriebszeichen** werden mit ihrem Namen angesagt statt buchstabiert:
+  „=“ Trennung, „+“ Spruchende, <SK> Ende der Verbindung, <KN> bitte
+  kommen, <BK> Unterbrechung (englisch separator, end of message, end of
+  contact, over to you only, break). Auch in Hinweisen wie „Neues Zeichen:
+  <SK> · Taste *“ („… Taste Stern“).
+- **Fortschritt** (Reiter Statistik) nennt den Zeitraum („19 Durchgänge am
+  30.09.2026“ bzw. „vom … bis … an 6 Tagen“) statt „seit“; Durchgänge mit
+  weniger als 5 Zeichen (kurze Proben) zählen dort nicht mehr mit.
+
 ## 2.41
 
 - **Am Stück und Sprechen:** Den Inhalt wählen Optionsfelder statt einer
