@@ -1137,6 +1137,13 @@ class DecimalTest(AppTestCase):
         row = panel.char_tree.item(panel.char_tree.get_children()[0])["values"]
         self.assertEqual([str(v) for v in row[3:5]], ["2,27", "5,9"])
 
+    def test_progress_text_on_a_single_day(self):
+        from datetime import datetime
+        from morsetrainer.widgets.progress_widget import span_text
+        day = [{"time": datetime(2026, 9, 30, h)} for h in (12, 18, 19)]
+        self.assertEqual(span_text(day), "3 Durchgänge am 30.09.2026")
+        self.assertEqual(span_text(day[:1]), "1 Durchgang am 30.09.2026")
+
     def test_progress_text_uses_the_decimal_comma(self):
         from datetime import datetime
         panel = self.app.progress_panel
@@ -1147,6 +1154,7 @@ class DecimalTest(AppTestCase):
         with mock.patch.object(stats, "load_history", return_value=history):
             panel.refresh()
         self.assertIn("Trefferquote 97,6 % → 94,7 %", panel.info_var.get())
+        self.assertTrue(panel.info_var.get().startswith("2 Durchgänge vom 25.09.2026 bis 03.10.2026 an 2 Tagen"))
         row = panel.table.item(panel.table.get_children()[0])["values"]
         self.assertEqual(str(row[1]), "94,7 %")
 

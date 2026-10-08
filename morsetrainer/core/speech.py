@@ -14,7 +14,8 @@ noch die erste Ansage stockt.
 
 Gesprochen wird buchstabiert: Buchstabennamen (A, Be, Ce … bzw. ay, bee,
 see …) oder das internationale Buchstabieralphabet (Alfa, Bravo …), wie
-es im Funkbetrieb üblich ist. Wortgrenzen werden zu einer kurzen Pause."""
+es im Funkbetrieb üblich ist; Betriebszeichen mit ihrem Namen („Spruchende“).
+Wortgrenzen werden zu einer kurzen Pause."""
 import sys
 import threading
 from pathlib import Path
@@ -22,7 +23,7 @@ from pathlib import Path
 import numpy as np
 
 from morsetrainer import DATA_DIR
-from morsetrainer.core.morse import AMPLITUDE, PROSIGNS, SAMPLE_RATE
+from morsetrainer.core.morse import AMPLITUDE, SAMPLE_RATE
 from morsetrainer.i18n import tr
 
 VOICE_NAME = "de_DE-thorsten-medium"
@@ -50,8 +51,6 @@ DIGITS = {"0": "Null", "1": "Eins", "2": "Zwo", "3": "Drei", "4": "Vier", "5": "
           "7": "Sieben", "8": "Acht", "9": "Neun"}
 # „Strich“ hieße im Morsetrainer ein Dah, daher „Schrägstrich“.
 SIGNS = {".": "Punkt", ",": "Komma", "?": "Fragezeichen", "/": "Schrägstrich"}
-# Betriebszeichen, im gewählten Alphabet buchstabiert (<KN> = Ka Enn bzw. Kilo November).
-PROSIGN_NAMES = {"=": "BT", "+": "AR", **PROSIGNS}
 
 ALPHABETS = {"de": GERMAN, "nato": NATO}
 
@@ -73,6 +72,13 @@ NATO_EN = {
 DIGITS_EN = {"0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five", "6": "six",
              "7": "seven", "8": "eight", "9": "nine"}
 SIGNS_EN = {".": "period", ",": "comma", "?": "question mark", "/": "slash"}
+# Betriebszeichen mit ihrem Namen statt buchstabiert (BT, AR, SK, KN, BK).
+# Englisch „break“ nur für BK, BT heißt daher „separator“; Namen nach
+# ITU-R M.1172, IARU-Leitfaden und BNetzA-Prüfungsfrage BB108.
+SIGNS = {**SIGNS, "=": "Trennung", "+": "Spruchende", "*": "Ende der Verbindung", "(": "bitte kommen",
+         "#": "Unterbrechung"}
+SIGNS_EN = {**SIGNS_EN, "=": "separator", "+": "end of message", "*": "end of contact", "(": "over to you only",
+            "#": "break"}
 # Je Sprache: (Alphabete, Ziffern, Satzzeichen).
 TABLES = {
     "de": ({"de": GERMAN, "nato": NATO}, DIGITS, SIGNS),
@@ -86,8 +92,6 @@ def _tables(alphabet: str, lang: str):
 
 
 def _name(ch: str, letters: dict, digits: dict = DIGITS, signs: dict = SIGNS) -> str:
-    if ch in PROSIGN_NAMES:
-        return " ".join(letters[c] for c in PROSIGN_NAMES[ch])
     return letters.get(ch) or digits.get(ch) or signs.get(ch) or ""
 
 

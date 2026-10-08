@@ -12,6 +12,7 @@ from unittest import mock
 import numpy as np
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
+from morsetrainer import i18n
 from morsetrainer.core import koch, mp3, review, speech, stats, words
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE
 from morsetrainer.modes.content import ItemSource
@@ -25,10 +26,15 @@ def fake_synth(text):
 class SpeechTextTest(unittest.TestCase):
     def test_spelling(self):
         self.assertEqual(speech.spoken("DL4YM/P"), "De, Ell, Vier, Üpsilon, Emm, Schrägstrich, Pe")
-        self.assertEqual(speech.spoken("(", "nato"), "Kilo November")
+        self.assertEqual(speech.spoken("(", "nato"), "bitte kommen")  # <KN>
         self.assertEqual(speech.spoken_words("TNX FER 599"), "tnx. fer. Fünf, Neun, Neun")
         self.assertEqual(speech.spoken("TU 73", "nato"), "Tango, Juni-form. Sieben, Drei")
-        self.assertEqual(speech.spoken("*"), "Ess Ka")  # <SK>
+        self.assertEqual(speech.spoken("*"), "Ende der Verbindung")  # <SK>
+        self.assertEqual(speech.spoken("+#", "nato"), "Spruchende, Unterbrechung")  # AR, <BK>
+        self.assertEqual(speech.spoken("TU =", "nato"), "Tango, Juni-form. Trennung")
+        self.assertEqual(speech.spoken("TU =", "nato", lang="en"), "Tango, Uniform. separator")
+        self.assertEqual(speech.spoken("+*(#", lang="en"),
+                         "end of message, end of contact, over to you only, break")
         for ch in MORSE_CODE:
             self.assertTrue(speech.spoken(ch), ch)  # jedes Zeichen hat eine Ansage
 
@@ -297,6 +303,13 @@ class ListenModeTest(AppTestCase):
         self.assertEqual(m.announcement("NAME", "", opts), "name")
         opts["kind"] = "calls"  # Rufzeichen immer buchstabiert
         self.assertEqual(m.announcement("DL1A", "", opts), "De, Ell, Eins, A")
+
+    def test_announcement_in_english(self):
+        m = self.listen
+        opts = {"alphabet": "nato", "meaning": True, "whole": False, "kind": "words", "lang": "en"}
+        with mock.patch.object(i18n, "LANG", "en"):
+            self.assertEqual(m.announcement("TNX", words.WORDS["TNX"], opts), "Tango, November, X-ray. thanks")
+            self.assertIs(m.speaker, speech.speaker_for("en"))
 
     def test_export_writes_mp3(self):
         if mp3.available():

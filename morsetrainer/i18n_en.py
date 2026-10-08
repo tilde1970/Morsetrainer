@@ -180,6 +180,11 @@ EN.update({
     "Enter: jetzt aktualisieren. Escape: später.": "Enter: update now. Escape: later.",
     "Lade Version {version}.": "Downloading version {version}.",
     "Aktualisieren …": "Update …",
+    "Stern": "asterisk",
+    "Klammer auf": "left parenthesis",
+    "Raute": "hash",
+    "Plus": "plus",
+    "Gleichheitszeichen": "equals sign",
     "Erst den Durchgang beenden, dann aktualisieren.": "Finish the run first, then update.",
     "„{needle}“ nicht gefunden, dafür „{shown}“: ": "“{needle}” not found, showing “{shown}”: ",
     "im Reiter {title}: {n} Treffer": "in the {title} tab: {n} matches",
@@ -459,8 +464,11 @@ EN.update({
     "%d.%m. %H:%M": "%b %d %H:%M",
     "%d.%m.%Y": "%Y-%m-%d",
     "%d.%m.%Y %H:%M": "%Y-%m-%d %H:%M",
-    "{n} Durchgänge seit {date} · Trefferquote {first} % → {last} %, Tempo {wpm_first} → {wpm_last} WPM":
-        "{n} sessions since {date} · accuracy {first} % → {last} %, speed {wpm_first} → {wpm_last} WPM",
+    "1 Durchgang am {date}": "1 session on {date}",
+    "{n} Durchgänge am {date}": "{n} sessions on {date}",
+    "{n} Durchgänge vom {first} bis {last} an {days} Tagen": "{n} sessions from {first} to {last} on {days} days",
+    " · Trefferquote {first} % → {last} %, Tempo {wpm_first} → {wpm_last} WPM":
+        " · accuracy {first} % → {last} %, speed {wpm_first} → {wpm_last} WPM",
     " · Punkte zuletzt {last}, bester {best}": " · score last {last}, best {best}",
     "Statistik (aktueller Durchgang)": "Statistics (current session)",
     "Ø effektive Geschwindigkeit: –": "Ø effective speed: –",
@@ -591,10 +599,10 @@ EN.update({
     "Normal": "Normal",
     "Lang": "Long",
     "Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine eigene Tonhöhe. "
-    "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs); <SK>, <KN> und <BK> werden "
+    "„=“ ist BT (Trennung), „+“ ist AR (Spruchende); <SK>, <KN> und <BK> werden "
     "zusammengezogen gesendet und beim Mittippen nicht gezählt. Der Zeichensatz oben gilt hier nicht.":
         "Listen to a complete CW QSO or a contest run. Each station has its own pitch. "
-        "“=” is BT (separator), “+” is AR (end of transmission); <SK>, <KN> and <BK> are sent "
+        "“=” is BT (separator), “+” is AR (end of message); <SK>, <KN> and <BK> are sent "
         "run together and not counted when typing along. The character set above does not apply here.",
     "Neues QSO (F5)": "New QSO (F5)",
     "Nochmal (F6)": "Again (F6)",

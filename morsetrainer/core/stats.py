@@ -451,14 +451,22 @@ def _session_effective_wpm(config: dict, summary: dict) -> int:
     return tempo.effective(wpm, int(fw) if fw else None)
 
 
-def load_history():
+# Kürzere Durchgänge (Proben, gleich abgebrochen) sagen über den Fortschritt
+# nichts und fehlen im Reiter Statistik unter Fortschritt; für Diplome und
+# Zeichenstatistik zählen sie weiter.
+MIN_HISTORY_TOTAL = 5
+
+
+def load_history(min_total: int = 1):
     """Alle abgeschlossenen Durchgänge, chronologisch: [{"time": datetime,
     "mode", "accuracy_pct", "wpm", "total"}]. Quelle sind die Durchgänge
-    (config + summary) und die Ergebnisse (log_result)."""
+    (config + summary, ab `min_total` Zeichen) und die Ergebnisse
+    (log_result)."""
     history = []
     for session in db.sessions():
         config, summary = session.config, session.summary
-        if (not config or not summary or not summary.get("total") or config.get("self_assessed")
+        if (not config or not summary or not summary.get("total")
+                or summary["total"] < min_total or config.get("self_assessed")
                 or config.get("in_history") is False):
             continue
         try:

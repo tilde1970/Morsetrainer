@@ -269,7 +269,8 @@ many characters. Runs with band conditions do not count here (section 6).
 - **Most frequent confusions** of the last 30 days, with a button to
   practise them against each other.
 - **Daily goal**, **awards** and **lifeline** (section 5) and the
-  **progress history** per exercise.
+  **progress history** per exercise (sessions with fewer than 5
+  characters, such as short tries, are left out there).
 
 ## 4. Daily practice
 

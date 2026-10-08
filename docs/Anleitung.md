@@ -269,7 +269,8 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
 - **Häufigste Verwechslungen** der letzten 30 Tage, mit Knopf, um sie
   gezielt gegeneinander zu üben.
 - **Tagesziel**, **Diplome** und **Lebenslinie** (Abschnitt 5) und der
-  **Fortschrittsverlauf** je Übung.
+  **Fortschrittsverlauf** je Übung (Durchgänge mit weniger als 5 Zeichen,
+  etwa kurze Proben, zählen dort nicht mit).
 
 ## 4. Tagesübung
 

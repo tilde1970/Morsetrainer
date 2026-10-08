@@ -6,6 +6,7 @@ from tkinter import ttk
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
+from morsetrainer import i18n
 from morsetrainer.widgets import theme
 from tests.test_modes import AppTestCase
 
@@ -887,6 +888,15 @@ class AnnouncerModesTest(AnnouncerTest):
 
 class VoiceLanguageTest(AppTestCase):
     """Ansage in der Sprache der Oberfläche; ohne Stimme ein Fehlerton."""
+
+    def test_shown_prosigns_are_spoken_by_name(self):
+        from morsetrainer.widgets import announcer
+        self.assertEqual(announcer.speakable("Neues Zeichen: <SK> · Taste *"),
+                         "Neues Zeichen: Ende der Verbindung, Taste Stern")
+        self.assertEqual(announcer.speakable("73 <KN>"), "73 bitte kommen")
+        from morsetrainer.i18n_en import EN
+        with mock.patch.object(i18n, "LANG", "en"), mock.patch.object(i18n, "_TABLE", EN):
+            self.assertEqual(announcer.speakable("<BK> · key #"), "break, key hash")
 
     def test_english_spelling(self):
         from morsetrainer.core import speech

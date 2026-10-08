@@ -138,6 +138,18 @@ class _LineChart:
         c.tag_raise(text, box)
 
 
+def span_text(entries) -> str:
+    """Wie viele Durchgänge über welchen Zeitraum: „19 Durchgänge am
+    30.09.2026“ bzw. „… vom 24.09.2026 bis 07.10.2026 an 6 Tagen“."""
+    n, days = len(entries), len({e["time"].date() for e in entries})
+    first, last = entries[0]["time"], entries[-1]["time"]
+    if days == 1:
+        text = tr("1 Durchgang am {date}") if n == 1 else tr("{n} Durchgänge am {date}")
+        return text.format(n=n, date=first.strftime(tr("%d.%m.%Y")))
+    return tr("{n} Durchgänge vom {first} bis {last} an {days} Tagen").format(
+        n=n, first=first.strftime(tr("%d.%m.%Y")), last=last.strftime(tr("%d.%m.%Y")), days=days)
+
+
 class ProgressPanel:
     """Fortschritt im Reiter Statistik: Trefferquote und Tempo der letzten
     Durchgänge eines Modus als Linien, mit Kurzfassung."""
@@ -173,7 +185,7 @@ class ProgressPanel:
     def refresh(self):
         """Verlauf neu laden; Modusauswahl auf die vorhandenen Modi setzen
         (Standard: der zuletzt trainierte) und anzeigen."""
-        self.history = stats.load_history()
+        self.history = stats.load_history(stats.MIN_HISTORY_TOTAL)
         modes = [m for m in stats.HISTORY_MODES if any(e["mode"] == m for e in self.history)]
         labels = [tr(stats.HISTORY_MODES[m]) for m in modes]
         self.mode_combo.config(values=labels)
@@ -194,10 +206,9 @@ class ProgressPanel:
         if entries:
             first = entries[0]["accuracy_pct"]
             last = entries[-1]["accuracy_pct"]
-            text = tr("{n} Durchgänge seit {date} · Trefferquote {first} % → {last} %, "
-                      "Tempo {wpm_first} → {wpm_last} WPM").format(
-                n=len(entries), date=entries[0]["time"].strftime(tr("%d.%m.%Y")), first=short_number(first),
-                last=short_number(last),
+            text = span_text(entries) + tr(" · Trefferquote {first} % → {last} %, "
+                                           "Tempo {wpm_first} → {wpm_last} WPM").format(
+                first=short_number(first), last=short_number(last),
                 wpm_first=entries[0]["wpm"], wpm_last=entries[-1]["wpm"])
             scores = [e["score"] for e in entries if "score" in e]
             if scores:

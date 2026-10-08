@@ -96,6 +96,7 @@ class StatsRobustnessTest(unittest.TestCase):
         tests.write_session([{"type": "config", "mode": "group", "wpm": 20, "start_time": "2026-01-01T12:00:00"},
                              {"type": "char", "char": "K"}])  # abgestürzt: ohne summary
         self.assertEqual(len(stats.load_history()), 1)
+        self.assertEqual(stats.load_history(stats.MIN_HISTORY_TOTAL), [])  # 1 Zeichen: nur eine Probe
 
 
 class AudioErrorTest(unittest.TestCase):

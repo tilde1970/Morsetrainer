@@ -29,6 +29,7 @@ from morsetrainer.core import audio, mp3, speech, words
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, MORSE_CODE, SAMPLE_RATE, build_text, display_text, silence, vary_voice,
 )
+from morsetrainer import i18n
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import ItemSource
 from morsetrainer.widgets import announcer, theme
@@ -203,12 +204,12 @@ class ListenModeFrame:
         if problem:
             announcer.problem(self.status_var, problem)
             return None
-        reason = speech.speaker.available()
+        reason = self.speaker.available()
         if reason:
             self.status_var.set(reason)
             return None
         return {"count": count, "pause": pause, "wpm": wpm, "freq": freq, "fw": self.farnsworth_wpm(),
-                "source": source, "alphabet": ALPHABET,
+                "source": source, "alphabet": ALPHABET, "lang": i18n.LANG,
                 "meaning": self.meaning_var.get(), "replay": self.replay_var.get(),
                 "whole": self.whole_var.get(), "kind": source.kind,
                 "vary": self.vary_var is not None and self.vary_var.get()}
@@ -220,24 +221,32 @@ class ListenModeFrame:
         Zeichen."""
         return pause + 0.3 * len(text.replace(" ", ""))
 
+    @property
+    def speaker(self):
+        """Stimme in der Sprache der Oberfläche (englisch mit Alfa, Bravo …)."""
+        return speech.speaker_for(i18n.LANG)
+
     @staticmethod
     def announcement(text: str, meaning: str, opts) -> str:
         """Zeichen, Gruppen, Rufzeichen buchstabiert. Wörter und Wendungen
         wahlweise als Ganzes – als Wort erkannt, nicht Buchstabe für
         Buchstabe: bei Kürzeln die deutsche Bedeutung („TNX“ → „danke“), bei
         gewöhnlichen Wörtern das Wort selbst."""
-        german = meaning.split("–")[-1].strip()
+        lang = opts.get("lang", "de")
+        if lang != "de":
+            meaning = words.shown_meaning(text, meaning)
+        said_meaning = meaning.split("–")[-1].strip()
         if opts.get("whole") and opts.get("kind") in ("words", "phrases"):
-            return german or speech.spoken_words(text, opts["alphabet"])
-        said = speech.spoken(text, opts["alphabet"])
-        if opts["meaning"] and german:
-            said += ". " + german
+            return said_meaning or speech.spoken_words(text, opts["alphabet"], lang)
+        said = speech.spoken(text, opts["alphabet"], lang)
+        if opts["meaning"] and said_meaning:
+            said += ". " + said_meaning
         return said
 
     def item_parts(self, text: str, meaning: str, wpm: int, freq: int, opts):
         """(Morsezeichen, Denkpause, Ansage, Rest) als Samples."""
         code = build_text(text, wpm, freq, opts["fw"])
-        voice = speech.speaker.synth(self.announcement(text, meaning, opts))
+        voice = self.speaker.synth(self.announcement(text, meaning, opts))
         rest = [silence(REPLAY_GAP_S), code] if opts["replay"] else []
         rest.append(silence(GAP_AFTER_S))
         return code, silence(self.think_seconds(text, opts["pause"])), voice, np.concatenate(rest)
@@ -275,19 +284,19 @@ class ListenModeFrame:
         self.meaning_text.set("")
         self.on_start_cb()
         self.status_var.set(tr("Stimme wird geladen…"))
-        speech.speaker.preload()
+        self.speaker.preload()
         self._wait_for_voice(self.session_id)
 
     def _wait_for_voice(self, session_id):
         if not self.running or session_id != self.session_id:
             return
-        if speech.speaker.voice is None and speech.speaker.error is None:
+        if self.speaker.voice is None and self.speaker.error is None:
             self.root.after(100, self._wait_for_voice, session_id)
             return
-        if speech.speaker.error:
+        if self.speaker.error:
             self.stop()
-            self.status_var.set(speech.speaker.error)
-            announcer.say(speech.speaker.error)
+            self.status_var.set(self.speaker.error)
+            announcer.say(self.speaker.error)
             return
         self._next_item(session_id)
 
@@ -408,9 +417,9 @@ class ListenModeFrame:
         """Im Hintergrund: Einträge erzeugen und kodieren. Das Ergebnis holt
         _watch_export im Tk-Thread ab."""
         try:
-            speech.speaker.load()
-            if speech.speaker.error:
-                raise mp3.Mp3Error(speech.speaker.error)
+            self.speaker.load()
+            if self.speaker.error:
+                raise mp3.Mp3Error(self.speaker.error)
             with mp3.Mp3Writer(path) as writer:
                 writer.write(build_text("VVV = ", opts["wpm"], opts["freq"], opts["fw"]))
                 writer.write(silence(1.0))

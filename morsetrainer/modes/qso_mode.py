@@ -164,7 +164,7 @@ class QsoModeFrame:
             parent, wrap=560,
             text=tr("Hör einem kompletten CW-QSO oder einem Contest-Run zu. Jede Station hat eine "
                     "eigene Tonhöhe. "
-                    "„=“ ist BT (Trennung), „+“ ist AR (Ende des Durchgangs); <SK>, <KN> und <BK> "
+                    "„=“ ist BT (Trennung), „+“ ist AR (Spruchende); <SK>, <KN> und <BK> "
                     "werden zusammengezogen gesendet und beim Mittippen nicht gezählt. "
                     "Der Zeichensatz oben gilt hier nicht."),
         ).pack(anchor="w", padx=10, pady=(8, 2))

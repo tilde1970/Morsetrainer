@@ -24,7 +24,7 @@ import tkinter as tk
 
 from morsetrainer import i18n
 from morsetrainer.core import audio, sfx, speech
-from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
+from morsetrainer.core.morse import AUDIO_LATENCY, PROSIGN_KEYS, SAMPLE_RATE
 from morsetrainer.i18n import N_, number, tr
 
 # Pause nach einer Ansage, bevor es weitergeht.
@@ -704,6 +704,13 @@ def render(text: str, deliver) -> None:
 _SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("±", N_(" plus minus ")),
             ("✓", N_("richtig")), ("✗", N_("falsch")), ("★", N_(" Stern ")), ("☆", ""), ("…", ""),
             ("%", N_(" Prozent")), ("≥", N_("mindestens")), ("≤", N_("höchstens")), ("–", ","), ("·", ","))
+# Betriebszeichen, wie sie angezeigt werden („<SK>“), mit ihrem Namen
+# („Ende der Verbindung“); die Taste dazu („Taste *“) mit dem Namen der Taste.
+_PROSIGN_SHOWN = re.compile(r"<(" + "|".join(PROSIGN_KEYS.values()) + r")>")
+_PROSIGN_CHAR = {name: ch for ch, name in PROSIGN_KEYS.items()}
+_KEY = re.compile(r"\b(Taste|key) ([*(#+=])")
+_KEY_NAMES = {"*": N_("Stern"), "(": N_("Klammer auf"), "#": N_("Raute"), "+": N_("Plus"),
+              "=": N_("Gleichheitszeichen")}
 # Einheiten, die die Stimme sonst buchstabiert („HaZet“); nur als ganzes Wort.
 _UNITS = ((re.compile(r"\bkHz\b"), N_("Kilohertz")), (re.compile(r"\bHz\b"), N_("Hertz")))
 # Englische Lehnwörter, die die deutsche Stimme deutsch ausspricht
@@ -750,6 +757,8 @@ def speakable(text: str) -> str:
     Leerzeichen weg."""
     if not text:
         return ""
+    text = _PROSIGN_SHOWN.sub(lambda m: speech.spoken(_PROSIGN_CHAR[m.group(1)], lang=i18n.LANG), text)
+    text = _KEY.sub(lambda m: f"{m.group(1)} {tr(_KEY_NAMES[m.group(2)])}", text)
     for symbol, word in _SYMBOLS:
         if symbol in text:
             text = text.replace(symbol, tr(word) if word else "")
