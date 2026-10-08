@@ -1,4 +1,5 @@
 """Barrierefreiheit: Schriftgröße, Sprachansage, hoher Kontrast, Tastatur und Einstellungsfenster."""
+import sys
 import time
 import tkinter as tk
 from tkinter import font as tkfont
@@ -421,7 +422,7 @@ class AnnouncerTest(AppTestCase):
         # Der Zwischenspeicher wächst nicht unbegrenzt (Statistik-Ansagen sind
         # lang und jedes Mal anders); der älteste Eintrag fällt heraus.
         announcer = self.app.announcer
-        announcer._cache.clear()
+        announcer.clear_cache()
         with mock.patch.object(self.announcer, "CACHE_SIZE", 3):
             for text in ("eins", "zwei", "drei", "vier", "fünf"):
                 announcer._synth(text)
@@ -433,7 +434,7 @@ class AnnouncerTest(AppTestCase):
         import numpy as np
         from morsetrainer.core import speech
         announcer = self.app.announcer
-        announcer._cache.clear()
+        announcer.clear_cache()
         second = np.zeros(1000, dtype=np.float32)  # 4000 Bytes
         with mock.patch.object(speech.speaker, "synth", lambda text: second), \
                 mock.patch.object(self.announcer, "CACHE_BYTES", 10000):
@@ -443,6 +444,48 @@ class AnnouncerTest(AppTestCase):
             with mock.patch.object(speech.speaker, "synth", lambda text: np.zeros(5000, dtype=np.float32)):
                 self.assertIsNotNone(announcer._synth("zu lang"))
         self.assertNotIn("zu lang", announcer._cache)
+
+    def test_speech_cache_holds_across_threads(self):
+        import threading
+        import numpy as np
+        from morsetrainer.core import speech
+        announcer = self.app.announcer
+        announcer.clear_cache()
+        errors = []
+
+        def speak(offset):
+            try:
+                for i in range(300):
+                    announcer._synth(f"Ansage {(i + offset) % 40}")
+            except Exception as error:  # noqa: BLE001 – jeder Fehler ist hier ein Befund
+                errors.append(error)
+
+        interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)  # Threads wechseln oft: Wettläufe zeigen sich
+        try:
+            with mock.patch.object(speech.speaker, "synth", lambda text: np.zeros(400, dtype=np.float32)), \
+                    mock.patch.object(self.announcer, "CACHE_BYTES", 16000):
+                threads = [threading.Thread(target=speak, args=(n * 7,)) for n in range(4)]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join()
+        finally:
+            sys.setswitchinterval(interval)
+        self.assertEqual(errors, [])
+        self.assertEqual(announcer._cache_size, sum(s.nbytes for s in announcer._cache.values()))
+        self.assertLessEqual(announcer._cache_size, 16000)
+
+    def test_failing_synthesis_does_not_stall_the_flow(self):
+        import threading
+        self.app.announcer.var.set(True)
+        done = []
+        with mock.patch.object(self.app.announcer, "_synth", side_effect=RuntimeError("Stimme kaputt")), \
+                mock.patch.object(threading, "excepthook") as hook:
+            self.app.announcer.say("Erster Satz. " + "Noch etwas mehr Text. " * 5, then=lambda: done.append(1))
+            self.assertTrue(self.pump_until(lambda: done, timeout=3))
+        self.assertTrue(hook.called)  # der Fehler kommt im Protokoll an
+        self.assertIs(hook.call_args.args[0].exc_type, RuntimeError)
 
     def test_long_announcement_starts_with_the_first_sentence(self):
         from morsetrainer.widgets import announcer

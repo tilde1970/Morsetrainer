@@ -54,6 +54,9 @@ WINDOW_BACK_MS = 120
 
 _instance = None
 _synth_lock = threading.Lock()  # Piper nicht aus zwei Threads zugleich
+# Den Zwischenspeicher teilen sich mehrere Synthese-Threads (verdrängte
+# Ansagen rechnen noch, render() im Contest, Tipp-Echo).
+_cache_lock = threading.Lock()
 
 
 class Announcer:
@@ -73,6 +76,7 @@ class Announcer:
         self.last_closed = None  # (Fenster, time.time()): nicht doppelt ansagen
         self.window_token = 0  # token der letzten Fensteransage (wird nicht mit angehängt)
         self._cache = {}
+        self._cache_size = 0  # Bytes im Zwischenspeicher
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
                            and self.speaker().voice is None and self.speaker().preload())
@@ -125,7 +129,14 @@ class Announcer:
             for index, chunk in enumerate(chunks):
                 if token != self.token:
                     return  # verdrängt: den Rest nicht mehr erzeugen
-                results[index] = self._synth(chunk)
+                try:
+                    results[index] = self._synth(chunk)
+                except BaseException:
+                    # Ohne die übrigen Stücke wartete poll() endlos und der
+                    # Ablauf (then) stünde still; der Fehler geht ins Protokoll.
+                    for rest in range(index, len(chunks)):
+                        results.setdefault(rest, None)
+                    raise
 
         threading.Thread(target=work, daemon=True).start()
         state = {"next": 0, "free_at": 0.0}  # nächstes Stück; wann das laufende zu Ende ist
@@ -248,7 +259,8 @@ class Announcer:
         """Sprache für `text` (zwischengespeichert, höchstens CACHE_SIZE Einträge
         und CACHE_BYTES; zuerst fällt, was am längsten nicht gebraucht wurde);
         None, wenn die Stimme versagt."""
-        samples = self._cache.pop(text, None)
+        with _cache_lock:
+            samples = self._take_cached(text)
         if samples is None:
             with _synth_lock:
                 try:
@@ -256,15 +268,28 @@ class Announcer:
                 except Exception:  # Stimme defekt: lieber still als abgestürzt
                     samples = None
         if samples is not None:
-            size = getattr(samples, "nbytes", 0)
-            while self._cache and (len(self._cache) >= CACHE_SIZE or self._cache_bytes() + size > CACHE_BYTES):
-                self._cache.pop(next(iter(self._cache)))
-            if size <= CACHE_BYTES:
-                self._cache[text] = samples
+            with _cache_lock:
+                self._take_cached(text)  # inzwischen von einem anderen Thread erzeugt
+                size = getattr(samples, "nbytes", 0)
+                while self._cache and (len(self._cache) >= CACHE_SIZE or self._cache_size + size > CACHE_BYTES):
+                    self._take_cached(next(iter(self._cache)))
+                if size <= CACHE_BYTES:
+                    self._cache[text] = samples
+                    self._cache_size += size
         return samples
 
-    def _cache_bytes(self) -> int:
-        return sum(getattr(samples, "nbytes", 0) for samples in self._cache.values())
+    def clear_cache(self) -> None:
+        """Zwischenspeicher leeren."""
+        with _cache_lock:
+            self._cache.clear()
+            self._cache_size = 0
+
+    def _take_cached(self, text: str):
+        """Eintrag aus dem Zwischenspeicher nehmen (unter _cache_lock)."""
+        samples = self._cache.pop(text, None)
+        if samples is not None:
+            self._cache_size -= getattr(samples, "nbytes", 0)
+        return samples
 
 
 def _chunks(text: str) -> list:
