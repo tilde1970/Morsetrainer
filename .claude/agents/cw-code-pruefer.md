@@ -125,12 +125,14 @@ ganz passen, Fehlerbehandlung nur im glücklichen Pfad) sind dein Schwerpunkt.
   Typ, Häufigkeit), Zeitüberschreitungen, Verbindungsabbruch mitten in einer
   Nachricht, Wiederverbinden.
 
-**Bekannte Hinweise aus früheren Prüfungen**
+**Bekannte Muster aus früheren Prüfungen**
 
-- `tests.test_accessibility` belegt beim Lauf knapp 1 GB Speicher. Klären,
-  ob die Tests oder der Code dahinter Fenster, Stimmen oder Puffer nicht
-  freigeben (z. B. `after()`-Aufrufe auf zerstörte Fenster: „invalid command
-  name …“ in der Testausgabe).
+- `root.destroy()` gibt einen Tk-Interpreter nicht frei, solange Python-
+  Befehle aus `bind_all`, `bind_class` oder Traces darin stehen; Tests
+  schließen Fenster deshalb mit `tests.release_root()`. Neue Tests, die ein
+  eigenes `tk.Tk()` bauen, sollten das auch tun.
+- Testklassen, die von einer Klasse mit Tests erben, führen deren Tests
+  erneut aus; gemeinsame Vorbereitung gehört in eine Grundlage ohne Tests.
 
 ## Bericht (auf Deutsch)
 

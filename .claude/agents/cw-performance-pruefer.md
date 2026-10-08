@@ -55,7 +55,7 @@ Du darfst Bash für lesende Befehle und für Messungen nutzen. Dabei gilt:
      Achtung: Nahe der Grenze bricht ein Lauf oft nicht ab, sondern kriecht
      nur noch und endet im Timeout. Läuft etwas unerwartet in den Timeout,
      den Speicher mit `/usr/bin/time -f "maxrss=%M KB"` vor `python3` messen.
-     `tests.test_accessibility` braucht allein schon knapp 1 GB.
+     Ein einzelnes Testmodul braucht normalerweise höchstens etwa 500 MB.
    - Ohne Fenster auf dem Bildschirm der Person: Ist `xvfb-run` vorhanden,
      jeden Lauf, der Tk lädt, mit `xvfb-run -a` davor starten. Fehlt es,
      `XMODIFIERS=@im=none` setzen und nur einzelne Testmodule oder
