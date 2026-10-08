@@ -268,6 +268,31 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(status.value, 3)
         self.assertEqual(status.dates, [None] * 4)
 
+    def test_star_collector_counts_today(self):
+        all_three = {"stars": list(daily.STAR_ORDER)}
+        days = {day(i).isoformat(): all_three for i in range(16)}   # 48 Sterne
+        days[day(16).isoformat()] = all_three                        # heute: 51
+        status = awards.evaluate(Data([], [], {}, {}, {"days": days}), today=day(16))["stars"]
+        self.assertEqual(status.dates[0], day(16))
+
+    def test_star_collector_exact_silver_and_diamond(self):
+        all_three = {"stars": list(daily.STAR_ORDER)}
+
+        def reached(full_days, last_stars, level):
+            days = {day(i).isoformat(): all_three for i in range(full_days)}
+            days[day(full_days).isoformat()] = {"stars": list(daily.STAR_ORDER[:last_stars])}
+            return awards.evaluate(Data([], [], {}, {}, {"days": days}), today=day(400))["stars"].dates[level]
+
+        self.assertEqual(reached(66, 2, 1), day(66))   # genau 200
+        self.assertIsNone(reached(66, 1, 1))           # 199
+        self.assertEqual(reached(333, 1, 3), day(333))  # genau 1000
+        self.assertIsNone(reached(332, 2, 3))          # 998
+
+    def test_star_collector_ignores_damaged_star_lists(self):
+        for entry in ({"stars": "dabei,sauber,weiter"}, {"stars": None}, ["dabei", "sauber"]):
+            d = Data([], [], {}, {}, {"days": {day(0).isoformat(): entry}})
+            self.assertEqual(awards.evaluate(d, today=day(1))["stars"].value, 0, entry)
+
     def test_unlevelled_awards(self):
         quiz = result("qso_quiz", 0, kind="ragchew", correct=5, total=5, replays=0, wpm=15)
         self.assertEqual(dates("first_qso", data(results=[quiz])), [day(0)])
@@ -363,6 +388,16 @@ class CheckTest(unittest.TestCase):
         all_three = {"stars": list(daily.STAR_ORDER)}
         daily.save({"days": {day(i).isoformat(): all_three for i in range(17)}})
         self.assertEqual(awards.evaluate(today=day(20))["stars"].dates[0], day(16))
+
+    def test_check_passes_its_day_to_the_star_collector(self):
+        # Weit in der Vergangenheit: Mit dem echten Datum statt `today` zählten
+        # alle 51 Sterne schon beim ersten Aufruf.
+        all_three = {"stars": list(daily.STAR_ORDER)}
+        d = Data([], [], {}, {}, {"days": {day(i).isoformat(): all_three for i in range(-400, -383)}})
+        self.assertEqual(awards.check(today=day(-395), data=d), ([], 0))
+        self.assertEqual(awards.seals_of(awards.load(), "stars"), {})
+        self.assertEqual(awards.check(today=day(-384), data=d), ([("stars", 0)], None))
+        self.assertEqual(awards.seals_of(awards.load(), "stars"), {0: day(-384)})
 
 class DamagedDataTest(unittest.TestCase):
     """Von Hand veränderte oder beschädigte Dateien dürfen die Prüfung nach
