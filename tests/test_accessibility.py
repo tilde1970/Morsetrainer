@@ -481,6 +481,19 @@ class AnnouncerTest(AnnouncerCase):
         self.assertEqual(announcer._cache_size, sum(s.nbytes for s in announcer._cache.values()))
         self.assertLessEqual(announcer._cache_size, 16000)
 
+    def test_first_announcement_waits_until_the_window_is_drawn(self):
+        # Ist die Stimme noch nicht geladen, lädt die erste Ansage sie – und
+        # das hält die Oberfläche an. Deshalb erst, wenn das Fenster steht.
+        from morsetrainer.core import speech
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        self.said.clear()
+        with mock.patch.object(speech.speaker, "voice", None), mock.patch.object(speech.speaker, "preload", lambda: None):
+            self.app.announcer.say("Reiter Gruppen.")
+            time.sleep(0.1)
+            self.assertEqual(self.said, [])
+            self.assertTrue(self.pump_until(lambda: self.said, timeout=3))
+
     def test_failing_synthesis_does_not_stall_the_flow(self):
         import threading
         self.app.announcer.var.set(True)

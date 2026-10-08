@@ -48,6 +48,10 @@ CHUNK_CHARS = 150
 # etwa die Ansage eines eben gewechselten Reiters nicht dazukommt.
 WINDOW_JOIN_BEFORE_S = 0.25
 WINDOW_JOIN_AFTER_S = 0.4
+# Die Stimme erst so lange nach dem Zeichnen laden: Ihr Laden hält alle
+# Python-Threads knapp 1 s an, auch die Oberfläche (core/speech.py); so
+# steht das Fenster schon, statt erst danach zu erscheinen.
+PRELOAD_AFTER_MS = 300
 # Nach dem Schließen eines Fensters so lange warten, bis der Fokus
 # zurückgegeben ist, dann sagen, wo man gelandet ist.
 WINDOW_BACK_MS = 120
@@ -78,8 +82,19 @@ class Announcer:
         self._cache = {}
         self._cache_size = 0  # Bytes im Zwischenspeicher
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
-        self.var.trace_add("write", lambda *_: self.var.get() and self.available() is None
-                           and self.speaker().voice is None and self.speaker().preload())
+        self.var.trace_add("write", lambda *_: self._preload_soon())
+
+    def _preload_soon(self) -> None:
+        """Ansage an: die Stimme laden, sobald das Fenster gezeichnet ist."""
+        if self.var.get() and self.available() is None and self.speaker().voice is None:
+            try:
+                self.root.after_idle(self._after, PRELOAD_AFTER_MS, self._preload_now)
+            except tk.TclError:
+                pass
+
+    def _preload_now(self) -> None:
+        if self.var.get() and self.speaker().voice is None:
+            self.speaker().preload()
 
     def _after(self, ms: int, callback, *args) -> None:
         """root.after; ist das Fenster schon zu (Programmende), still nichts."""
@@ -138,7 +153,16 @@ class Announcer:
                         results.setdefault(rest, None)
                     raise
 
-        threading.Thread(target=work, daemon=True).start()
+        thread = threading.Thread(target=work, daemon=True)
+        if self.speaker().voice is None:
+            # Erste Ansage (etwa der Reiter beim Start): Sie lädt die Stimme,
+            # und das hält die Oberfläche an – erst, wenn das Fenster steht.
+            try:
+                self.root.after_idle(self._after, PRELOAD_AFTER_MS, thread.start)
+            except tk.TclError:
+                thread.start()
+        else:
+            thread.start()
         state = {"next": 0, "free_at": 0.0}  # nächstes Stück; wann das laufende zu Ende ist
 
         def poll():

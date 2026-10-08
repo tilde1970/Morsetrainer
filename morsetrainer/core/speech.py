@@ -9,8 +9,10 @@ mitgeliefert (sys._MEIPASS/voices), aus dem Quelltext im Datenverzeichnis
 available() den Grund und alles andere läuft ohne Ansage weiter.
 
 Geladen wird die Stimme erst beim ersten Gebrauch (knapp 1 s), in einem
-Hintergrund-Thread über Speaker.preload(), damit weder der Programmstart
-noch die erste Ansage stockt.
+Hintergrund-Thread über Speaker.preload(), damit die erste Ansage nicht
+stockt. Das Laden hält trotzdem alle Python-Threads an, auch die
+Oberfläche (onnxruntime gibt die Sperre des Interpreters dabei nicht
+frei); die Sprachansage lädt deshalb erst, wenn das Fenster steht.
 
 Gesprochen wird buchstabiert: Buchstabennamen (A, Be, Ce … bzw. ay, bee,
 see …) oder das internationale Buchstabieralphabet (Alfa, Bravo …), wie
