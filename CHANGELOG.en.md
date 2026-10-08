@@ -1,5 +1,23 @@
 # Changes
 
+## 2.44
+
+- **Finest hours award:** the “Star collector” award is now called “Finest
+  hours”; levels already reached are kept. Stars and practice days dated
+  after today (clock set wrong) no longer count for Finest hours and
+  Endurance.
+- **Faster start with announcements:** the window appears before the voice
+  is loaded (about 0.5 instead of 1.3 seconds); the first announcement comes
+  a moment later instead.
+- **Faster awards:** after a run the awards are evaluated once instead of
+  three times, and a small digest is stored for each run. Start and
+  evaluation stay quick and need less memory even after years of practice.
+  The first start after the update creates the digests.
+- **More robust:** a brief database read error can no longer drop runs from
+  the awards for good. With a second program window open, the evaluation no
+  longer waits up to 5 seconds. A speech output error no longer stops the
+  practice flow.
+
 ## 2.43
 
 - **New award Star collector:** all daily practice stars together, bronze

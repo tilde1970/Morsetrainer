@@ -1,5 +1,23 @@
 # Änderungen
 
+## 2.44
+
+- **Diplom Sternstunden:** Das Diplom „Sternensammler“ heißt jetzt
+  „Sternstunden“; erreichte Stufen bleiben erhalten. Sterne und Übungstage
+  mit einem Datum nach heute (falsch gestellte Uhr) zählen für Sternstunden
+  und Ausdauer nicht mehr.
+- **Schnellerer Start mit Sprachansage:** Das Fenster erscheint, bevor die
+  Stimme geladen ist (etwa 0,5 statt 1,3 Sekunden); die erste Ansage kommt
+  dafür einen Augenblick später.
+- **Diplome schneller:** Nach einer Übung werden die Diplome einmal statt
+  dreimal ausgewertet, und je Durchgang wird ein kleiner Auszug gespeichert.
+  So bleiben Start und Auswertung auch nach Jahren Übung zügig und brauchen
+  weniger Speicher. Der erste Start nach dem Update legt die Auszüge an.
+- **Robuster:** Ein kurzer Lesefehler der Datenbank lässt keine Durchgänge
+  mehr dauerhaft aus den Diplomen fallen. Läuft ein zweites
+  Programmfenster, wartet die Auswertung nicht mehr bis zu 5 Sekunden. Ein
+  Fehler der Sprachausgabe hält den Übungsablauf nicht mehr an.
+
 ## 2.43
 
 - **Neues Diplom Sternensammler:** Alle Sterne der Tagesübung zusammen,
