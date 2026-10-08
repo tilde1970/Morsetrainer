@@ -30,6 +30,10 @@ restart. The screenshots show the German interface.
   sets the pace, everyone hears the same sequence and types along, the
   trainer sees live who typed what. Also with a fixed pace for pencil and
   paper.
+- **Accessible:** the trainer aims to be usable without looking at the
+  screen. A built-in voice announces results, tabs, windows and controls,
+  everything works from the keyboard, plus font size up to 200 % and high
+  contrast.
 
 ## Screenshots
 
@@ -78,6 +82,26 @@ PowerShell and compare with the line in `SHA256SUMS.txt`.
 
 Everything else is in the [manual](docs/Anleitung.en.md), also in the
 program under **Help**.
+
+## Accessibility
+
+The Morsetrainer aims to work well for visually impaired and blind users,
+and this is being improved continuously:
+
+- **Announcements (F9)** with a built-in voice, no screen reader needed:
+  the result of each answer, the end of a run, tabs, windows, and fields
+  and switches as you move through them with Tab. **F11** tells you where
+  you are.
+- **Keyboard:** everything is reachable without a mouse, with shortcuts
+  for the main tasks (daily practice F12, band conditions, tabs).
+- **Seeing:** font size with Ctrl+Plus/Minus (75–200 %), high contrast
+  (black, white, yellow, at least 7:1); right and wrong are always shown as
+  text too, not only as a colour.
+
+Screen readers can hardly reach the interface (Tk) so far, which is why
+the program speaks for itself. Details in the
+[manual, section 8](docs/Anleitung.en.md#8-accessibility). Feedback on what
+is still missing or gets in the way is very welcome.
 
 ## Security
 

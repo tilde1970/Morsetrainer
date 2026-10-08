@@ -28,6 +28,10 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 - **Netzwerk:** Kurs oder Clubabend im lokalen Netz. Der Trainer gibt vor,
   alle hören dieselbe Sequenz und tippen mit, der Trainer sieht live, wer
   was getippt hat. Auch mit festem Takt für Papier und Bleistift.
+- **Barrierefrei:** Der Trainer soll auch ohne Blick auf den Bildschirm
+  bedienbar sein. Eine eingebaute Stimme sagt Ergebnisse, Reiter, Fenster
+  und Bedienelemente an, alles geht mit der Tastatur, dazu Schriftgröße
+  bis 200 % und hoher Kontrast.
 
 ## So sieht er aus
 
@@ -77,6 +81,25 @@ der Zeile in `SHA256SUMS.txt` vergleichen.
 
 Alles Weitere steht in der [Anleitung](docs/Anleitung.md), im Programm
 unter **Hilfe**.
+
+## Barrierefreiheit
+
+Der Morsetrainer soll auch für Sehbehinderte und Blinde gut nutzbar sein,
+daran wird laufend weitergearbeitet:
+
+- **Ansage (F9)** mit eingebauter Stimme, ohne Screenreader: Ergebnis
+  jeder Antwort, Ende eines Durchgangs, Reiter, Fenster, Felder und
+  Schalter beim Springen mit Tab. **F11** sagt, wo man gerade ist.
+- **Tastatur:** Alles ist ohne Maus erreichbar, mit Kürzeln für die
+  wichtigsten Abläufe (Tagesübung F12, Bandbedingungen, Reiter).
+- **Sehen:** Schriftgröße mit Strg+Plus/Minus (75–200 %), hoher Kontrast
+  (Schwarz, Weiß, Gelb, mindestens 7:1); richtig und falsch stehen immer
+  auch als Text da, nicht nur als Farbe.
+
+Screenreader erreichen die Oberfläche (Tk) bisher kaum, deshalb spricht
+das Programm selbst. Einzelheiten in der
+[Anleitung, Abschnitt 8](docs/Anleitung.md#8-barrierefreiheit).
+Rückmeldungen, was noch fehlt oder stört, sind sehr willkommen.
 
 ## Sicherheit
 
