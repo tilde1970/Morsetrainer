@@ -49,9 +49,13 @@ Du darfst Bash für lesende Befehle und für Messungen nutzen. Dabei gilt:
    Desktop. Deshalb gilt für jeden Python-Lauf (Tests, Messungen, Start):
    - Immer mit diesem Vorspann starten, er begrenzt Speicher und CPU und
      verhindert Auslagern, das den ganzen Desktop lähmt:
-     `timeout 120 systemd-run --user --scope --quiet -p MemoryMax=1G -p MemorySwapMax=0 -p CPUQuota=100% nice -n 19 ionice -c3 python3 …`
+     `timeout 120 systemd-run --user --scope --quiet -p MemoryMax=1500M -p MemorySwapMax=0 -p CPUQuota=100% nice -n 19 ionice -c3 python3 …`
      (Timeout nach Bedarf, höchstens 300 Sekunden). Bricht ein Lauf an der
      Speichergrenze ab, ist das ein Befund – nicht die Grenze erhöhen.
+     Achtung: Nahe der Grenze bricht ein Lauf oft nicht ab, sondern kriecht
+     nur noch und endet im Timeout. Läuft etwas unerwartet in den Timeout,
+     den Speicher mit `/usr/bin/time -f "maxrss=%M KB"` vor `python3` messen.
+     `tests.test_accessibility` braucht allein schon knapp 1 GB.
    - Ohne Fenster auf dem Bildschirm der Person: Ist `xvfb-run` vorhanden,
      jeden Lauf, der Tk lädt, mit `xvfb-run -a` davor starten. Fehlt es,
      `XMODIFIERS=@im=none` setzen und nur einzelne Testmodule oder
