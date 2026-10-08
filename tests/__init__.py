@@ -43,6 +43,35 @@ def session_lines(session_id: int) -> list:
     return [session.config, *db.session_events(session_id), *([session.summary] if session.summary else [])]
 
 
+def release_root(root) -> None:
+    """Tk-Fenster schließen und seinen Interpreter freigeben. root.destroy()
+    allein lässt die Python-Befehle von bind_all, bind_class und Traces im
+    Interpreter stehen; sie halten die App und damit den ganzen Interpreter
+    fest (etwa 5 MB je Test)."""
+    import gc
+    import tkinter as tk
+    from morsetrainer.widgets import theme
+    interp = root.tk
+    try:
+        for after_id in interp.splitlist(interp.call("after", "info")):
+            root.after_cancel(after_id)  # sonst „invalid command name …“ nach dem Schließen
+    except tk.TclError:
+        pass
+    root.destroy()
+    # Variablen löschen ihre Trace-Befehle beim Einsammeln selbst; die sind
+    # gleich schon weg.
+    for obj in gc.get_objects():
+        if isinstance(obj, tk.Variable) and getattr(obj, "_tk", None) is interp:
+            obj._tclCommands = None
+    for name in interp.splitlist(interp.call("info", "commands")):
+        if name[:1].isdigit():  # von tkinter angelegte Python-Befehle
+            try:
+                interp.deletecommand(name)
+            except tk.TclError:
+                pass
+    theme._fonts[:] = [f for f in theme._fonts if getattr(f, "_tk", None) is not interp]
+
+
 def write_session(lines) -> int:
     """Legt einen Durchgang aus Zeilen wie in einer Sitzungsdatei an
     (erste Zeile config mit "start_time" und "mode", eine Zeile "summary"

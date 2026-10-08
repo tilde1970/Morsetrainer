@@ -132,9 +132,9 @@ class FontScaleTest(AppTestCase):
         self.assertEqual(theme.zoom_step(75, -1), 75)
 
 
-class AnnouncerTest(AppTestCase):
-    """Sprachansage: Ergebnis, Reiter und Status mit der eingebauten Stimme;
-    der Ablauf geht erst nach der Ansage weiter."""
+class AnnouncerCase(AppTestCase):
+    """Grundlage der Ansage-Tests: Stimme und Ausgabe ersetzt, gesagte Texte
+    in self.said. Ohne eigene Tests, damit Unterklassen keine erben."""
 
     def setUp(self):
         super().setUp()
@@ -167,6 +167,11 @@ class AnnouncerTest(AppTestCase):
             self.root.update()
             time.sleep(0.01)
         return condition()
+
+
+class AnnouncerTest(AnnouncerCase):
+    """Sprachansage: Ergebnis, Reiter und Status mit der eingebauten Stimme;
+    der Ablauf geht erst nach der Ansage weiter."""
 
     def test_off_means_nothing_said_and_flow_goes_on(self):
         done = []
@@ -591,7 +596,7 @@ class ContrastTest(AppTestCase):
                         if hasattr(mode, "on_close"):
                             mode.on_close()
                 finally:
-                    root.destroy()
+                    tests.release_root(root)
         finally:
             theme.set_palette("light")
 
@@ -693,7 +698,7 @@ class KeyboardTest(AppTestCase):
         finally:
             from morsetrainer.widgets import announcer
             announcer._instance = self.app.announcer
-            root.destroy()
+            tests.release_root(root)
 
     def test_alt_number_selects_tab_unless_locked(self):
         self.app.select_tab(1)
@@ -871,7 +876,7 @@ class SettingsWindowTest(AppTestCase):
         self.assertFalse(any("Schriftgröße" in t or "Sichern" in t for t in texts))
 
 
-class AnnouncerModesTest(AnnouncerTest):
+class AnnouncerModesTest(AnnouncerCase):
     """Ansage in QSO, Contest und Statistik."""
 
     def test_contest_speaks_log_errors_into_the_mix(self):
@@ -988,7 +993,7 @@ class VoiceLanguageTest(AppTestCase):
             self.assertEqual(tone.call_count, 2)
 
 
-class FocusAnnounceTest(AnnouncerTest):
+class FocusAnnounceTest(AnnouncerCase):
     """Fokus-Ansage: mit Tab ins Element gesprungen sagt es, was es ist und
     wie es steht."""
 
@@ -1064,7 +1069,7 @@ class FocusAnnounceTest(AnnouncerTest):
 
 
 
-class EveningSummaryAnnounceTest(AnnouncerTest):
+class EveningSummaryAnnounceTest(AnnouncerCase):
     def test_evening_summary_is_read_in_sentences(self):
         from morsetrainer.core import daily
         from morsetrainer.widgets import announcer
@@ -1130,7 +1135,7 @@ class EveningSummaryAnnounceTest(AnnouncerTest):
 
 
 
-class DiplomaAnnounceTest(AnnouncerTest):
+class DiplomaAnnounceTest(AnnouncerCase):
     def test_diploma_window_is_read_and_print_buttons_are_named(self):
         from datetime import date
         from morsetrainer.core import awards
@@ -1159,7 +1164,7 @@ class DiplomaAnnounceTest(AnnouncerTest):
         window.close()
 
 
-class ListenAnnounceTest(AnnouncerTest):
+class ListenAnnounceTest(AnnouncerCase):
     """Reiter Sprechen: angesagt wird nur, was man sonst nur sieht."""
 
     def test_start_problem_end_and_progress(self):

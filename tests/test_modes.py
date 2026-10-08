@@ -48,7 +48,7 @@ class AppTestCase(unittest.TestCase):
         if hasattr(self, "root"):
             for mode in self.app.modes:
                 mode.running = False
-            self.root.destroy()
+            tests.release_root(self.root)
         for patch in self.patches:
             patch.stop()
         self.tmp.cleanup()
