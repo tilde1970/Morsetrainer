@@ -168,6 +168,19 @@ EN.update({
         "lessons {first}–{last}.",
     "alle Zeichen, keins bevorzugt": "all characters, none favoured",
     "Es gibt nur {n} Reiter.": "There are only {n} tabs.",
+    "Update verfügbar": "Update available",
+    "Neu in Version {version}:": "New in version {version}:",
+    "Geladen wird von GitHub und mit der Prüfsumme geprüft. Danach startet der Morsetrainer neu; "
+    "deine Übungsdaten und Einstellungen bleiben erhalten.":
+        "It is downloaded from GitHub and checked against its checksum. Then the Morsetrainer restarts; "
+        "your practice data and settings are kept.",
+    "Später": "Later",
+    "Jetzt aktualisieren": "Update now",
+    "Neu: {titles}.": "New: {titles}.",
+    "Enter: jetzt aktualisieren. Escape: später.": "Enter: update now. Escape: later.",
+    "Lade Version {version}.": "Downloading version {version}.",
+    "Aktualisieren …": "Update …",
+    "Erst den Durchgang beenden, dann aktualisieren.": "Finish the run first, then update.",
     "„{needle}“ nicht gefunden, dafür „{shown}“: ": "“{needle}” not found, showing “{shown}”: ",
     "im Reiter {title}: {n} Treffer": "in the {title} tab: {n} matches",
     "Neu in Version {version}": "New in version {version}",
@@ -1252,12 +1265,9 @@ EN.update({
     "Warte auf den Trainer…": "Waiting for the trainer…",
 
     # Updates (widgets/updater.py, app.py, Netzwerk-Reiter)
-    "Update": "Update",
     "Version {version} verfügbar": "Version {version} available",
     "Version {theirs} ist erschienen, du hast {mine}.": "Version {theirs} has been released, you have {mine}.",
     "Der Trainer nutzt Version {theirs}, du hast {mine}.": "The trainer uses version {theirs}, you have {mine}.",
-    "Jetzt aktualisieren und neu starten? Geladen wird von GitHub.":
-        "Update and restart now? It is downloaded from GitHub.",
     "Lade Version {version}… {progress}": "Downloading version {version}… {progress}",
     "Update fehlgeschlagen: {error}. Von Hand laden: {url}": "Update failed: {error}. Download manually: {url}",
     "Version {version} installiert – starte neu…": "Version {version} installed – restarting…",

@@ -900,10 +900,14 @@ neuen Quelltext entpacken und `stats/`, `window_state.json` und ggf.
 ### Updates
 
 Beim Start schaut der Morsetrainer im Hintergrund nach, ob es ein neueres
-Release gibt, und fragt dann, ob er es laden soll. Mit „Ja“ lädt er die
-exe bzw. das AppImage von GitHub, tauscht die eigene Datei aus und startet
-neu; mit „Nein“ fragt er bei dieser Version nicht noch einmal, unten in
-der Fußzeile steht nur „Version … verfügbar“. Nach einem Update sagt ein
+Release gibt. Das Fenster „Update verfügbar“ zeigt, was in der neuen
+Version neu ist, die Ansage liest die Überschriften vor (F11 wiederholt).
+Mit „Jetzt aktualisieren“ (Enter) lädt er die exe bzw. das AppImage von
+GitHub, tauscht die eigene Datei aus und startet neu; der Fortschritt
+steht im Fenster. Mit „Später“ (Esc) steht unten in der Fußzeile
+„Version … verfügbar“ mit dem Knopf „Aktualisieren …“, der das Fenster
+jederzeit wieder öffnet (nicht während eines Durchgangs). Von selbst
+fragt er bei dieser Version erst nach sieben Tagen wieder. Nach einem Update sagt ein
 Hinweis einmal, was sich an der Bedienung geändert hat. Ohne Internet
 passiert nichts, das Programm läuft ganz normal. Aus dem Quelltext
 gestartet und auf dem Mac gibt es nur den Hinweis. Liegt die Datei in

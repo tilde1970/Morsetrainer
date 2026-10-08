@@ -81,6 +81,28 @@ def installed():
 def latest_version(timeout: float = CHECK_TIMEOUT_S):
     """Nummer des neuesten Releases auf GitHub ("2.16"). UpdateError ohne
     Internet oder bei unerwarteter Antwort. Blockiert (im Thread aufrufen)."""
+    return latest_release(timeout)[0]
+
+
+# Die Release-Beschreibung endet mit Verweisen (CHANGELOG, Vergleich); die
+# gehören nicht zu den Neuerungen.
+_NOTES_END = re.compile(r"^\s*(Alle Änderungen:|All changes:|\*\*Full Changelog\*\*)", re.MULTILINE)
+MAX_NOTES_CHARS = 6000
+
+
+def release_notes(body) -> str:
+    """Die Neuerungen aus der Beschreibung eines Releases (Markdown), ohne
+    die Verweise am Ende; leer, wenn es keine gibt."""
+    if not isinstance(body, str):
+        return ""
+    end = _NOTES_END.search(body)
+    return (body[:end.start()] if end else body).strip()[:MAX_NOTES_CHARS]
+
+
+def latest_release(timeout: float = CHECK_TIMEOUT_S):
+    """(Nummer, Neuerungen) des neuesten Releases auf GitHub. UpdateError
+    ohne Internet oder bei unerwarteter Antwort. Blockiert (im Thread
+    aufrufen)."""
     request = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases/latest",
                                      headers={"User-Agent": "Morsetrainer",
                                               "Accept": "application/vnd.github+json"})
@@ -93,7 +115,7 @@ def latest_version(timeout: float = CHECK_TIMEOUT_S):
     version = tag[1:] if isinstance(tag, str) and tag.startswith("v") else None
     if parse_version(version) is None:
         raise UpdateError(f"unerwartete Antwort: {tag!r}")
-    return version
+    return version, release_notes(data.get("body"))
 
 
 def release_url(version: str) -> str:

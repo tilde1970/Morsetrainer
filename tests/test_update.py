@@ -8,10 +8,12 @@ import time
 import tkinter as tk
 import unittest
 import urllib.error
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
+from morsetrainer import app as app_module
 from morsetrainer.net import update
 from morsetrainer.widgets import updater as updater_module
 from tests.test_modes import AppTestCase
@@ -60,6 +62,14 @@ class VersionTest(unittest.TestCase):
             self.assertEqual(update.latest_version(), "2.16")
         self.assertIn("api.github.com/repos/tilde1970/Morsetrainer/releases/latest", urlopen.call_args[0][0].full_url)
         self.assertEqual(urlopen.call_args[1]["timeout"], update.CHECK_TIMEOUT_S)
+
+    def test_release_notes_without_the_links_at_the_end(self):
+        body = ("- **Am Stück:** Optionsfelder.\n\nAlle Änderungen: [CHANGELOG.md](https://x), im Programm.\n\n"
+                "**Full Changelog**: https://github.com/compare/v2.40...v2.41")
+        answer = FakeResponse(json.dumps({"tag_name": "v2.41", "body": body}).encode())
+        with mock.patch.object(update.urllib.request, "urlopen", return_value=answer):
+            self.assertEqual(update.latest_release(), ("2.41", "- **Am Stück:** Optionsfelder."))
+        self.assertEqual(update.release_notes(None), "")
 
     def test_latest_version_without_internet(self):
         for problem in (urllib.error.URLError("no route"), TimeoutError(), OSError("offline")):
@@ -197,7 +207,7 @@ class UpdaterTest(unittest.TestCase):
         target = (Path("/x/Morsetrainer.exe"), update.WINDOWS_ASSET)
         with mock.patch.object(updater_module.Updater, "can_install", return_value=installable), \
                 mock.patch.object(update, "installed", return_value=target), \
-                mock.patch.object(updater_module.messagebox, "askyesno", return_value=answer) as asked:
+                mock.patch.object(updater_module.UpdateDialog, "ask", return_value=answer) as asked:
             outcome = self.updater.offer(version, "Neu.", self.shown.append, **kwargs)
         return outcome, asked.call_count
 
@@ -233,6 +243,44 @@ class UpdaterTest(unittest.TestCase):
         self.assertEqual(self.offer(installable=False), (updater_module.HINT, 0))
         self.assertIn("releases/tag/v2.16", self.shown[-1])
 
+    def test_dialog_shows_and_announces_what_is_new(self):
+        from morsetrainer.widgets import announcer
+        notes = "- **Am Stück:** Optionsfelder.\n- **Hilfe:** Suche toleranter."
+        with mock.patch.object(announcer, "say") as say:
+            dialog = updater_module.UpdateDialog(self.root, "2.16", "Version 2.16 ist erschienen, du hast 2.15.", notes)
+        try:
+            spoken = say.call_args.args[0]
+            self.assertIn("du hast 2.15", spoken)
+            self.assertIn("Neu: Am Stück, Hilfe.", spoken)
+            self.assertIn("Enter: jetzt aktualisieren", spoken)
+            self.assertEqual(dialog.top.title(), "Update verfügbar")
+            frame = dialog.top.winfo_children()[0]
+            text = [w for box in frame.winfo_children() for w in box.winfo_children() if isinstance(w, tk.Text)][0]
+            self.assertIn("Am Stück: Optionsfelder.", text.get("1.0", "end"))
+            self.assertNotIn("**", text.get("1.0", "end"))
+            self.assertIn("bold", text.tag_names("1.2"))
+            self.assertTrue(dialog.top.bind("<Escape>") and dialog.top.bind("<Return>"))
+            dialog._escape()  # Esc
+            self.assertEqual(dialog.answer.get(), "no")
+            self.assertFalse(dialog.ask())
+            self.assertFalse(dialog.top.winfo_exists())
+        finally:
+            dialog.close()
+
+    def test_dialog_yes_shows_progress_and_failure(self):
+        from morsetrainer.widgets import announcer
+        with mock.patch.object(announcer, "say") as say:
+            dialog = updater_module.UpdateDialog(self.root, "2.16", "Neu.")
+            dialog.answer.set("yes")  # Enter
+            self.assertTrue(dialog.ask())
+            dialog.show_progress("Lade Version 2.16… 40 %", 40)
+            self.assertEqual(dialog.progress["value"], 40)
+            dialog.show_failed("Update fehlgeschlagen: offline.")
+        self.assertEqual(say.call_args.args[0], "Update fehlgeschlagen: offline.")
+        self.assertEqual(dialog.progress_var.get(), "Update fehlgeschlagen: offline.")
+        dialog._escape()  # Esc schließt nach dem Fehler
+        self.assertFalse(dialog.top.winfo_exists())
+
     def wait(self, condition, timeout=3.0):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
@@ -246,7 +294,8 @@ class UpdaterTest(unittest.TestCase):
 class StartupCheckTest(AppTestCase):
     def check(self, latest, outcome=None):
         side_effect = update.UpdateError("offline") if latest is None else None
-        with mock.patch.object(update, "latest_version", return_value=latest, side_effect=side_effect), \
+        result = None if latest is None else (latest, "")
+        with mock.patch.object(update, "latest_release", return_value=result, side_effect=side_effect), \
                 mock.patch.object(self.app.updater, "offer", return_value=outcome) as offer:
             self.app.update_checked = False
             self.app.check_for_update()
@@ -272,13 +321,34 @@ class StartupCheckTest(AppTestCase):
         self.assertIn("99.0 verfügbar", self.app.update_var.get())
         self.app._save_state()
         self.assertEqual(self.app._load_state()["update_declined"], "99.0")
+        self.assertEqual(self.app._load_state()["update_declined_on"], date.today().isoformat())
         self.check("99.0").assert_not_called()  # abgelehnt: nur der Hinweis unten
+        self.root.update()
+        self.assertEqual(self.app.update_button.winfo_manager(), "pack")
+
+    def test_asks_again_after_a_week(self):
+        self.app.update_declined = "99.0"
+        self.app.update_declined_on = date.today() - timedelta(days=app_module.UPDATE_ASK_AGAIN_DAYS - 1)
+        self.check("99.0").assert_not_called()
+        self.app.update_declined_on = date.today() - timedelta(days=app_module.UPDATE_ASK_AGAIN_DAYS)
+        self.check("99.0").assert_called_once()
+
+    def test_footer_button_offers_again(self):
+        self.check("99.0", outcome=updater_module.DECLINED)
+        with mock.patch.object(self.app.updater, "offer", return_value=updater_module.STARTED) as offer:
+            self.app.update_button.invoke()
+        self.assertTrue(offer.call_args.kwargs["again"])
+        self.root.update()
+        self.assertEqual(self.app.update_button.winfo_manager(), "")
 
     def test_no_question_during_a_running_exercise(self):
         self.app.running_mode = True
         self.check("99.0").assert_not_called()
         self.assertIn("99.0 verfügbar", self.app.update_var.get())
-
+        with mock.patch.object(self.app.updater, "offer") as offer:
+            self.app.update_button.invoke()
+        offer.assert_not_called()
+        self.assertIn("Durchgang beenden", self.app.update_var.get())
 
     def test_join_after_restart_opens_the_network_tab(self):
         network = self.mode("Netzwerk")

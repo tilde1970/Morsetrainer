@@ -37,7 +37,7 @@ from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
-from morsetrainer.widgets.updater import DECLINED, Updater
+from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
@@ -81,6 +81,7 @@ WHATS_NEW_DELAY_MS = 800  # Hinweis nach einem Update, wenn das Fenster steht
 # So oft wird nachgesehen, ob ein Hintergrund-Thread einen Fehler protokolliert hat.
 ERROR_POLL_MS = 1000
 UPDATE_POLL_MS = 500
+UPDATE_ASK_AGAIN_DAYS = 7  # nach „Später“ fragt der Start erst so viele Tage danach wieder
 # Übungen, die einzeln abfragen (hören, antworten, das nächste), teilen sich
 # den Reiter „Einzeln“; oben wählt man, welche. Die Titel bleiben Schlüssel
 # der gespeicherten Einstellungen.
@@ -122,7 +123,12 @@ class MorseTrainerApp:
         self.saved_state = self._load_state()
         self.updater = Updater(root, __version__, self.restart_for_update)
         declined = self.saved_state.get("update_declined")
-        self.update_declined = declined if isinstance(declined, str) else None  # „Nein“ zu dieser Version
+        self.update_declined = declined if isinstance(declined, str) else None  # „Später“ zu dieser Version
+        try:
+            self.update_declined_on = date.fromisoformat(self.saved_state.get("update_declined_on"))
+        except (TypeError, ValueError):
+            self.update_declined_on = date.today() if self.update_declined else None
+        self.update_available = None  # (Version, Neuerungen) des neueren Releases
         self.update_checked = False  # Updateprüfung beim Start abgeschlossen
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
@@ -251,6 +257,7 @@ class MorseTrainerApp:
             "modes": self._mode_settings(),
             i18n.SETTING_KEY: self.language_var.get(),
             "update_declined": self.update_declined,
+            "update_declined_on": self.update_declined_on.isoformat() if self.update_declined_on else None,
             "one_by_one": self.one_by_one_var.get(),
             "seen_version": __version__,
         }
@@ -892,8 +899,12 @@ class MorseTrainerApp:
         self.practice_var = tk.StringVar(value="")
         ttk.Label(footer, textvariable=self.practice_var).pack(side="left")
         self.update_var = tk.StringVar(value="")  # Updateprüfung beim Start
-        ttk.Label(footer, textvariable=self.update_var, style="Footer.TLabel", wraplength=420).pack(
-            side="left", padx=(12, 0))
+        update_box = ttk.Frame(footer)
+        update_box.pack(side="left", padx=(12, 0))
+        ttk.Label(update_box, textvariable=self.update_var, style="Footer.TLabel", wraplength=420).pack(side="left")
+        # Erst sichtbar, wenn ein neueres Release da ist: holt das Update-Fenster wieder.
+        self.update_button = ttk.Button(update_box, text=tr("Aktualisieren …"), style="Flat.TButton",
+                                        command=self.offer_update)
         ttk.Button(footer, text=tr("Hilfe"), style="Flat.TButton",
                    command=lambda: HelpWindow.show(self.root)).pack(side="right", padx=(8, 0))
         ttk.Label(
@@ -1582,7 +1593,7 @@ class MorseTrainerApp:
 
         def run():
             try:
-                result["version"] = update.latest_version()
+                result["version"], result["notes"] = update.latest_release()
             except update.UpdateError:
                 result["version"] = None
             except Exception:
@@ -1593,7 +1604,8 @@ class MorseTrainerApp:
 
     def _await_update_check(self, result):
         """Wartet auf das Ergebnis der Updateprüfung beim Start; bei neuerer
-        Version Hinweis in der Fußzeile bzw. Frage, ob geladen werden soll."""
+        Version Frage, ob geladen werden soll, sonst Hinweis und Knopf in
+        der Fußzeile."""
         if "version" not in result:
             self.root.after(UPDATE_POLL_MS, lambda: self._await_update_check(result))
             return
@@ -1601,16 +1613,46 @@ class MorseTrainerApp:
         self.update_checked = True
         if not update.is_newer(version, __version__):
             return
-        available = tr("Version {version} verfügbar").format(version=version)
-        if version == self.update_declined or self.running_mode:
-            # Schon abgelehnt, oder es läuft gerade eine Übung: nicht dazwischenfragen.
-            self.update_var.set(available)
+        self.update_available = (version, result.get("notes", ""))
+        if self._update_recently_declined(version) or self.running_mode:
+            # Kürzlich „Später“, oder es läuft gerade eine Übung: nicht dazwischenfragen.
+            self._show_update_available()
             return
+        self.offer_update(again=False)
+
+    def _update_recently_declined(self, version) -> bool:
+        """Hat der Nutzer diese Version vor weniger als UPDATE_ASK_AGAIN_DAYS
+        Tagen mit „Später“ abgelehnt?"""
+        return (version == self.update_declined and self.update_declined_on is not None
+                and date.today() - self.update_declined_on < timedelta(days=UPDATE_ASK_AGAIN_DAYS))
+
+    def _show_update_available(self) -> None:
+        """Fußzeile: „Version … verfügbar“ und der Knopf „Aktualisieren …“."""
+        if self.update_available is None or self.updater.busy:
+            return
+        self.update_var.set(tr("Version {version} verfügbar").format(version=self.update_available[0]))
+        self.update_button.pack(side="left", padx=(4, 0))
+
+    def offer_update(self, again=True) -> None:
+        """Fenster „Update verfügbar“ zum neueren Release, beim Start oder
+        wieder über den Knopf in der Fußzeile (`again`)."""
+        if self.update_available is None:
+            return
+        if self.running_mode:
+            # Nicht mitten im Durchgang aktualisieren.
+            text = tr("Erst den Durchgang beenden, dann aktualisieren.")
+            self.update_var.set(text)
+            announcer.say(text)
+            return
+        version, notes = self.update_available
         outcome = self.updater.offer(version, tr("Version {theirs} ist erschienen, du hast {mine}.").format(
-            theirs=version, mine=__version__), self.update_var.set)
+            theirs=version, mine=__version__), self.update_var.set,
+            failed=lambda: self.update_button.pack(side="left", padx=(4, 0)), notes=notes, again=again)
         if outcome == DECLINED:
-            self.update_declined = version
-            self.update_var.set(available)
+            self.update_declined, self.update_declined_on = version, date.today()
+            self._show_update_available()
+        elif outcome in (STARTED, HINT):
+            self.update_button.pack_forget()  # lädt schon, oder der Link steht in der Fußzeile
 
     def restart_for_update(self, args):
         """Update ist installiert: wie beim Schließen alles speichern, nach

@@ -886,10 +886,13 @@ new source and copy `stats/`, `window_state.json` and, if present,
 ### Updates
 
 On start the Morsetrainer checks in the background whether there is a newer
-release and then asks whether to download it. With “Yes” it downloads the
-exe or AppImage from GitHub, replaces its own file and restarts; with “No”
-it does not ask again for this version, the footer just shows “Version …
-available”. After an update a note says once what has changed in how the
+release. The “Update available” window shows what is new in that version,
+and the announcement reads out the headings (F11 repeats). With “Update
+now” (Enter) it downloads the exe or AppImage from GitHub, replaces its own
+file and restarts; the progress is shown in the window. With “Later” (Esc)
+the footer shows “Version … available” with the button “Update …”, which
+opens the window again at any time (not during a run). It only asks again
+by itself for this version after seven days. After an update a note says once what has changed in how the
 program is used. Without internet nothing happens, the program runs as
 usual. Run from source or on the Mac, there is only the hint. If the file
 is in a folder without write permission, please download it by hand.

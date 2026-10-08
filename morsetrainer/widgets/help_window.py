@@ -187,7 +187,7 @@ def render(widget: tk.Text, text: str) -> None:
     widget.configure(state="disabled")
 
 
-def _setup_tags(widget: tk.Text) -> None:
+def setup_tags(widget: tk.Text) -> None:
     widget.tag_configure("h1", font=theme.FEEDBACK, spacing1=4, spacing3=6)
     widget.tag_configure("h2", font=theme.SCORE, spacing1=10, spacing3=4)
     widget.tag_configure("h3", font=theme.HEADING, spacing1=8, spacing3=2)
@@ -257,7 +257,7 @@ class HelpWindow:
             text.configure(yscrollcommand=scroll.set)
             scroll.pack(side="right", fill="y")
             text.pack(side="left", fill="both", expand=True)
-            _setup_tags(text)
+            setup_tags(text)
             text.tag_configure("match", background=theme.SELECT)
             text.tag_configure("match_current", background=theme.ACCENT, foreground=theme.SURFACE)
             try:
