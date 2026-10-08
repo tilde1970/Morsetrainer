@@ -1179,10 +1179,11 @@ class MorseTrainerApp:
         """Neue Siegel eintragen und für das Diplom-Fenster vormerken;
         Rückgabe wie awards.check(): Zahl der nachgetragenen Diplome beim
         allerersten Mal, sonst None."""
-        new, seeded = awards.check()
+        statuses = awards.evaluate()  # einmal für Siegel und Übersicht
+        new, seeded = awards.check(statuses=statuses)
         today = date.today()
         self.pending_seals += [(key, level, today) for key, level in new]
-        self.awards_panel.refresh()
+        self.awards_panel.refresh(awards.overview(statuses=statuses))
         self.lifeline_panel.refresh()
         return seeded
 
@@ -1211,14 +1212,17 @@ class MorseTrainerApp:
         self.diploma_window = DiplomaWindow(self.root, seals, self.station_call_var, self.station_name_var,
                                             title)
 
-    def _refresh_all_time(self):
+    def _refresh_all_time(self, with_awards=True):
+        """Reiter Statistik neu füllen; ohne `with_awards` bleiben Diplome und
+        Lebenslinie für ein gleich folgendes _check_awards() liegen."""
         data = stats.load_all_time()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
         self.review_var.set(self._review_text(review.load()))
         self.progress_panel.refresh()
-        self.awards_panel.refresh()
-        self.lifeline_panel.refresh()
+        if with_awards:
+            self.awards_panel.refresh()
+            self.lifeline_panel.refresh()
 
     @staticmethod
     def _review_text(data: dict, today=None) -> str:
@@ -1474,7 +1478,7 @@ class MorseTrainerApp:
         und Statistik nachtragen, die Reiter bleiben gesperrt."""
         self._record_practice()
         self._update_practice()
-        self._refresh_all_time()
+        self._refresh_all_time(with_awards=False)
         self._check_awards()  # angezeigt erst nach dem Trennen
 
     def _network_session_closed(self):
@@ -1520,17 +1524,17 @@ class MorseTrainerApp:
             self.daily.on_block_end(self._active_mode())
             return
         self._unlock_tabs()
-        self._refresh_all_time()
+        self._refresh_all_time(with_awards=False)
+        self._check_awards()
         self._offer_next_lesson(self._active_mode())
         self._offer_groups(self._active_mode())
-        self._check_awards()
         self.show_pending_seals()
 
     def finish_daily(self):
         """Tagesübung zu Ende (DailyRunner): Reiter wieder frei."""
         self.running_mode = False
         self._unlock_tabs()
-        self._refresh_all_time()
+        self._refresh_all_time(with_awards=False)
         self._update_practice()
         self._check_awards()  # angezeigt nach der Abendbilanz
 

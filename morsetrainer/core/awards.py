@@ -15,6 +15,7 @@ Siegel ab dem Tag, an dem es auffällt.
 Fächer der Lernkartei heißen hier wie in der Oberfläche 1–6 (`box` 0–5)."""
 import re
 import sys
+from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
@@ -183,15 +184,21 @@ def _make_session(config: dict, summary: dict, events: list):
     return Session(day, config, summary, chars, groups)
 
 
+# Durchgänge je Abfrage beim ersten Lesen: Alle auf einmal hielten jede
+# Zeile als dict gleichzeitig im Speicher (nach Jahren Übung über 1 GB).
+LOAD_CHUNK = 200
+
+
 def _load_sessions() -> list:
     """Abgeschlossene Durchgänge ohne Selbstbewertung, nach Startzeit; die
-    Zeilen werden nur für noch nicht gelesene Durchgänge geholt."""
+    Zeilen werden nur für noch nicht gelesene Durchgänge geholt, in Stücken."""
     wanted = [s for s in db.sessions() if s.summary is not None and not s.config.get("self_assessed")]
     generation = db.generation
-    missing = [s.id for s in wanted if (generation, s.id) not in _session_cache]
-    events = db.events_by_session(missing) if missing else {}
-    for s in wanted:
-        if s.id in events:
+    missing = [s for s in wanted if (generation, s.id) not in _session_cache]
+    for start in range(0, len(missing), LOAD_CHUNK):
+        chunk = missing[start:start + LOAD_CHUNK]
+        events = db.events_by_session([s.id for s in chunk])
+        for s in chunk:
             _session_cache[(generation, s.id)] = _make_session(s.config, s.summary, events[s.id])
     return [session for session in (_session_cache[(generation, s.id)] for s in wanted) if session]
 
@@ -635,6 +642,23 @@ def _window_sum(per_day: dict, first: date, last: date) -> dict:
     return out
 
 
+def _sliding_sums(per_day: dict, days: list, width: int):
+    """Je Tag aus `days` (aufsteigend, alle Tage mit Einträgen in `per_day`):
+    (Tag, Summen je Schlüssel über die letzten `width` Tage). Das dict wird
+    weitergeschoben statt neu summiert und gilt nur bis zum nächsten Schritt;
+    Schlüssel, die aus dem Fenster gefallen sind, stehen mit 0 darin."""
+    window, sums = deque(), {}
+    for day in days:
+        for key, n in per_day.get(day, {}).items():
+            sums[key] = sums.get(key, 0) + n
+        window.append(day)
+        start = day - timedelta(days=width - 1)
+        while window[0] < start:
+            for key, n in per_day.get(window.popleft(), {}).items():
+                sums[key] -= n
+        yield day, sums
+
+
 def _confusion_state(data: Data):
     """(überwunden [(Tag, 1)], offene Paare {Paar: letzter Problemtag},
     Versuche je Tag, Verwechslungen je Tag)."""
@@ -645,12 +669,13 @@ def _confusion_state(data: Data):
     # Tage, an denen ein Paar verwechselt wurde und (im Fenster bis dahin)
     # zu den häufigsten gehörte.
     problem_days = {}
-    for day in days:
+    for day, tries in _sliding_sums(attempts, days, CONFUSION_WINDOW):
         start = day - timedelta(days=CONFUSION_WINDOW - 1)
+        # Neu summiert, weil bei gleich vielen Verwechslungen die Reihenfolge
+        # im Fenster entscheidet, welche Paare zu den häufigsten zählen.
         conf = _window_sum(confusions, start, day)
         if not conf:
             continue
-        tries = _window_sum(attempts, start, day)
         ranked = sorted(conf.items(), key=lambda item: -item[1])[:CONFUSION_TOP]
         for pair, n in ranked:
             if not confusions.get(day, {}).get(pair):
@@ -658,21 +683,21 @@ def _confusion_state(data: Data):
             pair_tries = sum(tries.get(ch, 0) for ch in pair)
             if n >= CONFUSION_MIN and pair_tries and n / pair_tries >= CONFUSION_SHARE:
                 problem_days.setdefault(pair, []).append(day)
-    overcome, open_pairs = [], {}
-    for pair, marked in problem_days.items():
-        last_problem = max(marked)
-        open_pairs[pair] = last_problem
-        # Frühestens 28 Tage nach dem letzten Tag als Problem, Fenster danach.
-        for day in days:
-            start = day - timedelta(days=CLEAN_DAYS - 1)
+    overcome = []
+    open_pairs = {pair: max(marked) for pair, marked in problem_days.items()}
+    waiting = dict(open_pairs)
+    clean = zip(_sliding_sums(attempts, days, CLEAN_DAYS), _sliding_sums(confusions, days, CLEAN_DAYS))
+    for (day, tries), (_, conf) in clean:
+        if not waiting:
+            break
+        start = day - timedelta(days=CLEAN_DAYS - 1)
+        for pair, last_problem in list(waiting.items()):
+            # Frühestens 28 Tage nach dem letzten Tag als Problem, Fenster danach.
             if start <= last_problem:
                 continue
-            tries = _window_sum(attempts, start, day)
-            conf = _window_sum(confusions, start, day).get(pair, 0)
-            if all(tries.get(ch, 0) >= CLEAN_ATTEMPTS for ch in pair) and conf <= 1:
+            if all(tries.get(ch, 0) >= CLEAN_ATTEMPTS for ch in pair) and conf.get(pair, 0) <= 1:
                 overcome.append((day, 1))
-                del open_pairs[pair]
-                break
+                del open_pairs[pair], waiting[pair]
     return overcome, open_pairs, attempts, confusions
 
 
@@ -867,14 +892,14 @@ def seals_of(state: dict, key: str) -> dict:
     return out
 
 
-def check(today: date = None, data: Data = None):
+def check(today: date = None, data: Data = None, statuses: dict = None):
     """Neue Siegel eintragen. Rückgabe (neu, nachgetragen): `neu` ist eine
     Liste (Schlüssel, Stufe) für das Diplom-Fenster; beim allerersten Aufruf
     wird still nachgetragen und `nachgetragen` ist die Zahl der Diplome
-    (sonst None)."""
+    (sonst None). `statuses`: schon vorhandenes Ergebnis von evaluate()."""
     today = today or date.today()
     state = load()
-    statuses = evaluate(data, today)
+    statuses = statuses if statuses is not None else evaluate(data, today)
     first_time = not state["seeded"]
     new = []
     for award in AWARDS:
