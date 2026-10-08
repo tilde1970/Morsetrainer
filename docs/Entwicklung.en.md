@@ -53,5 +53,7 @@ tools/motive/        award motifs: drawings (quellen/) and stich.py, which
 
 A tag `vX.Y` starts `.github/workflows/release.yml`: it builds AppImage,
 exe and Mac app (ZIP, Apple silicon only, unsigned), writes `SHA256SUMS.txt` and creates the release with the version's
-section from `CHANGELOG.md`. The update in the program only installs files
+section from `CHANGELOG.md` and below it (from “### English”) the one from
+`CHANGELOG.en.md`; the update window in the program shows the part in the
+interface language. The update in the program only installs files
 that match `SHA256SUMS.txt` (`morsetrainer/net/update.py`).

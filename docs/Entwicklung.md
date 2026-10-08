@@ -53,5 +53,7 @@ tools/motive/        Motive der Diplome: Zeichnungen (quellen/) und stich.py,
 
 Ein Tag `vX.Y` startet `.github/workflows/release.yml`: Es baut AppImage,
 exe und Mac-App (ZIP, nur Apple-Prozessor, nicht signiert), schreibt `SHA256SUMS.txt` und legt alles mit dem Abschnitt der
-Version aus `CHANGELOG.md` als Release an. Das Update im Programm lädt nur
+Version aus `CHANGELOG.md` und darunter (ab „### English“) aus
+`CHANGELOG.en.md` als Release an; das Update-Fenster im Programm zeigt den
+Teil in der Sprache der Oberfläche. Das Update im Programm lädt nur
 Dateien, die zu `SHA256SUMS.txt` passen (`morsetrainer/net/update.py`).

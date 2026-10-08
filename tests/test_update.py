@@ -70,6 +70,15 @@ class VersionTest(unittest.TestCase):
         with mock.patch.object(update.urllib.request, "urlopen", return_value=answer):
             self.assertEqual(update.latest_release(), ("2.41", "- **Am Stück:** Optionsfelder."))
         self.assertEqual(update.release_notes(None), "")
+        self.assertEqual(update.release_notes(body, "en"), "- **Am Stück:** Optionsfelder.")  # ohne englischen Teil
+
+    def test_release_notes_in_english(self):
+        body = ("- **Update:** eigenes Fenster.\n\nAlle Änderungen: [CHANGELOG.md](https://x), im Programm.\n\n"
+                "### English\n\n- **Update:** a window of its own.\n\n"
+                "All changes: [CHANGELOG.en.md](https://x), in the program.\n\n"
+                "**Full Changelog**: https://github.com/compare/v2.42...v2.43")
+        self.assertEqual(update.release_notes(body), "- **Update:** eigenes Fenster.")
+        self.assertEqual(update.release_notes(body, "en"), "- **Update:** a window of its own.")
 
     def test_latest_version_without_internet(self):
         for problem in (urllib.error.URLError("no route"), TimeoutError(), OSError("offline")):

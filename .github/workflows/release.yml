@@ -103,12 +103,19 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
-      # Beschreibung: der Abschnitt dieser Version aus CHANGELOG.md, dazu die
-      # von GitHub erzeugten Hinweise (Vergleichslink).
+      # Beschreibung: der Abschnitt dieser Version aus CHANGELOG.md, darunter
+      # ab „### English“ der aus CHANGELOG.en.md (das Update-Fenster zeigt je
+      # nach Sprache den einen oder anderen, net/update.py), dazu die von
+      # GitHub erzeugten Hinweise (Vergleichslink).
       - run: |
-          awk -v v="${GITHUB_REF_NAME#v}" '/^## /{if(f)exit; if($2==v)f=1; next} f' CHANGELOG.md > notes.md
-          printf '\nAlle Änderungen: [CHANGELOG.md](%s/%s/blob/main/CHANGELOG.md), im Programm unter „Hilfe“.\n' \
-            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> notes.md
+          section() { awk -v v="${GITHUB_REF_NAME#v}" '/^## /{if(f)exit; if($2==v)f=1; next} f' "$1"; }
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/main"
+          {
+            section CHANGELOG.md
+            printf '\nAlle Änderungen: [CHANGELOG.md](%s/CHANGELOG.md), im Programm unter „Hilfe“.\n\n### English\n\n' "$url"
+            section CHANGELOG.en.md
+            printf '\nAll changes: [CHANGELOG.en.md](%s/CHANGELOG.en.md), in the program under “Help”.\n' "$url"
+          } > notes.md
       # Prüfsummen: zum Nachprüfen von Hand, und das Update im Programm
       # lädt nur, was hierzu passt (morsetrainer/net/update.py).
       - run: sha256sum Morsetrainer-x86_64.AppImage Morsetrainer-x86_64.AppImage.zsync Morsetrainer.exe Morsetrainer-macOS.zip > SHA256SUMS.txt

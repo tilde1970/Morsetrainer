@@ -1593,7 +1593,7 @@ class MorseTrainerApp:
 
         def run():
             try:
-                result["version"], result["notes"] = update.latest_release()
+                result["version"], result["notes"] = update.latest_release(lang=i18n.LANG)
             except update.UpdateError:
                 result["version"] = None
             except Exception:
