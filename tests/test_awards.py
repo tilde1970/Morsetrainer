@@ -230,6 +230,12 @@ class AwardsTest(unittest.TestCase):
                     session("group", 2, wpm=15, chars=chars), session("group", 3, chars=chars)]
         self.assertEqual(dates("heard", data(sessions))[0], day(3))  # Wörter und 15 WPM zählen nicht
 
+    def test_endurance_ignores_future_days(self):
+        practice = {day(i).isoformat(): 900 for i in range(10)}  # ab heute: 10 Tage
+        status = awards.evaluate(data(practice=practice), today=day(0))["endurance"]
+        self.assertEqual((status.value, status.dates[0]), (1, None))
+        self.assertEqual(dates("endurance", data(practice=practice))[0], day(9))
+
     def test_star_collector(self):
         all_three = {"stars": ["dabei", "sauber", "weiter"]}
         days = {day(i).isoformat(): all_three for i in range(16)}  # 48 Sterne

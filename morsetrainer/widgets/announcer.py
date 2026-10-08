@@ -34,6 +34,9 @@ POLL_MS = 20
 # so lange, damit nichts hängen bleibt, falls immer neue kommen.
 SUPERSEDED_MAX_WAIT_S = 30
 CACHE_SIZE = 64
+# Zusätzlich nach Größe begrenzt (etwa anderthalb Minuten Sprache): Ansagen
+# mit Zahlen (F11, Statistik) kommen kaum je gleich wieder, sind aber lang.
+CACHE_BYTES = 16 * 1024 * 1024
 # Lange Ansagen (Statistik) satzweise: der erste Satz klingt sofort, die
 # übrigen entstehen, während er läuft. Kurze bleiben ein Stück.
 SPLIT_ABOVE_CHARS = 60
@@ -242,20 +245,26 @@ class Announcer:
         poll()
 
     def _synth(self, text: str):
-        """Sprache für `text` (zwischengespeichert, höchstens CACHE_SIZE Einträge);
+        """Sprache für `text` (zwischengespeichert, höchstens CACHE_SIZE Einträge
+        und CACHE_BYTES; zuerst fällt, was am längsten nicht gebraucht wurde);
         None, wenn die Stimme versagt."""
-        samples = self._cache.get(text)
+        samples = self._cache.pop(text, None)
         if samples is None:
             with _synth_lock:
                 try:
                     samples = self.speaker().synth(text)
                 except Exception:  # Stimme defekt: lieber still als abgestürzt
                     samples = None
-            if samples is not None:
-                if len(self._cache) >= CACHE_SIZE:
-                    self._cache.pop(next(iter(self._cache)))
+        if samples is not None:
+            size = getattr(samples, "nbytes", 0)
+            while self._cache and (len(self._cache) >= CACHE_SIZE or self._cache_bytes() + size > CACHE_BYTES):
+                self._cache.pop(next(iter(self._cache)))
+            if size <= CACHE_BYTES:
                 self._cache[text] = samples
         return samples
+
+    def _cache_bytes(self) -> int:
+        return sum(getattr(samples, "nbytes", 0) for samples in self._cache.values())
 
 
 def _chunks(text: str) -> list:

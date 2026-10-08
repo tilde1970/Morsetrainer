@@ -815,14 +815,16 @@ def _confusion_hint(state, today: date):
             {"pair": "/".join(sorted(pair)), "days": days_left, "tries": fewest, "need": CLEAN_ATTEMPTS})
 
 
-def _endurance(data: Data) -> list:
+def _endurance(data: Data, today: date) -> list:
+    """Tage mit genug Übung; Tage nach heute (falsch gestellte Uhr) zählen nicht."""
     days = []
     for key, seconds in data.practice.items():
         try:
-            if seconds >= DAY_GOAL_S:
-                days.append((date.fromisoformat(key), 1))
+            day = date.fromisoformat(key)
         except ValueError:
             continue
+        if day <= today and seconds >= DAY_GOAL_S:
+            days.append((day, 1))
     return _cumulative(days)
 
 
@@ -917,7 +919,7 @@ def evaluate(data: Data = None, today: date = None) -> dict:
         "contest": lambda: _contest(contest_runs), "wpx": lambda: _wpx(data),
         "headphones": lambda: _headphones(data),
         "confusion": lambda: _cumulative(confusion[0]) if confusion else [],
-        "endurance": lambda: _endurance(data), "stars": lambda: _stars(data, today), "heard": lambda: _heard(data),
+        "endurance": lambda: _endurance(data, today), "stars": lambda: _stars(data, today), "heard": lambda: _heard(data),
         "first_qso": lambda: _first_qso(data), "all_contests": lambda: _all_contests(data),
         "club": lambda: _club(data), "q_groups": lambda: _q_groups(data), "digits": lambda: _digits(data, today),
     }

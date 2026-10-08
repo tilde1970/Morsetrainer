@@ -427,6 +427,23 @@ class AnnouncerTest(AppTestCase):
                 announcer._synth(text)
         self.assertEqual(list(announcer._cache), ["drei", "vier", "fünf"])
 
+    def test_speech_cache_is_limited_by_size(self):
+        # Lange Ansagen mit wechselnden Zahlen (F11) füllen den Speicher nicht:
+        # Es zählt auch die Größe; was gerade gebraucht wurde, bleibt.
+        import numpy as np
+        from morsetrainer.core import speech
+        announcer = self.app.announcer
+        announcer._cache.clear()
+        second = np.zeros(1000, dtype=np.float32)  # 4000 Bytes
+        with mock.patch.object(speech.speaker, "synth", lambda text: second), \
+                mock.patch.object(self.announcer, "CACHE_BYTES", 10000):
+            for text in ("eins", "zwei", "eins", "drei"):
+                announcer._synth(text)
+            self.assertEqual(list(announcer._cache), ["eins", "drei"])
+            with mock.patch.object(speech.speaker, "synth", lambda text: np.zeros(5000, dtype=np.float32)):
+                self.assertIsNotNone(announcer._synth("zu lang"))
+        self.assertNotIn("zu lang", announcer._cache)
+
     def test_long_announcement_starts_with_the_first_sentence(self):
         from morsetrainer.widgets import announcer
         self.assertEqual(announcer._chunks("Richtig."), ["Richtig."])

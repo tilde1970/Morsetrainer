@@ -162,7 +162,9 @@ class MorseTrainerApp:
         self._build_notebook()
         self._follow_station()
         self._build_all_time_tab()
-        self._refresh_all_time()
+        # Diplome und Lebenslinie füllt _check_awards_at_start, wenn das
+        # Fenster schon steht: Die Auswertung braucht nach Jahren Übung Zeit.
+        self._refresh_all_time(with_awards=False)
         # Tab-Reihenfolge folgt der Stapelreihenfolge: die Fußzeile (Hilfe)
         # zuletzt, nach Tagesübung und Reitern.
         self.footer.lift()
