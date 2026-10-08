@@ -712,7 +712,8 @@ _KEY = re.compile(r"\b(Taste|key) ([*(#+=])")
 _KEY_NAMES = {"*": N_("Stern"), "(": N_("Klammer auf"), "#": N_("Raute"), "+": N_("Plus"),
               "=": N_("Gleichheitszeichen")}
 # Einheiten, die die Stimme sonst buchstabiert („HaZet“); nur als ganzes Wort.
-_UNITS = ((re.compile(r"\bkHz\b"), N_("Kilohertz")), (re.compile(r"\bHz\b"), N_("Hertz")))
+_UNITS = ((re.compile(r"\bkHz\b"), N_("Kilohertz")), (re.compile(r"\bHz\b"), N_("Hertz")),
+          (re.compile(r"/h\b"), N_(" pro Stunde")))
 # Englische Lehnwörter, die die deutsche Stimme deutsch ausspricht
 # („Fäding“): so geschrieben, wie sie klingen sollen (auch im Wortinnern,
 # etwa „Flatterfading“).

@@ -98,6 +98,17 @@ WHATS_NEW = {
 }
 
 
+# Restzeit „3:12“: für die Ansage als „3 Min. 12 s“ (announcer.speakable
+# macht daraus Minuten und Sekunden).
+_CLOCK = re.compile(r"\b(\d+):(\d{2})\b")
+
+
+def _spoken_clock(match) -> str:
+    minutes, seconds = int(match.group(1)), int(match.group(2))
+    parts = ([f"{minutes} Min."] if minutes else []) + ([f"{seconds} s"] if seconds or not minutes else [])
+    return " ".join(parts)
+
+
 class MorseTrainerApp:
     """Das Hauptfenster: Kopfleiste mit den gemeinsamen Einstellungen
     (Zeichensatz, Tempo, Tonhöhe, Lektion), Tagesübung, die Übungs-Reiter und
@@ -620,10 +631,14 @@ class MorseTrainerApp:
             return
         parts = [self._tab_name()]
         mode = self._active_mode()
-        # session_info_var: Adresse und PIN des Trainers im Netzwerk.
-        for attr in ("status_var", "session_info_var", "feedback_var", "remaining_var", "progress_var"):
+        # session_info_var: Adresse und PIN des Trainers im Netzwerk; live_var
+        # (Am Stück) und score_var (Contest, Quiz) mit Zwischenstand und Restzeit.
+        for attr in ("status_var", "session_info_var", "feedback_var", "live_var", "score_var", "remaining_var",
+                     "progress_var"):
             var = getattr(mode, attr, None)
             text = var.get().strip() if var is not None else ""
+            if attr in ("live_var", "score_var", "remaining_var"):
+                text = _CLOCK.sub(_spoken_clock, text)
             if attr == "progress_var":  # „3/20“ im Reiter Sprechen
                 text = re.sub(r"^(\d+)/(\d+)$", lambda m: tr("{done} von {total}").format(
                     done=m.group(1), total=m.group(2)), text)

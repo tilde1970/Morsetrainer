@@ -680,7 +680,8 @@ One”). If the voice is missing, F9 and F11 play an error tone and the
 reason appears in the status line.
 
 **Where am I? (F11)** reads out the tab, status, last feedback and
-remaining time, during daily practice the current card, in the Statistics
+remaining time (in Non-stop with the provisional accuracy, in Contest with
+QSOs and rate), during daily practice the current card, in the Statistics
 tab an overview (overall result, most errors, confusions, review box,
 seals, practice today) – even with announcements switched off.
 

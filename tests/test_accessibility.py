@@ -1115,6 +1115,17 @@ class ListenAnnounceTest(AnnouncerTest):
         listen.progress_var.set("3/20")
         self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
         self.assertTrue(self.pump_until(lambda: any("Hör zu. 3 von 20" in s for s in self.said)), self.said)
+        # Restzeit und Zwischenstand in Am Stück und im Contest
+        self.app.show_mode("Kontinuierlich")
+        self.mode("Kontinuierlich").live_var.set("Gesendet: 40 Zeichen · Restzeit 3:12")
+        self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
+        self.assertTrue(self.pump_until(lambda: any("Restzeit 3 Minuten 12 Sekunden" in s for s in self.said)),
+                        self.said)
+        self.app.show_mode("Contest")
+        self.mode("Contest").score_var.set("QSOs: 5 · richtig: 4 · Rate: 80/h · Rest 1:00")
+        self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
+        self.assertTrue(self.pump_until(lambda: any("80 pro Stunde, Rest eine Minute" in s for s in self.said)),
+                        self.said)
         # Ende eines Durchgangs
         with mock.patch.object(listen_mode.audio, "play"):
             listen.running, listen.done, listen.total = True, 20, 20

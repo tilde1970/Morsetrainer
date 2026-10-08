@@ -689,7 +689,8 @@ der Stimme Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann
 und der Grund steht in der Statuszeile.
 
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
-Restzeit vor, in der Tagesübung die aktuelle Karte, im Reiter Statistik
+Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit
+QSOs und Rate), in der Tagesübung die aktuelle Karte, im Reiter Statistik
 eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
 Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
 

@@ -180,6 +180,7 @@ EN.update({
     "Enter: jetzt aktualisieren. Escape: später.": "Enter: update now. Escape: later.",
     "Lade Version {version}.": "Downloading version {version}.",
     "Aktualisieren …": "Update …",
+    " pro Stunde": " per hour",
     "Stern": "asterisk",
     "Klammer auf": "left parenthesis",
     "Raute": "hash",
