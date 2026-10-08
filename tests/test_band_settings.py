@@ -451,6 +451,21 @@ class ExtraInterferenceTest(unittest.TestCase):
         again, _ = self.run_band({"levels": {"fence": 1.0}, "gain": 1.0}, 15)
         np.testing.assert_array_equal(x, again)
 
+    def test_keying_envelope_in_chunks_matches_the_whole(self):
+        # Die Hüllkurve wird stückweise gerechnet (Speicher); an den
+        # Stückgrenzen darf sich nichts verschieben.
+        import numpy as np
+        rng = np.random.default_rng(5)
+        magnitude = np.abs(np.repeat(rng.random(400) > 0.5, 97) * rng.uniform(0.5, 1.0, 400 * 97)).astype(np.float32)
+        window = 40
+        total = np.cumsum(magnitude, dtype=np.float64)
+        envelope = (total[window:] - total[:-window]) / window
+        expected = (envelope > 0.3 * envelope.max()).astype(np.int8)
+        for chunk in (1000, 4096, 1 << 20):
+            with mock.patch.object(band, "ENVELOPE_CHUNK", chunk):
+                np.testing.assert_array_equal(band._keyed(magnitude, window), expected, err_msg=str(chunk))
+        self.assertIsNone(band._keyed(np.zeros(500, dtype=np.float32), window))
+
     def test_key_clicks_get_through_a_narrow_filter(self):
         # Der Nachbar liegt weit daneben: Ein 250-Hz-Filter nimmt seinen Ton
         # fast ganz weg, seine Klicks nicht.

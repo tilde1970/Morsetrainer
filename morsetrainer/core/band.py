@@ -325,12 +325,36 @@ def _cw_qrm_loop(rng, freq: int, offset_range=QRM_OFFSETS[DEFAULT_QRM_OFFSET]) -
         qso = qso_text.generate_qso(kind, qso_text.LENGTH_LONG)
     finally:
         random.setstate(state)
+    # Jedes Stück gleich als float32: alle erst in float64 zu sammeln kostete
+    # bei 150 s Schleife über 100 MB zusätzlich.
     parts = [
-        build_text(text, wpm, freq + offset, chirp=chirp) if station == 0
-        else silence(rng.uniform(*CW_QRM_PAUSE_SECONDS))
+        (build_text(text, wpm, freq + offset, chirp=chirp) if station == 0
+         else silence(rng.uniform(*CW_QRM_PAUSE_SECONDS))).astype(np.float32)
         for station, text in qso.transmissions
     ]
-    return np.concatenate(parts).astype(np.float32)
+    return np.concatenate(parts)
+
+
+# Stückgröße für die Hüllkurve in _keyed (Abtastwerte).
+ENVELOPE_CHUNK = 1 << 20
+
+
+def _keyed(magnitude: np.ndarray, window: int):
+    """1, wo der gleitende Mittelwert von `magnitude` über `window` Werte
+    über 30 % seines Höchstwerts liegt, sonst 0 (int8, `window` kürzer);
+    None ohne Signal. In Stücken gerechnet: Die ganze Schleife in float64
+    hielte zwei Kopien von je über 50 MB."""
+    count = len(magnitude) - window
+
+    def envelope(start):
+        total = np.cumsum(magnitude[start:start + ENVELOPE_CHUNK + window], dtype=np.float64)
+        return (total[window:] - total[:-window]) / window
+
+    starts = range(0, count, ENVELOPE_CHUNK)
+    top = max((envelope(start).max() for start in starts), default=0.0)
+    if top <= 0:
+        return None
+    return np.concatenate([(envelope(start) > 0.3 * top).astype(np.int8) for start in starts])
 
 
 def _key_clicks(loop: np.ndarray, rng) -> np.ndarray:
@@ -341,11 +365,9 @@ def _key_clicks(loop: np.ndarray, rng) -> np.ndarray:
     clicks = np.zeros(len(loop), dtype=np.float32)
     if len(loop) <= window:
         return clicks
-    total = np.cumsum(np.abs(loop), dtype=np.float64)
-    envelope = (total[window:] - total[:-window]) / window
-    if envelope.max() <= 0:
+    keyed = _keyed(np.abs(loop), window)
+    if keyed is None:
         return clicks
-    keyed = (envelope > 0.3 * envelope.max()).astype(np.int8)
     edges = np.flatnonzero(np.diff(keyed)) + window // 2
     noise = _shaped_noise_loop()
     length = int(CLICK_SECONDS * SAMPLE_RATE)
