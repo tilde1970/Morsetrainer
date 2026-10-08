@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 from morsetrainer.i18n import N_
-from morsetrainer.core import db, errorlog, koch, practice, review, stats, words
+from morsetrainer.core import daily, db, errorlog, koch, practice, review, stats, words
 
 STATE_KEY = "awards"
 
@@ -114,6 +114,8 @@ AWARDS = (
           (1, 3, 6), N_("Paare"), 5, unit_one=N_("Paar"), unit_dative=N_("Paaren")),
     Award("endurance", N_("Ausdauer"), N_("Tage mit ≥ 10 Min. Übung, nicht in Folge"),
           (10, 50, 150, 365), N_("Tage"), unit_dative=N_("Tagen")),
+    Award("stars", N_("Sternensammler"), N_("Sterne der Tagesübung insgesamt"),
+          (50, 200, 500, 1000), N_("Sterne"), unit_dative=N_("Sternen")),
     Award("heard", N_("Zeichen gehört"), N_("Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM"),
           (5000, 25000, 100000, 250000), N_("Zeichen")),
     Award("first_qso", N_("Erstes QSO verstanden"), N_("Normales QSO mit Abfrage, alles richtig, ohne "
@@ -149,11 +151,13 @@ class Session:
 @dataclass
 class Data:
     """Alles, was die Diplome auswerten: Durchgänge, Ergebnisse der Modi ohne
-    Zeichenprotokoll (QSO, Contest, Rufz …), Lernkartei und Übungszeit."""
+    Zeichenprotokoll (QSO, Contest, Rufz …), Lernkartei, Übungszeit und die
+    Sterne der Tagesübung."""
     sessions: list
     results: list   # Ergebnisse (stats.log_result) mit "day"
     review: dict
     practice: dict
+    daily: dict = None  # Stand der Tagesübung (daily.load())
 
 
 # Abgeschlossene Durchgänge ändern sich nicht mehr: einmal gelesen, bleiben
@@ -203,7 +207,7 @@ def load_data() -> Data:
         except (KeyError, TypeError, ValueError):
             continue
     results.sort(key=lambda r: r["time"])
-    return Data(sessions, results, review.load(), practice.load())
+    return Data(sessions, results, review.load(), practice.load(), daily.load())
 
 
 # --- Hilfen ------------------------------------------------------------------------
@@ -703,6 +707,19 @@ def _endurance(data: Data) -> list:
     return _cumulative(days)
 
 
+def _stars(data: Data) -> list:
+    """Sterne der Tagesübung, aufsummiert wie in der Lebenslinie."""
+    state = data.daily or {}
+    days = []
+    for key in state.get("days", {}):
+        try:
+            day = date.fromisoformat(key)
+        except (TypeError, ValueError):
+            continue
+        days.append((day, len(daily.stars_on(state, day))))
+    return _cumulative(days)
+
+
 def _heard(data: Data) -> list:
     return _cumulative((s.day, sum(1 for _, _, ok in s.chars if ok)) for s in data.sessions
                        if _random_chars(s) and _char_wpm(s.config) >= MIN_CHAR_WPM)
@@ -778,7 +795,7 @@ def evaluate(data: Data = None, today: date = None) -> dict:
         "contest": lambda: _contest(contest_runs), "wpx": lambda: _wpx(data),
         "headphones": lambda: _headphones(data),
         "confusion": lambda: _cumulative(confusion[0]) if confusion else [],
-        "endurance": lambda: _endurance(data), "heard": lambda: _heard(data),
+        "endurance": lambda: _endurance(data), "stars": lambda: _stars(data), "heard": lambda: _heard(data),
         "first_qso": lambda: _first_qso(data), "all_contests": lambda: _all_contests(data),
         "club": lambda: _club(data), "q_groups": lambda: _q_groups(data), "digits": lambda: _digits(data, today),
     }

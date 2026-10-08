@@ -229,6 +229,18 @@ class AwardsTest(unittest.TestCase):
                     session("group", 2, wpm=15, chars=chars), session("group", 3, chars=chars)]
         self.assertEqual(dates("heard", data(sessions))[0], day(3))  # Wörter und 15 WPM zählen nicht
 
+    def test_star_collector(self):
+        all_three = {"stars": ["dabei", "sauber", "weiter"]}
+        days = {day(i).isoformat(): all_three for i in range(16)}  # 48 Sterne
+        days[day(20).isoformat()] = {"stars": ["dabei"]}             # 49
+        days[day(30).isoformat()] = {"stars": ["dabei", "weiter"]}   # 51: Bronze
+        days["kaputt"] = all_three
+        d = Data([], [], {}, {}, {"days": days})
+        status = awards.evaluate(d, today=day(100))["stars"]
+        self.assertEqual(status.dates[0], day(30))
+        self.assertEqual(status.value, 51)
+        self.assertEqual(dates("stars", data()), [None] * 4)  # ohne Tagesübung
+
     def test_unlevelled_awards(self):
         quiz = result("qso_quiz", 0, kind="ragchew", correct=5, total=5, replays=0, wpm=15)
         self.assertEqual(dates("first_qso", data(results=[quiz])), [day(0)])
