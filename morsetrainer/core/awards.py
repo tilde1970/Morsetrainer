@@ -114,7 +114,7 @@ AWARDS = (
           (1, 3, 6), N_("Paare"), 5, unit_one=N_("Paar"), unit_dative=N_("Paaren")),
     Award("endurance", N_("Ausdauer"), N_("Tage mit ≥ 10 Min. Übung, nicht in Folge"),
           (10, 50, 150, 365), N_("Tage"), unit_dative=N_("Tagen")),
-    Award("stars", N_("Sternensammler"), N_("Sterne der Tagesübung insgesamt"),
+    Award("stars", N_("Sternstunden"), N_("Sterne der Tagesübung insgesamt"),
           (50, 200, 500, 1000), N_("Sterne"), unit_dative=N_("Sternen")),
     Award("heard", N_("Zeichen gehört"), N_("Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM"),
           (5000, 25000, 100000, 250000), N_("Zeichen")),

@@ -322,7 +322,7 @@ as they were.
   daily practice, daily goal reached; – = no practice), and next to it
   where you stand on the **weekly goal of 12 stars**. Four to five days of
   practice get you there; a missed day doesn't cost you the week. All
-  stars together count for the **Star collector** award (section 5). Until
+  stars together count for the **Finest hours** award (section 5). Until
   the first daily practice of a new week it shows a look back, e.g.
   “Last week: 4 days, 11 ★, lesson 12 → 13”.
 
@@ -373,7 +373,7 @@ next open level – stamped “PREVIEW”, without date and number.
 | Headphones | 15 / 20 / 25 WPM effective | 41 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”, characters ≥ 18 WPM; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
 | Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
 | Endurance | 10 / 50 / 150 / 365 days | – | Days with ≥ 10 min practice, not in a row |
-| Star collector | 50 / 200 / 500 / 1,000 stars | – | Daily practice stars in total (as in the lifeline) |
+| Finest hours | 50 / 200 / 500 / 1,000 stars | – | Daily practice stars in total (as in the lifeline) |
 | Characters heard | 5,000 / 25,000 / 100,000 / 250,000 | – | Correctly recognised random characters, characters ≥ 18 WPM |
 | Club night | 1 / 5 / 15 / 40 evenings | – | Days with ≥ 10 min of network sessions in total, taken part in or led as trainer (only runs with participants) |
 | First QSO understood | – | 40 | Normal QSO with questions, all right, without “Again”, ≥ 15 WPM effective, characters ≥ 18 WPM |

@@ -1364,7 +1364,7 @@ EN.update({
     "Paar": "pair",
     "Ausdauer": "Endurance",
     "Tage mit ≥ 10 Min. Übung, nicht in Folge": "Days with ≥ 10 min practice, not in a row",
-    "Sternensammler": "Star collector",
+    "Sternstunden": "Finest hours",
     "Sterne der Tagesübung insgesamt": "Daily practice stars in total",
     "Sterne": "stars",
     "Sternen": "stars",

@@ -322,7 +322,7 @@ wieder wie vorher.
   erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum
   **Wochenziel von 12 Sternen**. Das schaffst du mit vier bis fünf
   Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Alle Sterne
-  zusammen zählen für das Diplom **Sternensammler** (Abschnitt 5). Bis zur
+  zusammen zählen für das Diplom **Sternstunden** (Abschnitt 5). Bis zur
   ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.
   „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“.
 
@@ -374,7 +374,7 @@ Nummer.
 | Kopfhörer | 15 / 20 / 25 WPM effektiv | 41 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“, Zeichen ≥ 18 WPM; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
 | Verwechslung überwunden | 1 / 3 / 6 Paare | 5 | Ein Paar, das zu deinen häufigsten Verwechslungen gehörte, 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt |
 | Ausdauer | 10 / 50 / 150 / 365 Tage | – | Tage mit ≥ 10 Min. Übung, nicht in Folge |
-| Sternensammler | 50 / 200 / 500 / 1.000 Sterne | – | Sterne der Tagesübung insgesamt (wie in der Lebenslinie) |
+| Sternstunden | 50 / 200 / 500 / 1.000 Sterne | – | Sterne der Tagesübung insgesamt (wie in der Lebenslinie) |
 | Zeichen gehört | 5.000 / 25.000 / 100.000 / 250.000 | – | Richtig erkannte Zufallszeichen, Zeichen ≥ 18 WPM |
 | Clubabend | 1 / 5 / 15 / 40 Abende | – | Tage mit zusammen ≥ 10 Min. Netzwerk-Übung, mitgemacht oder als Trainer geleitet (nur Durchgänge mit Teilnehmern) |
 | Erstes QSO verstanden | – | 40 | Normales QSO mit Abfrage, alles richtig, ohne „Nochmal“, ≥ 15 WPM effektiv, Zeichen ≥ 18 WPM |
