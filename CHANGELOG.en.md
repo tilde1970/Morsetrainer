@@ -1,5 +1,16 @@
 # Changes
 
+## 2.43
+
+- **New award Star collector:** all daily practice stars together, bronze
+  from 50, silver from 200, gold from 500, platinum from 1,000 stars. Every
+  star counts, also from weeks without the weekly goal reached.
+- **Where am I? (F11):** now also reads out the remaining time and the
+  current score in Non-stop and Contest (“time left 3 minutes 12 seconds”,
+  “rate 80 per hour”).
+- **Update in English:** with the English interface, the update window
+  will show what is new in English.
+
 ## 2.42
 
 - **Update:** a window of its own shows what is new in the new version;

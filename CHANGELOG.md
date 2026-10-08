@@ -1,5 +1,16 @@
 # Änderungen
 
+## 2.43
+
+- **Neues Diplom Sternensammler:** Alle Sterne der Tagesübung zusammen,
+  Bronze ab 50, Silber ab 200, Gold ab 500, Platin ab 1.000 Sternen. Jeder
+  Stern zählt, auch aus Wochen ohne erreichtes Wochenziel.
+- **Wo bin ich? (F11):** liest jetzt auch in Am Stück und im Contest die
+  Restzeit und den Zwischenstand vor („Restzeit 3 Minuten 12 Sekunden“,
+  „Rate 80 pro Stunde“).
+- **Update auf Englisch:** Bei englischer Oberfläche zeigt das
+  Update-Fenster künftig die Neuerungen auf Englisch.
+
 ## 2.42
 
 - **Update:** Ein eigenes Fenster zeigt, was in der neuen Version neu ist;
