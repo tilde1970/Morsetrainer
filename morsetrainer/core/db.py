@@ -232,11 +232,16 @@ def _write(sql: str, params=()) -> int:
         return _connection().execute(sql, params).lastrowid
 
 
-def _read(sql: str, params=()) -> list:
+def _read(sql: str, params=(), strict: bool = False) -> list:
+    """Zeilen der Abfrage; bei einem Fehler leer, mit `strict` wird er
+    weitergereicht (wer aus dem Ergebnis Dauerhaftes ableitet, muss
+    „nichts da“ von „nicht lesbar“ unterscheiden)."""
     with _lock:
         try:
             return _connection().execute(sql, params).fetchall()
         except (Error, OSError):
+            if strict:
+                raise
             return []
 
 
@@ -366,15 +371,16 @@ def sessions(since=None, until=None, mode=None, events=False) -> list:
     return out
 
 
-def events_by_session(ids) -> dict:
-    """{id: [Zeilen in der Reihenfolge des Schreibens]} der Durchgänge `ids`."""
+def events_by_session(ids, strict: bool = False) -> dict:
+    """{id: [Zeilen in der Reihenfolge des Schreibens]} der Durchgänge `ids`;
+    `strict`: Lesefehler weiterreichen statt leere Listen."""
     by_id = {session_id: [] for session_id in ids}
     ids = list(by_id)
     # In Stücken, damit die Zahl der Platzhalter die Grenze von SQLite nicht reißt.
     for start in range(0, len(ids), 500):
         chunk = ids[start:start + 500]
         rows = _read(f"SELECT session_id, data FROM events WHERE session_id IN "
-                     f"({','.join('?' * len(chunk))}) ORDER BY session_id, id", chunk)
+                     f"({','.join('?' * len(chunk))}) ORDER BY session_id, id", chunk, strict)
         for session_id, text in rows:
             entry = _load(text)
             if isinstance(entry, dict):
@@ -397,11 +403,23 @@ def digests(ids, version: int) -> dict:
     return out
 
 
+# Auszüge sind nur ein Vorrat: Schreibt gerade ein anderes Programmfenster,
+# lieber verzichten als das Fenster BUSY_TIMEOUT_MS lang anhalten.
+DIGEST_BUSY_TIMEOUT_MS = 200
+
+
 def save_digests(items: dict, version: int) -> None:
-    """{id: Auszug} in der Fassung `version` speichern (ersetzt ältere)."""
-    with transaction():
-        _connection().executemany("INSERT OR REPLACE INTO digests (session_id, version, data) VALUES (?, ?, ?)",
-                                  [(session_id, version, _dump(data)) for session_id, data in items.items()])
+    """{id: Auszug} in der Fassung `version` speichern (ersetzt ältere).
+    Wartet höchstens DIGEST_BUSY_TIMEOUT_MS auf eine Sperre."""
+    with _lock:
+        conn = _connection()
+        conn.execute(f"PRAGMA busy_timeout = {DIGEST_BUSY_TIMEOUT_MS}")
+        try:
+            with transaction():
+                conn.executemany("INSERT OR REPLACE INTO digests (session_id, version, data) VALUES (?, ?, ?)",
+                                 [(session_id, version, _dump(data)) for session_id, data in items.items()])
+        finally:
+            conn.execute(f"PRAGMA busy_timeout = {BUSY_TIMEOUT_MS}")
 
 
 def session_events(session_id: int) -> list:

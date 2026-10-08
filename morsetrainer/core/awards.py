@@ -267,7 +267,9 @@ LOAD_CHUNK = 200
 
 def _digests(ids: list) -> dict:
     """{id: Digest}: gespeicherte Auszüge, fehlende oder veraltete aus den
-    Zeilen berechnet und gespeichert."""
+    Zeilen berechnet und gespeichert. Sind die Zeilen nicht lesbar, fehlen
+    diese Durchgänge im Ergebnis: Ein leerer Auszug würde gespeichert und
+    sie zählten nie wieder."""
     found = {}
     for session_id, obj in db.digests(ids, DIGEST_VERSION).items():
         digest = _digest_from_json(obj)
@@ -275,7 +277,13 @@ def _digests(ids: list) -> dict:
             found[session_id] = digest
     todo = [session_id for session_id in ids if session_id not in found]
     if todo:
-        events = db.events_by_session(todo)
+        try:
+            events = db.events_by_session(todo, strict=True)
+        except (db.Error, OSError):
+            if "digests" not in _failed:
+                _failed.add("digests")
+                errorlog.record(*sys.exc_info())
+            return found
         fresh = {session_id: _events_digest(events[session_id]) for session_id in todo}
         try:
             db.save_digests({session_id: _digest_to_json(d) for session_id, d in fresh.items()}, DIGEST_VERSION)
@@ -290,13 +298,16 @@ def _load_sessions() -> list:
     nur für noch nicht gelesene Durchgänge, in Stücken."""
     wanted = [s for s in db.sessions() if s.summary is not None and not s.config.get("self_assessed")]
     generation = db.generation
+    if any(key[0] != generation for key in _session_cache):
+        _session_cache.clear()  # andere Datei (Sicherung zurückgespielt): Altes freigeben
     missing = [s for s in wanted if (generation, s.id) not in _session_cache]
     for start in range(0, len(missing), LOAD_CHUNK):
         chunk = missing[start:start + LOAD_CHUNK]
         digests = _digests([s.id for s in chunk])
         for s in chunk:
-            _session_cache[(generation, s.id)] = _make_session(s.config, s.summary, digests[s.id])
-    return [session for session in (_session_cache[(generation, s.id)] for s in wanted) if session]
+            if s.id in digests:  # sonst nicht lesbar: beim nächsten Mal wieder versucht
+                _session_cache[(generation, s.id)] = _make_session(s.config, s.summary, digests[s.id])
+    return [session for session in (_session_cache.get((generation, s.id)) for s in wanted) if session]
 
 
 def load_data() -> Data:
@@ -889,13 +900,15 @@ def _q_groups(data: Data) -> list:
             continue
         for sent, n in s.digest.first_ok.items():
             if sent in Q_GROUPS:
-                hits.setdefault(sent, []).extend([s.day] * n)
+                hits.setdefault(sent, []).append((s.day, n))
     done = []
-    for days in hits.values():
-        days.sort()
-        for index in range(2, len(days)):
-            if len(set(days[:index + 1])) >= 2:
-                done.append((days[index], 1))
+    for counted in hits.values():
+        total, days = 0, set()
+        for day, n in sorted(counted, key=lambda item: item[0]):
+            total += n
+            days.add(day)
+            if total >= 3 and len(days) >= 2:
+                done.append((day, 1))
                 break
     return _cumulative(done)
 

@@ -465,6 +465,55 @@ class DigestTest(unittest.TestCase):
         self.assertEqual(loaded.digest.correct, 2)
         self.assertEqual(set(db.digests([session_id], awards.DIGEST_VERSION)), {session_id})
 
+    def test_unreadable_lines_are_not_stored_as_empty_digest(self):
+        session_id = tests.write_session(DIGEST_LINES)
+        read = db._read
+
+        def failing(sql, params=(), strict=False):
+            if "FROM events" in sql and strict:
+                raise db.Error("disk I/O error")
+            return read(sql, params, strict)
+
+        awards._failed.discard("digests")
+        with mock.patch.object(db, "_read", failing), mock.patch.object(awards.errorlog, "record") as record:
+            self.assertEqual(awards._load_sessions(), [])  # diesmal ohne den Durchgang
+            awards._load_sessions()
+        record.assert_called_once()  # einmal je Programmlauf ins Fehlerprotokoll
+        self.assertEqual(db.digests([session_id], awards.DIGEST_VERSION), {})
+        [loaded] = awards._load_sessions()  # wieder lesbar: richtig gezählt
+        self.assertEqual(loaded.digest.correct, 2)
+        awards._failed.discard("digests")
+
+    def test_saving_digests_waits_only_briefly_for_another_window(self):
+        import sqlite3
+        import time
+        session_id = tests.write_session(DIGEST_LINES)
+        other = sqlite3.connect(db.path(), isolation_level=None)
+        try:
+            other.execute("BEGIN IMMEDIATE")  # das andere Fenster schreibt gerade
+            start = time.monotonic()
+            with self.assertRaises(db.Error):
+                db.save_digests({session_id: {}}, awards.DIGEST_VERSION)
+            self.assertLess(time.monotonic() - start, 2)
+            [loaded] = awards._load_sessions()  # Auswertung geht trotzdem
+            self.assertEqual(loaded.digest.correct, 2)
+        finally:
+            other.execute("ROLLBACK")
+            other.close()
+        self.assertEqual(db._read("PRAGMA busy_timeout"), [(db.BUSY_TIMEOUT_MS,)])
+
+    def test_cache_of_another_database_is_released(self):
+        tests.write_session(DIGEST_LINES)
+        awards._load_sessions()
+        db.close()  # z. B. Sicherung zurückgespielt: neue Generation
+        awards._load_sessions()
+        self.assertEqual({key[0] for key in awards._session_cache}, {db.generation})
+
+    def test_huge_hand_edited_count_is_harmless(self):
+        huge = awards.Digest({}, 0, [], {"QRL": 10 ** 12}, {})
+        runs = [awards.Session(day(i), {"mode": "word", "wpm": 20}, {}, digest=huge) for i in (0, 1)]
+        self.assertEqual(awards.evaluate(data(runs), today=day(5))["q_groups"].value, 1)
+
     def test_digest_goes_with_its_session(self):
         session_id = tests.write_session(DIGEST_LINES)
         awards._load_sessions()
