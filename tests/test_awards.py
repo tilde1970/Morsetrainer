@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import awards, db, diploma, koch, stats
+from morsetrainer.core import awards, daily, db, diploma, koch, stats
 from morsetrainer.core.awards import Data, Session
 from morsetrainer.widgets import awards_panel as panel
 
@@ -241,6 +241,33 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(status.value, 51)
         self.assertEqual(dates("stars", data()), [None] * 4)  # ohne Tagesübung
 
+    def test_star_collector_exact_thresholds(self):
+        all_three = {"stars": list(daily.STAR_ORDER)}
+        days = {day(i).isoformat(): all_three for i in range(16)}  # 48 Sterne
+        days[day(16).isoformat()] = {"stars": [daily.DABEI]}         # 49
+        d = Data([], [], {}, {}, {"days": days})
+        self.assertEqual(dates("stars", d), [None] * 4)
+        days[day(17).isoformat()] = {"stars": [daily.DABEI]}         # genau 50
+        self.assertEqual(dates("stars", d)[0], day(17))
+        self.assertEqual(awards.BY_KEY["stars"].targets, (50, 200, 500, 1000))
+
+    def test_star_collector_all_levels(self):
+        all_three = {"stars": list(daily.STAR_ORDER)}
+        days = {day(i).isoformat(): all_three for i in range(334)}  # 1002 Sterne
+        status = awards.evaluate(Data([], [], {}, {}, {"days": days}), today=day(400))["stars"]
+        self.assertEqual(status.dates, [day(16), day(66), day(166), day(333)])
+
+    def test_star_collector_ignores_duplicates_and_unknown(self):
+        days = {day(0).isoformat(): {"stars": [daily.DABEI] * 60 + ["x"] * 60}}
+        self.assertEqual(awards.evaluate(Data([], [], {}, {}, {"days": days}), today=day(1))["stars"].value, 1)
+
+    def test_star_collector_ignores_future_days(self):
+        all_three = {"stars": list(daily.STAR_ORDER)}
+        days = {day(i).isoformat(): all_three for i in range(17)}  # ab heute: 51 Sterne
+        status = awards.evaluate(Data([], [], {}, {}, {"days": days}), today=day(0))["stars"]
+        self.assertEqual(status.value, 3)
+        self.assertEqual(status.dates, [None] * 4)
+
     def test_unlevelled_awards(self):
         quiz = result("qso_quiz", 0, kind="ragchew", correct=5, total=5, replays=0, wpm=15)
         self.assertEqual(dates("first_qso", data(results=[quiz])), [day(0)])
@@ -331,6 +358,11 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(awards.check(today=day(8), data=data()), ([], None))  # nichts geht verloren
         self.assertIn("club", awards.load()["seals"])
 
+
+    def test_star_collector_reads_saved_daily_state(self):
+        all_three = {"stars": list(daily.STAR_ORDER)}
+        daily.save({"days": {day(i).isoformat(): all_three for i in range(17)}})
+        self.assertEqual(awards.evaluate(today=day(20))["stars"].dates[0], day(16))
 
 class DamagedDataTest(unittest.TestCase):
     """Von Hand veränderte oder beschädigte Dateien dürfen die Prüfung nach

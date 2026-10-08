@@ -707,14 +707,17 @@ def _endurance(data: Data) -> list:
     return _cumulative(days)
 
 
-def _stars(data: Data) -> list:
-    """Sterne der Tagesübung, aufsummiert wie in der Lebenslinie."""
+def _stars(data: Data, today: date) -> list:
+    """Sterne der Tagesübung, aufsummiert wie in der Lebenslinie; Tage nach
+    heute (falsch gestellte Uhr) zählen nicht."""
     state = data.daily or {}
     days = []
     for key in state.get("days", {}):
         try:
             day = date.fromisoformat(key)
         except (TypeError, ValueError):
+            continue
+        if day > today:
             continue
         days.append((day, len(daily.stars_on(state, day))))
     return _cumulative(days)
@@ -795,7 +798,7 @@ def evaluate(data: Data = None, today: date = None) -> dict:
         "contest": lambda: _contest(contest_runs), "wpx": lambda: _wpx(data),
         "headphones": lambda: _headphones(data),
         "confusion": lambda: _cumulative(confusion[0]) if confusion else [],
-        "endurance": lambda: _endurance(data), "stars": lambda: _stars(data), "heard": lambda: _heard(data),
+        "endurance": lambda: _endurance(data), "stars": lambda: _stars(data, today), "heard": lambda: _heard(data),
         "first_qso": lambda: _first_qso(data), "all_contests": lambda: _all_contests(data),
         "club": lambda: _club(data), "q_groups": lambda: _q_groups(data), "digits": lambda: _digits(data, today),
     }
