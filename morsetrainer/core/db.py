@@ -5,6 +5,8 @@ Tabellen:
               Zeile "summary" (beide als JSON)
     events    die Zeilen dazwischen ("char", "group"), je Durchgang in
               der Reihenfolge des Schreibens
+    digests   Auszug je abgeschlossenem Durchgang für die Diplome (JSON,
+              mit Fassung); fehlt er, wird er aus events neu berechnet
     results   Ergebnisse ohne Zeichenstatistik (QSO-Abfrage, Contest …)
     state     Zustände als JSON unter einem Schlüssel (Gesamtstatistik,
               Tagesübung, Diplome, Lernkartei, Übungszeit)
@@ -55,6 +57,11 @@ CREATE TABLE IF NOT EXISTS events (
     data TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS events_session ON events (session_id, id);
+CREATE TABLE IF NOT EXISTS digests (
+    session_id INTEGER PRIMARY KEY REFERENCES sessions (id) ON DELETE CASCADE,
+    version INTEGER NOT NULL,
+    data TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS results (
     id INTEGER PRIMARY KEY,
     time TEXT NOT NULL,
@@ -373,6 +380,28 @@ def events_by_session(ids) -> dict:
             if isinstance(entry, dict):
                 by_id[session_id].append(entry)
     return by_id
+
+
+def digests(ids, version: int) -> dict:
+    """{id: Auszug} der Durchgänge `ids`, nur in der Fassung `version`;
+    unlesbare fehlen."""
+    out = {}
+    ids = list(ids)
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start + 500]
+        for session_id, text in _read(f"SELECT session_id, data FROM digests WHERE version = ? AND session_id IN "
+                                      f"({','.join('?' * len(chunk))})", [version, *chunk]):
+            entry = _load(text)
+            if isinstance(entry, dict):
+                out[session_id] = entry
+    return out
+
+
+def save_digests(items: dict, version: int) -> None:
+    """{id: Auszug} in der Fassung `version` speichern (ersetzt ältere)."""
+    with transaction():
+        _connection().executemany("INSERT OR REPLACE INTO digests (session_id, version, data) VALUES (?, ?, ?)",
+                                  [(session_id, version, _dump(data)) for session_id, data in items.items()])
 
 
 def session_events(session_id: int) -> list:

@@ -1,4 +1,5 @@
 """Tests für die Diplome (core/awards.py)."""
+import json
 import tempfile
 import unittest
 from datetime import date, timedelta
@@ -399,6 +400,82 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(awards.check(today=day(-384), data=d), ([("stars", 0)], None))
         self.assertEqual(awards.seals_of(awards.load(), "stars"), {0: day(-384)})
 
+DIGEST_LINES = [
+    {"type": "config", "mode": "callsign", "start_time": "2026-10-01T20:00:00"},
+    {"type": "char", "char": "K", "typed": "K", "correct": True},
+    {"type": "char", "char": "K", "typed": "R", "correct": False},
+    {"type": "char", "char": "M", "typed": "M", "correct": True},
+    {"type": "group", "sent": "DL4YM", "typed": "DL4YM", "first": True},
+    {"type": "group", "sent": "DK1AB", "typed": "DK1AB"},
+    {"type": "group", "sent": "DF2CD", "typed": "DF2C", "first": False},
+    {"type": "summary", "total": 3},
+]
+
+
+class DigestTest(unittest.TestCase):
+    """Auszüge der Durchgänge: einmal aus den Zeilen berechnet, dann aus der
+    Datenbank gelesen; veraltete werden neu berechnet."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.patch = mock.patch.object(stats, "STATS_DIR", Path(self.tmp.name))
+        self.patch.start()
+        awards._session_cache.clear()
+
+    def tearDown(self):
+        awards._session_cache.clear()
+        self.patch.stop()
+        self.tmp.cleanup()
+
+    def test_digest_counts(self):
+        d = awards.digest_of([("K", "K", True), ("K", "R", False), ("S", "H", False), ("H", "S", False),
+                              ("M", "", False), ("M", "MM", False)],
+                             [("DL4YM", "DL4YM", True), ("DK1AB", "DK1AB", None), ("DF2CD", "DF2CD", False)])
+        self.assertEqual(d.attempts, {"K": 2, "S": 1, "H": 1, "M": 2})
+        self.assertEqual(d.correct, 1)
+        self.assertEqual(d.confusions, [(frozenset("KR"), 1), (frozenset("SH"), 2)])
+        self.assertEqual(d.first_ok, {"DL4YM": 1})
+        self.assertEqual(d.legacy_ok, {"DK1AB": 1})
+        self.assertEqual(awards._digest_from_json(json.loads(json.dumps(awards._digest_to_json(d)))), d)
+
+    def test_stored_digest_is_used_instead_of_the_lines(self):
+        session_id = tests.write_session(DIGEST_LINES)
+        [first] = awards._load_sessions()
+        self.assertEqual(set(db.digests([session_id], awards.DIGEST_VERSION)), {session_id})
+        db._write("DELETE FROM events WHERE session_id = ?", (session_id,))
+        awards._session_cache.clear()
+        [again] = awards._load_sessions()
+        self.assertEqual(again.digest, first.digest)
+        self.assertEqual(again.digest.attempts, {"K": 2, "M": 1})
+
+    def test_other_version_is_recomputed(self):
+        session_id = tests.write_session(DIGEST_LINES)
+        with mock.patch.object(awards, "DIGEST_VERSION", 0):
+            awards._load_sessions()
+        db._write("UPDATE digests SET data = ? WHERE session_id = ?", ('{"attempts": {}, "correct": 99, '
+                  '"confusions": [], "first_ok": {}, "legacy_ok": {}}', session_id))
+        awards._session_cache.clear()
+        [loaded] = awards._load_sessions()
+        self.assertEqual(loaded.digest.correct, 2)
+        self.assertEqual(set(db.digests([session_id], awards.DIGEST_VERSION)), {session_id})
+
+    def test_digest_goes_with_its_session(self):
+        session_id = tests.write_session(DIGEST_LINES)
+        awards._load_sessions()
+        db.delete_session(session_id)
+        self.assertEqual(db._read("SELECT COUNT(*) FROM digests"), [(0,)])
+
+    def test_awards_from_database_match_awards_from_lines(self):
+        lines = [{"type": "config", "mode": "callsign", "start_time": "2026-10-01T20:00:00", "wpm": 20}]
+        lines += [{"type": "group", "sent": call, "typed": call, "first": True} for call in ("DL4YM", "W1AW", "JA1XY")]
+        lines.append({"type": "summary", "total": 3})
+        tests.write_session(lines)
+        from_db = awards.evaluate(today=day(100))["wpx"]
+        groups = [(call, call, True) for call in ("DL4YM", "W1AW", "JA1XY")]
+        from_lines = awards.evaluate(data([session("callsign", 0, groups=groups)]), today=day(100))["wpx"]
+        self.assertEqual(from_db.value, 3)
+        self.assertEqual((from_db.value, from_db.dates), (from_lines.value, from_lines.dates))
+
 class DamagedDataTest(unittest.TestCase):
     """Von Hand veränderte oder beschädigte Dateien dürfen die Prüfung nach
     der Übung nicht jedes Mal scheitern lassen."""
@@ -414,8 +491,18 @@ class DamagedDataTest(unittest.TestCase):
             ])
             db._write("INSERT INTO events (session_id, type, data) VALUES (?, '', '[1, 2]')", (session_id,))
             [loaded] = awards._load_sessions()
-        self.assertEqual(loaded.chars, [("K", "", False), ("", "K", True)])
-        self.assertEqual(loaded.groups, [("KM", "", None)])
+        self.assertEqual(loaded.digest, awards.digest_of([("K", "", False), ("", "K", True)], [("KM", "", None)]))
+
+    def test_damaged_stored_digest_is_recomputed(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
+            session_id = tests.write_session(DIGEST_LINES)
+            awards._load_sessions()
+            for broken in ('{"attempts": {"K": "viele"}}', '[1]', '{"attempts": {}, "correct": 1, "confusions": '
+                           '[["K", "K", 1]], "first_ok": {}, "legacy_ok": {}}'):
+                db._write("UPDATE digests SET data = ? WHERE session_id = ?", (broken, session_id))
+                awards._session_cache.clear()
+                [loaded] = awards._load_sessions()
+                self.assertEqual(loaded.digest.attempts, {"K": 2, "M": 1}, broken)
 
     def test_failing_award_leaves_the_others(self):
         club = data([session("network", 0, duration_s=600)])

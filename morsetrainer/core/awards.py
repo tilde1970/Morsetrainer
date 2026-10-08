@@ -139,14 +139,85 @@ BY_KEY = {award.key: award for award in AWARDS}
 
 # --- Daten ----------------------------------------------------------------------
 @dataclass
+class Digest:
+    """Auszug eines Durchgangs mit allem, was die Diplome aus seinen Zeilen
+    brauchen. Abgeschlossene Durchgänge ändern sich nicht mehr; der Auszug
+    wird einmal berechnet und in der Datenbank gespeichert, damit die
+    Diplome nicht bei jedem Start alle Zeilen lesen."""
+    attempts: dict    # {gesendetes Zeichen: Versuche}
+    correct: int      # richtig erkannte Zeichen
+    confusions: list  # [(Paar als frozenset, Anzahl)], nach erstem Auftreten
+    first_ok: dict    # {gesendete Gruppe: beim ersten Versuch richtig}
+    legacy_ok: dict   # {gesendete Gruppe: richtig, ohne Angabe zum ersten Versuch (ältere Daten)}
+
+
+# Steigt, wenn sich ändert, was im Auszug steht oder wie er gezählt wird:
+# Gespeicherte Auszüge einer anderen Fassung werden neu berechnet.
+DIGEST_VERSION = 1
+
+
+def digest_of(chars, groups) -> Digest:
+    """Auszug aus [(gesendet, getippt, richtig)] und [(gesendet, getippt,
+    erster Versuch richtig oder None)]."""
+    attempts, confusions, first_ok, legacy_ok = {}, {}, {}, {}
+    correct = 0
+    for sent, typed, ok in chars:
+        attempts[sent] = attempts.get(sent, 0) + 1
+        correct += ok
+        if not ok and len(typed) == 1 and typed != sent and typed.strip():
+            pair = frozenset((sent, typed))
+            confusions[pair] = confusions.get(pair, 0) + 1
+    for sent, typed, first in groups:
+        if first:
+            first_ok[sent] = first_ok.get(sent, 0) + 1
+        elif first is None and sent == typed:
+            legacy_ok[sent] = legacy_ok.get(sent, 0) + 1
+    return Digest(attempts, correct, list(confusions.items()), first_ok, legacy_ok)
+
+
+def _digest_to_json(d: Digest) -> dict:
+    return {"attempts": d.attempts, "correct": d.correct,
+            "confusions": [[*sorted(pair), n] for pair, n in d.confusions],
+            "first_ok": d.first_ok, "legacy_ok": d.legacy_ok}
+
+
+def _counts(obj) -> bool:
+    return isinstance(obj, dict) and all(
+        isinstance(k, str) and isinstance(v, int) and not isinstance(v, bool) and v >= 0 for k, v in obj.items())
+
+
+def _digest_from_json(obj):
+    """Gespeicherter Auszug als Digest; None, wenn er nicht zum Aufbau passt
+    (von Hand verändert): Dann wird er aus den Zeilen neu berechnet."""
+    if not isinstance(obj, dict) or not all(_counts(obj.get(k)) for k in ("attempts", "first_ok", "legacy_ok")):
+        return None
+    correct, confusions = obj.get("correct"), obj.get("confusions")
+    if not isinstance(correct, int) or isinstance(correct, bool) or not isinstance(confusions, list):
+        return None
+    pairs = []
+    for item in confusions:
+        if not (isinstance(item, list) and len(item) == 3 and all(isinstance(ch, str) for ch in item[:2])
+                and item[0] != item[1] and isinstance(item[2], int) and not isinstance(item[2], bool)):
+            return None
+        pairs.append((frozenset(item[:2]), item[2]))
+    return Digest(obj["attempts"], correct, pairs, obj["first_ok"], obj["legacy_ok"])
+
+
+@dataclass
 class Session:
-    """Ein gespeicherter Durchgang, aufbereitet für die Diplome: Tag, config und
-    summary sowie die Ergebnisse je Zeichen und je Gruppe."""
+    """Ein gespeicherter Durchgang, aufbereitet für die Diplome: Tag, config,
+    summary und der Auszug seiner Zeilen. Ohne Auszug wird er aus `chars`
+    und `groups` gebildet (so bauen die Tests Durchgänge)."""
     day: date
     config: dict
     summary: dict
-    chars: list   # [(gesendet, getippt, richtig)]
-    groups: list  # [(gesendet, getippt, erster Versuch richtig oder None)]
+    chars: list = ()   # [(gesendet, getippt, richtig)]
+    groups: list = ()  # [(gesendet, getippt, erster Versuch richtig oder None)]
+    digest: Digest = None
+
+    def __post_init__(self):
+        if self.digest is None:
+            self.digest = digest_of(self.chars, self.groups)
 
 
 @dataclass
@@ -166,9 +237,8 @@ class Data:
 _session_cache = {}
 
 
-def _make_session(config: dict, summary: dict, events: list):
-    """Session aus config, summary und den Zeilen eines Durchgangs; None, wenn
-    die Startzeit fehlt oder ungültig ist."""
+def _events_digest(events: list) -> Digest:
+    """Auszug aus den gespeicherten Zeilen eines Durchgangs."""
     chars, groups = [], []
     for obj in events:
         kind = obj.get("type")
@@ -177,29 +247,55 @@ def _make_session(config: dict, summary: dict, events: list):
         elif kind == "group":
             first = obj.get("first")
             groups.append((_text(obj.get("sent")), _text(obj.get("typed")), first if isinstance(first, bool) else None))
+    return digest_of(chars, groups)
+
+
+def _make_session(config: dict, summary: dict, digest: Digest):
+    """Session aus config, summary und Auszug; None, wenn die Startzeit fehlt
+    oder ungültig ist."""
     try:
         day = datetime.fromisoformat(config["start_time"]).date()
     except (KeyError, TypeError, ValueError):
         return None
-    return Session(day, config, summary, chars, groups)
+    return Session(day, config, summary, digest=digest)
 
 
-# Durchgänge je Abfrage beim ersten Lesen: Alle auf einmal hielten jede
-# Zeile als dict gleichzeitig im Speicher (nach Jahren Übung über 1 GB).
+# Durchgänge je Abfrage, wenn Auszüge erst berechnet werden müssen: Alle auf
+# einmal hielten jede Zeile als dict gleichzeitig im Speicher.
 LOAD_CHUNK = 200
 
 
+def _digests(ids: list) -> dict:
+    """{id: Digest}: gespeicherte Auszüge, fehlende oder veraltete aus den
+    Zeilen berechnet und gespeichert."""
+    found = {}
+    for session_id, obj in db.digests(ids, DIGEST_VERSION).items():
+        digest = _digest_from_json(obj)
+        if digest is not None:
+            found[session_id] = digest
+    todo = [session_id for session_id in ids if session_id not in found]
+    if todo:
+        events = db.events_by_session(todo)
+        fresh = {session_id: _events_digest(events[session_id]) for session_id in todo}
+        try:
+            db.save_digests({session_id: _digest_to_json(d) for session_id, d in fresh.items()}, DIGEST_VERSION)
+        except (db.Error, OSError):
+            pass  # dann beim nächsten Programmstart noch einmal
+        found.update(fresh)
+    return found
+
+
 def _load_sessions() -> list:
-    """Abgeschlossene Durchgänge ohne Selbstbewertung, nach Startzeit; die
-    Zeilen werden nur für noch nicht gelesene Durchgänge geholt, in Stücken."""
+    """Abgeschlossene Durchgänge ohne Selbstbewertung, nach Startzeit; Auszüge
+    nur für noch nicht gelesene Durchgänge, in Stücken."""
     wanted = [s for s in db.sessions() if s.summary is not None and not s.config.get("self_assessed")]
     generation = db.generation
     missing = [s for s in wanted if (generation, s.id) not in _session_cache]
     for start in range(0, len(missing), LOAD_CHUNK):
         chunk = missing[start:start + LOAD_CHUNK]
-        events = db.events_by_session([s.id for s in chunk])
+        digests = _digests([s.id for s in chunk])
         for s in chunk:
-            _session_cache[(generation, s.id)] = _make_session(s.config, s.summary, events[s.id])
+            _session_cache[(generation, s.id)] = _make_session(s.config, s.summary, digests[s.id])
     return [session for session in (_session_cache[(generation, s.id)] for s in wanted) if session]
 
 
@@ -556,10 +652,9 @@ def _wpx(data: Data) -> list:
 
     for s in data.sessions:
         if s.config.get("mode") == "callsign" and _char_wpm(s.config) >= MIN_CHAR_WPM:
-            for sent, typed, first in s.groups:
-                # Ohne Angabe zum ersten Versuch (ältere Daten) zählt richtig getippt.
-                if first or (first is None and sent == typed):
-                    add(sent, s.day)
+            # Ohne Angabe zum ersten Versuch (ältere Daten) zählt richtig getippt.
+            for sent in (*s.digest.first_ok, *s.digest.legacy_ok):
+                add(sent, s.day)
     for r in data.results:
         if r.get("mode") == "contest" and _num(r.get("wpm")) >= MIN_CHAR_WPM:
             # Nur Calls ohne Rückfrage (ältere Daten kennen den Unterschied nicht).
@@ -624,11 +719,10 @@ def _daily_char_counts(data: Data):
             continue
         day_attempts = attempts.setdefault(s.day, {})
         day_confusions = confusions.setdefault(s.day, {})
-        for sent, typed, correct in s.chars:
-            day_attempts[sent] = day_attempts.get(sent, 0) + 1
-            if not correct and len(typed) == 1 and typed != sent and typed.strip():
-                pair = frozenset((sent, typed))
-                day_confusions[pair] = day_confusions.get(pair, 0) + 1
+        for sent, n in s.digest.attempts.items():
+            day_attempts[sent] = day_attempts.get(sent, 0) + n
+        for pair, n in s.digest.confusions:
+            day_confusions[pair] = day_confusions.get(pair, 0) + n
     return attempts, confusions
 
 
@@ -749,7 +843,7 @@ def _stars(data: Data, today: date) -> list:
 
 
 def _heard(data: Data) -> list:
-    return _cumulative((s.day, sum(1 for _, _, ok in s.chars if ok)) for s in data.sessions
+    return _cumulative((s.day, s.digest.correct) for s in data.sessions
                        if _random_chars(s) and _char_wpm(s.config) >= MIN_CHAR_WPM)
 
 
@@ -791,9 +885,9 @@ def _q_groups(data: Data) -> list:
     for s in data.sessions:
         if s.config.get("mode") != "word" or _char_wpm(s.config) < MIN_CHAR_WPM:
             continue
-        for sent, _, first in s.groups:
-            if sent in Q_GROUPS and first:
-                hits.setdefault(sent, []).append(s.day)
+        for sent, n in s.digest.first_ok.items():
+            if sent in Q_GROUPS:
+                hits.setdefault(sent, []).extend([s.day] * n)
     done = []
     for days in hits.values():
         days.sort()
