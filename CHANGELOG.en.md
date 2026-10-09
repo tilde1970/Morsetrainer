@@ -1,5 +1,11 @@
 # Changes
 
+## 2.46
+
+- **Review box at a glance:** the Statistics tab shows which characters are
+  in each box, from “Box 1 · every day” to “Box 6 · every 32 days”. F11
+  reads it out too.
+
 ## 2.45
 
 - **More room during a run:** for groups, words, callsigns and in

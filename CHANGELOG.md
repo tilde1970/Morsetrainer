@@ -1,5 +1,11 @@
 # Änderungen
 
+## 2.46
+
+- **Lernkartei im Überblick:** Der Reiter Statistik zeigt je Fach, welche
+  Zeichen darin liegen, von „Fach 1 · jeden Tag“ bis „Fach 6 · alle 32
+  Tage“. F11 liest es mit vor.
+
 ## 2.45
 
 - **Mehr Platz im Durchgang:** Bei Gruppen, Wörtern, Rufzeichen und in Am
