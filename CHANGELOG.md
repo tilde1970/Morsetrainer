@@ -1,5 +1,36 @@
 # Änderungen
 
+## 2.45
+
+- **Mehr Platz im Durchgang:** Bei Gruppen, Wörtern, Rufzeichen und in Am
+  Stück sind die Optionen während eines Durchgangs ausgeblendet. So bleiben
+  Antwortfeld, Rückmeldung und Stop auch bei großer Schrift oder kleinem
+  Bildschirm ohne Rollen sichtbar.
+- **Tagesübung nicht aus Versehen beenden:** Esc oder F5 beenden sie erst
+  beim zweiten Druck innerhalb von drei Sekunden; der erste wird angezeigt
+  und angesagt. Dazu gibt es den Knopf „Tagesübung beenden (Esc)“.
+- **Esc stoppt überall:** in allen Übungsreitern, auch aus dem Antwortfeld
+  heraus (im Contest bricht Esc weiter das Senden ab). F5 im Contest vor
+  dem Start erinnert daran, dass F10 startet.
+- **Tastenkürzel an den Knöpfen:** „Start (F5)“, „▶ Tagesübung (10 Min,
+  F12)“, „Einstellungen … (Strg+,)“, „Probehören (Strg+P)“ usw.
+- **Ziel und Ergebnis sichtbar:** Im Reiter Zeichen steht neben Start „23
+  von 50 Zeichen, Ziel 90 %“; nach dem Stoppen steht das Ergebnis in der
+  Statuszeile.
+- **Tempo in ZpM:** Mit Farnsworth zeigt die Kopfleiste das effektive
+  Tempo, das du hörst („≈ 50 ZpM effektiv“ bei 20/10).
+- **Hilfe beim Reiter:** Die Hilfe öffnet mit der Anleitung beim Abschnitt
+  des Reiters, in dem du gerade bist.
+- **Einstellungen:** Das Tagesziel steht jetzt im Fenster „Einstellungen …“
+  (Karte „Üben“). Nach dem Umstellen von Sprache oder Kontrast startet
+  „Jetzt neu starten“ das Programm gleich neu.
+- **Große Schrift und kleine Bildschirme:** Kopfleiste und
+  Tagesübungs-Leiste brechen um, statt sich zu überdecken; im Fenster
+  Bandbedingungen bleiben Probehören und Schließen unten stehen und
+  bekommen beim Öffnen den Fokus.
+- **Kleinigkeiten:** Legende zum Wochenstreifen, die Zeile „Inhalt“ ist ein
+  einziger Tab-Schritt, Spaltenköpfe nicht mehr abgeschnitten.
+
 ## 2.44
 
 - **Diplom Sternstunden:** Das Diplom „Sternensammler“ heißt jetzt

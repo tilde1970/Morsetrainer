@@ -42,7 +42,7 @@ from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, one_tab_stop, wrap_pair
 
 __author__ = "DL4YM"
-__version__ = "2.44"
+__version__ = "2.45"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -98,6 +98,9 @@ WHATS_NEW = {
     "2.40": N_("Zeichen, Gruppen, Wörter und Rufzeichen stehen jetzt gemeinsam im Reiter „Einzeln“; den "
                "Inhalt wählst du dort oben unter „Inhalt“ (oder Alt+1 noch einmal drücken). „Kontinuierlich“ "
                "heißt jetzt „Am Stück“. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.45": N_("Das Tagesziel stellst du jetzt unter „Einstellungen …“ ein (Karte „Üben“). Die Tagesübung "
+               "beendet Esc oder F5 erst beim zweiten Druck; dafür gibt es den Knopf „Tagesübung beenden“. "
+               "Alles Weitere steht unter Hilfe, Änderungen."),
 }
 
 

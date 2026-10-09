@@ -1,5 +1,35 @@
 # Changes
 
+## 2.45
+
+- **More room during a run:** for groups, words, callsigns and in
+  Non-stop the options are hidden during a run, so the answer field,
+  feedback and Stop stay visible without scrolling even with a large font
+  or a small screen.
+- **No accidental end of the daily practice:** Esc or F5 only end it on the
+  second press within three seconds; the first is shown and announced.
+  There is also an “End daily practice (Esc)” button.
+- **Esc stops everywhere:** in all practice tabs, also from the answer
+  field (in the contest Esc still aborts sending). F5 in the contest
+  before the start reminds you that F10 starts.
+- **Shortcuts on the buttons:** “Start (F5)”, “▶ Daily practice (10 min,
+  F12)”, “Settings … (Ctrl+,)”, “Listen (Ctrl+P)” and so on.
+- **Goal and result visible:** in the Characters exercise “23 of 50
+  characters, goal 90 %” is shown next to Start; after stopping, the
+  result is in the status line.
+- **Speed in CPM:** with Farnsworth the header shows the effective speed
+  you hear (“≈ 50 CPM effective” at 20/10).
+- **Help at the tab:** Help opens the manual at the section of the tab
+  you are in.
+- **Settings:** the daily goal is now in the “Settings …” window
+  (“Practice” box). After changing language or contrast, “Restart now”
+  restarts the program right away.
+- **Large fonts and small screens:** the header and the daily practice bar
+  wrap instead of overlapping; in the band conditions window Listen and
+  Close stay at the bottom and get the focus on opening.
+- **Small things:** legend for the week strip, the “Content” row is a
+  single Tab stop, column headings no longer cut off.
+
 ## 2.44
 
 - **Finest hours award:** the “Star collector” award is now called “Finest

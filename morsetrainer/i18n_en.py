@@ -762,6 +762,12 @@ EN.update({
     "Im Contest startet F10; F1 bis F8 senden erst im Durchgang.":
         "In the contest F10 starts; F1 to F8 only send during a run.",
     "Optionen dieser Übung": "Options for this exercise",
+    ("Das Tagesziel stellst du jetzt unter „Einstellungen …“ ein (Karte „Üben“). Die Tagesübung "
+     "beendet Esc oder F5 erst beim zweiten Druck; dafür gibt es den Knopf „Tagesübung beenden“. "
+     "Alles Weitere steht unter Hilfe, Änderungen."):
+        "You now set the daily goal under “Settings …” (“Practice” box). Esc or F5 only end the daily "
+        "practice on the second press; there is an “End daily practice” button for that. Everything else "
+        "is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",
