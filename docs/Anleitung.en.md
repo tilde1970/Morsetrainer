@@ -2,13 +2,13 @@
 
 A CW trainer for everyone from beginners to contesters, developed by
 **DL4YM**. This manual is also in the program: the **Help** button on the
-right of the footer shows it and the changes of the versions; Ctrl+F
-searches in it. A short overview with pictures is in the
+right of the footer shows it, right at the section of the tab you are in,
+next to it the changes of the versions; Ctrl+F searches in it. A short overview with pictures is in the
 [README](../README.en.md).
 
 **Language:** the program starts in German. Switch to English under
-„Einstellungen …“ (top right, or Ctrl+Comma) → „Sprache / Language“; it
-takes effect after a restart.
+„Einstellungen … (Strg+,)“ (Ctrl+Comma) → „Sprache / Language“; it takes
+effect after a restart („Jetzt neu starten“ restarts right away).
 
 **Contents**
 
@@ -52,11 +52,11 @@ a time. This is how to begin:
    characters you confused in the last 30 days and practises exactly those
    against each other. “↩ Lesson” at the top takes you back to your lesson.
 
-Or just press **▶ Daily practice (10 min)** (F12): it puts together what
+Or just press **▶ Daily practice (10 min, F12)**: it puts together what
 is due every day and switches the tabs by itself (section 4).
 
 **Short and daily** beats long and rare: the footer shows today's practice
-time and the daily goal (adjustable in the Statistics tab), the week strip
+time and the daily goal (adjustable under “Settings …”), the week strip
 at the top the days you practised.
 
 ## 2. Header and settings
@@ -64,8 +64,11 @@ at the top the days you practised.
 ### Header
 
 The Koch lesson, speed (WPM), pitch (Hz) and character set are always at
-the top; they apply to all tabs. **▸ More options** holds the practice
-options:
+the top; they apply to all tabs. If the window is too narrow (large font),
+speed and pitch move to a second line. On the right is the speed in
+characters per minute, with Farnsworth the effective speed you actually
+hear (“≈ 50 CPM effective” at 20/10). **▸ More options** holds the
+practice options:
 
 - **Farnsworth:** characters at the set speed, but longer gaps between
   them (Koch speed 20/10). At a slow character speed (below 18 WPM) the
@@ -79,16 +82,18 @@ options:
 
 ### Settings
 
-**Settings …** (top right, or Ctrl+Comma) opens a window with everything
-you set once:
+**Settings … (Ctrl+,)** opens a window with everything you set once:
 
 - **Callsign and name:** appear on the awards and are the default for “My
   callsign” in Contest and “Name/callsign” in Network (there the callsign
   if there is no name). Both fields follow along until you enter something
   else there, such as a contest callsign. Without a callsign of your own
   the name is enough; for the contest you then enter a made-up callsign.
+- **Practice:** the daily goal in minutes (0 = no goal); the footer shows
+  how much you have practised today.
 - **Sprache / Language:** switch the interface to English (takes effect
-  after a restart). The voice in the Speak tab stays German.
+  after a restart; **Restart now** appears at the bottom of the window for
+  that). The voice in the Speak tab stays German.
 - **Accessibility:** font size, high contrast, announcements (section 8).
 - **Data:** back up and restore (section 11).
 
@@ -109,11 +114,21 @@ stop with the button or F5 (F10 in Contest).
 Listen, answer, the next one. At the top under **Content** you choose
 **Characters**, **Groups**, **Words** or **Callsigns** (also with the arrow
 keys or by pressing Alt+1 again); the choice is saved. The space bar
-repeats; recognised only after the repeat counts as not recognised.
+repeats; recognised only after the repeat counts as not recognised. F5 or
+the **Start (F5)** button starts and stops, Esc stops too. After stopping,
+the status line shows the result, e.g. “Run finished: 46 of 50 characters
+correct (92 %).”
+
+The **options for this exercise** are above the Start button. For groups,
+words and callsigns (and in Non-stop) they are hidden during a run, so
+that the answer field and feedback stay visible without scrolling even
+with a large font or a small screen; after stopping they are back.
 
 **Characters:** recognise single characters, without interference. After
 each answer you see your reaction time and the limit, e.g. “0.38 s, limit
-1.20 s”.
+1.20 s”. Next to the Start button you see how far you are: “23 of 50
+characters, goal 90 %”. With 50 characters and 90 % (with time limit) the
+program suggests moving on to groups.
 
 - **Time limit** (Instant Character Recognition): the limit counts from
   the end of the last dot or dash. It gets shorter while you answer
@@ -268,14 +283,14 @@ many characters. Runs with band conditions do not count here (section 6).
   favoured” and can be practised specifically.
 - **Most frequent confusions** of the last 30 days, with a button to
   practise them against each other.
-- **Daily goal**, **awards** and **lifeline** (section 5) and the
+- **Awards** and **lifeline** (section 5) and the
   **progress history** per exercise (sessions with fewer than 5
   characters, such as short tries, are left out there).
 
 ## 4. Daily practice
 
 Can't be bothered to decide what to practise today? **▶ Daily practice
-(10 min)** at the top (or F12) puts together ten minutes from whatever is
+(10 min, F12)** at the top puts together ten minutes from whatever is
 due and switches the tabs by itself. Afterwards the tab settings are back
 as they were.
 
@@ -309,8 +324,12 @@ as they were.
   day can add missing stars; earned stars are never lost, not even when
   you stop early.
 - **Between the blocks** a short card shows the result, new stars and
-  what comes next. It stays until you continue with Enter or “Continue”;
-  Esc ends the daily practice.
+  what comes next. It stays until you continue with Enter or “Continue”.
+- **Ending:** with the **End daily practice (Esc)** button below the time
+  bar or the button in the tab. Esc and F5 only end it on the second
+  press within three seconds; the first shows (and announces) “Press Esc
+  again to end the daily practice.” So a slip, such as Esc meant for a
+  secondary window, doesn't cost you the day.
 - **Evening summary:** stars, what improved compared with the week before
   (reaction time per character, group score; only with enough data and at
   the same speed, never “worse”), how much is missing for the next lesson,
@@ -324,7 +343,8 @@ as they were.
   practice get you there; a missed day doesn't cost you the week. All
   stars together count for the **Finest hours** award (section 5). Until
   the first daily practice of a new week it shows a look back, e.g.
-  “Last week: 4 days, 11 ★, lesson 12 → 13”.
+  “Last week: 4 days, 11 ★, lesson 12 → 13”. As long as no star has been
+  earned this week, a line below explains the symbols.
 
 ## 5. Awards and lifeline
 
@@ -463,7 +483,8 @@ it, your own sidetone in the contest does not.
   inside the filter. The levels and the award count the value inside the
   filter: “medium” with a 500 Hz filter is about “light”.
 
-**Listen** (button at the bottom of the window, Ctrl+P): plays CQ calls
+**Listen (Ctrl+P)** (button at the bottom of the window; it stays there
+while the rest scrolls): plays CQ calls
 at your pitch and speed under the conditions currently set, with your
 callsign from the settings, without a time limit. Whatever you change
 meanwhile can be heard at once; a second press (or closing the window)
@@ -741,7 +762,8 @@ seals, practice today) – even with announcements switched off.
   contrast, check box, off”, “Speed, number field, 20 WPM”); changes with
   the space bar, arrow keys or in a list are announced too. When the
   program sets the focus itself (e.g. into the answer field), it stays
-  silent.
+  silent. A row of option buttons (such as “Content”) is a single Tab
+  stop; within it the arrow keys choose.
 - **Typing:** in the settings fields (characters, callsign, name, prefix
   filter, network, search in the help) and in all number fields each typed
   character is spelled out, deleted ones with “deleted”. Not in the answer
@@ -756,7 +778,8 @@ seals, practice today) – even with announcements switched off.
 
 - **Font size:** Ctrl+Plus, Ctrl+Minus, Ctrl+0 (section 2).
 - **High contrast:** “Settings …” → “High contrast (black, white,
-  yellow)”, takes effect after a restart. Black background, white text,
+  yellow)”, takes effect after a restart (**Restart now** button at the
+  bottom of the window). Black background, white text,
   yellow main buttons and highlights, strong borders; all text stands out
   from its background by at least 7:1.
 - Right and wrong are always shown as text too, not only as colour.
@@ -776,21 +799,21 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Everywhere | F12 | start daily practice |
 | Everywhere | Ctrl+Plus, Ctrl+Minus, Ctrl+0 | font larger, smaller, normal |
 | Everywhere | Ctrl+B | open band conditions (inside: Ctrl+P listens) |
-| Everywhere | Ctrl+Comma | settings |
+| Everywhere | Ctrl+Comma (Ctrl+,) | settings |
 | Everywhere | Tab, Shift+Tab | through fields, buttons and check boxes (focus highlighted in colour) |
 | Everywhere | Space, Enter | press a button; space toggles check boxes |
 | Everywhere | arrow keys | choose in lists, sliders, tabs, tables and the “Content” row (One by one, Non-stop, Speak) |
-| Everywhere | Esc | close secondary windows |
-| Daily practice | Enter, Esc | skip the card between blocks, end daily practice |
-| One by one, Non-stop | F5 | start/stop |
+| Everywhere | Esc | close secondary windows; in a practice tab stop the run |
+| Daily practice | Enter | skip the card between blocks |
+| Daily practice | Esc or F5, twice | end daily practice |
+| One by one, Non-stop | F5, Esc | start/stop, stop |
 | One by one | Alt+1 (again) | next content: Characters → Groups → Words → Callsigns |
 | One by one | Space | repeat the character or sequence |
 | One by one, head copy | Enter, J, N | reveal, knew it, didn't |
 | One by one, RufZ | F6, F7, Esc | after the run: replay missed or current one again, from the start, stop |
-| Non-stop | Esc | stop |
 | Speak | F5, Space, Esc | start/stop, current item again, stop |
-| QSO | F5, F6, F7, F8 | new QSO/stop, listen again, show text, check |
-| Contest | F10 | start/end |
+| QSO | F5, F6, F7, F8, Esc | new QSO/stop, listen again, show text, check, stop |
+| Contest | F10 | start/end (F5 before the start reminds you) |
 | Contest | F1, F2, F3, F4 | CQ, exchange, TU/log, my call |
 | Contest | F5, F7, F8 | their call, “?”, “AGN” |
 | Contest | Enter, Esc | send the appropriate next message (ESM), abort sending |

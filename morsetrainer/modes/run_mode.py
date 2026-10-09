@@ -315,7 +315,7 @@ class RunModeFrame:
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start (F10)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(controls, textvariable=self.status_var, style="Status.TLabel").pack(side="left", padx=12)
@@ -461,7 +461,7 @@ class RunModeFrame:
         self.my_tx_start = self.my_tx_end = 0
 
         self.running = True
-        self.start_button.config(text=tr("Stop"))
+        self.start_button.config(text=tr("Stop (F10)"))
         for widget in (self.kind_combo, self.my_call_entry, self.my_exchange_entry, self.activity_spin,
                        self.duration_spin, self.wpm_spread_spin, self.freq_spread_spin):
             widget.config(state="disabled")
@@ -478,7 +478,7 @@ class RunModeFrame:
         if self.mixer is not None:
             self.mixer.stop()
             self.mixer = None
-        self.start_button.config(text=tr("Start"))
+        self.start_button.config(text=tr("Start (F10)"))
         for widget in (self.my_call_entry, self.activity_spin, self.duration_spin, self.wpm_spread_spin,
                        self.freq_spread_spin):
             widget.config(state="normal")
@@ -825,6 +825,10 @@ class RunModeFrame:
         Nachrichten (MESSAGES), F10 startet bzw. beendet."""
         if key == "F10":
             self.toggle_running()
+            return
+        if key in MESSAGES and not self.running:
+            # Wer aus den anderen Reitern F5 als Start gewohnt ist.
+            announcer.problem(self.status_var, tr("Im Contest startet F10; F1 bis F8 senden erst im Durchgang."))
             return
         if key in MESSAGES and self.running:
             self._send(MESSAGES[key][0])

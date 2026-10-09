@@ -810,7 +810,7 @@ class PreviewTest(AppTestCase):
         sessions = len(db.sessions())
         with mock.patch.object(self.band_preview.audio, "output_stream", lambda: stream):
             self.settings.toggle_preview()
-            self.assertEqual(self.settings.preview_button.cget("text"), "Probehören beenden")
+            self.assertEqual(self.settings.preview_button.cget("text"), "Probehören beenden (Strg+P)")
             self.assertTrue(stream.reached.wait(10))
             self.settings.toggle_preview()  # zweiter Druck stoppt
             self.wait_done()
@@ -820,7 +820,7 @@ class PreviewTest(AppTestCase):
         peak = np.fft.rfftfreq(len(out), 1 / self.band_preview.SAMPLE_RATE)[np.argmax(spectrum)]
         self.assertAlmostEqual(peak, 700, delta=15)  # eigene Tonhöhe
         self.assertGreater(float(np.std(out[-2400:])), 0.001)  # Rauschen auch in der Pause
-        self.assertEqual(self.settings.preview_button.cget("text"), "Probehören")
+        self.assertEqual(self.settings.preview_button.cget("text"), "Probehören (Strg+P)")
         self.assertEqual(len(db.sessions()), sessions)  # kein Durchgang in der Statistik
 
     def test_runs_without_time_limit(self):
@@ -876,7 +876,7 @@ class PreviewTest(AppTestCase):
                 self.assertFalse(self.settings.preview.running)
                 self.wait_done()
                 self.app._unlock_tabs()
-        self.assertEqual(self.settings.preview_button.cget("text"), "Probehören")
+        self.assertEqual(self.settings.preview_button.cget("text"), "Probehören (Strg+P)")
         self.assertNotIn("disabled", self.settings.preview_button.state())
         self.assertTrue(self.settings.window.bind("<Control-p>"))
 

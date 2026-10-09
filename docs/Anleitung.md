@@ -2,7 +2,8 @@
 
 Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
 Diese Anleitung steht auch im Programm: Der Knopf **Hilfe** rechts in der
-Fußzeile zeigt sie und die Änderungen der Versionen; Strg+F sucht darin.
+Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem du gerade bist,
+daneben die Änderungen der Versionen; Strg+F sucht darin.
 Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 
 **Inhalt**
@@ -47,11 +48,11 @@ anderen dazu. So geht es los:
    Zeichen du in den letzten 30 Tagen verwechselt hast, und übt genau diese
    gegeneinander. „↩ Lektion“ oben führt zurück zu deiner Lektion.
 
-Oder einfach **▶ Tagesübung (10 Min)** drücken (F12): Sie stellt jeden Tag
+Oder einfach **▶ Tagesübung (10 Min, F12)** drücken: Sie stellt jeden Tag
 zusammen, was dran ist, und schaltet die Reiter selbst um (Abschnitt 4).
 
 **Täglich kurz** üben schlägt selten lang: Die Fußzeile zeigt die heutige
-Übungszeit und das Tagesziel (einstellbar im Reiter Statistik), der
+Übungszeit und das Tagesziel (einstellbar unter „Einstellungen …“), der
 Wochenstreifen oben die Tage, an denen du geübt hast.
 
 ## 2. Kopfleiste und Einstellungen
@@ -59,8 +60,11 @@ Wochenstreifen oben die Tage, an denen du geübt hast.
 ### Kopfleiste
 
 Oben stehen immer Koch-Lektion, Tempo (WPM), Tonhöhe (Hz) und der
-Zeichensatz; sie gelten für alle Reiter. Unter **▸ Weitere Optionen**
-liegen die Übungsoptionen:
+Zeichensatz; sie gelten für alle Reiter. Ist das Fenster zu schmal (große
+Schrift), rücken Tempo und Tonhöhe in eine zweite Zeile. Rechts steht das
+Tempo in Zeichen pro Minute, mit Farnsworth das effektive, das du
+tatsächlich hörst („≈ 50 ZpM effektiv“ bei 20/10). Unter **▸ Weitere
+Optionen** liegen die Übungsoptionen:
 
 - **Farnsworth:** Zeichen im eingestellten Tempo, aber längere Pausen
   dazwischen (Koch-Tempo 20/10). Bei langsamem Zeichentempo (unter
@@ -74,8 +78,8 @@ liegen die Übungsoptionen:
 
 ### Einstellungen
 
-**Einstellungen …** (oben rechts, oder Strg+Komma) öffnet ein Fenster mit
-allem, was man einmal einstellt:
+**Einstellungen … (Strg+,)** öffnet ein Fenster mit allem, was man einmal
+einstellt:
 
 - **Rufzeichen und Name:** stehen auf den Diplomen und sind die Vorgabe
   für „Mein Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort
@@ -83,8 +87,11 @@ allem, was man einmal einstellt:
   anderes einträgst, etwa ein Contest-Rufzeichen. Ohne eigenes Rufzeichen
   genügt der Name; für den Contest trägst du dann ein ausgedachtes
   Rufzeichen ein.
+- **Üben:** das Tagesziel in Minuten (0 = ohne Ziel); die Fußzeile zeigt,
+  wie viel du heute schon geübt hast.
 - **Sprache / Language:** Oberfläche auf Englisch umstellen (wirkt nach
-  einem Neustart). Die Stimme im Reiter Sprechen bleibt deutsch.
+  einem Neustart; unten im Fenster erscheint dafür **Jetzt neu starten**).
+  Die Stimme im Reiter Sprechen bleibt deutsch.
 - **Barrierefreiheit:** Schriftgröße, hoher Kontrast, Ansage (Abschnitt 8).
 - **Daten:** sichern und einlesen (Abschnitt 11).
 
@@ -107,10 +114,21 @@ Hören, antworten, das nächste. Oben unter **Inhalt** wählst du
 **Zeichen**, **Gruppen**, **Wörter** oder **Rufzeichen** (auch mit den
 Pfeiltasten oder mit Alt+1 noch einmal); die Wahl bleibt gespeichert. Die
 Leertaste wiederholt; erst nach der Wiederholung erkannt zählt als nicht
-erkannt.
+erkannt. F5 oder der Knopf **Start (F5)** startet und stoppt, Esc stoppt
+auch. Nach dem Stoppen steht das Ergebnis in der Statuszeile, z. B.
+„Durchgang beendet: 46 von 50 Zeichen richtig (92 %).“
+
+Die **Optionen dieser Übung** stehen über dem Start-Knopf. Bei Gruppen,
+Wörtern und Rufzeichen (und in Am Stück) sind sie während eines
+Durchgangs ausgeblendet, damit Antwortfeld und Rückmeldung auch bei großer
+Schrift oder kleinem Bildschirm ohne Rollen zu sehen sind; nach dem Stop
+sind sie wieder da.
 
 **Zeichen:** einzelne Zeichen erkennen, ohne Störungen. Nach jeder Antwort
 stehen deine Reaktionszeit und das Limit da, z. B. „0,38 s, Limit 1,20 s“.
+Rechts neben dem Start-Knopf steht, wie weit du bist: „23 von 50 Zeichen,
+Ziel 90 %“. Mit 50 Zeichen und 90 % (mit Zeitlimit) schlägt das Programm
+vor, mit Gruppen weiterzumachen.
 
 - **Zeitlimit** (Instant Character Recognition): Das Limit zählt ab dem
   Ende des letzten Punkts oder Strichs. Es wird kürzer, solange du sicher
@@ -268,14 +286,14 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   lassen sich gezielt üben.
 - **Häufigste Verwechslungen** der letzten 30 Tage, mit Knopf, um sie
   gezielt gegeneinander zu üben.
-- **Tagesziel**, **Diplome** und **Lebenslinie** (Abschnitt 5) und der
+- **Diplome** und **Lebenslinie** (Abschnitt 5) und der
   **Fortschrittsverlauf** je Übung (Durchgänge mit weniger als 5 Zeichen,
   etwa kurze Proben, zählen dort nicht mit).
 
 ## 4. Tagesübung
 
-Keine Lust zu entscheiden, was du heute übst? **▶ Tagesübung (10 Min)**
-oben (oder F12) stellt zehn Minuten aus dem zusammen, was dran ist, und
+Keine Lust zu entscheiden, was du heute übst? **▶ Tagesübung (10 Min,
+F12)** oben stellt zehn Minuten aus dem zusammen, was dran ist, und
 schaltet die Reiter selbst um. Danach sind die Einstellungen der Reiter
 wieder wie vorher.
 
@@ -310,7 +328,12 @@ wieder wie vorher.
   auch nicht beim Abbrechen.
 - **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue
   Sterne und was als Nächstes kommt. Sie bleibt stehen, bis du mit Enter
-  oder „Weiter“ fortfährst; Esc beendet die Tagesübung.
+  oder „Weiter“ fortfährst.
+- **Beenden:** mit dem Knopf **Tagesübung beenden (Esc)** unter dem
+  Zeitbalken oder dem Knopf im Reiter. Esc und F5 beenden erst beim
+  zweiten Druck innerhalb von drei Sekunden; beim ersten steht dort (und
+  wird angesagt) „Noch einmal Esc beendet die Tagesübung.“ So kostet ein
+  Fehlgriff, etwa Esc für ein Nebenfenster, nicht den Tag.
 - **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
   (Reaktionszeit je Zeichen, Gruppenquote; nur mit genug Daten und bei
   gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion
@@ -324,7 +347,8 @@ wieder wie vorher.
   Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Alle Sterne
   zusammen zählen für das Diplom **Sternstunden** (Abschnitt 5). Bis zur
   ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.
-  „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“.
+  „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“. Solange diese Woche noch
+  kein Stern verdient ist, erklärt eine Zeile darunter die Zeichen.
 
 ## 5. Diplome und Lebenslinie
 
@@ -466,7 +490,8 @@ hindurch, dein eigener Mithörton im Contest nicht.
   zusätzlich den Wert im Filter. Für die Stufen und das Diplom zählt der
   Wert im Filter: „mittel“ mit 500-Hz-Filter entspricht etwa „leicht“.
 
-**Probehören** (Knopf unten im Fenster, Strg+P): spielt CQ-Rufe in deiner
+**Probehören (Strg+P)** (Knopf unten im Fenster, er bleibt stehen, auch
+wenn der Rest gerollt wird): spielt CQ-Rufe in deiner
 Tonhöhe und deinem Tempo unter den gerade eingestellten Bedingungen, mit
 deinem Rufzeichen aus den Einstellungen, ohne Zeitgrenze. Was du
 währenddessen verstellst, hörst du sofort; ein zweiter Druck (oder das
@@ -752,7 +777,9 @@ Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
   Auswahl, Deutsch“, „Hoher Kontrast, Schalter, aus“, „Tempo, Zahlenfeld,
   20 WPM“); was du mit Leertaste, Pfeiltasten oder in einer Auswahl
   änderst, wird ebenfalls angesagt. Setzt das Programm den Fokus selbst
-  (etwa ins Antwortfeld), bleibt es still.
+  (etwa ins Antwortfeld), bleibt es still. Eine Reihe von Optionsfeldern
+  (etwa „Inhalt“) ist ein einziger Tab-Schritt; darin wählen die
+  Pfeiltasten.
 - **Tippen:** In den Feldern der Einstellungen (Zeichen, Rufzeichen, Name,
   Präfix-Filter, Netzwerk, Suche in der Hilfe) und in allen Zahlenfeldern
   wird jedes getippte Zeichen buchstabiert, Gelöschtes mit „gelöscht“. In
@@ -768,7 +795,8 @@ Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
 
 - **Schriftgröße:** Strg+Plus, Strg+Minus, Strg+0 (Abschnitt 2).
 - **Hoher Kontrast:** „Einstellungen …“ → „Hoher Kontrast (Schwarz, Weiß,
-  Gelb)“, wirkt nach einem Neustart. Schwarzer Grund, weiße Schrift, gelbe
+  Gelb)“, wirkt nach einem Neustart (Knopf **Jetzt neu starten** unten im
+  Fenster). Schwarzer Grund, weiße Schrift, gelbe
   Hauptknöpfe und Markierungen, kräftige Rahmen; jede Schrift hebt sich
   mindestens 7:1 vom Grund ab.
 - Richtig und falsch stehen immer auch als Text da, nicht nur als Farbe.
@@ -788,21 +816,21 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Überall | F12 | Tagesübung starten |
 | Überall | Strg+Plus, Strg+Minus, Strg+0 | Schrift größer, kleiner, normal |
 | Überall | Strg+B | Bandbedingungen öffnen (darin Strg+P: Probehören) |
-| Überall | Strg+Komma | Einstellungen |
+| Überall | Strg+Komma (Strg+,) | Einstellungen |
 | Überall | Tab, Umschalt+Tab | durch Felder, Knöpfe und Schalter (Fokus farbig markiert) |
 | Überall | Leertaste, Enter | Knopf drücken; Leertaste schaltet Schalter um |
 | Überall | Pfeiltasten | in Listen, Reglern, Reitern, Tabellen und in der Zeile „Inhalt“ (Einzeln, Am Stück, Sprechen) wählen |
-| Überall | Esc | Nebenfenster schließen |
-| Tagesübung | Enter, Esc | Zwischenkarte überspringen, Tagesübung beenden |
-| Einzeln, Am Stück | F5 | Start/Stop |
+| Überall | Esc | Nebenfenster schließen; in einem Übungsreiter den Durchgang stoppen |
+| Tagesübung | Enter | Zwischenkarte überspringen |
+| Tagesübung | Esc oder F5, zweimal | Tagesübung beenden |
+| Einzeln, Am Stück | F5, Esc | Start/Stop, stoppen |
 | Einzeln | Alt+1 (noch einmal) | Inhalt weiterschalten: Zeichen → Gruppen → Wörter → Rufzeichen |
 | Einzeln | Leertaste | Zeichen bzw. Sequenz wiederholen |
 | Einzeln, Kopfhören | Enter, J, N | auflösen, gewusst, nicht gewusst |
 | Einzeln, Rufz | F6, F7, Esc | nach dem Durchgang: verpasste nachhören bzw. aktuelles nochmal, von vorn, anhalten |
-| Am Stück | Esc | stoppen |
 | Sprechen | F5, Leertaste, Esc | Start/Stop, aktuellen Eintrag nochmal, stoppen |
-| QSO | F5, F6, F7, F8 | neues QSO/Stop, nochmal hören, Text zeigen, prüfen |
-| Contest | F10 | Start/Ende |
+| QSO | F5, F6, F7, F8, Esc | neues QSO/Stop, nochmal hören, Text zeigen, prüfen, stoppen |
+| Contest | F10 | Start/Ende (F5 vor dem Start erinnert daran) |
 | Contest | F1, F2, F3, F4 | CQ, Austausch, TU/loggen, eigenes Call |
 | Contest | F5, F7, F8 | sein Call, „?“, „AGN“ |
 | Contest | Enter, Esc | passende nächste Nachricht senden (ESM), Senden abbrechen |

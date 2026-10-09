@@ -15,9 +15,10 @@ Der Reiter merkt sich dafür in `options_card` seine Einstellungskarte und
 ruft beim Auswerten _remember_result() auf; die längste Serie richtiger
 Antworten beim ersten Hören zählt er in _count_streak()."""
 import time
+import tkinter as tk
 
 from morsetrainer.core import review
-from morsetrainer.i18n import tr
+from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import announcer
 
 
@@ -62,6 +63,23 @@ class DailyModeMixin:
         """Kennzeichen für die config-Zeile des gespeicherten Durchgangs."""
         return {"daily": True} if self.daily_minutes else {}
 
+    def show_options_for_run(self, running: bool) -> None:
+        """Während eines Durchgangs ist die Einstellungskarte weg, damit
+        Antwortfeld, Status und Stop auch bei großer Schrift oder kleinem
+        Bildschirm ohne Rollen zu sehen sind; danach ist sie wieder da (in
+        der Tagesübung erst mit daily_release)."""
+        card = self.options_card
+        if running and card is not None:
+            # Fokus in der Karte (etwa F5 im Feld „Dauer“): Tasten gingen
+            # sonst an ein unsichtbares Feld.
+            try:
+                focus = card.focus_get()
+            except (KeyError, tk.TclError):  # Fokus in einer Klappliste
+                focus = None
+            if focus is not None and str(focus).startswith(str(card)):
+                self.start_button.focus_set()
+        self.set_options_visible(not running and not self.daily_minutes)
+
     def set_options_visible(self, visible: bool) -> None:
         """Einstellungskarte aus- und an derselben Stelle wieder einblenden."""
         card = self.options_card
@@ -100,6 +118,16 @@ class DailyModeMixin:
         if not self.daily_minutes and summary.get("total"):
             announcer.say(tr("Durchgang beendet. {correct} von {total} Zeichen richtig.").format(
                 correct=summary["correct"], total=summary["total"]))
+
+    def _stopped_text(self) -> str:
+        """Statuszeile nach dem Stop: das Ergebnis des Durchgangs, wie es auch
+        angesagt wird (_remember_result); ohne gewertete Zeichen „Gestoppt.“."""
+        result = self.last_result or {}
+        correct, total = result.get("correct", 0), result.get("total", 0)
+        if not total:
+            return tr("Gestoppt.")
+        return tr("Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).").format(
+            correct=correct, total=total, share=number(round(correct / total * 100)))
 
     def _count_streak(self, clean: bool = None) -> None:
         """Serie fortsetzen (`clean`: beim ersten Hören richtig, ohne

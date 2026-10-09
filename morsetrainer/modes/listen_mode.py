@@ -98,7 +98,7 @@ class ListenModeFrame:
                     "Übung auf Handy oder im Auto. F5 startet und stoppt, Leertaste wiederholt."),
         ).pack(anchor="w", padx=8, pady=(4, 2))
 
-        options = theme.card(parent, tr("Einstellungen"))
+        options = theme.card(parent, tr("Optionen dieser Übung"))
         row = ttk.Frame(options)
         row.pack(fill="x", pady=1)
         ttk.Label(row, text=tr("Gruppen zu")).pack(side="left", padx=(0, 4))
@@ -139,7 +139,7 @@ class ListenModeFrame:
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.export_button = ttk.Button(controls, text=tr("Als MP3 speichern…"), command=self.export)
         self.export_button.pack(side="left", padx=8)
@@ -277,7 +277,7 @@ class ListenModeFrame:
         self.session_id += 1
         self.running = True
         self.done, self.total = 0, opts["count"]
-        self.start_button.config(text=tr("Stop"))
+        self.start_button.config(text=tr("Stop (F5)"))
         self.content_buttons.state(["disabled"])
         self.export_button.config(state="disabled")
         self.solution_var.set("")
@@ -368,7 +368,7 @@ class ListenModeFrame:
         self.running = False
         self.session_id += 1
         audio.stop()
-        self.start_button.config(text=tr("Start"))
+        self.start_button.config(text=tr("Start (F5)"))
         self.content_buttons.state(["!disabled"])
         self.export_button.config(state="normal")
         self.progress_var.set("")

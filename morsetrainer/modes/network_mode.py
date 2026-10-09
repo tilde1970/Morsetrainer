@@ -455,7 +455,7 @@ class NetworkModeFrame:
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_run,
+        self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_run,
                                        state="disabled")
         self.start_button.pack(side="left")
         self.next_button = ttk.Button(controls, text=tr("Weiter (F7)"), command=self.advance, state="disabled")
@@ -984,7 +984,7 @@ class NetworkModeFrame:
         self.item = None
         self.solution_selected = None
         self._show_content_options()
-        self.start_button.config(text=tr("Stop"))
+        self.start_button.config(text=tr("Stop (F5)"))
         self.next_button.config(state="disabled" if continuous else "normal")
         self.export_button.config(state="disabled")
         self.paper_button.config(state="disabled")
@@ -1177,7 +1177,7 @@ class NetworkModeFrame:
             if self.run_signs and (self.listen_var.get() or self.run_speaker):
                 self._play_signs(END_TEXT, wpm, None, spec)
             self._log_led_run(wpm)
-        self.start_button.config(text=tr("Start"))
+        self.start_button.config(text=tr("Start (F5)"))
         self.next_button.config(state="disabled")
         self.export_button.config(state="normal" if self.board is not None and self.board.items else "disabled")
         self.paper_button.config(state=self.export_button.cget("state"))

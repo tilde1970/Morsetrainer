@@ -194,7 +194,7 @@ class ContinuousModeFrame(DailyModeMixin):
                     "F5 startet und stoppt, Esc stoppt."),
         ).pack(anchor="w", padx=8, pady=(2, 2))
 
-        options = self.options_card = theme.card(parent, tr("Einstellungen"))
+        options = self.options_card = theme.card(parent, tr("Optionen dieser Übung"))
         duration = ttk.Frame(options)
         duration.pack(fill="x")
         ttk.Label(duration, text=tr("Dauer:")).pack(side="left", padx=(0, 4))
@@ -220,7 +220,7 @@ class ContinuousModeFrame(DailyModeMixin):
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
 
         self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
@@ -357,8 +357,9 @@ class ContinuousModeFrame(DailyModeMixin):
 
         self.running = True
         self.band_toggle.set_locked(True)
-        self.start_button.config(text=tr("Stop"))
+        self.start_button.config(text=tr("Stop (F5)"))
         self.content_buttons.state(["disabled"])
+        self.show_options_for_run(True)
         self.status_var.set(tr("Läuft – höre zu und tippe mit…"))
         self.on_start_cb()
 
@@ -507,8 +508,9 @@ class ContinuousModeFrame(DailyModeMixin):
             # der Sitzungs-Stream ist schon zu).
             self.end_sent = True
             audio.play_quietly(build_text(END_TEXT, self.wpm, self.freq))
-        self.start_button.config(text=tr("Start"))
+        self.start_button.config(text=tr("Start (F5)"))
         self.content_buttons.state(["!disabled"])
+        self.show_options_for_run(False)
         self.status_var.set(tr("Werte aus…"))
         self._finalize_session(stopped_at=None if self.finishing else time.time())
         self.status_var.set(tr("Gestoppt."))

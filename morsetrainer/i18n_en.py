@@ -12,12 +12,17 @@ EN.update({
     "Zeichen": "Characters",
     "Farnsworth, effektiv": "Farnsworth, effective",
     "Koch-Tempo {wpm}/{effective}": "Koch speed {wpm}/{effective}",
-    "Schwache Zeichen bevorzugen (gilt ab nächstem Start)": "Favour weak characters (from the next start)",
+    "Schwache Zeichen bevorzugen (ab dem nächsten Durchgang)": "Favour weak characters (from the next run)",
     "Tonhöhe und Tempo leicht variieren (gegen Gewöhnung an einen Klang)":
         "Vary pitch and speed slightly (so you don't get used to one sound)",
     "wirkt nach Neustart des Programms": "takes effect after restarting the program",
     "Daten": "Data",
-    "Einstellungen …": "Settings …",
+    "Einstellungen … ({key})": "Settings … ({key})",
+    "Strg": "Ctrl",
+    "Umschalt": "Shift",
+    "Üben": "Practice",
+    "{n} Minuten": "{n} minutes",
+    "Jetzt neu starten": "Restart now",
     "Station": "Station",
     "Sprache / Language": "Sprache / Language",  # zweisprachig, damit man zurückfindet
     "Barrierefreiheit": "Accessibility",
@@ -363,7 +368,12 @@ EN.update({
 
 # --- daily_runner.py, widgets/daily_panel.py (Tagesübung) ---
 EN.update({
-    "▶ Tagesübung ({minutes} Min)": "▶ Daily practice ({minutes} min)",
+    "▶ Tagesübung ({minutes} Min, {key})": "▶ Daily practice ({minutes} min, {key})",
+    "Tagesübung beenden (Esc)": "End daily practice (Esc)",
+    "Tagesübung beenden": "End daily practice",
+    "Noch einmal {key} beendet die Tagesübung.": "Press {key} again to end the daily practice.",
+    "{star} Stern aus der Tagesübung, ✓ frei geübt, – nicht geübt, · noch nicht dran":
+        "{star} star from the daily practice, ✓ practised freely, – not practised, · still to come",
     "Mo": "Mon", "Di": "Tue", "Mi": "Wed", "Do": "Thu", "Fr": "Fri", "Sa": "Sat", "So": "Sun",
     "Wochenziel erreicht: {stars} {star}": "Weekly goal reached: {stars} {star}",
     "{stars} von {goal} {star} diese Woche": "{stars} of {goal} {star} this week",
@@ -406,7 +416,7 @@ EN.update({
     "Verwechslungen {chars}": "confusions {chars}",
     "Noch {minutes} Min: {what}": "{minutes} more min: {what}",
     "Weiter ▶": "Continue ▶",
-    "Enter geht weiter, Esc beendet die Tagesübung": "Enter continues, Esc ends the daily practice",
+    "Enter geht weiter, zweimal Esc beendet die Tagesübung": "Enter continues, Esc twice ends the daily practice",
     "Besser geworden (gegenüber der Vorwoche)": "Improved (compared with the week before)",
     "Stand gehalten.": "Held steady.",
     "Für einen Vergleich mit der Vorwoche fehlen noch Daten.": "Not enough data yet to compare with last week.",
@@ -503,8 +513,8 @@ EN.update({
     "Weidezaun": "Fence",
     "Tastklicks": "Key clicks",
     "Weitere Störungen": "More interference",
-    "Probehören": "Listen",
-    "Probehören beenden": "Stop listening",
+    "Probehören ({key})": "Listen ({key})",
+    "Probehören beenden ({key})": "Stop listening ({key})",
     "CQ mit diesen Bedingungen, bis du stoppst; Änderungen sind gleich zu hören.":
         "CQ under these conditions until you stop; changes can be heard at once.",
     "Zählt nicht für Statistik, Übungszeit und Diplome.": "Does not count for statistics, practice time or awards.",
@@ -745,8 +755,18 @@ EN.update({
     "Min.": "min",
     "(0 = ohne Limit)": "(0 = no limit)",
     "Quittungston": "Feedback beep",
-    "Start": "Start",
-    "Stop": "Stop",
+    "Start (F5)": "Start (F5)",
+    "Stop (F5)": "Stop (F5)",
+    "Start (F10)": "Start (F10)",
+    "Stop (F10)": "Stop (F10)",
+    "Im Contest startet F10; F1 bis F8 senden erst im Durchgang.":
+        "In the contest F10 starts; F1 to F8 only send during a run.",
+    "Optionen dieser Übung": "Options for this exercise",
+    "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
+        "Run finished: {correct} of {total} characters correct ({share} %).",
+    "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",
+    "{n} Zeichen, {share} % richtig (Ziel {pct} %)": "{n} characters, {share} % correct (goal {pct} %)",
+    "≈ {cpm} ZpM effektiv": "≈ {cpm} CPM effective",
     "Wiederholen (Leertaste)": "Repeat (space bar)",
     "Bereit. Drücke Start.": "Ready. Press Start.",
     "Enter bestätigt": "Enter confirms",
@@ -1431,12 +1451,12 @@ EN.update({
         "Select a row to see the condition. Seals you have achieved stay, even when the overall statistics "
         "are reset.",
     # Zentrale Bandbedingungen (widgets/band_settings.py)
-    "Einstellen …": "Adjust …",
+    "Einstellen … ({key})": "Adjust … ({key})",
     "keine Störung eingeschaltet": "no interference switched on",
     "Störungen": "Interference",
     "Lautstärke der Störgeräusche": "Noise volume",
-    "Lautstärke {gain} %": "volume {gain} %",
-    "Stufe {name}": "level {name}",
+    "Lautstärke {gain} %": "Volume {gain} %",
+    "Stufe {name}": "Level {name}",
     "Stufe:": "Level:",
     "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
     "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "

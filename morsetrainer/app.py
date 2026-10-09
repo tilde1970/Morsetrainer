@@ -19,7 +19,7 @@ from morsetrainer import DATA_DIR, i18n
 from morsetrainer.core import audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, stats, storage, tempo
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
-from morsetrainer.i18n import N_, tr
+from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
 from morsetrainer.modes.group_mode import GroupModeFrame
@@ -39,7 +39,7 @@ from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, theme
-from morsetrainer.widgets.ui_widgets import ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ScrollableFrame, one_tab_stop, wrap_pair
 
 __author__ = "DL4YM"
 __version__ = "2.44"
@@ -58,6 +58,9 @@ OLD_CONTEST_PLACEHOLDER_CALL = "DL4YM"
 FUNCTION_KEYS = {f"F{i}" for i in range(1, 13)}
 # Startet die Tagesübung; von keinem Reiter belegt.
 DAILY_KEY = "F12"
+# Esc bzw. F5 beenden die Tagesübung erst, wenn sie innerhalb dieser Zeit
+# zweimal gedrückt werden.
+DAILY_END_CONFIRM_S = 3.0
 # Bedienelemente, die Leertaste, Enter und Pfeile selbst auswerten, wenn sie
 # den Tastaturfokus haben.
 FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, ttk.Treeview, ttk.Scale,
@@ -127,6 +130,7 @@ class MorseTrainerApp:
         # nach dem Durchgang kommt der alte zurück, siehe _handle_mode_stop.
         self.drill_restore = None
         self.restart_args = None  # nach einem Update: neu starten mit diesen Argumenten
+        self.restart_command = None  # „Jetzt neu starten“ (Sprache, Kontrast): dieser Befehl
         self.groups_offered = set()  # Lektionen, für die der Gruppen-Hinweis schon kam
         self.error_shown = False  # Hinweis auf fehler.log kommt einmal je Sitzung
         root.title(tr("Morsetrainer von {author}").format(author=__author__))
@@ -157,7 +161,9 @@ class MorseTrainerApp:
         self._build_footer()
         # Vor dem Notizbuch gepackt: steht über den Reitern.
         self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start(),
-                                  on_continue=lambda: self.daily.continue_now())
+                                  on_continue=lambda: self.daily.continue_now(),
+                                  on_end=lambda: self.daily.abort())
+        self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
         self._build_notebook()
         self._follow_station()
@@ -300,19 +306,24 @@ class MorseTrainerApp:
         header.pack(fill="x")
         header.columnconfigure(1, weight=1)
 
+        # Lektion links, Tempo und Ton rechts; reicht die Breite nicht (große
+        # Schrift, schmales Fenster), rutschen Tempo und Ton in eine zweite
+        # Zeile, statt sich mit der Lektion zu überdecken.
         top = ttk.Frame(header)
         top.grid(row=0, column=0, columnspan=2, sticky="we")
+        lesson_row, tone_row = ttk.Frame(top), ttk.Frame(top)
+        wrap_pair(top, lesson_row, tone_row)
         self.charset_var = tk.StringVar(value=DEFAULT_CHARSET)
-        self._build_koch_row(top)
+        self._build_koch_row(lesson_row)
         self.freq_var = tk.IntVar(value=600)
-        ttk.Label(top, text="Hz").pack(side="right", padx=(4, 0))
-        freq_spin = ttk.Spinbox(top, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5)
+        ttk.Label(tone_row, text="Hz").pack(side="right", padx=(4, 0))
+        freq_spin = ttk.Spinbox(tone_row, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5)
         freq_spin.pack(side="right")
         announcer.name(freq_spin, tr("Tonhöhe"), value=lambda: f"{freq_spin.get()} Hz")
         # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
         self.wpm_var = tk.IntVar(value=koch.RECOMMENDED_WPM)
-        ttk.Label(top, text="WPM").pack(side="right", padx=(4, 16))
-        wpm_spin = ttk.Spinbox(top, from_=5, to=40, textvariable=self.wpm_var, width=4)
+        ttk.Label(tone_row, text="WPM").pack(side="right", padx=(4, 16))
+        wpm_spin = ttk.Spinbox(tone_row, from_=5, to=40, textvariable=self.wpm_var, width=4)
         wpm_spin.pack(side="right")
         announcer.name(wpm_spin, tr("Tempo"), value=lambda: f"{wpm_spin.get()} WPM")
         freq_spin.lift()  # Tab wie auf dem Bildschirm: erst Tempo, dann Tonhöhe
@@ -327,17 +338,19 @@ class MorseTrainerApp:
 
         toggle_row = ttk.Frame(header)
         toggle_row.grid(row=2, column=0, columnspan=2, sticky="we", pady=(4, 0))
+        more_part, settings_part = ttk.Frame(toggle_row), ttk.Frame(toggle_row)
+        wrap_pair(toggle_row, more_part, settings_part)
         self.more_var = tk.BooleanVar(value=False)
-        self.more_button = ttk.Button(toggle_row, style="Flat.TButton", command=self._toggle_more)
+        self.more_button = ttk.Button(more_part, style="Flat.TButton", command=self._toggle_more)
         self.more_button.pack(side="left")
         self.extras_var = tk.StringVar(value="")
-        theme.hint(toggle_row, textvariable=self.extras_var).pack(side="left", padx=(8, 0))
+        theme.hint(more_part, textvariable=self.extras_var).pack(side="left", padx=(8, 0))
         # Umrechnung für alle, die in ZpM/BpM denken (DL-Kurse, RufZ, HST);
         # hier statt neben dem WPM-Feld, weil die obere Zeile voll ist.
         self.cpm_var = tk.StringVar(value="")
-        theme.hint(toggle_row, textvariable=self.cpm_var).pack(side="right")
-        ttk.Button(toggle_row, text=tr("Einstellungen …"), style="Flat.TButton", command=self.open_settings).pack(
-            side="right", padx=(0, 12))
+        theme.hint(settings_part, textvariable=self.cpm_var).pack(side="right")
+        ttk.Button(settings_part, text=tr("Einstellungen … ({key})").format(key=ctrl_key(",")),
+                   style="Flat.TButton", command=self.open_settings).pack(side="right", padx=(0, 12))
 
         # Hinweis bei zu langsamem Zeichentempo (koch.SLOW_CHAR_WPM), sonst
         # ausgeblendet; unter den aufklappbaren Optionen (Zeile 3).
@@ -369,7 +382,7 @@ class MorseTrainerApp:
 
         self.weighted_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(
-            self.more_frame, text=tr("Schwache Zeichen bevorzugen (gilt ab nächstem Start)"),
+            self.more_frame, text=tr("Schwache Zeichen bevorzugen (ab dem nächsten Durchgang)"),
             variable=self.weighted_var,
         ).pack(anchor="w", pady=2)
 
@@ -395,10 +408,15 @@ class MorseTrainerApp:
         body = ttk.Frame(window, padding=10)
         body.pack(fill="both", expand=True)
         station_card = theme.card(body, tr("Station"), padx=0)
+        practice_card = theme.card(body, tr("Üben"), padx=0)
         language_card = theme.card(body, tr("Sprache / Language"), padx=0)
         access_card = theme.card(body, tr("Barrierefreiheit"), padx=0)
         data_card = theme.card(body, tr("Daten"), padx=0)
-        ttk.Button(body, text=tr("Schließen"), command=self.close_settings).pack(anchor="e", pady=(8, 0))
+        bottom = ttk.Frame(body)
+        bottom.pack(fill="x", pady=(8, 0))
+        ttk.Button(bottom, text=tr("Schließen"), command=self.close_settings).pack(side="right")
+        # Erst sichtbar, wenn eine Einstellung erst nach einem Neustart wirkt.
+        self.restart_button = ttk.Button(bottom, text=tr("Jetzt neu starten"), command=self.restart_now)
 
         # Eigenes Rufzeichen und Name: für die Diplome und als Vorgabe in
         # den Reitern Contest und Netzwerk (siehe _follow_station).
@@ -415,6 +433,19 @@ class MorseTrainerApp:
         announcer.echo(call_entry)
         announcer.echo(name_entry)
         theme.hint(station, text=tr("falls vorhanden; für Diplome, Contest und Netzwerk")).pack(side="left")
+
+        # Tagesziel, angezeigt in der Fußzeile; so lang wie die Tagesübung
+        # (core/daily.py).
+        self.daily_goal_var = tk.IntVar(value=10)
+        goal = ttk.Frame(practice_card)
+        goal.pack(fill="x", pady=2)
+        ttk.Label(goal, text=tr("Tagesziel")).pack(side="left")
+        goal_spin = ttk.Spinbox(goal, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5)
+        goal_spin.pack(side="left", padx=(6, 4))
+        announcer.name(goal_spin, tr("Tagesziel"), value=lambda: tr("{n} Minuten").format(n=goal_spin.get()))
+        ttk.Label(goal, text=tr("Min. pro Tag")).pack(side="left")
+        theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(
+            side="left", padx=(8, 0))
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
@@ -466,8 +497,8 @@ class MorseTrainerApp:
         band_row = ttk.Frame(self.more_frame)
         band_row.pack(fill="x", pady=2)
         ttk.Label(band_row, text=tr("Bandbedingungen")).pack(side="left")
-        ttk.Button(band_row, text=tr("Einstellen …"), command=self.band_settings.open_window).pack(
-            side="left", padx=(6, 8))
+        ttk.Button(band_row, text=tr("Einstellen … ({key})").format(key=ctrl_key("B")),
+                   command=self.band_settings.open_window).pack(side="left", padx=(6, 8))
         self.band_summary_var = tk.StringVar(value="")
         theme.hint(band_row, textvariable=self.band_summary_var, wrap=440).pack(side="left")
         self.band_settings.subscribe(lambda: self.band_summary_var.set(self.band_settings.summary()))
@@ -484,14 +515,10 @@ class MorseTrainerApp:
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
                     self.weighted_var, self.vary_var):
             var.trace_add("write", lambda *_: self._update_more())
-        for var in (self.wpm_var, self.farnsworth_wpm_var):
+        for var in (self.wpm_var, self.farnsworth_wpm_var, self.farnsworth_enabled_var):
             var.trace_add("write", lambda *_: self._update_cpm())
         self._update_cpm()
         ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
-
-        # Einstellbar im Reiter Statistik, angezeigt in der Fußzeile; so
-        # lang wie die Tagesübung (core/daily.py).
-        self.daily_goal_var = tk.IntVar(value=10)
 
     def open_settings(self) -> None:
         """Einstellungsfenster zeigen (Strg+Komma); der Fokus geht hinein."""
@@ -519,6 +546,7 @@ class MorseTrainerApp:
         chosen = next(k for k, v in i18n.LANGUAGES.items() if v == self.language_box.get())
         self.language_var.set(chosen)
         self.language_hint_var.set("" if chosen == i18n.LANG else tr("wirkt nach Neustart des Programms"))
+        self._show_restart_button()
 
     def _export_data(self):
         """Einstellungen und Daten als ZIP an einen frei gewählten Ort sichern."""
@@ -578,11 +606,19 @@ class MorseTrainerApp:
         self.on_close(keep_files=True)
 
     def _update_cpm(self):
-        """ZpM-Hinweise zu den WPM-Feldern (PARIS-Umrechnung, core/tempo.py);
-        leer bzw. ohne ZpM, solange ein Feld keine Zahl enthält."""
+        """ZpM-Hinweise zu den WPM-Feldern (PARIS-Umrechnung, core/tempo.py),
+        mit Farnsworth fürs effektive Tempo; leer bzw. ohne ZpM, solange ein
+        Feld keine Zahl enthält."""
         try:
             wpm = self.wpm_var.get()
-            self.cpm_var.set(tr("{wpm} WPM ≈ {cpm} ZpM").format(wpm=wpm, cpm=tempo.cpm(wpm)))
+            effective = self.farnsworth_wpm()
+            if effective is None:
+                self.cpm_var.set(tr("{wpm} WPM ≈ {cpm} ZpM").format(wpm=wpm, cpm=tempo.cpm(wpm)))
+            else:
+                # Gehört wird das effektive Tempo (daneben steht „Farnsworth
+                # 10“); nur das Zeichentempo umzurechnen hieße bei 20/10
+                # „100 ZpM“ statt rund 50.
+                self.cpm_var.set(tr("≈ {cpm} ZpM effektiv").format(cpm=tempo.cpm(effective)))
         except tk.TclError:
             wpm = None
             self.cpm_var.set("")
@@ -602,7 +638,23 @@ class MorseTrainerApp:
     def _contrast_toggled(self) -> None:
         changed = self.contrast_var.get() != self.contrast_at_start
         self.contrast_hint_var.set(tr("wirkt nach Neustart des Programms") if changed else "")
+        self._show_restart_button()
         announcer.say(tr("Hoher Kontrast nach Neustart.") if changed and self.contrast_var.get() else "")
+
+    def _show_restart_button(self) -> None:
+        """„Jetzt neu starten“ zeigen, solange Sprache oder Kontrast anders
+        eingestellt sind als beim Start (und der Neustart möglich ist)."""
+        pending = self.language_var.get() != i18n.LANG or self.contrast_var.get() != self.contrast_at_start
+        if pending and update.restart_command() is not None:
+            self.restart_button.pack(side="left")
+        else:
+            self.restart_button.pack_forget()
+
+    def restart_now(self) -> None:
+        """Alles speichern wie beim Schließen, danach startet main() das
+        Programm neu."""
+        self.restart_command = update.restart_command()
+        self.on_close()
 
     def toggle_announce(self) -> None:
         """F9: Ansage an/aus, hörbar bestätigt."""
@@ -923,7 +975,8 @@ class MorseTrainerApp:
         self.update_button = ttk.Button(update_box, text=tr("Aktualisieren …"), style="Flat.TButton",
                                         command=self.offer_update)
         ttk.Button(footer, text=tr("Hilfe"), style="Flat.TButton",
-                   command=lambda: HelpWindow.show(self.root)).pack(side="right", padx=(8, 0))
+                   command=lambda: HelpWindow.show(self.root, self.notebook.tab("current", "text"))).pack(
+            side="right", padx=(8, 0))
         ttk.Label(
             footer, text=tr("Morsetrainer {version} · entwickelt von {author} · 73!").format(
                 version=__version__, author=__author__), style="Footer.TLabel",
@@ -1083,12 +1136,6 @@ class MorseTrainerApp:
             frame, title=tr("Gesamtstatistik (alle Durchgänge)"), tree_height=12, show_save_label=False
         )
 
-        goal = theme.card(frame, tr("Tagesziel"))
-        row = ttk.Frame(goal)
-        row.pack(fill="x")
-        ttk.Spinbox(row, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5).pack(side="left")
-        ttk.Label(row, text=tr("Min. pro Tag")).pack(side="left", padx=(4, 0))
-        theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(anchor="w", pady=(4, 0))
         self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")),
                                         station=lambda: (self.station_call(), self.station_name_var.get().strip()))
         self.lifeline_panel = LifelinePanel(frame)
@@ -1402,6 +1449,7 @@ class MorseTrainerApp:
             for key, step in (("Left", -1), ("Up", -1), ("Right", 1), ("Down", 1)):
                 button.bind(f"<{key}>", lambda e, d=step: self._step_content(d, focus=True) or "break")
             self.one_by_one_buttons.append(button)
+        one_tab_stop(self.one_by_one_buttons, self.one_by_one_var)
         theme.hint(tab, wrap=640, text=tr(
             "Eins nach dem anderen: hören, antworten, das nächste. Ohne Pause fortlaufend mitschreiben: "
             "Reiter „Am Stück“.")).pack(anchor="w", padx=8)
@@ -1561,12 +1609,12 @@ class MorseTrainerApp:
     def _dispatch_key(self, event):
         # Funktionstasten sind Kürzel des aktiven Reiters und gelten auch in
         # Eingabefeldern (dort haben sie sonst keine Bedeutung).
-        """Jede Taste im Hauptfenster: Tagesübung (Esc, Enter), Ansage (F9, F11),
+        """Jede Taste im Hauptfenster: Tagesübung (Esc, F5, Enter), Ansage (F9, F11),
         Tagesübung starten (F12), Funktionstasten an den aktiven Reiter, sonst
         an dessen on_key – außer die Taste gehört einem Eingabefeld oder dem
         Bedienelement mit dem Fokus."""
-        if event.keysym == "Escape" and self.daily.active:
-            self.daily.abort()
+        if event.keysym in ("Escape", "F5") and self.daily.active:
+            self._confirm_daily_end(event.keysym)
             return
         if event.keysym == "Return" and self.daily.card_open:
             self.daily.continue_now()
@@ -1584,6 +1632,13 @@ class MorseTrainerApp:
             if mode is not None and hasattr(mode, "on_function_key"):
                 mode.on_function_key(event.keysym)
             return
+        # Esc beendet in jedem Übungsreiter den Durchgang, auch aus dem
+        # Antwortfeld heraus (im Contest bricht es nur das Senden ab).
+        if event.keysym == "Escape":
+            mode = self._active_mode()
+            if mode is not None:
+                mode.on_key(event)
+            return
         # Tastendrücke, die eigentlich für ein Eingabefeld gedacht sind (z. B.
         # das WPM-Feld beim Ändern der Geschwindigkeit, oder das Antwortfeld im
         # Gruppen-/Rufzeichen-Modus), sollen nicht zusätzlich als Morse-Antwort
@@ -1598,6 +1653,27 @@ class MorseTrainerApp:
         mode = self._active_mode()
         if mode is not None:
             mode.on_key(event)
+
+    def _confirm_daily_end(self, keysym: str) -> None:
+        """Esc oder F5 in der Tagesübung: beendet sie erst beim zweiten Druck
+        innerhalb von DAILY_END_CONFIRM_S. Ein einzelner Fehlgriff (etwa Esc,
+        um ein Nebenfenster zu schließen) soll nicht den Tag kosten; ohne
+        Dialog, der Ablauf und Ansage unterbräche."""
+        now = time.time()
+        if now - self.daily_end_pressed <= DAILY_END_CONFIRM_S:
+            self.daily_end_pressed = 0.0
+            self.daily_bar.show_notice("")
+            self.daily.abort()
+            return
+        self.daily_end_pressed = now
+        text = tr("Noch einmal {key} beendet die Tagesübung.").format(key="Esc" if keysym == "Escape" else keysym)
+        self.daily_bar.show_notice(text)
+        announcer.say(text)
+        self.root.after(int(DAILY_END_CONFIRM_S * 1000), self._clear_daily_notice)
+
+    def _clear_daily_notice(self) -> None:
+        if time.time() - self.daily_end_pressed >= DAILY_END_CONFIRM_S:
+            self.daily_bar.show_notice("")
 
     def _start_daily(self) -> bool:
         """Tagesübung starten, wenn gerade nichts läuft; True, wenn gestartet."""
@@ -1796,6 +1872,8 @@ def main():
     found = update.installed()
     if app.restart_args is not None and found is not None:
         update.relaunch(found[0], app.restart_args)
+    elif app.restart_command is not None:
+        update.relaunch(Path(app.restart_command[0]), app.restart_command[1:])
 
 
 if __name__ == "__main__":

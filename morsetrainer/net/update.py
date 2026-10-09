@@ -226,6 +226,19 @@ def relaunch(target: Path, args) -> None:
     subprocess.Popen([str(target), *args], env=env, close_fds=True, **options)
 
 
+def restart_command():
+    """Befehl, der den Morsetrainer neu startet, als Liste: die Programmdatei
+    (exe, AppImage, Mac-App) bzw. Python mit main.py; None, wenn er sich
+    nicht ermitteln lässt."""
+    found = installed()
+    if found is not None:
+        return [str(found[0])]
+    if getattr(sys, "frozen", False):
+        return [sys.executable]
+    main = Path(sys.argv[0]).resolve() if sys.argv and sys.argv[0] else None
+    return [sys.executable, str(main)] if main is not None and main.is_file() else None
+
+
 def cleanup() -> None:
     """Reste eines Updates entfernen (alte exe, abgebrochener Download)."""
     found = installed()

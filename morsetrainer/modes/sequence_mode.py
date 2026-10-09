@@ -261,7 +261,7 @@ class SequenceModeFrame(DailyModeMixin):
         if self.intro_text:
             theme.hint(parent, text=tr(self.intro_text), wrap=560).pack(anchor="w", padx=10, pady=(8, 2))
 
-        options = self.options_card = theme.card(parent, tr("Einstellungen"))
+        options = self.options_card = theme.card(parent, tr("Optionen dieser Übung"))
         self._build_extra_settings(options)
 
         style = ttk.Frame(options)
@@ -304,7 +304,7 @@ class SequenceModeFrame(DailyModeMixin):
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(
             controls, text=tr("Wiederholen (Leertaste)"), command=self.repeat_sequence, state="disabled"
@@ -438,7 +438,8 @@ class SequenceModeFrame(DailyModeMixin):
         self.band_rank_min = band.preset_rank(spec)
         self.band = None
         self._band_for_play(freq)
-        self.start_button.config(text=tr("Stop"))
+        self.start_button.config(text=tr("Stop (F5)"))
+        self.show_options_for_run(True)
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
         self.diff_var.set("")
@@ -515,7 +516,8 @@ class SequenceModeFrame(DailyModeMixin):
         self.band_toggle.set_locked(False)
         self.waiting_for_input = False
         self.submit_pending = False
-        self.start_button.config(text=tr("Start"))
+        self.start_button.config(text=tr("Start (F5)"))
+        self.show_options_for_run(False)
         self.repeat_button.config(state="disabled")
         self._set_input_open(False)
         self._set_head_buttons()
@@ -524,8 +526,9 @@ class SequenceModeFrame(DailyModeMixin):
         if self.send_prosigns:
             wpm, freq = self._audio_settings()
             audio.play_quietly(self._with_band(build_text(END_TEXT, wpm, freq)))
+        self.last_result = None
         self._finalize_session()
-        self.status_var.set(tr("Gestoppt."))
+        self.status_var.set(self._stopped_text())
         self.remaining_var.set("")
         if self.tempo is not None:
             best = tr("{wpm} WPM effektiv").format(wpm=self.tempo_best) if self.tempo_best else "–"
@@ -981,11 +984,15 @@ class SequenceModeFrame(DailyModeMixin):
 
     def on_key(self, event):
         # Eingabe erfolgt über das Entry-Feld (self.entry), nicht über eine
-        # globale Tastenbindung; nur die Leertaste wirkt auch außerhalb, beim
-        # Kopfhören außerdem Enter, J und N.
-        """Tasten außerhalb des Eingabefelds: Leertaste wiederholt, beim Kopfhören
-        löst Enter auf, J und N bewerten."""
-        if event.keysym == "space":
+        # globale Tastenbindung; nur Esc und die Leertaste wirken auch
+        # außerhalb, beim Kopfhören außerdem Enter, J und N.
+        """Tasten außerhalb des Eingabefelds: Esc beendet den Durchgang (auch aus
+        dem Eingabefeld), Leertaste wiederholt, beim Kopfhören löst Enter auf,
+        J und N bewerten."""
+        if event.keysym == "Escape":
+            if self.running:
+                self.stop()
+        elif event.keysym == "space":
             self.repeat_sequence()
         elif self.style == HEAD and self.running:
             key = event.keysym.lower()

@@ -366,6 +366,22 @@ class StartupCheckTest(AppTestCase):
         rejoin.assert_called_once_with("1234")
         self.assertIs(self.app._active_mode(), network)
 
+    def test_restart_command_from_source_runs_main(self):
+        main = Path(app_module.__file__).resolve().parent.parent / "main.py"
+        with mock.patch.object(update.sys, "argv", [str(main)]), \
+                mock.patch.object(update, "installed", return_value=None):
+            self.assertEqual(update.restart_command(), [update.sys.executable, str(main)])
+        with mock.patch.object(update.sys, "argv", ["python -m unittest"]), \
+                mock.patch.object(update, "installed", return_value=None):
+            self.assertIsNone(update.restart_command())
+
+    def test_restart_now_saves_first(self):
+        with mock.patch.object(self.app, "on_close") as close, \
+                mock.patch.object(app_module.update, "restart_command", return_value=["morsetrainer"]):
+            self.app.restart_now()
+        close.assert_called_once()
+        self.assertEqual(self.app.restart_command, ["morsetrainer"])
+
     def test_restart_saves_first(self):
         with mock.patch.object(self.app, "on_close") as close:
             self.app.restart_for_update(("--join", "1234"))

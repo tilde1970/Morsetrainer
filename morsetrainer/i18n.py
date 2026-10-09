@@ -15,6 +15,7 @@ Einstellung (window_state.json, Schlüssel "language") wirkt ab dem nächsten
 Start. MORSETRAINER_LANG hat Vorrang (die Tests laufen damit auf Deutsch)."""
 import json
 import os
+import sys
 
 from morsetrainer import DATA_DIR
 
@@ -66,3 +67,18 @@ def short_number(value) -> str:
     Dezimalzeichen der Sprache: 94.7 -> „94,7“ bzw. „94.7“, 100.0 -> „100“."""
     text = f"{value:g}"
     return text if LANG == "en" else text.replace(".", ",")
+
+
+def ctrl_key(key: str, shift: bool = False) -> str:
+    """Tastenkürzel mit Strg zum Anzeigen („Strg+B“), auf dem Mac mit Cmd;
+    `shift`: zusätzlich Umschalt."""
+    parts = ["Cmd" if sys.platform == "darwin" else tr("Strg")]
+    if shift:
+        parts.append(tr("Umschalt"))
+    return "+".join(parts + [key])
+
+
+def daily_key() -> str:
+    """Taste der Tagesübung zum Anzeigen: F12, auf dem Mac Cmd+Umschalt+T
+    (dort ist F12 vom System belegt, siehe app.py)."""
+    return ctrl_key("T", shift=True) if sys.platform == "darwin" else "F12"

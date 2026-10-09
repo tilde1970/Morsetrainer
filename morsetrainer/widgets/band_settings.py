@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import band
-from morsetrainer.i18n import N_, tr
+from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_preview import BandPreview
 from morsetrainer.widgets.ui_widgets import ScrollableFrame
@@ -245,7 +245,9 @@ class BandSettings:
             return
         running = self.preview is not None and self.preview.running
         blocked = self.preview_blocked() if self.preview is not None else None
-        self.preview_button.config(text=tr("Probehören beenden") if running else tr("Probehören"))
+        key = ctrl_key("P")
+        self.preview_button.config(text=(tr("Probehören beenden ({key})") if running
+                                         else tr("Probehören ({key})")).format(key=key))
         self.preview_button.state(["disabled"] if blocked and not running else ["!disabled"])
         if running:
             text = tr("CQ mit diesen Bedingungen, bis du stoppst; Änderungen sind gleich zu hören.")
@@ -274,6 +276,7 @@ class BandSettings:
         if self.window is not None:
             self.window.deiconify()
             self.window.lift()
+            self.window.focus_set()
             return
         self.focus_before = self.root.focus_get()
         window = self.window = tk.Toplevel(self.root)
@@ -282,9 +285,15 @@ class BandSettings:
         window.configure(background=theme.BG)
         window.protocol("WM_DELETE_WINDOW", self.close_window)
         window.bind("<Escape>", lambda e: self.close_window())
+        # Probehören und Schließen fest unten, außerhalb des Rollbereichs:
+        # vor dem Rollbereich gepackt, damit sie immer zu sehen sind.
+        self.bottom = bottom = ttk.Frame(window, padding=(10, 6, 10, 10))
+        bottom.pack(side="bottom", fill="x")
+        ttk.Separator(window).pack(side="bottom", fill="x")
         # Mit Scrollleiste: Bei großer Schrift oder kleinem Bildschirm passt
         # das Fenster nicht ganz auf den Bildschirm.
         self.scroller = ScrollableFrame(window)
+        bottom.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: die Knöpfe zuletzt
         frame = self.content = ttk.Frame(self.scroller.inner, padding=10)
         frame.pack(fill="both", expand=True)
         theme.hint(frame, wrap=460, text=tr(
@@ -305,8 +314,11 @@ class BandSettings:
         presets = ttk.Frame(frame)
         presets.pack(fill="x", pady=(0, 4))
         ttk.Label(presets, text=tr("Stufe:")).pack(side="left", padx=(0, 6))
+        preset_buttons = []
         for preset, name in PRESET_NAMES.items():
-            ttk.Button(presets, text=tr(name), command=lambda p=preset: self.set_preset(p)).pack(side="left", padx=2)
+            button = ttk.Button(presets, text=tr(name), command=lambda p=preset: self.set_preset(p))
+            button.pack(side="left", padx=2)
+            preset_buttons.append(button)
 
         box = theme.card(frame, tr("Störungen"), padx=0)
         box.columnconfigure(1, weight=1)
@@ -383,27 +395,30 @@ class BandSettings:
 
         self.rank_var = tk.StringVar(value="")
         theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(4, 0))
-        bottom = ttk.Frame(frame)
-        bottom.pack(fill="x", pady=(8, 0))
-        ttk.Button(bottom, text=tr("Schließen"), command=self.close_window).pack(side="right")
+        buttons = ttk.Frame(bottom)
+        buttons.pack(side="bottom", fill="x")
+        ttk.Button(buttons, text=tr("Schließen"), command=self.close_window).pack(side="right")
         self.preview_var = tk.StringVar(value="")
         if self.preview is not None:
             # Strg+P (auf dem Mac auch Cmd+P): die Bedingungen gleich hören.
-            self.preview_button = ttk.Button(bottom, command=self.toggle_preview, width=18)
+            self.preview_button = ttk.Button(buttons, command=self.toggle_preview, width=28)
             self.preview_button.pack(side="left")
-            theme.hint(frame, textvariable=self.preview_var, wrap=460).pack(anchor="w", pady=(4, 0))
+            theme.hint(bottom, textvariable=self.preview_var, wrap=460).pack(anchor="w", pady=(0, 4))
             for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
                 for key in ("p", "P"):  # auch mit Feststelltaste
                     window.bind(f"<{modifier}-{key}>", lambda e: self.toggle_preview() or "break")
         self._update_window()
         self._show_preview()
         self._fit_window()
+        # Der Fokus geht hinein (wie im Fenster Einstellungen), sonst träfe
+        # Esc das Hauptfenster statt dieses Fenster.
+        preset_buttons[0].focus_set()
 
     def _fit_window(self) -> None:
         """So groß wie der Inhalt, aber nicht höher als der Bildschirm
         erlaubt; der Rest ist mit der Scrollleiste erreichbar."""
         self.window.update_idletasks()
-        limit = int(self.window.winfo_screenheight() * WINDOW_MAX_SCREEN_SHARE)
+        limit = int(self.window.winfo_screenheight() * WINDOW_MAX_SCREEN_SHARE) - self.bottom.winfo_reqheight()
         self.scroller.canvas.config(width=self.content.winfo_reqwidth(),
                                     height=min(self.content.winfo_reqheight(), limit))
 
@@ -513,7 +528,7 @@ class BandToggle:
         top.pack(fill="x")
         self.check = ttk.Checkbutton(top, text=tr("Bandbedingungen"), variable=variable)
         self.check.pack(side="left")
-        ttk.Button(top, text=tr("Einstellen …"), style="Flat.TButton",
+        ttk.Button(top, text=tr("Einstellen … ({key})").format(key=ctrl_key("B")), style="Flat.TButton",
                    command=settings.open_window).pack(side="left", padx=(6, 0))
         self.locked_hint = theme.hint(top, text=tr("an/aus erst nach dem Durchgang"))
         self.summary_var = tk.StringVar(value="")

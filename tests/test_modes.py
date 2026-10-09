@@ -1087,7 +1087,7 @@ class HelpWindowTest(AppTestCase):
         help_window.HelpWindow.show(self.root)
         window = help_window.HelpWindow._open
         try:
-            window.notebook.select(1)  # Anleitung
+            window.notebook.select(0)  # Anleitung
             self.root.update()
             self.assertTrue(window.top.bind("<Control-f>"))
             window.focus_search()
@@ -1219,3 +1219,130 @@ class IconTest(AppTestCase):
 
     def test_window_icon_is_set(self):
         self.assertEqual([icon.width() for icon in self.app.icons], list(app_module.ICON_SIZES))
+
+
+class UsabilityTest(AppTestCase):
+    """Bedienung: Platz im Durchgang, einheitliche Tasten, sichtbares Ziel und
+    Ergebnis, Hilfe zum Reiter, Optionsgruppen als ein Tab-Stopp."""
+
+    def _esc(self, widget):
+        self.app._dispatch_key(type("E", (), {"keysym": "Escape", "char": "\x1b", "widget": widget})())
+
+    def test_options_card_hidden_while_running(self):
+        # Bei großer Schrift oder kleinem Bildschirm schob die Karte Antwortfeld,
+        # Status und Stop aus dem sichtbaren Bereich.
+        for title in ("Gruppen", "Kontinuierlich"):
+            mode = self.mode(title)
+            card = mode.options_card
+            siblings = card.master.pack_slaves()
+            self.app.show_mode(title)
+            # Am Stück: ohne Audio-Thread (die Attrappe hat keinen Tonstrom).
+            with mock.patch.object(type(mode), "_play_loop", create=True):
+                mode.start()
+            self.assertTrue(mode.running, title)
+            self.assertEqual(card.winfo_manager(), "", title)
+            mode.stop()
+            self.assertEqual(card.master.pack_slaves(), siblings, title)  # an derselben Stelle zurück
+
+    def test_focus_leaves_the_hidden_card(self):
+        group = self.mode("Gruppen")
+        self.app.show_mode("Gruppen")
+        spin = next(w for w in group.options_card.winfo_children()[-1].winfo_children()
+                    if isinstance(w, ttk.Spinbox))
+        spin.focus_force()
+        self.root.update()
+        group.start()
+        self.root.update()
+        self.assertNotEqual(self.root.focus_get(), spin)
+        group.stop()
+
+    def test_escape_stops_in_every_practice_tab(self):
+        single = self.mode("Einzelzeichen")
+        self.app.show_mode("Einzelzeichen")
+        single.start()
+        self._esc(self.root)
+        self.assertFalse(single.running)
+        group = self.mode("Gruppen")
+        self.app.show_mode("Gruppen")
+        group.start()
+        self._esc(group.entry)  # auch aus dem Antwortfeld
+        self.assertFalse(group.running)
+
+    def test_start_buttons_name_their_key(self):
+        self.assertEqual(self.mode("Einzelzeichen").start_button.cget("text"), "Start (F5)")
+        self.assertEqual(self.mode("Gruppen").start_button.cget("text"), "Start (F5)")
+        self.assertEqual(self.mode("Contest").start_button.cget("text"), "Start (F10)")
+        self.assertIn("F12", self.app.daily_bar.start_button.cget("text"))
+
+    def test_f5_in_contest_points_to_f10(self):
+        contest = self.mode("Contest")
+        contest.on_function_key("F5")
+        self.assertFalse(contest.running)
+        self.assertIn("F10", contest.status_var.get())
+
+    def test_single_shows_goal_and_result(self):
+        single = self.mode("Einzelzeichen")
+        single.start()
+        self.assertEqual(single.progress_var.get(), "0 von 50 Zeichen, Ziel 90 %")
+        single.current_char, single.voice, single.waiting_for_input, single.replayed = "K", (20, 600), True, False
+        single.play_start_time = time.time() - 0.5
+        single.on_key(type("E", (), {"keysym": "K", "char": "K"})())
+        self.assertEqual(single.progress_var.get(), "1 von 50 Zeichen, Ziel 90 %")
+        single.stop()
+        self.assertEqual(single.status_var.get(), "Durchgang beendet: 1 von 1 Zeichen richtig (100 %).")
+        self.assertEqual(single.progress_var.get(), "")
+
+    def test_stop_without_answers_says_stopped(self):
+        single = self.mode("Einzelzeichen")
+        single.start()
+        single.stop()
+        self.assertEqual(single.status_var.get(), "Gestoppt.")
+
+    def test_tempo_hint_names_the_effective_speed(self):
+        self.app.wpm_var.set(20)
+        self.app.farnsworth_wpm_var.set(10)
+        self.app.farnsworth_enabled_var.set(True)
+        self.assertEqual(self.app.cpm_var.get(), "≈ 50 ZpM effektiv")
+        self.app.farnsworth_enabled_var.set(False)
+        self.assertEqual(self.app.cpm_var.get(), "20 WPM ≈ 100 ZpM")
+
+    def test_help_opens_the_guide_at_the_tab(self):
+        from morsetrainer.widgets import help_window
+        help_window.HelpWindow.show(self.root, "Am Stück")
+        window = help_window.HelpWindow._open
+        try:
+            self.assertEqual(window.notebook.index("current"), 0)  # Anleitung zuerst
+            text = window.texts["docs/Anleitung.md"]
+            window.top.update()
+            top_line = text.get("@0,0 linestart", "@0,0 lineend")
+            self.assertEqual(top_line.strip(), "Am Stück")
+            window.show_topic("Netzwerk")  # Abschnitt mit Nummer: „7. Netzwerk: …“
+            window.top.update()
+            self.assertIn("Netzwerk", text.get("@0,0 linestart", "@0,0 lineend"))
+        finally:
+            window.top.destroy()
+
+    def test_choice_group_is_one_tab_stop(self):
+        buttons = self.app.one_by_one_buttons
+        self.assertEqual([bool(b.cget("takefocus")) for b in buttons], [True, False, False, False])
+        self.app.show_content(app_module.ONE_BY_ONE[2])
+        self.assertEqual([bool(b.cget("takefocus")) for b in buttons], [False, False, True, False])
+
+    def test_daily_goal_is_in_the_settings_window(self):
+        def spinboxes(widget):
+            for child in widget.winfo_children():
+                if isinstance(child, ttk.Spinbox):
+                    yield child
+                yield from spinboxes(child)
+        variables = [str(s.cget("textvariable")) for s in spinboxes(self.app.settings_window)]
+        self.assertIn(str(self.app.daily_goal_var), variables)
+
+    def test_restart_button_only_while_a_restart_is_pending(self):
+        self.assertEqual(self.app.restart_button.winfo_manager(), "")
+        with mock.patch.object(app_module.update, "restart_command", return_value=["morsetrainer"]):
+            self.app.contrast_var.set(not self.app.contrast_at_start)
+            self.app._contrast_toggled()
+            self.assertEqual(self.app.restart_button.winfo_manager(), "pack")
+            self.app.contrast_var.set(self.app.contrast_at_start)
+            self.app._contrast_toggled()
+            self.assertEqual(self.app.restart_button.winfo_manager(), "")

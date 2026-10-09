@@ -166,7 +166,7 @@ class SingleModeFrame(DailyModeMixin):
     def _build_widgets(self, parent):
         """Baut den Reiter: Erklärung, Zeitlimit, Start und Wiederholen, Anzeige von
         Zeichen und Rückmeldung, Verlauf und Statistik."""
-        options = self.options_card = theme.card(parent, tr("Einstellungen"))
+        options = self.options_card = theme.card(parent, tr("Optionen dieser Übung"))
         icr = ttk.Frame(options)
         icr.pack(fill="x")
         self.icr_var = tk.BooleanVar(value=True)
@@ -183,12 +183,15 @@ class SingleModeFrame(DailyModeMixin):
 
         controls = ttk.Frame(parent)
         controls.pack(fill="x", padx=10, pady=(8, 0))
-        self.start_button = ttk.Button(controls, text=tr("Start"), style="Accent.TButton", command=self.toggle_running)
+        self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(
             controls, text=tr("Wiederholen (Leertaste)"), command=self.repeat_char, state="disabled"
         )
         self.repeat_button.pack(side="left", padx=8)
+        # Wie weit es bis zum Ziel des Durchgangs ist (Gruppen-Vorschlag).
+        self.progress_var = tk.StringVar(value="")
+        theme.hint(controls, textvariable=self.progress_var).pack(side="right")
 
         self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 4))
@@ -260,7 +263,7 @@ class SingleModeFrame(DailyModeMixin):
         self.correcting = False
         self.icr_whole_session = self.icr_var.get()
         self.block_end = self._daily_deadline()
-        self.start_button.config(text=tr("Stop"))
+        self.start_button.config(text=tr("Stop (F5)"))
         self.repeat_button.config(state="normal")
         self.feedback_var.set("")
         self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get(),
@@ -271,6 +274,7 @@ class SingleModeFrame(DailyModeMixin):
         self.history_var.set("")
         self._count_streak()
         self.stats_panel.reset()
+        self._show_progress({"total": 0, "accuracy_pct": 0.0})
         self.on_start_cb()
         self.next_char()
 
@@ -279,11 +283,13 @@ class SingleModeFrame(DailyModeMixin):
         self.running = False
         self.waiting_for_input = False
         self.timeout_token += 1
-        self.start_button.config(text=tr("Start"))
+        self.start_button.config(text=tr("Start (F5)"))
         self.repeat_button.config(state="disabled")
         audio.stop()
+        self.last_result = None
         self._finalize_session()
-        self.status_var.set(tr("Gestoppt."))
+        self.status_var.set(self._stopped_text())
+        self.progress_var.set("")
         self.on_stop_cb()
 
     def _finalize_session(self):
@@ -464,7 +470,23 @@ class SingleModeFrame(DailyModeMixin):
         self.history.append(correct)
         self.history = self.history[-HISTORY_LEN:]
         self.history_var.set("".join("✓" if ok else "✗" for ok in self.history))
-        self.stats_panel.refresh(self.session_stats.summary(), self.session_stats.char_rows())
+        summary = self.session_stats.summary()
+        self.stats_panel.refresh(summary, self.session_stats.char_rows())
+        self._show_progress(summary)
+
+    def _show_progress(self, summary: dict) -> None:
+        """Stand zum Ziel (koch.ADVANCE_MIN_CHARS Zeichen mit
+        koch.ADVANCE_ACCURACY_PCT); in der Tagesübung zeigt das die Leiste."""
+        if self.daily_minutes:
+            self.progress_var.set("")
+            return
+        need, pct = koch.ADVANCE_MIN_CHARS, number(round(koch.ADVANCE_ACCURACY_PCT))
+        if summary["total"] < need:
+            text = tr("{n} von {need} Zeichen, Ziel {pct} %").format(n=summary["total"], need=need, pct=pct)
+        else:
+            text = tr("{n} Zeichen, {share} % richtig (Ziel {pct} %)").format(
+                n=summary["total"], share=number(round(summary["accuracy_pct"])), pct=pct)
+        self.progress_var.set(text)
 
     def repeat_char(self):
         # Nur solange eine Antwort erwartet wird; in der Pause nach einer
@@ -479,8 +501,12 @@ class SingleModeFrame(DailyModeMixin):
             self.play_current()
 
     def on_key(self, event):
-        """Taste im Reiter: Leertaste wiederholt, ein Zeichen ist die Antwort
-        (gewertet nach richtig, Zeit und Wiederholung)."""
+        """Taste im Reiter: Esc beendet den Durchgang, Leertaste wiederholt, ein
+        Zeichen ist die Antwort (gewertet nach richtig, Zeit und Wiederholung)."""
+        if event.keysym == "Escape":
+            if self.running:
+                self.stop()
+            return
         if event.keysym == "space":
             self.repeat_char()
             return

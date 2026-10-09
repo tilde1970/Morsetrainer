@@ -7,7 +7,7 @@ from unittest import mock
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import daily_runner
 from morsetrainer.core import daily, koch, review
-from tests.test_modes import AppTestCase
+from tests.test_modes import AppTestCase, app_module
 
 
 REAL_PLAN = daily.plan
@@ -66,10 +66,37 @@ class DailyRunnerTest(AppTestCase):
         self.assertNotEqual(self.mode("Einzelzeichen").options_card.winfo_manager(), "")
         self.assertEqual(review.focus, set())
 
-    def test_escape_aborts(self):
+    def _key(self, keysym):
+        self.app._dispatch_key(type("E", (), {"keysym": keysym, "widget": self.app.root})())
+
+    def test_escape_twice_aborts(self):
+        # Ein einzelner Fehlgriff (Esc für ein Nebenfenster, F5 aus Gewohnheit)
+        # kostet nicht den Tag; erst der zweite Druck beendet.
         self.runner.start()
-        self.app._dispatch_key(type("E", (), {"keysym": "Escape", "widget": self.app.root})())
+        self._key("Escape")
+        self.assertTrue(self.runner.active)
+        self.assertTrue(self.runner.mode.running)
+        self.assertEqual(self.app.daily_bar.notice_var.get(), "Noch einmal Esc beendet die Tagesübung.")
+        self._key("Escape")
         self.assertFalse(self.runner.active)
+        self.assertEqual(self.app.daily_bar.notice_var.get(), "")
+
+    def test_second_key_too_late_only_warns_again(self):
+        self.runner.start()
+        self._key("F5")
+        self.assertEqual(self.app.daily_bar.notice_var.get(), "Noch einmal F5 beendet die Tagesübung.")
+        self.app.daily_end_pressed -= app_module.DAILY_END_CONFIRM_S + 1
+        self._key("F5")
+        self.assertTrue(self.runner.active)
+        self._key("Escape")
+        self.assertFalse(self.runner.active)
+
+    def test_end_buttons_say_they_end_the_daily_practice(self):
+        self.runner.start()
+        self.assertEqual(self.runner.mode.start_button.cget("text"), "Tagesübung beenden")
+        self.app.daily_bar.end_button.invoke()
+        self.assertFalse(self.runner.active)
+        self.assertEqual(self.mode("Einzelzeichen").start_button.cget("text"), "Start (F5)")
 
     def test_full_run_goes_through_all_blocks(self):
         with mock.patch.object(daily, "plan", short_plan):
@@ -151,7 +178,9 @@ class DailyRunnerTest(AppTestCase):
         with mock.patch.object(daily, "plan", short_plan):
             self.runner.start()
             self._end_block_only()
-            self.app._dispatch_key(type("E", (), {"keysym": "Escape", "widget": self.app.root})())
+            self._key("Escape")
+            self.assertTrue(self.runner.active)
+            self._key("Escape")
         self.assertFalse(self.runner.active)
         self.assertEqual(self.app.charset_var.get(), koch.lesson_charset(12))
         self.assertIsNotNone(self.runner.summary.window)  # kurze Bilanz

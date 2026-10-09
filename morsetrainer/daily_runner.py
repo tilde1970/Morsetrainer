@@ -5,8 +5,8 @@ Reiter in modes/daily_support.py).
 Vorher werden die gemeinsamen Einstellungen (Zeichensatz, Tempo,
 Gewichtung) gemerkt und danach zurückgestellt; die Tagesübung arbeitet mit
 ihrer eigenen Lektion und ihrem Tagestempo. Ein Block, der von Hand
-gestoppt wird (Stop, F5, Esc), beendet die ganze Tagesübung; bereits
-verdiente Sterne bleiben.
+gestoppt wird (Knopf im Reiter oder in der Leiste, zweimal Esc oder F5),
+beendet die ganze Tagesübung; bereits verdiente Sterne bleiben.
 
 Zwischen den Blöcken steht die Zwischenkarte, bis man mit Enter (oder dem
 Knopf) weitergeht; am Ende die Abendbilanz. Aus ihr startet „Noch 5 Min“ eine Zugabe:
@@ -240,6 +240,8 @@ class DailyRunner:
             self.block_started = None
             review.focus = set()
             return False
+        # Stop beendet hier nicht nur den Block, sondern die ganze Übung.
+        mode.start_button.config(text=tr("Tagesübung beenden"))
         return True
 
     def _focus(self, block) -> set:

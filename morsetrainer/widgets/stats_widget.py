@@ -3,6 +3,7 @@ Fehlertabelle je Zeichen. Dient sowohl der Statistik eines laufenden
 Durchgangs als auch der Gesamtstatistik, damit das Layout einheitlich ist
 und nicht doppelt gebaut wird."""
 import tkinter as tk
+from tkinter import font as tkfont
 from tkinter import ttk
 
 from morsetrainer.core.morse import display_text
@@ -17,7 +18,7 @@ class StatsPanel:
         box = theme.card(parent, title or tr("Statistik (aktueller Durchgang)"))
         summary = ttk.Frame(box)
         summary.pack(fill="x", pady=(0, 6))
-        self.stats_var = tk.StringVar(value="0 / 0 (0%)")
+        self.stats_var = tk.StringVar(value="0 / 0 (0 %)")
         ttk.Label(summary, textvariable=self.stats_var, style="Score.TLabel").pack(side="left")
         self.speed_var = tk.StringVar(value=tr("Ø effektive Geschwindigkeit: –"))
         ttk.Label(summary, textvariable=self.speed_var).pack(side="left", padx=(16, 0))
@@ -30,9 +31,15 @@ class StatsPanel:
             "avg_rt": tr("Ø Reaktion (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),
         }
         widths = {"char": 60, "good": 60, "wrong": 55, "avg_rt": 75, "avg_wpm": 60, "confusions": 140}
+        # Mindestens so breit wie die Überschrift (große Schrift, Englisch).
+        try:
+            heading_font = tkfont.Font(name=theme.HEADING, exists=True)
+        except tk.TclError:  # ohne theme.apply() (einzelne Teile, Tests)
+            heading_font = tkfont.nametofont("TkHeadingFont")
         for col in columns:
             self.char_tree.heading(col, text=headings[col])
-            self.char_tree.column(col, width=widths[col], anchor="w" if col == "confusions" else "center")
+            width = max(widths[col], heading_font.measure(headings[col]) + theme.scaled(14))
+            self.char_tree.column(col, width=width, anchor="w" if col == "confusions" else "center")
         self.char_tree.pack(fill="x", pady=(2, 0))
         theme.hint(box, wrap=520, text=tr(
             "Ø Reaktion: Zeit vom letzten Punkt oder Strich bis zu deiner Taste, Ø WPM: Tempo ab Beginn des "
@@ -45,7 +52,7 @@ class StatsPanel:
 
     def reset(self):
         """Leert Anzeige und Tabelle (neuer Durchgang)."""
-        self.stats_var.set("0 / 0 (0%)")
+        self.stats_var.set("0 / 0 (0 %)")
         self.speed_var.set(tr("Ø effektive Geschwindigkeit: –"))
         self.save_var.set("")
         for item in self.char_tree.get_children():
@@ -54,7 +61,7 @@ class StatsPanel:
     def refresh(self, summary: dict, rows: list):
         """Zeigt `summary` (wie SessionStats.summary()) und die Zeilen `rows` (wie
         char_rows()) an."""
-        self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f}%)")
+        self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f} %)")
         speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
         if summary.get("cpm"):
             speed += tr(" · {cpm:.0f} ZpM gemessen").format(cpm=summary["cpm"])

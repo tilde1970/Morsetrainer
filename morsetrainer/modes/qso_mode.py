@@ -800,7 +800,12 @@ class QsoModeFrame:
         self._finalize_session()
 
     def on_key(self, event):
-        """Beim Mittippen: jedes Morsezeichen mit Zeitpunkt mitschreiben."""
+        """Esc beendet das QSO; beim Mittippen jedes Morsezeichen mit Zeitpunkt
+        mitschreiben."""
+        if event.keysym == "Escape":
+            if self.running:
+                self._finish(stopped=True)
+            return
         if not (self.running and self.tracking):
             return
         typed = event.char.upper()

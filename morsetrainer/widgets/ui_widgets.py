@@ -40,6 +40,45 @@ class ChoiceBox(ttk.Combobox):
             self.variable.set(self.keys[labels.index(shown)])
 
 
+def wrap_pair(container, left, right, gap: int = 16, sticky: str = "e") -> None:
+    """`left` und `right` nebeneinander in `container` (`right` rechtsbündig,
+    mit sticky="w" gleich anschließend); reicht die Breite nicht (große
+    Schrift, schmales Fenster), rutscht `right` in eine zweite Zeile, statt
+    sich zu überdecken oder abgeschnitten zu werden."""
+    container.columnconfigure(1, weight=1)
+    left.grid(row=0, column=0, sticky="w")
+    right.grid(row=0, column=1, sticky=sticky, padx=(theme.scaled(gap) if sticky == "w" else 0, 0))
+
+    def update(_event=None):
+        fits = left.winfo_reqwidth() + right.winfo_reqwidth() + theme.scaled(gap) <= container.winfo_width()
+        wrapped = int(right.grid_info().get("row", 0)) == 1
+        if fits and wrapped:
+            right.grid(row=0, column=1, columnspan=1, sticky=sticky, pady=0,
+                       padx=(theme.scaled(gap) if sticky == "w" else 0, 0))
+        elif not fits and not wrapped:
+            right.grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0), padx=0)
+
+    container.bind("<Configure>", update, add="+")
+    # Auch wenn sich nur der Inhalt ändert (längerer Hinweis, andere Schrift).
+    for part in (left, right):
+        part.bind("<Configure>", update, add="+")
+
+
+def one_tab_stop(buttons, variable) -> None:
+    """Optionsfelder einer Gruppe als ein Tab-Stopp: Tab erreicht nur das
+    gewählte, die Pfeiltasten wählen die anderen (wie in Optionsgruppen
+    üblich, spart Tastaturnutzern Tabs)."""
+    def update(*_):
+        values = [str(button.cget("value")) for button in buttons]
+        current = variable.get()
+        chosen = values.index(current) if current in values else 0
+        for index, button in enumerate(buttons):
+            button.configure(takefocus=index == chosen)
+
+    variable.trace_add("write", update)
+    update()
+
+
 class ChoiceButtons(ttk.Frame):
     """Optionsfelder nebeneinander für deutsche Werte (wie ChoiceBox, aber
     alle Möglichkeiten auf einen Blick): `variable` hält den deutschen Wert,
@@ -59,6 +98,7 @@ class ChoiceButtons(ttk.Frame):
             for arrow, step in (("Left", -1), ("Up", -1), ("Right", 1), ("Down", 1)):
                 button.bind(f"<{arrow}>", lambda e, d=step: self.step(d) or "break")
             self.buttons.append(button)
+        one_tab_stop(self.buttons, variable)
 
     def step(self, step: int) -> None:
         """Den nächsten (1) bzw. vorigen (−1) Wert wählen, Fokus mitnehmen

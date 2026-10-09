@@ -11,8 +11,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import daily, stats, week
-from morsetrainer.i18n import N_, number, tr
+from morsetrainer.i18n import N_, daily_key, number, tr
 from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets.ui_widgets import wrap_pair
 
 FULL_STAR, EMPTY_STAR = "★", "☆"
 BLOCK_LABELS = {daily.WARMUP: N_("Aufwärmen"), daily.MAIN: N_("Hauptteil"), daily.OUTRO: N_("Ausklang"),
@@ -39,6 +40,12 @@ def week_text(days: list) -> str:
             mark = {week.FUTURE: "·", week.PRACTICED: "✓"}.get(item["status"], "–")
         parts.append(f"{tr(WEEKDAYS[item['day'].weekday()])} {mark}")
     return "  ".join(parts)
+
+
+def week_legend() -> str:
+    """Erklärung der Zeichen im Wochenstreifen."""
+    return tr("{star} Stern aus der Tagesübung, ✓ frei geübt, – nicht geübt, · noch nicht dran").format(
+        star=FULL_STAR)
 
 
 def week_goal_text(stars: int) -> str:
@@ -169,20 +176,33 @@ def extra_label(offer) -> str:
 class DailyBar:
     """Leiste der Tagesübung über den Reitern: Startknopf, Wochenstreifen und
     Ziel; während der Übung Block, Restzeit und die Zwischenkarte."""
-    def __init__(self, parent, on_start, on_continue):
+    def __init__(self, parent, on_start, on_continue, on_end=None):
         self.frame = ttk.Frame(parent, padding=(10, 6, 10, 2))
         self.frame.columnconfigure(1, weight=1)
         self.idle = ttk.Frame(self.frame)
+        top = ttk.Frame(self.idle)
+        top.pack(fill="x")
+        start_part, week_part = ttk.Frame(top), ttk.Frame(top)
+        wrap_pair(top, start_part, week_part, gap=12, sticky="w")
         self.start_button = ttk.Button(
-            self.idle, text=tr("▶ Tagesübung ({minutes} Min)").format(minutes=daily.TOTAL_MINUTES),
+            start_part, text=tr("▶ Tagesübung ({minutes} Min, {key})").format(
+                minutes=daily.TOTAL_MINUTES, key=daily_key()),
             style="Accent.TButton", command=on_start)
         self.start_button.pack(side="left")
         self.week_var = tk.StringVar(value="")
-        ttk.Label(self.idle, textvariable=self.week_var).pack(side="left", padx=(12, 0))
+        ttk.Label(week_part, textvariable=self.week_var).pack(side="left")
         self.goal_var = tk.StringVar(value="")
-        ttk.Label(self.idle, textvariable=self.goal_var, style="Score.TLabel").pack(side="left", padx=(12, 0))
+        ttk.Label(week_part, textvariable=self.goal_var, style="Score.TLabel").pack(side="left", padx=(12, 0))
+        # Eigene Zeile mit Umbruch: neben dem Wochenstreifen würde ein langer
+        # Hinweis bei schmalem Fenster abgeschnitten.
         self.note_var = tk.StringVar(value="")
-        theme.hint(self.idle, textvariable=self.note_var).pack(side="left", padx=(10, 0))
+        self.note = theme.hint(self.idle, textvariable=self.note_var, wrap=640)
+        # Erklärt die Zeichen im Wochenstreifen, solange diese Woche noch kein
+        # Stern verdient ist (danach kennt man sie).
+        self.legend = theme.hint(self.idle, text=week_legend(), wrap=640)
+        # Nie breiter als die Leiste, auch wenn das Fenster bei großer Schrift
+        # nicht mitwachsen kann.
+        self.idle.bind("<Configure>", self._fit_wraps, add="+")
 
         self.active = ttk.Frame(self.frame)
         self.active.columnconfigure(1, weight=1)
@@ -195,6 +215,14 @@ class DailyBar:
         self.progress.grid(row=1, column=0, columnspan=2, sticky="we", pady=(4, 0))
         self.time_var = tk.StringVar(value="")
         theme.hint(self.active, textvariable=self.time_var).grid(row=1, column=2, sticky="e", padx=(8, 0))
+        # Sichtbarer Ausstieg; Esc beendet erst beim zweiten Druck (app.py).
+        # Eigene Zeile, damit die Abschnitte daneben nicht abgeschnitten werden.
+        end_row = ttk.Frame(self.active)
+        end_row.grid(row=2, column=0, columnspan=3, sticky="we", pady=(4, 0))
+        self.end_button = ttk.Button(end_row, text=tr("Tagesübung beenden (Esc)"), command=on_end)
+        self.end_button.pack(side="right")
+        self.notice_var = tk.StringVar(value="")
+        theme.hint(end_row, textvariable=self.notice_var).pack(side="left")
 
         self.card = ttk.LabelFrame(self.frame, padding=(10, 4, 10, 8))
         self.card_lines = ttk.Frame(self.card)
@@ -202,8 +230,14 @@ class DailyBar:
         footer = ttk.Frame(self.card)
         footer.pack(fill="x", pady=(6, 0))
         ttk.Button(footer, text=tr("Weiter ▶"), style="Accent.TButton", command=on_continue).pack(side="left")
-        theme.hint(footer, text=tr("Enter geht weiter, Esc beendet die Tagesübung")).pack(side="left", padx=(10, 0))
+        theme.hint(footer, text=tr("Enter geht weiter, zweimal Esc beendet die Tagesübung")).pack(
+            side="left", padx=(10, 0))
         self.show_idle()
+
+    def _fit_wraps(self, event) -> None:
+        width = max(event.width - theme.scaled(8), theme.scaled(200))
+        for label in (self.note, self.legend):
+            label.configure(wraplength=min(theme.scaled(640), width))
 
     def pack(self, **options):
         """Packt die Leiste in voller Breite."""
@@ -215,15 +249,26 @@ class DailyBar:
         self.active.pack_forget()
         self.idle.pack(fill="x")
         self.note_var.set(note)
+        if note:
+            # Über der Legende, falls sie schon steht.
+            order = {"before": self.legend} if self.legend.winfo_manager() else {}
+            self.note.pack(anchor="w", pady=(2, 0), **order)
+        else:
+            self.note.pack_forget()
 
     def show_week(self, days: list, stars: int) -> None:
         """Wochenstreifen (`days`) und Stand des Wochenziels (`stars`) anzeigen."""
         self.week_var.set(week_text(days))
         self.goal_var.set(week_goal_text(stars))
+        if stars:
+            self.legend.pack_forget()
+        else:
+            self.legend.pack(anchor="w", pady=(2, 0))
 
     def show_active(self) -> None:
         """Während der Übung: Block und Fortschritt statt des Startknopfs."""
         self.idle.pack_forget()
+        self.notice_var.set("")
         self.active.pack(fill="x")
 
     def show_card(self, title: str, lines, strong=()) -> None:
@@ -236,6 +281,10 @@ class DailyBar:
             style = "Score.TLabel" if line in strong else "TLabel"
             ttk.Label(self.card_lines, text=line, style=style, wraplength=640, justify="left").pack(anchor="w")
         self.card.pack(fill="x", pady=(6, 0))
+
+    def show_notice(self, text: str) -> None:
+        """Kurzer Hinweis unter dem Zeitbalken (leer: keiner)."""
+        self.notice_var.set(text)
 
     def hide_card(self) -> None:
         """Blendet die Zwischenkarte aus."""

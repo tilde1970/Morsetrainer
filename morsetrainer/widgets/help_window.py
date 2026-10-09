@@ -21,7 +21,10 @@ from morsetrainer import i18n
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import announcer, theme
 
-DOCS = ((N_("Änderungen"), "CHANGELOG.md"), (N_("Anleitung"), "docs/Anleitung.md"))
+# Die Anleitung zuerst: Wer Hilfe sucht, will wissen, wie etwas geht; was
+# neu ist, zeigt das Programm ohnehin nach einem Update.
+DOCS = ((N_("Anleitung"), "docs/Anleitung.md"), (N_("Änderungen"), "CHANGELOG.md"))
+GUIDE = "docs/Anleitung.md"
 
 _IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>")
 # Andere Wörter für dasselbe, wie man sie sucht, aber wie es in der
@@ -206,22 +209,26 @@ class HelpWindow:
     _open = None
 
     @classmethod
-    def show(cls, root) -> None:
-        """Öffnet das Hilfefenster oder holt das schon offene nach vorn."""
+    def show(cls, root, topic: str = None) -> None:
+        """Öffnet das Hilfefenster oder holt das schon offene nach vorn; mit
+        `topic` (Name eines Reiters, wie angezeigt) gleich an dessen Abschnitt
+        in der Anleitung."""
         try:
             if cls._open is not None and cls._open.top.winfo_exists():
                 cls._open.top.deiconify()
                 cls._open.top.lift()
+                cls._open.show_topic(topic)
                 return
         except tk.TclError:
             pass  # gehörte zu einem schon zerstörten Hauptfenster
         cls._open = cls(root)
+        cls._open.show_topic(topic)
 
     def __init__(self, root):
         self.top = tk.Toplevel(root)
         self.top.title(tr("Morsetrainer – Hilfe"))
         self.top.configure(background=theme.BG)
-        self.top.geometry("760x640")
+        self.top.geometry(theme.scaled_geometry(self.top, 760, 640))
         # Suchen (Strg+F): im gerade gezeigten Reiter; Enter springt zum
         # nächsten Treffer, Umschalt+Enter zum vorigen.
         bar = ttk.Frame(self.top)
@@ -245,6 +252,9 @@ class HelpWindow:
         # nicht je Suche neu: Tk-Variablen sollen nicht laufend entstehen und
         # vergehen.
         self.match_length = tk.IntVar(self.top)
+        # Vor dem Notizbuch gepackt: bleibt auch auf kleinem Bildschirm sichtbar.
+        close = ttk.Button(self.top, text=tr("Schließen"), command=self.top.destroy)
+        close.pack(side="bottom", anchor="e", padx=8, pady=(0, 8))
         notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
         notebook.bind("<<NotebookTabChanged>>", lambda e: self._new_search(), add="+")
@@ -266,11 +276,27 @@ class HelpWindow:
                 content = tr("{name} wurde nicht gefunden.").format(name=name)
             render(text, content)
             self.texts[name] = text
-        ttk.Button(self.top, text=tr("Schließen"), command=self.top.destroy).pack(anchor="e", padx=8, pady=(0, 8))
+        close.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: Schließen zuletzt
         self.top.bind("<Escape>", self._escape)
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             for key in ("f", "F"):  # auch mit Feststelltaste
                 self.top.bind(f"<{modifier}-{key}>", lambda e: self.focus_search() or "break")
+
+    def show_topic(self, topic: str = None) -> None:
+        """Anleitung zeigen und, falls es eine Überschrift `topic` gibt (etwa
+        „Am Stück“ oder „7. Netzwerk: Üben in der Gruppe“), dorthin rollen."""
+        self.notebook.select([name for _, name in DOCS].index(GUIDE))
+        if not topic:
+            return
+        text = self.texts[GUIDE]
+        wanted = topic.strip().lower()
+        for tag in ("h3", "h2"):
+            ranges = text.tag_ranges(tag)
+            for start, end in zip(ranges[::2], ranges[1::2]):
+                heading = text.get(start, end).strip().lower()
+                if heading == wanted or re.sub(r"^\d+\.\s*", "", heading).startswith(wanted):
+                    text.yview(start)
+                    return
 
     def _current_text(self) -> tk.Text:
         return self.texts[DOCS[self.notebook.index("current")][1]]
