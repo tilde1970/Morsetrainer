@@ -283,7 +283,9 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten
   Tag. Entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus
   Zufallszeichen. Fällige Zeichen kommen mit „schwache bevorzugt“ öfter und
-  lassen sich gezielt üben.
+  lassen sich gezielt üben. Darunter steht je Fach, welche Zeichen darin
+  liegen, von „Fach 1 · jeden Tag“ bis „Fach 6 · alle 32 Tage“; F11 liest
+  das mit vor.
 - **Häufigste Verwechslungen** der letzten 30 Tage, mit Knopf, um sie
   gezielt gegeneinander zu üben.
 - **Diplome** und **Lebenslinie** (Abschnitt 5) und der

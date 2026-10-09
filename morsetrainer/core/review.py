@@ -190,6 +190,17 @@ def boxed_chars(data=None) -> str:
     return "".join(ch for ch, e in data.items() if "due" in e)
 
 
+def by_box(data=None) -> list:
+    """Zeichen je Fach (Index wie "box", 0 = Fach 1), in jedem Fach erst die
+    Buchstaben, dann Ziffern, dann die übrigen, jeweils sortiert."""
+    data = load() if data is None else data
+    boxes = [[] for _ in INTERVALS]
+    for ch, e in data.items():
+        if "due" in e:
+            boxes[min(max(e.get("box", 0), 0), len(INTERVALS) - 1)].append(ch)
+    return ["".join(sorted(chars, key=lambda ch: (not ch.isalpha(), not ch.isdigit(), ch))) for chars in boxes]
+
+
 def due_chars(data=None, today=None, known=None) -> str:
     """Heute fällige Zeichen, zuerst die aus den unteren Fächern.
     `known`: nur diese Zeichen (z. B. der aktuelle Zeichensatz)."""

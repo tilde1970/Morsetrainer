@@ -280,7 +280,9 @@ many characters. Runs with band conditions do not count here (section 6).
   reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones
   the next day. Decided once a day from 5 attempts, promoted only from
   random characters. Due characters come up more often with “weak
-  favoured” and can be practised specifically.
+  favoured” and can be practised specifically. Below, each box lists the
+  characters in it, from “Box 1 · every day” to “Box 6 · every 32 days”;
+  F11 reads this out too.
 - **Most frequent confusions** of the last 30 days, with a button to
   practise them against each other.
 - **Awards** and **lifeline** (section 5) and the

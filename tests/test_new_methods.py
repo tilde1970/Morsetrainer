@@ -426,3 +426,23 @@ class StatsTabReviewTest(AppTestCase):
         text = self.app._review_text({"K": {"box": 0, "due": "2026-09-28"}}, today)
         self.assertIn("morgen", text)
         self.assertIn("Lernkartei", self.app._review_text({}, today))
+
+    def test_chars_per_box(self):
+        data = {"K": {"box": 0, "due": "2026-09-27"}, "5": {"box": 0, "due": "2026-09-27"},
+                "A": {"box": 0, "due": "2026-09-27"}, "M": {"box": 2, "due": "2026-10-01"},
+                "R": {"box": 9, "due": "2026-10-01"},  # kaputter Wert: ins letzte Fach
+                "U": {"box": 1}}  # ohne Fälligkeit: noch nicht in der Kartei
+        self.assertEqual(review.by_box(data), ["AK5", "", "M", "", "", "R"])
+        lines = self.app._boxes_text(data).split("\n")
+        self.assertEqual(len(lines), len(review.INTERVALS))
+        self.assertEqual(lines[0].split(), ["Fach", "1", "·", "jeden", "Tag", "A", "K", "5"])
+        self.assertTrue(lines[1].endswith("  –"))
+        self.assertTrue(lines[2].startswith("Fach 3 · alle 4 Tage"))
+        column = len("Fach 6 · alle 32 Tage") + 2  # Zeichen in einer Spalte hinter dem längsten Fach
+        self.assertTrue(all(line[column - 1] == " " and line[column] != " " for line in lines), lines)
+        self.assertEqual(self.app._boxes_text({}), "")
+        full = {ch: {"box": 0, "due": "2026-09-27"} for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
+        lines = self.app._boxes_text(full).split("\n")
+        self.assertEqual(lines[0].split()[-1], "T")  # 20 Zeichen, dann umgebrochen
+        self.assertEqual(lines[1].split(), list("UVWXYZ"))
+        self.assertTrue(lines[2].startswith("Fach 2"))

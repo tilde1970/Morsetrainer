@@ -68,6 +68,8 @@ FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, t
 # Sprachansage an/aus und „wo bin ich?“ (widgets/announcer.py).
 ANNOUNCE_KEY = "F9"
 STATUS_KEY = "F11"
+# Zeichen je Zeile in der Übersicht der Lernkartei-Fächer (Reiter Statistik).
+BOX_CHARS_PER_LINE = 20
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
 CONFUSION_PAIRS = 4
 # Übungszeit in der Fußzeile während eines Durchgangs so oft auffrischen.
@@ -743,9 +745,14 @@ class MorseTrainerApp:
                 tr("{sent} als {typed} getippt, {times}").format(sent=spell(sent), typed=spell(typed),
                                                                  times=announcer.times(count))
                 for sent, typed, count, _ in pairs))
-        due = review.due_chars()
+        review_data = review.load()
+        due = review.due_chars(review_data)
         parts.append((tr("Heute in der Lernkartei fällig: ") + ", ".join(spell(ch) for ch in due)) if due
                      else tr("In der Lernkartei ist heute nichts fällig"))
+        boxes = [tr("Fach {n}: {chars}").format(n=index + 1, chars=", ".join(spell(ch) for ch in chars))
+                 for index, chars in enumerate(review.by_box(review_data)) if chars]
+        if boxes:
+            parts.append(tr("In der Lernkartei liegen ") + "; ".join(boxes))
         parts.append(self.awards_panel.summary_var.get())
         if self.practice_var.get():
             parts.append(self.practice_var.get())
@@ -1146,6 +1153,10 @@ class MorseTrainerApp:
         review_box = theme.card(frame, tr("Wiederholung über Tage (Lernkartei)"))
         self.review_var = tk.StringVar(value="")
         ttk.Label(review_box, textvariable=self.review_var, justify="left", wraplength=520).pack(anchor="w", pady=4)
+        # Welche Zeichen in welchem Fach liegen, ein Fach je Zeile.
+        self.boxes_var = tk.StringVar(value="")
+        ttk.Label(review_box, textvariable=self.boxes_var, font=theme.MONO, justify="left").pack(
+            anchor="w", pady=(0, 6))
         theme.hint(
             review_box, wrap=520,
             text=tr("Sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, "
@@ -1270,7 +1281,9 @@ class MorseTrainerApp:
         data = stats.load_all_time()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
-        self.review_var.set(self._review_text(review.load()))
+        review_data = review.load()
+        self.review_var.set(self._review_text(review_data))
+        self.boxes_var.set(self._boxes_text(review_data))
         self.progress_panel.refresh()
         if with_awards:
             self.awards_panel.refresh()
@@ -1292,6 +1305,31 @@ class MorseTrainerApp:
         else:
             when = tr("am {date}").format(date=day.strftime(tr("%d.%m.")))
         return tr("Heute ist nichts fällig. Als Nächstes {when}: ").format(when=when) + " ".join(display_text(ch) for ch in chars)
+
+    @staticmethod
+    def _box_label(index: int) -> str:
+        """„Fach 1 · jeden Tag“, „Fach 3 · alle 4 Tage“."""
+        days = review.INTERVALS[index]
+        every = tr("jeden Tag") if days == 1 else tr("alle {days} Tage").format(days=days)
+        return tr("Fach {n}").format(n=index + 1) + " · " + every
+
+    @classmethod
+    def _boxes_text(cls, data: dict) -> str:
+        """Die Fächer der Lernkartei mit ihren Zeichen, ein Fach je Zeile
+        („–“ für ein leeres Fach); leer, solange nichts in der Kartei liegt."""
+        boxes = review.by_box(data)
+        if not any(boxes):
+            return ""
+        labels = [cls._box_label(index) for index in range(len(boxes))]
+        width = max(len(label) for label in labels)
+        lines = []
+        for label, chars in zip(labels, boxes):
+            # Volle Fächer umbrechen, damit die Zeile ins Fenster passt.
+            chunks = [chars[i:i + BOX_CHARS_PER_LINE] for i in range(0, len(chars), BOX_CHARS_PER_LINE)] or [""]
+            for number, chunk in enumerate(chunks):
+                head = label.ljust(width) if number == 0 else " " * width
+                lines.append(f"{head}  " + (" ".join(display_text(ch) for ch in chunk) or "–"))
+        return "\n".join(lines)
 
     def _drill_due(self):
         """Fällige Zeichen gezielt: stark gewichtet unter dem ganzen

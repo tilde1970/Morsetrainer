@@ -762,6 +762,11 @@ EN.update({
     "Im Contest startet F10; F1 bis F8 senden erst im Durchgang.":
         "In the contest F10 starts; F1 to F8 only send during a run.",
     "Optionen dieser Übung": "Options for this exercise",
+    "jeden Tag": "every day",
+    "alle {days} Tage": "every {days} days",
+    "Fach {n}": "Box {n}",
+    "Fach {n}: {chars}": "box {n}: {chars}",
+    "In der Lernkartei liegen ": "In the review box: ",
     ("Das Tagesziel stellst du jetzt unter „Einstellungen …“ ein (Karte „Üben“). Die Tagesübung "
      "beendet Esc oder F5 erst beim zweiten Druck; dafür gibt es den Knopf „Tagesübung beenden“. "
      "Alles Weitere steht unter Hilfe, Änderungen."):
