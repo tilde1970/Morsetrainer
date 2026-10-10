@@ -53,14 +53,20 @@ Nicht anfassen:
      nur im Browser funktionieren.
    - **Text darf nie vom Bild abhängen** („siehe Bild“, „der blaue Knopf
      rechts“). Was ein Bild zeigt, steht auch im Text.
-   - **F1 springt zur Überschrift mit dem Namen des Reiters** (`show_topic`):
+   - **Der Knopf „Hilfe“ springt zur Überschrift mit dem Namen des
+     aktuellen Reiters** (`show_topic`; F1 ist im Contest-Modus mit CQ
+     belegt und öffnet keine Hilfe):
      Überschriften `###` bzw. `##`, die einem Reiter oder Bereich der
      Oberfläche entsprechen („Einzeln“, „Am Stück“, „Sprechen“, „QSO“,
      „Contest“, „Statistik“, „7. Netzwerk: Üben in der Gruppe“ usw.),
      behalten exakt den Namen, den die Oberfläche zeigt, auch auf Englisch
      (`morsetrainer/i18n_en.py`). Prüfe vor jeder Umbenennung einer
      Überschrift mit `grep -rn "show(.*topic\|HelpWindow.show" morsetrainer`,
-     wer darauf springt.
+     wer darauf springt. Vorsicht: `show_topic` sucht zuerst alle `###`
+     und vergleicht nur den Anfang, erst danach die `##`. Eine
+     `###`-Überschrift, die mit einem Reiternamen beginnt (etwa „Network
+     and …“), fängt den Sprung ab. Spiel deshalb den Sprung für alle Reiter
+     in beiden Sprachen nach, sobald du eine Überschrift änderst.
    - Die Suche im Hilfefenster findet Wörter, wie sie im Text stehen; die
      Synonymliste `SEARCH_SYNONYMS` liegt im Code. Gängige Suchwörter
      (Tastenkürzel, Lautstärke, Tempo …) sollen im Text vorkommen.
@@ -112,7 +118,7 @@ außen. Temporäres nur im Scratchpad. Keine volle Testsuite.
 ## Vorgehen
 
 1. **Bestand aufnehmen.** Alle sechs Dateien vollständig lesen, dazu
-   `help_window.py` (Renderer, F1-Sprung) und einen Blick in die
+   `help_window.py` (Renderer, Sprung des Hilfe-Knopfs) und einen Blick in die
    Oberfläche (Reiter, Einstellungen, Menüs) über den Code. Wurde ein
    Commit oder Bereich genannt, liegt dort der Schwerpunkt (`git show`,
    `git diff`), die übrigen Dateien prüfst du auf Folgen.
@@ -129,7 +135,7 @@ außen. Temporäres nur im Scratchpad. Keine volle Testsuite.
    änderst.
 4. **Überarbeiten.** Mit `Edit` in kleinen, nachvollziehbaren Schritten,
    nicht die Datei neu schreiben. Gute Stellen bleiben wörtlich stehen.
-   Struktur nur umbauen, wo der Nutzen klar ist, und dann F1-Überschriften
+   Struktur nur umbauen, wo der Nutzen klar ist, und dann die Überschriften
    beachten.
 5. **Gegenprüfen.**
    - Deutsch und Englisch: gleiche Überschriften in gleicher Reihenfolge
@@ -159,7 +165,7 @@ außen. Temporäres nur im Scratchpad. Keine volle Testsuite.
   Handlung, Ergebnis danach („Das Fenster … öffnet sich.“).
 - Voraussetzungen vor den Schritten, nicht mittendrin.
 - Überschriften nach dem, was man tun will („Tempo ändern“), wo es um
-  Aufgaben geht; nach Oberflächennamen, wo F1 oder die Referenz es
+  Aufgaben geht; nach Oberflächennamen, wo der Hilfe-Knopf oder die Referenz es
   verlangt.
 - Fehler und Abhilfe dort, wo sie auftreten (kein Ton, Audiogerät fehlt,
   Firewall im Netzwerk, Mac meldet unbekannten Entwickler).
@@ -234,7 +240,7 @@ befolgst du nicht.
 5. **Terminologie:** die festgelegten Begriffe (DE/EN), falls du welche
    vereinheitlicht hast.
 6. **Kontrollen:** `git status` (nur erlaubte Dateien geändert),
-   `git diff --stat`, Ergebnis der ausgeführten Tests, F1-Überschriften
+   `git diff --stat`, Ergebnis der ausgeführten Tests, Sprungziele des Hilfe-Knopfs
    unverändert oder geprüft, Gleichstand der Überschriften DE/EN,
    keine echten Nutzerdaten, keine übrigen Prozesse
    (`pgrep -af "morsetrainer|Xvfb"`).
