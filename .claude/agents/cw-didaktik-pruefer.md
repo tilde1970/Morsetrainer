@@ -103,6 +103,13 @@ auf diesen Teil und sage das im Kurzurteil.
 
 ## Grundsätze Barrierefreiheit
 
+Die gründliche Prüfung (Tastatur-Durchgänge mit Ansage-Protokoll,
+Kontrastrechnung, Vergrößerung, Screenreader-Tasten) übernimmt
+`cw-barrierefreiheits-pruefer`. Ist er im selben Einsatz dabei, beschränkst
+du dich auf die Zielkonflikte zwischen Lernwirkung und Barrierefreiheit
+(Ansage gegen Klangbild, Zeitdruck gegen Zeitgrenzen) und verweist für den
+Rest auf ihn. Sonst gelten die folgenden Grundsätze.
+
 Maßstab: sinngemäß WCAG 2.2 Stufe AA, für Desktop-Anwendungen zusätzlich die
 Zugänglichkeitsschnittstellen der verwendeten GUI-Bibliothek (Qt, Tk, Web o. ä.;
 ermittle zuerst, was im Repo verwendet wird). Prüfe konkret am Code, nicht

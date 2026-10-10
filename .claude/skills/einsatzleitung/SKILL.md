@@ -49,10 +49,11 @@ Zuordnung nach Art der Änderung (eine Datei kann mehrere Zeilen treffen):
 | Datenhaltung und Statistik: `core/db.py`, `stats.py`, `storage.py`, `migration.py`, `backup.py`, `review.py`, `weighting.py` | test, code, bei Mengen-/Laufzeitfragen performance |
 | Lernlogik: `core/koch.py`, `practice.py`, `daily.py`, `week.py`, `awards.py`, `lifeline.py`, `modes/*` | didaktik, test, teilnehmer |
 | CW-Inhalte: `core/morse.py`, `words.py`, `qso_text.py`, `woerter.txt`, Rufzeichen-, Contest-, Q-Gruppen-Material, `modes/content.py`, `qso_*`, `callsign_mode.py` | fachinhalt, bei Lernwirkung didaktik |
-| Oberfläche: `widgets/*`, `app.py`, `i18n*.py`, Dialoge, Reiter, Menüs, Tastenkürzel | usability, teilnehmer, didaktik (Barrierefreiheit) |
-| Sprachausgabe: `core/speech.py`, `widgets/announcer.py`, `voices/` | didaktik (Barrierefreiheit), plattform |
+| Oberfläche: `widgets/*`, `app.py`, `i18n*.py`, Dialoge, Reiter, Menüs, Tastenkürzel | usability, barrierefreiheit, teilnehmer |
+| Sprachausgabe: `core/speech.py`, `widgets/announcer.py`, `voices/` | barrierefreiheit, plattform |
 | Netzwerk: `net/*`, `modes/network_mode.py` | code, test, bei Durchsatz performance |
 | Installation und Verpackung: `requirements.txt`, `packaging/*`, `net/update.py`, `widgets/updater.py`, Pfade, Start | plattform, code |
+| Farben, Schrift, Kontrast, Vergrößerung: `widgets/theme.py` | barrierefreiheit, usability |
 | Fehlerbehandlung allgemein, größere Umbauten, unerklärliche Abstürze | code |
 | Bedienung, Texte, Tasten, Installation oder Funktionen geändert | technical-writer (immer zuletzt) |
 | Nur Doku geändert | technical-writer, sonst niemand |
@@ -61,6 +62,7 @@ Zuordnung nach Art der Änderung (eine Datei kann mehrere Zeilen treffen):
 Die Prüfer heißen als `subagent_type`: `cw-code-pruefer`,
 `cw-test-pruefer`, `cw-performance-pruefer`, `cw-plattform-pruefer`,
 `cw-didaktik-pruefer`, `cw-teilnehmer-pruefer`, `cw-usability-pruefer`,
+`cw-barrierefreiheits-pruefer`,
 `cw-fachinhalts-pruefer`, `cw-technical-writer`.
 
 Bei `klein`: nach Nutzen sortieren und auf höchstens drei kürzen. Vorrang
@@ -74,7 +76,7 @@ Regeln für die Reihenfolge:
 - **Welle 1:** rein lesende Prüfer (code, test, didaktik, teilnehmer,
   fachinhalt) parallel in einer Nachricht starten.
 - **Welle 2:** Prüfer mit Messungen oder virtueller Anzeige (performance,
-  plattform, usability) höchstens zu zweit gleichzeitig, damit sie sich
+  plattform, usability, barrierefreiheit) höchstens zu zweit gleichzeitig, damit sie sich
   Messwerte und Rechenzeit nicht gegenseitig verfälschen. Sie dürfen parallel
   zu Welle 1 laufen, wenn höchstens zwei von ihnen dabei sind.
 - **Letzte Welle:** `cw-technical-writer` allein und erst, wenn alle
