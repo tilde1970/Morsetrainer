@@ -23,20 +23,27 @@ from morsetrainer.widgets import theme
 class AppTestCase(unittest.TestCase):
     """Hauptfenster mit allen Reitern, Daten in einem Temp-Verzeichnis."""
 
+    # Aufgeräumt wird über addCleanup, gleich nach dem Anlegen: Das läuft auch,
+    # wenn setUp mittendrin scheitert oder ein tearDown einen Fehler wirft.
+    # Unterklassen dürfen self.patches noch Patches anhängen.
+
     def setUp(self):
         gc.collect()  # Reste früherer Tests hier im Hauptthread einsammeln
         self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
             mock.patch.object(app_module, "WINDOW_STATE_FILE", directory / "window_state.json"),
         ]
+        self.addCleanup(tests.stop_patches, self.patches)
         for patch in self.patches:
             patch.start()
         try:
             self.root = tk.Tk()
         except tk.TclError:
             self.skipTest("keine Anzeige")
+        self.addCleanup(self._release)
         self.root.withdraw()
         self.app = app_module.MorseTrainerApp(self.root)
         self.app.charset_var.set("KMUR")
@@ -44,18 +51,14 @@ class AppTestCase(unittest.TestCase):
     def mode(self, title):
         return self.app.modes[self.app.mode_titles.index(title)]
 
-    def tearDown(self):
+    def _release(self):
         from morsetrainer.widgets import announcer
         announcer._instance = None  # nicht über ein zerstörtes Fenster weitersprechen
-        patches, tmp = self.patches, self.tmp
-        if hasattr(self, "root"):
+        if hasattr(self, "app"):
             for mode in self.app.modes:
                 mode.running = False
             mode = None  # hielte sonst den Reiter samt App über das Einsammeln hinaus fest
-            tests.release_root(self.root, owner=self)
-        for patch in patches:
-            patch.stop()
-        tmp.cleanup()
+        tests.release_root(self.root, owner=self)
 
 
 
@@ -74,7 +77,7 @@ class ReleaseTest(unittest.TestCase):
         try:
             self.assertGreater(len(announcer._names), names_before)
         finally:
-            case.tearDown()
+            case.doCleanups()
         self.assertEqual(sum(isinstance(obj, tk.Variable) for obj in gc.get_objects()), before)
         self.assertEqual(len(announcer._names), names_before)
         thread = threading.Thread(target=gc.collect, daemon=True)
@@ -83,6 +86,43 @@ class ReleaseTest(unittest.TestCase):
         thread.join(2)
         self.assertFalse(thread.is_alive())
         self.assertLess(time.monotonic() - start, 0.5)
+
+
+class CyclicGarbageTest(AppTestCase):
+    """Im Programm dürfen Tk-Objekte nicht im zyklischen Müll landen: Den
+    sammelt die Garbage Collection ein, wo sie gerade läuft, etwa im
+    Audio-Rückruf; der wartete dann auf die mainloop, und schließt das
+    Programm zugleich den Tonstrom, hängt es."""
+
+    def test_tabs_and_windows_leave_no_tk_objects_behind(self):
+        import tkinter.font
+        from morsetrainer.widgets import help_window
+        gc.collect()
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        for tab in self.app.notebook.tabs():
+            self.app.notebook.select(tab)
+            self.root.update()
+        self.app.open_settings()
+        self.root.update()
+        self.app.close_settings()
+        self.app.band_settings.open_window()
+        self.root.update()
+        self.app.band_settings.close_window()
+        help_window.HelpWindow.show(self.root)
+        self.root.update()
+        help_window.HelpWindow._open.top.destroy()
+        self.root.update()
+        gc.set_debug(gc.DEBUG_SAVEALL)
+        try:
+            gc.collect()
+            found = sorted({type(obj).__name__ for obj in gc.garbage
+                            if isinstance(obj, (tk.Variable, tk.Image, tkinter.font.Font))})
+        finally:
+            gc.set_debug(0)
+            gc.garbage.clear()
+        self.assertEqual(found, [])
 
 
 class GroupEvaluationTest(AppTestCase):

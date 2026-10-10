@@ -83,6 +83,13 @@ def release_root(root, owner=None) -> None:
     gc.collect()
 
 
+def stop_patches(patches) -> None:
+    """Patches beenden, auch nicht gestartete (für addCleanup: die Liste darf
+    bis dahin noch wachsen)."""
+    for patch in reversed(patches):
+        patch.stop()
+
+
 def write_session(lines) -> int:
     """Legt einen Durchgang aus Zeilen wie in einer Sitzungsdatei an
     (erste Zeile config mit "start_time" und "mode", eine Zeile "summary"

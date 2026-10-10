@@ -638,19 +638,25 @@ class NetworkTabTest(unittest.TestCase):
         # Sekunde auf (Verbindung zu spät, Test hängt). Eingesammelt wird im
         # Hauptthread, hier und in tests.release_root().
         gc.collect()
-        gc.disable()
-        self.addCleanup(gc.enable)
+        if gc.isenabled():
+            gc.disable()
+            self.addCleanup(gc.enable)
+        # Aufräumen über addCleanup, gleich nach dem Anlegen: läuft auch, wenn
+        # setUp scheitert oder on_close einen Fehler wirft.
         self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
         directory = Path(self.tmp.name)
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
         ]
+        self.addCleanup(tests.stop_patches, self.patches)
         for patch in self.patches:
             patch.start()
         try:
             self.root = tk.Tk()
         except tk.TclError:
             self.skipTest("keine Anzeige")
+        self.addCleanup(self._release)
         self.root.withdraw()
         from morsetrainer.modes.network_mode import TRAINER, NetworkModeFrame
         self.charset = tk.StringVar(value="KMRSU")
@@ -672,17 +678,16 @@ class NetworkTabTest(unittest.TestCase):
         self.trainer = make(TRAINER)
         self.trainee = make("trainee")
 
-    def tearDown(self):
+    def _release(self):
         from morsetrainer.widgets import announcer
         announcer._instance = None
-        patches, tmp = self.patches, self.tmp
-        if hasattr(self, "root"):
-            self.trainee.on_close()
-            self.trainer.on_close()
+        try:
+            for frame in (getattr(self, "trainee", None), getattr(self, "trainer", None)):
+                if frame is not None:
+                    frame.on_close()
+            frame = None  # hielte sonst den Reiter über das Einsammeln hinaus fest
+        finally:
             tests.release_root(self.root, owner=self)
-        for patch in patches:
-            patch.stop()
-        tmp.cleanup()
 
     def pump(self):
         self.root.update()
