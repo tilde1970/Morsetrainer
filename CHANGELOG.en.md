@@ -1,5 +1,17 @@
 # Changes
 
+## 2.47
+
+- **Help with F1:** F1 opens the manual at the section of the tab you are
+  in. In Contest F1 still sends CQ; there the “Help (F1)” button opens the
+  help. On the Mac Cmd+Shift+H works too.
+- **Help in the Network tab:** the help button jumped to the wrong section
+  there; it now opens the chapter on the network.
+- **Manual revised:** missing options are described (duration, feedback
+  beep, time limit, group length, switches in the Speak tab), technical
+  terms are explained, and there is a hint in case the AppImage does not
+  start because of FUSE.
+
 ## 2.46
 
 - **Review box at a glance:** the Statistics tab shows which characters are

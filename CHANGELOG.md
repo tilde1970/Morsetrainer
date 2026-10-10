@@ -1,5 +1,17 @@
 # Änderungen
 
+## 2.47
+
+- **Hilfe mit F1:** F1 öffnet die Anleitung beim Abschnitt des Reiters, in
+  dem du gerade bist. Im Contest sendet F1 weiter CQ, dort öffnet der Knopf
+  „Hilfe (F1)“ die Hilfe. Auf dem Mac geht auch Cmd+Umschalt+H.
+- **Englische Hilfe im Reiter Network:** Der Hilfe-Knopf sprang dort zu
+  einem falschen Abschnitt; jetzt öffnet er das Kapitel zum Netzwerk.
+- **Anleitung überarbeitet:** Fehlende Optionen sind beschrieben (Dauer,
+  Quittungston, Zeitlimit, Gruppenlänge, Schalter im Reiter Sprechen),
+  Fachbegriffe werden erklärt, und es gibt einen Hinweis, falls das
+  AppImage wegen FUSE nicht startet.
+
 ## 2.46
 
 - **Lernkartei im Überblick:** Der Reiter Statistik zeigt je Fach, welche
