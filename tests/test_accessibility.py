@@ -143,7 +143,7 @@ class AnnouncerCase(AppTestCase):
         from morsetrainer.widgets import announcer
         self.announcer = announcer
         self.said, self.played = [], []
-        self.patches = [
+        self.speech_patches = [
             mock.patch.object(speech.speaker, "available", lambda: None),
             # Geladen vortäuschen: sonst lüde die Ansage die echte Stimme im
             # Hintergrund, und ohne Piper bliebe ein Fehler an ihr hängen.
@@ -152,11 +152,11 @@ class AnnouncerCase(AppTestCase):
                               lambda text: (self.said.append(text), np.zeros(4800, dtype=np.float32))[1]),
             mock.patch.object(announcer.audio, "play_quietly", lambda samples: self.played.append(len(samples))),
         ]
-        for patch in self.patches:
+        for patch in self.speech_patches:
             patch.start()
 
     def tearDown(self):
-        for patch in self.patches:
+        for patch in self.speech_patches:
             patch.stop()
         super().tearDown()
 

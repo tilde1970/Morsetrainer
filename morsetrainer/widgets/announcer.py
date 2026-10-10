@@ -482,7 +482,20 @@ def change_text(before: str, after: str, alphabet: str = "de") -> str:
     return spell_chars(added, alphabet)
 
 
+def _forget(widget) -> None:
+    """Ein zerstörtes Bedienelement aus allen Merklisten streichen. Sonst
+    hielten sie es (über die Wert-Funktionen samt Fenster) fest, und jeder
+    neu geöffnete Dialog (fortlaufende Namen .!toplevel2 …) käme dazu."""
+    key = str(widget)
+    for registry in (_names, _values, _echo_last):
+        registry.pop(key, None)
+    for registry in (_echo_widgets, _nato_widgets, _iconified):
+        registry.discard(key)
+
+
 def _install_focus(root) -> None:
+    # Nach den Klassenbindungen (Fenster geschlossen), die die Namen noch brauchen.
+    root.bind_all("<Destroy>", lambda e: _forget(e.widget), add="+")
     root.bind_class("Toplevel", "<Map>", lambda e: _window_shown(e.widget), add="+")
     for sequence in ("<Unmap>", "<Destroy>"):
         root.bind_class("Toplevel", sequence, lambda e: _window_closed(e.widget), add="+")

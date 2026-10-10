@@ -43,11 +43,13 @@ def session_lines(session_id: int) -> list:
     return [session.config, *db.session_events(session_id), *([session.summary] if session.summary else [])]
 
 
-def release_root(root) -> None:
+def release_root(root, owner=None) -> None:
     """Tk-Fenster schließen und seinen Interpreter freigeben. root.destroy()
     allein lässt die Python-Befehle von bind_all, bind_class und Traces im
     Interpreter stehen; sie halten die App und damit den ganzen Interpreter
-    fest (etwa 5 MB je Test)."""
+    fest (etwa 5 MB je Test). `owner`: der Test; seine Attribute (Fenster,
+    App, Variablen) werden gelöscht, damit alles hier eingesammelt wird und
+    nicht erst, wenn der Test selbst wegfällt. Deshalb zuletzt aufrufen."""
     import gc
     import tkinter as tk
     from morsetrainer.widgets import theme
@@ -59,10 +61,12 @@ def release_root(root) -> None:
         pass
     root.destroy()
     # Variablen löschen ihre Trace-Befehle beim Einsammeln selbst; die sind
-    # gleich schon weg.
-    for obj in gc.get_objects():
-        if isinstance(obj, tk.Variable) and getattr(obj, "_tk", None) is interp:
-            obj._tclCommands = None
+    # gleich schon weg. (Ohne Schleifenvariable: sie hielte das letzte Objekt
+    # samt allem, woran es hängt, über das Einsammeln unten hinaus fest.)
+    for variable in [obj for obj in gc.get_objects()
+                     if isinstance(obj, tk.Variable) and getattr(obj, "_tk", None) is interp]:
+        variable._tclCommands = None
+    variable = None
     for name in interp.splitlist(interp.call("info", "commands")):
         if name[:1].isdigit():  # von tkinter angelegte Python-Befehle
             try:
@@ -70,6 +74,9 @@ def release_root(root) -> None:
             except tk.TclError:
                 pass
     theme._fonts[:] = [f for f in theme._fonts if getattr(f, "_tk", None) is not interp]
+    if owner is not None:
+        for name in [name for name in vars(owner) if not name.startswith("_")]:
+            delattr(owner, name)
     # Jetzt im Hauptthread einsammeln. Räumt sonst irgendwann ein anderer
     # Thread (Netzwerk, Audio) Tk-Variablen und -Bilder weg, wartet tkinter
     # dort je Objekt eine Sekunde auf die mainloop, die in Tests nie läuft.

@@ -134,7 +134,7 @@ class TkLanguageTest(unittest.TestCase):
         self.root.withdraw()
 
     def tearDown(self):
-        self.root.destroy()
+        tests.release_root(self.root, owner=self)
 
     def test_choice_box_shows_english_but_keeps_german_value(self):
         from morsetrainer.widgets.ui_widgets import ChoiceBox

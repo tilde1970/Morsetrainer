@@ -675,13 +675,14 @@ class NetworkTabTest(unittest.TestCase):
     def tearDown(self):
         from morsetrainer.widgets import announcer
         announcer._instance = None
+        patches, tmp = self.patches, self.tmp
         if hasattr(self, "root"):
             self.trainee.on_close()
             self.trainer.on_close()
-            tests.release_root(self.root)
-        for patch in self.patches:
+            tests.release_root(self.root, owner=self)
+        for patch in patches:
             patch.stop()
-        self.tmp.cleanup()
+        tmp.cleanup()
 
     def pump(self):
         self.root.update()

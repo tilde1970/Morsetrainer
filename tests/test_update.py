@@ -210,7 +210,7 @@ class UpdaterTest(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, "root"):
-            self.root.destroy()
+            tests.release_root(self.root, owner=self)
 
     def offer(self, version="2.16", answer=True, installable=True, **kwargs):
         target = (Path("/x/Morsetrainer.exe"), update.WINDOWS_ASSET)

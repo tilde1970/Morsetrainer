@@ -2,6 +2,7 @@
 aber ohne Ton; ohne Anzeige (kein $DISPLAY) werden sie übersprungen. Die
 Wiedergabe wird übersprungen: die Tests setzen den Zustand nach dem Ton
 direkt und rufen die Auswertung auf."""
+import gc
 import tempfile
 import threading
 import time
@@ -23,6 +24,7 @@ class AppTestCase(unittest.TestCase):
     """Hauptfenster mit allen Reitern, Daten in einem Temp-Verzeichnis."""
 
     def setUp(self):
+        gc.collect()  # Reste früherer Tests hier im Hauptthread einsammeln
         self.tmp = tempfile.TemporaryDirectory()
         directory = Path(self.tmp.name)
         self.patches = [
@@ -45,14 +47,42 @@ class AppTestCase(unittest.TestCase):
     def tearDown(self):
         from morsetrainer.widgets import announcer
         announcer._instance = None  # nicht über ein zerstörtes Fenster weitersprechen
+        patches, tmp = self.patches, self.tmp
         if hasattr(self, "root"):
             for mode in self.app.modes:
                 mode.running = False
-            tests.release_root(self.root)
-        for patch in self.patches:
+            mode = None  # hielte sonst den Reiter samt App über das Einsammeln hinaus fest
+            tests.release_root(self.root, owner=self)
+        for patch in patches:
             patch.stop()
-        self.tmp.cleanup()
+        tmp.cleanup()
 
+
+
+class ReleaseTest(unittest.TestCase):
+    """Nach dem Test ist das Hauptfenster samt App im Hauptthread eingesammelt.
+    Bliebe es liegen, sammelte es irgendwann ein Netzwerk- oder Audio-Thread
+    ein: je Tk-Objekt 1 s Warten auf die mainloop, dann Tcl_AsyncDelete."""
+
+    def test_nothing_of_the_app_is_left_for_other_threads(self):
+        from morsetrainer.widgets import announcer
+        gc.collect()
+        before = sum(isinstance(obj, tk.Variable) for obj in gc.get_objects())
+        names_before = len(announcer._names)
+        case = AppTestCase("setUp")
+        case.setUp()
+        try:
+            self.assertGreater(len(announcer._names), names_before)
+        finally:
+            case.tearDown()
+        self.assertEqual(sum(isinstance(obj, tk.Variable) for obj in gc.get_objects()), before)
+        self.assertEqual(len(announcer._names), names_before)
+        thread = threading.Thread(target=gc.collect, daemon=True)
+        start = time.monotonic()
+        thread.start()
+        thread.join(2)
+        self.assertFalse(thread.is_alive())
+        self.assertLess(time.monotonic() - start, 0.5)
 
 
 class GroupEvaluationTest(AppTestCase):

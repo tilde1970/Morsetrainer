@@ -659,7 +659,7 @@ class DiplomaWindowTest(unittest.TestCase):
         self.tk = tk
 
     def tearDown(self):
-        self.root.destroy()
+        tests.release_root(self.root, owner=self)
 
     def test_print_uses_call_and_name_from_the_window(self):
         tk = self.tk
