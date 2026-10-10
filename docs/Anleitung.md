@@ -1,6 +1,7 @@
 # Morsetrainer – Anleitung
 
-Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
+Ein Trainer für Morsetelegrafie (CW) für Einsteiger ohne Vorkenntnisse bis
+zu Contestern (Teilnehmern an Funkwettbewerben), entwickelt von **DL4YM**.
 Diese Anleitung steht auch im Programm: Der Knopf **Hilfe** rechts in der
 Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem du gerade bist,
 daneben die Änderungen der Versionen; Strg+F sucht darin.
@@ -10,7 +11,8 @@ Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 
 1. Erste Schritte
 2. Kopfleiste und Einstellungen
-3. Die Reiter: Einzeln, Am Stück, Sprechen, QSO, Contest, Statistik
+3. Die Reiter: Einzeln, Am Stück, Sprechen, QSO, Contest, Statistik (den
+   Reiter Netzwerk beschreibt Abschnitt 7)
 4. Tagesübung
 5. Diplome und Lebenslinie
 6. Bandbedingungen
@@ -26,8 +28,8 @@ Der Morsetrainer folgt der **Koch-Methode**: Du lernst die Zeichen von
 Anfang an im vollen Tempo als Klangbild, erst zwei, dann eins nach dem
 anderen dazu. So geht es los:
 
-1. **Koch-Lektion** oben auf 1 stellen (K und M). Voreingestellt ist das
-   **Koch-Tempo 20/10** (unter „▸ Weitere Optionen“ jederzeit wieder
+1. **Koch-Lektion** oben auf 1 stellen (K und M; beim ersten Start schon
+   so eingestellt). Voreingestellt ist das **Koch-Tempo 20/10** (unter „▸ Weitere Optionen“ jederzeit wieder
    herstellbar): Die Zeichen kommen schnell genug, dass du sie als
    Klangbild hörst statt Punkte und Striche zu zählen, dafür mit längeren
    Pausen dazwischen. „▶ anhören“ spielt das neue Zeichen vor.
@@ -59,8 +61,9 @@ Wochenstreifen oben die Tage, an denen du geübt hast.
 
 ### Kopfleiste
 
-Oben stehen immer Koch-Lektion, Tempo (WPM), Tonhöhe (Hz) und der
-Zeichensatz; sie gelten für alle Reiter. Ist das Fenster zu schmal (große
+Oben stehen immer Koch-Lektion, Tempo in WPM (Wörter pro Minute,
+Standard 20), Tonhöhe in Hz (Standard 600) und der Zeichensatz im Feld
+„Zeichen“; sie gelten für alle Reiter. Ist das Fenster zu schmal (große
 Schrift), rücken Tempo und Tonhöhe in eine zweite Zeile. Rechts steht das
 Tempo in Zeichen pro Minute, mit Farnsworth das effektive, das du
 tatsächlich hörst („≈ 50 ZpM effektiv“ bei 20/10). Unter **▸ Weitere
@@ -78,17 +81,17 @@ Optionen** liegen die Übungsoptionen:
 
 ### Einstellungen
 
-**Einstellungen … (Strg+,)** öffnet ein Fenster mit allem, was man einmal
-einstellt:
+**Einstellungen … (Strg+Komma)** öffnet ein Fenster mit allem, was man
+einmal einstellt:
 
-- **Rufzeichen und Name:** stehen auf den Diplomen und sind die Vorgabe
-  für „Mein Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort
+- **Station:** Rufzeichen und Name stehen auf den Diplomen und sind die
+  Vorgabe für „Mein Rufzeichen“ im Contest und „Name/Rufzeichen“ im Netzwerk (dort
   ohne Name das Rufzeichen). Beide Felder ziehen mit, bis du dort etwas
   anderes einträgst, etwa ein Contest-Rufzeichen. Ohne eigenes Rufzeichen
   genügt der Name; für den Contest trägst du dann ein ausgedachtes
   Rufzeichen ein.
-- **Üben:** das Tagesziel in Minuten (0 = ohne Ziel); die Fußzeile zeigt,
-  wie viel du heute schon geübt hast.
+- **Üben:** das Tagesziel in Minuten (Standard 10, 0 = ohne Ziel); die
+  Fußzeile zeigt, wie viel du heute schon geübt hast.
 - **Sprache / Language:** Oberfläche auf Englisch umstellen (wirkt nach
   einem Neustart; unten im Fenster erscheint dafür **Jetzt neu starten**).
   Die Stimme im Reiter Sprechen bleibt deutsch.
@@ -130,10 +133,15 @@ Rechts neben dem Start-Knopf steht, wie weit du bist: „23 von 50 Zeichen,
 Ziel 90 %“. Mit 50 Zeichen und 90 % (mit Zeitlimit) schlägt das Programm
 vor, mit Gruppen weiterzumachen.
 
-- **Zeitlimit** (Instant Character Recognition): Das Limit zählt ab dem
-  Ende des letzten Punkts oder Strichs. Es wird kürzer, solange du sicher
-  bist, und länger, wenn du Zeichen verpasst; eine Verwechslung ändert es
-  nicht. Die Leertaste wiederholt, verlängert die Frist aber nicht.
+- **Zeitlimit** (Instant Character Recognition, also sofortiges Erkennen):
+  Das Limit zählt ab dem Ende des letzten Punkts oder Strichs. Es beginnt
+  bei 2 s und bewegt sich zwischen 0,5 und 3 s: kürzer, solange du sicher
+  bist, länger, wenn du Zeichen verpasst; eine Verwechslung ändert es
+  nicht. „zurücksetzen“ stellt es wieder auf 2 s. Die Leertaste wiederholt,
+  verlängert die Frist aber nicht.
+- **Quittungston:** ein kurzer heller Ton bei richtiger, ein tiefer
+  Doppelton bei falscher Antwort (Standard aus). Mit Ansage (F9) gilt,
+  was Abschnitt 8 unter „Was angesagt wird“ beschreibt.
 - Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen
   direkt nacheinander. Ein falsch erkanntes Zeichen kommt gleich noch
   einmal, während die Lösung dasteht, und wird nach ein paar anderen
@@ -166,6 +174,8 @@ dann mit Lösung noch einmal, im Originaltempo.
 
 **Optionen bei Gruppen, Wörtern und Rufzeichen:**
 
+- **Gruppenlänge von … bis** (nur Gruppen, Standard 2 bis 5) und **Länge
+  wächst mit** (Standard an), siehe oben.
 - **Eingabe:** *Mitschreiben* (tippen, während der Ton läuft), *Erst
   merken* (tippen nach dem Ton) oder *Kopfhören* (nichts tippen; Enter löst
   auf, dann J = gewusst, N = nicht gewusst). Kopfhören beruht auf deiner
@@ -178,9 +188,12 @@ dann mit Lösung noch einmal, im Originaltempo.
   werden die Pausen länger, damit man nicht mitzählen kann. Dieselbe Regel
   gilt für „Tempo automatisch anpassen“ im Reiter QSO. Der Verlauf zeigt
   das effektive Tempo (z. B. 10 bei 20/10 WPM).
+- **Lösung zeigen nach** 1 bis 3 Fehlversuchen (Standard 1), siehe oben.
 - **Bandbedingungen** an und aus (eingestellt werden sie zentral,
   Abschnitt 6). Sie liegen auch unter dem Anfangszeichen (VVV =) und dem
   Schlusszeichen (+).
+- **Dauer** des Durchgangs in Minuten (Standard 5, 0 = ohne Limit) und
+  **Quittungston** (Standard aus, wie bei Zeichen).
 
 **Koch-Lektion und Aufstieg:** Wer in Gruppen (oder in Am Stück) in einem
 Durchgang mit mindestens 50 Zeichen 90 % beim ersten Versuch schafft,
@@ -203,10 +216,11 @@ bekommt die nächste Lektion angeboten.
 Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); auch
 wenn du hinterherhinkst, geht es weiter. Oben unter **Inhalt** wählst du
 **Zufallszeichen** – in Gruppen (Standard 5) mit Wortpause dazwischen, bei
-Gruppenlänge 0 durchgehend – oder **Klartext**: Wörter, typische
-QSO-Wendungen („TNX FER CALL“, „UR RST 599“), Rufzeichen oder ganze QSOs
-(Klartext zählt nicht für die Lektion). Auf Wunsch mit Bandbedingungen,
-die durchgehend unter dem ganzen Durchgang liegen.
+Gruppenlänge 0 durchgehend – oder Klartext: **Wörter**, **Wendungen**
+(typische QSO-Wendungen wie „TNX FER CALL“, „UR RST 599“), **Rufzeichen**
+oder **QSO-Klartext** (ganze QSOs). Klartext zählt nicht für die Lektion.
+Auf Wunsch mit Bandbedingungen, die durchgehend unter dem ganzen Durchgang
+liegen.
 
 - Gewertet wird eine Taste nur, wenn sie zum Zeichen passt: nicht vorab
   geraten und höchstens 5 s danach; zu viel Getipptes zählt als Fehler.
@@ -229,15 +243,20 @@ du oben unter **Inhalt**.
   ihrer Bedeutung („TNX“ → „danke“).
 - Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen).
 - Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen (bei Gruppen
-  mit einstellbarer Länge).
+  mit einstellbarer Länge, Standard 5). **Anzahl** der Einträge: Standard
+  50.
+- Schalter (alle standardmäßig an): **Wörter und Wendungen als Ganzes
+  ansagen**, **Beim Buchstabieren mit Bedeutung** und **Danach noch einmal
+  morsen**.
 - **Als MP3 speichern** für unterwegs (Handy, Auto).
 - Zählt nur für die Übungszeit. Die Stimme ist immer deutsch.
 
 ### QSO
 
-Komplette QSOs hören: normales QSO oder Contest-Runs (CQ WW, CQ WPX, WAG,
-ARRL DX, IARU HF) mit einstellbaren Pile-ups (Standard aus). Neben der
-Länge steht die geschätzte Dauer. Ausgewertet wird wahlweise:
+Komplette QSOs (Funkverbindungen) hören: normales QSO oder Contest-Runs
+(CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) mit einstellbaren Pile-ups (viele
+Anrufer gleichzeitig, Standard aus). Neben der Länge steht die geschätzte
+Dauer. Ausgewertet wird wahlweise:
 
 - per **Abfrage/Log**: danach einloggen, F8 prüft;
 - durch **Mittippen**: fortlaufend wie in Am Stück, Ergebnis in Prozent;
@@ -366,8 +385,9 @@ der Abendbilanz, die die neuen Siegel auch nennt.
 
 Jedes Diplom hat links ein eigenes Motiv im Stil eines Stichtiefdrucks
 wie auf Geldscheinen, etwa die Handtaste bei Koch, den Rennwagen bei QRQ
-oder die Wählscheibe bei „Alle Ziffern“. Rechts steht das Clubheim des OV
-Gütersloh (N47), wo der Morsetrainer entsteht.
+oder die Wählscheibe bei „Alle Ziffern“. Rechts steht das Clubheim des
+Amateurfunk-Ortsverbands (OV) Gütersloh, N47, wo der Morsetrainer
+entsteht.
 
 <img src="bilder/diplom.png" width="640" alt="Beispiel: Koch-Diplom in Gold für DL1ABC">
 
@@ -438,8 +458,8 @@ Einstellen …**, „Einstellen …“ in einem Reiter oder Strg+B. In den Reite
 schaltest du sie nur an oder aus.
 
 Einzeln zuschaltbar und regelbar sind Bandrauschen, Knackstörungen (QRN),
-QSB, Chirp (zwitschernder Sender), SSB-QRM (verstimmte Sprache), CW-QRM auf
-der Nachbarfrequenz und **Stärkeunterschiede** (wie unterschiedlich laut
+QSB (Schwund, Fading), Chirp (zwitschernder Sender), SSB-QRM (verstimmte
+Sprache), CW-QRM auf der Nachbarfrequenz und **Stärkeunterschiede** (wie unterschiedlich laut
 die Stationen in QSO und Contest ankommen); dazu die **Lautstärke der
 Störgeräusche** gegenüber den Zeichen. Die Knöpfe **leicht**, **mittel**
 und **stark** setzen die Stufen, nach denen auch das Diplom QRN-fest
@@ -531,9 +551,8 @@ auch ohne Störungen besser als nach Training in sehr starkem Rauschen.
   einem QSB-Loch untergeht, sagt nichts darüber, ob du es kannst.
 - **Im Netzwerk** hören alle Teilnehmer die Einstellung des Trainers, mit
   demselben Fading, denselben Stationen und demselben Nachbar-QRM,
-  Gewitter und Träger (Trainer und Teilnehmer ab Version 2.39). Nur wer
-  eine eigene `callsigns.scp` hat, hört im QRM womöglich andere
-  Rufzeichen.
+  Gewitter und Träger. Nur wer eine eigene `callsigns.scp` hat, hört im
+  QRM womöglich andere Rufzeichen.
 
 ## 7. Netzwerk: Üben in der Gruppe
 
@@ -835,7 +854,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Contest | F10 | Start/Ende (F5 vor dem Start erinnert daran) |
 | Contest | F1, F2, F3, F4 | CQ, Austausch, TU/loggen, eigenes Call |
 | Contest | F5, F7, F8 | sein Call, „?“, „AGN“ |
-| Contest | Enter, Esc | passende nächste Nachricht senden (ESM), Senden abbrechen |
+| Contest | Enter, Esc | passende nächste Nachricht senden (ESM, „Enter Sends Message“), Senden abbrechen |
 | Netzwerk (Trainer) | F5, F6, F7 | Start/Stop, für alle wiederholen, weiter |
 | Hilfe | Strg+F | suchen (Enter: nächster Treffer, Umschalt+Enter: voriger) |
 
@@ -986,6 +1005,10 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   eins pro Zeile, optional mit Bedeutung: `DOK = Distrikts-Ortsverbandskenner`.
   Der Knopf „Eigene Wörter bearbeiten“ legt die Datei mit Anleitung an und
   öffnet sie. Die Wörter kommen zu den eingebauten dazu.
+- `fehler.log`: Protokoll unerwarteter Programmfehler. Tritt einer auf,
+  nennt ein Fenster einmal den Pfad der Datei; leg sie bitte bei, wenn du
+  den Fehler meldest (Issues auf GitHub, siehe README). Wird sie größer als
+  1 MB, beginnt sie neu.
 
 ### Sichern und auf einen neuen Rechner umziehen
 

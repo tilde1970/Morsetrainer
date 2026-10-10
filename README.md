@@ -1,6 +1,8 @@
 # Morsetrainer
 
-Ein CW-Trainer für Einsteiger bis Contester, entwickelt von **DL4YM**.
+Ein Trainer für Morsetelegrafie (CW) für Windows, Linux und macOS, für
+Einsteiger ohne Vorkenntnisse bis zu Contestern (Teilnehmern an
+Funkwettbewerben), entwickelt von **DL4YM**.
 
 Vom Lernen einzelner Zeichen nach der Koch-Methode bis zum eigenen
 Contest-Pile-up unter realistischen Kurzwellenbedingungen – allein am
@@ -37,15 +39,15 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 ### Mitschreiben im Koch-Tempo
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Reiter Einzeln, Gruppen: Mitschreiben im Koch-Tempo 20/10, „Richtig: ESJ“">
+<img src="docs/bilder/gruppen.png" width="640" alt="Hauptfenster im Reiter Einzeln mit dem Inhalt Gruppen. Oben Koch-Lektion 15, 20 WPM, 600 Hz und Farnsworth 10, darunter die Optionen der Übung, das Antwortfeld mit ESJ und die Rückmeldung „Richtig: ESJ“.">
 
 ### Diplom zum Ausdrucken
 
-<img src="docs/bilder/diplom.png" width="640" alt="Koch-Diplom in Gold für DL1ABC">
+<img src="docs/bilder/diplom.png" width="640" alt="Beispiel-Diplom Koch in Gold für DL1ABC, Max Mustermann, im Stil einer Urkunde: links eine Handtaste, rechts ein Clubheim mit Antennenmast, unten ein goldenes Siegel, oben rechts die Diplom-Nummer.">
 
 ### Clubabend im Netzwerk
 
-<img src="docs/bilder/netzwerk.png" width="640" alt="Clubabend: Tabelle des Trainers mit vier Teilnehmern">
+<img src="docs/bilder/netzwerk.png" width="640" alt="Tabelle des Trainers am Clubabend mit vier Teilnehmern: je Name der Status, die aktuelle Antwort, der Anteil richtiger Zeichen, die flüssig richtigen Sequenzen und die Zeit. Darunter das Ergebnis der Gruppe, 97 % der Zeichen richtig und 85 % der Sequenzen flüssig, die häufigsten Fehler und die Tempo-Empfehlung.">
 
 ## Download
 
@@ -60,10 +62,11 @@ wird dafür nicht benötigt:
   („Weitere Informationen“ → „Trotzdem ausführen“).
 - **macOS (Apple-Prozessor):** `Morsetrainer-macOS.zip` herunterladen,
   entpacken und `Morsetrainer.app` in „Programme“ ziehen. Die App ist nicht
-  signiert, beim ersten Start muss man sie freigeben – siehe
-  [Anleitung](docs/Anleitung.md#macos), dort auch der Weg für Intel-Macs.
+  signiert, beim ersten Start musst du sie freigeben. Wie das geht und
+  was für Intel-Macs gilt, steht in der
+  [Anleitung, Abschnitt macOS](docs/Anleitung.md#macos).
 
-Ab Version 2.30 liegt `SHA256SUMS.txt` mit den Prüfsummen daneben. Zum
+Neben den Programmen liegt `SHA256SUMS.txt` mit den Prüfsummen. Zum
 Nachprüfen unter Linux `sha256sum -c --ignore-missing SHA256SUMS.txt`,
 unter Windows in der PowerShell `Get-FileHash Morsetrainer.exe` und mit
 der Zeile in `SHA256SUMS.txt` vergleichen.
@@ -76,11 +79,12 @@ der Zeile in `SHA256SUMS.txt` vergleichen.
    unter **Gruppen** mitschreiben, während der Ton läuft.
 3. Oder einfach **▶ Tagesübung (10 Min)** drücken (F12) – sie schaltet die
    Reiter selbst um.
-4. Unter „Einstellungen …“ (oben rechts) Rufzeichen und Name eintragen; sie stehen
-   auf den Diplomen.
+4. Mit Strg+Komma (oder dem Knopf „Einstellungen …“ oben rechts)
+   Rufzeichen und Name eintragen; sie stehen auf den Diplomen.
 
-Alles Weitere steht in der [Anleitung](docs/Anleitung.md), im Programm
-unter **Hilfe**.
+Alles Weitere steht in der [Anleitung](docs/Anleitung.md). Im Programm
+öffnet sie der Knopf **Hilfe** unten rechts, gleich beim Abschnitt des
+Reiters, in dem du gerade bist.
 
 ## Barrierefreiheit
 
@@ -92,14 +96,15 @@ daran wird laufend weitergearbeitet:
   Schalter beim Springen mit Tab. **F11** sagt, wo man gerade ist.
 - **Tastatur:** Alles ist ohne Maus erreichbar, mit Kürzeln für die
   wichtigsten Abläufe (Tagesübung F12, Bandbedingungen, Reiter).
-- **Sehen:** Schriftgröße mit Strg+Plus/Minus (75–200 %), hoher Kontrast
+- **Sehen:** Schriftgröße mit Strg+Plus und Strg+Minus (75–200 %), hoher Kontrast
   (Schwarz, Weiß, Gelb, mindestens 7:1); richtig und falsch stehen immer
   auch als Text da, nicht nur als Farbe.
 
 Screenreader erreichen die Oberfläche (Tk) bisher kaum, deshalb spricht
-das Programm selbst. Einzelheiten in der
-[Anleitung, Abschnitt 8](docs/Anleitung.md#8-barrierefreiheit).
-Rückmeldungen, was noch fehlt oder stört, sind sehr willkommen.
+das Programm selbst. Einzelheiten stehen in der
+[Anleitung, Abschnitt 8 „Barrierefreiheit“](docs/Anleitung.md#8-barrierefreiheit).
+Rückmeldungen, was noch fehlt oder stört, sind sehr willkommen (siehe
+„Rückmeldung“ unten).
 
 ## Sicherheit
 
@@ -122,6 +127,13 @@ Rückmeldungen, was noch fehlt oder stört, sind sehr willkommen.
 - [Änderungen](CHANGELOG.md) je Version
 - [Entwicklung](docs/Entwicklung.md): aus dem Quelltext starten, Tests,
   Projektstruktur, Release
+
+## Rückmeldung
+
+Fehler, Wünsche und Fragen bitte als
+[Issue auf GitHub](https://github.com/tilde1970/Morsetrainer/issues).
+Bei einem Programmfehler zeigt der Morsetrainer, wo die Datei `fehler.log`
+liegt; leg sie dem Issue bei.
 
 ## Lizenz
 

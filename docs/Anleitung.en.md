@@ -1,20 +1,23 @@
 # Morsetrainer – Manual
 
-A CW trainer for everyone from beginners to contesters, developed by
+A Morse code (CW) trainer for everyone from complete beginners to
+contesters (people who take part in radio contests), developed by
 **DL4YM**. This manual is also in the program: the **Help** button on the
 right of the footer shows it, right at the section of the tab you are in,
-next to it the changes of the versions; Ctrl+F searches in it. A short overview with pictures is in the
-[README](../README.en.md).
+next to it the changes of the versions; Ctrl+F searches in it. A short
+overview with pictures is in the [README](../README.en.md).
 
-**Language:** the program starts in German. Switch to English under
-„Einstellungen … (Strg+,)“ (Ctrl+Comma) → „Sprache / Language“; it takes
-effect after a restart („Jetzt neu starten“ restarts right away).
+**Language:** the program starts in German. Switch to English with
+Ctrl+Comma (the button is called “Einstellungen … (Strg+,)”) → “Sprache /
+Language”; it takes effect after a restart (“Jetzt neu starten” restarts
+right away).
 
 **Contents**
 
 1. Getting started
 2. Header and settings
-3. The tabs: One by one, Non-stop, Speak, QSO, Contest, Statistics
+3. The tabs: One by one, Non-stop, Speak, QSO, Contest, Statistics (the
+   Network tab is described in section 7)
 4. Daily practice
 5. Awards and lifeline
 6. Band conditions
@@ -30,8 +33,8 @@ The Morsetrainer follows the **Koch method**: you learn the characters at
 full speed as a sound pattern from the start, first two, then one more at
 a time. This is how to begin:
 
-1. Set **Koch lesson** at the top to 1 (K and M). The default is **Koch
-   speed 20/10** (can be restored at any time under “▸ More options”): the
+1. Set **Koch lesson** at the top to 1 (K and M; already set on first
+   start). The default is **Koch speed 20/10** (can be restored at any time under “▸ More options”): the
    characters come fast enough that you hear them as a sound pattern
    instead of counting dits and dahs, with longer gaps in between.
    “▶ listen” plays the new character.
@@ -63,9 +66,10 @@ at the top the days you practised.
 
 ### Header
 
-The Koch lesson, speed (WPM), pitch (Hz) and character set are always at
-the top; they apply to all tabs. If the window is too narrow (large font),
-speed and pitch move to a second line. On the right is the speed in
+The Koch lesson, speed in WPM (words per minute, default 20), pitch in Hz
+(default 600) and the character set in the “Characters” field are always
+at the top; they apply to all tabs. If the window is too narrow (large
+font), speed and pitch move to a second line. On the right is the speed in
 characters per minute, with Farnsworth the effective speed you actually
 hear (“≈ 50 CPM effective” at 20/10). **▸ More options** holds the
 practice options:
@@ -82,15 +86,15 @@ practice options:
 
 ### Settings
 
-**Settings … (Ctrl+,)** opens a window with everything you set once:
+**Settings … (Ctrl+Comma)** opens a window with everything you set once:
 
-- **Callsign and name:** appear on the awards and are the default for “My
-  callsign” in Contest and “Name/callsign” in Network (there the callsign
+- **Station:** callsign and name appear on the awards and are the default
+  for “My callsign” in Contest and “Name/callsign” in Network (there the callsign
   if there is no name). Both fields follow along until you enter something
   else there, such as a contest callsign. Without a callsign of your own
   the name is enough; for the contest you then enter a made-up callsign.
-- **Practice:** the daily goal in minutes (0 = no goal); the footer shows
-  how much you have practised today.
+- **Practice:** the daily goal in minutes (default 10, 0 = no goal); the
+  footer shows how much you have practised today.
 - **Sprache / Language:** switch the interface to English (takes effect
   after a restart; **Restart now** appears at the bottom of the window for
   that). The voice in the Speak tab stays German.
@@ -131,9 +135,13 @@ characters, goal 90 %”. With 50 characters and 90 % (with time limit) the
 program suggests moving on to groups.
 
 - **Time limit** (Instant Character Recognition): the limit counts from
-  the end of the last dot or dash. It gets shorter while you answer
-  reliably and longer when you miss characters; a confusion leaves it
-  unchanged. The space bar repeats but does not extend the deadline.
+  the end of the last dot or dash. It starts at 2 s and moves between 0.5
+  and 3 s: shorter while you answer reliably, longer when you miss
+  characters; a confusion leaves it unchanged. “reset” sets it back to
+  2 s. The space bar repeats but does not extend the deadline.
+- **Feedback beep:** a short high beep for a correct answer, a low double
+  tone for a wrong one (default off). With announcements on (F9), what
+  section 8 describes under “What is announced” applies.
 - After a confusion you hear the correct character and the one you typed
   back to back. A wrongly recognised character is played again right away
   while the solution is shown, and asked again after a few other
@@ -165,6 +173,8 @@ with the solution, at the original speed.
 
 **Options in Groups, Words and Callsigns:**
 
+- **Group length from … to** (Groups only, default 2 to 5) and **Length
+  adapts** (default on), see above.
 - **Input:** *Copy while listening* (type while the audio plays), *Listen
   first* (type after the audio) or *Head copy* (type nothing; Enter
   reveals, then J = knew it, N = didn't). Head copy relies on your own
@@ -177,8 +187,11 @@ with the solution, at the original speed.
   longer, so you cannot count. The same rule applies to “Adjust speed
   automatically” in the QSO tab. The history shows the effective speed
   (e.g. 10 at 20/10 WPM).
+- **Show solution after** 1 to 3 failed attempts (default 1), see above.
 - **Band conditions** on and off (they are set centrally, section 6). They
   also run under the start sign (VVV =) and the end sign (+).
+- **Duration** of the run in minutes (default 5, 0 = no limit) and
+  **Feedback beep** (default off, as in Characters).
 
 **Koch lesson and moving up:** if you get 90 % on the first attempt in a
 session of at least 50 characters in Groups (or in Non-stop), the next
@@ -200,10 +213,11 @@ lesson is offered.
 
 The audio keeps running without waiting, you type along (as when
 listening on the air); even if you fall behind, it carries on. At the top
-under **Content** you choose **random characters** – in groups (default
-5) with a word gap in between, continuous with group length 0 – or **plain
-text**: words, typical QSO phrases (“TNX FER CALL”, “UR RST 599”),
-callsigns or complete QSOs (plain text does not count for the lesson).
+under **Content** you choose **Random characters** – in groups (default
+5) with a word gap in between, continuous with group length 0 – or plain
+text: **Words**, **Phrases** (typical QSO phrases such as “TNX FER CALL”,
+“UR RST 599”), **Callsigns** or **QSO plain text** (complete QSOs). Plain
+text does not count for the lesson.
 Optionally with band conditions running under the whole session.
 
 - A key only counts if it fits the character: not guessed in advance and
@@ -227,15 +241,19 @@ content at the top under **Content**.
 - The thinking pause is deliberately short (default 1 s plus 0.3 s per
   character).
 - Content: characters, groups, words, phrases, callsigns (groups with an
-  adjustable length).
+  adjustable length, default 5). **Count** of items: default 50.
+- Switches (all on by default): **Announce words and phrases as a whole**,
+  **Add the meaning when spelling** and **Send the Morse code again
+  afterwards**.
 - **Save as MP3** for on the go (phone, car).
 - Counts only for practice time. *The voice is always German.*
 
 ### QSO
 
-Listen to complete QSOs: normal QSO or contest runs (CQ WW, CQ WPX, WAG,
-ARRL DX, IARU HF) with adjustable pile-ups (default off). Next to the
-length the estimated duration is shown. Evaluation is your choice:
+Listen to complete QSOs (radio contacts): normal QSO or contest runs
+(CQ WW, CQ WPX, WAG, ARRL DX, IARU HF) with adjustable pile-ups (many
+callers at once, default off). Next to the length the estimated duration
+is shown. Evaluation is your choice:
 
 - **log check**: log afterwards, F8 checks;
 - **typing along**: continuously as in Non-stop, result in percent;
@@ -363,7 +381,8 @@ only after the evening summary, which also mentions the new seals.
 Every award has its own motif on the left in the style of an intaglio
 engraving like on banknotes, e.g. the straight key for Koch, the racing car
 for QRQ or the rotary dial for “All digits”. On the right stands the club
-house of the Gütersloh club (N47), where the Morsetrainer is made.
+house of the Gütersloh amateur radio club (N47), where the Morsetrainer is
+made.
 
 <img src="bilder/diplom.en.png" width="640" alt="Example: Koch award in gold for DL1ABC">
 
@@ -432,8 +451,8 @@ They are set in one place: **More options → Band conditions → Adjust …**,
 “Adjust …” in a tab, or Ctrl+B. In the tabs you only switch them on or off.
 
 Each can be switched on and adjusted: band noise, static crashes (QRN),
-QSB, chirp (chirpy transmitter), SSB QRM (detuned speech), CW QRM on the
-adjacent frequency and **strength differences** (how differently loud the
+QSB (fading), chirp (chirpy transmitter), SSB QRM (detuned speech), CW QRM
+on the adjacent frequency and **strength differences** (how differently loud the
 stations arrive in QSO and contest); plus the **noise volume** relative to
 the signals. The buttons **light**, **medium** and **heavy** set the levels
 that the QRN-proof award counts; the window shows which level the setting
@@ -523,9 +542,8 @@ over to quiet conditions better than practising in very heavy noise.
   nothing about whether you know it.
 - **On the network** all participants hear the trainer's setting, with
   the same fading, the same stations and the same neighbouring QRM,
-  thunderstorm and carrier (trainer and participants from version 2.39).
-  Only someone with their own `callsigns.scp` may hear other callsigns in
-  the QRM.
+  thunderstorm and carrier. Only someone with their own `callsigns.scp`
+  may hear other callsigns in the QRM.
 
 ## 7. Network: practising as a group
 
@@ -671,7 +689,7 @@ computers are mixed.
   connecting whether to download it (section 10); the Morsetrainer then
   restarts and connects to the trainer again.
 
-### Network and security
+### Connection and security
 
 - The trainer needs port 7373 (TCP) and 7374 (UDP) for the search. On
   Windows the firewall asks the first time – allow it for private
@@ -715,8 +733,8 @@ seals, practice today) – even with announcements switched off.
 - **One by one:** in Groups, Words and Callsigns the result of each answer
   (“Right”, “Wrong. Listen again”, after the last attempt “Sent: kay, em,
   you. Typed: kay, em, em”), the solution in head copy; in Characters only
-  errors (“Wrong. kay, not em”), correct answers get the short confirmation
-  tone. The program waits until the announcement has finished.
+  errors (“Wrong. kay, not em”), correct answers get the short high
+  beep. The program waits until the announcement has finished.
 - **Everywhere:** the result at the end of each run, the tab name when
   switching (in One by one with the content), the cards of the daily
   practice and messages why a run does not start (e.g. too few characters)
@@ -818,7 +836,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Contest | F10 | start/end (F5 before the start reminds you) |
 | Contest | F1, F2, F3, F4 | CQ, exchange, TU/log, my call |
 | Contest | F5, F7, F8 | their call, “?”, “AGN” |
-| Contest | Enter, Esc | send the appropriate next message (ESM), abort sending |
+| Contest | Enter, Esc | send the appropriate next message (ESM, “Enter Sends Message”), abort sending |
 | Network (trainer) | F5, F6, F7 | start/stop, repeat for everyone, next |
 | Help | Ctrl+F | search (Enter: next match, Shift+Enter: previous) |
 
@@ -965,6 +983,10 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   one per line, optionally with a meaning: `POTA = Parks on the Air`. The
   “Edit own words” button creates the file with instructions and opens it.
   The words are added to the built-in ones.
+- `fehler.log`: log of unexpected program errors. When one occurs, a
+  window shows the path of the file once; please attach it when you report
+  the error (issues on GitHub, see the README). Once it grows beyond 1 MB,
+  it starts afresh.
 
 ### Backing up and moving to a new computer
 
