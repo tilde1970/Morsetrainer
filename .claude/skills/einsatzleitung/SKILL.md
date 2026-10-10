@@ -45,7 +45,7 @@ Zuordnung nach Art der Änderung (eine Datei kann mehrere Zeilen treffen):
 
 | Änderung | Prüfer |
 |---|---|
-| Audio, Timing, Störungen: `core/audio.py`, `band.py`, `pause_noise.py`, `latency.py`, `tempo.py`, `sfx.py`, `mp3.py`, `net/stream.py` | performance, code |
+| Audio, Timing, Störungen: `core/audio.py`, `band.py`, `pause_noise.py`, `latency.py`, `tempo.py`, `sfx.py`, `mp3.py`, `net/stream.py` | performance, code; bei Tonformung, Filtern, Störungen und Pegeln signal |
 | Datenhaltung und Statistik: `core/db.py`, `stats.py`, `storage.py`, `migration.py`, `backup.py`, `review.py`, `weighting.py` | test, code, bei Mengen-/Laufzeitfragen performance |
 | Lernlogik: `core/koch.py`, `practice.py`, `daily.py`, `week.py`, `awards.py`, `lifeline.py`, `modes/*` | didaktik, test, teilnehmer |
 | CW-Inhalte: `core/morse.py`, `words.py`, `qso_text.py`, `woerter.txt`, Rufzeichen-, Contest-, Q-Gruppen-Material, `modes/content.py`, `qso_*`, `callsign_mode.py` | fachinhalt, bei Lernwirkung didaktik |
@@ -62,7 +62,7 @@ Zuordnung nach Art der Änderung (eine Datei kann mehrere Zeilen treffen):
 Die Prüfer heißen als `subagent_type`: `cw-code-pruefer`,
 `cw-test-pruefer`, `cw-performance-pruefer`, `cw-plattform-pruefer`,
 `cw-didaktik-pruefer`, `cw-teilnehmer-pruefer`, `cw-usability-pruefer`,
-`cw-barrierefreiheits-pruefer`,
+`cw-barrierefreiheits-pruefer`, `cw-signal-pruefer`,
 `cw-fachinhalts-pruefer`, `cw-technical-writer`.
 
 Bei `klein`: nach Nutzen sortieren und auf höchstens drei kürzen. Vorrang
@@ -76,7 +76,7 @@ Regeln für die Reihenfolge:
 - **Welle 1:** rein lesende Prüfer (code, test, didaktik, teilnehmer,
   fachinhalt) parallel in einer Nachricht starten.
 - **Welle 2:** Prüfer mit Messungen oder virtueller Anzeige (performance,
-  plattform, usability, barrierefreiheit) höchstens zu zweit gleichzeitig, damit sie sich
+  plattform, usability, barrierefreiheit, signal) höchstens zu zweit gleichzeitig, damit sie sich
   Messwerte und Rechenzeit nicht gegenseitig verfälschen. Sie dürfen parallel
   zu Welle 1 laufen, wenn höchstens zwei von ihnen dabei sind.
 - **Letzte Welle:** `cw-technical-writer` allein und erst, wenn alle
