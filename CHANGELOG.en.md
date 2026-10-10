@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.48
 
 - **No more crash when closing during an announcement:** closing the
   window while speech output was still being generated crashed the

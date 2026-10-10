@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das
   Fenster schloss, während die Sprachausgabe noch rechnete, bekam einen
