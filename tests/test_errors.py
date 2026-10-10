@@ -3,9 +3,13 @@ Update, MP3-Export und Schließen daran nicht hängen bleiben."""
 import http.client
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
+
+import numpy as np
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import app as app_module
@@ -120,6 +124,15 @@ class AppErrorTest(AppTestCase):
                 listen._export_worker(Path(self.tmp.name) / "x.mp3", {})
         self.assertIn("Stimme kaputt", listen.export_result)
 
+    def test_export_after_shutdown_writes_nothing(self):
+        listen = self.mode("Sprechen")
+        path = Path(self.tmp.name) / "x.mp3"
+        self.addCleanup(setattr, speech, "_closing", False)
+        self.assertTrue(speech.shut_down(0))
+        listen._export_worker(path, {})
+        self.assertFalse(path.exists())
+        self.assertIn("abgebrochen", listen.export_result)
+
 
 class UpdateNetErrorTest(unittest.TestCase):
     def setUp(self):
@@ -154,6 +167,44 @@ class SmallRobustnessTest(unittest.TestCase):
         for text in (5, None, ["KMR"], {"a": 1}):
             self.assertIsNone(NetworkModeFrame._on_item(object(), {"type": "item", "n": 1, "text": text, "wpm": 20}))
 
+
+
+class SpeechShutdownTest(unittest.TestCase):
+    """Das Programmende wartet auf laufende Sprachsynthese; ein Python-Ende
+    mitten in onnxruntime bricht den Prozess sonst hart ab."""
+
+    def setUp(self):
+        self.addCleanup(setattr, speech, "_closing", False)
+
+    def test_waits_for_running_synthesis_and_refuses_new(self):
+        started, release = threading.Event(), threading.Event()
+
+        class Voice:
+            config = SimpleNamespace(sample_rate=speech.SAMPLE_RATE)
+
+            def synthesize(self, text):
+                started.set()
+                release.wait(5)
+                return [SimpleNamespace(audio_float_array=np.ones(10, dtype=np.float32))]
+
+        speaker = speech.Speaker()
+        speaker.voice = Voice()
+        thread = threading.Thread(target=speaker.synth, args=("A",), daemon=True)
+        thread.start()
+        self.assertTrue(started.wait(5))
+        self.assertFalse(speech.shut_down(0.1))  # rechnet noch
+        self.assertEqual(len(speaker.synth("B")), 0)  # nichts Neues mehr
+        release.set()
+        thread.join(5)
+        self.assertTrue(speech.shut_down(0.1))
+
+    def test_no_voice_is_loaded_after_shutdown(self):
+        speaker = speech.Speaker()
+        speech.shut_down(0)
+        with mock.patch.object(speaker, "available", return_value=None):
+            self.assertFalse(speaker.load())
+        self.assertIsNone(speaker.voice)
+        self.assertIsNone(speaker.error)
 
 
 class AudioLockTest(unittest.TestCase):

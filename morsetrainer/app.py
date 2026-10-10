@@ -5,6 +5,7 @@ Kontinuierlich, QSO-Hörtraining, aktiver Contest-Betrieb, Netzwerk für
 Gruppen) plus Statistik, mit
 gemeinsamen Einstellungen für Zeichensatz (frei oder als Koch-Lektion),
 Geschwindigkeit und Tonhöhe."""
+import os
 import re
 import sys
 import threading
@@ -16,7 +17,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, stats, storage, tempo
+from morsetrainer.core import (audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, speech,
+                                stats, storage, tempo)
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, ctrl_key, tr
@@ -90,6 +92,9 @@ WHATS_NEW_DELAY_MS = 800  # Hinweis nach einem Update, wenn das Fenster steht
 ERROR_POLL_MS = 1000
 UPDATE_POLL_MS = 500
 UPDATE_ASK_AGAIN_DAYS = 7  # nach „Später“ fragt der Start erst so viele Tage danach wieder
+# Programmende: so lange auf eine laufende Ansage oder den MP3-Export warten
+# (ein Stück Piper-Synthese lässt sich nicht unterbrechen).
+SPEECH_SHUTDOWN_S = 3.0
 # Übungen, die einzeln abfragen (hören, antworten, das nächste), teilen sich
 # den Reiter „Einzeln“; oben wählt man, welche. Die Titel bleiben Schlüssel
 # der gespeicherten Einstellungen.
@@ -1921,11 +1926,18 @@ def main():
         root.after(UPDATE_CHECK_DELAY_MS, app.check_for_update)
         root.after(WHATS_NEW_DELAY_MS, app.show_whats_new)
     root.mainloop()
+    idle = speech.shut_down(SPEECH_SHUTDOWN_S)
     found = update.installed()
     if app.restart_args is not None and found is not None:
         update.relaunch(found[0], app.restart_args)
     elif app.restart_command is not None:
         update.relaunch(Path(app.restart_command[0]), app.restart_command[1:])
+    if not idle:
+        # Rechnet die Stimme noch, bricht das normale Python-Ende onnxruntime
+        # hart ab (Core-Dump). Gespeichert ist alles schon in on_close.
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
 
 
 if __name__ == "__main__":

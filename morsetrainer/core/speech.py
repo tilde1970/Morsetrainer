@@ -18,6 +18,7 @@ Gesprochen wird buchstabiert: Buchstabennamen (A, Be, Ce … bzw. ay, bee,
 see …) oder das internationale Buchstabieralphabet (Alfa, Bravo …), wie
 es im Funkbetrieb üblich ist; Betriebszeichen mit ihrem Namen („Spruchende“).
 Wortgrenzen werden zu einer kurzen Pause."""
+import contextlib
 import sys
 import threading
 from pathlib import Path
@@ -151,6 +152,45 @@ def resample(samples: np.ndarray, rate: int, target: int = SAMPLE_RATE) -> np.nd
     return np.interp(positions, np.arange(len(samples)), samples).astype(np.float32)
 
 
+# Programmende mitten in onnxruntime (Stimme laden, Sprache erzeugen) bricht
+# den Prozess hart ab (Core-Dump). Wer Piper benutzt, meldet sich deshalb mit
+# busy() an; shut_down() lässt keine neue Arbeit mehr zu und wartet darauf.
+_busy_count = 0
+_idle = threading.Condition()
+_closing = False
+
+
+@contextlib.contextmanager
+def busy():
+    """Klammer um Arbeit mit der Stimme, auf die shut_down() wartet; liefert
+    False (und meldet nichts an), wenn das Programmende schon läuft."""
+    global _busy_count
+    with _idle:
+        if _closing:
+            allowed = False
+        else:
+            allowed = True
+            _busy_count += 1
+    try:
+        yield allowed
+    finally:
+        if allowed:
+            with _idle:
+                _busy_count -= 1
+                _idle.notify_all()
+
+
+def shut_down(timeout: float) -> bool:
+    """Programmende: keine Stimme mehr laden, keine Sprache mehr erzeugen
+    und höchstens `timeout` s warten, bis laufende Arbeit (busy()) fertig
+    ist. False, wenn noch etwas läuft; dann den Prozess mit os._exit()
+    beenden, nicht über das normale Python-Ende."""
+    global _closing
+    with _idle:
+        _closing = True
+        return _idle.wait_for(lambda: _busy_count == 0, timeout)
+
+
 class Speaker:
     """Lädt die Stimme einmal und erzeugt Sprache als float32 bei
     SAMPLE_RATE, etwa so laut wie die Morsezeichen."""
@@ -186,8 +226,11 @@ class Speaker:
             if self.available() is not None:
                 return False
             try:
-                from piper import PiperVoice
-                self.voice = PiperVoice.load(str(voice_path(self.lang)))
+                with busy() as allowed:
+                    if not allowed:
+                        return False
+                    from piper import PiperVoice
+                    self.voice = PiperVoice.load(str(voice_path(self.lang)))
             except Exception as exc:  # kaputtes Modell, fehlende Laufzeit …
                 self.error = tr("Sprachausgabe nicht verfügbar: {error}").format(error=exc)
                 return False
@@ -201,7 +244,10 @@ class Speaker:
         """Sprache für `text`; leer, wenn keine Sprachausgabe möglich ist."""
         if not text or not self.load():
             return np.zeros(0, dtype=np.float32)
-        chunks = [chunk.audio_float_array for chunk in self.voice.synthesize(text)]
+        with busy() as allowed:
+            if not allowed:
+                return np.zeros(0, dtype=np.float32)
+            chunks = [chunk.audio_float_array for chunk in self.voice.synthesize(text)]
         if not chunks:
             return np.zeros(0, dtype=np.float32)
         samples = resample(np.concatenate(chunks), self.voice.config.sample_rate)

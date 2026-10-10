@@ -1,5 +1,13 @@
 # Changes
 
+## Unreleased
+
+- **No more crash when closing during an announcement:** closing the
+  window while speech output was still being generated crashed the
+  program (on Linux with a crash report). Now it waits briefly until the
+  announcement is done. A running MP3 export is cancelled and the
+  half-written file deleted.
+
 ## 2.47
 
 - **Help with F1:** F1 opens the manual at the section of the tab you are

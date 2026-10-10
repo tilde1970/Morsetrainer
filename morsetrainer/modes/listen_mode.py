@@ -415,7 +415,15 @@ class ListenModeFrame:
 
     def _export_worker(self, path, opts):
         """Im Hintergrund: Einträge erzeugen und kodieren. Das Ergebnis holt
-        _watch_export im Tk-Thread ab."""
+        _watch_export im Tk-Thread ab. Das Programmende wartet darauf (bricht
+        über on_close ab), damit keine halbe MP3-Datei liegen bleibt."""
+        with speech.busy() as allowed:
+            if allowed:
+                self._export(path, opts)
+            else:
+                self.export_result = tr("MP3 abgebrochen.")
+
+    def _export(self, path, opts):
         try:
             self.speaker.load()
             if self.speaker.error:

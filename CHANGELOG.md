@@ -1,5 +1,13 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das
+  Fenster schloss, während die Sprachausgabe noch rechnete, bekam einen
+  Absturz (unter Linux mit Absturzbericht). Jetzt wartet das Programm kurz,
+  bis die Ansage fertig ist. Ein laufender MP3-Export wird abgebrochen und
+  die halbe Datei gelöscht.
+
 ## 2.47
 
 - **Hilfe mit F1:** F1 öffnet die Anleitung beim Abschnitt des Reiters, in
