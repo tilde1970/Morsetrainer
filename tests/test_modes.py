@@ -1068,6 +1068,18 @@ class HelpWindowTest(AppTestCase):
         images = help_window.parse('Text\n\n![Bild](a.png)\n\n<img src="b.png" width="640" alt="x">\n')
         self.assertEqual([b for b in images if b[0] != "gap"], [("p", "Text")])
 
+    def test_heading_for_topic(self):
+        """Erst der genaue Name, dann ein Kapitel, das so beginnt, zuletzt ein
+        Unterabschnitt: „Network and security“ fängt „Network“ nicht ab."""
+        from morsetrainer.widgets import help_window
+        headings = [("h2", "3. Tabs"), ("h3", "Single"), ("h3", "Network and security"),
+                    ("h2", "7. Network: practising as a group"), ("h3", "Statistics")]
+        find = help_window.find_heading
+        self.assertEqual(find(headings, "Single"), 1)
+        self.assertEqual(find(headings, "Network"), 3)
+        self.assertEqual(find(headings, "Stat"), 4)
+        self.assertIsNone(find(headings, "Contest"))
+
     def test_help_shows_changelog_and_readme(self):
         from morsetrainer.widgets import help_window
         help_window.HelpWindow.show(self.root)

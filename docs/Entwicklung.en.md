@@ -39,8 +39,9 @@ python main.py --selftest probe.mp3   # self-test without a window: sound, voice
 MORSETRAINER_LANG=en python main.py   # English interface (Linux, macOS)
 ```
 
-`MORSETRAINER_LANG` takes precedence over the setting; the language the
-program ran with is saved as the setting on exit.
+`MORSETRAINER_LANG` takes precedence over the setting but does not change
+it: on exit the saved language is kept unless you choose another one in the
+settings.
 
 `--selftest` checks that PortAudio, Tcl/Tk, both voices and the MP3 export
 are present, writes a short sample as MP3 and exits with code 0 (otherwise

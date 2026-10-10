@@ -528,6 +528,20 @@ class AnnouncerTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: "Ansage aus." in self.said))
         self.assertIs(self.app._shared_settings()["announce"], False)
 
+    def test_f1_opens_help_except_in_contest(self):
+        """F1 öffnet die Hilfe beim aktuellen Reiter; im Contest sendet es
+        CQ wie in Contest-Programmen und öffnet keine Hilfe."""
+        from morsetrainer import app as app_module
+        with mock.patch.object(app_module.HelpWindow, "show") as show:
+            self.app._dispatch_key(mock.Mock(keysym="F1", char=""))
+            show.assert_called_once_with(self.app.root, self.app.notebook.tab("current", "text"))
+            self.app.show_mode("Contest")
+            show.reset_mock()
+            with mock.patch.object(self.mode("Contest"), "on_function_key") as contest_key:
+                self.app._dispatch_key(mock.Mock(keysym="F1", char=""))
+            show.assert_not_called()
+            contest_key.assert_called_once_with("F1")
+
     def test_f11_reads_tab_and_status_even_when_off(self):
         self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
         self.assertTrue(self.pump_until(lambda: self.said))

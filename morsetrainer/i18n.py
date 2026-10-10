@@ -24,16 +24,25 @@ DEFAULT = "de"
 SETTING_KEY = "language"
 
 
-def _configured() -> str:
-    lang = os.environ.get("MORSETRAINER_LANG")
-    if lang is None:
-        try:
-            lang = json.loads((DATA_DIR / "window_state.json").read_text(encoding="utf-8")).get(SETTING_KEY)
-        except (OSError, ValueError, AttributeError):
-            lang = None
+def _stored() -> str:
+    """Die in den Einstellungen gewählte Sprache, ohne MORSETRAINER_LANG."""
+    try:
+        lang = json.loads((DATA_DIR / "window_state.json").read_text(encoding="utf-8")).get(SETTING_KEY)
+    except (OSError, ValueError, AttributeError):
+        lang = None
     return lang if lang in LANGUAGES else DEFAULT
 
 
+def _configured() -> str:
+    lang = os.environ.get("MORSETRAINER_LANG")
+    if lang is None:
+        return _stored()
+    return lang if lang in LANGUAGES else DEFAULT
+
+
+# STORED wird beim Beenden wieder gespeichert, solange niemand eine Sprache
+# wählt: Ein Start mit MORSETRAINER_LANG soll die Einstellung nicht ändern.
+STORED = _stored()
 LANG = _configured()
 
 if LANG == "en":

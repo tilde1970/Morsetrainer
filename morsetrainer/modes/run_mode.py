@@ -197,6 +197,7 @@ class RunModeFrame:
     Funktionstasten, Anrufer melden sich (auch mehrere zugleich), du loggst
     Rufzeichen und Austausch; am Ende zählen Rate und Fehler wie im Contest."""
     uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
+    claims_help_key = True  # F1 sendet CQ, öffnet hier nicht die Hilfe
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
                  band_settings=None):

@@ -95,6 +95,7 @@ class LanguageSettingTest(unittest.TestCase):
             self.assertEqual(i18n._configured(), "de")
             os.environ["MORSETRAINER_LANG"] = "en"
             self.assertEqual(i18n._configured(), "en")
+            self.assertEqual(i18n._stored(), "de")
 
     def test_numbers_use_the_separators_of_the_language(self):
         self.assertEqual((i18n.number(12345), i18n.number(0.38, 2)), ("12.345", "0,38"))
@@ -159,5 +160,19 @@ class TkLanguageTest(unittest.TestCase):
             app._save_state()
             saved = json.loads((Path(tmp) / "window_state.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["language"], "en")
+            for mode in app.modes:
+                mode.on_close()
+
+    def test_language_from_environment_is_not_saved(self):
+        """Ein Start mit MORSETRAINER_LANG=en ändert die gespeicherte Sprache
+        nicht, solange man in den Einstellungen nichts wählt."""
+        from morsetrainer import app as app_module
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(app_module, "WINDOW_STATE_FILE", Path(tmp) / "window_state.json"), \
+                mock.patch.object(i18n, "STORED", "en"):
+            app = app_module.MorseTrainerApp(self.root)
+            app._save_state()
+            saved = json.loads((Path(tmp) / "window_state.json").read_text(encoding="utf-8"))
+            self.assertEqual(saved["language"], "en")  # nicht LANG="de" aus der Umgebung
             for mode in app.modes:
                 mode.on_close()

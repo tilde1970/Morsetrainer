@@ -41,7 +41,7 @@ interface. German overview: [README.md](README.md).
 
 ### Copying at Koch speed
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Main window (German interface) in the One by one tab with the content Groups. At the top Koch lesson 15, 20 WPM, 600 Hz and Farnsworth 10, below the exercise options, the answer field with ESJ and the feedback “Richtig: ESJ” (correct).">
+<img src="docs/bilder/gruppen.png" width="640" alt="Main window (German interface) in the One by one tab with the content Groups. At the top Koch lesson 15, 20 WPM, 600 Hz and Farnsworth 10. In the middle of a run: the answer field with ESJ, the feedback “Richtig: ESJ” (correct) and below it the statistics of the run, 3 of 3 correct.">
 
 ### Award to print
 
@@ -58,7 +58,9 @@ Ready-to-run programs are on the
 Python installation is needed:
 
 - **Linux:** download `Morsetrainer-x86_64.AppImage`, make it executable
-  (`chmod +x Morsetrainer-x86_64.AppImage`) and run it.
+  (`chmod +x Morsetrainer-x86_64.AppImage`) and run it. If it does not
+  start and reports a FUSE error, see the
+  [manual, section “Linux and Windows”](docs/Anleitung.en.md).
 - **Windows:** download and run `Morsetrainer.exe`. The file is not signed,
   so Windows SmartScreen warns on first start (“More info” → “Run anyway”).
 - **macOS (Apple silicon):** download `Morsetrainer-macOS.zip`, unpack it
@@ -82,8 +84,8 @@ PowerShell and compare with the line in `SHA256SUMS.txt`.
    enter your callsign and name; they appear on the awards.
 
 Everything else is in the [manual](docs/Anleitung.en.md). In the program,
-the **Help** button at the bottom right opens it, right at the section of
-the tab you are in.
+F1 or the **Help (F1)** button at the bottom right opens it, right at the
+section of the tab you are in.
 
 ## Accessibility
 

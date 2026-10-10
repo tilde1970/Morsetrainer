@@ -2,9 +2,10 @@
 
 Ein Trainer für Morsetelegrafie (CW) für Einsteiger ohne Vorkenntnisse bis
 zu Contestern (Teilnehmern an Funkwettbewerben), entwickelt von **DL4YM**.
-Diese Anleitung steht auch im Programm: Der Knopf **Hilfe** rechts in der
-Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem du gerade bist,
-daneben die Änderungen der Versionen; Strg+F sucht darin.
+Diese Anleitung steht auch im Programm: F1 oder der Knopf **Hilfe (F1)**
+rechts in der Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem
+du gerade bist, daneben die Änderungen der Versionen; Strg+F sucht darin.
+Im Reiter Contest sendet F1 CQ, dort öffnet nur der Knopf die Hilfe.
 Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 
 **Inhalt**
@@ -832,6 +833,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Überall | Alt+1 … Alt+7 | Reiter Einzeln, Am Stück, Sprechen, QSO, Contest, Netzwerk, Statistik |
 | Überall | Alt+0 | Reiter Statistik |
 | Überall | Strg+Tab | durch die Reiter blättern |
+| Überall außer Contest | F1 | Hilfe beim Abschnitt des aktuellen Reiters |
 | Überall | F9 | Ansage an/aus |
 | Überall | F11 | vorlesen, wo du bist |
 | Überall | F12 | Tagesübung starten |
@@ -860,7 +862,8 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 
 **Auf dem Mac** sind F9, F11 und F12 Medientasten oder vom System belegt
 (Fn+F11 zeigt den Schreibtisch). Dafür gibt es Cmd+Umschalt+A (Ansage
-an/aus), Cmd+Umschalt+W (wo bin ich) und Cmd+Umschalt+T (Tagesübung).
+an/aus), Cmd+Umschalt+W (wo bin ich), Cmd+Umschalt+T (Tagesübung) und
+Cmd+Umschalt+H (Hilfe).
 Cmd+0 bleibt dort der Schrift (normal groß).
 
 **Suchen in der Hilfe** findet auch, was anders geschrieben ist: Umlaute
@@ -878,7 +881,12 @@ Fertige Programme gibt es unter
 wird dafür nicht benötigt.
 
 - **Linux:** `Morsetrainer-x86_64.AppImage` herunterladen, ausführbar
-  machen (`chmod +x Morsetrainer-x86_64.AppImage`) und starten.
+  machen (`chmod +x Morsetrainer-x86_64.AppImage`) und starten. Meldet es
+  beim Start „No suitable fusermount binary found“ oder einen anderen
+  Fehler zu FUSE, fehlt das Programm `fusermount`: Paket `fuse3`
+  installieren (Debian, Ubuntu, Mint: `sudo apt install fuse3`) oder das
+  AppImage ohne FUSE starten:
+  `./Morsetrainer-x86_64.AppImage --appimage-extract-and-run`.
 - **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
   („Weitere Informationen“ → „Trotzdem ausführen“).

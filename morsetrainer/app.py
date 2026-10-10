@@ -68,6 +68,9 @@ FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, t
 # Sprachansage an/aus und „wo bin ich?“ (widgets/announcer.py).
 ANNOUNCE_KEY = "F9"
 STATUS_KEY = "F11"
+# Hilfe beim aktuellen Reiter; im Contest sendet F1 CQ wie in
+# Contest-Programmen, dort bleibt der Knopf.
+HELP_KEY = "F1"
 # Zeichen je Zeile in der Übersicht der Lernkartei-Fächer (Reiter Statistik).
 BOX_CHARS_PER_LINE = 20
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
@@ -220,13 +223,17 @@ class MorseTrainerApp:
         selbst (ohne ::tk::mac::Quit beendet Tk ohne on_close, also ohne zu
         speichern). F9, F11 und F12 sind dort Medientasten bzw. vom System
         belegt (Fn+F11 zeigt den Schreibtisch): zusätzlich Cmd+Umschalt+A
-        (Ansage), W (wo bin ich) und T (Tagesübung)."""
+        (Ansage), W (wo bin ich), T (Tagesübung) und H (Hilfe)."""
         self.root.createcommand("::tk::mac::Quit", self.on_close)
         self.root.createcommand("::tk::mac::ShowPreferences", self.open_settings)
         for letter, action in (("A", self.toggle_announce), ("W", self.read_status),
-                               ("T", self._start_daily)):
+                               ("T", self._start_daily), ("H", self.open_help)):
             for key in (letter, letter.lower()):
                 self.root.bind_all(f"<Command-Shift-{key}>", lambda e, a=action: a() or "break")
+
+    def open_help(self):
+        """Hilfe beim Abschnitt des aktuellen Reiters (Knopf, F1)."""
+        HelpWindow.show(self.root, self.notebook.tab("current", "text"))
 
     def _set_icon(self):
         """Fenstericon, auch für das Hilfefenster (default=True). Fehlt die
@@ -279,7 +286,7 @@ class MorseTrainerApp:
             "geometry": self.root.geometry(),
             "shared": self._shared_settings(),
             "modes": self._mode_settings(),
-            i18n.SETTING_KEY: self.language_var.get(),
+            i18n.SETTING_KEY: self.language_var.get() if self.language_chosen else i18n.STORED,
             "update_declined": self.update_declined,
             "update_declined_on": self.update_declined_on.isoformat() if self.update_declined_on else None,
             "one_by_one": self.one_by_one_var.get(),
@@ -457,6 +464,7 @@ class MorseTrainerApp:
         language = ttk.Frame(language_card)
         language.pack(fill="x", pady=2)
         self.language_var = tk.StringVar(value=i18n.LANG)
+        self.language_chosen = False
         self.language_box = ttk.Combobox(language, values=list(i18n.LANGUAGES.values()), state="readonly",
                                          width=10)
         self.language_box.set(i18n.LANGUAGES[i18n.LANG])
@@ -550,6 +558,7 @@ class MorseTrainerApp:
         dem nächsten Start, siehe i18n.py."""
         chosen = next(k for k, v in i18n.LANGUAGES.items() if v == self.language_box.get())
         self.language_var.set(chosen)
+        self.language_chosen = True
         self.language_hint_var.set("" if chosen == i18n.LANG else tr("wirkt nach Neustart des Programms"))
         self._show_restart_button()
 
@@ -984,8 +993,7 @@ class MorseTrainerApp:
         # Erst sichtbar, wenn ein neueres Release da ist: holt das Update-Fenster wieder.
         self.update_button = ttk.Button(update_box, text=tr("Aktualisieren …"), style="Flat.TButton",
                                         command=self.offer_update)
-        ttk.Button(footer, text=tr("Hilfe"), style="Flat.TButton",
-                   command=lambda: HelpWindow.show(self.root, self.notebook.tab("current", "text"))).pack(
+        ttk.Button(footer, text=tr("Hilfe (F1)"), style="Flat.TButton", command=self.open_help).pack(
             side="right", padx=(8, 0))
         ttk.Label(
             footer, text=tr("Morsetrainer {version} · entwickelt von {author} · 73!").format(
@@ -1653,7 +1661,7 @@ class MorseTrainerApp:
         """Jede Taste im Hauptfenster: Tagesübung (Esc, F5, Enter), Ansage (F9, F11),
         Tagesübung starten (F12), Funktionstasten an den aktiven Reiter, sonst
         an dessen on_key – außer die Taste gehört einem Eingabefeld oder dem
-        Bedienelement mit dem Fokus."""
+        Bedienelement mit dem Fokus. F1 öffnet die Hilfe, außer im Contest."""
         if event.keysym in ("Escape", "F5") and self.daily.active:
             self._confirm_daily_end(event.keysym)
             return
@@ -1667,6 +1675,9 @@ class MorseTrainerApp:
             self.read_status()
             return
         if event.keysym == DAILY_KEY and self._start_daily():
+            return
+        if event.keysym == HELP_KEY and not getattr(self._active_mode(), "claims_help_key", False):
+            self.open_help()
             return
         if event.keysym in FUNCTION_KEYS:
             mode = self._active_mode()

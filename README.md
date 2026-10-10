@@ -39,7 +39,7 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 ### Mitschreiben im Koch-Tempo
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Hauptfenster im Reiter Einzeln mit dem Inhalt Gruppen. Oben Koch-Lektion 15, 20 WPM, 600 Hz und Farnsworth 10, darunter die Optionen der Übung, das Antwortfeld mit ESJ und die Rückmeldung „Richtig: ESJ“.">
+<img src="docs/bilder/gruppen.png" width="640" alt="Hauptfenster im Reiter Einzeln mit dem Inhalt Gruppen. Oben Koch-Lektion 15, 20 WPM, 600 Hz und Farnsworth 10. Mitten im Durchgang: das Antwortfeld mit ESJ, die Rückmeldung „Richtig: ESJ“ und darunter die Statistik des Durchgangs, 3 von 3 richtig.">
 
 ### Diplom zum Ausdrucken
 
@@ -56,7 +56,9 @@ Fertige Programme gibt es unter
 wird dafür nicht benötigt:
 
 - **Linux:** `Morsetrainer-x86_64.AppImage` herunterladen, ausführbar machen
-  (`chmod +x Morsetrainer-x86_64.AppImage`) und starten.
+  (`chmod +x Morsetrainer-x86_64.AppImage`) und starten. Startet es mit
+  einer Meldung zu FUSE nicht: siehe
+  [Anleitung, Abschnitt „Linux und Windows“](docs/Anleitung.md).
 - **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
   („Weitere Informationen“ → „Trotzdem ausführen“).
@@ -83,8 +85,8 @@ der Zeile in `SHA256SUMS.txt` vergleichen.
    Rufzeichen und Name eintragen; sie stehen auf den Diplomen.
 
 Alles Weitere steht in der [Anleitung](docs/Anleitung.md). Im Programm
-öffnet sie der Knopf **Hilfe** unten rechts, gleich beim Abschnitt des
-Reiters, in dem du gerade bist.
+öffnet sie F1 oder der Knopf **Hilfe (F1)** unten rechts, gleich beim
+Abschnitt des Reiters, in dem du gerade bist.
 
 ## Barrierefreiheit
 

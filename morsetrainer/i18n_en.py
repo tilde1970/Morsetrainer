@@ -242,7 +242,7 @@ EN.update({
         "and then type them. "
         "That is also where the next lesson is offered.\n\n"
         "Switch to groups?",
-    "Hilfe": "Help",
+    "Hilfe (F1)": "Help (F1)",
     "Morsetrainer {version} · entwickelt von {author} · 73!": "Morsetrainer {version} · developed by {author} · 73!",
     "Heute {minutes} von {goal} Min": "Today {minutes} of {goal} min",
     "Heute {minutes} Min": "Today {minutes} min",

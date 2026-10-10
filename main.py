@@ -4,7 +4,8 @@ import sys
 USAGE = """Morsetrainer von DL4YM
 
   python main.py                 Programm starten
-  python main.py --join ADRESSE  einer Netzwerk-Sitzung beitreten
+  python main.py --join PIN      nach einem Update wieder mit dem Trainer
+                                 verbinden (Adresse und Name sind gespeichert)
   python main.py --selftest X.mp3  Selbsttest (Ton, Stimme, MP3) ohne Fenster
   python main.py --version       Version anzeigen"""
 

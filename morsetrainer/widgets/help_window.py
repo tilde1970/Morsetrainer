@@ -203,6 +203,27 @@ def setup_tags(widget: tk.Text) -> None:
     widget.tag_configure("p", spacing1=2)
 
 
+def find_heading(headings, topic: str):
+    """Index der Überschrift für `topic` in `headings` (Liste aus Ebene „h2“
+    oder „h3“ und Text, in Reihenfolge der Anleitung), sonst None.
+
+    Zuerst zählt der genaue Name, ohne Kapitelnummer („Am Stück“), dann
+    ein Kapitel, das so beginnt („Netzwerk“ → „7. Netzwerk: Üben in der
+    Gruppe“), zuletzt ein Unterabschnitt, der so beginnt. So fängt ein
+    Unterabschnitt wie „Network and security“ den Sprung zum Kapitel
+    „7. Network: …“ nicht ab."""
+    wanted = topic.strip().lower()
+    plain = [re.sub(r"^\d+\.\s*", "", heading.strip().lower()) for _, heading in headings]
+    tests = (lambda i: plain[i] == wanted,
+             lambda i: headings[i][0] == "h2" and plain[i].startswith(wanted),
+             lambda i: headings[i][0] == "h3" and plain[i].startswith(wanted))
+    for test in tests:
+        for index in range(len(headings)):
+            if test(index):
+                return index
+    return None
+
+
 class HelpWindow:
     """Ein Fenster je Hauptfenster; ein zweiter Aufruf holt es nach vorn."""
 
@@ -289,14 +310,14 @@ class HelpWindow:
         if not topic:
             return
         text = self.texts[GUIDE]
-        wanted = topic.strip().lower()
-        for tag in ("h3", "h2"):
+        headings = []
+        for tag in ("h2", "h3"):
             ranges = text.tag_ranges(tag)
-            for start, end in zip(ranges[::2], ranges[1::2]):
-                heading = text.get(start, end).strip().lower()
-                if heading == wanted or re.sub(r"^\d+\.\s*", "", heading).startswith(wanted):
-                    text.yview(start)
-                    return
+            headings += [(tag, start, text.get(start, end)) for start, end in zip(ranges[::2], ranges[1::2])]
+        headings.sort(key=lambda item: tuple(int(n) for n in text.index(item[1]).split(".")))
+        found = find_heading([(tag, heading) for tag, _, heading in headings], topic)
+        if found is not None:
+            text.yview(headings[found][1])
 
     def _current_text(self) -> tk.Text:
         return self.texts[DOCS[self.notebook.index("current")][1]]

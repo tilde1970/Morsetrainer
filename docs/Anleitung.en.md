@@ -2,9 +2,10 @@
 
 A Morse code (CW) trainer for everyone from complete beginners to
 contesters (people who take part in radio contests), developed by
-**DL4YM**. This manual is also in the program: the **Help** button on the
-right of the footer shows it, right at the section of the tab you are in,
-next to it the changes of the versions; Ctrl+F searches in it. A short
+**DL4YM**. This manual is also in the program: F1 or the **Help (F1)**
+button on the right of the footer shows it, right at the section of the tab
+you are in, next to it the changes of the versions; Ctrl+F searches in it.
+In the Contest tab F1 sends CQ, so there only the button opens the help. A short
 overview with pictures is in the [README](../README.en.md).
 
 **Language:** the program starts in German. Switch to English with
@@ -814,6 +815,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Everywhere | Alt+1 … Alt+7 | tabs One by one, Non-stop, Speak, QSO, Contest, Network, Statistics |
 | Everywhere | Alt+0 | Statistics tab |
 | Everywhere | Ctrl+Tab | cycle through the tabs |
+| Everywhere except Contest | F1 | help at the section of the current tab |
 | Everywhere | F9 | announcements on/off |
 | Everywhere | F11 | read out where you are |
 | Everywhere | F12 | start daily practice |
@@ -842,7 +844,8 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 
 **On the Mac** F9, F11 and F12 are media keys or taken by the system
 (Fn+F11 shows the desktop). Use Cmd+Shift+A (announcements on/off),
-Cmd+Shift+W (where am I) and Cmd+Shift+T (daily practice) instead. Cmd+0
+Cmd+Shift+W (where am I), Cmd+Shift+T (daily practice) and Cmd+Shift+H
+(help) instead. Cmd+0
 stays with the font (normal size) there.
 
 **Searching the help** also finds what is written differently: umlaut
@@ -860,7 +863,12 @@ Ready-to-run programs are on the
 Python installation is needed.
 
 - **Linux:** download `Morsetrainer-x86_64.AppImage`, make it executable
-  (`chmod +x Morsetrainer-x86_64.AppImage`) and run it.
+  (`chmod +x Morsetrainer-x86_64.AppImage`) and run it. If it reports
+  “No suitable fusermount binary found” or another FUSE error on start,
+  the `fusermount` program is missing: install the `fuse3` package
+  (Debian, Ubuntu, Mint: `sudo apt install fuse3`) or start the AppImage
+  without FUSE:
+  `./Morsetrainer-x86_64.AppImage --appimage-extract-and-run`.
 - **Windows:** download and run `Morsetrainer.exe`. The file is not signed,
   so Windows SmartScreen warns on first start (“More info” → “Run anyway”).
 
