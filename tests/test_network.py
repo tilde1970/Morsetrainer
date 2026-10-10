@@ -1,6 +1,7 @@
 """Tests für den Netzwerkmodus: Protokoll, Auswertung beim Trainer, echte
 Verbindungen über localhost und ein ganzer Durchgang Trainer ↔ Teilnehmer
 im Reiter (mit Tk-Fenster, ohne Ton; ohne Anzeige übersprungen)."""
+import gc
 import socket
 import tempfile
 import time
@@ -632,6 +633,13 @@ class NetworkTabTest(unittest.TestCase):
     """Trainer und Teilnehmer als zwei Reiter in einem Fenster."""
 
     def setUp(self):
+        # Kein automatisches Einsammeln während des Tests: Es könnte in einem
+        # Netzwerk-Thread laufen, und jedes Tk-Objekt hielte ihn dort eine
+        # Sekunde auf (Verbindung zu spät, Test hängt). Eingesammelt wird im
+        # Hauptthread, hier und in tests.release_root().
+        gc.collect()
+        gc.disable()
+        self.addCleanup(gc.enable)
         self.tmp = tempfile.TemporaryDirectory()
         directory = Path(self.tmp.name)
         self.patches = [
@@ -670,7 +678,7 @@ class NetworkTabTest(unittest.TestCase):
         if hasattr(self, "root"):
             self.trainee.on_close()
             self.trainer.on_close()
-            self.root.destroy()
+            tests.release_root(self.root)
         for patch in self.patches:
             patch.stop()
         self.tmp.cleanup()

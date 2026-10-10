@@ -70,6 +70,10 @@ def release_root(root) -> None:
             except tk.TclError:
                 pass
     theme._fonts[:] = [f for f in theme._fonts if getattr(f, "_tk", None) is not interp]
+    # Jetzt im Hauptthread einsammeln. Räumt sonst irgendwann ein anderer
+    # Thread (Netzwerk, Audio) Tk-Variablen und -Bilder weg, wartet tkinter
+    # dort je Objekt eine Sekunde auf die mainloop, die in Tests nie läuft.
+    gc.collect()
 
 
 def write_session(lines) -> int:
