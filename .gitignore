@@ -11,3 +11,7 @@ dist/
 *.spec
 voices/
 fehler.log
+# GitHub-Download-Statistik (nur lokal)
+download_history.json
+reports/
+morsetrainer_downloads.py

@@ -48,7 +48,9 @@ Zuordnung nach Art der Änderung (eine Datei kann mehrere Zeilen treffen):
 | Audio, Timing, Störungen: `core/audio.py`, `band.py`, `pause_noise.py`, `latency.py`, `tempo.py`, `sfx.py`, `mp3.py`, `net/stream.py` | performance, code; bei Tonformung, Filtern, Störungen und Pegeln signal |
 | Datenhaltung und Statistik: `core/db.py`, `stats.py`, `storage.py`, `migration.py`, `backup.py`, `review.py`, `weighting.py` | test, code, bei Mengen-/Laufzeitfragen performance |
 | Lernlogik: `core/koch.py`, `practice.py`, `daily.py`, `week.py`, `awards.py`, `lifeline.py`, `modes/*` | didaktik, test, teilnehmer |
-| CW-Inhalte: `core/morse.py`, `words.py`, `qso_text.py`, `woerter.txt`, Rufzeichen-, Contest-, Q-Gruppen-Material, `modes/content.py`, `qso_*`, `callsign_mode.py` | fachinhalt, bei Lernwirkung didaktik |
+| CW-Inhalte: `core/morse.py`, `words.py`, `qso_text.py`, `woerter.txt`, Rufzeichen-, Contest-, Q-Gruppen-Material, `modes/content.py`, `qso_*`, `callsign_mode.py` | fachinhalt, bei Lernwirkung didaktik; bei neuem oder geändertem QSO-, Rufzeichen- oder Contest-Material zusätzlich qso-szenarien (der bestehenden Material prüft und ergänzt) |
+| Fehlerdiagnose-Auswertungen: `core/review.py`, Fehlerklassen, Wiederholungslogik, individuelle Schwächenanalyse | fehleranalyse (zusätzlich zu didaktik/test), damit Diagnosen richtig einordnen statt nur konstatieren |
+| Motivation, Fortschrittsanzeige, Streaks, Belohnungen, Tagesziele: `widgets/progress*`, Auswertungsdialoge, Feedbacktexte | motivationstrainer (zusätzlich), didaktik (Ehrlichkeit der Messwerte) |
 | Oberfläche: `widgets/*`, `app.py`, `i18n*.py`, Dialoge, Reiter, Menüs, Tastenkürzel | usability, barrierefreiheit, teilnehmer |
 | Sprachausgabe: `core/speech.py`, `widgets/announcer.py`, `voices/` | barrierefreiheit, plattform |
 | Netzwerk: `net/*`, `modes/network_mode.py` | code, test, bei Durchsatz performance |
@@ -63,22 +65,35 @@ Die Prüfer heißen als `subagent_type`: `cw-code-pruefer`,
 `cw-test-pruefer`, `cw-performance-pruefer`, `cw-plattform-pruefer`,
 `cw-didaktik-pruefer`, `cw-teilnehmer-pruefer`, `cw-usability-pruefer`,
 `cw-barrierefreiheits-pruefer`, `cw-signal-pruefer`,
-`cw-fachinhalts-pruefer`, `cw-technical-writer`.
+`cw-fachinhalts-pruefer`, `cw-technical-writer`, `cw-fehleranalyse-trainer`,
+`cw-qso-szenarien-ersteller`, `cw-motivationstrainer`.
+
+Hinweis: `cw-didaktik-ersteller` (didaktische Materialentwicklung) und
+`cw-qso-szenarien-ersteller` sind keine reinen Prüfer, sondern Ersteller.
+Sie laufen nur auf ausdrücklichen Auftrag des Nutzers („Material für …
+erstellen“), nicht automatisch als Teil eines Release-Einsatzes. Soll die
+Einsatzleitung sie einbinden, gelten dieselben Wellen- und Berichtsregeln
+wie für Prüfer; ihr Material wird im Lagebericht unter „Ideen und
+Vorschläge“ geführt, nicht unter Fehlerbefunden.
 
 Bei `klein`: nach Nutzen sortieren und auf höchstens drei kürzen. Vorrang
 hat, wer Fehler findet, die Nutzer direkt treffen (Absturz, Datenverlust,
-falsche Inhalte, unbedienbar), vor Stil- und Komfortfragen.
+falsche Inhalte, unbedienbar), vor Stil- und Komfortfragen. Didaktik geht
+bei Lernlogik-Änderungen vor Motivation und Fehleranalyse, weil falsche
+Lehrinhalte Nutzer stärker treffen als suboptimale Motivation.
 
 ## Schritt 3: Einsatzplan in Wellen
 
 Regeln für die Reihenfolge:
 
 - **Welle 1:** rein lesende Prüfer (code, test, didaktik, teilnehmer,
-  fachinhalt) parallel in einer Nachricht starten.
+  fachinhalt, fehleranalyse, motivationstrainer, qso-szenarien) parallel in
+  einer Nachricht starten.
 - **Welle 2:** Prüfer mit Messungen oder virtueller Anzeige (performance,
-  plattform, usability, barrierefreiheit, signal) höchstens zu zweit gleichzeitig, damit sie sich
-  Messwerte und Rechenzeit nicht gegenseitig verfälschen. Sie dürfen parallel
-  zu Welle 1 laufen, wenn höchstens zwei von ihnen dabei sind.
+  plattform, usability, barrierefreiheit, signal) höchstens zu zweit
+  gleichzeitig, damit sie sich Messwerte und Rechenzeit nicht gegenseitig
+  verfälschen. Sie dürfen parallel zu Welle 1 laufen, wenn höchstens zwei von
+  ihnen dabei sind.
 - **Letzte Welle:** `cw-technical-writer` allein und erst, wenn alle
   anderen fertig sind, weil er als Einziger Dateien ändert. Er bekommt die
   für die Doku relevanten Befunde der anderen mit.
@@ -107,6 +122,12 @@ sich allein verständlich sein und enthält:
    Fundstelle `datei:zeile`, Beleg und Vorschlag; am Ende eine Zeile
    „Freigabe aus Sicht dieses Prüfers: ja / mit Vorbehalt / nein“.
 
+Bei Ersteller-Aufträgen (qso-szenarien, didaktik-ersteller) gilt Punkt 5
+angepasst: statt Schwere-Einstufung liefert der Ersteller Material mit
+Selbstprüfung gegen die Grundsätze des cw-didaktik-pruefer; das Material
+geht vor Veröffentlichung durch den cw-didaktik-pruefer, sofern dieser im
+gleichen Einsatz läuft (dann hinter ihm in der nächsten Welle).
+
 Prüfer laufen im Hintergrund. Während sie laufen, keine Ergebnisse vorweg
 nehmen; wenn der Nutzer fragt, sagen, wer noch läuft.
 
@@ -118,8 +139,10 @@ Wenn alle Berichte da sind:
    Nennung aller Prüfer, die sie gefunden haben (mehrfach gefunden = höheres
    Gewicht).
 2. **Widersprüche abgleichen:** wenn Prüfer Gegensätzliches empfehlen (z. B.
-   Didaktik gegen Usability), beide Seiten kurz darstellen und eine
-   Empfehlung geben.
+   Didaktik gegen Usability, Motivation gegen Ehrlichkeit der Messwerte,
+   Realismus gegen Überforderung), beide Seiten kurz darstellen und eine
+   Empfehlung geben. Bei Motivation gegen Didaktik entscheidet die
+   Ehrlichkeit der Messwerte.
 3. **Gegen Entscheidungen prüfen:** Befunde, die einer getroffenen
    Entscheidung widersprechen, nicht als offen führen, sondern in einer
    eigenen kurzen Zeile „bewusst entschieden, erneut vorgeschlagen von …“.
@@ -134,11 +157,31 @@ Aufbau des Lageberichts (Deutsch, knapp):
   („releasefähig“ / „releasefähig nach Punkt X“ / „nicht releasefähig“).
 - Vor dem Release nötig: kritisch und hoch, je mit Fundstelle und Vorschlag.
 - Kann warten: mittel und niedrig, kurz.
-- Ideen und Vorschläge (z. B. neue Lernmethoden), getrennt von Fehlern.
+- Ideen und Vorschläge (z. B. neue Lernmethoden, neues QSO-Material,
+  Motivationsideen), getrennt von Fehlern; Materialentwürfe der Ersteller
+  stehen hier mit Quelle und Stand.
 - Was der Technical-Writer geändert hat, falls eingesetzt.
 - Bewusst entschiedene Punkte, die erneut aufkamen.
 
-Danach anbieten, die offenen Punkte in `Plan-Offen.md` einzutragen. Erst nach
+Danach anbieten, die offenen Punkte in Plan-Offen.md einzutragen. Erst nach
 ausdrücklicher Freigabe eintragen. Kein Commit, kein Release, keine
 Codeänderung im Rahmen der Einsatzleitung; Korrekturen sind ein eigener
 Auftrag des Nutzers.
+
+## Zielkonflikte zwischen den Agents (Zur Entscheidungsfindung der Einsatzleitung)
+
+Bei widersprüchlichen Empfehlungen gilt diese Rangfolge:
+
+1. **Ehrlichkeit der Messwerte** (cw-didaktik-pruefer) schlägt Motivation
+   (cw-motivationstrainer): keine geschönten oder vereinfachten Messwerte,
+   auch nicht zur Motivation.
+2. **Lernwirksamkeit** schlägt Realismusreiz: Wenn cw-qso-szenarien-ersteller
+   realistisches Material liefert, das die cw-didaktik-pruefer-Grundsätze
+   verletzt (Überforderung, Vorhersagbarkeit), gewinnt die Didaktik.
+3. **Fehleranalyse erteilt keine Lempossa-Ratschläge:** Die
+   cw-fehleranalyse-trainer-Ergebnisse beschreiben, *was* der Nutzer falsch
+   macht; ob und wie er es üben soll, entscheidet die Didaktik.
+4. **Ersteller sind keine Prüfer:** Material der Ersteller
+   (cw-didaktik-ersteller, cw-qso-szenarien-ersteller) braucht immer eine
+   Prüfung durch den cw-didaktik-pruefer bzw. cw-fachinhalts-pruefer, bevor
+   es als gültig gilt.
