@@ -14,7 +14,7 @@ import traceback
 from datetime import date, timedelta
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 
 from morsetrainer import DATA_DIR, i18n
 from morsetrainer.core import (audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, speech,
@@ -40,7 +40,7 @@ from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
-from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, one_tab_stop, wrap_pair
 
 __author__ = "DL4YM"
@@ -313,7 +313,7 @@ class MorseTrainerApp:
         notes = [tr(WHATS_NEW[version]) for version in versions
                  if (seen is None or update.is_newer(version, seen)) and not update.is_newer(version, __version__)]
         if notes:
-            messagebox.showinfo(tr("Neu in Version {version}").format(version=__version__), "\n\n".join(notes),
+            dialog.showinfo(tr("Neu in Version {version}").format(version=__version__), "\n\n".join(notes),
                                 parent=self.root)
 
     def _build_settings(self):
@@ -580,10 +580,10 @@ class MorseTrainerApp:
         try:
             count = backup.export_data(Path(path), __version__)
         except OSError as exc:
-            messagebox.showerror(tr("Daten sichern"), tr("Die Sicherung konnte nicht geschrieben werden:\n{error}")
+            dialog.showerror(tr("Daten sichern"), tr("Die Sicherung konnte nicht geschrieben werden:\n{error}")
                                  .format(error=exc), parent=self.root)
             return
-        messagebox.showinfo(tr("Daten sichern"), tr(
+        dialog.showinfo(tr("Daten sichern"), tr(
             "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "
             "Einlesen …“ wieder einlesen.").format(count=count, path=path), parent=self.root)
 
@@ -591,7 +591,7 @@ class MorseTrainerApp:
         """Sicherung einlesen; ersetzt alle Daten, danach beendet sich das
         Programm, ohne die alten Einstellungen zurückzuschreiben."""
         if self.running_mode or self.daily.active:
-            messagebox.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
+            dialog.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
                                 parent=self.root)
             return
         path = filedialog.askopenfilename(
@@ -603,10 +603,10 @@ class MorseTrainerApp:
         try:
             info = backup.read_info(Path(path))
         except backup.BackupError:
-            messagebox.showerror(tr("Daten einlesen"), tr("Das ist keine Sicherung des Morsetrainers."),
+            dialog.showerror(tr("Daten einlesen"), tr("Das ist keine Sicherung des Morsetrainers."),
                                  parent=self.root)
             return
-        if not messagebox.askyesno(tr("Daten einlesen"), tr(
+        if not dialog.askyesno(tr("Daten einlesen"), tr(
                 "Sicherung vom {created} (Version {version}) einlesen?\n\nAlle bisherigen Einstellungen und "
                 "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher in {folder} "
                 "gesichert. Danach beendet sich das Programm, bitte neu starten.").format(
@@ -616,10 +616,10 @@ class MorseTrainerApp:
         try:
             backup.import_data(Path(path), __version__)
         except (OSError, backup.BackupError) as exc:
-            messagebox.showerror(tr("Daten einlesen"), tr("Einlesen fehlgeschlagen:\n{error}").format(error=exc),
+            dialog.showerror(tr("Daten einlesen"), tr("Einlesen fehlgeschlagen:\n{error}").format(error=exc),
                                  parent=self.root)
             return
-        messagebox.showinfo(tr("Daten einlesen"), tr(
+        dialog.showinfo(tr("Daten einlesen"), tr(
             "Daten eingelesen. Das Programm beendet sich jetzt; beim nächsten Start gelten die eingelesenen "
             "Einstellungen."), parent=self.root)
         self.on_close(keep_files=True)
@@ -912,7 +912,7 @@ class MorseTrainerApp:
         try:
             audio.play(build_text(f"{ch} {ch} {ch}", wpm, freq, self.farnsworth_wpm()))
         except audio.AudioError as exc:
-            messagebox.showwarning(tr("Tonausgabe"), str(exc))
+            dialog.showwarning(tr("Tonausgabe"), str(exc))
 
     def _set_koch_tempo(self):
         self.wpm_var.set(koch.RECOMMENDED_WPM)
@@ -953,7 +953,7 @@ class MorseTrainerApp:
                 "Koch-Tempo {rec}/{eff} weiterüben, damit sich das Klangbild einprägt. Für das Koch-Diplom "
                 "zählen Läufe erst ab {min} WPM Zeichentempo.").format(
                 wpm=wpm, rec=koch.RECOMMENDED_WPM, eff=koch.RECOMMENDED_EFFECTIVE_WPM, min=koch.SLOW_CHAR_WPM)
-        if messagebox.askyesno(tr("Nächste Koch-Lektion"), text):
+        if dialog.askyesno(tr("Nächste Koch-Lektion"), text):
             self.charset_var.set(koch.lesson_charset(lesson + 1))
             self._play_new_char()
 
@@ -971,7 +971,7 @@ class MorseTrainerApp:
         if lesson is None or lesson in self.groups_offered or not koch.passed(correct, total):
             return
         self.groups_offered.add(lesson)
-        if messagebox.askyesno(
+        if dialog.askyesno(
             tr("Weiter mit Gruppen"),
             tr("Die Zeichen von Lektion {lesson} sitzen: {correct} von {total} richtig ({share:.0%}), "
                "mit Zeitlimit.\n\n"
@@ -1269,7 +1269,7 @@ class MorseTrainerApp:
             return  # nach der Übung prüft _handle_mode_stop
         seeded = self._check_awards()
         if seeded:
-            messagebox.showinfo(tr("Diplome"), tr(
+            dialog.showinfo(tr("Diplome"), tr(
                 "Aus deinem bisherigen Üben wurden {n} Diplome nachgetragen. Du findest sie im Reiter "
                 "Statistik unter „Diplome“ und kannst sie dort ansehen und drucken.").format(n=seeded))
         else:
@@ -1407,7 +1407,7 @@ class MorseTrainerApp:
     def _reset_all_time(self):
         """Gesamtstatistik und Lernkartei nach Rückfrage löschen; Durchgänge,
         Lektion, Diplome und Einstellungen bleiben."""
-        if messagebox.askyesno(
+        if dialog.askyesno(
             tr("Gesamtstatistik zurücksetzen"),
             tr("Gesamtstatistik wirklich zurücksetzen?\n\n"
                "Gelöscht werden die Statistik je Zeichen, die Lernkartei (alle Zeichen fangen "
@@ -1845,7 +1845,7 @@ class MorseTrainerApp:
         Ordner beim Start aus dem Quelltext), es sagen statt still zu verlieren."""
         error = self._save_state()
         if error:
-            messagebox.showwarning(tr("Einstellungen nicht gespeichert"),
+            dialog.showwarning(tr("Einstellungen nicht gespeichert"),
                                    tr("Die Einstellungen ließen sich nicht speichern: {error}").format(error=error),
                                    parent=self.root)
 
@@ -1864,7 +1864,7 @@ class MorseTrainerApp:
     def _check_errors(self, poll=True):
         if errorlog.take_unseen() and not self.error_shown:
             self.error_shown = True
-            messagebox.showerror(tr("Unerwarteter Fehler"), tr(
+            dialog.showerror(tr("Unerwarteter Fehler"), tr(
                 "Im Programm ist ein unerwarteter Fehler aufgetreten. Einzelheiten stehen in\n{path}\n\n"
                 "Bitte schick diese Datei mit, wenn du den Fehler meldest.").format(path=errorlog.LOG_FILE),
                 parent=self.root)

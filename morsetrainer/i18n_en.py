@@ -431,6 +431,11 @@ EN.update({
 
 # --- widgets/ ---
 EN.update({
+    "Ja": "Yes",
+    "Nein": "No",
+    "OK": "OK",
+    "Enter: ja. Escape: nein.": "Enter: yes. Escape: no.",
+    "Enter: schließen.": "Enter: close.",
     "Änderungen": "Changes",
     "Anleitung": "Manual",
     "Morsetrainer – Hilfe": "Morsetrainer – Help",

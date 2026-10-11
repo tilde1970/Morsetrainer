@@ -124,7 +124,7 @@ class DailyRunnerTest(AppTestCase):
     def test_no_lesson_question_during_daily(self):
         with mock.patch.object(daily, "plan", short_plan), \
                 mock.patch.object(daily_runner.daily, "finish_block", return_value=[]), \
-                mock.patch("morsetrainer.app.messagebox.askyesno") as ask:
+                mock.patch("morsetrainer.app.dialog.askyesno") as ask:
             self.runner.start()
             while self.runner.active:
                 if self.runner.mode is self.mode("Gruppen"):

@@ -80,7 +80,7 @@ class AppErrorTest(AppTestCase):
     def test_whats_new_once_after_an_update(self):
         with mock.patch.object(app_module, "WHATS_NEW", {"2.10": "alt", "9.0": "Zukunft", "2.39": "Reiter neu"}), \
                 mock.patch.object(app_module, "__version__", "2.39"), \
-                mock.patch.object(app_module.messagebox, "showinfo") as shown:
+                mock.patch.object(app_module.dialog, "showinfo") as shown:
             self.app.saved_state = {"seen_version": "2.20"}
             self.app.show_whats_new()
             self.assertEqual(shown.call_args.args[1], "Reiter neu")  # nur Neues bis zur eigenen Version
@@ -93,12 +93,12 @@ class AppErrorTest(AppTestCase):
 
     def test_settings_that_cannot_be_saved_are_reported(self):
         with mock.patch.object(app_module.storage, "write_json_atomic", side_effect=PermissionError("schreibgeschützt")), \
-                mock.patch.object(app_module.messagebox, "showwarning") as warned:
+                mock.patch.object(app_module.dialog, "showwarning") as warned:
             self.app._save_state_or_warn()
         self.assertIn("schreibgeschützt", warned.call_args.args[1])
 
     def test_callback_error_is_logged_and_shown_once(self):
-        with mock.patch.object(app_module.messagebox, "showerror") as shown:
+        with mock.patch.object(app_module.dialog, "showerror") as shown:
             for _ in range(2):
                 try:
                     raise KeyError("x")

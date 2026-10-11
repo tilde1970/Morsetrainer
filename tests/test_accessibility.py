@@ -1233,3 +1233,83 @@ class ListenAnnounceTest(AnnouncerCase):
         listen._watch_export(20)
         self.assertTrue(self.pump_until(lambda: "MP3 gespeichert, 12 Minuten." in self.said))
         self.assertFalse([s for s in self.said if "/home" in s])
+
+
+
+class DialogTest(AnnouncerCase):
+    """Meldungen und Ja/Nein-Fragen (widgets/dialog.py) statt messagebox:
+    angesagt, Enter und Escape entscheiden, die Leertaste nicht."""
+
+    def open(self, question=True):
+        from morsetrainer.widgets import dialog
+        window = dialog.MessageDialog(self.root, "Nächste Koch-Lektion", "Mit Lektion 5 weitermachen?",
+                                      question=question)
+        self.addCleanup(window.close)
+        return window
+
+    def key(self, window, sequence):
+        """Die Bindung des Fensters für `sequence` ausführen, wie ein Tastendruck."""
+        self.assertTrue(window.top.bind(sequence), sequence)
+        window.keys[sequence]()
+
+    def button(self, window, text):
+        frame = window.top.winfo_children()[0].winfo_children()[1]
+        return [w for w in frame.winfo_children() if w.cget("text") == text][0]
+
+    def test_questions_are_spoken_and_answer_only_with_enter_or_escape(self):
+        self.app.announcer.var.set(True)
+        window = self.open()
+        self.assertTrue(self.pump_until(lambda: any("Mit Lektion 5 weitermachen?" in s for s in self.said)),
+                        self.said)
+        self.assertTrue(any("Enter: ja. Escape: nein." in s for s in self.said), self.said)
+        self.key(window, "<Return>")
+        self.assertTrue(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+        window = self.open()
+        self.key(window, "<Escape>")
+        self.assertFalse(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+
+    def test_space_alone_decides_nothing(self):
+        # Die Leertaste wirkt nur auf einen Knopf mit Fokus; den hat beim
+        # Öffnen keiner, das Fenster selbst kennt sie nicht.
+        window = self.open()
+        self.assertEqual(window.top.focus_lastfor(), window.top)
+        self.assertFalse(window.top.bind("<space>") or window.top.bind("<Key-space>"))
+        self.assertTrue(window.top.winfo_exists())
+
+    def test_enter_belongs_to_the_button_with_focus(self):
+        self.root.deiconify()  # nur ein sichtbares Fenster merkt sich den Fokus
+        window = self.open()
+        self.root.update()
+        self.button(window, "Nein").focus_force()
+        self.root.update()
+        self.key(window, "<Return>")
+        self.assertFalse(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+
+    def test_closing_the_window_means_no(self):
+        window = self.open()
+        self.root.tk.call(window.top.protocol("WM_DELETE_WINDOW"))
+        self.assertFalse(window.answer)
+
+    def test_f11_repeats_and_f9_switches_announcement(self):
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        window = self.open(question=False)
+        self.assertTrue(self.pump_until(lambda: any("Mit Lektion 5 weitermachen?" in s for s in self.said)))
+        self.assertTrue(any("Enter: schließen." in s for s in self.said))
+        self.said.clear()
+        self.app.announcer.clear_cache()  # sonst käme die Wiederholung ohne synth aus dem Speicher
+        self.key(window, "<F11>")
+        self.assertTrue(self.pump_until(lambda: any("Mit Lektion 5 weitermachen?" in s for s in self.said)))
+        self.key(window, "<F9>")
+        self.assertFalse(self.app.announcer.enabled())
+        self.key(window, "<F9>")
+        self.assertTrue(self.app.announcer.enabled())
+
+    def test_app_asks_with_the_spoken_dialog(self):
+        from morsetrainer import app as app_module
+        from morsetrainer.modes import network_mode
+        self.assertFalse(hasattr(app_module, "messagebox"))
+        self.assertFalse(hasattr(network_mode, "messagebox"))

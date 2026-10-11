@@ -35,7 +35,7 @@ import time
 import tkinter as tk
 import tkinter.font as tkfont
 from datetime import datetime
-from tkinter import messagebox, ttk
+from tkinter import ttk
 
 from morsetrainer.core import align, answer_sheet, audio, band, stats, tempo
 import numpy as np
@@ -59,7 +59,7 @@ from morsetrainer.net.scoreboard import (
     solution_text,
 )
 from morsetrainer.net.server import TrainerServer
-from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceBox, ScrollableFrame
@@ -1297,7 +1297,7 @@ class NetworkModeFrame:
         name = self._selected_name()
         if self.server is None or name is None or name not in self.server.names():
             return
-        if not messagebox.askyesno(
+        if not dialog.askyesno(
                 tr("Teilnehmer entfernen"),
                 tr("{name} entfernen? Dieser Rechner kann sich bis zum Schließen der Sitzung nicht wieder "
                    "anmelden.").format(name=name),

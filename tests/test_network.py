@@ -736,10 +736,10 @@ class NetworkTabTest(unittest.TestCase):
         tree.selection_set(tree.get_children()[0])
         self.pump()
         self.assertEqual(str(self.trainer.kick_button["state"]), "normal")
-        with mock.patch("morsetrainer.modes.network_mode.messagebox.askyesno", return_value=False):
+        with mock.patch("morsetrainer.modes.network_mode.dialog.askyesno", return_value=False):
             self.trainer.kick_selected()
         self.assertIn("DL4YM", self.trainer.server.names())
-        with mock.patch("morsetrainer.modes.network_mode.messagebox.askyesno", return_value=True):
+        with mock.patch("morsetrainer.modes.network_mode.dialog.askyesno", return_value=True):
             self.trainer.kick_selected()
         self.assertNotIn("DL4YM", self.trainer.server.names())
         self.assertIn("DL4YM entfernt", self.trainer.notice_var.get())
