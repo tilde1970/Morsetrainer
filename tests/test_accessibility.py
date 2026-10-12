@@ -1484,6 +1484,60 @@ def band_rank(settings):
     return band.preset_rank(settings.spec())
 
 
+class StatisticsAnnounceTest(AnnouncerCase):
+    """Statistik ohne Maus: Diplome mit Bedingung, Lebenslinie per Pfeiltasten,
+    F11 mit Fortschritt und Lebenslinie."""
+
+    def setUp(self):
+        super().setUp()
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+
+    def test_diploma_row_reads_its_condition(self):
+        tree = self.app.awards_panel.tree
+        self.app.awards_panel.refresh()
+        self.assertTrue(self.announcer.describe(tree).startswith("Diplome, Tabelle"), self.announcer.describe(tree))
+        first = tree.get_children()[0]
+        tree.selection_set(first)
+        self.root.update()
+        detail = self.app.awards_panel.detail_var.get()
+        self.assertTrue(detail)
+        del self.said[:]
+        with mock.patch.object(tree, "focus_get", lambda: tree):
+            tree.event_generate("<<TreeviewSelect>>")
+            self.assertTrue(self.pump_until(lambda: self.said))
+        spoken = " ".join(self.said)
+        self.assertIn("Diplom:", spoken)
+        self.assertIn(detail.split(".")[0][:25], spoken)
+
+    def test_lifeline_days_with_the_arrow_keys(self):
+        from datetime import date, timedelta
+        panel = self.app.lifeline_panel
+        today = date.today()
+        days = [today - timedelta(days=2), today - timedelta(days=1), today]
+        panel.line = {"days": days, "stars": [1, 2, 4], "lesson": [3, 3, 4], "tempo": [12, 12, 13], "seals": {}}
+        panel.info_var.set("Seit gestern")
+        panel.xs = [10, 20, 30]
+        del self.said[:]
+        panel._step("End", None)
+        self.assertTrue(self.pump_until(lambda: self.said))
+        self.assertIn("Lektion 4", " ".join(self.said))
+        del self.said[:]
+        self.app.announcer._cache.clear()
+        panel._step("Left", -1)
+        self.assertTrue(self.pump_until(lambda: self.said))
+        self.assertIn(days[1].strftime("%d.%m.%Y"), " ".join(self.said))
+        self.assertEqual(panel.day_index, 1)
+        panel._step("Prior", -7)
+        self.assertEqual(panel.day_index, 0)
+        self.assertTrue(panel.canvas.bind("<Right>"))
+        self.assertIn("Lebenslinie, Diagramm", self.announcer.describe(panel.canvas))
+
+    def test_f11_in_statistics_mentions_progress_and_lifeline(self):
+        spoken = self.app.statistics_spoken()
+        self.assertIn("Lebenslinie:", spoken)
+
+
 class FirstStartTest(AnnouncerCase):
     """Beim allerersten Start erfährt man, wie die Ansage angeht."""
 

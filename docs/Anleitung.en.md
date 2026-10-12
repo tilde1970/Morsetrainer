@@ -444,7 +444,11 @@ road from your first practice until today: daily-practice stars added up,
 the highest Koch lesson practised (up to the final lesson 41) and the
 daily speed of the daily practice, with the award seals underneath as
 diamonds in their colour. All three lines only rise or stay level; hover
-with the mouse to see the values and seals of each day. The lifeline stays
+with the mouse to see the values and seals of each day. Without a mouse,
+Tab into the lifeline; the left and right arrows move one day, Page up and
+Page down one week, Home and End to the first or last day, and
+announcements read out the values. In the awards table announcements read
+the condition along with each row. The lifeline stays
 complete after “Reset overall statistics”.
 
 ## 6. Band conditions

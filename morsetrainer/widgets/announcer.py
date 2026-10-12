@@ -349,11 +349,13 @@ ROLES = {
     "TButton": N_("Knopf"), "TCheckbutton": N_("Schalter"), "TRadiobutton": N_("Optionsfeld"),
     "TCombobox": N_("Auswahl"), "TSpinbox": N_("Zahlenfeld"), "TEntry": N_("Eingabefeld"),
     "TScale": N_("Regler"), "Text": N_("Textfeld"), "Treeview": N_("Tabelle"), "TNotebook": N_("Reiter"),
+    "Canvas": N_("Diagramm"),
 }
 _names = {}  # str(Widget) -> fester Name (name())
 _values = {}  # str(Widget) -> Funktion, die den angezeigten Wert liefert (z. B. S/N statt Zahl)
 _echo_widgets = set()  # str(Widget): Eingabefelder, in denen das Tippen angesagt wird (echo())
 _echo_last = {}  # str(Widget) -> Inhalt beim letzten Blick (Fokus oder Taste)
+_row_extras = {}  # str(Tabelle) -> Funktion: Satz nach der vorgelesenen Zeile (row_extra())
 _nato_widgets = set()  # str(Widget): Rufzeichen im Funkalphabet buchstabieren (nato())
 # Tasten, deren Wirkung ein Zahlenfeld schon selbst ansagt (<<Increment>>).
 _ECHO_SKIP_KEYS = {"Up", "Down", "Prior", "Next", "Tab", "ISO_Left_Tab"}
@@ -365,6 +367,12 @@ def name(widget, text: str, value=None) -> None:
     _names[str(widget)] = text
     if value is not None:
         _values[str(widget)] = value
+
+
+def row_extra(tree, text) -> None:
+    """Nach jeder vorgelesenen Zeile der Tabelle `tree` noch `text()` sagen,
+    etwa die Bedingung des gewählten Diploms, die sonst nur darunter steht."""
+    _row_extras[str(tree)] = text
 
 
 def value_of(widget, value) -> None:
@@ -498,7 +506,7 @@ def _forget(widget) -> None:
     hielten sie es (über die Wert-Funktionen samt Fenster) fest, und jeder
     neu geöffnete Dialog (fortlaufende Namen .!toplevel2 …) käme dazu."""
     key = str(widget)
-    for registry in (_names, _values, _echo_last):
+    for registry in (_names, _values, _echo_last, _row_extras):
         registry.pop(key, None)
     for registry in (_echo_widgets, _nato_widgets, _iconified):
         registry.discard(key)
@@ -753,6 +761,9 @@ def _read_row(event) -> None:
                  for column, value in zip(columns, values) if str(value).strip()]
     except tk.TclError:
         return
+    extra = _row_extras.get(str(tree))
+    if extra is not None and extra():
+        parts.append(extra().rstrip("."))
     _instance.say(". ".join(parts) + ".")
 
 

@@ -252,9 +252,12 @@ class AwardsPanel:
         self.tree.tag_configure("open", foreground=theme.MUTED)
         self.tree.pack(fill="x", pady=(2, 0))
         self.tree.bind("<<TreeviewSelect>>", lambda e: self._show_detail())
+        # Sonst hieße die Tabelle beim Vorlesen wie die Zeile darüber („Noch keine Siegel“).
+        announcer.name(self.tree, tr("Diplome"))
 
         self.detail_var = tk.StringVar(value="")
         theme.hint(box, textvariable=self.detail_var, wrap=WRAP).pack(anchor="w", pady=(6, 0))
+        announcer.row_extra(self.tree, self.detail_var.get)  # die Bedingung gleich mit vorlesen
         self.on_show = on_show
         self.station = station
         buttons = ttk.Frame(box)
@@ -320,7 +323,11 @@ class AwardsPanel:
         goal = self._next_goal()
         if goal:
             call, name = self.station() if self.station else ("", "")
-            self.note_var.set(preview_diploma(*goal, call, name))
+            note = preview_diploma(*goal, call, name)
+            self.note_var.set(note)
+            # Ohne Dateipfad, wenn es geklappt hat: der hilft beim Zuhören nicht.
+            opened = note.startswith(tr("Vorschau im Browser geöffnet: {path}").split("{")[0])
+            announcer.say(tr("Vorschau im Browser geöffnet.") if opened else note)
 
     def _show_detail(self):
         selected = self.tree.selection()

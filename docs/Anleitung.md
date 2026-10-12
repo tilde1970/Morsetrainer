@@ -450,7 +450,11 @@ langen Weg vom ersten Üben bis heute: Sterne der Tagesübung aufsummiert,
 die höchste geübte Koch-Lektion (bis zur Abschlusslektion 41) und das
 Tagestempo der Tagesübung, darunter die Siegel der Diplome als Rauten in
 ihrer Farbe. Alle drei Linien steigen nur oder bleiben stehen; mit der
-Maus siehst du für jeden Tag die Werte und die Siegel. Die Lebenslinie
+Maus siehst du für jeden Tag die Werte und die Siegel. Ohne Maus gehst du
+mit Tab in die Lebenslinie; Pfeil links und rechts gehen einen Tag weiter,
+Bild auf und ab eine Woche, Pos1 und Ende zum ersten bzw. letzten Tag, und
+die Ansage liest die Werte vor. In der Tabelle der Diplome liest die
+Ansage zu jeder Zeile die Bedingung mit. Die Lebenslinie
 bleibt auch nach „Gesamtstatistik zurücksetzen“ vollständig.
 
 ## 6. Bandbedingungen

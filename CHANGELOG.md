@@ -55,6 +55,11 @@
   Reglergriffe und der Fokusrahmen heben sich deutlich ab; Hinweise und
   abgeblendete Einträge sind besser lesbar.
 
+- **Statistik ohne Maus:** Die Tabelle der Diplome liest zu jeder Zeile die
+  Bedingung vor, die Vorschau wird angesagt. Die Lebenslinie ist mit Tab
+  erreichbar; die Pfeiltasten gehen durch die Tage und sagen deren Werte
+  an. F11 nennt im Reiter Statistik auch Fortschritt und Lebenslinie.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

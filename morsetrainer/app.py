@@ -845,6 +845,10 @@ class MorseTrainerApp:
         if boxes:
             parts.append(tr("In der Lernkartei liegen ") + "; ".join(boxes))
         parts.append(self.awards_panel.summary_var.get())
+        if self.progress_panel.mode_var.get():
+            parts.append(tr("Fortschritt {mode}: {info}").format(mode=self.progress_panel.mode_var.get(),
+                                                                 info=self.progress_panel.info_var.get()))
+        parts.append(tr("Lebenslinie: {info}").format(info=self.lifeline_panel.info_var.get()))
         if self.practice_var.get():
             parts.append(self.practice_var.get())
         return ". ".join(part for part in parts if part) + "."

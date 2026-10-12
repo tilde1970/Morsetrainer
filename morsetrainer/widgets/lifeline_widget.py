@@ -1,6 +1,8 @@
 """Lebenslinie im Statistik-Reiter (core/lifeline.py): Sterne gesamt,
 Koch-Lektion und Tagestempo übereinander auf einer gemeinsamen
 Zeitachse, darunter die Siegel der Diplome als Rauten in ihrer Farbe.
+Mit Tab erreichbar: Pfeil links/rechts, Bild auf/ab (eine Woche), Pos1
+und Ende gehen durch die Tage und sagen deren Werte an.
 
 Wie beim Fortschritt drei getrennte Diagramme statt mehrerer y-Achsen.
 Alle drei sind Stufenlinien: Der Wert gilt, bis er sich ändert. Beim
@@ -12,7 +14,7 @@ from tkinter import ttk
 
 from morsetrainer.core import awards, diploma, koch, lifeline
 from morsetrainer.i18n import N_, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.progress_widget import MARGIN, _nice_range
 
 PANEL_TITLE = 24   # Titelzeile plus Luft über der obersten Achsenzahl
@@ -97,13 +99,20 @@ class LifelinePanel:
         box = theme.card(parent, tr("Lebenslinie"))
         self.info_var = tk.StringVar(value="")
         theme.hint(box, textvariable=self.info_var, wrap=520).pack(anchor="w")
-        self.canvas = tk.Canvas(box, height=HEIGHT, background=theme.SURFACE, highlightthickness=0)
+        self.canvas = tk.Canvas(box, height=HEIGHT, background=theme.SURFACE, takefocus=1,
+                                highlightthickness=theme.BORDER_WIDTH + 1, highlightcolor=theme.FOCUS,
+                                highlightbackground=theme.SURFACE)
         self.canvas.pack(fill="x", pady=(4, 0))
         self.line = {"days": []}
         self.xs = []
+        self.day_index = None  # mit der Tastatur gewählter Tag
         self.canvas.bind("<Configure>", lambda e: self.draw())
         self.canvas.bind("<Motion>", self._motion)
         self.canvas.bind("<Leave>", lambda e: self.canvas.delete("hover"))
+        announcer.name(self.canvas, tr("Lebenslinie"), value=lambda: self.info_var.get() + ". " + tr(
+            "Pfeil links und rechts gehen durch die Tage."))
+        for key, step in (("Left", -1), ("Right", 1), ("Prior", -7), ("Next", 7), ("Home", None), ("End", None)):
+            self.canvas.bind(f"<{key}>", lambda e, k=key, s=step: self._step(k, s) or "break")
 
     def refresh(self):
         """Daten neu laden und neu zeichnen."""
@@ -220,23 +229,46 @@ class LifelinePanel:
     def _motion(self, event):
         """Maus über der Lebenslinie: Markierung und Werte des nächstgelegenen Tags
         (mit Siegeln) anzeigen."""
-        c = self.canvas
-        c.delete("hover")
         if not self.xs:
             return
         i = min(range(len(self.xs)), key=lambda k: abs(self.xs[k] - event.x))
-        x = self.xs[i]
-        c.create_line(x, 0, x, HEIGHT - AXIS_ROW, fill=theme.MUTED, tags="hover")
+        self._show_day(i, event.y)
+
+    def _step(self, key, step):
+        """Tastatur: anderen Tag wählen, zeigen und ansagen."""
+        if not self.xs:
+            announcer.say(self.info_var.get())
+            return
+        last = len(self.xs) - 1
+        if key == "Home":
+            index = 0
+        elif key == "End" or self.day_index is None:
+            index = last
+        else:
+            index = min(max(self.day_index + step, 0), last)
+        self.day_index = index
+        self._show_day(index, HEIGHT // 2)
+        announcer.say(", ".join(line.replace("◆ ", tr("Siegel") + " ") for line in self.day_lines(index)))
+
+    def day_lines(self, i) -> list:
+        """Tag `i` mit seinen Werten und den Siegeln, die an ihm kamen."""
         day = self.line["days"][i]
         lines = [day.strftime(tr("%d.%m.%Y")) + "  ·  " + "  ·  ".join(
             value_text(key, self.line[key][i], koch_done(self.line, day)) for key, _ in PANELS)]
-        lines += ["◆ " + seal_text(key, level) for key, level in self.line["seals"].get(day, [])]
+        return lines + ["◆ " + seal_text(key, level) for key, level in self.line["seals"].get(day, [])]
+
+    def _show_day(self, i, y):
+        c = self.canvas
+        c.delete("hover")
+        x = self.xs[i]
+        c.create_line(x, 0, x, HEIGHT - AXIS_ROW, fill=theme.MUTED, tags="hover")
+        lines = self.day_lines(i)
         text = c.create_text(0, 0, text="\n".join(lines), anchor="nw", fill=theme.TEXT, font=theme.SMALL,
                              tags="hover")
         bx0, by0, bx1, by1 = c.bbox(text)
         w, h = bx1 - bx0 + 10, by1 - by0 + 6
         tx = x + 10 if x + 10 + w < c.winfo_width() else x - 10 - w
-        ty = max(2, min(event.y - h - 10, HEIGHT - AXIS_ROW - h))
+        ty = max(2, min(y - h - 10, HEIGHT - AXIS_ROW - h))
         c.coords(text, tx + 5, ty + 3)
         box = c.create_rectangle(tx, ty, tx + w, ty + h, fill=theme.SURFACE, outline=theme.GRID, tags="hover")
         c.tag_raise(text, box)
