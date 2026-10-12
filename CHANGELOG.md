@@ -47,6 +47,10 @@
 - **Klapplisten zum Anhören:** In einer aufgeklappten Liste (Schriftgröße,
   Sprache, Modus …) sagt die Ansage beim Blättern den Eintrag an, z. B.
   „Deutsch, 1 von 2“.
+- **Bandbedingungen mit Rückmeldung:** Die Stufenknöpfe heißen „Stufe
+  leicht“ usw. und bestätigen die Wahl; F11 sagt im Fenster auch, welcher
+  Stufe die Einstellung entspricht. Die Stufen stehen jetzt oben, Tab
+  beginnt dort.
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

@@ -1302,7 +1302,11 @@ class WindowKeysTest(AnnouncerCase):
         self.root.update()
         for window in (self.app.settings_window, self.app.band_settings.window, help_window.HelpWindow._open.top):
             del self.said[:]
-            self.assertEqual(self.key(window, "F11"), "break")
+            if window.bind("<F11>"):  # eigenes F11 (Bandbedingungen mit Stufe)
+                self.assertIsNone(self.key(window, "F11"))
+                self.app.band_settings._read_where()
+            else:
+                self.assertEqual(self.key(window, "F11"), "break")
             self.assertTrue(self.pump_until(lambda: self.said), window)
             self.assertIn("Fenster", " ".join(self.said), window)
             before = self.app.announcer.var.get()
@@ -1405,6 +1409,61 @@ class ComboboxListTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: any("zwei, 2 von 3." in t for t in self.said)), self.said)
         self.root.tk.call("event", "generate", listbox, "<Escape>")
         self.root.update()
+
+
+class BandWindowAnnounceTest(AnnouncerCase):
+    """Bandbedingungen: Stufen benannt und bestätigt, F11 mit der Stufe,
+    Tab beginnt bei den Stufen."""
+
+    def setUp(self):
+        super().setUp()
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        self.settings = self.app.band_settings
+        self.settings.open_window()
+        self.addCleanup(self.settings.close_window)
+        self.root.update()
+
+    def preset_buttons(self):
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        return [w for w in walk(self.settings.window) if w.winfo_class() == "TButton"
+                and str(w.cget("text")) in ("leicht", "mittel", "stark")]
+
+    def test_presets_are_named_and_confirmed(self):
+        light, medium, heavy = self.preset_buttons()
+        self.assertEqual(self.announcer.describe(medium), "Stufe mittel, Knopf.")
+        del self.said[:]
+        medium.invoke()
+        self.assertTrue(self.pump_until(lambda: any("Stufe mittel eingestellt." in t for t in self.said)), self.said)
+        self.assertEqual(band_rank(self.settings), "medium")
+
+    def test_f11_tells_the_level(self):
+        self.preset_buttons()[2].invoke()
+        self.root.update()
+        self.assertTrue(self.settings.window.bind("<F11>"))
+        del self.said[:]
+        self.settings._read_where()
+        self.assertTrue(self.pump_until(lambda: self.said))
+        spoken = " ".join(self.said)
+        self.assertIn("Fenster Bandbedingungen", spoken)
+        self.assertIn("Entspricht mindestens Stufe stark", spoken)
+
+    def test_tab_starts_at_the_levels(self):
+        # Erstes Bedienelement im Fenster (Tab-Folge): die Stufe „leicht“,
+        # „Band in der Antwortpause“ folgt danach.
+        light = self.preset_buttons()[0]
+        content = light.master.master  # Tab folgt der Stapelfolge der Kinder
+        order = [str(w) for w in content.winfo_children()]
+        pause = next(w for w in content.winfo_children() if w.winfo_class() == "TCheckbutton")
+        self.assertLess(order.index(str(light.master)), order.index(str(pause)))
+
+
+def band_rank(settings):
+    from morsetrainer.core import band
+    return band.preset_rank(settings.spec())
 
 
 class FirstStartTest(AnnouncerCase):

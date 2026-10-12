@@ -304,21 +304,22 @@ class BandSettings:
             "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
             "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "
             "ist für den Feinschliff.")).pack(anchor="w", pady=(0, 2))
+        presets = ttk.Frame(frame)
+        presets.pack(fill="x", pady=(0, 4))
+        ttk.Label(presets, text=tr("Stufe:")).pack(side="left", padx=(0, 6))
+        preset_buttons = []
+        for preset, name in PRESET_NAMES.items():
+            button = ttk.Button(presets, text=tr(name), command=lambda p=preset: self._choose_preset(p))
+            button.pack(side="left", padx=2)
+            announcer.name(button, tr("Stufe {name}").format(name=tr(name)))
+            preset_buttons.append(button)
+
         pause = ttk.Checkbutton(frame, text=tr("Band in der Antwortpause"), variable=self.pause_var)
         pause.pack(anchor="w")
         theme.hint(frame, wrap=460, text=tr(
             "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
             "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
             "zählt für Stufe und Diplom gleich.")).pack(anchor="w", pady=(0, 6))
-
-        presets = ttk.Frame(frame)
-        presets.pack(fill="x", pady=(0, 4))
-        ttk.Label(presets, text=tr("Stufe:")).pack(side="left", padx=(0, 6))
-        preset_buttons = []
-        for preset, name in PRESET_NAMES.items():
-            button = ttk.Button(presets, text=tr(name), command=lambda p=preset: self.set_preset(p))
-            button.pack(side="left", padx=2)
-            preset_buttons.append(button)
 
         box = theme.card(frame, tr("Störungen"), padx=0)
         box.columnconfigure(1, weight=1)
@@ -411,8 +412,30 @@ class BandSettings:
         self._show_preview()
         self._fit_window()
         # Der Fokus geht hinein (wie im Fenster Einstellungen), sonst träfe
-        # Esc das Hauptfenster statt dieses Fenster.
+        # Esc das Hauptfenster statt dieses Fenster. Die Stufen stehen oben,
+        # damit Tab dort beginnt, wo man meist hinwill.
         preset_buttons[0].focus_set()
+        # F11: wo man ist, dazu welcher Stufe die Einstellung entspricht
+        # (der Satz steht sonst nur unten im Fenster).
+        window.bind("<F11>", lambda e: self._read_where() or "break")
+
+    def _choose_preset(self, preset: str) -> None:
+        """Knopf „leicht“/„mittel“/„stark“: übernehmen und bestätigen."""
+        self.set_preset(preset)
+        announcer.say(tr("Stufe {name} eingestellt.").format(name=tr(PRESET_NAMES[preset])))
+
+    def _read_where(self) -> None:
+        if self.window is None:
+            return
+        text = tr("Fenster {title}.").format(title=self.window.title()) + " " + self.rank_var.get()
+        try:
+            focus = self.window.focus_get()
+            if focus is not None and focus is not self.window:
+                text += " " + announcer.describe(focus)
+        except (tk.TclError, KeyError):
+            pass
+        if announcer.get() is not None:
+            announcer.get().say(text, force=True)
 
     def _fit_window(self) -> None:
         """So groß wie der Inhalt, aber nicht höher als der Bildschirm
