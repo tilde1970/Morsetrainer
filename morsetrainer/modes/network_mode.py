@@ -828,7 +828,8 @@ class NetworkModeFrame:
         try:
             server.start(port)
         except OSError as exc:
-            self.trainer_status_var.set(tr("Port {port} lässt sich nicht öffnen: {error}").format(port=port, error=exc))
+            announcer.problem(self.trainer_status_var,
+                              tr("Port {port} lässt sich nicht öffnen: {error}").format(port=port, error=exc))
             return
         self.server = server
         self.board = Scoreboard()
@@ -944,13 +945,13 @@ class NetworkModeFrame:
         charset = normalize(self.charset_var.get())
         continuous = self.flow_var.get() == CONTINUOUS
         if continuous and kind == "custom":
-            self.trainer_status_var.set(tr("Am Stück geht nicht mit eigenem Text – Gruppen wählen."))
+            announcer.problem(self.trainer_status_var, tr("Am Stück geht nicht mit eigenem Text – Gruppen wählen."))
             return
         if kind == "custom":
             lines = [" ".join(line.upper().split()) for line in self.custom_text.get("1.0", "end").splitlines()]
             self.custom_items = [line[:protocol.TEXT_MAX] for line in lines if normalize(line)]
             if not self.custom_items:
-                self.trainer_status_var.set(tr("Kein eigener Text – eine Zeile je Sequenz eintragen."))
+                announcer.problem(self.trainer_status_var, tr("Kein eigener Text – eine Zeile je Sequenz eintragen."))
                 return
             self.source = None
             self.planned = len(self.custom_items)
@@ -1584,11 +1585,11 @@ class NetworkModeFrame:
         Ergebnisse und leert die Felder für den nächsten."""
         name = protocol.clean_name(self.paper_name_var.get())
         if not name:
-            self.paper_note_var.set(tr("Bitte Name oder Rufzeichen eingeben."))
+            announcer.problem(self.paper_note_var, tr("Bitte Name oder Rufzeichen eingeben."))
             return
         if self.board is None or not self.board.add_paper(name, self.paper_sheet.values()):
-            self.paper_note_var.set(tr("„{name}“ hat schon am Rechner geantwortet – anderen Namen wählen.").format(
-                name=name))
+            announcer.problem(self.paper_note_var, tr(
+                "„{name}“ hat schon am Rechner geantwortet – anderen Namen wählen.").format(name=name))
             return
         data = self.board.summary(name)
         self.paper_note_var.set(tr("Bogen von {name}: {correct} von {total} richtig. Nächster Bogen?").format(
@@ -1663,12 +1664,13 @@ class NetworkModeFrame:
         entries = [f"{host}" + (f":{port}" if port != protocol.DEFAULT_PORT else "") for _, host, port in found]
         self.address_box.config(values=entries)
         if not found:
-            self.trainee_status_var.set(tr("Kein Trainer gefunden. Adresse von Hand eingeben?"))
+            announcer.problem(self.trainee_status_var, tr("Kein Trainer gefunden. Adresse von Hand eingeben?"))
             return
         if not self.address_var.get().strip() or self.address_var.get() not in entries:
             self.address_var.set(entries[0])
         names = ", ".join(f"{session} ({entry})" for (session, _, _), entry in zip(found, entries))
         self.trainee_status_var.set(tr("Gefunden: {names}").format(names=names))
+        announcer.say(self.trainee_status_var.get())
 
     def toggle_connection(self):
         """Teilnehmer: verbinden bzw. trennen (Knopf)."""
@@ -1683,10 +1685,10 @@ class NetworkModeFrame:
         name = protocol.clean_name(self.name_var.get())
         address = protocol.parse_address(self.address_var.get())
         if not name:
-            self.trainee_status_var.set(tr("Bitte Name oder Rufzeichen eingeben."))
+            announcer.problem(self.trainee_status_var, tr("Bitte Name oder Rufzeichen eingeben."))
             return
         if address is None:
-            self.trainee_status_var.set(tr("Bitte die Adresse des Trainers eingeben oder suchen."))
+            announcer.problem(self.trainee_status_var, tr("Bitte die Adresse des Trainers eingeben oder suchen."))
             return
         self.client = net_client.TraineeClient()
         self.client.connect(address[0], address[1], name, self.pin_var.get().strip(), self.version)

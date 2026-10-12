@@ -255,7 +255,7 @@ class SingleModeFrame(DailyModeMixin):
         Zeichen) und spielt das erste Zeichen."""
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
-            self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
+            announcer.problem(self.status_var, tr("Kein gültiges Zeichen im Zeichensatz!"))
             return
         self.charset = charset
         self.running = True

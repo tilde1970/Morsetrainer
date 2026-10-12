@@ -424,12 +424,12 @@ class RunModeFrame:
         eingestellten Art, Aktivität und Dauer."""
         kind, my_call = self._kind(), self._my_call()
         if not my_call or not all(ch in MORSE_CODE for ch in my_call):
-            self.status_var.set(tr("Bitte ein gültiges eigenes Rufzeichen eintragen."))
+            announcer.problem(self.status_var, tr("Bitte ein gültiges eigenes Rufzeichen eintragen."))
             return
         my_exchange = self.my_exchange_var.get().strip().upper()
         if not qso_text.uses_serial(kind, my_call):
             if not my_exchange or not all(ch in MORSE_CODE for ch in my_exchange):
-                self.status_var.set(tr("Bitte deinen Austausch eintragen."))
+                announcer.problem(self.status_var, tr("Bitte deinen Austausch eintragen."))
                 return
             self.my_exchanges[kind] = my_exchange
         try:

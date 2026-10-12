@@ -415,7 +415,7 @@ class QsoModeFrame:
                 if self.qso_eval == EVAL_HEAD:
                     # Mit den Fragen vor Augen nochmal hören wäre gezieltes
                     # Mitschreiben statt Kopfhören.
-                    self.status_var.set(tr("Erst die Fragen beantworten und prüfen – dann „Nochmal“."))
+                    announcer.problem(self.status_var, tr("Erst die Fragen beantworten und prüfen – dann „Nochmal“."))
                     return
                 self.replays += 1
             self._play(tracking=False)

@@ -431,13 +431,15 @@ class CallsignModeFrame(SequenceModeFrame):
         genug Rufzeichen aus den erlaubten Zeichen geben; sonst steht der Grund in
         der Statuszeile."""
         if self.rufz_var.get() and self.style_var.get() == HEAD:
-            self.status_var.set(tr("Der Rufz-Durchgang braucht eine Eingabe – Mitschreiben oder Erst merken."))
+            announcer.problem(self.status_var,
+                              tr("Der Rufz-Durchgang braucht eine Eingabe – Mitschreiben oder Erst merken."))
             return False
         allowed = self._allowed()
         if not self.all_calls:
             self.pool = []
             if allowed is not None and not (allowed & set(LETTERS) and allowed & set(DIGITS)):
-                self.status_var.set(tr("Für Rufzeichen braucht der Zeichensatz Buchstaben und eine Ziffer."))
+                announcer.problem(self.status_var,
+                                  tr("Für Rufzeichen braucht der Zeichensatz Buchstaben und eine Ziffer."))
                 return False
             return True
         self._update_pool()
@@ -450,7 +452,8 @@ class CallsignModeFrame(SequenceModeFrame):
                 hint = tr("Weitere Lektionen lernen oder „Nur gelernte Zeichen“ ausschalten.")
             else:
                 hint = tr("Präfix-Filter erweitern.")
-            self.status_var.set(tr("Nur {n} passende Rufzeichen.").format(n=len(self.pool)) + "\n" + hint)
+            announcer.problem(self.status_var,
+                              tr("Nur {n} passende Rufzeichen.").format(n=len(self.pool)) + "\n" + hint)
             return False
         return True
 

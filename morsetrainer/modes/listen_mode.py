@@ -206,7 +206,7 @@ class ListenModeFrame:
             return None
         reason = self.speaker.available()
         if reason:
-            self.status_var.set(reason)
+            announcer.problem(self.status_var, reason)
             return None
         return {"count": count, "pause": pause, "wpm": wpm, "freq": freq, "fw": self.farnsworth_wpm(),
                 "source": source, "alphabet": ALPHABET, "lang": i18n.LANG,

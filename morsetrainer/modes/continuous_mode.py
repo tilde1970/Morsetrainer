@@ -295,7 +295,7 @@ class ContinuousModeFrame(DailyModeMixin):
         nach „VVV =“ ohne Pause sendet, bis die Dauer um ist (0 = bis Stop)."""
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
-            self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
+            announcer.problem(self.status_var, tr("Kein gültiges Zeichen im Zeichensatz!"))
             return
         try:
             minutes = self.duration_var.get()

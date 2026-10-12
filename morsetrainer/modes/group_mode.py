@@ -96,7 +96,7 @@ class GroupModeFrame(SequenceModeFrame):
         Sonst steht der Grund in der Statuszeile."""
         charset = "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
         if not charset:
-            self.status_var.set(tr("Kein gültiges Zeichen im Zeichensatz!"))
+            announcer.problem(self.status_var, tr("Kein gültiges Zeichen im Zeichensatz!"))
             return False
         try:
             low, high = self.min_len_var.get(), self.max_len_var.get()
@@ -104,7 +104,7 @@ class GroupModeFrame(SequenceModeFrame):
             announcer.problem(self.status_var, tr("Ungültige Gruppenlänge!"))
             return False
         if low > high:
-            self.status_var.set(tr("Gruppenlänge „von“ darf nicht größer als „bis“ sein!"))
+            announcer.problem(self.status_var, tr("Gruppenlänge „von“ darf nicht größer als „bis“ sein!"))
             return False
         self.charset = charset
         if self.adaptive_var.get():

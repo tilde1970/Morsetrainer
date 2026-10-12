@@ -34,6 +34,11 @@
 - **F9 und F11 in jedem Fenster:** Auch in Einstellungen,
   Bandbedingungen, Hilfe und den Netzwerk-Fenstern schaltet F9 die Ansage
   und F11 sagt, in welchem Fenster und auf welchem Bedienelement du bist.
+- **Fehler beim Start werden angesagt:** Startet eine Übung nicht (etwa
+  ohne gültige Zeichen, ohne eigenes Rufzeichen im Contest oder ohne Name
+  im Netzwerk), sagt die Ansage den Grund, statt ihn nur in die
+  Statuszeile zu schreiben.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

@@ -1349,6 +1349,39 @@ class WindowKeysTest(AnnouncerCase):
         self.assertIn(", Auswahl, ", spoken)
 
 
+class StartProblemTest(AnnouncerCase):
+    """Startet ein Reiter nicht, sagt die Ansage warum – sonst merkt man
+    ohne Blick auf die Statuszeile nur, dass nichts passiert."""
+
+    def test_start_problems_are_spoken_in_every_mode(self):
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        self.app.charset_var.set("äöü")  # kein Morsezeichen
+        for title in ("Einzelzeichen", "Gruppen", "Kontinuierlich"):
+            del self.said[:]
+            self.app.announcer._cache.clear()  # gleicher Text käme sonst ohne neue Synthese
+            self.mode(title).start()
+            self.assertFalse(self.mode(title).running, title)
+            self.assertTrue(self.pump_until(lambda: any("Kein gültiges Zeichen" in t for t in self.said)), title)
+        self.app.charset_var.set("KMUR")  # Buchstaben, aber keine Ziffer
+        callsign = self.mode("Rufzeichen")
+        callsign.all_calls = []
+        del self.said[:]
+        callsign.start()
+        self.assertTrue(self.pump_until(lambda: any("Rufzeichen" in t for t in self.said)), self.said)
+        contest = self.mode("Contest")
+        contest.my_call_var.set("")
+        del self.said[:]
+        contest.start()
+        self.assertFalse(contest.running)
+        self.assertTrue(self.pump_until(lambda: any("eigenes Rufzeichen" in t for t in self.said)), self.said)
+        network = self.mode("Netzwerk")
+        network.name_var.set("")
+        del self.said[:]
+        network.connect()
+        self.assertTrue(self.pump_until(lambda: any("Name oder Rufzeichen" in t for t in self.said)), self.said)
+
+
 class FirstStartTest(AnnouncerCase):
     """Beim allerersten Start erfährt man, wie die Ansage angeht."""
 
