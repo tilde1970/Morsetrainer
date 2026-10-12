@@ -737,6 +737,11 @@ der Stimme Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann
 „Delta Lima One“). Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton,
 und der Grund steht in der Statuszeile.
 
+Beim allerersten Start sagt das Programm einmal an, dass F9 die Ansage
+einschaltet und F11 sagt, wo du bist. Läuft dabei ein Screenreader (NVDA,
+JAWS, Windows-Sprachausgabe, VoiceOver oder Orca), ist die Ansage gleich
+eingeschaltet.
+
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit
 QSOs und Rate), in der Tagesübung die aktuelle Karte, im Reiter Statistik

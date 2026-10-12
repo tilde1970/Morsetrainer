@@ -18,6 +18,10 @@
   gewählten Abstand zum Nachbarn; „Zero-Beat“ liegt danach weiter auf der
   eigenen Frequenz.
 
+- **Erster Start nicht mehr stumm:** Beim allerersten Start sagt das
+  Programm, dass F9 die Sprachansage einschaltet und F11 sagt, wo du bist.
+  Läuft ein Screenreader, ist die Ansage gleich eingeschaltet.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

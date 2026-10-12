@@ -17,8 +17,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import (audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, speech,
-                                stats, storage, tempo)
+from morsetrainer.core import (audio, awards, backup, band, errorlog, koch, migration, practice, review,
+                                screenreader, sfx, speech, stats, storage, tempo)
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, ctrl_key, tr
@@ -69,6 +69,9 @@ FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, t
                    ttk.Combobox)
 # Sprachansage an/aus und „wo bin ich?“ (widgets/announcer.py).
 ANNOUNCE_KEY = "F9"
+# Begrüßung beim ersten Start erst, wenn das Fenster steht (die Stimme zu
+# laden hält das Zeichnen sonst auf).
+FIRST_START_GREETING_MS = 800
 STATUS_KEY = "F11"
 # Hilfe beim aktuellen Reiter; im Contest sendet F1 CQ wie in
 # Contest-Programmen, dort bleibt der Knopf.
@@ -149,6 +152,7 @@ class MorseTrainerApp:
         root.title(tr("Morsetrainer von {author}").format(author=__author__))
         self._set_icon()
         self.saved_state = self._load_state()
+        self.first_start = not self.saved_state  # noch nie geschlossen: kein gespeicherter Zustand
         self.updater = Updater(root, __version__, self.restart_for_update)
         declined = self.saved_state.get("update_declined")
         self.update_declined = declined if isinstance(declined, str) else None  # „Später“ zu dieser Version
@@ -191,6 +195,8 @@ class MorseTrainerApp:
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
         self.root.after(500, self._check_awards_at_start)
+        if self.first_start:
+            self.root.after(FIRST_START_GREETING_MS, self._greet_first_start)
         # Ausgabegerät wach halten, damit kein Zeichenanfang verloren geht.
         audio.keep_awake()
 
@@ -678,6 +684,22 @@ class MorseTrainerApp:
         Programm neu."""
         self.restart_command = update.restart_command()
         self.on_close()
+
+    def _greet_first_start(self) -> None:
+        """Beim allerersten Start sagen, wie man die Ansage einschaltet – auch
+        bei ausgeschalteter Ansage, sonst erführe niemand ohne Blick auf den
+        Bildschirm von F9. Läuft ein Screenreader, gleich einschalten."""
+        if self.announcer.available() is not None:
+            return  # keine Stimme: statt Ansage käme nur der Fehlerton
+        keys = {"announce": i18n.announce_key(), "where": i18n.where_key()}
+        if screenreader.running():
+            self.announcer.var.set(True)
+            text = tr("Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
+                      "{announce} schaltet sie aus. {where} sagt, wo du bist.").format(**keys)
+        else:
+            text = tr("Morsetrainer. {announce} schaltet die Sprachansage ein. "
+                      "{where} sagt, wo du bist.").format(**keys)
+        self.announcer.say(text, force=True)
 
     def toggle_announce(self) -> None:
         """F9: Ansage an/aus, hörbar bestätigt."""

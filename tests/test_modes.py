@@ -35,6 +35,8 @@ class AppTestCase(unittest.TestCase):
         self.patches = [
             mock.patch.object(stats, "STATS_DIR", directory),
             mock.patch.object(app_module, "WINDOW_STATE_FILE", directory / "window_state.json"),
+            # Jeder Test ist ein „erster Start“; die Begrüßung prüft FirstStartTest.
+            mock.patch.object(app_module.MorseTrainerApp, "_greet_first_start", lambda self: None),
         ]
         self.addCleanup(tests.stop_patches, self.patches)
         for patch in self.patches:

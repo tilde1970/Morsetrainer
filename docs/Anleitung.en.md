@@ -723,6 +723,11 @@ Thorsten voice, English with the Lessac voice (callsigns then “Delta Lima
 One”). If the voice is missing, F9 and F11 play an error tone and the
 reason appears in the status line.
 
+On the very first start the program says once that F9 switches
+announcements on and F11 tells you where you are. If a screen reader is
+running (NVDA, JAWS, Windows Narrator, VoiceOver or Orca), announcements
+are switched on right away.
+
 **Where am I? (F11)** reads out the tab, status, last feedback and
 remaining time (in Non-stop with the provisional accuracy, in Contest with
 QSOs and rate), during daily practice the current card, in the Statistics

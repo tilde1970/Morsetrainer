@@ -9,7 +9,7 @@ from unittest import mock
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import i18n
 from morsetrainer.widgets import theme
-from tests.test_modes import AppTestCase
+from tests.test_modes import AppTestCase, app_module
 
 
 def announcer_targets(widget):
@@ -1254,6 +1254,53 @@ class ListenAnnounceTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: "MP3 gespeichert, 12 Minuten." in self.said))
         self.assertFalse([s for s in self.said if "/home" in s])
 
+
+
+# Vor dem Patch in AppTestCase gemerkt, der die Begrüßung sonst abschaltet.
+REAL_GREETING = app_module.MorseTrainerApp._greet_first_start
+
+
+class FirstStartTest(AnnouncerCase):
+    """Beim allerersten Start erfährt man, wie die Ansage angeht."""
+
+    def greet(self, reader):
+        from morsetrainer.core import screenreader
+        with mock.patch.object(screenreader, "running", lambda: reader):
+            REAL_GREETING(self.app)
+        self.pump_until(lambda: False, timeout=0.3)
+        return " ".join(self.said)
+
+    def test_first_start_tells_how_to_switch_on(self):
+        self.assertTrue(self.app.first_start)
+        self.assertFalse(self.app.announcer.var.get())
+        spoken = self.greet(reader=False)
+        self.assertIn("F9 schaltet die Sprachansage ein.", spoken)
+        self.assertIn("F11 sagt, wo du bist.", spoken)
+        self.assertFalse(self.app.announcer.var.get())  # nur gesagt, nicht eingeschaltet
+
+    def test_screen_reader_switches_it_on(self):
+        spoken = self.greet(reader=True)
+        self.assertTrue(self.app.announcer.var.get())
+        self.assertIn("weil ein Screenreader läuft", spoken)
+
+    def test_screen_reader_detection_says_no_on_errors(self):
+        import subprocess
+        from morsetrainer.core import screenreader
+        answer = mock.Mock(returncode=0, stdout="true\n")
+        with mock.patch.object(sys, "platform", "linux"), \
+                mock.patch.object(screenreader, "_orca_process", lambda: False):
+            with mock.patch.object(subprocess, "run", lambda *a, **k: answer):
+                self.assertTrue(screenreader.running())
+            with mock.patch.object(subprocess, "run", mock.Mock(side_effect=FileNotFoundError)):
+                self.assertFalse(screenreader.running())
+            with mock.patch.object(subprocess, "run", mock.Mock(side_effect=subprocess.TimeoutExpired("x", 1))):
+                self.assertFalse(screenreader.running())
+
+    def test_later_starts_are_quiet(self):
+        from morsetrainer import app as app_module
+        self.app._save_state()
+        self.assertTrue(app_module.WINDOW_STATE_FILE.exists())
+        self.assertTrue(self.app._load_state())  # beim nächsten Start: first_start False
 
 
 class DailyAnnounceTest(AnnouncerCase):

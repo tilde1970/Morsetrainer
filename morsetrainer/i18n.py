@@ -87,6 +87,17 @@ def ctrl_key(key: str, shift: bool = False) -> str:
     return "+".join(parts + [key])
 
 
+def announce_key() -> str:
+    """Taste, die die Ansage ein- und ausschaltet (auf dem Mac Cmd+Umschalt+A,
+    siehe app.py)."""
+    return ctrl_key("A", shift=True) if sys.platform == "darwin" else "F9"
+
+
+def where_key() -> str:
+    """Taste, die vorliest, wo man ist (auf dem Mac Cmd+Umschalt+W)."""
+    return ctrl_key("W", shift=True) if sys.platform == "darwin" else "F11"
+
+
 def daily_key() -> str:
     """Taste der Tagesübung zum Anzeigen: F12, auf dem Mac Cmd+Umschalt+T
     (dort ist F12 vom System belegt, siehe app.py)."""
