@@ -518,10 +518,32 @@ def _install_focus(root) -> None:
     root.bind_class("TCheckbutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
     root.bind_class("TRadiobutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
     root.bind_class("TCombobox", "<<ComboboxSelected>>", lambda e: _say_value(e.widget), add="+")
+    # Aufgeklappte Liste einer Klappliste (von Tk selbst gebaut, tkinter
+    # kennt sie nicht): beim Öffnen und beim Blättern den Eintrag sagen.
+    root.bind_class("ComboboxListbox", "<FocusIn>", lambda e: _say_list_item(str(e.widget), opened=True), add="+")
+    root.bind_class("ComboboxListbox", "<<ListboxSelect>>", lambda e: _say_list_item(str(e.widget)), add="+")
     for sequence in ("<<Increment>>", "<<Decrement>>"):
         root.bind_class("TSpinbox", sequence, lambda e: _later_value(e.widget), add="+")
     for key in ("Left", "Right", "Up", "Down", "Home", "End"):
         root.bind_class("TScale", f"<KeyRelease-{key}>", lambda e: _say_value(e.widget), add="+")
+
+
+def _say_list_item(listbox: str, opened: bool = False) -> None:
+    """„zwei, 2 von 3.“ für den gewählten Eintrag der Liste `listbox` (Tk-Name)."""
+    if not active():
+        return
+    try:
+        call = _instance.root.tk.call
+        selection = call(listbox, "curselection")
+        if not selection:
+            return
+        index = int(selection[0])
+        item = str(call(listbox, "get", index))
+        size = int(call(listbox, "size"))
+    except (tk.TclError, ValueError):
+        return
+    text = tr("{item}, {n} von {total}.").format(item=item, n=index + 1, total=size)
+    _instance.say((tr("Liste offen.") + " " if opened else "") + text)
 
 
 def _later_value(widget) -> None:

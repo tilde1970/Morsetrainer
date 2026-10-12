@@ -44,6 +44,9 @@
   Hinweis „Noch einmal Esc beendet die Tagesübung“ und andere Ansagen
   werden nicht mehr vom nächsten Zeichen abgeschnitten.
 
+- **Klapplisten zum Anhören:** In einer aufgeklappten Liste (Schriftgröße,
+  Sprache, Modus …) sagt die Ansage beim Blättern den Eintrag an, z. B.
+  „Deutsch, 1 von 2“.
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

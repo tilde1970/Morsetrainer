@@ -447,6 +447,8 @@ EN.update({
     "OK": "OK",
     "Enter: ja. Escape: nein.": "Enter: yes. Escape: no.",
     "Enter: schließen.": "Enter: close.",
+    "{item}, {n} von {total}.": "{item}, {n} of {total}.",
+    "Liste offen.": "List open.",
     "Dateiauswahl {title}.": "File selection {title}.",
     "Enter: unter dem vorgeschlagenen Namen speichern. Escape: abbrechen.":
         "Enter: save under the suggested name. Escape: cancel.",

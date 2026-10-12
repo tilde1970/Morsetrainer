@@ -1382,6 +1382,31 @@ class StartProblemTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: any("Name oder Rufzeichen" in t for t in self.said)), self.said)
 
 
+class ComboboxListTest(AnnouncerCase):
+    """Aufgeklappte Klapplisten sagen beim Blättern den Eintrag an."""
+
+    def test_open_combobox_list_reads_items(self):
+        self.app.announcer.var.set(True)
+        self.root.deiconify()
+        self.pump_until(lambda: False, timeout=0.3)
+        combo = ttk.Combobox(self.root, values=["eins", "zwei", "drei"], state="readonly")
+        combo.pack()
+        combo.current(0)
+        self.root.update()
+        combo.focus_force()
+        self.root.update()
+        del self.said[:]
+        combo.event_generate("<Down>")  # aufklappen
+        self.root.update()
+        listbox = f"{self.root.tk.call('ttk::combobox::PopdownWindow', str(combo))}.f.l"
+        self.assertTrue(self.pump_until(lambda: any("Liste offen" in t for t in self.said)), self.said)
+        self.assertIn("eins, 1 von 3.", " ".join(self.said))
+        self.root.tk.call("event", "generate", listbox, "<Down>")
+        self.assertTrue(self.pump_until(lambda: any("zwei, 2 von 3." in t for t in self.said)), self.said)
+        self.root.tk.call("event", "generate", listbox, "<Escape>")
+        self.root.update()
+
+
 class FirstStartTest(AnnouncerCase):
     """Beim allerersten Start erfährt man, wie die Ansage angeht."""
 
