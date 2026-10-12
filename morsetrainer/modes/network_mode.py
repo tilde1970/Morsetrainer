@@ -532,7 +532,7 @@ class NetworkModeFrame:
             tree.column(col, width=widths[col], anchor="w" if col in ("name", "last") else "center")
         tree.tag_configure("ok", foreground=theme.OK)
         tree.tag_configure("error", foreground=theme.ERROR)
-        tree.tag_configure("gone", foreground=theme.DISABLED)
+        tree.tag_configure("gone", foreground=theme.MUTED)
         scrollbar.pack(side="right", fill="y")
         tree.pack(side="left", fill="both", expand=True)
         tree.bind("<<TreeviewSelect>>", lambda e: (self._show_details(), self._show_kick()))

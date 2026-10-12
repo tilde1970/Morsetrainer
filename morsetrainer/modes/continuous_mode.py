@@ -623,7 +623,7 @@ class ContinuousModeFrame(DailyModeMixin):
         scrollbar.pack(side="right", fill="y")
         text.pack(side="left", fill="both", expand=True)
         text.tag_configure("error", foreground=theme.ERROR)
-        text.tag_configure("number", foreground=theme.DISABLED)
+        text.tag_configure("number", foreground=theme.MUTED)
         # Umbruch nach der Fensterbreite: bei geänderter Breite neu aufbauen.
         text.bind("<Configure>", lambda e: self._render_full(only_if_resized=True))
         window.bind("<Key>", self._on_full_key)

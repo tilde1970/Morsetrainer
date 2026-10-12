@@ -26,7 +26,11 @@ PALETTES = {
         "BG": "#f3f4f6", "SURFACE": "#ffffff", "BORDER": "#d3d7de", "BUTTON": "#e8eaee",
         "BUTTON_ACTIVE": "#dde1e7", "TEXT": "#1d2127", "MUTED": "#5f6670", "DISABLED": "#a0a6ae",
         "ACCENT": "#2a6fd0", "ACCENT_ACTIVE": "#215bb0",
-        "FOCUS": "#8db4ea",  # Rahmen des Eingabefelds mit Tastaturfokus
+        "FOCUS": "#2a6fd0",  # Rahmen des Eingabefelds mit Tastaturfokus
+        # Rand von Eingabefeldern und Reglergriff: mindestens 3:1 gegen
+        # Hintergrund, Feld und Schiene (WCAG 1.4.11), sonst sieht man bei
+        # schwachem Sehen nicht, wo ein Feld ist.
+        "EDGE": "#6b7380",
         "SELECT": "#d7e6fa", "OK": "#1e7e34", "ERROR": "#c0392b", "OK_BG": "#d9f2dd", "ERROR_BG": "#f9dcd9",
         "GRID": "#e4e6ea",  # Hilfslinien in Diagrammen
         "TROUGH": "#d3d7de",  # Schiene der Schieberegler
@@ -40,6 +44,7 @@ PALETTES = {
         "ACCENT": "#ffd400", "ACCENT_ACTIVE": "#ffe766", "FOCUS": "#ffd400", "SELECT": "#00468c",
         "OK": "#6cf06c", "ERROR": "#ff8080", "OK_BG": "#003d00", "ERROR_BG": "#5c0000",
         "GRID": "#5a5a5a", "TROUGH": "#4d4d4d", "STATION_COLORS": ("#80c8ff", "#ffb84d", "#7cfc9a"),
+        "EDGE": "#ffffff",
         "BORDER_WIDTH": 2,
     },
 }
@@ -295,10 +300,10 @@ def apply(root) -> None:
               darkcolor=[("active", BUTTON)], bordercolor=[("focus", ACCENT), ("active", BUTTON)])
 
     for widget in ("TEntry", "TSpinbox", "TCombobox"):
-        style.configure(widget, fieldbackground=SURFACE, background=BUTTON, bordercolor=BORDER,
+        style.configure(widget, fieldbackground=SURFACE, background=BUTTON, bordercolor=EDGE,
                         lightcolor=SURFACE, darkcolor=SURFACE, arrowcolor=MUTED, padding=(4, 2),
                         borderwidth=BORDER_WIDTH)
-        style.map(widget, bordercolor=[("focus", FOCUS)],
+        style.map(widget, bordercolor=[("focus", FOCUS), ("disabled", BORDER)],
                   fieldbackground=[("disabled", BG), ("readonly", SURFACE)],
                   background=[("active", BUTTON_ACTIVE)])
     # clam färbt die Schrift einer fokussierten Klappliste weiß (für ein
@@ -313,9 +318,10 @@ def apply(root) -> None:
         style.map(widget, background=[("focus", SELECT), ("active", BG)],
                   indicatorbackground=[("disabled", BG), ("pressed", SELECT), ("selected", SURFACE)])
 
-    style.configure("TScale", background=BUTTON, troughcolor=TROUGH, bordercolor=BORDER,
+    style.configure("TScale", background=BUTTON, troughcolor=TROUGH, bordercolor=EDGE,
                     lightcolor=BUTTON, darkcolor=BUTTON)
-    style.map("TScale", background=[("disabled", BG), ("active", ACCENT)], troughcolor=[("focus", ACCENT)])
+    style.map("TScale", background=[("disabled", BG), ("active", ACCENT)], troughcolor=[("focus", ACCENT)],
+              bordercolor=[("disabled", BORDER)])
     style.configure("TScrollbar", background=BUTTON, troughcolor=BG, bordercolor=BG, arrowcolor=MUTED,
                     lightcolor=BUTTON, darkcolor=BUTTON)
     style.map("TScrollbar", background=[("active", BUTTON_ACTIVE)])

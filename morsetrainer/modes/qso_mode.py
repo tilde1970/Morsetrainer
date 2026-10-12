@@ -216,8 +216,8 @@ class QsoModeFrame:
         for i, color in enumerate(theme.STATION_COLORS):
             self.reveal_text.tag_config(f"st{i}", foreground=color)
         self.reveal_text.tag_config("miss", foreground=theme.SURFACE, background=theme.ERROR)
-        self.reveal_text.tag_config("unsent", foreground=theme.DISABLED)
-        self.reveal_text.tag_config("extra", foreground=theme.DISABLED, font=theme.SMALL_ITALIC)
+        self.reveal_text.tag_config("unsent", foreground=theme.MUTED)
+        self.reveal_text.tag_config("extra", foreground=theme.MUTED, font=theme.SMALL_ITALIC)
         self.reveal_text.config(state="disabled")
 
         self.stats_box = ttk.Frame(parent)

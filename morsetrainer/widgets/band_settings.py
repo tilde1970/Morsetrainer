@@ -573,7 +573,7 @@ class BandToggle:
 
     def _show(self) -> None:
         self.summary_var.set(self.settings.summary())
-        self.summary.config(foreground="" if self.variable.get() else theme.DISABLED)
+        self.summary.config(foreground="" if self.variable.get() else theme.MUTED)
 
     def _changed(self) -> None:
         self._show()

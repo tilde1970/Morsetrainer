@@ -51,6 +51,10 @@
   leicht“ usw. und bestätigen die Wahl; F11 sagt im Fenster auch, welcher
   Stufe die Einstellung entspricht. Die Stufen stehen jetzt oben, Tab
   beginnt dort.
+- **Bessere Kontraste im hellen Farbschema:** Eingabefelder,
+  Reglergriffe und der Fokusrahmen heben sich deutlich ab; Hinweise und
+  abgeblendete Einträge sind besser lesbar.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

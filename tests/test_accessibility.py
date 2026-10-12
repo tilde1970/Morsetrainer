@@ -620,6 +620,24 @@ class ContrastTest(AppTestCase):
             self.assertGreaterEqual(ratio(contrast[fg], contrast[bg]), 7, (fg, bg))
         for color in contrast["STATION_COLORS"]:
             self.assertGreaterEqual(ratio(color, contrast["SURFACE"]), 7, color)
+        # Helle Palette: Text 4,5:1, Feldränder, Fokus und Reglergriff 3:1
+        # (WCAG 1.4.3 und 1.4.11) – auf jedem Grund, auf dem sie stehen.
+        for fg, bg in (("TEXT", "BG"), ("MUTED", "BG"), ("MUTED", "SURFACE"), ("MUTED", "BUTTON"),
+                       ("TEXT", "SELECT")):
+            self.assertGreaterEqual(ratio(light[fg], light[bg]), 4.5, (fg, bg))
+        for fg, bg in (("FOCUS", "SURFACE"), ("FOCUS", "BG"), ("EDGE", "SURFACE"), ("EDGE", "BG"),
+                       ("EDGE", "TROUGH"), ("EDGE", "BUTTON")):
+            self.assertGreaterEqual(ratio(light[fg], light[bg]), 3, (fg, bg))
+
+    def test_info_texts_do_not_use_the_disabled_grey(self):
+        # Das Grau für gesperrte Bedienelemente ist zu blass für Text, den man
+        # lesen soll (2,2:1); Hinweise und abgeblendete Einträge nehmen MUTED.
+        import pathlib
+        package = pathlib.Path(theme.__file__).resolve().parents[1]
+        for path in [*package.glob("modes/*.py"), *package.glob("widgets/*.py")]:
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if "theme.DISABLED" in line and "else theme.DISABLED" not in line:
+                    self.fail(f"{path.name}:{number}: {line.strip()}")
 
     def test_chosen_at_start_and_saved(self):
         self.assertEqual(theme.PALETTE, "light")
