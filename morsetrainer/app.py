@@ -154,6 +154,7 @@ class MorseTrainerApp:
         self.saved_state = self._load_state()
         self.first_start = not self.saved_state  # noch nie geschlossen: kein gespeicherter Zustand
         self.updater = Updater(root, __version__, self.restart_for_update)
+        HelpWindow.version = __version__
         declined = self.saved_state.get("update_declined")
         self.update_declined = declined if isinstance(declined, str) else None  # „Später“ zu dieser Version
         try:

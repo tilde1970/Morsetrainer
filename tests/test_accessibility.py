@@ -1329,6 +1329,66 @@ class FirstStartTest(AnnouncerCase):
         self.assertTrue(self.app._load_state())  # beim nächsten Start: first_start False
 
 
+class HelpReadingTest(AnnouncerCase):
+    """Die Hilfe ohne Hinsehen: Fokus im Text, Pfeiltasten lesen Absatz für
+    Absatz, ein Suchtreffer liest seine Zeile."""
+
+    def setUp(self):
+        super().setUp()
+        from morsetrainer.widgets import help_window
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        help_window.HelpWindow.show(self.root, "Einzeln")
+        self.window = help_window.HelpWindow._open
+        self.addCleanup(lambda: self.window.top.winfo_exists() and self.window.top.destroy())
+        self.text = self.window.texts[help_window.GUIDE]
+
+    def spoken_after(self, action):
+        del self.said[:]
+        action()
+        self.pump_until(lambda: False, timeout=0.3)
+        return " ".join(self.said)
+
+    def test_help_is_read_with_the_arrow_keys(self):
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertIn("Überschrift: Einzeln", " ".join(self.said))
+        self.assertIn("Pfeil runter liest weiter", " ".join(self.said))
+        self.assertIs(self.root.focus_get() or self.text, self.text)  # ohne Fenstermanager evtl. None
+        start = self.text.index("insert")
+        spoken = self.spoken_after(lambda: self.text.event_generate("<Down>"))
+        line = self.text.get("insert linestart", "insert lineend").strip()
+        self.assertNotEqual(self.text.index("insert"), start)
+        self.assertTrue(line)
+        self.assertIn(line[:30], spoken)
+        self.spoken_after(lambda: self.text.event_generate("<Up>"))
+        self.assertEqual(self.text.index("insert"), start)
+        self.text.mark_set("insert", "end-1c")
+        self.assertIn("Ende der Hilfe.", self.spoken_after(lambda: self.text.event_generate("<Down>")))
+
+    def test_search_hit_reads_its_line(self):
+        def search():
+            self.window.notebook.select(0)
+            self.window.search_var.set("Koch-Lektion")
+        spoken = self.spoken_after(search)
+        pos = self.text.index("match_current.first")
+        line = self.text.get(f"{pos} linestart", f"{pos} lineend").strip()
+        self.assertIn("Treffer 1 von", spoken)
+        self.assertIn(line[:30], spoken)
+        self.assertEqual(self.text.index("insert"), self.text.index(f"{pos} linestart"))
+
+    def test_browser_button_opens_this_version(self):
+        from morsetrainer.widgets import help_window
+        with mock.patch.object(help_window.webbrowser, "open") as browser:
+            self.window.open_in_browser()
+        url = browser.call_args[0][0]
+        self.assertTrue(url.endswith(f"/blob/v{app_module.__version__}/docs/Anleitung.md"), url)
+
+    def test_closed_help_is_not_kept(self):
+        from morsetrainer.widgets import help_window
+        self.window.top.destroy()
+        self.assertIsNone(help_window.HelpWindow._open)
+
+
 class DailyAnnounceTest(AnnouncerCase):
     """Tagesübung mit Ansage: kein Morseton über der Stimme."""
 

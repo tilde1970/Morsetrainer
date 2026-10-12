@@ -14,6 +14,7 @@ Zeile) fallen weg."""
 import re
 import sys
 import tkinter as tk
+import webbrowser
 from pathlib import Path
 from tkinter import ttk
 
@@ -25,6 +26,9 @@ from morsetrainer.widgets import announcer, theme
 # neu ist, zeigt das Programm ohnehin nach einem Update.
 DOCS = ((N_("Anleitung"), "docs/Anleitung.md"), (N_("Änderungen"), "CHANGELOG.md"))
 GUIDE = "docs/Anleitung.md"
+# Dieselbe Datei zur installierten Version auf GitHub: Dort liest ein
+# Screenreader sie mit Überschriften-Navigation.
+WEB_DOC = "https://github.com/tilde1970/Morsetrainer/blob/{ref}/{path}"
 
 _IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>")
 # Andere Wörter für dasselbe, wie man sie sucht, aber wie es in der
@@ -228,6 +232,7 @@ class HelpWindow:
     """Ein Fenster je Hauptfenster; ein zweiter Aufruf holt es nach vorn."""
 
     _open = None
+    version = None  # installierte Version (setzt das Hauptfenster); ohne: neuester Stand
 
     @classmethod
     def show(cls, root, topic: str = None) -> None:
@@ -239,11 +244,13 @@ class HelpWindow:
                 cls._open.top.deiconify()
                 cls._open.top.lift()
                 cls._open.show_topic(topic)
+                cls._open.start_reading()
                 return
         except tk.TclError:
             pass  # gehörte zu einem schon zerstörten Hauptfenster
         cls._open = cls(root)
         cls._open.show_topic(topic)
+        cls._open.start_reading()
 
     def __init__(self, root):
         self.top = tk.Toplevel(root)
@@ -274,8 +281,12 @@ class HelpWindow:
         # vergehen.
         self.match_length = tk.IntVar(self.top)
         # Vor dem Notizbuch gepackt: bleibt auch auf kleinem Bildschirm sichtbar.
-        close = ttk.Button(self.top, text=tr("Schließen"), command=self.top.destroy)
-        close.pack(side="bottom", anchor="e", padx=8, pady=(0, 8))
+        buttons = ttk.Frame(self.top)
+        buttons.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
+        close = ttk.Button(buttons, text=tr("Schließen"), command=self.top.destroy)
+        close.pack(side="right")
+        browser = ttk.Button(buttons, text=tr("Im Browser öffnen"), command=self.open_in_browser)
+        browser.pack(side="right", padx=(0, 8))
         notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
         notebook.bind("<<NotebookTabChanged>>", lambda e: self._new_search(), add="+")
@@ -296,9 +307,12 @@ class HelpWindow:
             except OSError:
                 content = tr("{name} wurde nicht gefunden.").format(name=name)
             render(text, content)
+            text.mark_set("insert", "1.0")  # Vorlesen beginnt oben, nicht hinter dem Eingefügten
+            self._bind_reading(text)
             self.texts[name] = text
-        close.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: Schließen zuletzt
+        buttons.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: die Knöpfe zuletzt
         self.top.bind("<Escape>", self._escape)
+        self.top.bind("<Destroy>", self._forget, add="+")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             for key in ("f", "F"):  # auch mit Feststelltaste
                 self.top.bind(f"<{modifier}-{key}>", lambda e: self.focus_search() or "break")
@@ -318,6 +332,57 @@ class HelpWindow:
         found = find_heading([(tag, heading) for tag, _, heading in headings], topic)
         if found is not None:
             text.yview(headings[found][1])
+            text.mark_set("insert", headings[found][1])
+
+    def start_reading(self) -> None:
+        """Fokus in den Text und ansagen, wo man ist und wie man liest (den
+        Fensternamen sagt die Fensteransage davor)."""
+        text = self._current_text()
+        text.focus_set()
+        announcer.say(self._line(text) + ". " + tr("Pfeil runter liest weiter, Pfeil hoch zurück. {key} sucht.")
+                      .format(key=i18n.ctrl_key("F")))
+
+    def open_in_browser(self) -> None:
+        name = [name for _, name in DOCS][self.notebook.index("current")]
+        path = doc_path(name).name if name == "CHANGELOG.md" else "docs/" + doc_path(name).name
+        ref = f"v{self.version}" if self.version else "main"
+        webbrowser.open(WEB_DOC.format(ref=ref, path=path))
+
+    # --- Vorlesen mit den Pfeiltasten ------------------------------------------------
+    def _bind_reading(self, text: tk.Text) -> None:
+        """Pfeil runter/hoch: nächster bzw. voriger Absatz, vorgelesen. Tab
+        verlässt den Text (im Textfeld fügte er sonst ein Tabzeichen ein)."""
+        text.bind("<Down>", lambda e: self._read_next(text, 1) or "break")
+        text.bind("<Up>", lambda e: self._read_next(text, -1) or "break")
+        text.bind("<Tab>", lambda e: text.tk_focusNext().focus_set() or "break")
+        text.bind("<Shift-Tab>", lambda e: text.tk_focusPrev().focus_set() or "break")
+        text.bind("<ISO_Left_Tab>", lambda e: text.tk_focusPrev().focus_set() or "break")
+
+    def _read_next(self, text: tk.Text, direction: int) -> None:
+        line = int(text.index("insert").split(".")[0])
+        last = int(text.index("end-1c").split(".")[0])
+        while 1 <= line + direction <= last:
+            line += direction
+            if text.get(f"{line}.0", f"{line}.0 lineend").strip():
+                text.mark_set("insert", f"{line}.0")
+                text.see("insert")
+                announcer.say(self._line(text))
+                return
+        announcer.say(tr("Ende der Hilfe.") if direction > 0 else tr("Anfang der Hilfe."))
+
+    @staticmethod
+    def _line(text: tk.Text, index: str = "insert") -> str:
+        """Der Absatz an `index` zum Vorlesen, Überschriften als solche."""
+        line = text.get(f"{index} linestart", f"{index} lineend").strip()
+        tags = text.tag_names(f"{index} linestart")
+        if any(tag in tags for tag in ("h1", "h2", "h3")):
+            return tr("Überschrift: {line}").format(line=line)
+        return line
+
+    def _forget(self, event) -> None:
+        # Das geschlossene Fenster samt Texten nicht bis zum nächsten F1 festhalten.
+        if event.widget is self.top and HelpWindow._open is self:
+            HelpWindow._open = None
 
     def _current_text(self) -> tk.Text:
         return self.texts[DOCS[self.notebook.index("current")][1]]
@@ -388,8 +453,9 @@ class HelpWindow:
         pos, length = self.matches[self.match_index]
         text.tag_add("match_current", pos, f"{pos}+{length}c")
         text.see(pos)
+        text.mark_set("insert", f"{pos} linestart")  # Pfeil runter liest ab hier weiter
         self._say_result(self.search_note + tr("Treffer {n} von {total}").format(
-            n=self.match_index + 1, total=len(self.matches)))
+            n=self.match_index + 1, total=len(self.matches)), spoken=self._line(text, pos))
 
     def _found_elsewhere(self, needle: str, exact=False) -> str:
         """„im Reiter Änderungen: 3 Treffer“, wenn der andere Reiter etwas hat
@@ -407,6 +473,8 @@ class HelpWindow:
                     return tr("im Reiter {title}: {n} Treffer").format(title=tr(title), n=hits)
         return ""
 
-    def _say_result(self, message: str) -> None:
+    def _say_result(self, message: str, spoken: str = "") -> None:
+        """Ergebnis anzeigen und ansagen, gesprochen mit `spoken` (der Zeile
+        des Treffers) dahinter."""
         self.search_info_var.set(message)
-        announcer.say(message)
+        announcer.say(f"{message}: {spoken}" if spoken else message)

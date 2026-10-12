@@ -5,6 +5,9 @@ zu Contestern (Teilnehmern an Funkwettbewerben), entwickelt von **DL4YM**.
 Diese Anleitung steht auch im Programm: F1 oder der Knopf **Hilfe (F1)**
 rechts in der Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem
 du gerade bist, daneben die Änderungen der Versionen; Strg+F sucht darin.
+Mit Sprachansage liest Pfeil runter bzw. hoch den nächsten bzw. vorigen
+Absatz vor; **Im Browser öffnen** zeigt die Anleitung im Browser, wo auch
+ein Screenreader sie liest.
 Im Reiter Contest sendet F1 CQ, dort öffnet nur der Knopf die Hilfe.
 Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 
@@ -864,6 +867,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Contest | Enter, Esc | passende nächste Nachricht senden (ESM, „Enter Sends Message“), Senden abbrechen |
 | Netzwerk (Trainer) | F5, F6, F7 | Start/Stop, für alle wiederholen, weiter |
 | Hilfe | Strg+F | suchen (Enter: nächster Treffer, Umschalt+Enter: voriger) |
+| Hilfe | Pfeil runter, Pfeil hoch | nächsten bzw. vorigen Absatz vorlesen |
 
 **Auf dem Mac** sind F9, F11 und F12 Medientasten oder vom System belegt
 (Fn+F11 zeigt den Schreibtisch). Dafür gibt es Cmd+Umschalt+A (Ansage

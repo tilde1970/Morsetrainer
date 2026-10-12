@@ -27,6 +27,10 @@
   Bandbedingungen oder der Statistik), sieht es jetzt; der Bereich rollt
   mit.
 
+- **Hilfe zum Anhören:** Beim Öffnen sagt die Hilfe an, wo sie steht;
+  Pfeil runter und hoch lesen Absatz für Absatz vor, und ein Suchtreffer
+  liest seine Zeile. Neu ist der Knopf „Im Browser öffnen“.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

@@ -5,6 +5,9 @@ contesters (people who take part in radio contests), developed by
 **DL4YM**. This manual is also in the program: F1 or the **Help (F1)**
 button on the right of the footer shows it, right at the section of the tab
 you are in, next to it the changes of the versions; Ctrl+F searches in it.
+With announcements on, the down and up arrows read the next and previous
+paragraph; **Open in browser** shows the manual in your browser, where a
+screen reader can read it too.
 In the Contest tab F1 sends CQ, so there only the button opens the help. A short
 overview with pictures is in the [README](../README.en.md).
 
@@ -846,6 +849,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Contest | Enter, Esc | send the appropriate next message (ESM, “Enter Sends Message”), abort sending |
 | Network (trainer) | F5, F6, F7 | start/stop, repeat for everyone, next |
 | Help | Ctrl+F | search (Enter: next match, Shift+Enter: previous) |
+| Help | Down arrow, up arrow | read the next or previous paragraph |
 
 **On the Mac** F9, F11 and F12 are media keys or taken by the system
 (Fn+F11 shows the desktop). Use Cmd+Shift+A (announcements on/off),
