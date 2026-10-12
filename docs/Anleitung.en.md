@@ -466,11 +466,11 @@ the signals. The buttons **light**, **medium** and **heavy** set the levels
 that the QRN-proof award counts; the window shows which level the setting
 matches at least.
 
-| Level | Noise (S/N) | QSB (deepest dip) | plus |
+| Level | Noise (S/N) | QSB (time below −6 dB) | plus |
 |---|---|---|---|
-| light | +8 dB | 30 % (about −3 dB) | – |
-| medium | +2 dB | 50 % (about −5.5 dB) | QRN 30 % |
-| heavy | −4 dB | 80 % (about −12 dB) | QRN 50 %, CW QRM 30 % |
+| light | +8 dB | 30 % (about 6 %) | – |
+| medium | +2 dB | 50 % (about 14 %) | QRN 30 % |
+| heavy | −4 dB | 80 % (about 20 %, dips down to −40 dB) | QRN 50 %, CW QRM 30 % |
 
 - **Signal-to-noise ratio (S/N):** measured in the receiver filter
   (300–2700 Hz) relative to the unfaded signal; the slider ranges from
@@ -478,10 +478,13 @@ matches at least.
   ratio is roughly 16 dB better – so −4 dB feels like about +12 dB in a
   narrow filter. If the
   noise gets louder than the receiver would pass, it turns the signal down
-  like an AGC instead of clipping.
-- **Fading** changes irregularly (two overlaid variations); its depth
-  follows the slider and varies only a little – the level sets the
-  difficulty, not chance.
+  like an AGC instead of clipping. Like a real receiver it turns up the
+  gain in the gaps: between characters the noise gets louder (up to the
+  signal level, at most 12 dB); during the tone the set ratio applies.
+- **Fading** is random as on the band: mostly shallow, now and then a
+  deeper dip. The higher the slider, the more often and deeper; from
+  “heavy” on there are occasional short, very deep dips. Flutter fading is
+  random too, only much faster.
 - **Chirp** is shown in Hz (largest offset while keying).
 - **CW QRM offset:** the adjacent run is **far** (300–500 Hz) away,
   **close** (50–200 Hz) or at **zero beat** (almost on your frequency).

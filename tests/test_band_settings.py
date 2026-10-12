@@ -61,8 +61,8 @@ class LevelsTest(unittest.TestCase):
         import numpy as np
         for level in (0.05, 0.6, 1.0):
             conditions = band.conditions({"levels": {"noise": level}, "gain": 1.0}, 600)
-            silence = np.zeros(band.SAMPLE_RATE, dtype=np.float32)
-            noise_rms = float(np.sqrt(np.mean(conditions.mix([(silence, 0)], len(silence)) ** 2)))
+            # Ohne Station: die signalgeführte AGC regelt dann nicht hoch.
+            noise_rms = float(np.sqrt(np.mean(conditions.mix([], band.SAMPLE_RATE) ** 2)))
             _, agc = conditions.noise_and_agc()
             measured = 20 * np.log10(band.SIGNAL_RMS * agc / noise_rms)
             self.assertAlmostEqual(measured, band.noise_snr_db(level), delta=0.5)
@@ -72,21 +72,68 @@ class LevelsTest(unittest.TestCase):
         mixed, _ = band.apply_preset(conditions, tone)
         self.assertLess(float(np.max(np.abs(mixed))), 1.0)
 
-    def test_fading_depth_follows_the_level_not_chance(self):
+    def test_receiver_agc_raises_noise_in_pauses_only(self):
+        # Beim Ton gilt der eingestellte Rauschabstand; in der Pause regelt
+        # der Empfänger hoch, das Rauschen wird lauter (höchstens bis zur
+        # Signalstärke, höchstens 12 dB).
         import numpy as np
-        step = band.SAMPLE_RATE // 4
-        for level in (0.3, 0.8):
-            wanted = level * band.QSB_MAX_DEPTH
-            for _ in range(10):
-                conditions = band.conditions({"levels": {"qsb": level}, "gain": 1.0}, 600)
-                gains = []
-                for _ in range(10 * 60 * 4):  # 10 min Bandzeit in Viertelsekunden
-                    gains.append(float(conditions.station_gain(0, 1)[0]))
-                    conditions.sample_pos += step
-                depth = 1 - min(gains) / max(gains)
-                # Höchstens die Streuung je Station, und das tiefe Loch kommt auch wirklich.
-                self.assertLessEqual(depth, min(wanted * band.QSB_DEPTH_SPREAD[1], band.QSB_MAX_DEPTH) + 0.01)
-                self.assertGreaterEqual(depth, 0.75 * wanted * band.QSB_DEPTH_SPREAD[0])
+        rate = band.SAMPLE_RATE
+        t = np.arange(2 * rate) / rate
+        signal = np.zeros(4 * rate, dtype=np.float32)
+        signal[:2 * rate] = band.AMPLITUDE * np.sin(2 * np.pi * 600 * t)  # 2 s Ton, dann 2 s Pause
+        block = int(rate * band.PRESET_BLOCK_SECONDS)
+
+        def rms(x):
+            return float(np.sqrt(np.mean(x.astype(float) ** 2)))
+        # 0,4: normal; 0,8: so laut, dass die Rausch-AGC das Signal absenkt.
+        for level in (0.4, 0.8):
+            conditions = band.conditions({"levels": {"noise": level}, "gain": 1.0}, 600)
+            noise_rms, agc = conditions.noise_and_agc()
+            out = np.concatenate([conditions.mix([(signal[i:i + block], 0)], block)
+                                  for i in range(0, len(signal), block)])
+            during = rms(out[rate // 2:2 * rate] - agc * signal[rate // 2:2 * rate])
+            pause = rms(out[3 * rate:])
+            self.assertAlmostEqual(20 * np.log10(band.SIGNAL_RMS * agc / during), band.noise_snr_db(level),
+                                   delta=0.7, msg=level)
+            raised = 20 * np.log10(pause / during)
+            expected = max(min(20 * np.log10(band.SIGNAL_RMS * agc / noise_rms), band.SIGNAL_AGC_MAX_DB), 0)
+            self.assertAlmostEqual(raised, expected, delta=1.0, msg=level)
+        # Gleich nach dem Ton noch nicht ganz oben (Loslassen ~0,25 s).
+        conditions = band.conditions({"levels": {"noise": 0.4}, "gain": 1.0}, 600)
+        out = np.concatenate([conditions.mix([(signal[i:i + block], 0)], block) for i in range(0, len(signal), block)])
+        self.assertLess(rms(out[2 * rate:2 * rate + rate // 20]), 0.8 * rms(out[3 * rate:]))
+
+    def test_qsb_depth_per_level(self):
+        # Rice-Fading: Je höher der Regler, desto öfter und tiefer die Löcher;
+        # „stark“ ist Rayleigh mit gelegentlich sehr tiefen Löchern.
+        import numpy as np
+        below_6db = {}
+        for level in (0.3, 0.5, 0.8):
+            shares, deepest = [], []
+            for seed in range(4):
+                conditions = band.conditions({"levels": {"qsb": level}, "gain": 1.0, "seed": seed}, 600)
+                loop = conditions._fading_loop("qsb", conditions.qsb[0])
+                db = 20 * np.log10(np.maximum(band.rice_gain(loop, level), 1e-6))
+                shares.append(float(np.mean(db < -6)))
+                deepest.append(float(db.min()))
+            below_6db[level] = float(np.mean(shares))
+            if level == 0.8:
+                self.assertLess(max(deepest), -20)
+        self.assertLess(below_6db[0.3], below_6db[0.5])
+        self.assertLess(below_6db[0.5], below_6db[0.8])
+        self.assertLess(below_6db[0.3], 0.12)
+        self.assertTrue(0.1 < below_6db[0.8] < 0.35, below_6db)
+
+    def test_fading_loops_are_seamless_and_same_for_same_seed(self):
+        import numpy as np
+        loop = band._gauss_loop(5, band.QSB_LOOP_SECONDS, band.QSB_RATE_HZ, band.QSB_BANDWIDTH_HZ)
+        steps = np.abs(np.diff(np.concatenate([loop, loop[:1]])))
+        self.assertLess(steps[-1], 5 * np.median(steps))  # Übergang am Schleifenende wie überall
+        np.testing.assert_array_equal(loop, band._gauss_loop(5, band.QSB_LOOP_SECONDS, band.QSB_RATE_HZ,
+                                                             band.QSB_BANDWIDTH_HZ))
+        a = band.conditions({"levels": {"qsb": 0.5}, "gain": 1.0, "seed": 9}, 600)
+        b = band.conditions({"levels": {"qsb": 0.5}, "gain": 1.0, "seed": 9}, 600)
+        np.testing.assert_array_equal(a._fading(0, 48000), b._fading(0, 48000))
 
 
 class FadeTest(unittest.TestCase):
@@ -231,7 +278,8 @@ class FilterAndQrmTest(unittest.TestCase):
         for level in (0.4, 0.6, 0.8):
             spec = {"levels": {"noise": level}, "gain": 1.0}
             silent = np.zeros(band.SAMPLE_RATE * seconds, dtype=np.float32)
-            noise = self.blockwise(band.conditions(spec, 600), silent)
+            quiet = band.conditions(spec, 600)  # ohne Station: die AGC regelt nicht hoch
+            noise = np.concatenate([quiet.mix([], 960) for _ in range(len(silent) // 960)])
             t = np.arange(len(silent)) / band.SAMPLE_RATE
             tone = (band.AMPLITUDE * np.sin(2 * np.pi * 600 * t)).astype(np.float32)
             both = self.blockwise(band.conditions(spec, 600), tone)
@@ -404,7 +452,7 @@ class FilterAndQrmTest(unittest.TestCase):
     def test_qrm_fades_with_qsb(self):
         import numpy as np
         conditions = band.conditions({"levels": {"cw_qrm": 1.0, "qsb": 1.0}, "gain": 1.0, "seed": 1}, 600)
-        gains = conditions._fading(conditions.qrm_qsb, 30 * band.SAMPLE_RATE)
+        gains = conditions._fading(len(conditions.qsb) - 1, 30 * band.SAMPLE_RATE)  # letzter: CW-QRM
         self.assertLess(float(np.min(gains)), 0.3)
         self.assertAlmostEqual(float(np.max(gains)), 1.0, delta=0.2)
 
@@ -482,12 +530,15 @@ class ExtraInterferenceTest(unittest.TestCase):
         self.assertGreater(lowest(quiet), 0.29)
 
     def test_flutter_trembles_at_a_few_hertz(self):
+        # Flattern: Die Hüllkurve wechselt binnen Zehntelsekunden (Spreizung
+        # um 10 Hz), bei 100 % mit tiefen Einbrüchen.
         import numpy as np
         x, _ = self.run_band({"levels": {"flutter": 1.0}, "gain": 1.0}, 10, self.tone(10))
-        envelope = np.array([np.max(np.abs(x[i:i + 480])) for i in range(0, len(x), 480)])
-        spectrum = np.abs(np.fft.rfft(envelope - envelope.mean()))
-        peak = np.fft.rfftfreq(len(envelope), 0.01)[np.argmax(spectrum)]
-        self.assertTrue(4 <= peak <= 16, peak)
+        envelope = np.array([np.max(np.abs(x[i:i + 480])) for i in range(0, len(x), 480)])  # je 10 ms
+        centred = envelope - envelope.mean()
+        correlation = np.correlate(centred, centred, "full")[len(centred) - 1:]
+        correlation /= correlation[0]
+        self.assertLess(int(np.argmax(correlation < 0.5)), 15)  # nach weniger als 0,15 s nicht mehr ähnlich
         self.assertLess(float(envelope.min()), 0.15)
 
     def test_carrier_near_the_frequency_comes_and_goes(self):

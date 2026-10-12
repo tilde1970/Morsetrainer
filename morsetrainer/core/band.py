@@ -91,17 +91,19 @@ MAX_QRN_RMS = 0.25
 
 # Stärkeunterschiede: Grundstärke der Stationen (Station 0 ist gut zu
 # hören; die Werte gelten für Regler auf 50 %, 100 % macht die Unterschiede
-# doppelt so groß). QSB: Fading. Die Tiefe des Fadings folgt dem Regler (100 % = QSB_MAX_DEPTH,
-# rund −26 dB im tiefsten Loch) mit wenig Streuung je Station, damit die
-# Stufe und nicht der Zufall die Schwierigkeit bestimmt. Zwei überlagerte
-# Schwingungen ungleicher Periode machen den Verlauf unregelmäßig.
+# doppelt so groß).
 STRENGTH_FIRST = (0.9, 1.0)
 STRENGTH_OTHERS = (0.35, 1.0)
-QSB_PERIOD_SECONDS = (6.0, 30.0)
-QSB_SECOND_RATIO = (2.2, 3.4)   # zweite Schwingung so viel schneller
-QSB_SECOND_WEIGHT = 0.5
-QSB_MAX_DEPTH = 0.95
-QSB_DEPTH_SPREAD = (0.85, 1.15)
+# QSB und Flatterfading wie auf dem Band: Rice-Fading, also ein fester
+# Anteil plus Streuung, die sich zufällig überlagert (komplexes
+# Gauß-Rauschen mit der Bandbreite *_BANDWIDTH_HZ). Der Regler setzt das
+# Verhältnis K von festem Anteil zu Streuung (rice_k): wenig Regler = großes
+# K = flache Schwankungen, 100 % = K 0 = Rayleigh mit gelegentlich sehr
+# tiefen, kurzen Löchern. Der Verlauf ist je Station eine nahtlose Schleife
+# aus dem Startwert (im Netzwerk für alle gleich).
+QSB_BANDWIDTH_HZ = 0.08  # Löcher kommen im Abstand von etwa 5–20 s
+QSB_RATE_HZ = 20  # so oft wird der Verlauf erzeugt, dazwischen interpoliert
+QSB_LOOP_SECONDS = 600
 
 # Chirp: Anteil der Stationen mit „zwitscherndem“ Sender (mindestens eine),
 # Frequenzablage beim Tasten (bei Regler auf 50 %; skaliert linear) und
@@ -143,10 +145,18 @@ STORM_RATE_PER_SECOND = 6.0
 AGC_PUMP_THRESHOLD = 0.15
 AGC_PUMP_MAX_DEPTH = 0.9
 AGC_PUMP_RELEASE_SECONDS = 0.1
-# Flatterfading: drei überlagerte Schwingungen in diesem Bereich, Tiefe bei
-# Regler 100 %.
-FLUTTER_HZ = (5.0, 15.0)
-FLUTTER_MAX_DEPTH = 0.8
+# Flatterfading (Polarlicht, Mehrwege): wie QSB, aber mit rund 10 Hz
+# Spreizung.
+FLUTTER_BANDWIDTH_HZ = 8.0
+FLUTTER_RATE_HZ = 100
+FLUTTER_LOOP_SECONDS = 60
+# Signalgeführte AGC: Fehlt das Signal (Pause, tiefes Fading), regelt der
+# Empfänger hoch, das Rauschen wird lauter – höchstens bis zur Lautstärke
+# des Signals und um SIGNAL_AGC_MAX_DB. Sie folgt dem Signal sofort und
+# lässt mit SIGNAL_AGC_RELEASE_SECONDS los; beim Ton bleibt der
+# Rauschabstand also, wie er eingestellt ist.
+SIGNAL_AGC_MAX_DB = 12.0
+SIGNAL_AGC_RELEASE_SECONDS = 0.25
 # Träger: Abstand zur eigenen Tonhöhe, langsames Wandern, an und aus.
 CARRIER_OFFSET_HZ = (30, 250)
 CARRIER_DRIFT_HZ = 15
@@ -532,11 +542,9 @@ class BandConditions:
         self.strengths = [self.rng.uniform(*STRENGTH_FIRST)] + [
             self.rng.uniform(*STRENGTH_OTHERS) for _ in range(station_count - 1)
         ]
-        self.qsb = []  # je Station (Frequenz, Phase, Frequenz 2, Phase 2, Streuung der Tiefe)
-        for _ in range(station_count):
-            freq = 1 / self.rng.uniform(*QSB_PERIOD_SECONDS)
-            self.qsb.append((freq, self.rng.uniform(0, 2 * np.pi), freq * self.rng.uniform(*QSB_SECOND_RATIO),
-                             self.rng.uniform(0, 2 * np.pi), self.rng.uniform(*QSB_DEPTH_SPREAD)))
+        # Startwerte der Fading-Schleifen je Station (letzter Eintrag: CW-QRM);
+        # die Schleifen selbst entstehen erst, wenn QSB bzw. Flattern läuft.
+        self.qsb = [int(self.rng.integers(2 ** 63)) for _ in range(station_count + 1)]
         chirpy = [self.rng.random() < CHIRP_PROBABILITY for _ in range(station_count)]
         if not any(chirpy):
             chirpy[int(self.rng.integers(station_count))] = True
@@ -545,13 +553,8 @@ class BandConditions:
             if c else None
             for c in chirpy
         ]
-        # Eigenes Fading des CW-QRM (wie eine weitere Station).
-        freq = 1 / self.rng.uniform(*QSB_PERIOD_SECONDS)
-        self.qrm_qsb = (freq, self.rng.uniform(0, 2 * np.pi), freq * self.rng.uniform(*QSB_SECOND_RATIO),
-                        self.rng.uniform(0, 2 * np.pi), self.rng.uniform(*QSB_DEPTH_SPREAD))
-        # Flatterfading je Station (letzter Eintrag: CW-QRM): drei Schwingungen.
-        self.flutter = [[(self.rng.uniform(*FLUTTER_HZ), self.rng.uniform(0, 2 * np.pi)) for _ in range(3)]
-                        for _ in range(station_count + 1)]
+        self.flutter = [int(self.rng.integers(2 ** 63)) for _ in range(station_count + 1)]
+        self._fading_loops = {}  # (Art, Startwert) -> komplexe Schleife
         self.carrier_offset = self.rng.uniform(*CARRIER_OFFSET_HZ) * self.rng.choice((-1, 1))
         self.carrier_drift_hz = 1 / self.rng.uniform(8.0, 20.0)  # so schnell wandert er hin und her
         # Das CW-QRM würfelt aus einem eigenen Strom: Wie viele Zufallszahlen
@@ -632,6 +635,7 @@ class BandConditions:
         Fading und Rauschen beginnen von vorn."""
         self.sample_pos = 0
         self.gains = {}  # zuletzt verwendete Pegel (für _smooth)
+        self.signal_hold = 0.0  # Signalspitze, auf die die AGC zuletzt regelte
         self.noise_pos = int(self.rng.integers(len(self.noise)))
         self.ssb_pos = int(self.rng.integers(SSB_LOOP_SECONDS * SAMPLE_RATE))
         self.cw_qrm_pos = 0
@@ -702,18 +706,24 @@ class BandConditions:
         CW-Filter. Station None steht für den eigenen Mithörton (kein QSB,
         keine AGC, nicht gefiltert)."""
         noise_rms, agc = self.noise_and_agc()
+        boost = SIGNAL_RMS * agc / noise_rms if noise_rms > 0 else 1.0  # AGC höchstens bis Signalstärke
+        agc_level = agc  # volle Signalspitze = AMPLITUDE · agc
         # Verstellt jemand Regler oder Schalter mitten im Ton, gleiten die
         # Pegel kurz hinüber, statt hörbar zu springen.
         noise_rms = self._smooth("noise", noise_rms, n)
         agc = self._smooth("agc", agc, n)
         out = np.zeros(n, dtype=np.float64)
         sidetone = np.zeros(n, dtype=np.float64)
+        stations = False
         for block, station in sources:
             block = block[:n]
             if station is None or station == VOICE:
                 sidetone[:len(block)] += block
             else:
+                stations = True
                 out[:len(block)] += block * (self.station_gain(station, len(block)) * _head(agc, len(block)))
+        # Ohne Station (Bandgeräusch in der Antwortpause) regelt nichts.
+        receiver = self._signal_agc(out, boost, AMPLITUDE * agc_level, n) if stations else 1.0
         levels = self.levels
         if np.any(noise_rms):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
@@ -740,7 +750,7 @@ class BandConditions:
         if (self._on("cw_qrm") or self._on("clicks")) and cw_qrm is not None:
             pos = self.cw_qrm_pos % len(cw_qrm)
             self.cw_qrm_pos, part = _loop_slice(cw_qrm, pos, n)
-            fading = self._fading(self.qrm_qsb, n) if self._on("qsb") else 1.0
+            fading = self._fading(len(self.qsb) - 1, n) if self._on("qsb") else 1.0
             neighbour = fading * self._flutter(len(self.flutter) - 1, n)
             if self._on("cw_qrm"):
                 background += part * neighbour * levels["cw_qrm"]
@@ -751,9 +761,28 @@ class BandConditions:
         out += background * (self._smooth("background", self.background_gain, n) * agc)
         if crashes is not None:
             out *= self._pump(crashes * self.background_gain, n)
-        out = self._filtered(out)
+        out = self._filtered(out) * receiver
         self.sample_pos += n
         return soft_limit(out + sidetone).astype(np.float32)
+
+    def _signal_agc(self, signal: np.ndarray, boost: float, full: float, n: int):
+        """Verstärkung der signalgeführten AGC je Sample (1 beim vollen Ton mit
+        Spitze `full`, bis `boost`, höchstens SIGNAL_AGC_MAX_DB, ohne Signal). Die
+        Signalspitze folgt sofort und klingt mit SIGNAL_AGC_RELEASE_SECONDS
+        ab; laufendes Maximum im Logarithmus wie bei _pump."""
+        boost = min(boost, 10 ** (SIGNAL_AGC_MAX_DB / 20))
+        if boost <= 1.0:
+            self.signal_hold = 0.0
+            return 1.0
+        k = -1.0 / (SAMPLE_RATE * SIGNAL_AGC_RELEASE_SECONDS)
+        t = np.arange(n)
+        level = np.abs(signal)
+        with np.errstate(divide="ignore"):
+            marks = np.log(level) - k * t
+            carried = math.log(self.signal_hold) + k if self.signal_hold > 0 else -math.inf
+        hold = np.exp(np.maximum(np.maximum.accumulate(marks), carried) + k * t)
+        self.signal_hold = float(hold[-1])
+        return 1 + (boost - 1) * np.clip(1 - hold / full, 0, 1)
 
     def _smooth(self, key: str, value: float, n: int):
         """`value` für einen Block von `n` Samples; hat sich der Pegel seit
@@ -806,12 +835,12 @@ class BandConditions:
         eigenen Mithörton (None)."""
         if station is None:
             return 1.0
-        station %= len(self.qsb)
+        station %= len(self.strengths)
         gain = 1.0
         if self._on("strength"):
             gain = max(1 - (1 - self.strengths[station]) * 2 * self.levels["strength"], 0.05)
         if self._on("qsb"):
-            gain = gain * self._fading(self.qsb[station], n)
+            gain = gain * self._fading(station, n)
         if self._on("flutter"):
             gain = gain * self._flutter(station, n)
         return gain
@@ -820,10 +849,19 @@ class BandConditions:
         """Flatterfading (0 … 1) über die nächsten `n` Samples; 1 ohne."""
         if not self._on("flutter"):
             return 1.0
-        t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
-        wave = sum(np.sin(2 * np.pi * freq * t + phase) for freq, phase in self.flutter[index % len(self.flutter)])
-        dip = 0.5 * (1 + wave / 3)  # 0 … 1
-        return 1 - FLUTTER_MAX_DEPTH * self.levels["flutter"] * dip
+        loop = self._fading_loop("flutter", self.flutter[index % len(self.flutter)])
+        return rice_gain(_loop_at(loop, FLUTTER_RATE_HZ, self.sample_pos, n), self.levels["flutter"])
+
+    def _fading_loop(self, kind: str, seed: int) -> np.ndarray:
+        key = (kind, seed)
+        loop = self._fading_loops.get(key)
+        if loop is None:
+            if kind == "qsb":
+                loop = _gauss_loop(seed, QSB_LOOP_SECONDS, QSB_RATE_HZ, QSB_BANDWIDTH_HZ)
+            else:
+                loop = _gauss_loop(seed, FLUTTER_LOOP_SECONDS, FLUTTER_RATE_HZ, FLUTTER_BANDWIDTH_HZ)
+            self._fading_loops[key] = loop
+        return loop
 
     def _storm(self, n: int) -> np.ndarray:
         """Gewitter: zwischen Pausen ein Schub dichter Knacker."""
@@ -911,14 +949,11 @@ class BandConditions:
         envelope = ramp if self.carrier_on else 1 - ramp
         return np.sin(phases) * envelope
 
-    def _fading(self, params, n: int) -> np.ndarray:
-        """Fading-Verlauf (0 … 1) über die nächsten `n` Samples."""
-        freq, phase, freq2, phase2, spread = params
-        level = self.levels["qsb"]
-        t = (self.sample_pos + np.arange(n)) / SAMPLE_RATE
-        wave = (np.sin(2 * np.pi * freq * t + phase) + QSB_SECOND_WEIGHT * np.sin(2 * np.pi * freq2 * t + phase2))
-        dip = 0.5 * (1 + wave / (1 + QSB_SECOND_WEIGHT))  # 0 … 1
-        return 1 - min(level * QSB_MAX_DEPTH * spread, QSB_MAX_DEPTH) * dip
+    def _fading(self, index: int, n: int) -> np.ndarray:
+        """QSB-Verlauf (0 … 1) der Station `index` über die nächsten `n` Samples
+        (der letzte Index ist das CW-QRM)."""
+        loop = self._fading_loop("qsb", self.qsb[index % len(self.qsb)])
+        return rice_gain(_loop_at(loop, QSB_RATE_HZ, self.sample_pos, n), self.levels["qsb"])
 
     def _crashes(self, n: int) -> np.ndarray:
         """Knackstörungen im nächsten Block (meist Stille)."""
@@ -960,6 +995,41 @@ def noise_snr_db(level: float, gain: float = 1.0) -> float:
 def chirp_max_hz(level: float) -> float:
     """Größte Frequenzablage beim Tasten für Regler `level` (chirp_for)."""
     return CHIRP_DELTA_HZ[1] * 2 * level
+
+
+def _gauss_loop(seed: int, seconds: float, rate: float, bandwidth_hz: float) -> np.ndarray:
+    """Komplexes Gauß-Rauschen (Leistung 1) mit gaußförmigem Spektrum der
+    Breite `bandwidth_hz`, `rate` Werte je Sekunde; per FFT erzeugt und daher
+    als Schleife nahtlos."""
+    rng = np.random.default_rng(seed)
+    n = int(seconds * rate)
+    spectrum = rng.normal(size=n) + 1j * rng.normal(size=n)
+    spectrum *= np.exp(-(np.fft.fftfreq(n, 1 / rate) / bandwidth_hz) ** 2)
+    z = np.fft.ifft(spectrum)
+    return z / np.sqrt(np.mean(np.abs(z) ** 2))
+
+
+def _loop_at(loop: np.ndarray, rate: float, start: int, n: int) -> np.ndarray:
+    """Werte der Schleife `loop` (`rate` je Sekunde) für die Samples
+    start … start+n, linear interpoliert."""
+    t = (start + np.arange(n)) * (rate / SAMPLE_RATE)
+    i = np.floor(t).astype(np.int64)
+    frac = t - i
+    i %= len(loop)
+    return loop[i] * (1 - frac) + loop[(i + 1) % len(loop)] * frac
+
+
+def rice_k(level: float) -> float:
+    """Regler (0 … 1) → Rice-Faktor K: leicht 30 % ≈ 4,3 (flache
+    Schwankungen), mittel 50 % ≈ 1,9, ab stark (80 %) 0 = Rayleigh."""
+    return max(10 * (1 - level) ** 2.2 - 0.3, 0.0)
+
+
+def rice_gain(scatter: np.ndarray, level: float) -> np.ndarray:
+    """Fading-Verstärkung (höchstens 1) aus dem Streuanteil `scatter`
+    (komplex, Leistung 1) bei Regler `level`."""
+    k = rice_k(level)
+    return np.minimum(np.abs(math.sqrt(k / (k + 1)) + math.sqrt(1 / (k + 1)) * scatter), 1.0)
 
 
 def _head(gain, n: int):

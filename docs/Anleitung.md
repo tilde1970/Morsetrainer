@@ -474,21 +474,25 @@ und **stark** setzen die Stufen, nach denen auch das Diplom QRN-fest
 zählt; das Fenster zeigt, welcher Stufe die Einstellung mindestens
 entspricht.
 
-| Stufe | Rauschen (S/N) | QSB (tiefstes Loch) | dazu |
+| Stufe | Rauschen (S/N) | QSB (Zeit unter −6 dB) | dazu |
 |---|---|---|---|
-| leicht | +8 dB | 30 % (ca. −3 dB) | – |
-| mittel | +2 dB | 50 % (ca. −5,5 dB) | QRN 30 % |
-| stark | −4 dB | 80 % (ca. −12 dB) | QRN 50 %, CW-QRM 30 % |
+| leicht | +8 dB | 30 % (ca. 6 %) | – |
+| mittel | +2 dB | 50 % (ca. 14 %) | QRN 30 % |
+| stark | −4 dB | 80 % (ca. 20 %, Löcher bis −40 dB) | QRN 50 %, CW-QRM 30 % |
 
 - **Rauschabstand (S/N):** gemessen im Empfängerfilter (300–2700 Hz)
   gegenüber dem ungeschwächten Signal; der Regler reicht von +20 dB bis
   −10 dB. Das Ohr hört CW wie durch ein Filter von etwa 50 Hz, dort ist der
   Abstand rund 16 dB größer – −4 dB fühlen sich also an wie rund +12 dB im
   schmalen Filter. Wird das Rauschen lauter, als der Empfänger es durchließe,
-  regelt er wie eine AGC das Signal herunter statt zu übersteuern.
-- **Fading** wechselt unregelmäßig (zwei überlagerte Schwankungen), seine
-  Tiefe folgt dem Regler und streut nur wenig – die Stufe bestimmt die
-  Schwierigkeit, nicht der Zufall.
+  regelt er wie eine AGC das Signal herunter statt zu übersteuern. Wie ein
+  echter Empfänger regelt er in den Pausen hoch: Zwischen den Zeichen wird
+  das Rauschen lauter (bis zur Signalstärke, höchstens 12 dB), beim Ton gilt
+  der eingestellte Rauschabstand.
+- **Fading** ist zufällig wie auf dem Band: meist flache Schwankungen, ab
+  und zu ein tieferes Loch. Je höher der Regler, desto öfter und tiefer;
+  ab „stark“ gibt es gelegentlich kurze, sehr tiefe Löcher. Auch
+  Flatterfading schwankt zufällig, nur viel schneller.
 - **Chirp** steht in Hz (größte Ablage beim Tasten).
 - **CW-QRM-Abstand:** Der Nachbar-Run liegt **weit** (300–500 Hz) daneben,
   **nah** (50–200 Hz) oder auf **Zero-Beat** (fast auf deiner Frequenz).

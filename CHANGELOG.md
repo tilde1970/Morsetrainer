@@ -84,6 +84,12 @@
   „weit“ jetzt deutlich weg (300 Hz daneben −13 statt −7 dB), klingelt
   dafür etwas mehr. Knackstörungen und Gewitter prasseln als Folge kurzer
   Einzelentladungen statt als glatte Rauschstöße.
+- **Fading und Empfänger wie auf dem Band:** QSB und Flatterfading
+  schwanken jetzt zufällig (Rice-Fading): meist flach, ab und zu ein
+  tieferes Loch, ab „stark“ gelegentlich sehr tiefe. Der Empfänger regelt
+  in den Pausen hoch, zwischen den Zeichen wird das Rauschen lauter; beim
+  Ton gilt der eingestellte Rauschabstand. „Leicht“ und „mittel“ werden
+  dadurch etwas schwerer.
 
 ## 2.48
 
