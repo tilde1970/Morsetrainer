@@ -90,6 +90,10 @@
   in den Pausen hoch, zwischen den Zeichen wird das Rauschen lauter; beim
   Ton gilt der eingestellte Rauschabstand. „Leicht“ und „mittel“ werden
   dadurch etwas schwerer.
+- **Tiefe Töne und Mithörton:** Bei Tonhöhen unter 400 Hz dämpft das
+  Empfängerfilter jetzt auch das Signal (bei 300 Hz −3 dB), so war ein
+  tiefer Ton bisher etwas leichter. Der eigene Mithörton (Contest) ist 3 dB
+  leiser und wird zusammen mit dem Bandgeräusch seltener begrenzt.
 
 ## 2.48
 

@@ -488,7 +488,8 @@ entspricht.
   regelt er wie eine AGC das Signal herunter statt zu übersteuern. Wie ein
   echter Empfänger regelt er in den Pausen hoch: Zwischen den Zeichen wird
   das Rauschen lauter (bis zur Signalstärke, höchstens 12 dB), beim Ton gilt
-  der eingestellte Rauschabstand.
+  der eingestellte Rauschabstand. Bei sehr tiefer Tonhöhe (unter 400 Hz)
+  dämpft das Empfängerfilter auch das Signal etwas, bei 300 Hz um 3 dB.
 - **Fading** ist zufällig wie auf dem Band: meist flache Schwankungen, ab
   und zu ein tieferes Loch. Je höher der Regler, desto öfter und tiefer;
   ab „stark“ gibt es gelegentlich kurze, sehr tiefe Löcher. Auch

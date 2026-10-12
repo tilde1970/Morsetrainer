@@ -268,6 +268,39 @@ class FilterAndQrmTest(unittest.TestCase):
             self.assertLess(start, 0.6 * rms(settled), before)
             self.assertLess(start, rms(previous[-quarter:]) * 1.8 + 0.05, before)
 
+    def test_low_pitch_is_shaped_by_the_receiver_filter(self):
+        # Ohne schmales Filter dämpft das Empfängerfilter einen sehr tiefen
+        # Ton (300 Hz: −3 dB); mit CW-Filter um die Tonhöhe nicht.
+        import numpy as np
+        rate = band.SAMPLE_RATE
+        t = np.arange(rate) / rate
+
+        def tone_level(pitch, spec):
+            conditions = band.conditions(spec, pitch)
+            tone = (band.AMPLITUDE * np.sin(2 * np.pi * pitch * t)).astype(np.float32)
+            out = np.concatenate([conditions.mix([(tone[i:i + 960], 0)], 960) for i in range(0, rate, 960)])
+            return float(np.sqrt(np.mean(out[rate // 4:] ** 2)))
+        plain = {"levels": {}, "gain": 1.0}
+        self.assertAlmostEqual(20 * np.log10(tone_level(300, plain) / tone_level(600, plain)), -3.0, delta=0.3)
+        self.assertAlmostEqual(20 * np.log10(tone_level(450, plain) / tone_level(600, plain)), -0.2, delta=0.2)
+        narrow = {"levels": {}, "gain": 1.0, "filter": 500}
+        self.assertAlmostEqual(20 * np.log10(tone_level(300, narrow) / tone_level(600, narrow)), 0.0, delta=0.3)
+
+    def test_soft_limit_rare_in_presets(self):
+        # Contest-ähnlich: eigener Mithörton und eine Gegenstation über dem
+        # Band der Stufe – die weiche Begrenzung greift nur selten.
+        import numpy as np
+        own = band.build_text("CQ TEST DL4YM DL4YM TEST", 28, 600)
+        other = band.build_text("DK2AB DK2AB 5NN 14 TU", 26, 650)
+        n = max(len(own), len(other))
+        mine, theirs = np.zeros(n, np.float32), np.zeros(n, np.float32)
+        mine[:len(own)], theirs[:len(other)] = own, other
+        for preset in band.PRESETS:
+            conditions = band.conditions(dict(band.spec_from_preset(preset), seed=3), 600)
+            out = np.concatenate([conditions.mix([(mine[i:i + 960], None), (theirs[i:i + 960], 0)],
+                                                 len(mine[i:i + 960])) for i in range(0, n, 960)])
+            self.assertLess(float(np.mean(np.abs(out) > 0.9)), 0.012, preset)
+
     def test_displayed_snr_matches_measured(self):
         # Angezeigter Rauschabstand = gemessener Abstand von Dauerstrich zu
         # Rauschen am Ausgang (ohne Filter, ohne Fading).
@@ -317,7 +350,8 @@ class FilterAndQrmTest(unittest.TestCase):
         import numpy as np
         conditions = band.conditions({"levels": {}, "gain": 1.0, "filter": 250}, 600)  # ohne zufällige Knacker
         out = self.blockwise(conditions, self.tone(1000), station=None)
-        self.assertAlmostEqual(float(np.max(np.abs(out))), 0.3, delta=0.01)
+        # Ungefiltert durch (1000 Hz bei 250-Hz-Filter um 600 Hz), nur 3 dB leiser.
+        self.assertAlmostEqual(float(np.max(np.abs(out))), 0.3 * band.SIDETONE_GAIN, delta=0.01)
 
     def test_filter_takes_away_noise(self):
         import numpy as np

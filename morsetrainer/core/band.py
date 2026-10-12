@@ -156,6 +156,10 @@ FLUTTER_LOOP_SECONDS = 60
 # lässt mit SIGNAL_AGC_RELEASE_SECONDS los; beim Ton bleibt der
 # Rauschabstand also, wie er eingestellt ist.
 SIGNAL_AGC_MAX_DB = 12.0
+# Eigener Mithörton 3 dB leiser als eine volle Station: Zusammen mit dem
+# Bandgeräusch begrenzte soft_limit sonst merklich oft (bei „leicht“ gut
+# 2 % der Samples).
+SIDETONE_GAIN = 10 ** (-3 / 20)
 SIGNAL_AGC_RELEASE_SECONDS = 0.25
 # Träger: Abstand zur eigenen Tonhöhe, langsames Wandern, an und aus.
 CARRIER_OFFSET_HZ = (30, 250)
@@ -568,6 +572,7 @@ class BandConditions:
         self.extra_rng = np.random.default_rng([self.qrm_seed, 1 << 40])
         self.fence_period = self.extra_rng.uniform(*FENCE_PERIOD_SECONDS)
         self.freq = 600
+        self.pitch_gain = 1.0  # Empfängerfilter bei der Tonhöhe (prepare)
         self.rewind()
 
     def prepare(self, freq: int, qrm_freq=None) -> None:
@@ -577,6 +582,11 @@ class BandConditions:
         `freq`): Bei leicht verstimmten Stationen bleibt der Nachbar auf
         seiner Frequenz, statt mit jedem Ruf neu zu entstehen."""
         self.freq = freq
+        # Ohne schmales CW-Filter formt das Empfängerfilter (300–2700 Hz) auch
+        # das Signal: Bei sehr tiefem Ton ist es leiser, das Rauschen nicht.
+        # Bezug 600 Hz, wo der Rauschabstand geeicht ist; höher wird es nicht lauter.
+        gains = _passband_gain(np.array([float(freq), 600.0]))
+        self.pitch_gain = min(float(gains[0] / gains[1]), 1.0)
         qrm_freq = freq if qrm_freq is None else qrm_freq
         if self.enabled["ssb"] and self.ssb is None:
             self.ssb = _ssb_babble_loop()
@@ -721,11 +731,15 @@ class BandConditions:
         stations = False
         for block, station in sources:
             block = block[:n]
-            if station is None or station == VOICE:
+            if station is None:
+                sidetone[:len(block)] += block * SIDETONE_GAIN
+            elif station == VOICE:
                 sidetone[:len(block)] += block
             else:
                 stations = True
-                out[:len(block)] += block * (self.station_gain(station, len(block)) * _head(agc, len(block)))
+                pitch = self.pitch_gain if self.filter is None else 1.0
+                out[:len(block)] += block * (self.station_gain(station, len(block)) * pitch
+                                             * _head(agc, len(block)))
         # Ohne Station (Bandgeräusch in der Antwortpause) regelt nichts.
         receiver = self._signal_agc(out, boost, AMPLITUDE * agc_level, n) if stations else 1.0
         levels = self.levels

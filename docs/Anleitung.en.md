@@ -480,7 +480,9 @@ matches at least.
   noise gets louder than the receiver would pass, it turns the signal down
   like an AGC instead of clipping. Like a real receiver it turns up the
   gain in the gaps: between characters the noise gets louder (up to the
-  signal level, at most 12 dB); during the tone the set ratio applies.
+  signal level, at most 12 dB); during the tone the set ratio applies. At
+  a very low pitch (below 400 Hz) the receiver filter also attenuates the
+  signal a little, by 3 dB at 300 Hz.
 - **Fading** is random as on the band: mostly shallow, now and then a
   deeper dip. The higher the slider, the more often and deeper; from
   “heavy” on there are occasional short, very deep dips. Flutter fading is
