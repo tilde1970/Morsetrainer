@@ -5,6 +5,11 @@
 - **Meldungen und Rückfragen mit Ansage:** Fragen wie „Nächste
   Koch-Lektion?“ werden vorgelesen, samt „Enter: ja. Escape: nein.“ Die
   Leertaste sagt nicht mehr versehentlich Ja; F9 und F11 wirken auch dort.
+- **Tagesübung wartet auf ihre Ansage:** Jeder Block wird angesagt
+  („Tagesübung, Aufwärmen: Zeichen, 3 Minuten“), erst danach kommt das
+  erste Zeichen. Bisher lief die Ansage über dem Morseton, und das erste
+  Zeichen zählte als zu langsam. Auch das neue Zeichen einer Lektion
+  erklingt erst nach der Ansage.
 - **Daten sichern und einlesen ohne Fehler:** Unter Linux brach der
   Dateidialog bei eingeschalteter Ansage mit „Unerwarteter Fehler“ ab.
   Vor dem Dateidialog wird jetzt gesagt, was kommt und was Enter und

@@ -15,7 +15,7 @@ import time
 from datetime import date
 
 from morsetrainer.core import awards, daily, koch, practice, review, stats, week
-from morsetrainer.i18n import tr
+from morsetrainer.i18n import short_number, tr
 from morsetrainer.widgets import announcer
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, review_line, stars_named)
@@ -25,6 +25,16 @@ from morsetrainer.widgets.awards_panel import seal_name
 # Reiter je Modus der Blöcke (deutsche Titel = Schlüssel, siehe app.py).
 MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter", "callsign": "Rufzeichen",
                "continuous": "Kontinuierlich"}
+
+
+def block_text(block) -> str:
+    """Ansage vor einem Block, z. B. „Tagesübung, Aufwärmen: Zeichen,
+    3 Minuten.“"""
+    return tr("Tagesübung, {block}: {mode}, {minutes} Minuten.").format(
+        block=tr(BLOCK_LABELS[block.kind]), mode=tr(stats.HISTORY_MODES[block.mode]),
+        minutes=short_number(block.minutes))
+
+
 # Feste Einstellungen je Modus (Schlüssel wie settings() des Reiters).
 _SEQUENCE = {"adaptive_tempo": False, "band": False, "give_up": 1}
 MODE_SETTINGS = {
@@ -126,9 +136,9 @@ class DailyRunner:
         if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
             # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
             char = koch.newest_char(lesson)
+            # Vorspielen erst nach der Ansage, sie schnitte sonst das Zeichen ab.
             self._show_card(tr("Neues Zeichen: {char}").format(char=char),
-                            [preview_line(self.blocks[0], lesson, self.state["tempo"])])
-            app._play_new_char()
+                            [preview_line(self.blocks[0], lesson, self.state["tempo"])], then=app._play_new_char)
         else:
             self._next_block()
 
@@ -207,31 +217,37 @@ class DailyRunner:
         if self.index >= len(self.blocks):
             self._finish(completed=True)
             return
-        block = self.blocks[self.index]
-        if not self._start_block(block) and block.mode != "group":
-            # Zu wenige Wörter oder Rufzeichen für den Zeichensatz: stattdessen Gruppen.
-            self.blocks[self.index] = block = daily.Block(block.kind, "group", block.minutes, {})
-            self._start_block(block)
-        if self.mode is None:
-            self._finish(completed=False)
+        self._start_block(self.blocks[self.index])
 
-    def _start_block(self, block) -> bool:
-        """Wechselt zum Reiter des Blocks, setzt seine festen Einstellungen und
-        startet ihn; False, wenn der Reiter nicht starten konnte."""
+    def _start_block(self, block) -> None:
+        """Wechselt still zum Reiter des Blocks, setzt seine festen
+        Einstellungen, sagt den Block an und startet ihn erst danach (sonst
+        liefe die Ansage über dem ersten Zeichen, und es zählte als zu
+        langsam)."""
         app = self.app
         title = MODE_TITLES[block.mode]
         mode = app.modes[app.mode_titles.index(title)]
-        # Zwischen den Blöcken sind die Reiter noch gesperrt; der neue Reiter
-        # sperrt sie beim Start wieder.
-        for tab_id in app.notebook.tabs():
-            app.notebook.tab(tab_id, state="normal")
-        app.show_mode(title)
+        # Zwischen den Blöcken bleiben die anderen Reiter gesperrt, auch
+        # während der Ansage; der neue Reiter sperrt sie beim Start selbst.
+        tab_id = app.tab_ids[app.mode_titles.index(title)]
+        app.notebook.tab(tab_id, state="normal")
+        app.show_mode(title, announce=False)
+        for other in app.notebook.tabs():
+            if other != tab_id:
+                app.notebook.tab(other, state="disabled")
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
         settings = {**MODE_SETTINGS[block.mode], **block.params}
         if block.mode == "single":
             settings["icr_limit"] = daily.warmup_limit(self.state)
         mode.daily_configure(block.minutes, **settings)
         self.mode = mode
+        announcer.say(block_text(block), then=lambda: self._run_block(block, mode))
+
+    def _run_block(self, block, mode) -> None:
+        """Nach der Blockansage: Reiter starten. Reichen Wörter oder
+        Rufzeichen für den Zeichensatz nicht, wird es ein Gruppen-Block."""
+        if not self.active or self.mode is not mode:
+            return  # während der Ansage abgebrochen
         self.block_started = time.time()
         mode.start()
         if not mode.running:
@@ -239,10 +255,14 @@ class DailyRunner:
             self.mode = None
             self.block_started = None
             review.focus = set()
-            return False
+            if block.mode != "group":
+                self.blocks[self.index] = block = daily.Block(block.kind, "group", block.minutes, {})
+                self._start_block(block)
+            else:
+                self._finish(completed=False)
+            return
         # Stop beendet hier nicht nur den Block, sondern die ganze Übung.
         mode.start_button.config(text=tr("Tagesübung beenden"))
-        return True
 
     def _focus(self, block) -> set:
         charset = self.app.charset_var.get().upper()
@@ -296,14 +316,15 @@ class DailyRunner:
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
         self._show_card(title, lines, strong)
 
-    def _show_card(self, title: str, lines, strong=()) -> None:
-        """Die Karte bleibt stehen, bis man weitergeht (continue_now)."""
+    def _show_card(self, title: str, lines, strong=(), then=None) -> None:
+        """Die Karte bleibt stehen, bis man weitergeht (continue_now);
+        `then` kommt nach ihrer Ansage."""
         self.bar.show_card(title, lines, strong)
         self.card_open = True
         self.card_shown = time.time()
         # Ansage (Barrierefreiheit); F11 liest sie noch einmal vor.
-        self.card_text = ". ".join([title, *lines, "Weiter mit Enter"]) + "."
-        announcer.say(self.card_text)
+        self.card_text = ". ".join([title, *lines, tr("Weiter mit Enter")]) + "."
+        announcer.say(self.card_text, then=then)
         self.app.root.focus_set()  # Enter und Esc sollen ankommen
 
     def continue_now(self) -> None:

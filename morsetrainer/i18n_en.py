@@ -371,6 +371,8 @@ EN.update({
     "▶ Tagesübung ({minutes} Min, {key})": "▶ Daily practice ({minutes} min, {key})",
     "Tagesübung beenden (Esc)": "End daily practice (Esc)",
     "Tagesübung beenden": "End daily practice",
+    "Weiter mit Enter": "Continue with Enter",
+    "Tagesübung, {block}: {mode}, {minutes} Minuten.": "Daily practice, {block}: {mode}, {minutes} minutes.",
     "Noch einmal {key} beendet die Tagesübung.": "Press {key} again to end the daily practice.",
     "{star} Stern aus der Tagesübung, ✓ frei geübt, – nicht geübt, · noch nicht dran":
         "{star} star from the daily practice, ✓ practised freely, – not practised, · still to come",

@@ -785,6 +785,10 @@ class MorseTrainerApp:
         return name
 
     def _announce_tab(self, event=None) -> None:
+        if self.silent_tab is not None:
+            silent, self.silent_tab = self.silent_tab, None
+            if silent == self.notebook.select():
+                return
         hint = " " + tr("F11 liest die Übersicht vor.") if self._active_mode() is None else ""
         announcer.say(tr("Reiter {name}.").format(name=self._tab_name()) + hint)
 
@@ -1449,6 +1453,7 @@ class MorseTrainerApp:
 
         self.modes = []
         self.mode_titles = []
+        self.silent_tab = None  # Reiter, dessen nächster Wechsel nicht angesagt wird (show_mode)
         self.tab_ids = []  # je Modus der Reiter, in dem er steht (bei „Einzeln“ derselbe)
         self.one_by_one_tab = None
         self.one_by_one_frames = {}
@@ -1546,11 +1551,15 @@ class MorseTrainerApp:
             self.one_by_one_var.set(title)
             self._show_one_by_one()
 
-    def show_mode(self, title: str) -> None:
+    def show_mode(self, title: str, announce: bool = True) -> None:
         """Die Übung `title` (Schlüssel aus mode_classes) zeigen: ihren Reiter
-        wählen, in „Einzeln“ auch die Übung."""
+        wählen, in „Einzeln“ auch die Übung. `announce` False: den Wechsel
+        nicht ansagen (die Tagesübung sagt ihren Block selbst an)."""
         self.show_content(title)
-        self.notebook.select(self.tab_ids[self.mode_titles.index(title)])
+        tab_id = self.tab_ids[self.mode_titles.index(title)]
+        if not announce and self.notebook.select() != tab_id:
+            self.silent_tab = tab_id  # <<NotebookTabChanged>> kommt erst später
+        self.notebook.select(tab_id)
 
     def _lock_tabs(self):
         # Fokus aus Eingabefeldern oben (Zeichen, WPM …) nehmen, sonst

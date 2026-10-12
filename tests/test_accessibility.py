@@ -1256,6 +1256,51 @@ class ListenAnnounceTest(AnnouncerCase):
 
 
 
+class DailyAnnounceTest(AnnouncerCase):
+    """Tagesübung mit Ansage: kein Morseton über der Stimme."""
+
+    def setUp(self):
+        super().setUp()
+        from morsetrainer.core import koch
+        self.app.charset_var.set(koch.lesson_charset(12))
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        self.runner = self.app.daily
+
+    def test_daily_block_waits_for_its_announcement(self):
+        self.app.show_mode("Kontinuierlich")  # Wechsel zum ersten Block wäre sonst eine Reiteransage
+        self.pump_until(lambda: False, timeout=0.3)
+        del self.said[:]
+        self.runner.start()
+        mode = self.runner.mode
+        self.assertFalse(mode.running)  # erst ansagen, dann spielen
+        self.assertTrue(self.pump_until(lambda: mode.running), self.said)
+        spoken = " ".join(self.said)
+        self.assertIn("Tagesübung, Aufwärmen: Zeichen, 3 Minuten.", spoken)
+        self.assertNotIn("Reiter", spoken)
+        others = [t for t in self.app.notebook.tabs() if t != self.app.notebook.select()]
+        self.assertTrue(all(self.app.notebook.tab(t, "state") == "disabled" for t in others))
+
+    def test_abort_during_the_announcement_starts_nothing(self):
+        self.runner.start()
+        mode = self.runner.mode
+        self.runner.abort()
+        self.pump_until(lambda: False, timeout=0.5)
+        self.assertFalse(self.runner.active)
+        self.assertFalse(mode.running)
+        self.assertTrue(all(self.app.notebook.tab(t, "state") == "normal" for t in self.app.notebook.tabs()))
+
+    def test_new_character_plays_after_the_card(self):
+        from morsetrainer.core import daily
+        played = []
+        with mock.patch.object(daily, "is_new_lesson", lambda state, today: True), \
+                mock.patch.object(self.app, "_play_new_char", lambda: played.append(len(self.said))):
+            self.runner.start()
+            self.assertTrue(self.pump_until(lambda: played))
+        self.assertIn("Neues Zeichen", " ".join(self.said[:played[0]]))
+        self.assertIn("Weiter mit Enter.", " ".join(self.said[:played[0]]))
+
+
 class DialogTest(AnnouncerCase):
     """Meldungen und Ja/Nein-Fragen (widgets/dialog.py) statt messagebox:
     angesagt, Enter und Escape entscheiden, die Leertaste nicht."""
