@@ -60,6 +60,9 @@
   erreichbar; die Pfeiltasten gehen durch die Tage und sagen deren Werte
   an. F11 nennt im Reiter Statistik auch Fortschritt und Lebenslinie.
 
+- **Stimme einstellbar:** Unter „Einstellungen …“ lassen sich Sprechtempo
+  (70–200 %) und Lautstärke der Ansage (25–100 %) wählen.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

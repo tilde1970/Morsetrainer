@@ -69,6 +69,9 @@ FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, t
                    ttk.Combobox)
 # Sprachansage an/aus und „wo bin ich?“ (widgets/announcer.py).
 ANNOUNCE_KEY = "F9"
+# Sprechtempo und Lautstärke der Ansage in Prozent (Einstellungen).
+VOICE_RATE_STEPS = (70, 85, 100, 115, 130, 150, 175, 200)
+VOICE_VOLUME_STEPS = (25, 50, 75, 100)
 # Begrüßung beim ersten Start erst, wenn das Fenster steht (die Stimme zu
 # laden hält das Zeichnen sonst auf).
 FIRST_START_GREETING_MS = 800
@@ -518,6 +521,17 @@ class MorseTrainerApp:
                         command=self._announce_toggled).pack(side="left")
         self.announce_hint_var = tk.StringVar(value=tr("F11 liest vor, wo du bist"))
         theme.hint(speak, textvariable=self.announce_hint_var, wrap=420).pack(side="left", padx=(8, 0))
+        voice = ttk.Frame(access_card)
+        voice.pack(fill="x", pady=2)
+        for label, var, steps in ((tr("Sprechtempo"), self.announcer.rate_var, VOICE_RATE_STEPS),
+                                  (tr("Lautstärke der Ansage"), self.announcer.volume_var, VOICE_VOLUME_STEPS)):
+            ttk.Label(voice, text=label).pack(side="left")
+            box = ttk.Combobox(voice, values=[f"{step} %" for step in steps], state="readonly", width=7)
+            box.pack(side="left", padx=(6, 14))
+            announcer.name(box, label)
+            box.bind("<<ComboboxSelected>>", lambda e, b=box, v=var: v.set(int(b.get().split()[0])))
+            var.trace_add("write", lambda *_, b=box, v=var: b.set(f"{v.get()} %"))
+            box.set(f"{var.get()} %")
 
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)
@@ -1151,6 +1165,8 @@ class MorseTrainerApp:
             "station_name": (self.station_name_var, None),
             "font_scale": (self.font_scale_var, (theme.ZOOM_STEPS[0], theme.ZOOM_STEPS[-1])),
             "announce": (self.announcer.var, None),
+            "announce_rate": (self.announcer.rate_var, (VOICE_RATE_STEPS[0], VOICE_RATE_STEPS[-1])),
+            "announce_volume": (self.announcer.volume_var, (VOICE_VOLUME_STEPS[0], VOICE_VOLUME_STEPS[-1])),
             "contrast": (self.contrast_var, None),
         }
 

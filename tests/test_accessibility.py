@@ -149,7 +149,7 @@ class AnnouncerCase(AppTestCase):
             # Hintergrund, und ohne Piper bliebe ein Fehler an ihr hängen.
             mock.patch.object(speech.speaker, "voice", object()),
             mock.patch.object(speech.speaker, "synth",
-                              lambda text: (self.said.append(text), np.zeros(4800, dtype=np.float32))[1]),
+                              lambda text, rate=1.0: (self.said.append(text), np.zeros(4800, dtype=np.float32))[1]),
             mock.patch.object(announcer.audio, "play_quietly", lambda samples: self.played.append(len(samples))),
         ]
         for patch in self.speech_patches:
@@ -204,7 +204,7 @@ class AnnouncerTest(AnnouncerCase):
         self.pump_until(lambda: False, timeout=0.5)
         done = []
         with mock.patch.object(speech.speaker, "synth",
-                               lambda text: np.zeros(self.announcer.SAMPLE_RATE, dtype=np.float32)):
+                               lambda text, rate=1.0: np.zeros(self.announcer.SAMPLE_RATE, dtype=np.float32)):
             start = time.monotonic()
             self.app.announcer.say("Eine Sekunde lang.", then=lambda: done.append(time.monotonic()))
             self.assertTrue(self.pump_until(lambda: done, timeout=4))
@@ -434,7 +434,7 @@ class AnnouncerTest(AnnouncerCase):
         self.pump_until(lambda: False, timeout=0.5)  # Reiter-Ansage beim Aufbau ausklingen lassen
         done = {}
         with mock.patch.object(speech.speaker, "synth",
-                               lambda text: np.zeros(self.announcer.SAMPLE_RATE, dtype=np.float32)):
+                               lambda text, rate=1.0: np.zeros(self.announcer.SAMPLE_RATE, dtype=np.float32)):
             self.app.announcer.say("Erste.", then=lambda: done.setdefault("first", time.monotonic()))
             self.assertTrue(self.pump_until(lambda: self.app.announcer.speaking_until > time.time()))
             second = time.monotonic()
@@ -461,12 +461,12 @@ class AnnouncerTest(AnnouncerCase):
         announcer = self.app.announcer
         announcer.clear_cache()
         second = np.zeros(1000, dtype=np.float32)  # 4000 Bytes
-        with mock.patch.object(speech.speaker, "synth", lambda text: second), \
+        with mock.patch.object(speech.speaker, "synth", lambda text, rate=1.0: second), \
                 mock.patch.object(self.announcer, "CACHE_BYTES", 10000):
             for text in ("eins", "zwei", "eins", "drei"):
                 announcer._synth(text)
             self.assertEqual(list(announcer._cache), ["eins", "drei"])
-            with mock.patch.object(speech.speaker, "synth", lambda text: np.zeros(5000, dtype=np.float32)):
+            with mock.patch.object(speech.speaker, "synth", lambda text, rate=1.0: np.zeros(5000, dtype=np.float32)):
                 self.assertIsNotNone(announcer._synth("zu lang"))
         self.assertNotIn("zu lang", announcer._cache)
 
@@ -488,7 +488,7 @@ class AnnouncerTest(AnnouncerCase):
         interval = sys.getswitchinterval()
         sys.setswitchinterval(1e-6)  # Threads wechseln oft: Wettläufe zeigen sich
         try:
-            with mock.patch.object(speech.speaker, "synth", lambda text: np.zeros(400, dtype=np.float32)), \
+            with mock.patch.object(speech.speaker, "synth", lambda text, rate=1.0: np.zeros(400, dtype=np.float32)), \
                     mock.patch.object(self.announcer, "CACHE_BYTES", 16000):
                 threads = [threading.Thread(target=speak, args=(n * 7,)) for n in range(4)]
                 for thread in threads:
@@ -1536,6 +1536,48 @@ class StatisticsAnnounceTest(AnnouncerCase):
     def test_f11_in_statistics_mentions_progress_and_lifeline(self):
         spoken = self.app.statistics_spoken()
         self.assertIn("Lebenslinie:", spoken)
+
+
+class VoiceSettingsTest(AnnouncerCase):
+    """Sprechtempo und Lautstärke der Ansage einstellbar und gespeichert."""
+
+    def test_rate_reaches_the_voice_and_volume_the_output(self):
+        import numpy as np
+        from morsetrainer.core import speech
+        self.app.announcer.var.set(True)
+        rates, played = [], []
+        loud = np.full(4800, 0.5, dtype=np.float32)
+        with mock.patch.object(speech.speaker, "synth", lambda text, rate=1.0: (rates.append(rate), loud)[1]), \
+                mock.patch.object(self.announcer.audio, "play_quietly", lambda samples: played.append(samples)):
+            self.app.announcer.rate_var.set(150)
+            self.app.announcer.volume_var.set(50)
+            self.app.announcer.say("Probe eins.")
+            self.assertTrue(self.pump_until(lambda: played))
+        self.assertEqual(rates[-1], 1.5)
+        self.assertAlmostEqual(float(played[-1].max()), 0.25)
+
+    def test_changing_the_rate_drops_cached_speech(self):
+        self.app.announcer._cache["alt"] = object()
+        self.app.announcer.rate_var.set(130)
+        self.assertNotIn("alt", self.app.announcer._cache)
+        self.app.announcer._cache["alt"] = object()
+        self.app.announcer.volume_var.set(75)  # Lautstärke wirkt beim Abspielen, Speicher bleibt
+        self.assertIn("alt", self.app.announcer._cache)
+
+    def test_saved_and_restored(self):
+        self.app.announcer.rate_var.set(175)
+        self.app.announcer.volume_var.set(25)
+        shared = self.app._shared_settings()
+        self.assertEqual((shared["announce_rate"], shared["announce_volume"]), (175, 25))
+
+    def test_real_voice_speaks_faster(self):
+        from morsetrainer.core import speech
+        voice = speech.Speaker()
+        if voice.available() is not None:
+            self.skipTest("keine Stimme")
+        normal = len(voice.synth("Guten Abend, das ist eine Probe."))
+        fast = len(voice.synth("Guten Abend, das ist eine Probe.", rate=1.5))
+        self.assertLess(fast, normal * 0.9)  # Pausen bleiben, daher nicht ganz 1/1,5
 
 
 class FirstStartTest(AnnouncerCase):

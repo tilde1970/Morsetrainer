@@ -19,7 +19,7 @@ from morsetrainer.modes.content import ItemSource
 from tests.test_modes import AppTestCase
 
 
-def fake_synth(text):
+def fake_synth(text, rate=1.0):
     return np.zeros(int(0.1 * SAMPLE_RATE), dtype=np.float32)
 
 

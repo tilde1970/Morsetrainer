@@ -453,6 +453,8 @@ EN.update({
     "Pfeil links und rechts gehen durch die Tage.": "Left and right arrows go through the days.",
     "Fortschritt {mode}: {info}": "Progress {mode}: {info}",
     "Lebenslinie: {info}": "Lifeline: {info}",
+    "Sprechtempo": "Speaking rate",
+    "Lautstärke der Ansage": "Announcement volume",
     "Stufe {name}": "Level {name}",
     "Stufe {name} eingestellt.": "Level {name} set.",
     "Dateiauswahl {title}.": "File selection {title}.",

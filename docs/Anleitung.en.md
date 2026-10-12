@@ -728,7 +728,8 @@ screen – no screen reader needed. F9 switches announcements on and off
 it. Announcements use the language of the interface: German with the
 Thorsten voice, English with the Lessac voice (callsigns then “Delta Lima
 One”). If the voice is missing, F9 and F11 play an error tone and the
-reason appears in the status line.
+reason appears in the status line. Under “Settings …” you set the
+**Speaking rate** (70–200 %) and the **Announcement volume** (25–100 %).
 
 On the very first start the program says once that F9 switches
 announcements on and F11 tells you where you are. If a screen reader is

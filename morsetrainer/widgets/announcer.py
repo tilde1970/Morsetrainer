@@ -22,6 +22,8 @@ import threading
 import time
 import tkinter as tk
 
+import numpy as np
+
 from morsetrainer import i18n
 from morsetrainer.core import audio, sfx, speech
 from morsetrainer.core.morse import AUDIO_LATENCY, PROSIGN_KEYS, SAMPLE_RATE
@@ -70,6 +72,13 @@ class Announcer:
     def __init__(self, root):
         self.root = root
         self.var = tk.BooleanVar(value=False)
+        # Sprechtempo und Lautstärke in Prozent (Einstellungen); der
+        # Synthese-Thread liest die einfachen Attribute, nicht die Tk-Variablen.
+        self.rate_var = tk.IntVar(value=100)
+        self.volume_var = tk.IntVar(value=100)
+        self.rate = self.volume = 1.0
+        self.rate_var.trace_add("write", lambda *_: self._voice_changed())
+        self.volume_var.trace_add("write", lambda *_: self._voice_changed())
         self.token = 0
         self.speaking_until = 0.0  # time.time(), zu der die laufende Ansage endet
         self.done_token = 0  # token der zuletzt ganz abgespielten Ansage
@@ -83,6 +92,19 @@ class Announcer:
         self._cache_size = 0  # Bytes im Zwischenspeicher
         # Stimme schon laden, sobald die Ansage an ist (knapp 1 s).
         self.var.trace_add("write", lambda *_: self._preload_soon())
+
+    def _voice_changed(self) -> None:
+        try:
+            rate, volume = self.rate_var.get() / 100, self.volume_var.get() / 100
+        except tk.TclError:
+            return
+        if rate != self.rate:
+            self.rate = rate
+            self.clear_cache()  # Gespeichertes hat noch das alte Tempo
+        self.volume = volume
+
+    def _at_volume(self, samples):
+        return samples if self.volume == 1.0 else samples * np.float32(self.volume)
 
     def _preload_soon(self) -> None:
         """Ansage an: die Stimme laden, sobald das Fenster gezeichnet ist."""
@@ -180,7 +202,7 @@ class Announcer:
             if index in results and time.time() >= state["free_at"]:
                 samples = results[index]
                 if samples is not None and len(samples):
-                    audio.play_quietly(samples)
+                    audio.play_quietly(self._at_volume(samples))
                     state["free_at"] = time.time() + len(samples) / SAMPLE_RATE + (AUDIO_LATENCY if index == 0 else 0)
                     self.speaking_until = state["free_at"]
                 state["next"] += 1
@@ -275,7 +297,7 @@ class Announcer:
             if thread.is_alive():
                 self._after(POLL_MS, poll)
             elif result.get("samples") is not None and len(result["samples"]):
-                deliver(result["samples"])
+                deliver(self._at_volume(result["samples"]))
 
         poll()
 
@@ -288,7 +310,7 @@ class Announcer:
         if samples is None:
             with _synth_lock:
                 try:
-                    samples = self.speaker().synth(text)
+                    samples = self.speaker().synth(text, rate=self.rate)
                 except Exception:  # Stimme defekt: lieber still als abgestürzt
                     samples = None
         if samples is not None:

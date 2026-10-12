@@ -859,7 +859,7 @@ class NetworkTabTest(unittest.TestCase):
         for patch in (mock.patch.object(speech.speaker, "available", lambda: None),
                       mock.patch.object(speech.speaker, "voice", object()),
                       mock.patch.object(speech.speaker, "synth",
-                                        lambda text: (said.append(text), np.zeros(4800, dtype=np.float32))[1]),
+                                        lambda text, rate=1.0: (said.append(text), np.zeros(4800, dtype=np.float32))[1]),
                       mock.patch.object(announcer.audio, "play_quietly", lambda samples: None)):
             patch.start()
             self.addCleanup(patch.stop)

@@ -742,7 +742,9 @@ aus (auch unter „Einstellungen …“ → „Rückmeldung ansagen“), die Sti
 bestätigt es. Die Ansage spricht die Sprache der Oberfläche: deutsch mit
 der Stimme Thorsten, englisch mit der Stimme Lessac (Rufzeichen dann
 „Delta Lima One“). Fehlt die Stimme, kommt bei F9 und F11 ein Fehlerton,
-und der Grund steht in der Statuszeile.
+und der Grund steht in der Statuszeile. Unter „Einstellungen …“ stellst du
+das **Sprechtempo** (70–200 %) und die **Lautstärke der Ansage** (25–100 %)
+ein.
 
 Beim allerersten Start sagt das Programm einmal an, dass F9 die Ansage
 einschaltet und F11 sagt, wo du bist. Läuft dabei ein Screenreader (NVDA,
