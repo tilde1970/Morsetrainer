@@ -18,7 +18,8 @@ from morsetrainer.core import awards, daily, koch, practice, review, stats, week
 from morsetrainer.i18n import short_number, tr
 from morsetrainer.widgets import announcer
 from morsetrainer.widgets.daily_panel import (
-    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, moment_line, preview_line, review_line, stars_named)
+    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, moment_line, preview_line, review_line,
+    stars_named)
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 from morsetrainer.widgets.awards_panel import seal_name
 
@@ -106,6 +107,19 @@ class DailyRunner:
             elapsed += (time.time() - self.block_started) / 60
         self.bar.update(self.blocks, self.index, elapsed, daily.stars_on(self.state, self.today))
         self.tick_id = self.app.root.after(TICK_MS, self._tick)
+
+    def spoken_status(self) -> str:
+        """Für F11 während eines Blocks: welcher Block, wie weit die Übung ist
+        und welche Sterne heute schon da sind (Zeiten als „M:SS“)."""
+        elapsed = self.done_minutes
+        if self.block_started is not None:
+            elapsed += (time.time() - self.block_started) / 60
+        stars = daily.stars_on(self.state, self.today)
+        block = self.blocks[self.index]
+        return tr("Tagesübung, {block}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.").format(
+            block=tr(BLOCK_LABELS[block.kind]), n=self.index + 1, total=len(self.blocks),
+            elapsed=minutes_text(min(elapsed, daily.TOTAL_MINUTES)), minutes=daily.TOTAL_MINUTES,
+            stars=stars_named(stars) if stars else tr("noch kein Stern"))
 
     # --- Start ---------------------------------------------------------------------
     def start(self) -> None:

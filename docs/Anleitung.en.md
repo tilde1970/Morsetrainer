@@ -733,7 +733,8 @@ are switched on right away.
 
 **Where am I? (F11)** reads out the tab, status, last feedback and
 remaining time (in Non-stop with the provisional accuracy, in Contest with
-QSOs and rate), during daily practice the current card, in the Statistics
+QSOs and rate), during daily practice the current card or, during a block,
+which block is running, the practice time and the stars, in the Statistics
 tab an overview (overall result, most errors, confusions, review box,
 seals, practice today) – even with announcements switched off.
 F9 and F11 work in every window; in Settings, Band conditions, Help and

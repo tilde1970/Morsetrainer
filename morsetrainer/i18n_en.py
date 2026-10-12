@@ -372,6 +372,9 @@ EN.update({
     "Tagesübung beenden (Esc)": "End daily practice (Esc)",
     "Tagesübung beenden": "End daily practice",
     "Weiter mit Enter": "Continue with Enter",
+    "Tagesübung, {block}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.":
+        "Daily practice, {block}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",
+    "noch kein Stern": "no star yet",
     "Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
     "{announce} schaltet sie aus. {where} sagt, wo du bist.":
         "Morsetrainer. Spoken feedback is on because a screen reader is running. "

@@ -892,6 +892,24 @@ def _average(match) -> str:
     return f"Durchschnitts{word[:1].lower()}{word[1:]}"
 
 
+def speaking() -> bool:
+    """Läuft eine Ansage oder wird sie gerade erzeugt?"""
+    if _instance is None:
+        return False
+    return _instance.done_token != _instance.token or remaining() > 0
+
+
+def when_quiet(then) -> None:
+    """`then()`, sobald keine Ansage mehr läuft (sofort, wenn keine läuft),
+    spätestens nach SUPERSEDED_MAX_WAIT_S. Für Reiter, deren nächstes
+    Zeichen sonst eine Ansage abschnitte (etwa den Esc-Hinweis der
+    Tagesübung oder F11)."""
+    if not speaking():
+        then()
+        return
+    _instance._when_idle(then, time.time() + SUPERSEDED_MAX_WAIT_S)
+
+
 def remaining() -> float:
     """Sekunden, bis die laufende Ansage zu Ende ist (0, wenn keine läuft);
     etwa um Nachgespieltes danach zu beginnen."""

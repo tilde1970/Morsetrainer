@@ -39,6 +39,11 @@
   im Netzwerk), sagt die Ansage den Grund, statt ihn nur in die
   Statuszeile zu schreiben.
 
+- **Tagesübung mit Orientierung:** F11 sagt während eines Blocks, welcher
+  Block läuft, wie weit die Übung ist und welche Sterne du heute hast. Der
+  Hinweis „Noch einmal Esc beendet die Tagesübung“ und andere Ansagen
+  werden nicht mehr vom nächsten Zeichen abgeschnitten.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

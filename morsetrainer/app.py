@@ -778,6 +778,8 @@ class MorseTrainerApp:
             self.announcer.say(self.statistics_spoken(), force=True)
             return
         parts = [self._tab_name()]
+        if self.daily.active and self.daily.mode is not None:
+            parts.insert(0, _CLOCK.sub(_spoken_clock, self.daily.spoken_status()).rstrip("."))
         mode = self._active_mode()
         # session_info_var: Adresse und PIN des Trainers im Netzwerk; live_var
         # (Am Stück) und score_var (Contest, Quiz) mit Zwischenstand und Restzeit.

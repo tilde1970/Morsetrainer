@@ -611,10 +611,14 @@ class SequenceModeFrame(DailyModeMixin):
                 and len(clean_input(self.input_var.get())) >= len(self.current_sequence)):
             self.on_submit()
 
-    def next_sequence(self):
+    def next_sequence(self, waited=False):
         """Nächste Sequenz erzeugen und vorspielen; ist die Zeit um oder die feste
-        Anzahl erreicht, endet der Durchgang."""
+        Anzahl erreicht, endet der Durchgang. Läuft gerade eine Ansage (F11,
+        Hinweis), kommt die Sequenz erst danach."""
         if not self.running:
+            return
+        if not waited and announcer.speaking():
+            announcer.when_quiet(lambda: self.next_sequence(waited=True))
             return
         if self._time_up():
             self.stop()

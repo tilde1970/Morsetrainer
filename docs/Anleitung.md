@@ -747,7 +747,8 @@ eingeschaltet.
 
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit
-QSOs und Rate), in der Tagesübung die aktuelle Karte, im Reiter Statistik
+QSOs und Rate), in der Tagesübung die aktuelle Karte bzw. während eines
+Blocks, welcher Block läuft, die Übungszeit und die Sterne, im Reiter Statistik
 eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
 Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
 F9 und F11 wirken in jedem Fenster; in Einstellungen, Bandbedingungen,

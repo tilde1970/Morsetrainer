@@ -1510,6 +1510,33 @@ class DailyAnnounceTest(AnnouncerCase):
         others = [t for t in self.app.notebook.tabs() if t != self.app.notebook.select()]
         self.assertTrue(all(self.app.notebook.tab(t, "state") == "disabled" for t in others))
 
+    def test_f11_tells_block_time_and_stars(self):
+        self.runner.start()
+        self.assertTrue(self.pump_until(lambda: self.runner.mode.running))
+        del self.said[:]
+        self.app.read_status()
+        self.assertTrue(self.pump_until(lambda: self.said))
+        spoken = " ".join(self.said)
+        self.assertIn("Tagesübung, Aufwärmen, Block 1 von", spoken)
+        self.assertIn("von 10 Minuten", spoken)
+        self.assertIn("noch kein Stern", spoken)
+        self.assertNotRegex(spoken, r"\d:\d\d")  # Zeit gesprochen, nicht „0:05“
+
+    def test_next_character_waits_for_a_running_announcement(self):
+        # Der Esc-Hinweis (oder F11) wird nicht vom nächsten Zeichen abgeschnitten.
+        from morsetrainer.widgets import announcer
+        self.runner.start()
+        mode = self.runner.mode
+        self.assertTrue(self.pump_until(lambda: mode.running))
+        played = []
+        with mock.patch.object(mode, "play_current", lambda: played.append(announcer.speaking())):
+            self.app._confirm_daily_end("Escape")
+            self.assertTrue(announcer.speaking())
+            mode.next_char()
+            self.assertEqual(played, [])  # noch nicht
+            self.assertTrue(self.pump_until(lambda: played))
+        self.assertEqual(played, [False])  # erst nach der Ansage
+
     def test_abort_during_the_announcement_starts_nothing(self):
         self.runner.start()
         mode = self.runner.mode
