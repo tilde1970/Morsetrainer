@@ -79,6 +79,14 @@ GAIN_GLIDE_SECONDS = 0.02
 CRASH_RATE_PER_SECOND = 0.25
 CRASH_SECONDS = (0.03, 0.2)
 CRASH_GAIN = (2.0, 5.0)
+# Eine Knackstörung ist eine Folge sehr kurzer Einzelentladungen
+# (CRASH_PULSE_SECONDS lang, im Mittel CRASH_PULSE_GAP_SECONDS auseinander,
+# nach hinten seltener), keine glatte Rauschwolke; Spitzen wie bei echtem
+# Gewitter-QRN, CRASH_PULSE_BOOST gleicht die kürzere Dauer zum Teil aus.
+CRASH_PULSE_SECONDS = (0.0002, 0.002)
+CRASH_PULSE_GAP_SECONDS = 0.006
+CRASH_PULSE_BOOST = 3.0
+CRASH_PULSE_FADE = 0.93  # jede Entladung etwas schwächer als die vorige
 MAX_QRN_RMS = 0.25
 
 # Stärkeunterschiede: Grundstärke der Stationen (Station 0 ist gut zu
@@ -180,7 +188,7 @@ MAX_CLICK_AMPLITUDE = AMPLITUDE * 1.5
 # minimale Phase: kausal wie ein echtes Filter, das schmale klingelt leicht.
 FILTER_WIDTHS = (2400, 500, 250)
 DEFAULT_FILTER = 2400
-FILTER_ORDER = 4
+FILTER_ORDER = 8  # steile Flanken wie ein Quarz- oder DSP-Filter (300 Hz neben der Mitte −13 dB)
 FILTER_IR_SECONDS = 0.06
 FILTER_FFT_SIZE = 2 ** 15
 
@@ -924,11 +932,22 @@ class BandConditions:
         return out
 
     def _make_crash(self) -> np.ndarray:
+        """Eine Knackstörung: unregelmäßige Folge kurzer Entladungen, die
+        nach hinten seltener und schwächer werden."""
         length = int(self.rng.uniform(*CRASH_SECONDS) * SAMPLE_RATE)
-        start = int(self.rng.integers(len(self.noise) - length))
-        # Schneller Anstieg, exponentielles Abklingen.
-        envelope = np.exp(-np.arange(length) / (length / 4)) * np.minimum(np.arange(length) / 48, 1)
-        return (self.noise[start:start + length] * envelope * self.rng.uniform(*CRASH_GAIN)).astype(np.float32)
+        out = np.zeros(length, dtype=np.float32)
+        strength = self.rng.uniform(*CRASH_GAIN) * CRASH_PULSE_BOOST
+        t = 0
+        while t < length:
+            width = int(self.rng.uniform(*CRASH_PULSE_SECONDS) * SAMPLE_RATE) + 2
+            start = int(self.rng.integers(len(self.noise) - width))
+            pulse = self.noise[start:start + width] * np.exp(-np.arange(width) / (width / 3))
+            end = min(t + width, length)
+            out[t:end] += pulse[:end - t] * strength * self.rng.uniform(0.3, 1.0)
+            gap = self.rng.exponential(CRASH_PULSE_GAP_SECONDS * (1 + 3 * t / length))
+            t += int(gap * SAMPLE_RATE) + width
+            strength *= CRASH_PULSE_FADE
+        return out
 
 
 def noise_snr_db(level: float, gain: float = 1.0) -> float:

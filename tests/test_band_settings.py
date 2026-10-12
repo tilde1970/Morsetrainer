@@ -175,6 +175,28 @@ class FilterAndQrmTest(unittest.TestCase):
         return np.concatenate([conditions.mix([(samples[i:i + block], station)], len(samples[i:i + block]))
                                for i in range(0, len(samples), block)])
 
+    def test_filter_is_steep(self):
+        # 8. Ordnung: QRM „weit“ (300–500 Hz neben der eigenen Tonhöhe) nimmt
+        # das 500-Hz-Filter deutlich weg, die Rauschminderung bleibt.
+        import numpy as np
+        f = np.array([600.0, 900.0, 1000.0, 1100.0])
+        db = 20 * np.log10(band.filter_response(500, 600, f))
+        self.assertAlmostEqual(db[0], 0.0, places=6)
+        self.assertLess(db[1], -12)
+        self.assertLess(db[2], -30)
+        self.assertAlmostEqual(band.filter_noise_db(500), 5.8, delta=0.3)
+
+    def test_qrn_crashes_are_single_discharges(self):
+        # Knackstörung = Folge kurzer Impulse mit Lücken, keine glatte Wolke.
+        import numpy as np
+        conditions = band.BandConditions(1, seed=4)
+        for _ in range(20):
+            crash = conditions._make_crash()
+            envelope = np.abs(crash)
+            self.assertGreater(float(np.mean(envelope < 0.01 * envelope.max())), 0.3)  # viel Stille dazwischen
+            crest = envelope.max() / np.sqrt(np.mean(crash.astype(float) ** 2))
+            self.assertGreater(crest, 4)
+
     def test_no_step_on_gain_change(self):
         # Rauschen mitten in einem Ton lauter gestellt bzw. zugeschaltet: Der
         # Pegel gleitet hinüber, die Hüllkurve springt nicht von Block zu Block.

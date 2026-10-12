@@ -80,6 +80,10 @@
   die Pegel gleiten hinüber. Das AGC-Pumpen setzt genau am Knacker ein. Der
   Rauschabstand heißt jetzt „im Empfängerfilter (300–2700 Hz)“, im Ohr
   rund 16 statt 17 dB mehr.
+- **Steileres CW-Filter und echteres QRN:** Das 500-Hz-Filter nimmt QRM
+  „weit“ jetzt deutlich weg (300 Hz daneben −13 statt −7 dB), klingelt
+  dafür etwas mehr. Knackstörungen und Gewitter prasseln als Folge kurzer
+  Einzelentladungen statt als glatte Rauschstöße.
 
 ## 2.48
 
