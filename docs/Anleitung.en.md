@@ -472,10 +472,11 @@ matches at least.
 | medium | +2 dB | 50 % (about −5.5 dB) | QRN 30 % |
 | heavy | −4 dB | 80 % (about −12 dB) | QRN 50 %, CW QRM 30 % |
 
-- **Signal-to-noise ratio (S/N):** measured in 2.4 kHz bandwidth relative
-  to the unfaded signal; the slider ranges from +20 dB to −10 dB. The ear
-  hears CW like a filter of about 50 Hz, where the ratio is roughly 17 dB
-  better – so −4 dB feels like a good +13 dB in a narrow filter. If the
+- **Signal-to-noise ratio (S/N):** measured in the receiver filter
+  (300–2700 Hz) relative to the unfaded signal; the slider ranges from
+  +20 dB to −10 dB. The ear hears CW like a filter of about 50 Hz, where the
+  ratio is roughly 16 dB better – so −4 dB feels like about +12 dB in a
+  narrow filter. If the
   noise gets louder than the receiver would pass, it turns the signal down
   like an AGC instead of clipping.
 - **Fading** changes irregularly (two overlaid variations); its depth

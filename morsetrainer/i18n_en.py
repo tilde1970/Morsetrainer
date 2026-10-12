@@ -1532,8 +1532,8 @@ EN.update({
     "bis {hz} Hz": "up to {hz} Hz",
     "Keiner Stufe zugeordnet: Stufe leicht braucht mindestens Rauschen {snr} und QSB {qsb} %.":
         "No level reached: level light needs at least noise {snr} and QSB {qsb} %.",
-    "S/N: Rauschabstand in 2,4 kHz Bandbreite gegenüber dem ungeschwächten Signal; im Ohr, das CW wie ein "
-    "Filter von etwa 50 Hz hört, sind es rund 17 dB mehr.":
-        "S/N: signal-to-noise ratio in 2.4 kHz bandwidth relative to the unfaded signal; the ear hears CW "
-        "like a filter of about 50 Hz, where it is roughly 17 dB more.",
+    "S/N: Rauschabstand im Empfängerfilter (300–2700 Hz) gegenüber dem ungeschwächten Signal; im "
+    "Ohr, das CW wie ein Filter von etwa 50 Hz hört, sind es rund 16 dB mehr.":
+        "S/N: signal-to-noise ratio in the receiver filter (300–2700 Hz) relative to the unfaded signal; in "
+        "the ear, which hears CW like a filter of about 50 Hz, it is roughly 16 dB more.",
 })

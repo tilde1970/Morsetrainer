@@ -57,18 +57,22 @@ EFFECTS = ("noise", "qrn", "qsb", "chirp", "ssb", "cw_qrm", "strength", "storm",
 
 NOISE_LOOP_SECONDS = 20
 PASSBAND_HZ = (300, 2700)
-# Rauschen als Rauschabstand S/N in dB, gemessen in der Bandbreite des
-# Empfängerfilters (rund 2,4 kHz) gegenüber dem ungeschwächten Signal
-# (Dauerstrich, Effektivwert SIGNAL_RMS): Regler 0 % … 100 % gleichmäßig
-# über SNR_DB_RANGE. Das Ohr hört CW wie durch ein Filter von etwa 50 Hz,
-# dort ist der Abstand rund EAR_GAIN_DB größer.
+# Rauschen als Rauschabstand S/N in dB, gemessen im Empfängerfilter
+# (300–2700 Hz, Rauschbandbreite NOISE_BANDWIDTH_HZ) gegenüber dem
+# ungeschwächten Signal (Dauerstrich, Effektivwert SIGNAL_RMS): Regler
+# 0 % … 100 % gleichmäßig über SNR_DB_RANGE. Das Ohr hört CW wie durch ein
+# Filter von etwa 50 Hz, dort ist der Abstand rund EAR_GAIN_DB größer.
 SNR_DB_RANGE = (20.0, -10.0)
 SIGNAL_RMS = AMPLITUDE / math.sqrt(2)
-EAR_GAIN_DB = 10 * math.log10(2400 / 50)
+NOISE_BANDWIDTH_HZ = 1927  # Flanken des Filters eingerechnet (Test prüft gegen _noise_bandwidth)
+EAR_GAIN_DB = 10 * math.log10(NOISE_BANDWIDTH_HZ / 50)
 # Lauter als das wird das Rauschen nicht; stattdessen wird alles Übrige
 # leiser, wie bei der Regelung (AGC) eines Empfängers. So übersteuert auch
 # ein Signal unter dem Rauschen nichts.
 NOISE_RMS_CAP = 0.2
+# So lange gleiten Rauschen, AGC und Störpegel nach einer Änderung hinüber
+# (statt zu springen; beim Zuschalten ein sanftes Einblenden).
+GAIN_GLIDE_SECONDS = 0.02
 
 # Knackstörungen: mittlere Anzahl pro Sekunde, Länge und Stärke (ein
 # Vielfaches von MAX_QRN_RMS bei Regler auf 100 %).
@@ -619,6 +623,7 @@ class BandConditions:
         """Für eine neue Wiedergabe (z. B. „Nochmal hören“): gleiche Stationen,
         Fading und Rauschen beginnen von vorn."""
         self.sample_pos = 0
+        self.gains = {}  # zuletzt verwendete Pegel (für _smooth)
         self.noise_pos = int(self.rng.integers(len(self.noise)))
         self.ssb_pos = int(self.rng.integers(SSB_LOOP_SECONDS * SAMPLE_RATE))
         self.cw_qrm_pos = 0
@@ -675,6 +680,7 @@ class BandConditions:
         twin.fence_buf = self.fence_buf.copy()
         twin.filter_tail = np.zeros(0)
         twin._filter_spectra = {}
+        twin.gains = dict(self.gains)
         return twin
 
     def process(self, block: np.ndarray, station: int) -> np.ndarray:
@@ -688,6 +694,10 @@ class BandConditions:
         CW-Filter. Station None steht für den eigenen Mithörton (kein QSB,
         keine AGC, nicht gefiltert)."""
         noise_rms, agc = self.noise_and_agc()
+        # Verstellt jemand Regler oder Schalter mitten im Ton, gleiten die
+        # Pegel kurz hinüber, statt hörbar zu springen.
+        noise_rms = self._smooth("noise", noise_rms, n)
+        agc = self._smooth("agc", agc, n)
         out = np.zeros(n, dtype=np.float64)
         sidetone = np.zeros(n, dtype=np.float64)
         for block, station in sources:
@@ -695,9 +705,9 @@ class BandConditions:
             if station is None or station == VOICE:
                 sidetone[:len(block)] += block
             else:
-                out[:len(block)] += block * (self.station_gain(station, len(block)) * agc)
+                out[:len(block)] += block * (self.station_gain(station, len(block)) * _head(agc, len(block)))
         levels = self.levels
-        if self._on("noise"):
+        if np.any(noise_rms):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
             out += noise * noise_rms
         background = np.zeros(n, dtype=np.float64)
@@ -730,12 +740,25 @@ class BandConditions:
                 background += _loop_slice(clicks, pos, n)[1] * neighbour * (MAX_CLICK_AMPLITUDE * levels["clicks"])
         if self._on("carrier"):
             background += self._carrier(n) * (MAX_CARRIER_AMPLITUDE * levels["carrier"])
-        out += background * (self.background_gain * agc)
+        out += background * (self._smooth("background", self.background_gain, n) * agc)
         if crashes is not None:
             out *= self._pump(crashes * self.background_gain, n)
         out = self._filtered(out)
         self.sample_pos += n
         return soft_limit(out + sidetone).astype(np.float32)
+
+    def _smooth(self, key: str, value: float, n: int):
+        """`value` für einen Block von `n` Samples; hat sich der Pegel seit
+        dem letzten Block geändert, gleitet er in GAIN_GLIDE_SECONDS vom alten
+        Wert hinüber (sonst bleibt es eine Zahl, das spart Rechenzeit)."""
+        before = self.gains.get(key)
+        self.gains[key] = value
+        if before is None or before == value:
+            return value
+        glide = min(n, int(GAIN_GLIDE_SECONDS * SAMPLE_RATE))
+        ramp = np.full(n, value, dtype=np.float64)
+        ramp[:glide] = np.linspace(before, value, glide, endpoint=False)
+        return ramp
 
     def _filtered(self, x: np.ndarray) -> np.ndarray:
         """x durch das CW-Filter (Overlap-Add per FFT; das Nachklingen geht in
@@ -843,16 +866,24 @@ class BandConditions:
         return (self.noise[start:start + length] * envelope * self.extra_rng.uniform(1.0, 1.2)).astype(np.float32)
 
     def _pump(self, crashes: np.ndarray, n: int) -> np.ndarray:
-        """AGC-Pumpen: Verstärkung über den Block (1 = ungeregelt). Ein Knacker
-        über AGC_PUMP_THRESHOLD drückt sie sofort herunter, danach erholt sie
-        sich langsam."""
-        before = self.pump
-        peak = float(np.max(crashes)) if len(crashes) else 0.0
-        if peak > AGC_PUMP_THRESHOLD:
-            self.pump = max(self.pump, AGC_PUMP_MAX_DEPTH * self.levels["agc"] * min(peak / (2 * AGC_PUMP_THRESHOLD), 1))
-        else:
-            self.pump *= math.exp(-n / SAMPLE_RATE / AGC_PUMP_RELEASE_SECONDS)
-        return 1 - np.linspace(before, self.pump, n)
+        """AGC-Pumpen: Verstärkung je Sample (1 = ungeregelt). Ein Knacker
+        über AGC_PUMP_THRESHOLD drückt sie genau dort herunter, wo er kommt,
+        danach erholt sie sich mit AGC_PUMP_RELEASE_SECONDS – unabhängig
+        davon, wie die Wiedergabe in Blöcke geteilt ist."""
+        k = -1.0 / (SAMPLE_RATE * AGC_PUMP_RELEASE_SECONDS)  # log der Erholung je Sample
+        t = np.arange(n)
+        depth = AGC_PUMP_MAX_DEPTH * self.levels["agc"] * np.minimum(crashes[:n] / (2 * AGC_PUMP_THRESHOLD), 1)
+        hit = (crashes[:n] > AGC_PUMP_THRESHOLD) & (depth > 0)
+        # Tiefe = max über alle früheren Treffer s von depth[s]·e^(k·(t−s)),
+        # mitsamt dem Rest aus dem vorigen Block: im Logarithmus ein laufendes
+        # Maximum (ohne Schleife über die Samples).
+        with np.errstate(divide="ignore"):
+            marks = np.where(hit, np.log(np.where(hit, depth, 1.0)) - k * t, -np.inf)
+            carried = math.log(self.pump) + k if self.pump > 0 else -math.inf
+        best = np.maximum(np.maximum.accumulate(marks) if n else marks, carried)
+        pump = np.where(np.isfinite(best), np.exp(best + k * t), 0.0)
+        self.pump = float(pump[-1]) if n else self.pump
+        return 1 - pump
 
     def _carrier(self, n: int) -> np.ndarray:
         """Träger nahe der eigenen Frequenz: wandert langsam, kommt und geht
@@ -912,6 +943,11 @@ def chirp_max_hz(level: float) -> float:
     return CHIRP_DELTA_HZ[1] * 2 * level
 
 
+def _head(gain, n: int):
+    """Die ersten `n` Werte eines Pegelverlaufs (oder die Zahl selbst)."""
+    return gain[:n] if isinstance(gain, np.ndarray) else gain
+
+
 def _loop_slice(loop: np.ndarray, pos: int, n: int):
     """Nächste `n` Samples einer Endlosschleife ab `pos`; (neue Position, Samples)."""
     idx = (pos + np.arange(n)) % len(loop)
@@ -919,8 +955,8 @@ def _loop_slice(loop: np.ndarray, pos: int, n: int):
 
 # Stufen als Schnellwahl in der zentralen Einstellung und als Maßstab für
 # das Diplom QRN-fest: Störung -> Pegel.
-# Rauschabstand (noise_snr_db): leicht +8 dB, mittel +2 dB, stark −4 dB in
-# 2,4 kHz (im Ohr rund 17 dB mehr); dazu wachsen QSB und weitere Störungen.
+# Rauschabstand (noise_snr_db): leicht +8 dB, mittel +2 dB, stark −4 dB im
+# Empfängerfilter (im Ohr rund 16 dB mehr); dazu wachsen QSB und weitere Störungen.
 PRESETS = {
     "light": {"noise": 0.4, "qsb": 0.3},
     "medium": {"noise": 0.6, "qrn": 0.3, "qsb": 0.5},

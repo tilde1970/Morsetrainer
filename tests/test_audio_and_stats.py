@@ -65,6 +65,33 @@ class BandTest(unittest.TestCase):
         self.assertGreaterEqual(limited[3], -1.0)
 
 
+class TimingTest(unittest.TestCase):
+    """Zeitmaß auf Sample-Ebene: PARIS = 50 Einheiten, Punkt und Strich
+    zwischen den Halbwertspunkten genau 1 bzw. 3 Einheiten."""
+
+    @staticmethod
+    def half_width(samples):
+        from morsetrainer.core.morse import SAMPLE_RATE
+        # Hüllkurve: gleitendes Maximum über gut eine Periode (600 Hz)
+        envelope = np.abs(samples)
+        window = 81
+        padded = np.pad(envelope, (window // 2, window // 2))
+        envelope = np.lib.stride_tricks.sliding_window_view(padded, window).max(axis=1)
+        above = np.flatnonzero(envelope >= 0.5 * envelope.max())
+        return (above[-1] - above[0]) / SAMPLE_RATE
+
+    def test_paris_timing_exact(self):
+        from morsetrainer.core.morse import SAMPLE_RATE, build_samples, build_text
+        for wpm in (15, 20, 40, 60):
+            unit = 1.2 / wpm
+            # „PARIS “ = 50 Einheiten (Wortpause eingeschlossen)
+            self.assertAlmostEqual(len(build_text("PARIS ", wpm, 600)) / SAMPLE_RATE, 50 * unit, delta=0.002)
+            self.assertAlmostEqual(len(build_samples("E", wpm, 600)) / SAMPLE_RATE, 4 * unit, delta=0.001)
+            # Halbwertsbreite (Messung per gleitendem Maximum: ±1 Periode)
+            self.assertAlmostEqual(self.half_width(build_samples("E", wpm, 600)), unit, delta=0.002, msg=wpm)
+            self.assertAlmostEqual(self.half_width(build_samples("T", wpm, 600)), 3 * unit, delta=0.002, msg=wpm)
+
+
 class StatsTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

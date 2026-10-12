@@ -480,11 +480,11 @@ entspricht.
 | mittel | +2 dB | 50 % (ca. −5,5 dB) | QRN 30 % |
 | stark | −4 dB | 80 % (ca. −12 dB) | QRN 50 %, CW-QRM 30 % |
 
-- **Rauschabstand (S/N):** gemessen in 2,4 kHz Bandbreite gegenüber dem
-  ungeschwächten Signal; der Regler reicht von +20 dB bis −10 dB. Das Ohr
-  hört CW wie durch ein Filter von etwa 50 Hz, dort ist der Abstand rund
-  17 dB größer – −4 dB fühlen sich also an wie gut +13 dB im schmalen
-  Filter. Wird das Rauschen lauter, als der Empfänger es durchließe,
+- **Rauschabstand (S/N):** gemessen im Empfängerfilter (300–2700 Hz)
+  gegenüber dem ungeschwächten Signal; der Regler reicht von +20 dB bis
+  −10 dB. Das Ohr hört CW wie durch ein Filter von etwa 50 Hz, dort ist der
+  Abstand rund 16 dB größer – −4 dB fühlen sich also an wie rund +12 dB im
+  schmalen Filter. Wird das Rauschen lauter, als der Empfänger es durchließe,
   regelt er wie eine AGC das Signal herunter statt zu übersteuern.
 - **Fading** wechselt unregelmäßig (zwei überlagerte Schwankungen), seine
   Tiefe folgt dem Regler und streut nur wenig – die Stufe bestimmt die

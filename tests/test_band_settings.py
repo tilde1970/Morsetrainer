@@ -175,6 +175,48 @@ class FilterAndQrmTest(unittest.TestCase):
         return np.concatenate([conditions.mix([(samples[i:i + block], station)], len(samples[i:i + block]))
                                for i in range(0, len(samples), block)])
 
+    def test_no_step_on_gain_change(self):
+        # Rauschen mitten in einem Ton lauter gestellt bzw. zugeschaltet: Der
+        # Pegel gleitet hinüber, die Hüllkurve springt nicht von Block zu Block.
+        import numpy as np
+        block = int(band.SAMPLE_RATE * band.PRESET_BLOCK_SECONDS)
+        for before, after in ((0.2, 0.9), (None, 0.6)):
+            levels = {} if before is None else {"noise": before}
+            conditions = band.conditions({"levels": levels, "gain": 1.0}, 600)
+            silent = np.zeros(block, dtype=np.float32)
+            for _ in range(5):
+                previous = conditions.mix([(silent, 0)], block)
+            band.apply_spec(conditions, {"levels": {"noise": after}, "gain": 1.0})
+            out = conditions.mix([(silent, 0)], block)
+            settled = conditions.mix([(silent, 0)], block)  # nächster Block: voller neuer Pegel
+
+            def rms(x):
+                return float(np.sqrt(np.mean(x ** 2)))
+            quarter = int(band.GAIN_GLIDE_SECONDS * band.SAMPLE_RATE) // 4
+            start = rms(out[:quarter])
+            # Kein Sprung an der Blockgrenze: Der Anfang liegt nahe am alten
+            # Pegel und deutlich unter dem neuen.
+            self.assertLess(start, 0.6 * rms(settled), before)
+            self.assertLess(start, rms(previous[-quarter:]) * 1.8 + 0.05, before)
+
+    def test_displayed_snr_matches_measured(self):
+        # Angezeigter Rauschabstand = gemessener Abstand von Dauerstrich zu
+        # Rauschen am Ausgang (ohne Filter, ohne Fading).
+        import numpy as np
+        f = np.fft.rfftfreq(band.FILTER_FFT_SIZE, 1 / band.SAMPLE_RATE)
+        self.assertAlmostEqual(band.NOISE_BANDWIDTH_HZ, band._noise_bandwidth(band._passband_gain(f), f), delta=10)
+        seconds = 4
+        for level in (0.4, 0.6, 0.8):
+            spec = {"levels": {"noise": level}, "gain": 1.0}
+            silent = np.zeros(band.SAMPLE_RATE * seconds, dtype=np.float32)
+            noise = self.blockwise(band.conditions(spec, 600), silent)
+            t = np.arange(len(silent)) / band.SAMPLE_RATE
+            tone = (band.AMPLITUDE * np.sin(2 * np.pi * 600 * t)).astype(np.float32)
+            both = self.blockwise(band.conditions(spec, 600), tone)
+            signal_rms = np.sqrt(max(np.mean(both ** 2) - np.mean(noise ** 2), 1e-12))
+            measured = 20 * np.log10(signal_rms / np.sqrt(np.mean(noise ** 2)))
+            self.assertAlmostEqual(measured, band.noise_snr_db(level), delta=1.0, msg=level)
+
     def test_narrow_filter_passes_own_pitch_and_removes_far_signals(self):
         import numpy as np
         half = band.SAMPLE_RATE // 2
@@ -384,6 +426,23 @@ class ExtraInterferenceTest(unittest.TestCase):
         neighbours = sum(1 for i in range(1, 59) if loud[i] and (loud[i - 1] or loud[i + 1]))
         self.assertGreater(neighbours, sum(loud) / 2)
         self.assertFalse(any(loud[:3]))  # nicht gleich zu Beginn
+
+    def test_agc_pump_starts_at_the_crash_and_ignores_block_size(self):
+        import numpy as np
+        crashes = np.zeros(band.SAMPLE_RATE // 5)
+        crashes[1000:1100] = 0.5
+        gains = []
+        for block in (len(crashes), 960, 256):
+            conditions = band.BandConditions(1)
+            conditions.levels["agc"] = 1.0
+            gains.append(np.concatenate([conditions._pump(crashes[i:i + block], len(crashes[i:i + block]))
+                                         for i in range(0, len(crashes), block)]))
+        for other in gains[1:]:
+            np.testing.assert_allclose(other, gains[0], atol=1e-9)
+        self.assertEqual(gains[0][999], 1.0)  # vor dem Knacker ungeregelt
+        self.assertAlmostEqual(gains[0][1000], 1 - band.AGC_PUMP_MAX_DEPTH)  # genau am Knacker unten
+        release = int(band.AGC_PUMP_RELEASE_SECONDS * band.SAMPLE_RATE)
+        self.assertAlmostEqual(1 - gains[0][1099 + release], band.AGC_PUMP_MAX_DEPTH / np.e, delta=0.01)
 
     def test_agc_pumps_after_crashes(self):
         import numpy as np

@@ -139,11 +139,17 @@ def build_samples(char: str, wpm: int, freq: int, farnsworth_wpm=None, chirp=Non
     dah = dit * 3
     gap = dit  # Pause zwischen den Elementen eines Zeichens
     char_gap = char_gap_seconds(wpm, farnsworth_wpm)  # Pause nach dem Zeichen
+    # Die Flanken liegen halb außerhalb des Elements: Ton um RAMP_SECONDS
+    # länger, die folgende Pause um so viel kürzer. Dann ist der Ton
+    # zwischen den Halbwertspunkten genau einen Punkt bzw. Strich lang
+    # (sonst klängen Punkte bei hohem Tempo bis zu einem Viertel zu kurz),
+    # und das Zeichen dauert insgesamt gleich lang.
+    overlap = min(RAMP_SECONDS, gap / 2)
 
-    tone_dit = shaped_tone(freq, dit, chirp=chirp)
-    tone_dah = shaped_tone(freq, dah, chirp=chirp)
-    silence_gap = silence(gap)
-    silence_char = silence(char_gap)
+    tone_dit = shaped_tone(freq, dit + overlap, chirp=chirp)
+    tone_dah = shaped_tone(freq, dah + overlap, chirp=chirp)
+    silence_gap = silence(gap - overlap)
+    silence_char = silence(char_gap - overlap)
 
     parts = []
     for i, symbol in enumerate(code):

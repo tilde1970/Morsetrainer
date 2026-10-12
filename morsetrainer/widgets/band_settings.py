@@ -386,8 +386,8 @@ class BandSettings:
         self.gain_shown = ttk.Label(row, width=6, anchor="e")
         self.gain_shown.pack(side="left", padx=(6, 0))
         theme.hint(box, wrap=440, text=tr(
-            "S/N: Rauschabstand in 2,4 kHz Bandbreite gegenüber dem ungeschwächten Signal; im Ohr, das CW "
-            "wie ein Filter von etwa 50 Hz hört, sind es rund 17 dB mehr.")).grid(
+            "S/N: Rauschabstand im Empfängerfilter (300–2700 Hz) gegenüber dem ungeschwächten Signal; im "
+            "Ohr, das CW wie ein Filter von etwa 50 Hz hört, sind es rund 16 dB mehr.")).grid(
             row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
         theme.hint(gain, wrap=440, text=tr(
             "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist "

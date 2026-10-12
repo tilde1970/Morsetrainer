@@ -73,6 +73,14 @@
   zurück. Etwas kräftigere Akzent- und Stationsfarben, deutlicherer Fokus
   am blauen Startknopf.
 
+- **Sauberere Signale:** Punkte und Striche haben zwischen den
+  Halbwertspunkten jetzt genau ihre Länge (bei hohem Tempo klangen Punkte
+  bis zu einem Viertel zu kurz); das Tempo bleibt gleich. Wer Rauschen oder
+  Störungen mitten im Ton verstellt oder zuschaltet, hört kein Knacken mehr,
+  die Pegel gleiten hinüber. Das AGC-Pumpen setzt genau am Knacker ein. Der
+  Rauschabstand heißt jetzt „im Empfängerfilter (300–2700 Hz)“, im Ohr
+  rund 16 statt 17 dB mehr.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das
