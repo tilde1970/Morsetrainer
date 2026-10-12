@@ -266,6 +266,29 @@ class FilterAndQrmTest(unittest.TestCase):
         self.assertIsNot(conditions.cw_qrm, before)
         self.assertEqual(conditions.cw_qrm_offset, "far")
 
+    def test_cw_qrm_follows_pitch(self):
+        # Tonhöhe verstellt (Einstellung, QSO, Run): Zero-Beat bleibt
+        # Zero-Beat, „nah“ bleibt nah; derselbe Nachbar, nur verschoben.
+        import numpy as np
+
+        def peak(conditions):
+            loop = conditions.cw_qrm[:2 ** 21]
+            return np.fft.rfftfreq(len(loop), 1 / band.SAMPLE_RATE)[np.argmax(np.abs(np.fft.rfft(loop)))]
+
+        for key, (low, high) in {"zero": (0, 15), "near": (50, 200)}.items():
+            conditions = band.conditions({"levels": {"cw_qrm": 1.0}, "gain": 1.0, "qrm_offset": key, "seed": 5},
+                                         600)
+            first = len(conditions.cw_qrm)
+            conditions.prepare(700)
+            self.assertLessEqual(abs(peak(conditions) - 700), high + 10, key)
+            self.assertGreaterEqual(abs(peak(conditions) - 700), low - 10, key)
+            self.assertEqual(len(conditions.cw_qrm), first, key)  # gleicher Text, gleiches Tempo
+            # Kleine Abweichung und verstimmte Station: kein Neubau.
+            loop = conditions.cw_qrm
+            conditions.prepare(703)
+            conditions.prepare(780, qrm_freq=700)
+            self.assertIs(conditions.cw_qrm, loop)
+
     def test_same_seed_same_qrm_and_storms(self):
         # Netzwerk: Gleicher Startwert ergibt auf jedem Rechner dasselbe
         # CW-QRM und dieselben Gewitter, Träger und Knacker – auch wenn das

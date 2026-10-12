@@ -484,7 +484,9 @@ class SequenceModeFrame(DailyModeMixin):
             if self.band is None:
                 self.band = band.BandConditions(1)
             band.apply_spec(self.band, spec)
-            self.band.prepare(freq)
+            # QRM-Abstand zur eingestellten Tonhöhe, nicht zur verstimmten
+            # („Tonhöhe variieren“): Der Nachbar bleibt, wo er ist.
+            self.band.prepare(freq, qrm_freq=getattr(self, "_last_freq", freq))
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
             rank = band.preset_rank(spec)

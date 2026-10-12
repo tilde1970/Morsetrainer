@@ -114,6 +114,9 @@ VOWEL_FORMANTS = (
 # weg, „nah“ und „Zero-Beat“ nicht – dann hilft nur selektives Hören.
 QRM_OFFSETS = {"far": (300, 500), "near": (50, 200), "zero": (0, 15)}
 DEFAULT_QRM_OFFSET = "far"
+# Ab dieser Abweichung der Tonhöhe entsteht das CW-QRM neu (sonst stimmte
+# etwa „Zero-Beat“ nach dem Verstellen der Tonhöhe nicht mehr).
+QRM_PITCH_TOLERANCE_HZ = 5
 CW_QRM_WPM = (22, 32)
 CW_QRM_PAUSE_SECONDS = (1.0, 2.5)  # dort, wo seine (nicht hörbaren) Anrufer senden
 
@@ -511,6 +514,7 @@ class BandConditions:
         self.cw_qrm = None
         self.key_clicks = None  # Tastklicks zu cw_qrm, gleich lang
         self.cw_qrm_offset = None  # QRM_OFFSETS-Schlüssel, mit dem cw_qrm entstand
+        self.cw_qrm_freq = None  # Tonhöhe, zu der cw_qrm den Abstand hält
         self.filter = None  # ((Breite, Tonhöhe), Impulsantwort) oder None
         self._filter_spectra = {}
         self.strengths = [self.rng.uniform(*STRENGTH_FIRST)] + [
@@ -551,10 +555,14 @@ class BandConditions:
         self.freq = 600
         self.rewind()
 
-    def prepare(self, freq: int) -> None:
+    def prepare(self, freq: int, qrm_freq=None) -> None:
         """Erzeugt die Störsignale, die gerade eingeschaltet sind (einmalig,
-        neu bei anderem QRM-Abstand), und das CW-Filter um `freq`."""
+        neu bei anderem QRM-Abstand oder anderer Tonhöhe), und das CW-Filter
+        um `freq`. Das CW-QRM hält seinen Abstand zu `qrm_freq` (sonst
+        `freq`): Bei leicht verstimmten Stationen bleibt der Nachbar auf
+        seiner Frequenz, statt mit jedem Ruf neu zu entstehen."""
         self.freq = freq
+        qrm_freq = freq if qrm_freq is None else qrm_freq
         if self.enabled["ssb"] and self.ssb is None:
             self.ssb = _ssb_babble_loop()
         if self.enabled["smps"] and self.smps is None:
@@ -562,17 +570,20 @@ class BandConditions:
         if self.enabled["plc"] and self.plc is None:
             self.plc = _plc_data_loop()
         neighbour = self.enabled["cw_qrm"] or self.enabled["clicks"]
-        if neighbour and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset):
+        moved = self.cw_qrm_freq is not None and abs(qrm_freq - self.cw_qrm_freq) > QRM_PITCH_TOLERANCE_HZ
+        if neighbour and (self.cw_qrm is None or self.cw_qrm_offset != self.qrm_offset or moved):
             offset = self.qrm_offset
-            qrm_rng = np.random.default_rng([self.qrm_seed, self.qrm_builds])
-            self.qrm_builds += 1
-            loop = _cw_qrm_loop(qrm_rng, freq, QRM_OFFSETS[offset])
+            if self.cw_qrm is None or self.cw_qrm_offset != offset:
+                self.qrm_builds += 1  # neuer Nachbar; nur andere Tonhöhe: derselbe, verschoben
+            qrm_rng = np.random.default_rng([self.qrm_seed, self.qrm_builds - 1])
+            loop = _cw_qrm_loop(qrm_rng, qrm_freq, QRM_OFFSETS[offset])
             # Erst die Klicks, dann die Schleife: mix() nimmt beide nur, wenn
             # sie zusammenpassen.
             self.key_clicks = _key_clicks(loop, qrm_rng)
             self.cw_qrm = loop
             self.cw_qrm_pos %= len(self.cw_qrm)
             self.cw_qrm_offset = offset
+            self.cw_qrm_freq = qrm_freq
         if self.filter_width == DEFAULT_FILTER:
             self.filter = None
             self.noise = _shaped_noise_loop()

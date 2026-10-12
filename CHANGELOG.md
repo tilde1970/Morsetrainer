@@ -14,6 +14,9 @@
   Dateidialog bei eingeschalteter Ansage mit „Unerwarteter Fehler“ ab.
   Vor dem Dateidialog wird jetzt gesagt, was kommt und was Enter und
   Escape tun.
+- **CW-QRM folgt der Tonhöhe:** Wer die Tonhöhe verstellt, behält den
+  gewählten Abstand zum Nachbarn; „Zero-Beat“ liegt danach weiter auf der
+  eigenen Frequenz.
 
 ## 2.48
 
