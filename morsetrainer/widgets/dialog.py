@@ -14,7 +14,7 @@ Koch-Lektion. Hier:
 Gleiche Aufrufe wie messagebox (askyesno, showinfo, showwarning,
 showerror), damit der Umstieg nichts anderes ändert."""
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, ttk
 
 from morsetrainer.i18n import tr
 from morsetrainer.widgets import announcer, theme
@@ -126,3 +126,25 @@ def showinfo(title: str, text: str, parent=None) -> None:
 # Warnung und Fehler sehen gleich aus; was los ist, sagen Titel und Text.
 showwarning = showinfo
 showerror = showinfo
+
+
+def _choose_file(ask, keys: str, then, **options) -> None:
+    # Der Dateidialog von Tk sagt nichts an; vorher sagen, was kommt und was
+    # die Tasten tun, und erst nach der Ansage öffnen (sie liefe sonst
+    # über dem Dialog weiter und ginge im Tippen unter).
+    text = tr("Dateiauswahl {title}.").format(title=options.get("title", "")) + " " + keys
+    announcer.say(text, then=lambda: then(ask(**options)))
+
+
+def asksaveasfilename(then, **options) -> None:
+    """Wie filedialog.asksaveasfilename, aber angesagt; der gewählte Pfad
+    (leer bei Abbruch) geht an `then(path)`."""
+    _choose_file(filedialog.asksaveasfilename,
+                 tr("Enter: unter dem vorgeschlagenen Namen speichern. Escape: abbrechen."),
+                 then, **options)
+
+
+def askopenfilename(then, **options) -> None:
+    """Wie filedialog.askopenfilename, aber angesagt; Pfad an `then(path)`."""
+    _choose_file(filedialog.askopenfilename,
+                 tr("Dateinamen eingeben. Enter: öffnen. Escape: abbrechen."), then, **options)

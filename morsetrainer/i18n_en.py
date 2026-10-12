@@ -436,6 +436,10 @@ EN.update({
     "OK": "OK",
     "Enter: ja. Escape: nein.": "Enter: yes. Escape: no.",
     "Enter: schließen.": "Enter: close.",
+    "Dateiauswahl {title}.": "File selection {title}.",
+    "Enter: unter dem vorgeschlagenen Namen speichern. Escape: abbrechen.":
+        "Enter: save under the suggested name. Escape: cancel.",
+    "Dateinamen eingeben. Enter: öffnen. Escape: abbrechen.": "Type the file name. Enter: open. Escape: cancel.",
     "Änderungen": "Changes",
     "Anleitung": "Manual",
     "Morsetrainer – Hilfe": "Morsetrainer – Help",

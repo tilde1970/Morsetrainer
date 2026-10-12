@@ -269,6 +269,26 @@ class AnnouncerTest(AnnouncerCase):
         self.pump_until(lambda: False, timeout=0.3)
         self.assertEqual(len(self.said), said)
 
+    def test_announcer_ignores_widgets_tkinter_does_not_know(self):
+        # Tks eigene Dialoge (Dateidialog unter Linux) bauen ttk-Felder ohne
+        # tkinter; deren Ereignisse kommen mit dem Namen als Zeichenkette an.
+        self.app.announcer.var.set(True)
+        errors = []
+        self.root.report_callback_exception = lambda *exc: errors.append(exc)
+        for cls in ("ttk::entry", "ttk::spinbox", "ttk::checkbutton", "ttk::combobox"):
+            name = f".raw{cls.split(':')[-1]}"
+            self.root.tk.call(cls, name)
+            self.root.tk.call("pack", name)
+            self.root.update()
+            self.root.tk.call("focus", "-force", name)
+            for event in ("<FocusIn>", "<KeyRelease>", "<<TraverseIn>>", "<KeyRelease-space>",
+                          "<<ComboboxSelected>>", "<<Increment>>"):
+                self.root.tk.call("event", "generate", name, event)
+            self.root.update()
+            self.root.tk.call("destroy", name)
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertEqual(errors, [])
+
     def test_contest_calls_in_the_phonetic_alphabet(self):
         from morsetrainer.widgets import announcer
         contest = self.mode("Contest")
@@ -1269,6 +1289,20 @@ class DialogTest(AnnouncerCase):
         self.key(window, "<Escape>")
         self.assertFalse(window.answer)
         self.assertFalse(window.top.winfo_exists())
+
+    def test_file_dialog_opens_only_after_its_announcement(self):
+        # Tks Dateidialog ist stumm: erst ansagen, was kommt, dann öffnen.
+        from morsetrainer.widgets import dialog
+        self.app.announcer.var.set(True)
+        opened, chosen = [], []
+        ask = lambda **options: (opened.append(len(self.said)), "/tmp/x.zip")[1]
+        with mock.patch.object(dialog.filedialog, "asksaveasfilename", ask):
+            dialog.asksaveasfilename(chosen.append, parent=self.root, title="Daten sichern")
+            self.assertTrue(self.pump_until(lambda: chosen))
+        self.assertEqual(chosen, ["/tmp/x.zip"])
+        spoken = " ".join(self.said[:opened[0]])
+        self.assertIn("Dateiauswahl Daten sichern.", spoken)
+        self.assertIn("Escape: abbrechen.", spoken)
 
     def test_space_alone_decides_nothing(self):
         # Die Leertaste wirkt nur auf einen Knopf mit Fokus; den hat beim

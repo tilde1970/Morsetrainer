@@ -21,7 +21,7 @@ import time
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
-from tkinter import filedialog, ttk
+from tkinter import ttk
 
 import numpy as np
 
@@ -32,7 +32,7 @@ from morsetrainer.core.morse import (
 from morsetrainer import i18n
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import ItemSource
-from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ChoiceButtons, ScrollableFrame
 
 CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Wörter"): "words", N_("Wendungen"): "phrases",
@@ -391,11 +391,15 @@ class ListenModeFrame:
             return
         content = CONTENTS.get(self.content_var.get(), "chars")
         name = f"morsetrainer-{content}-{opts['wpm']}wpm-{datetime.now():%Y%m%d-%H%M}.mp3"
-        path = filedialog.asksaveasfilename(
+        dialog.asksaveasfilename(
+            lambda path: self._start_export(path, opts),
             parent=self.root, title=tr("Übung als MP3 speichern"), defaultextension=".mp3", initialfile=name,
             initialdir=str(Path.home()), filetypes=[("MP3", "*.mp3")],
         )
-        if not path:
+
+    def _start_export(self, path, opts):
+        # Während der Ansage vor dem Dateidialog kann schon etwas anderes laufen.
+        if not path or self.running or self.exporting:
             return
         self.exporting = True
         self.cancel_export = False

@@ -428,11 +428,20 @@ def _alphabet(widget) -> str:
     return "nato" if str(widget) in _nato_widgets else "de"
 
 
+def _known(widget) -> bool:
+    """Ob tkinter das Bedienelement kennt. In Tks eigenen Dialogen (z. B. dem
+    Dateidialog unter Linux) lösen deren Felder dieselben Klassenbindungen aus,
+    `event.widget` ist dann nur der Name als Zeichenkette."""
+    return isinstance(widget, tk.Misc)
+
+
 def _echoes(widget) -> bool:
     return widget.winfo_class() == "TSpinbox" or str(widget) in _echo_widgets
 
 
 def _echo_start(widget) -> None:
+    if not _known(widget):
+        return
     try:
         if _echoes(widget):
             _echo_last[str(widget)] = widget.get()
@@ -442,6 +451,8 @@ def _echo_start(widget) -> None:
 
 def _echo_key(event) -> None:
     widget = event.widget
+    if not _known(widget):
+        return
     try:
         if not _echoes(widget):
             return
@@ -508,18 +519,26 @@ def _install_focus(root) -> None:
     root.bind_class("TRadiobutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
     root.bind_class("TCombobox", "<<ComboboxSelected>>", lambda e: _say_value(e.widget), add="+")
     for sequence in ("<<Increment>>", "<<Decrement>>"):
-        root.bind_class("TSpinbox", sequence, lambda e: e.widget.after_idle(_say_value, e.widget), add="+")
+        root.bind_class("TSpinbox", sequence, lambda e: _later_value(e.widget), add="+")
     for key in ("Left", "Right", "Up", "Down", "Home", "End"):
         root.bind_class("TScale", f"<KeyRelease-{key}>", lambda e: _say_value(e.widget), add="+")
 
 
+def _later_value(widget) -> None:
+    # Die Spinbox zählt erst nach dem virtuellen Ereignis weiter.
+    if _known(widget):
+        widget.after_idle(_say_value, widget)
+
+
 def _later_state(widget) -> None:
     # ttk schaltet erst kurz nach dem Loslassen der Leertaste um.
+    if not _known(widget):
+        return
     widget.after(150, _say_value, widget)
 
 
 def _say_focus(widget) -> None:
-    if active():
+    if active() and _known(widget):
         try:
             _instance.say(describe(widget))
         except tk.TclError:
@@ -527,6 +546,8 @@ def _say_focus(widget) -> None:
 
 
 def _say_value(widget) -> None:
+    if not _known(widget):
+        return
     try:
         if active() and widget.focus_get() is widget:
             _instance.say(_value(widget) + ".")

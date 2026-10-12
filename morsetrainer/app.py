@@ -14,7 +14,7 @@ import traceback
 from datetime import date, timedelta
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
 from morsetrainer.core import (audio, awards, backup, band, errorlog, koch, migration, practice, review, sfx, speech,
@@ -570,11 +570,13 @@ class MorseTrainerApp:
     def _export_data(self):
         """Einstellungen und Daten als ZIP an einen frei gewählten Ort sichern."""
         self._save_state()  # damit die aktuellen Einstellungen mit hineinkommen
-        path = filedialog.asksaveasfilename(
-            parent=self.root, title=tr("Daten sichern"), defaultextension=".zip",
+        dialog.asksaveasfilename(
+            self._write_export, parent=self.root, title=tr("Daten sichern"), defaultextension=".zip",
             initialfile=tr("Morsetrainer-Sicherung-{date}.zip").format(date=date.today().isoformat()),
             initialdir=str(Path.home()), filetypes=[("ZIP", "*.zip")],
         )
+
+    def _write_export(self, path):
         if not path:
             return
         try:
@@ -594,10 +596,12 @@ class MorseTrainerApp:
             dialog.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
                                 parent=self.root)
             return
-        path = filedialog.askopenfilename(
-            parent=self.root, title=tr("Daten einlesen"), initialdir=str(Path.home()),
+        dialog.askopenfilename(
+            self._read_import, parent=self.root, title=tr("Daten einlesen"), initialdir=str(Path.home()),
             filetypes=[("ZIP", "*.zip"), (tr("Alle Dateien"), "*")],
         )
+
+    def _read_import(self, path):
         if not path:
             return
         try:

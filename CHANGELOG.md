@@ -1,5 +1,15 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Meldungen und Rückfragen mit Ansage:** Fragen wie „Nächste
+  Koch-Lektion?“ werden vorgelesen, samt „Enter: ja. Escape: nein.“ Die
+  Leertaste sagt nicht mehr versehentlich Ja; F9 und F11 wirken auch dort.
+- **Daten sichern und einlesen ohne Fehler:** Unter Linux brach der
+  Dateidialog bei eingeschalteter Ansage mit „Unerwarteter Fehler“ ab.
+  Vor dem Dateidialog wird jetzt gesagt, was kommt und was Enter und
+  Escape tun.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das
