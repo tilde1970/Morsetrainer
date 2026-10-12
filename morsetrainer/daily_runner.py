@@ -152,7 +152,8 @@ class DailyRunner:
             char = koch.newest_char(lesson)
             # Vorspielen erst nach der Ansage, sie schnitte sonst das Zeichen ab.
             self._show_card(tr("Neues Zeichen: {char}").format(char=char),
-                            [preview_line(self.blocks[0], lesson, self.state["tempo"])], then=app._play_new_char)
+                            [preview_line(self.blocks[0], lesson, self.state["tempo"])], then=app._play_new_char,
+                            spoken_title=tr("Neues Zeichen: {char}").format(char=announcer.spell(char)))
         else:
             self._next_block()
 
@@ -330,14 +331,15 @@ class DailyRunner:
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
         self._show_card(title, lines, strong)
 
-    def _show_card(self, title: str, lines, strong=(), then=None) -> None:
+    def _show_card(self, title: str, lines, strong=(), then=None, spoken_title=None) -> None:
         """Die Karte bleibt stehen, bis man weitergeht (continue_now);
-        `then` kommt nach ihrer Ansage."""
+        `then` kommt nach ihrer Ansage, `spoken_title` ersetzt dort den Titel
+        (etwa mit buchstabiertem Zeichen)."""
         self.bar.show_card(title, lines, strong)
         self.card_open = True
         self.card_shown = time.time()
         # Ansage (Barrierefreiheit); F11 liest sie noch einmal vor.
-        self.card_text = ". ".join([title, *lines, tr("Weiter mit Enter")]) + "."
+        self.card_text = ". ".join([spoken_title or title, *lines, tr("Weiter mit Enter")]) + "."
         announcer.say(self.card_text, then=then)
         self.app.root.focus_set()  # Enter und Esc sollen ankommen
 

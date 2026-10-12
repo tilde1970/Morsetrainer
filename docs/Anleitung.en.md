@@ -734,7 +734,10 @@ reason appears in the status line. Under “Settings …” you set the
 On the very first start the program says once that F9 switches
 announcements on and F11 tells you where you are. If a screen reader is
 running (NVDA, JAWS, Windows Narrator, VoiceOver or Orca), announcements
-are switched on right away.
+are switched on right away. So that the two voices do not talk over each
+other, mute your screen reader or put it to sleep while practising: NVDA
+with NVDA+S (until speech mode is “off”) or NVDA+Shift+Z (sleep mode for this
+program), Orca with Orca+S, VoiceOver with Ctrl (briefly silent).
 
 **Where am I? (F11)** reads out the tab, status, last feedback and
 remaining time (in Non-stop with the provisional accuracy, in Contest with

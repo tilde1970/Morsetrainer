@@ -749,7 +749,10 @@ ein.
 Beim allerersten Start sagt das Programm einmal an, dass F9 die Ansage
 einschaltet und F11 sagt, wo du bist. Läuft dabei ein Screenreader (NVDA,
 JAWS, Windows-Sprachausgabe, VoiceOver oder Orca), ist die Ansage gleich
-eingeschaltet.
+eingeschaltet. Damit beide Stimmen nicht durcheinanderreden, stellst du
+den Screenreader beim Üben am besten stumm oder in den Schlafmodus: NVDA
+mit NVDA+S (so oft, bis der Sprachmodus „aus“ ist) oder NVDA+Umschalt+Z (Schlafmodus für das
+Programm), Orca mit Orca+S, VoiceOver mit Strg (kurz stumm).
 
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit

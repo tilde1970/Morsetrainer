@@ -223,7 +223,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
 
-        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
+        self.status_var = tk.StringVar(value=tr("Bereit. Start mit F5."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         self.live_var = tk.StringVar(value="")

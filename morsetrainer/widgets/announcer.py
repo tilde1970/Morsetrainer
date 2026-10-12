@@ -855,6 +855,18 @@ _SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("
 # („Ende der Verbindung“); die Taste dazu („Taste *“) mit dem Namen der Taste.
 _PROSIGN_SHOWN = re.compile(r"<(" + "|".join(PROSIGN_KEYS.values()) + r")>")
 _PROSIGN_CHAR = {name: ch for ch, name in PROSIGN_KEYS.items()}
+# Schreibweisen, die die Stimme falsch oder gar nicht liest: „Strg+,“
+# (Komma fiele weg), „20/10 WPM“ (Farnsworth), „3 / 10“, „S/N“, „+8 dB“.
+_SPOKEN_FORMS = (
+    (re.compile(r"\b(Strg|Ctrl|Cmd)\+,"), lambda m: f"{m.group(1)}+{tr('Komma')}"),
+    (re.compile(r"\b(\d+)/(\d+) WPM\b"),
+     lambda m: tr("{wpm} WPM, effektiv {effective}").format(wpm=m.group(1), effective=m.group(2))),
+    (re.compile(r"(?<![\d/])(\d+) / (\d+)(?![\d/])"),
+     lambda m: tr("{done} von {total}").format(done=m.group(1), total=m.group(2))),
+    (re.compile(r"\bS/N\b"), lambda m: tr("Rauschabstand")),
+    (re.compile(r"(?<![\w.,+−])([+−])(\d)"),
+     lambda m: (tr("plus") if m.group(1) == "+" else tr("minus")) + " " + m.group(2)),
+)
 _KEY = re.compile(r"\b(Taste|key) ([*(#+=])")
 _KEY_NAMES = {"*": N_("Stern"), "(": N_("Klammer auf"), "#": N_("Raute"), "+": N_("Plus"),
               "=": N_("Gleichheitszeichen")}
@@ -907,6 +919,8 @@ def speakable(text: str) -> str:
         return ""
     text = _PROSIGN_SHOWN.sub(lambda m: speech.spoken(_PROSIGN_CHAR[m.group(1)], lang=i18n.LANG), text)
     text = _KEY.sub(lambda m: f"{m.group(1)} {tr(_KEY_NAMES[m.group(2)])}", text)
+    for pattern, spoken in _SPOKEN_FORMS:
+        text = pattern.sub(spoken, text)
     for symbol, word in _SYMBOLS:
         if symbol in text:
             text = text.replace(symbol, tr(word) if word else "")

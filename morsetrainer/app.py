@@ -72,6 +72,8 @@ ANNOUNCE_KEY = "F9"
 # Sprechtempo und Lautstärke der Ansage in Prozent (Einstellungen).
 VOICE_RATE_STEPS = (70, 85, 100, 115, 130, 150, 175, 200)
 VOICE_VOLUME_STEPS = (25, 50, 75, 100)
+# Hinweis auf zu langsames Zeichentempo: nach dem Echo der Ziffer ansagen.
+SLOW_HINT_SPOKEN_MS = 600
 # Begrüßung beim ersten Start erst, wenn das Fenster steht (die Stimme zu
 # laden hält das Zeichnen sonst auf).
 FIRST_START_GREETING_MS = 800
@@ -566,12 +568,14 @@ class MorseTrainerApp:
     def open_settings(self) -> None:
         """Einstellungsfenster zeigen (Strg+Komma); der Fokus geht hinein."""
         window = self.settings_window
-        if window.state() == "withdrawn":
+        hidden = window.state() == "withdrawn"
+        if hidden:
             self.settings_focus_before = self.root.focus_get()
         window.deiconify()
         window.lift()
         window.focus_set()
-        announcer.say(tr("Einstellungen") + ".")
+        if not hidden:  # sonst sagt die Fensteransage es schon (beim Erscheinen)
+            announcer.say(tr("Fenster {title}.").format(title=window.title()))
 
     def close_settings(self) -> None:
         """Ausblenden und den Fokus zurückgeben, etwa ans Eingabefeld."""
@@ -590,6 +594,8 @@ class MorseTrainerApp:
         self.language_var.set(chosen)
         self.language_chosen = True
         self.language_hint_var.set("" if chosen == i18n.LANG else tr("wirkt nach Neustart des Programms"))
+        if self.language_hint_var.get():
+            announcer.say(self.language_hint_var.get())
         self._show_restart_button()
 
     def _export_data(self):
@@ -674,6 +680,9 @@ class MorseTrainerApp:
             self.slow_hint_var.set(tr(
                 "Zeichentempo {wpm} WPM: So langsame Zeichen lassen sich mitzählen. Besser schnelle Zeichen "
                 "mit längeren Pausen (Farnsworth).").format(wpm=wpm))
+            if not self.slow_hint.winfo_manager():
+                # Einmal beim Erscheinen, nach dem Echo der getippten Ziffer.
+                self.root.after(SLOW_HINT_SPOKEN_MS, lambda: announcer.say(self.slow_hint_var.get()))
             self.slow_hint.grid(row=4, column=0, columnspan=2, sticky="we", pady=(4, 0))
         else:
             self.slow_hint.grid_remove()
@@ -917,6 +926,11 @@ class MorseTrainerApp:
 
     def _toggle_more(self):
         self.more_var.set(not self.more_var.get())
+        if self.more_var.get():
+            announcer.say(tr("Weitere Optionen geöffnet."))
+        else:
+            active = self.extras_var.get()
+            announcer.say(tr("Weitere Optionen geschlossen.") + (" " + active if active else ""))
 
     def _update_more(self):
         """Weitere Optionen ein-/ausklappen; zugeklappt steht daneben, was

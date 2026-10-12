@@ -623,8 +623,10 @@ class ContrastTest(AppTestCase):
         # Helle Palette: Text 4,5:1, Feldränder, Fokus und Reglergriff 3:1
         # (WCAG 1.4.3 und 1.4.11) – auf jedem Grund, auf dem sie stehen.
         for fg, bg in (("TEXT", "BG"), ("MUTED", "BG"), ("MUTED", "SURFACE"), ("MUTED", "BUTTON"),
-                       ("TEXT", "SELECT")):
+                       ("TEXT", "SELECT"), ("ACCENT", "BG"), ("ACCENT", "SURFACE"), ("SURFACE", "ACCENT")):
             self.assertGreaterEqual(ratio(light[fg], light[bg]), 4.5, (fg, bg))
+        for color in light["STATION_COLORS"]:
+            self.assertGreaterEqual(ratio(color, light["SURFACE"]), 4.5, color)
         for fg, bg in (("FOCUS", "SURFACE"), ("FOCUS", "BG"), ("EDGE", "SURFACE"), ("EDGE", "BG"),
                        ("EDGE", "TROUGH"), ("EDGE", "BUTTON")):
             self.assertGreaterEqual(ratio(light[fg], light[bg]), 3, (fg, bg))
@@ -1578,6 +1580,75 @@ class VoiceSettingsTest(AnnouncerCase):
         normal = len(voice.synth("Guten Abend, das ist eine Probe."))
         fast = len(voice.synth("Guten Abend, das ist eine Probe.", rate=1.5))
         self.assertLess(fast, normal * 0.9)  # Pausen bleiben, daher nicht ganz 1/1,5
+
+
+class SmallAnnounceTest(AnnouncerCase):
+    """Kleinere Lücken der Ansage (G1–G7 der Erstprüfung)."""
+
+    def test_spoken_forms(self):
+        speakable = self.announcer.speakable
+        self.assertEqual(speakable("Einstellungen … (Strg+,)"), "Einstellungen, Strg+Komma")
+        self.assertEqual(speakable("20/10 WPM"), "20 WPM, effektiv 10")
+        self.assertEqual(speakable("Richtig: 3 / 10"), "Richtig: 3 von 10")
+        self.assertEqual(speakable("im Filter S/N +8 dB"), "im Filter Rauschabstand plus 8 dB")
+        self.assertEqual(speakable("S/N −4 dB"), "Rauschabstand minus 4 dB")
+        self.assertEqual(speakable("Alt+1, Strg+B, Taste +"), "Alt+1, Strg+B, Taste Plus")
+
+    def test_ready_text_names_f5(self):
+        for title in ("Einzelzeichen", "Gruppen", "Kontinuierlich"):
+            self.assertIn("F5", self.mode(title).status_var.get(), title)
+
+    def test_more_options_and_restart_hint_are_spoken(self):
+        self.app.announcer.var.set(True)
+        before = self.app.more_var.get()
+        self.app._toggle_more()
+        expected = "Weitere Optionen geöffnet." if not before else "Weitere Optionen geschlossen."
+        self.assertTrue(self.pump_until(lambda: any(expected in t for t in self.said)), self.said)
+        self.app._toggle_more()
+
+    def test_settings_reopened_say_the_window_once(self):
+        self.app.announcer.var.set(True)
+        self.app.open_settings()
+        self.root.update()
+        self.pump_until(lambda: False, timeout=0.5)
+        del self.said[:]
+        self.app.announcer._cache.clear()
+        self.app.open_settings()  # schon offen: nur nach vorn, einmal „Fenster Einstellungen.“
+        self.assertTrue(self.pump_until(lambda: self.said))
+        self.assertEqual(" ".join(self.said).count("Einstellungen"), 1, self.said)
+
+    def test_new_character_card_spells_the_character(self):
+        from morsetrainer.core import daily, koch
+        self.app.charset_var.set(koch.lesson_charset(12))
+        self.app.announcer.var.set(True)
+        with mock.patch.object(daily, "is_new_lesson", lambda state, today: True), \
+                mock.patch.object(self.app, "_play_new_char", lambda: None):
+            self.app.daily.start()
+        char = koch.newest_char(daily.load()["lesson"])
+        self.assertIn(f"Neues Zeichen: {self.announcer.spell(char)}.", self.app.daily.card_text)
+        self.app.daily.abort(quiet=True)
+
+    def test_closing_summary_and_diploma_gives_focus_back(self):
+        from morsetrainer.core import awards
+        from datetime import date
+        from morsetrainer.widgets.awards_panel import DiplomaWindow
+        self.root.deiconify()
+        self.app.show_mode("Gruppen")
+        entry = self.mode("Gruppen").entry
+        entry.state(["!disabled"])
+        entry.focus_force()
+        self.root.update()
+        self.assertIs(self.root.focus_get(), entry)
+        award = awards.AWARDS[0]
+        window = DiplomaWindow(self.root, [(award.key, 0, date(2026, 10, 12))], self.app.station_call_var,
+                               self.app.station_name_var)
+        self.root.update()
+        window.window.focus_force()  # wie mit Fenstermanager: das neue Fenster hat den Fokus
+        self.root.update()
+        self.assertIsNot(self.root.focus_get(), entry)
+        window.close()
+        self.root.update()
+        self.assertIs(self.root.focus_get(), entry)
 
 
 class FirstStartTest(AnnouncerCase):

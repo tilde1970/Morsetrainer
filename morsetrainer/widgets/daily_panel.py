@@ -13,7 +13,7 @@ from tkinter import ttk
 from morsetrainer.core import daily, stats, week
 from morsetrainer.i18n import N_, daily_key, number, tr
 from morsetrainer.widgets import announcer, theme
-from morsetrainer.widgets.ui_widgets import wrap_pair
+from morsetrainer.widgets.ui_widgets import focus_keeper, wrap_pair
 
 FULL_STAR, EMPTY_STAR = "★", "☆"
 BLOCK_LABELS = {daily.WARMUP: N_("Aufwärmen"), daily.MAIN: N_("Hauptteil"), daily.OUTRO: N_("Ausklang"),
@@ -323,6 +323,7 @@ class EveningSummary:
         self.on_extra = on_extra
         self.on_close = on_close
         self.offer = offer
+        self.restore_focus = focus_keeper(root)
         self.window = window = tk.Toplevel(root)
         window.title(tr("Tagesübung"))
         window.configure(background=theme.BG)
@@ -410,5 +411,6 @@ class EveningSummary:
         if self.window is not None:
             self.window.destroy()
             self.window = None
+            self.restore_focus()
             if follow and self.on_close:
                 self.on_close()

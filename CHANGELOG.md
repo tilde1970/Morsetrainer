@@ -63,6 +63,16 @@
 - **Stimme einstellbar:** Unter „Einstellungen …“ lassen sich Sprechtempo
   (70–200 %) und Lautstärke der Ansage (25–100 %) wählen.
 
+- **Kleinere Verbesserungen der Ansage:** „Strg+,“ wird mit Komma
+  gesprochen, „20/10 WPM“, „3 / 10“ und „S/N +8 dB“ verständlich
+  („20 WPM, effektiv 10“, „3 von 10“, „Rauschabstand plus 8 dB“). Die
+  Statuszeile sagt „Bereit. Start mit F5.“, Weitere Optionen auf/zu, der
+  Hinweis zum langsamen Zeichentempo, „wirkt nach Neustart“ und der
+  Download-Fortschritt eines Updates werden angesagt, ein neues Zeichen der
+  Tagesübung buchstabiert. Nach Abendbilanz und Diplom kehrt der Fokus
+  zurück. Etwas kräftigere Akzent- und Stationsfarben, deutlicherer Fokus
+  am blauen Startknopf.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

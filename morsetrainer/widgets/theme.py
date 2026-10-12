@@ -25,8 +25,8 @@ PALETTES = {
     "light": {
         "BG": "#f3f4f6", "SURFACE": "#ffffff", "BORDER": "#d3d7de", "BUTTON": "#e8eaee",
         "BUTTON_ACTIVE": "#dde1e7", "TEXT": "#1d2127", "MUTED": "#5f6670", "DISABLED": "#a0a6ae",
-        "ACCENT": "#2a6fd0", "ACCENT_ACTIVE": "#215bb0",
-        "FOCUS": "#2a6fd0",  # Rahmen des Eingabefelds mit Tastaturfokus
+        "ACCENT": "#2868c8", "ACCENT_ACTIVE": "#215bb0",
+        "FOCUS": "#2868c8",  # Rahmen des Eingabefelds mit Tastaturfokus
         # Rand von Eingabefeldern und Reglergriff: mindestens 3:1 gegen
         # Hintergrund, Feld und Schiene (WCAG 1.4.11), sonst sieht man bei
         # schwachem Sehen nicht, wo ein Feld ist.
@@ -35,7 +35,7 @@ PALETTES = {
         "GRID": "#e4e6ea",  # Hilfslinien in Diagrammen
         "TROUGH": "#d3d7de",  # Schiene der Schieberegler
         # QSO: Station 1 bzw. Run-Station, dann abwechselnd die Gegenstationen.
-        "STATION_COLORS": ("#1f5fbf", "#b35900", "#2e8b57"),
+        "STATION_COLORS": ("#1f5fbf", "#b35900", "#287a4c"),
         "BORDER_WIDTH": 1,
     },
     "contrast": {
@@ -289,8 +289,10 @@ def apply(root) -> None:
                     lightcolor=ACCENT, darkcolor=ACCENT, font=HEADING, padding=(18, 4))
     style.map("Accent.TButton",
               background=[("disabled", BUTTON), ("pressed", ACCENT_ACTIVE), ("active", ACCENT_ACTIVE)],
-              lightcolor=[("disabled", BUTTON), ("focus", TEXT), ("active", ACCENT_ACTIVE)],
-              darkcolor=[("disabled", BUTTON), ("focus", TEXT), ("active", ACCENT_ACTIVE)],
+              # Fokus zweifarbig: innen Hintergrund, außen Schrift – hebt sich
+              # vom Knopf und von der Umgebung ab, auch Gelb auf Schwarz.
+              lightcolor=[("disabled", BUTTON), ("focus", BG), ("active", ACCENT_ACTIVE)],
+              darkcolor=[("disabled", BUTTON), ("focus", BG), ("active", ACCENT_ACTIVE)],
               foreground=[("disabled", DISABLED)],
               bordercolor=[("disabled", BORDER), ("focus", TEXT)])
     # Flacher Knopf ohne Rahmen, z. B. zum Auf-/Zuklappen.

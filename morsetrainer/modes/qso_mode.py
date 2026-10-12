@@ -189,7 +189,7 @@ class QsoModeFrame:
                                         state="disabled")
         self.reveal_button.pack(side="left")
 
-        self.status_var = tk.StringVar(value=tr("Bereit. Drücke „Neues QSO“."))
+        self.status_var = tk.StringVar(value=tr("Bereit. „Neues QSO“ mit F5."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 6))
 
         # Ein- und ausblendbare Bereiche; _update_layout() packt die jeweils

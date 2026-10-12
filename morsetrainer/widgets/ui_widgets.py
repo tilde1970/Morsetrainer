@@ -120,6 +120,29 @@ class ChoiceButtons(ttk.Frame):
         return None
 
 
+def focus_keeper(root):
+    """Den Tastaturfokus von jetzt merken (vor dem Öffnen eines Fensters);
+    die zurückgegebene Funktion gibt ihn zurück, hilfsweise dem Hauptfenster.
+    Ohne Fenstermanager (oder mit manchem) bliebe er sonst nirgends, und
+    Tasten wie F11 oder Enter gingen ins Leere."""
+    try:
+        before = root.focus_get()
+    except (KeyError, tk.TclError):  # Fokus in einem Dialog von Tk selbst
+        before = None
+
+    # focus_force: Das eben geschlossene Fenster war unseres; ohne
+    # Fenstermanager käme der Fokus mit focus_set nicht zurück.
+    def restore():
+        try:
+            if before is not None and before.winfo_exists() and before.winfo_viewable():
+                before.focus_force()
+            else:
+                root.focus_force()
+        except tk.TclError:
+            pass
+    return restore
+
+
 # Abstand zum Rand, wenn ein Bedienelement in Sicht gerollt wird (Pixel).
 FOCUS_MARGIN = 8
 

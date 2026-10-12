@@ -131,6 +131,7 @@ class Updater:
         self.asked = set()  # Versionen, nach denen schon gefragt wurde
         self.status = None  # laufender Download: Fortschritt aus dem Thread
         self.dialog = None  # UpdateDialog des laufenden Downloads
+        self.spoken_quarter = 0  # zuletzt angesagtes Viertel des Downloads
 
     @property
     def busy(self) -> bool:
@@ -166,6 +167,7 @@ class Updater:
             return DECLINED
         self.dialog = dialog
         announcer.say(tr("Lade Version {version}.").format(version=version))
+        self.spoken_quarter = 0
         args = prepare()
         target, asset = update.installed()
         status = self.status = {"done": 0, "total": 0, "installed": False, "error": None}
@@ -212,6 +214,11 @@ class Updater:
         show(text)
         if dialog is not None:
             dialog.show_progress(text, percent)
+        # Ansage nur bei jedem Viertel, nicht bei jedem Blick.
+        quarter = (percent or 0) // 25
+        if quarter > self.spoken_quarter:
+            self.spoken_quarter = quarter
+            announcer.say(text)
         try:
             self.root.after(WATCH_MS, lambda: self._watch(version, show, args, failed))
         except tk.TclError:

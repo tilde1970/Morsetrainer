@@ -313,7 +313,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.remaining_var = tk.StringVar(value="")
         theme.hint(controls, textvariable=self.remaining_var).pack(side="right")
 
-        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
+        self.status_var = tk.StringVar(value=tr("Bereit. Start mit F5."))
         ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel", wraplength=560,
                   justify="center").pack(pady=(14, 6))
 

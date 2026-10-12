@@ -14,6 +14,7 @@ from morsetrainer.core import awards, diploma, stats
 from morsetrainer.i18n import number, tr
 from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets.ui_widgets import focus_keeper
 
 WRAP = 520
 DIPLOMA_FILE_NAME = "diplom.html"
@@ -159,6 +160,7 @@ class DiplomaWindow:
     def __init__(self, root, seals, call_var, name_var, title=None, on_close=None):
         self.seals = seals
         self.on_close = on_close
+        self.restore_focus = focus_keeper(root)
         self.window = window = tk.Toplevel(root)
         window.title(title or (tr("Neues Siegel") if len(seals) == 1 else tr("Neue Siegel")))
         window.configure(background=theme.BG)
@@ -226,6 +228,7 @@ class DiplomaWindow:
             return
         self.window.destroy()
         self.window = None
+        self.restore_focus()
         if self.on_close:
             self.on_close()
 
