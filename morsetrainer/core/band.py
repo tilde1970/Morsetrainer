@@ -706,7 +706,11 @@ class BandConditions:
         CW-Filter. Station None steht für den eigenen Mithörton (kein QSB,
         keine AGC, nicht gefiltert)."""
         noise_rms, agc = self.noise_and_agc()
-        boost = SIGNAL_RMS * agc / noise_rms if noise_rms > 0 else 1.0  # AGC höchstens bis Signalstärke
+        # Die AGC hebt höchstens bis zur Signalstärke, gemessen beim
+        # Rauschabstand mit Lautstärke 100 %: So bleibt „Lautstärke der
+        # Störgeräusche“ (auch „bei mir leiser“ im Netzwerk) in den Pausen wirksam.
+        boost = (10 ** (noise_snr_db(self.levels["noise"]) / 20)
+                 if noise_rms > 0 and self.background_gain > 0 else 1.0)
         agc_level = agc  # volle Signalspitze = AMPLITUDE · agc
         # Verstellt jemand Regler oder Schalter mitten im Ton, gleiten die
         # Pegel kurz hinüber, statt hörbar zu springen.
