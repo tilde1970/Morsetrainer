@@ -1382,6 +1382,9 @@ class StartProblemTest(AnnouncerCase):
         self.pump_until(lambda: False, timeout=0.3)
         self.app.charset_var.set("äöü")  # kein Morsezeichen
         for title in ("Einzelzeichen", "Gruppen", "Kontinuierlich"):
+            # Erst die vorige Ansage ganz fertig werden lassen: Ihr Thread legt
+            # sie sonst womöglich nach dem Leeren noch in den Zwischenspeicher.
+            self.assertTrue(self.pump_until(lambda: not self.announcer.speaking()))
             del self.said[:]
             self.app.announcer._cache.clear()  # gleicher Text käme sonst ohne neue Synthese
             self.mode(title).start()
@@ -1515,6 +1518,12 @@ class StatisticsAnnounceTest(AnnouncerCase):
     def test_lifeline_days_with_the_arrow_keys(self):
         from datetime import date, timedelta
         panel = self.app.lifeline_panel
+        # Auffrischen und Neuzeichnen im Hintergrund (Diplome nach dem Start)
+        # überschrieben sonst die Testdaten.
+        for name in ("refresh", "draw"):
+            patch = mock.patch.object(panel, name, lambda: None)
+            patch.start()
+            self.addCleanup(patch.stop)
         today = date.today()
         days = [today - timedelta(days=2), today - timedelta(days=1), today]
         panel.line = {"days": days, "stars": [1, 2, 4], "lesson": [3, 3, 4], "tempo": [12, 12, 13], "seals": {}}
@@ -1524,6 +1533,7 @@ class StatisticsAnnounceTest(AnnouncerCase):
         panel._step("End", None)
         self.assertTrue(self.pump_until(lambda: self.said))
         self.assertIn("Lektion 4", " ".join(self.said))
+        self.assertTrue(self.pump_until(lambda: not self.announcer.speaking()))
         del self.said[:]
         self.app.announcer._cache.clear()
         panel._step("Left", -1)
@@ -1611,6 +1621,7 @@ class SmallAnnounceTest(AnnouncerCase):
         self.app.open_settings()
         self.root.update()
         self.pump_until(lambda: False, timeout=0.5)
+        self.assertTrue(self.pump_until(lambda: not self.announcer.speaking()))
         del self.said[:]
         self.app.announcer._cache.clear()
         self.app.open_settings()  # schon offen: nur nach vorn, einmal „Fenster Einstellungen.“
