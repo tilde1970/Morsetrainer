@@ -659,6 +659,32 @@ class KeyboardTest(AppTestCase):
                        ttk.Checkbutton(self.root), ttk.Radiobutton(self.root)):
             self.assertNotEqual(str(widget.cget("takefocus")), "0", widget)
 
+    def test_focus_is_scrolled_into_view(self):
+        # Große Schrift, kleines Fenster: Tab zu einem Feld unterhalb des
+        # sichtbaren Teils rollt dorthin, und zurück nach oben ebenso.
+        from morsetrainer.widgets.ui_widgets import ScrollableFrame
+        window = tk.Toplevel(self.root)
+        self.addCleanup(window.destroy)
+        window.geometry("300x150")
+        scroller = ScrollableFrame(window)
+        entries = [ttk.Entry(scroller.inner) for _ in range(20)]
+        for entry in entries:
+            entry.pack(pady=4)
+        window.update()
+
+        def visible(widget):
+            top = widget.winfo_rooty() - scroller.canvas.winfo_rooty()
+            return top >= 0 and top + widget.winfo_height() <= scroller.canvas.winfo_height()
+
+        self.assertFalse(visible(entries[-1]))
+        entries[-1].focus_force()
+        window.update()
+        self.assertTrue(visible(entries[-1]))
+        entries[0].focus_force()
+        window.update()
+        self.assertTrue(visible(entries[0]))
+        self.assertEqual(scroller.canvas.yview()[0], 0.0)
+
     def test_enter_presses_a_focused_button(self):
         # ttk kennt von sich aus nur die Leertaste; Enter soll genauso gehen
         # (z. B. „Schließen“ im Einstellungsfenster nach dem Durchtabben).

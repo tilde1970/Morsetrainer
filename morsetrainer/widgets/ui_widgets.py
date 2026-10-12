@@ -120,6 +120,10 @@ class ChoiceButtons(ttk.Frame):
         return None
 
 
+# Abstand zum Rand, wenn ein Bedienelement in Sicht gerollt wird (Pixel).
+FOCUS_MARGIN = 8
+
+
 class ScrollableFrame:
     """Frame mit senkrechter Scrollleiste, falls der Inhalt (z. B. ein
     langes Contest-Log samt Klartext) nicht ins Fenster passt."""
@@ -135,6 +139,38 @@ class ScrollableFrame:
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(window, width=e.width))
         self.canvas.bind("<Enter>", lambda e: self._bind_wheel(True))
         self.canvas.bind("<Leave>", lambda e: self._bind_wheel(False))
+        # Fokus mit Tab (oder Vorlesen per Tastatur) unterhalb des sichtbaren
+        # Teils: hinrollen, sonst arbeitet man bei großer Schrift blind. Die
+        # Bindung am Fenster sieht FocusIn aller Bedienelemente darin.
+        parent.winfo_toplevel().bind("<FocusIn>", self._follow_focus, add="+")
+
+    def _follow_focus(self, event):
+        widget = event.widget
+        if not isinstance(widget, tk.Misc) or not str(widget).startswith(str(self.inner) + "."):
+            return
+        try:
+            self.show(widget)
+        except tk.TclError:
+            pass
+
+    def show(self, widget):
+        """So weit rollen, dass `widget` ganz zu sehen ist (wenn es passt,
+        sonst sein Anfang)."""
+        total = self.inner.winfo_height()
+        visible = self.canvas.winfo_height()
+        if total <= visible or visible <= 1:
+            return
+        top = widget.winfo_rooty() - self.inner.winfo_rooty()
+        bottom = top + widget.winfo_height()
+        shown_top = self.canvas.canvasy(0)
+        margin = FOCUS_MARGIN
+        if top - margin < shown_top:
+            target = top - margin
+        elif bottom + margin > shown_top + visible:
+            target = min(bottom + margin - visible, top - margin)
+        else:
+            return
+        self.canvas.yview_moveto(max(target, 0) / total)
 
     def _on_scroll(self, first, last):
         """Scrollleiste nur zeigen, wenn der Inhalt nicht ganz hineinpasst."""

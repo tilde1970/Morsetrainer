@@ -22,6 +22,11 @@
   Programm, dass F9 die Sprachansage einschaltet und F11 sagt, wo du bist.
   Läuft ein Screenreader, ist die Ansage gleich eingeschaltet.
 
+- **Rollbereiche folgen der Tastatur:** Wer mit Tab zu einem Feld
+  springt, das bei großer Schrift außer Sicht liegt (etwa in den
+  Bandbedingungen oder der Statistik), sieht es jetzt; der Bereich rollt
+  mit.
+
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das
