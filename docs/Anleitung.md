@@ -750,6 +750,9 @@ Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit
 QSOs und Rate), in der Tagesübung die aktuelle Karte, im Reiter Statistik
 eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
 Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
+F9 und F11 wirken in jedem Fenster; in Einstellungen, Bandbedingungen,
+Hilfe und den Netzwerk-Fenstern sagt F11 den Namen des Fensters und das
+Bedienelement, auf dem du gerade stehst.
 
 ### Was angesagt wird
 

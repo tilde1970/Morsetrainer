@@ -31,6 +31,9 @@
   Pfeil runter und hoch lesen Absatz für Absatz vor, und ein Suchtreffer
   liest seine Zeile. Neu ist der Knopf „Im Browser öffnen“.
 
+- **F9 und F11 in jedem Fenster:** Auch in Einstellungen,
+  Bandbedingungen, Hilfe und den Netzwerk-Fenstern schaltet F9 die Ansage
+  und F11 sagt, in welchem Fenster und auf welchem Bedienelement du bist.
 ## 2.48
 
 - **Kein Absturz mehr beim Schließen während einer Ansage:** Wer das

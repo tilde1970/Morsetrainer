@@ -226,6 +226,10 @@ class MorseTrainerApp:
                 root.bind_all(f"<{modifier}-{key}>", lambda e: self.band_settings.open_window() or "break")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             root.bind_all(f"<{modifier}-comma>", lambda e: self.open_settings() or "break")
+        # F9 und F11 auch in den anderen Fenstern (Einstellungen,
+        # Bandbedingungen, Hilfe, Netzwerk …); im Hauptfenster gilt _dispatch_key.
+        for key in (ANNOUNCE_KEY, STATUS_KEY):
+            root.bind_all(f"<{key}>", self._window_key, add="+")
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         if sys.platform == "darwin":
             self._bind_mac_keys()
@@ -720,9 +724,53 @@ class MorseTrainerApp:
             return
         self.announcer.say(tr("Ansage an.") if self.announcer.enabled() else tr("Ansage aus."), force=True)
 
+    def _window_key(self, event):
+        """F9/F11 in einem anderen Fenster als dem Hauptfenster. Fenster mit
+        eigener Belegung (Meldungen, Abendbilanz, Diplom …) machen es selbst."""
+        top = self._window_of(event.widget)
+        if top is None or top is self.root or top.bind(f"<{event.keysym}>"):
+            return None
+        if event.keysym == ANNOUNCE_KEY:
+            self.toggle_announce()
+        else:
+            self.read_window(top)
+        return "break"
+
+    def _window_of(self, widget):
+        """Das Fenster von `widget`, None bei Tks eigenen Dialogen."""
+        if not isinstance(widget, tk.Misc):
+            return None
+        try:
+            return widget.winfo_toplevel()
+        except (tk.TclError, KeyError):
+            return None
+
+    def read_window(self, top) -> None:
+        """F11 in einem anderen Fenster: sein Name und das Bedienelement mit
+        dem Fokus („Fenster Einstellungen. Schriftgröße, Klappliste, 100 Prozent.“)."""
+        try:
+            text = tr("Fenster {title}.").format(title=top.title())
+            focus = top.focus_get()
+            if focus is not None and focus is not top and focus.winfo_toplevel() is top:
+                text += " " + announcer.describe(focus)
+        except (tk.TclError, KeyError):
+            return
+        self.announcer.say(text, force=True)
+
     def read_status(self) -> None:
         """F11: vorlesen, wo man ist – Reiter, Status, Rückmeldung, Restzeit
-        oder die Karte der Tagesübung."""
+        oder die Karte der Tagesübung; in einem anderen Fenster dieses (auf
+        dem Mac kommt Cmd+Umschalt+W in jedem Fenster hierher)."""
+        try:
+            top = self._window_of(self.root.focus_get())
+        except KeyError:
+            top = None
+        if top is not None and top is not self.root:
+            if top.bind(f"<{STATUS_KEY}>"):
+                top.event_generate(f"<{STATUS_KEY}>")
+            else:
+                self.read_window(top)
+            return
         if self.daily.active and self.daily.card_open:
             self.announcer.say(self.daily.card_text, force=True)
             return

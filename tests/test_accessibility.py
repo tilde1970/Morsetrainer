@@ -1286,6 +1286,69 @@ class ListenAnnounceTest(AnnouncerCase):
 REAL_GREETING = app_module.MorseTrainerApp._greet_first_start
 
 
+class WindowKeysTest(AnnouncerCase):
+    """F9 und F11 wirken in jedem Fenster, nicht nur im Hauptfenster."""
+
+    def key(self, widget, keysym):
+        return self.app._window_key(mock.Mock(widget=widget, keysym=keysym))
+
+    def test_f9_and_f11_work_in_every_window(self):
+        from morsetrainer.widgets import dialog, help_window
+        self.assertTrue(self.root.bind_all("<F9>") and self.root.bind_all("<F11>"))
+        self.app.open_settings()
+        self.app.band_settings.open_window()
+        help_window.HelpWindow.show(self.root)
+        self.addCleanup(lambda: help_window.HelpWindow._open and help_window.HelpWindow._open.top.destroy())
+        self.root.update()
+        for window in (self.app.settings_window, self.app.band_settings.window, help_window.HelpWindow._open.top):
+            del self.said[:]
+            self.assertEqual(self.key(window, "F11"), "break")
+            self.assertTrue(self.pump_until(lambda: self.said), window)
+            self.assertIn("Fenster", " ".join(self.said), window)
+            before = self.app.announcer.var.get()
+            self.assertEqual(self.key(window, "F9"), "break")
+            self.assertNotEqual(self.app.announcer.var.get(), before)
+            self.app.announcer.var.set(before)
+        # Im Hauptfenster gilt _dispatch_key, Fenster mit eigener Belegung
+        # (Meldungen) machen es selbst: nichts doppelt.
+        self.assertIsNone(self.key(self.root, "F9"))
+        message = dialog.MessageDialog(self.root, "Titel", "Text", question=False)
+        self.addCleanup(message.close)
+        self.assertIsNone(self.key(message.top, "F11"))
+
+    def test_f9_toggles_once_in_every_window(self):
+        # Hauptfenster (über <Key>) und anderes Fenster (über bind_all):
+        # je Druck genau ein Umschalten, nicht zwei.
+        self.app.open_settings()
+        self.root.deiconify()
+        self.root.update()
+        for window in (self.root, self.app.settings_window):
+            window.focus_force()
+            self.root.update()
+            before = self.app.announcer.var.get()
+            window.event_generate("<KeyPress-F9>", when="tail")
+            self.root.update()
+            self.assertNotEqual(self.app.announcer.var.get(), before, window)
+
+    def test_f11_names_the_focused_control(self):
+        self.app.open_settings()
+        self.root.update()
+        window = self.app.settings_window
+
+        def controls(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from controls(child)
+
+        focus = next(w for w in controls(window) if w.winfo_class() == "TCombobox")
+        with mock.patch.object(window, "focus_get", lambda: focus):
+            self.app.read_window(window)
+        self.pump_until(lambda: self.said)
+        spoken = " ".join(self.said)
+        self.assertIn("Fenster", spoken)
+        self.assertIn(", Auswahl, ", spoken)
+
+
 class FirstStartTest(AnnouncerCase):
     """Beim allerersten Start erfährt man, wie die Ansage angeht."""
 

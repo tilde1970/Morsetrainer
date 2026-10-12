@@ -736,6 +736,9 @@ remaining time (in Non-stop with the provisional accuracy, in Contest with
 QSOs and rate), during daily practice the current card, in the Statistics
 tab an overview (overall result, most errors, confusions, review box,
 seals, practice today) – even with announcements switched off.
+F9 and F11 work in every window; in Settings, Band conditions, Help and
+the network windows F11 says the name of the window and the control you
+are on.
 
 ### What is announced
 
