@@ -313,14 +313,20 @@ class DailyBar:
 ENTER_GRACE_S = 0.8
 
 
+# Text des einmaligen Hinweises auf die Betriebszeichen (siehe daily.prosign_hint_due).
+PROSIGN_HINT_TEXT = N_("Für QSOs fehlen noch die Betriebszeichen AR, KN, SK und BK. Sie kommen in den "
+                       "Lektionen 42 bis 45 dazu; du kannst sie jetzt oder später oben bei der Lektion einstellen.")
+
+
 class EveningSummary:
     """Abendbilanz: Sterne, was besser geworden ist, was fast geschafft ist,
     heute erreichte Siegel und auf Wunsch einmal „Noch 5 Min“. Enter und
     Esc schließen; danach `on_close` (zeigt die neuen Siegel)."""
 
     def __init__(self, root, stars, comparison: dict, outlook=None, offer=None, on_extra=None,
-                 completed: bool = True, week_stars: int = None, seals=(), on_close=None):
+                 completed: bool = True, week_stars: int = None, seals=(), on_close=None, on_prosigns=None):
         self.on_extra = on_extra
+        self.on_prosigns = on_prosigns
         self.on_close = on_close
         self.offer = offer
         self.restore_focus = focus_keeper(root)
@@ -354,6 +360,10 @@ class EveningSummary:
             for line in seals:
                 ttk.Label(box, text=line).pack(anchor="w")
 
+        if on_prosigns:
+            box = theme.card(frame, tr("Betriebszeichen"), padx=0, pady=(8, 0))
+            ttk.Label(box, text=tr(PROSIGN_HINT_TEXT), wraplength=theme.scaled(460), justify="left").pack(anchor="w")
+
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(14, 0))
         self.done_button = ttk.Button(buttons, text=tr("Fertig"), style="Accent.TButton", command=self.close)
@@ -362,6 +372,10 @@ class EveningSummary:
         if offer and on_extra:
             self.extra_button = ttk.Button(buttons, text=extra_label(offer), command=self._extra)
             self.extra_button.pack(side="right", padx=(0, 8))
+        self.prosign_button = None
+        if on_prosigns:
+            self.prosign_button = ttk.Button(buttons, text=tr("Lektion 42 einstellen"), command=self._prosigns)
+            self.prosign_button.pack(side="right", padx=(0, 8))
         # Enter gleich nach dem Erscheinen gehört noch zur letzten Antwort.
         self.opened = time.time()
         window.bind("<Return>", lambda e: self.close() if time.time() - self.opened >= ENTER_GRACE_S else None)
@@ -394,12 +408,20 @@ class EveningSummary:
             parts.append(tr("Stand gehalten."))
         if outlook:
             parts.append(outlook_line(outlook))
+        if self.on_prosigns:
+            parts.append(tr(PROSIGN_HINT_TEXT))
         if seals:
             parts.append((tr("Neues Siegel: ") if len(seals) == 1 else tr("Neue Siegel: ")) + "; ".join(seals))
         parts.append(tr("Enter: Fertig."))
         if self.extra_button is not None:
             parts.append(tr("Mit Tab: {label}.").format(label=self.extra_button.cget("text")))
+        if self.prosign_button is not None:
+            parts.append(tr("Mit Tab: {label}.").format(label=self.prosign_button.cget("text")))
         return ". ".join(part.rstrip(".") for part in parts if part) + "."
+
+    def _prosigns(self) -> None:
+        self.close()
+        self.on_prosigns()
 
     def _extra(self) -> None:
         self.close(follow=False)  # neue Siegel erst nach der Zugabe zeigen

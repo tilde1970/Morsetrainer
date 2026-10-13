@@ -388,6 +388,10 @@ EXTRA_MIN_SHARE = TEMPO_DOWN_SHARE
 RUFZ_FROM_LESSON = 27   # Rufzeichen brauchen die erste Ziffer (Lektion 23) und genug Zeichen
 CONFUSIONS, RUFZ, WORD = "confusions", "rufz", "word"
 
+# Einmaliger Hinweis auf die Betriebszeichen-Lektionen, sobald Lektion 41
+# bestanden ist: QSOs senden AR, KN, SK und BK. Gespeichert wird der Tag.
+PROSIGN_HINT = "prosign_hint"
+
 
 def latencies(first: date, last: date) -> dict:
     """{Zeichen: {Zeichentempo: [Sekunden]}} aus Einzelzeichen-Sitzungen;
@@ -537,6 +541,19 @@ def lesson_outlook(state: dict, today: date):
         return None
     missing = max(round(koch.ADVANCE_ACCURACY_PCT - correct / total * 100), 1)
     return {"lesson": lesson + 1, "missing": missing}
+
+
+def prosign_hint_due(state: dict, header_lesson: int, learned: str) -> bool:
+    """True, wenn die Abendbilanz einmalig auf die Lektionen 42–45 hinweisen
+    soll: Die Tagesübung hat Lektion 41 bestanden (vorgemerkt oder schon nach
+    Koch), der Hinweis kam noch nicht, und wer schon bei den Betriebszeichen
+    ist (Kopfleiste oder Lernkartei `learned`), braucht ihn nicht."""
+    if state.get(PROSIGN_HINT):
+        return False
+    pending = state.get("pending_lesson")
+    passed = current_lesson(state, 1) >= POST_KOCH or (isinstance(pending, int) and pending >= POST_KOCH)
+    started = header_lesson > koch.FINAL_LESSON or any(ch in learned for ch in koch.PROSIGN_ORDER)
+    return passed and not started
 
 
 def extra_offer(state: dict, today: date, lesson: int, confusion_chars: str):

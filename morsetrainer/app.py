@@ -992,6 +992,16 @@ class MorseTrainerApp:
             return
         self.charset_var.set(koch.lesson_charset(lesson))
 
+    def start_prosign_lessons(self):
+        """Aus der Abendbilanz: oben die erste Betriebszeichen-Lektion (42)
+        einstellen; die nächste wird danach wie gewohnt angeboten."""
+        lesson = koch.FINAL_LESSON + 1
+        self.lesson_var.set(lesson)
+        self._apply_lesson()
+        text = tr("Lektion {lesson} eingestellt, neu: {char}.").format(
+            lesson=lesson, char=key_hint(koch.newest_char(lesson)))
+        announcer.say(text)
+
     def _sync_lesson(self):
         """Lektion und Knopf „Neues Zeichen“ an den Zeichensatz anpassen; ein
         eigener Zeichensatz zeigt „(eigene Zeichen)“ und den Weg zurück zur

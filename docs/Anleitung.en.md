@@ -256,8 +256,9 @@ lesson is offered.
   often).
 - If you like, **lessons 42–45** then add the prosigns from QSOs: AR (key
   `+`), KN (`(`), SK (`*`) and BK (`#`). The trainer does not move there by
-  itself; set the lesson at the top. After that, the next prosign is
-  offered again. The daily practice also repeats prosigns you have learned.
+  itself; set the lesson at the top (the daily practice's evening summary
+  also points this out once, with a **Set lesson 42** button). After that,
+  the next prosign is offered again. The daily practice also repeats prosigns you have learned.
 
 ### Non-stop
 
@@ -405,7 +406,9 @@ as they were.
   the same speed, never “worse”), how much is missing for the next lesson,
   where you stand on the weekly goal and, if the main part went well, once
   a day **5 more min** with something different: your confusions within
-  the lesson, a RufZ run or words.
+  the lesson, a RufZ run or words. Once the daily practice has passed
+  lesson 41, it points out the prosigns (lessons 42–45) once; **Set lesson
+  42** sets them at the top.
 - **Week:** next to the button is the week strip from Monday, e.g.
   “Mon ★★★  Tue ★★  Wed ✓  Thu –  Fri ·” (✓ = practised freely without the
   daily practice, daily goal reached; – = no practice), and next to it

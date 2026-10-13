@@ -12,6 +12,7 @@ Zwischen den Blöcken steht die Zwischenkarte, bis man mit Enter (oder dem
 Knopf) weitergeht; am Ende die Abendbilanz. Aus ihr startet „Noch 5 Min“ eine Zugabe:
 ein einzelner Block mit demselben Ablauf, danach ohne neue Bilanz."""
 import time
+import tkinter as tk
 from datetime import date
 
 from morsetrainer.core import awards, daily, koch, practice, review, stats, week
@@ -414,16 +415,27 @@ class DailyRunner:
         """Öffnet die Abendbilanz, nach einer vollständigen Übung mit dem Angebot
         „Noch 5 Min“."""
         offer = None
+        prosigns = False
         if completed:
             app = self.app
             lesson = daily.current_lesson(self.state, 1)
-            charset = daily.lesson_charset(lesson, review.boxed_chars())
+            learned = review.boxed_chars()
+            charset = daily.lesson_charset(lesson, learned)
             confusions = app._confusion_charset(stats.recent_char_data(), stats.load_all_time())
             confusions = "".join(ch for ch in confusions if ch in charset)
             offer = daily.extra_offer(self.state, self.today, lesson, confusions)
+            try:
+                header_lesson = app.lesson_var.get()
+            except tk.TclError:
+                header_lesson = 1
+            prosigns = daily.prosign_hint_due(self.state, header_lesson, learned)
+            if prosigns:
+                self.state[daily.PROSIGN_HINT] = self.today.isoformat()
+                daily.save(self.state)
         self.summary = EveningSummary(
             self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
             offer, self.start_extra, completed, week.stars_in_week(self.state, self.today),
             # Nur Siegel, die noch kein Diplom-Fenster gezeigt hat; es folgt beim Schließen.
             seals=[seal_name(awards.BY_KEY[key], level) for key, level, _ in self.app.pending_seals],
-            on_close=self.app.show_pending_seals)
+            on_close=self.app.show_pending_seals,
+            on_prosigns=self.app.start_prosign_lessons if prosigns else None)

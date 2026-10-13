@@ -313,6 +313,16 @@ class ReviewTest(unittest.TestCase):
         daily.finish_block(state, TODAY, main_block(), main_result(95, 100))
         self.assertEqual(daily.lesson_outlook(state, TODAY), {"lesson": 13, "pending": True})
 
+    def test_prosign_hint_once_after_lesson_41(self):
+        self.assertFalse(daily.prosign_hint_due({"lesson": 41}, 41, ""))
+        self.assertTrue(daily.prosign_hint_due({"lesson": 41, "pending_lesson": daily.POST_KOCH}, 41, ""))
+        state = {"lesson": daily.POST_KOCH}
+        self.assertTrue(daily.prosign_hint_due(state, 41, ""))
+        self.assertFalse(daily.prosign_hint_due(state, 42, ""))     # schon bei den Betriebszeichen
+        self.assertFalse(daily.prosign_hint_due(state, 41, "AB+"))  # AR in der Lernkartei
+        state[daily.PROSIGN_HINT] = TODAY.isoformat()
+        self.assertFalse(daily.prosign_hint_due(state, 41, ""))
+
     def test_extra_offer_once_and_only_after_good_main_part(self):
         state = {"lesson": 30, "days": {}}
         self.assertIsNone(daily.extra_offer(state, TODAY, 30, ""))

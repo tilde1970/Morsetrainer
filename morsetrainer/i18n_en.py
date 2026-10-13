@@ -164,6 +164,13 @@ EN.update({
     "(eigene Zeichen)": "(own characters)",
     "↩ Lektion {lesson}": "↩ Lesson {lesson}",
     "neu: {char}": "new: {char}",
+    "Betriebszeichen": "Prosigns",
+    "Lektion 42 einstellen": "Set lesson 42",
+    "Lektion {lesson} eingestellt, neu: {char}.": "Lesson {lesson} set, new: {char}.",
+    ("Für QSOs fehlen noch die Betriebszeichen AR, KN, SK und BK. Sie kommen in den "
+     "Lektionen 42 bis 45 dazu; du kannst sie jetzt oder später oben bei der Lektion einstellen."):
+        ("For QSOs you still need the prosigns AR, KN, SK and BK. Lessons 42 to 45 add them; "
+         "you can set them now or later at the top next to the lesson."),
     "Tonausgabe": "Audio output",
     "Nächste Koch-Lektion": "Next Koch lesson",
     "Lektion {lesson} geschafft: {correct} von {total} Zeichen richtig ({share:.0%}).":

@@ -259,7 +259,9 @@ bekommt die nächste Lektion angeboten.
 - Wer möchte, nimmt danach in den **Lektionen 42–45** die Betriebszeichen
   aus dem QSO dazu: AR (Taste `+`), KN (`(`), SK (`*`) und BK (`#`).
   Dorthin wird nicht von selbst weitergeschaltet, die Lektion stellst du
-  oben ein; danach wird das nächste Betriebszeichen wieder angeboten.
+  oben ein (einmal weist auch die Abendbilanz der Tagesübung darauf hin,
+  mit Knopf **Lektion 42 einstellen**); danach wird das nächste
+  Betriebszeichen wieder angeboten.
   Gelernte Betriebszeichen wiederholt auch die Tagesübung.
 
 ### Am Stück
@@ -411,7 +413,9 @@ wieder wie vorher.
   gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion
   fehlt, der Stand zum Wochenziel und, wenn der Hauptteil gut lief, einmal
   am Tag **Noch 5 Min** mit etwas anderem: deine Verwechslungen aus der
-  Lektion, einen Rufz-Durchgang oder Wörter.
+  Lektion, einen Rufz-Durchgang oder Wörter. Hat die Tagesübung Lektion 41
+  bestanden, weist sie einmal auf die Betriebszeichen (Lektion 42–45) hin;
+  **Lektion 42 einstellen** stellt sie oben ein.
 - **Woche:** Neben dem Knopf steht der Wochenstreifen ab Montag, z. B.
   „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ = ohne Tagesübung frei geübt, mit
   erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum

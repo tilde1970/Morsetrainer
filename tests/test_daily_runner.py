@@ -199,6 +199,26 @@ class DailyRunnerTest(AppTestCase):
         self.runner.abort(quiet=True)
         self.assertIsNone(self.runner.summary)
 
+    def test_summary_points_to_prosign_lessons_once(self):
+        daily.save({"lesson": daily.POST_KOCH, "days": {}})
+        self.app.lesson_var.set(koch.FINAL_LESSON)
+        self.app._apply_lesson()
+        self.runner.state, self.runner.today = daily.load(), date.today()
+        self.runner._show_summary(set(), True)
+        summary = self.runner.summary
+        self.assertIsNotNone(summary.prosign_button)
+        self.assertIn("AR, KN, SK und BK", summary.spoken)
+        self.assertIn("Mit Tab: Lektion 42 einstellen.", summary.spoken)
+        summary.prosign_button.invoke()
+        self.assertIsNone(summary.window)
+        self.assertEqual(self.app.lesson_var.get(), koch.FINAL_LESSON + 1)
+        self.assertEqual(self.app.charset_var.get(), koch.lesson_charset(koch.FINAL_LESSON + 1))
+        self.assertEqual(daily.load()[daily.PROSIGN_HINT], date.today().isoformat())
+        self.app.lesson_var.set(koch.FINAL_LESSON)
+        self.runner._show_summary(set(), True)  # nur einmal
+        self.assertIsNone(self.runner.summary.prosign_button)
+        self.runner.summary.close()
+
     def test_extra_runs_one_block_once(self):
         self.runner.start_extra((daily.CONFUSIONS, "BD"))
         self.assertTrue(self.runner.active)
