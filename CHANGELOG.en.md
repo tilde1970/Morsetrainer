@@ -1,5 +1,53 @@
 # Changes
 
+## Unreleased
+
+- **Daily practice after Koch with a changing wind-down:** after lesson 41
+  the wind-down (4 min) changes from one practice day to the next:
+  callsigns, a short **QSO for head copy** with questions, callsigns
+  again, then a short **contest run to log**. The QSO only comes once the
+  prosigns AR, KN, SK and BK are learned and it fits into the four minutes
+  with its questions (roughly from 18 WPM effective); otherwise callsigns.
+  The block ends with “Check”; the daily practice stays at ten minutes.
+- **Wind-down under band conditions:** from 15 WPM effective, every second
+  cycle brings non-stop under band conditions instead of the contest run:
+  first “light”, after two days with 90 % or more “medium”, after twice in
+  a row below 80 % back to “light”. The wide filter and at most 100 %
+  noise volume are used; if you have turned the volume down, it stays
+  that way (it then does not count for QRN-proof). Afterwards your own
+  band settings are back.
+- **Wind-down by practice days:** it now changes by the number of days
+  you practised, not by the calendar. Whoever practised every other day
+  used to get the same one every time.
+- **Hint on the prosigns:** once the daily practice has passed lesson 41,
+  the evening summary mentions AR, KN, SK and BK (lessons 42–45) once,
+  with a button “Set lesson 42”.
+- **Words tab with type: Abbreviations / Plain words / Phrases / mixed.**
+  “Abbreviations” is the previous word list. **Plain words** brings about
+  300 English QSO words written out (WEATHER, STATION, THANKS …), also in
+  Non-stop, Speak and network; there “Words” is now called
+  “Abbreviations” as well. **Phrases** such as “TNX FER CALL” come with
+  word gaps and are typed without spaces; the time window has two parts
+  (start within 2 s, then 0.6 s per character). **mixed** brings a phrase
+  in roughly every third sequence; daily practice mixes this way from
+  lesson 35.
+- **Band levels fair with a low pitch:** without a narrow filter a very
+  low tone is quieter. The level buttons then set the noise weaker by
+  that amount, and it counts accordingly for QRN-proof.
+- **Focus returns:** after questions, settings, the band window and help,
+  the focus is back where it was. Escape in a question no longer goes to
+  the main window, and Tab reaches “Yes” before “No”.
+- **Announcements:** F5 (stop and start again right away) during an
+  announcement no longer starts a double run, nor does the start button
+  during a daily practice block announcement. In the band window the
+  noise slider is announced as “signal to noise”; values of
+  switched-off interference are dimmed.
+- **Small things:** help has the button “Open online in browser” (without
+  a browser the address is shown). Screen reader detection no longer
+  trips over unusual process names and also works in the AppImage.
+- **Manual:** new section “Your learning path” with nine steps from the
+  first characters to band conditions; NVDA sleep mode and JAWS added.
+
 ## 2.49
 
 - **Messages and questions are announced:** questions such as “Next Koch

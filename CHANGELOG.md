@@ -1,5 +1,55 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Tagesübung nach Koch mit wechselndem Ausklang:** Nach Lektion 41
+  wechselt der Ausklang (4 Min.) von Übungstag zu Übungstag: Rufzeichen,
+  ein kurzes **QSO zum Kopfhören** mit Fragen, wieder Rufzeichen, dann ein
+  kurzer **Contest-Run zum Mitloggen**. Das QSO kommt erst, wenn die
+  Betriebszeichen AR, KN, SK und BK gelernt sind und es samt Fragen in die
+  vier Minuten passt (etwa ab 18 WPM effektiv); sonst Rufzeichen. Der Block
+  endet mit „Prüfen“, die Tagesübung bleibt bei zehn Minuten.
+- **Ausklang unter Bandbedingungen:** Ab 15 WPM effektiv kommt in jedem
+  zweiten Durchlauf statt des Contest-Runs Am Stück unter
+  Bandbedingungen: zuerst „leicht“, nach zwei Tagen mit 90 % und mehr
+  „mittel“, nach zweimal hintereinander unter 80 % wieder „leicht“. Dafür
+  gelten das breite Filter und höchstens 100 % Störlautstärke; wer sie
+  leiser gestellt hat, behält das (zählt dann nicht für QRN-fest).
+  Danach ist die eigene Bandeinstellung wieder da.
+- **Ausklang nach Übungstagen:** Er wechselt jetzt nach der Zahl der Tage,
+  an denen du geübt hast, nicht nach dem Kalender. Wer jeden zweiten Tag
+  übte, bekam bisher immer denselben.
+- **Hinweis auf die Betriebszeichen:** Hat die Tagesübung Lektion 41
+  bestanden, nennt die Abendbilanz einmal AR, KN, SK und BK (Lektionen
+  42–45), mit Knopf „Lektion 42 einstellen“.
+- **Reiter Wörter mit Art: Abkürzungen / Klartext / Wendungen / gemischt.**
+  „Abkürzungen“ ist die bisherige Wortliste. **Klartext** bringt rund 300
+  ausgeschriebene englische QSO-Wörter (WEATHER, STATION, THANKS …), auch
+  in Am Stück, Sprechen und im Netzwerk; dort heißt „Wörter“ jetzt
+  ebenfalls „Abkürzungen“. **Wendungen** wie „TNX FER CALL“ kommen mit
+  Wortabstand und werden ohne Leerzeichen getippt; das Zeitfenster ist
+  zweigeteilt (in 2 s anfangen, dann 0,6 s je Zeichen). **gemischt**
+  bringt etwa jede dritte Sequenz eine Wendung; so mischt auch die
+  Tagesübung ab Lektion 35.
+- **Bandstufen bei tiefem Ton fair:** Ohne schmales Filter ist ein sehr
+  tiefer Ton leiser. Die Stufenknöpfe stellen das Rauschen dann um so
+  viel schwächer ein, und für QRN-fest zählt es entsprechend.
+- **Fokus kehrt zurück:** Nach Rückfragen, Einstellungen, Bandfenster und
+  Hilfe steht der Fokus wieder dort, wo er vorher war. Escape in einer
+  Rückfrage geht nicht mehr ans Hauptfenster, Tab erreicht „Ja“ vor
+  „Nein“.
+- **Ansage:** F5 (Stop und gleich wieder Start) während einer Ansage
+  startet keinen doppelten Ablauf mehr, ebenso der Startknopf während der
+  Blockansage der Tagesübung. Im Bandfenster heißt der Rauschregler in
+  der Ansage „Rauschabstand“; Werte ausgeschalteter Störungen sind
+  abgeblendet.
+- **Kleinigkeiten:** Die Hilfe hat den Knopf „Online im Browser öffnen“
+  (ohne Browser steht die Adresse da). Die Screenreader-Erkennung stolpert
+  nicht mehr über ungewöhnliche Prozessnamen und läuft auch im AppImage.
+- **Anleitung:** neuer Abschnitt „Der Lernweg“ mit neun Schritten von den
+  ersten Zeichen bis zu Bandbedingungen; NVDA-Schlafmodus und JAWS
+  ergänzt.
+
 ## 2.49
 
 - **Meldungen und Rückfragen mit Ansage:** Fragen wie „Nächste

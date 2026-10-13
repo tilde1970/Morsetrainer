@@ -125,6 +125,10 @@ WHATS_NEW = {
                "dadurch etwas schwerer. Sind deine Werte mit Band schlechter als vorher, liegt das am Band, nicht "
                "an dir; für die Zeichenstatistik zählen Durchgänge mit Band weiterhin nicht. Alles Weitere steht "
                "unter Hilfe, Änderungen."),
+    "2.50": N_("Die bisherige Auswahl „Wörter“ heißt jetzt „Abkürzungen“; neu daneben steht „Klartext“ mit "
+               "ausgeschriebenen englischen QSO-Wörtern (Wörter, Am Stück, Sprechen, Netzwerk). Nach Koch "
+               "wechselt der Ausklang der Tagesübung zwischen Rufzeichen, einem QSO zum Kopfhören, einem "
+               "Contest-Run und Bandbedingungen. Alles Weitere steht unter Hilfe, Änderungen."),
 }
 
 

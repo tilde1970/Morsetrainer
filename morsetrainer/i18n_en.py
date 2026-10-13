@@ -841,6 +841,14 @@ EN.update({
         "If your scores with band conditions are lower than before, that is the band, not you; runs with "
         "band conditions still don't count for the character statistics. Everything else is under Help, "
         "Changes.",
+    ("Die bisherige Auswahl „Wörter“ heißt jetzt „Abkürzungen“; neu daneben steht „Klartext“ mit "
+     "ausgeschriebenen englischen QSO-Wörtern (Wörter, Am Stück, Sprechen, Netzwerk). Nach Koch "
+     "wechselt der Ausklang der Tagesübung zwischen Rufzeichen, einem QSO zum Kopfhören, einem "
+     "Contest-Run und Bandbedingungen. Alles Weitere steht unter Hilfe, Änderungen."):
+        "The former choice “Words” is now called “Abbreviations”; next to it is the new “Plain words” "
+        "with English QSO words written out (Words, Non-stop, Speak, network). After Koch the daily "
+        "practice wind-down changes between callsigns, a QSO for head copy, a contest run and band "
+        "conditions. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",
