@@ -495,8 +495,9 @@ vergeben wird.
 Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25 Lektionen“) und ab
 welcher Lektion es erreichbar ist; offene stehen grau. Clubabend geht nur
 gemeinsam im Netzwerk und steht ohne Siegel am Ende. Eine gewählte Zeile
-zeigt Bedingung und Tage der Siegel, bei QRN-fest, Contest und
-Verwechslung auch, wie nah du der nächsten Stufe bist (bester Lauf bzw.
+zeigt die Bedingung und je Stufe den Stand: erreicht mit Tag, wie weit
+du bist (z. B. „Silber ab 25 Lektionen: 18 / 25“) oder „noch offen“. Bei
+QRN-fest, Contest und Verwechslung steht außerdem, wie nah du der nächsten Stufe bist (bester Lauf bzw.
 das nächste Paar mit verbleibenden Tagen). „Diplom ansehen und drucken“
 zeigt das Diplom der höchsten Stufe, „Vorschau: nächstes Ziel“ das der
 nächsten offenen Stufe – mit dem Stempel „VORSCHAU“, ohne Datum und

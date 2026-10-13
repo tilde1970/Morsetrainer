@@ -346,6 +346,25 @@ class OverviewTest(unittest.TestCase):
         self.assertEqual((panel.seals_text(awards.BY_KEY["first_qso"], status),
                           panel.next_text(awards.BY_KEY["first_qso"], status)), ("–", "–"))
 
+    def test_detail_shows_every_level(self):
+        koch_runs = [session("group", 0, lesson=18, first_try_correct=50, first_try_total=50)]
+        status = awards.evaluate(data(koch_runs), today=day(5))["koch"]
+        lines = panel.detail_text(awards.BY_KEY["koch"], status).splitlines()
+        self.assertIn("Bronze ab 10 Lektionen: erreicht am " + day(0).strftime("%d.%m.%Y"), lines)
+        self.assertIn("Silber ab 25 Lektionen: 18 / 25", lines)
+        self.assertIn(f"Gold ab {koch.FINAL_LESSON} Lektionen: 18 / {koch.FINAL_LESSON}", lines)
+        qrq = dict(content="chars", group_len=5, charset=koch.lesson_charset(40), completed=True,
+                   duration_s=200, total=300, correct=290, extra_keys=0)
+        status = awards.evaluate(data([session("continuous", 0, wpm=26, **qrq)]), today=day(5))["qrq"]
+        self.assertIn("Silber ab 25 WPM: an einem zweiten Tag wiederholen",
+                      panel.detail_text(awards.BY_KEY["qrq"], status).splitlines())
+        review = {ch: {"box": 2, "best_box": 2, "best_day": day(0).isoformat()} for ch in "ABCDEFG"}
+        text = panel.detail_text(awards.BY_KEY["wal"], awards.evaluate(data(review=review), today=day(5))["wal"])
+        self.assertIn("Bronze: 10 Buchstaben in Fach 3 – 7 / 10", text)
+        self.assertIn("Silber: alle 26 Buchstaben in Fach 3 – 7 / 26", text)
+        text = panel.detail_text(awards.BY_KEY["contest"], awards.evaluate(data(), today=day(5))["contest"])
+        self.assertIn("Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs in 10 Min., höchstens 1 Fehler – noch offen", text)
+
     def test_club_without_seal_comes_last(self):
         rows = awards.overview({"seals": {}, "seeded": True}, awards.evaluate(data(), today=day(5)))
         award, status = rows[-1]
@@ -368,7 +387,7 @@ class OverviewTest(unittest.TestCase):
         self.assertEqual(rows[awards.BY_KEY["club"]].dates, [day(-3), None, None, None])  # altes Siegel = Bronze
         endurance = rows[awards.BY_KEY["endurance"]]
         self.assertEqual((endurance.dates[0], endurance.next_level, endurance.progress), (day(-9), 1, (0, 50)))
-        self.assertIn("Bronze am", panel.detail_text(awards.BY_KEY["endurance"], endurance))
+        self.assertIn("Bronze ab 10 Tagen: erreicht am", panel.detail_text(awards.BY_KEY["endurance"], endurance))
 
 
 class CheckTest(unittest.TestCase):

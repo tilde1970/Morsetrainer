@@ -58,28 +58,43 @@ def next_text(award, status) -> str:
     return tr("{level}: {progress}").format(level=name, progress=progress) if progress else name
 
 
+def level_state(award, status, level) -> str:
+    """Stand einer Stufe: erreicht mit Tag, zweiter Tag fehlt, „18 / 25“
+    oder „noch offen“, wo sich nichts zählen lässt."""
+    day = status.dates[level]
+    if day is not None:
+        return tr("erreicht am {date}").format(date=day.strftime(tr("%d.%m.%Y")))
+    counted = status.level_progress[level] if status.level_progress else None
+    if counted is None:
+        return tr("noch offen")
+    have, need = counted
+    if have >= need and award.two_days:
+        return tr("an einem zweiten Tag wiederholen")
+    return tr("{have} / {need}").format(have=_amount(have), need=_amount(need))
+
+
 def detail_text(award, status) -> str:
-    """Ausführliche Beschreibung eines Diploms: Bedingung, Stufen, Regeln und
-    der Hinweis, wie nah die nächste Stufe ist."""
+    """Ausführliche Beschreibung eines Diploms: Bedingung, je Stufe Schwelle
+    und Stand, Regeln und der Hinweis, wie nah die nächste Stufe ist."""
     lines = [tr(award.condition)]
-    if award.levels and not award.stepped:
-        steps = " · ".join(f"{tr(awards.LEVEL_NAMES[i])} {_amount(t)}" for i, t in enumerate(award.targets))
-        lines.append(tr("Stufen: {steps} {unit}").format(steps=steps, unit=tr(award.unit)).strip())
-    for level, step in enumerate(award.steps):
-        lines.append(tr("{level}: {progress}").format(level=tr(awards.LEVEL_NAMES[level]), progress=tr(step)))
+    if award.levels:
+        for level, target in enumerate(award.targets):
+            name = tr(awards.LEVEL_NAMES[level])
+            if award.stepped:
+                label = tr("{level}: {progress}").format(level=name, progress=tr(award.steps[level]))
+                lines.append(tr("{condition} – {state}").format(condition=label,
+                                                                state=level_state(award, status, level)))
+            else:
+                label = tr("{level} ab {target} {unit}").format(
+                    level=name, target=_amount(target), unit=tr(award.unit_for(target, dative=True))).strip()
+                lines.append(tr("{level}: {progress}").format(level=label, progress=level_state(award, status, level)))
     if award.two_days:
         lines.append(tr("Silber und höher: an zwei verschiedenen Tagen."))
     if status.hint:
         text, values = status.hint
         lines.append(tr(text).format(**{k: tr(v) if isinstance(v, str) else v for k, v in values.items()}))
-    reached = [(level, day) for level, day in enumerate(status.dates) if day is not None]
-    if reached and award.levels:
-        seals = ", ".join(tr("{level} am {date}").format(level=tr(awards.LEVEL_NAMES[level]),
-                                                         date=day.strftime(tr("%d.%m.%Y")))
-                          for level, day in reached)
-        lines.append(tr("Erreicht: {seals}").format(seals=seals))
-    elif reached:
-        lines.append(tr("Erreicht am {date}").format(date=reached[0][1].strftime(tr("%d.%m.%Y"))))
+    if not award.levels and status.dates[0] is not None:
+        lines.append(tr("Erreicht am {date}").format(date=status.dates[0].strftime(tr("%d.%m.%Y"))))
     return "\n".join(lines)
 
 

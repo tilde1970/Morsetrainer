@@ -486,8 +486,9 @@ once per callsign.
 achieved, the next goal (e.g. “Silver: 18 / 25 lessons”) and from which
 lesson it can be reached; open ones are grey. Club night only works
 together in the network and is listed last while it has no seal. A
-selected row shows the condition and the days of the seals, for
-QRN-proof, Contest and Confusion also how close you are to the next level
+selected row shows the condition and the state of each level: achieved
+with the day, how far you are (e.g. “Silver from 25 lessons: 18 / 25”)
+or “not yet”. For QRN-proof, Contest and Confusion it also shows how close you are to the next level
 (best run or the next pair with the days left). “View and print award”
 shows the award of the highest level, “Preview: next goal” that of the
 next open level – stamped “PREVIEW”, without date and number.

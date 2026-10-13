@@ -400,6 +400,7 @@ class Status:
     progress: tuple = None  # (erreicht, nötig) zur nächsten Stufe, wenn sich das zählen lässt
     second_day: bool = False  # Schwelle der nächsten Stufe erreicht, fehlt nur der zweite Tag
     hint: tuple = None      # (Text mit Platzhaltern, Werte): wie nah man der nächsten Stufe ist
+    level_progress: list = None  # je Stufe (erreicht, nötig) oder None, wo sich nichts zählen lässt
 
     @property
     def next_level(self):
@@ -417,6 +418,8 @@ def _status(award: Award, dates: list, value: float) -> Status:
         # haben keinen zählbaren Fortschritt.
         if not award.stepped and target > 1:
             status.progress = (min(value, target), target)
+    if not award.stepped:
+        status.level_progress = [(min(value, t), t) if t > 1 else None for t in award.targets]
     return status
 
 
@@ -464,16 +467,18 @@ def _wal(data: Data, today: date) -> list:
     return events
 
 
-def wal_progress(data: Data) -> tuple:
-    """(erreicht, nötig) für die nächste Stufe von Worked All Letters."""
+def wal_levels(data: Data) -> list:
+    """(erreicht, nötig) je Stufe von Worked All Letters."""
     boxes = {ch: review.award_box(e) for ch, e in data.review.items()}
     letters3 = sum(boxes.get(ch, 0) >= BOX_3 for ch in LETTERS)
-    if letters3 < 10:
-        return letters3, 10
-    if letters3 < len(LETTERS):
-        return letters3, len(LETTERS)
-    have = sum(boxes.get(ch, 0) >= BOX_6 for ch in LETTERS) + sum(boxes.get(ch, 0) >= BOX_4 for ch in DIGITS)
-    return have, len(LETTERS) + len(DIGITS)
+    gold = sum(boxes.get(ch, 0) >= BOX_6 for ch in LETTERS) + sum(boxes.get(ch, 0) >= BOX_4 for ch in DIGITS)
+    return [(min(letters3, 10), 10), (letters3, len(LETTERS)), (gold, len(LETTERS) + len(DIGITS))]
+
+
+def wal_progress(data: Data) -> tuple:
+    """(erreicht, nötig) für die nächste Stufe von Worked All Letters."""
+    levels = wal_levels(data)
+    return next((step for step in levels if step[0] < step[1]), levels[-1])
 
 
 def _flow(data: Data) -> list:
@@ -941,6 +946,7 @@ def evaluate(data: Data = None, today: date = None) -> dict:
         found = _guarded(award.key, checks[award.key], [])
         value = max((v for _, v in found), default=0)
         statuses[award.key] = _status(award, level_dates(found, award.targets, award.two_days), value)
+    statuses["wal"].level_progress = _guarded("wal", lambda: wal_levels(data), None)
     if statuses["wal"].next_level is not None:
         statuses["wal"].progress = _guarded("wal", lambda: wal_progress(data), None)
     hints = {"qrn": lambda level: _qrn_hint(qrn_runs, level),
@@ -1043,6 +1049,8 @@ def overview(state: dict = None, statuses: dict = None) -> list:
             out.append((award, status))
             continue
         shown = _status(award, merged, status.value)
+        if award.stepped:
+            shown.level_progress = status.level_progress  # gezählt aus den Daten, nicht aus den Tagen
         if shown.next_level == status.next_level:
             shown.hint = status.hint
             if award.key == "wal":
