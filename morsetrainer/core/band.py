@@ -709,12 +709,15 @@ class BandConditions:
         """Ein Block einer einzelnen Station, mit QSB und Hintergrund."""
         return self.mix([(block, station)], len(block))
 
-    def mix(self, sources, n: int) -> np.ndarray:
+    def mix(self, sources, n: int, receiver_agc: bool = True) -> np.ndarray:
         """Mischt mehrere gleichzeitige Signale [(Block, Station), …] zu
         einem Block der Länge `n` (kürzere Blöcke werden mit Stille
         aufgefüllt) und legt Rauschen/QRM darunter, alles durch das
         CW-Filter. Station None steht für den eigenen Mithörton (kein QSB,
-        keine AGC, nicht gefiltert)."""
+        keine AGC, nicht gefiltert). Die signalgeführte AGC regelt auch in
+        Blöcken ohne Station weiter (das Rauschen steigt dann weich an);
+        `receiver_agc=False` lässt sie aus, etwa für das bewusst leisere
+        Bandgeräusch in der Antwortpause."""
         noise_rms, agc = self.noise_and_agc()
         # Die AGC hebt höchstens bis zur Signalstärke, gemessen beim
         # Rauschabstand mit Lautstärke 100 %: So bleibt „Lautstärke der
@@ -728,7 +731,6 @@ class BandConditions:
         agc = self._smooth("agc", agc, n)
         out = np.zeros(n, dtype=np.float64)
         sidetone = np.zeros(n, dtype=np.float64)
-        stations = False
         for block, station in sources:
             block = block[:n]
             if station is None:
@@ -736,12 +738,10 @@ class BandConditions:
             elif station == VOICE:
                 sidetone[:len(block)] += block
             else:
-                stations = True
                 pitch = self.pitch_gain if self.filter is None else 1.0
                 out[:len(block)] += block * (self.station_gain(station, len(block)) * pitch
                                              * _head(agc, len(block)))
-        # Ohne Station (Bandgeräusch in der Antwortpause) regelt nichts.
-        receiver = self._signal_agc(out, boost, AMPLITUDE * agc_level, n) if stations else 1.0
+        receiver = self._signal_agc(out, boost, AMPLITUDE * agc_level, n) if receiver_agc else 1.0
         levels = self.levels
         if np.any(noise_rms):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)

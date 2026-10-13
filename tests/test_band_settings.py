@@ -61,8 +61,8 @@ class LevelsTest(unittest.TestCase):
         import numpy as np
         for level in (0.05, 0.6, 1.0):
             conditions = band.conditions({"levels": {"noise": level}, "gain": 1.0}, 600)
-            # Ohne Station: die signalgeführte AGC regelt dann nicht hoch.
-            noise_rms = float(np.sqrt(np.mean(conditions.mix([], band.SAMPLE_RATE) ** 2)))
+            # Ohne signalgeführte AGC, die das Rauschen ohne Station hochregelt.
+            noise_rms = float(np.sqrt(np.mean(conditions.mix([], band.SAMPLE_RATE, receiver_agc=False) ** 2)))
             _, agc = conditions.noise_and_agc()
             measured = 20 * np.log10(band.SIGNAL_RMS * agc / noise_rms)
             self.assertAlmostEqual(measured, band.noise_snr_db(level), delta=0.5)
@@ -102,6 +102,29 @@ class LevelsTest(unittest.TestCase):
         conditions = band.conditions({"levels": {"noise": 0.4}, "gain": 1.0}, 600)
         out = np.concatenate([conditions.mix([(signal[i:i + block], 0)], block) for i in range(0, len(signal), block)])
         self.assertLess(rms(out[2 * rate:2 * rate + rate // 20]), 0.8 * rms(out[3 * rate:]))
+
+    def test_receiver_agc_runs_on_without_station(self):
+        # Contest: Zwischen zwei Anrufern ist kein Signal im Mix. Das Rauschen
+        # steigt dann weich an, statt beim Ende der Station abzufallen und
+        # beim nächsten Einsatz hochzuspringen.
+        import numpy as np
+        rate = band.SAMPLE_RATE
+        block = 960
+        tone = band.build_text("TEST", 28, 600)
+        plan = [tone, None, tone]  # Station, 1,5 s niemand, Station
+        conditions = band.conditions(dict(band.spec_from_preset("light"), seed=5), 600)
+        out = []
+        for part in plan:
+            length = len(part) if part is not None else int(1.5 * rate)
+            for i in range(0, length - block + 1, block):
+                out.append(conditions.mix([] if part is None else [(part[i:i + block], 0)], block))
+        levels = [20 * np.log10(np.sqrt(np.mean(b.astype(float) ** 2)) + 1e-12) for b in out]
+        first_quiet = len(tone) // block
+        last_quiet = first_quiet + int(1.5 * rate) // block - 1
+        for i in (first_quiet, last_quiet + 1):
+            self.assertLess(abs(levels[i] - levels[i - 1]), 1.5, i)
+        # Ohne Station regelt der Empfänger ganz hoch.
+        self.assertGreater(levels[last_quiet] - levels[first_quiet], 1.0)
 
     def test_qsb_depth_per_level(self):
         # Rice-Fading: Je höher der Regler, desto öfter und tiefer die Löcher;
@@ -311,8 +334,8 @@ class FilterAndQrmTest(unittest.TestCase):
         for level in (0.4, 0.6, 0.8):
             spec = {"levels": {"noise": level}, "gain": 1.0}
             silent = np.zeros(band.SAMPLE_RATE * seconds, dtype=np.float32)
-            quiet = band.conditions(spec, 600)  # ohne Station: die AGC regelt nicht hoch
-            noise = np.concatenate([quiet.mix([], 960) for _ in range(len(silent) // 960)])
+            quiet = band.conditions(spec, 600)  # ohne Station und ohne AGC: Rauschen beim Ton
+            noise = np.concatenate([quiet.mix([], 960, receiver_agc=False) for _ in range(len(silent) // 960)])
             t = np.arange(len(silent)) / band.SAMPLE_RATE
             tone = (band.AMPLITUDE * np.sin(2 * np.pi * 600 * t)).astype(np.float32)
             both = self.blockwise(band.conditions(spec, 600), tone)

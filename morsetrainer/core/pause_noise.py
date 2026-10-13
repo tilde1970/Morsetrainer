@@ -103,7 +103,7 @@ class PauseNoise:
             return np.zeros(n, dtype=np.float32)
         step = PAUSE_GAIN * n / (FADE_SECONDS * SAMPLE_RATE)
         after = min(before + step, target) if target > before else max(before - step, target)
-        out = source.mix([], n) * np.linspace(before, after, n, dtype=np.float32)
+        out = source.mix([], n, receiver_agc=False) * np.linspace(before, after, n, dtype=np.float32)
         with self.lock:
             self.gain = after
             if after == 0.0 and self.target == 0.0:
