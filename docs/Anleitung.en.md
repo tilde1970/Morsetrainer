@@ -4,7 +4,8 @@ A Morse code (CW) trainer for everyone from complete beginners to
 contesters (people who take part in radio contests), developed by
 **DL4YM**. This manual is also in the program: F1 or the **Help (F1)**
 button on the right of the footer shows it, right at the section of the tab
-you are in, next to it the changes of the versions; Ctrl+F searches in it.
+you are in, next to it the changes of the versions and the licenses of
+the components; Ctrl+F searches in it.
 With announcements on, the down and up arrows read the next and previous
 paragraph; **Open online in browser** shows the manual in your browser
 (needs internet), where a screen reader can read it too.

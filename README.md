@@ -139,7 +139,17 @@ liegt; leg sie dem Issue bei.
 
 ## Lizenz
 
-MIT, siehe [LICENSE](LICENSE). © 2026 DL4YM
+Der Quelltext steht unter der MIT-Lizenz, siehe [LICENSE](LICENSE).
+© 2026 DL4YM
+
+Die fertigen Programmdateien (AppImage, exe, Mac-App) enthalten die
+Sprachausgabe [Piper](https://github.com/OHF-Voice/piper1-gpl) mit
+espeak-ng. Beide stehen unter der GPL-3.0-or-later, darum werden die
+Programmdateien als Ganzes unter der GPL-3.0-or-later weitergegeben. Die
+Lizenzen aller Bestandteile stehen im Programm unter Hilfe → Lizenzen; die
+Quellarchive der GPL- und LGPL-Teile (piper, espeak-ng, lameenc, LAME)
+hängen am jeweiligen Release. Die Stimmen beruhen auf freien Datensätzen
+(Thorsten-Voice: CC0, LJ Speech: gemeinfrei).
 
 ---
 

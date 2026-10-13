@@ -1,12 +1,13 @@
 """Selbsttest für die Release-Builds: prüft ohne Fenster und Soundkarte,
-ob beide Stimmen, der MP3-Export, PortAudio (Ton) und Tcl/Tk (Oberfläche)
-im gepackten Programm vorhanden sind.
+ob beide Stimmen, der MP3-Export, PortAudio (Ton), Tcl/Tk (Oberfläche) und
+die Lizenzdatei im gepackten Programm vorhanden sind.
 
     morsetrainer --selftest ziel.mp3
 
 Schreibt eine kurze Übung (Morsezeichen plus Ansage) als MP3 und endet mit
 Code 0, sonst mit 1 und dem Grund auf stderr."""
 import sys
+from pathlib import Path
 
 from morsetrainer.core import mp3, speech
 from morsetrainer.core.morse import build_text
@@ -35,6 +36,11 @@ def run(path: str) -> int:
     missing = _libraries()
     if missing:
         print(missing, file=sys.stderr)
+        return 1
+    # Im Paket gehören die Lizenzen der Bestandteile dazu (GPL, LGPL, MIT …).
+    base = getattr(sys, "_MEIPASS", None)
+    if base and not (Path(base) / "THIRD_PARTY_LICENSES.md").is_file():
+        print("THIRD_PARTY_LICENSES.md fehlt im Programm.", file=sys.stderr)
         return 1
     speakers = [speech.speaker_for(lang) for lang in speech.VOICES]  # deutsch und englisch (Ansage)
     for reason in [speaker.available() for speaker in speakers] + [mp3.available()]:

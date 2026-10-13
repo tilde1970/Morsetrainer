@@ -7,6 +7,11 @@
   licensed for research only; LJ Speech is in the public domain. If you
   run from source, fetch it with `bash packaging/get_voice.sh`; until then
   the old voice keeps speaking.
+- **Licenses:** the help has a “Licenses” tab with the licenses of all
+  components. The program files contain Piper and espeak-ng
+  (GPL-3.0-or-later) and are therefore licensed as a whole under the GPL;
+  the Morsetrainer source stays MIT. The source archives of piper,
+  espeak-ng, lameenc and LAME are attached to the release.
 - **Feedback on the band level:** if the band conditions wind-down of the
   daily practice changes the level, the evening summary says so (“90 %
   twice – next band conditions wind-down: medium” or “Twice in a row below

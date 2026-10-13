@@ -1,5 +1,6 @@
-"""Hilfe-Fenster: Anleitung (docs/Anleitung.md) und Änderungen
-(CHANGELOG.md) im Programm lesen.
+"""Hilfe-Fenster: Anleitung (docs/Anleitung.md), Änderungen
+(CHANGELOG.md) und Lizenzen (THIRD_PARTY_LICENSES.md, nur in den Builds)
+im Programm lesen.
 
 Die Pfade gelten ab dem Verzeichnis von main.py; in AppImage und exe packt
 PyInstaller die Dateien mit ein (--add-data), dort liegen sie unter
@@ -25,7 +26,10 @@ from morsetrainer.widgets.ui_widgets import focus_keeper
 
 # Die Anleitung zuerst: Wer Hilfe sucht, will wissen, wie etwas geht; was
 # neu ist, zeigt das Programm ohnehin nach einem Update.
-DOCS = ((N_("Anleitung"), "docs/Anleitung.md"), (N_("Änderungen"), "CHANGELOG.md"))
+# Lizenzen zuletzt: Die Datei entsteht erst beim Bauen
+# (packaging/third_party_licenses.py) und ist sehr lang.
+LICENSES = "THIRD_PARTY_LICENSES.md"
+DOCS = ((N_("Anleitung"), "docs/Anleitung.md"), (N_("Änderungen"), "CHANGELOG.md"), (N_("Lizenzen"), LICENSES))
 GUIDE = "docs/Anleitung.md"
 # Dieselbe Datei zur installierten Version auf GitHub: Dort liest ein
 # Screenreader sie mit Überschriften-Navigation.
@@ -307,7 +311,10 @@ class HelpWindow:
             try:
                 content = doc_path(name).read_text(encoding="utf-8")
             except OSError:
-                content = tr("{name} wurde nicht gefunden.").format(name=name)
+                content = (tr("Der Quelltext steht unter der MIT-Lizenz (LICENSE). Die Lizenzen der "
+                              "Bestandteile liegen den fertigen Programmdateien bei; aus dem Quelltext "
+                              "erzeugt sie python packaging/third_party_licenses.py.")
+                           if name == LICENSES else tr("{name} wurde nicht gefunden.").format(name=name))
             render(text, content)
             text.mark_set("insert", "1.0")  # Vorlesen beginnt oben, nicht hinter dem Eingefügten
             self._bind_reading(text)
@@ -346,7 +353,9 @@ class HelpWindow:
 
     def open_in_browser(self) -> None:
         name = [name for _, name in DOCS][self.notebook.index("current")]
-        path = doc_path(name).name if name == "CHANGELOG.md" else "docs/" + doc_path(name).name
+        # Die Lizenzdatei entsteht beim Bauen und liegt nicht im Repo: dort LICENSE.
+        path = ("LICENSE" if name == LICENSES
+                else doc_path(name).name if name == "CHANGELOG.md" else "docs/" + doc_path(name).name)
         ref = f"v{self.version}" if self.version else "main"
         url = WEB_DOC.format(ref=ref, path=path)
         try:
@@ -483,7 +492,7 @@ class HelpWindow:
         current = self._current_text()
         for title, name in DOCS:
             text = self.texts[name]
-            if text is current:
+            if text is current or name == LICENSES:  # Lizenztexte träfen fast jede Suche
                 continue
             for pattern, shown, part in search_patterns(needle):
                 if exact and shown is not None:

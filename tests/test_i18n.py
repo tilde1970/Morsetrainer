@@ -119,6 +119,8 @@ class LanguageSettingTest(unittest.TestCase):
     def test_help_uses_english_files(self):
         from morsetrainer.widgets import help_window
         for _, name in help_window.DOCS:
+            if name == help_window.LICENSES:
+                continue  # entsteht beim Bauen, zweisprachig in einer Datei
             self.assertTrue(help_window.doc_path(name).exists())
             self.assertEqual(help_window.doc_path(name).name, Path(name).name)
             self.assertEqual(help_window.doc_path(name, "en").name, Path(name).name.replace(".md", ".en.md"))

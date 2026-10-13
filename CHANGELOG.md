@@ -7,6 +7,11 @@
   Datensatz, der nur für die Forschung freigegeben ist; LJ Speech ist
   gemeinfrei. Wer aus dem Quelltext startet, lädt sie mit
   `bash packaging/get_voice.sh`; bis dahin spricht die alte Stimme weiter.
+- **Lizenzen:** Die Hilfe hat einen Reiter „Lizenzen“ mit den Lizenzen
+  aller Bestandteile. Die Programmdateien enthalten Piper und espeak-ng
+  (GPL-3.0-or-later) und stehen darum als Ganzes unter der GPL; der
+  Quelltext des Morsetrainers bleibt MIT. Die Quellarchive von piper,
+  espeak-ng, lameenc und LAME hängen am Release.
 - **Rückmeldung zur Bandstufe:** Ändert der Band-Ausklang der Tagesübung
   die Stufe, sagt es die Abendbilanz („Zweimal 90 % geschafft – nächster
   Band-Ausklang: mittel“ bzw. „Zweimal hintereinander unter 80 % – nächster

@@ -4,7 +4,8 @@ Ein Trainer für Morsetelegrafie (CW) für Einsteiger ohne Vorkenntnisse bis
 zu Contestern (Teilnehmern an Funkwettbewerben), entwickelt von **DL4YM**.
 Diese Anleitung steht auch im Programm: F1 oder der Knopf **Hilfe (F1)**
 rechts in der Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem
-du gerade bist, daneben die Änderungen der Versionen; Strg+F sucht darin.
+du gerade bist, daneben die Änderungen der Versionen und die Lizenzen
+der Bestandteile; Strg+F sucht darin.
 Mit Sprachansage liest Pfeil runter bzw. hoch den nächsten bzw. vorigen
 Absatz vor; **Online im Browser öffnen** zeigt die Anleitung im Browser (braucht
 Internet), wo auch ein Screenreader sie liest.

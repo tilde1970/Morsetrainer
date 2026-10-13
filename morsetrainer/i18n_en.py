@@ -708,6 +708,9 @@ EN.update({
     "Erst die Fragen beantworten und prüfen – dann „Nochmal“.": "Answer and check the questions first – then “Again”.",
     "In der Tagesübung zählt das erste Hören – kein „Nochmal“.": "In the daily practice the first listen counts – no “Again”.",
     "Eingetragen: {value}.": "Entered: {value}.",
+    "Lizenzen": "Licenses",
+    "Der Quelltext steht unter der MIT-Lizenz (LICENSE). Die Lizenzen der Bestandteile liegen den fertigen Programmdateien bei; aus dem Quelltext erzeugt sie python packaging/third_party_licenses.py.":
+        "The source code is licensed under the MIT license (LICENSE). The licenses of the components come with the ready-made program files; from source, python packaging/third_party_licenses.py creates them.",
     "Leer.": "Empty.",
     "Stop (F5)": "Stop (F5)",
     "Wiederholung – ": "Replay – ",

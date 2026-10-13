@@ -14,11 +14,13 @@ PORTAUDIO=$(ldconfig -p | awk '/libportaudio\.so\.2 .*x86-64/ {print $NF}' | hea
 [ -n "$PORTAUDIO" ] || { echo "libportaudio.so.2 nicht gefunden (apt install libportaudio2)"; exit 1; }
 
 packaging/get_voice.sh
+# Lizenzen aller mitgelieferten Teile, im Programm unter Hilfe → Lizenzen.
+python packaging/third_party_licenses.py
 
 pyinstaller --noconfirm --clean --windowed --name morsetrainer \
     --add-binary "$PORTAUDIO:." \
     --runtime-hook packaging/rthook_portaudio.py \
-    --add-data CHANGELOG.md:. --add-data CHANGELOG.en.md:. \
+    --add-data CHANGELOG.md:. --add-data CHANGELOG.en.md:. --add-data THIRD_PARTY_LICENSES.md:. \
     --add-data docs/Anleitung.md:docs --add-data docs/Anleitung.en.md:docs \
     --add-data morsetrainer/assets:morsetrainer/assets \
     --add-data voices:voices --additional-hooks-dir packaging/hooks \
