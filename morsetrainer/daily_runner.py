@@ -17,7 +17,7 @@ from datetime import date
 
 from morsetrainer.core import awards, daily, koch, practice, qso_text, review, stats, week
 from morsetrainer.i18n import short_number, tr
-from morsetrainer.widgets import announcer
+from morsetrainer.widgets import announcer, band_settings
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, mode_name, moment_line, preview_line,
     review_line, stars_named)
@@ -308,11 +308,15 @@ class DailyRunner:
         spec["gain"] = min(spec["gain"], 1.0)
         settings.set_spec(spec, notify=False)
         settings.set_preset(preset)
+        settings.note_var.set(tr("Gesetzt von der Tagesübung: Stufe {name} für den Band-Ausklang, Filter in der "
+                                 "Grundeinstellung. Danach gilt wieder deine eigene Einstellung.").format(
+            name=tr(band_settings.PRESET_NAMES[preset])))
         return round(settings.spec()["gain"] * 100)
 
     def _release_band(self) -> None:
         """Eigene Bandeinstellung nach dem Band-Ausklang zurück."""
         if self.saved_band is not None:
+            self.app.band_settings.note_var.set("")
             self.app.band_settings.set_spec(self.saved_band)
             self.saved_band = None
 

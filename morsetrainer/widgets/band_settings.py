@@ -115,6 +115,10 @@ class BandSettings:
         self.preview_blocked = lambda: None  # Grund, warum gerade nicht, sonst None
         self.preview_poll = None  # after-ID der Abfrage, ob das Probehören zu Ende ist
         self.pitch = lambda: None  # Tonhöhe der Kopfleiste (setzt die App), für tiefe Töne
+        # Wer die Einstellung gerade vorgibt (Band-Ausklang der Tagesübung), sonst leer.
+        self.note_var = tk.StringVar(value="")
+        self.note_label = None  # dessen Zeile im offenen Fenster
+        self.note_var.trace_add("write", lambda *_: self._show_note())
         self.set_preset(DEFAULT_PRESET, notify=False)
         self.controls["strength"][0].set(True)
 
@@ -303,10 +307,12 @@ class BandSettings:
         bottom.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: die Knöpfe zuletzt
         frame = self.content = ttk.Frame(self.scroller.inner, padding=10)
         frame.pack(fill="both", expand=True)
-        theme.hint(frame, wrap=460, text=tr(
+        self.note_label = theme.hint(frame, textvariable=self.note_var, wrap=460)
+        self.note_anchor = theme.hint(frame, wrap=460, text=tr(
             "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken "
-            "sofort, auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers.")).pack(
-            anchor="w", pady=(0, 2))
+            "sofort, auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers."))
+        self.note_anchor.pack(anchor="w", pady=(0, 2))
+        self._show_note()
         theme.hint(frame, wrap=460, text=tr(
             "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
             "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "
@@ -430,6 +436,17 @@ class BandSettings:
         # F11: wo man ist, dazu welcher Stufe die Einstellung entspricht
         # (der Satz steht sonst nur unten im Fenster).
         window.bind("<F11>", lambda e: self._read_where() or "break")
+        if self.note_var.get():
+            announcer.say(self.note_var.get())  # kommt mit dem Fensternamen
+
+    def _show_note(self) -> None:
+        """Zeile „Gesetzt von der Tagesübung …“ nur zeigen, solange es sie gibt."""
+        if self.window is None or self.note_label is None:
+            return
+        if self.note_var.get():
+            self.note_label.pack(anchor="w", pady=(0, 6), before=self.note_anchor)
+        else:
+            self.note_label.pack_forget()
 
     def _choose_preset(self, preset: str) -> None:
         """Knopf „leicht“/„mittel“/„stark“: übernehmen und bestätigen."""
@@ -439,7 +456,8 @@ class BandSettings:
     def _read_where(self) -> None:
         if self.window is None:
             return
-        text = tr("Fenster {title}.").format(title=self.window.title()) + " " + self.rank_var.get()
+        text = " ".join(part for part in (tr("Fenster {title}.").format(title=self.window.title()),
+                                          self.note_var.get(), self.rank_var.get()) if part)
         try:
             focus = self.window.focus_get()
             if focus is not None and focus is not self.window:
@@ -468,6 +486,7 @@ class BandSettings:
         if self.window is not None:
             self.window.destroy()
             self.window = None
+            self.note_label = None
         restore, self.restore_focus = self.restore_focus, None
         if restore is not None:
             restore()

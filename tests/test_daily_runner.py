@@ -327,9 +327,19 @@ class DailyRunnerTest(AppTestCase):
         self.assertTrue(self.mode("Kontinuierlich").band_var.get())
         self.assertIn("Am Stück mit Band mittel, 4 Minuten.", text)
         self.assertNotIn("QRN-fest", text)
+        # Das Bandfenster sagt, wer die Einstellung gesetzt hat.
+        from morsetrainer.widgets import band_settings
+        with mock.patch.object(band_settings.announcer, "say") as say:
+            settings.open_window()
+        self.root.update()
+        self.assertTrue(settings.note_label.winfo_ismapped())
+        self.assertTrue(say.call_args[0][0].startswith("Gesetzt von der Tagesübung: Stufe mittel"))
         self.runner.abort()
         self.assertEqual(settings.spec(), own)
         self.assertFalse(self.mode("Kontinuierlich").band_var.get())
+        self.root.update()
+        self.assertFalse(settings.note_label.winfo_ismapped())  # auch im offenen Fenster wieder weg
+        settings.close_window()
 
     def test_band_outro_keeps_a_lower_noise_volume_and_says_so(self):
         own, text = self._band_outro(0.6)
