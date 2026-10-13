@@ -54,7 +54,7 @@ a time. This is how to begin:
    “Koch lesson and moving up” in section 3).
 4. From lesson 6 there are enough words for **Words** in the One by one tab
    (words with the newest character are favoured), then **Non-stop** and
-   **QSO**.
+   **QSO** (how to go on is described below under “Your learning path”).
 5. In the **Statistics** tab, “Practise the 4 most frequent” shows which
    characters you confused in the last 30 days and practises exactly those
    against each other. “↩ Lesson” at the top takes you back to your lesson.
@@ -65,6 +65,52 @@ is due every day and switches the tabs by itself (section 4).
 **Short and daily** beats long and rare: the footer shows today's practice
 time and the daily goal (adjustable under “Settings …”), the week strip
 at the top the days you practised.
+
+### Your learning path
+
+A suggestion for how to get from the first characters to operating on the
+air. The times are rough ranges for 10–20 minutes of practice a day;
+everyone learns at their own pace. The awards (section 5) are milestones
+along the way, not requirements for the next step.
+
+1. **The first characters** (lessons 1–9, about 2–4 weeks): recognise
+   characters instantly as a sound pattern. **Daily practice leads**:
+   characters with time limit, then groups; the next lesson comes by
+   itself. Milestone: Koch Bronze with lesson 10.
+2. **Characters and first words** (lessons 10–29, about 2–3 months): hear
+   words as a whole instead of letter by letter. **Daily practice leads**
+   on and ends with words. **On your own:** Words with “Listen first”,
+   Speak with words (also as MP3). Milestones: Koch Silver with lesson 25,
+   Copying in flow from lesson 15.
+3. **Digits, punctuation, callsigns** (lessons 30–41, about 1.5–2.5
+   months): the full character set. **Daily practice leads**, with words
+   or callsigns on alternate days. **On your own:** RufZ runs. Milestones:
+   All digits, Koch Gold with lesson 41.
+4. **Prosigns** (lessons 42–45, a few days): AR, KN, SK and BK. **Set them
+   yourself** (see “Koch lesson and moving up” in section 3); worth doing
+   before QSOs, because they occur there. Daily practice repeats prosigns
+   you have learned.
+
+From here the steps run side by side, each over weeks to months. After
+Koch, daily practice leads the speed (section 4); anything beyond that
+you choose yourself.
+
+5. **Speed and plain text in flow:** daily practice first shortens the
+   Farnsworth gaps, then makes the characters faster. **On your own:**
+   Non-stop with phrases or QSO plain text. Milestones: Copying in flow,
+   QRQ.
+6. **Callsigns as in a contest:** daily practice ends with callsigns.
+   **On your own:** RufZ runs without prefix filter. Milestones: Rufz, WPX.
+7. **Understanding QSOs, then in your head:** **on your own** in the QSO
+   tab, first “log check” with a short length, then “head copy +
+   questions”; “Adjust speed automatically” keeps you at your limit.
+   Milestones: First QSO understood, Headphones 15 / 20 / 25 WPM effective.
+8. **Contest and pile-up:** **on your own** in the QSO tab as a contest
+   run, first without, then with pile-up, then as the run station in the
+   Contest tab. Milestones: Contest, Worked All Contests.
+9. **Under band conditions:** **on your own** once a character set sits
+   firmly without interference (90 % or more); start with “light”
+   (section 6). Milestone: QRN-proof.
 
 ## 2. Header and settings
 

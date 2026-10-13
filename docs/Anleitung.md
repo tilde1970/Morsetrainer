@@ -49,7 +49,7 @@ anderen dazu. So geht es los:
    (Einzelheiten unter „Koch-Lektion und Aufstieg“ in Abschnitt 3).
 4. Ab Lektion 6 gibt es genug Wörter für **Wörter** im Reiter Einzeln
    (Wörter mit dem neuesten Zeichen kommen bevorzugt), danach **Am Stück**
-   und **QSO**.
+   und **QSO** (wie es weitergeht, steht unten unter „Der Lernweg“).
 5. Im Reiter **Statistik** zeigt „Die 4 häufigsten gezielt üben“, welche
    Zeichen du in den letzten 30 Tagen verwechselt hast, und übt genau diese
    gegeneinander. „↩ Lektion“ oben führt zurück zu deiner Lektion.
@@ -60,6 +60,53 @@ zusammen, was dran ist, und schaltet die Reiter selbst um (Abschnitt 4).
 **Täglich kurz** üben schlägt selten lang: Die Fußzeile zeigt die heutige
 Übungszeit und das Tagesziel (einstellbar unter „Einstellungen …“), der
 Wochenstreifen oben die Tage, an denen du geübt hast.
+
+### Der Lernweg
+
+Ein Vorschlag, wie es von den ersten Zeichen bis zum Funkbetrieb
+weitergeht. Die Zeiten sind grobe Spannen bei 10–20 Minuten Übung am Tag;
+jeder lernt anders schnell. Die Diplome (Abschnitt 5) sind Wegmarken
+unterwegs, keine Voraussetzung für den nächsten Schritt.
+
+1. **Die ersten Zeichen** (Lektion 1–9, etwa 2–4 Wochen): Zeichen sofort
+   als Klangbild erkennen. Die **Tagesübung führt**: Zeichen mit Zeitlimit,
+   dann Gruppen; die nächste Lektion kommt von selbst. Wegmarke:
+   Koch-Bronze mit Lektion 10.
+2. **Zeichen und erste Wörter** (Lektion 10–29, etwa 2–3 Monate): Wörter
+   als Ganzes hören statt Buchstabe für Buchstabe. Die **Tagesübung führt**
+   weiter und schließt mit Wörtern. **Selbst dazu:** Wörter mit „Erst
+   merken“, Sprechen mit Wörtern (auch als MP3). Wegmarken: Koch-Silber
+   mit Lektion 25, Mitschreiben im Fluss ab Lektion 15.
+3. **Ziffern, Satzzeichen, Rufzeichen** (Lektion 30–41, etwa 1,5–2,5
+   Monate): der volle Zeichensatz. Die **Tagesübung führt**, mit Wörtern
+   oder Rufzeichen im Wechsel. **Selbst dazu:** Rufz-Durchgänge.
+   Wegmarken: Alle Ziffern, Koch-Gold mit Lektion 41.
+4. **Betriebszeichen** (Lektion 42–45, einige Tage): AR, KN, SK und BK.
+   **Selbst einstellen** (siehe „Koch-Lektion und Aufstieg“ in Abschnitt 3);
+   lohnt sich, bevor es an QSOs geht, denn dort kommen sie vor. Gelernte
+   Betriebszeichen wiederholt die Tagesübung.
+
+Ab hier laufen die Schritte nebeneinander, jeder über Wochen bis Monate.
+Die Tagesübung führt nach Koch das Tempo (Abschnitt 4); was du darüber
+hinaus übst, wählst du selbst.
+
+5. **Tempo und Klartext im Fluss:** Die Tagesübung macht erst die
+   Farnsworth-Pausen kürzer, dann die Zeichen schneller. **Selbst dazu:**
+   Am Stück mit Wendungen oder QSO-Klartext. Wegmarken: Mitschreiben im
+   Fluss, QRQ.
+6. **Rufzeichen wie im Contest:** Die Tagesübung schließt mit Rufzeichen.
+   **Selbst dazu:** Rufz-Durchgänge ohne Präfix-Filter. Wegmarken: Rufz,
+   WPX.
+7. **QSOs verstehen, dann im Kopf:** **Selbst** im Reiter QSO, erst
+   „Abfrage/Log“ mit kurzer Länge, dann „Kopfhören + Fragen“; „Tempo
+   automatisch anpassen“ hält dich an der Grenze. Wegmarken: Erstes QSO
+   verstanden, Kopfhörer 15 / 20 / 25 WPM effektiv.
+8. **Contest und Pile-up:** **Selbst** im Reiter QSO als Contest-Run, erst
+   ohne, dann mit Pile-up, danach als Run-Station im Reiter Contest.
+   Wegmarken: Contest, Worked All Contests.
+9. **Unter Bandbedingungen:** **Selbst**, sobald ein Zeichensatz ohne
+   Störungen sicher sitzt (90 % und mehr), mit „leicht“ beginnen
+   (Abschnitt 6). Wegmarke: QRN-fest.
 
 ## 2. Kopfleiste und Einstellungen
 
