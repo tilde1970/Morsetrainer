@@ -7,6 +7,11 @@
   twice – next band conditions wind-down: medium” or “Twice in a row below
   80 % – next band conditions wind-down back to light”). The first step up
   to “medium” earns ★ Ahead.
+- **Band level counted more fairly:** for stepping up and back only the
+  first complete band conditions wind-down of a day counts; stopped ones
+  do not, and two on the same day are no longer “twice in a row”. Strength
+  differences are off in the wind-down (with one station they are only a
+  random penalty); afterwards your own setting applies again.
 - **Non-stop varies per group or word:** with “Vary pitch and speed
   slightly”, Non-stop now gives each group or word its own pitch and speed
   instead of one for the whole run. The CW filter follows the pitch.

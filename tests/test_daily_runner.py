@@ -309,7 +309,7 @@ class DailyRunnerTest(AppTestCase):
     def _band_outro(self, gain, cw_filter=500):
         """Tagesübung nur mit dem Band-Ausklang starten, ohne den Block laufen zu lassen."""
         settings = self.app.band_settings
-        spec = {"levels": {"noise": 0.1, "smps": 0.5}, "gain": gain}
+        spec = {"levels": {"noise": 0.1, "smps": 0.5, "strength": 0.5}, "gain": gain}
         settings.set_spec(spec | ({"filter": cw_filter} if cw_filter else {}))
         own = settings.spec()
         with mock.patch.object(daily, "plan", lambda *args, **kwargs: [daily.band_outro("medium")]), \
@@ -325,6 +325,7 @@ class DailyRunnerTest(AppTestCase):
         self.assertNotIn("smps", spec["levels"])
         self.assertEqual(spec["gain"], 1.0)  # lauter als 100 % nicht
         self.assertNotIn("filter", spec)  # die Stufen gelten ohne schmales Filter
+        self.assertNotIn("strength", spec["levels"])  # eine Station: keine Stärkeunterschiede
         self.assertTrue(self.mode("Kontinuierlich").band_var.get())
         self.assertIn("Am Stück mit Band mittel, 4 Minuten.", text)
         self.assertNotIn("QRN-fest", text)

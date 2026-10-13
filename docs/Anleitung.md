@@ -409,8 +409,10 @@ wieder wie vorher.
   zweiten Contest-Platz stattdessen **Am Stück unter Bandbedingungen**
   (Gruppen von 5): zuerst Stufe „leicht“, nach zwei Tagen mit 90 % und
   mehr „mittel“; zweimal hintereinander unter 80 % geht es zurück auf
-  „leicht“. Die Stufe wechselt am Tag danach; die Abendbilanz sagt es dir. Dafür gilt das breite
-  Filter, die Störlautstärke steht auf 100 %; hast du sie leiser gestellt,
+  „leicht“. Gezählt wird je Tag der erste ganze Durchgang, abgebrochene
+  nicht. Die Stufe wechselt am Tag danach; die Abendbilanz sagt es dir.
+  Dafür gilt das breite Filter ohne Stärkeunterschiede, die
+  Störlautstärke steht auf 100 %; hast du sie leiser gestellt,
   bleibt das so, zählt dann aber nicht für das Diplom QRN-fest. Danach ist
   deine eigene Bandeinstellung wieder da. Passt ein QSO nicht, kommen
   Rufzeichen; die Tagesübung bleibt bei zehn Minuten. Der Block endet mit

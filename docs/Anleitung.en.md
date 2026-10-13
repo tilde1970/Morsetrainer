@@ -400,9 +400,10 @@ as they were.
   15 WPM effective, every second contest slot brings **non-stop under band
   conditions** instead (groups of 5): first “light”, after two days with
   90 % or more “medium”; twice in a row below 80 % takes you back to
-  “light”. The level changes on the following day; the evening summary
-  tells you. The wide filter is
-  used and the noise volume is set to 100 %; if you have turned it down,
+  “light”. Each day the first complete run counts, stopped runs do not.
+  The level changes on the following day; the evening summary tells you.
+  The wide filter is used without strength differences, and the noise
+  volume is set to 100 %; if you have turned it down,
   it stays that way but then does not count for the QRN-proof award.
   Afterwards your own band settings are back. If a QSO
   does not fit, you get callsigns; the daily practice stays at ten

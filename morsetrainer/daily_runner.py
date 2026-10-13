@@ -299,7 +299,9 @@ class DailyRunner:
         """Stellt die Bandbedingungen für den Ausklang auf die Stufe `preset`
         (die eigene Einstellung wird gemerkt, _release_band). Das Filter steht
         auf der Grundeinstellung, für die die Stufen gelten (ein schmales
-        machte aus „mittel“ „leicht“). Die Störlautstärke steht auf 100 %; wer
+        machte aus „mittel“ „leicht“), die Stärkeunterschiede sind aus (bei
+        einer Station nur ein zufälliger Abzug, den die Stufe nicht kennt).
+        Die Störlautstärke steht auf 100 %; wer
         sie leiser gestellt hat (etwa wegen eines Hörproblems), behält das.
         Gibt (Störlautstärke in Prozent, ob ein eigenes Filter zurückgestellt
         wurde) zurück."""
@@ -308,6 +310,7 @@ class DailyRunner:
             self.saved_band = settings.spec()
         spec = settings.spec()
         own_filter = spec.pop("filter", None) is not None
+        spec["levels"].pop("strength", None)
         spec["gain"] = min(spec["gain"], 1.0)
         settings.set_spec(spec, notify=False)
         settings.set_preset(preset)

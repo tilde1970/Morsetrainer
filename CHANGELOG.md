@@ -7,6 +7,11 @@
   Band-Ausklang: mittel“ bzw. „Zweimal hintereinander unter 80 % – nächster
   Band-Ausklang wieder leicht“). Der erste Aufstieg auf „mittel“ bringt
   ★ Weiter.
+- **Bandstufe fairer gezählt:** Für Aufstieg und Rückfall zählt je Tag
+  nur der erste ganze Band-Ausklang; abgebrochene zählen nicht, und zwei
+  am selben Tag sind nicht mehr „zweimal hintereinander“. Im Ausklang
+  sind die Stärkeunterschiede aus (bei einer Station nur ein zufälliger
+  Abzug); danach gilt wieder deine Einstellung.
 - **Am Stück variiert je Gruppe bzw. Wort:** Mit „Tonhöhe und Tempo leicht
   variieren“ bekommt in Am Stück jetzt jede Gruppe bzw. jedes Wort eine
   eigene Tonhöhe und ein eigenes Tempo, nicht mehr der ganze Durchgang
