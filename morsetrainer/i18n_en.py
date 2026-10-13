@@ -391,8 +391,8 @@ EN.update({
     "Tagesübung beenden (Esc)": "End daily practice (Esc)",
     "Tagesübung beenden": "End daily practice",
     "Weiter mit Enter": "Continue with Enter",
-    "Tagesübung, {block}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.":
-        "Daily practice, {block}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",
+    "Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.":
+        "Daily practice, {block}: {mode}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",
     "noch kein Stern": "no star yet",
     "Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
     "{announce} schaltet sie aus. {where} sagt, wo du bist.":
@@ -439,6 +439,7 @@ EN.update({
     "Zweimal hintereinander unter 80 % – nächster Band-Ausklang wieder {band}.":
         "Twice in a row below 80 % – next band conditions wind-down back to {band}.",
     "{mode} mit Band {band}": "{mode}, conditions {band}",
+    "{mode}, Contest {contest}": "{mode}, contest {contest}",
     "Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.":
         "Noise volume {gain} %, does not count for the QRN-proof award.",
     "Gruppen bei {wpm} WPM: {before} % → {now} % beim ersten Versuch":

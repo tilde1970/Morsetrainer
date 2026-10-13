@@ -1911,7 +1911,9 @@ class DailyAnnounceTest(AnnouncerCase):
         self.app.read_status()
         self.assertTrue(self.pump_until(lambda: self.said))
         spoken = " ".join(self.said)
-        self.assertIn("Tagesübung, Aufwärmen, Block 1 von", spoken)
+        from morsetrainer.widgets.daily_panel import mode_name
+        mode = mode_name(self.runner.blocks[0])
+        self.assertIn(f"Tagesübung, Aufwärmen: {mode}, Block 1 von", spoken)
         self.assertIn("von 10 Minuten", spoken)
         self.assertIn("noch kein Stern", spoken)
         self.assertNotRegex(spoken, r"\d:\d\d")  # Zeit gesprochen, nicht „0:05“

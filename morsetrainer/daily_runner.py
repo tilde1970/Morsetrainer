@@ -125,8 +125,8 @@ class DailyRunner:
             elapsed += (time.time() - self.block_started) / 60
         stars = daily.stars_on(self.state, self.today)
         block = self.blocks[self.index]
-        return tr("Tagesübung, {block}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.").format(
-            block=tr(BLOCK_LABELS[block.kind]), n=self.index + 1, total=len(self.blocks),
+        return tr("Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.").format(
+            block=tr(BLOCK_LABELS[block.kind]), mode=mode_name(block), n=self.index + 1, total=len(self.blocks),
             elapsed=minutes_text(min(elapsed, daily.TOTAL_MINUTES)), minutes=daily.TOTAL_MINUTES,
             stars=stars_named(stars) if stars else tr("noch kein Stern"))
 

@@ -1,5 +1,6 @@
 """Tests für den Ablauf der Tagesübung im Hauptfenster (daily_runner.py)."""
 import time
+import unittest
 from datetime import date
 from tkinter import ttk
 from unittest import mock
@@ -11,6 +12,15 @@ from tests.test_modes import AppTestCase, app_module
 
 
 REAL_PLAN = daily.plan
+
+
+class ModeNameTest(unittest.TestCase):
+    def test_outro_names_band_level_and_contest(self):
+        from morsetrainer.widgets.daily_panel import mode_name
+        self.assertEqual(mode_name(daily.band_outro("light")), "Am Stück mit Band leicht")
+        contest = daily.Block(daily.OUTRO, daily.QSO_LOG, 3.5, {"kind": "wag"})
+        self.assertEqual(mode_name(contest), "QSO-Abfrage, Contest WAG (DOK)")
+        self.assertEqual(daily_runner.block_text(contest), "Tagesübung, Ausklang: QSO-Abfrage, Contest WAG (DOK), 3,5 Minuten.")
 
 
 def short_plan(*args, **kwargs):

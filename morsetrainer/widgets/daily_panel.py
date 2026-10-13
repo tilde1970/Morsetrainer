@@ -10,7 +10,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-from morsetrainer.core import awards, daily, stats, week
+from morsetrainer.core import awards, daily, qso_text, stats, week
 from morsetrainer.i18n import N_, daily_key, number, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import focus_keeper, wrap_pair
@@ -120,11 +120,14 @@ def moment_line(moment: dict) -> str:
 
 def mode_name(block) -> str:
     """Modus eines Blocks für Karte und Ansage, beim Band-Ausklang mit Stufe
-    („Am Stück mit Band leicht“)."""
+    („Am Stück mit Band leicht“), beim Contest-Run mit der Contest-Art."""
     name = tr(stats.HISTORY_MODES[block.mode])
     preset = block.params.get(daily.BAND_PRESET)
     if preset:
         return tr("{mode} mit Band {band}").format(mode=name, band=tr(awards.BAND_NAMES[daily.BAND_RANK[preset]]))
+    contest = qso_text.CONTEST_NAMES.get(block.params.get("kind"))
+    if block.mode == daily.QSO_LOG and contest:
+        return tr("{mode}, Contest {contest}").format(mode=name, contest=tr(contest))
     return name
 
 
