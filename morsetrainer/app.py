@@ -111,7 +111,8 @@ ONE_BY_ONE_LABELS = {"Einzelzeichen": N_("Zeichen")}  # sonst wie der Titel
 # Angezeigter Reitername, wo er vom Schlüssel abweicht.
 TAB_NAMES = {"Kontinuierlich": N_("Am Stück")}
 # Einmaliger Hinweis nach einem Update auf (mindestens) diese Version, für
-# Änderungen, bei denen man sonst etwas Gewohntes nicht wiederfindet.
+# Änderungen, bei denen man sonst etwas Gewohntes nicht wiederfindet oder
+# Gewohntes sich ohne Erklärung anders anfühlt.
 WHATS_NEW = {
     "2.40": N_("Zeichen, Gruppen, Wörter und Rufzeichen stehen jetzt gemeinsam im Reiter „Einzeln“; den "
                "Inhalt wählst du dort oben unter „Inhalt“ (oder Alt+1 noch einmal drücken). „Kontinuierlich“ "
@@ -119,6 +120,11 @@ WHATS_NEW = {
     "2.45": N_("Das Tagesziel stellst du jetzt unter „Einstellungen …“ ein (Karte „Üben“). Die Tagesübung "
                "beendet Esc oder F5 erst beim zweiten Druck; dafür gibt es den Knopf „Tagesübung beenden“. "
                "Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.49": N_("Die Bandbedingungen klingen jetzt echter: Das Fading hat ab und zu tiefe Löcher, und zwischen "
+               "den Zeichen wird das Rauschen lauter wie bei einem echten Empfänger. „leicht“ und „mittel“ sind "
+               "dadurch etwas schwerer. Sind deine Werte mit Band schlechter als vorher, liegt das am Band, nicht "
+               "an dir; für die Zeichenstatistik zählen Durchgänge mit Band weiterhin nicht. Alles Weitere steht "
+               "unter Hilfe, Änderungen."),
 }
 
 

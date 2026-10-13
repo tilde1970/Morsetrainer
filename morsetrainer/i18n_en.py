@@ -815,6 +815,16 @@ EN.update({
         "You now set the daily goal under “Settings …” (“Practice” box). Esc or F5 only end the daily "
         "practice on the second press; there is an “End daily practice” button for that. Everything else "
         "is under Help, Changes.",
+    ("Die Bandbedingungen klingen jetzt echter: Das Fading hat ab und zu tiefe Löcher, und zwischen "
+     "den Zeichen wird das Rauschen lauter wie bei einem echten Empfänger. „leicht“ und „mittel“ sind "
+     "dadurch etwas schwerer. Sind deine Werte mit Band schlechter als vorher, liegt das am Band, nicht "
+     "an dir; für die Zeichenstatistik zählen Durchgänge mit Band weiterhin nicht. Alles Weitere steht "
+     "unter Hilfe, Änderungen."):
+        "Band conditions now sound more real: fading occasionally has deep holes, and between characters "
+        "the noise gets louder, as with a real receiver. This makes “light” and “medium” a little harder. "
+        "If your scores with band conditions are lower than before, that is the band, not you; runs with "
+        "band conditions still don't count for the character statistics. Everything else is under Help, "
+        "Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",
