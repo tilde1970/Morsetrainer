@@ -896,6 +896,8 @@ EN.update({
     "Deine Eingabe? ({limit})": "Your answer? ({limit})",
     "zügig: {limit} s": "quick: {limit} s",
     "zügig: in {first} s anfangen, dann {typing} s zum Tippen": "quick: start within {first} s, then {typing} s to type",
+    "Zügig heißt hier: in {first} Sekunden anfangen, dann {typing} Sekunden je Zeichen zum Tippen.":
+        "Quick means here: start within {first} seconds, then {typing} seconds per character to type.",
     "Art": "Type",
     "Mit dem aktuellen Zeichensatz: {count} von {total} Wendungen":
         "With the current character set: {count} of {total} phrases",

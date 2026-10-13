@@ -147,6 +147,11 @@ class WordModeFrame(SequenceModeFrame):
                             if phrases >= MIN_PHRASES else tr("Für Wendungen reichen die Zeichen noch nicht."))
         self.count_var.set(text)
 
+    def idle_hint(self) -> str:
+        """Für F11 vor dem Start: die Zählzeile (wie viele Wörter bzw.
+        Wendungen passen, ob Wendungen dazukommen)."""
+        return self.count_var.get()
+
     def _edit_user_words(self):
         try:
             open_in_editor(words.ensure_user_file())

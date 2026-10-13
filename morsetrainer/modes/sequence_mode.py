@@ -431,6 +431,7 @@ class SequenceModeFrame(DailyModeMixin):
         self._show_answer_row()
         self.repeat_pending = False
         self.revealed = False
+        self.split_told = False  # zweigeteiltes Zeitfenster schon angesagt?
         self.first_try_correct = self.first_try_total = 0
         self._count_streak()
         self.koch_result = None
@@ -687,7 +688,20 @@ class SequenceModeFrame(DailyModeMixin):
         self.enter_time = None
         self.input_var.set("")
         self.status_var.set(tr("Höre zu… (Wiederholung)") if was_repeat else tr("Höre zu…"))
+        if self.first_key_limit is not None and not self.split_told and announcer.active():
+            # Einmal je Durchgang sagen, wie das zweigeteilte Fenster zählt; es
+            # stünde sonst nur in der Statuszeile. Der Ton kommt erst danach.
+            self.split_told = True
+            sequence = self.current_sequence
+            announcer.say(self._split_rule(),
+                          then=lambda: self.running and self.current_sequence == sequence and self.play_current())
+            return
         self.play_current()
+
+    def _split_rule(self) -> str:
+        """Ansage zum zweigeteilten Zeitfenster."""
+        return tr("Zügig heißt hier: in {first} Sekunden anfangen, dann {typing} Sekunden je Zeichen zum Tippen.").format(
+            first=number(self.first_key_limit, 0), typing=number(ANSWER_PER_CHAR_S, 1))
 
     def _audio_settings(self):
         # Falls das WPM-/Tonhöhe-Feld gerade mitten im Bearbeiten ist (z. B.

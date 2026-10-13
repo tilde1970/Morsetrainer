@@ -836,6 +836,12 @@ class MorseTrainerApp:
                     done=m.group(1), total=m.group(2)), text)
             if text:
                 parts.append(text.replace("\n", ". "))
+        # Vor dem Start: was der Reiter zur Auswahl sagt (Wörter: wie viele passen).
+        idle_hint = getattr(mode, "idle_hint", None)
+        if idle_hint is not None and not getattr(mode, "running", False):
+            text = idle_hint().strip().rstrip(".")
+            if text:
+                parts.append(text.replace("\n", ". "))
         self.announcer.say(". ".join(parts) + ".", force=True)
 
     def select_tab(self, index: int) -> None:

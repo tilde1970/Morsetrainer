@@ -1045,6 +1045,33 @@ class AnnouncerModesTest(AnnouncerCase):
         tone = np.full(960, 0.3, dtype=np.float32)
         self.assertAlmostEqual(float(np.max(conditions.mix([(tone, band.VOICE)], 960))), 0.3, delta=0.01)
 
+    def test_words_count_line_and_split_window_are_spoken(self):
+        from morsetrainer.core import koch
+        self.app.announcer.var.set(True)
+        self.app.charset_var.set(koch.lesson_charset(12))
+        self.app.show_mode("Wörter")
+        w = self.mode("Wörter")
+        w.content_var.set("gemischt")
+        del self.said[:]
+        self.app.read_status()  # F11 vor dem Start: auch die Zählzeile
+        self.assertTrue(self.pump_until(lambda: "Mit dem aktuellen Zeichensatz:" in " ".join(self.said)))
+        self.assertNotIn("Wörtern..", " ".join(self.said))
+        # Wendungen: einmal je Durchgang das zweigeteilte Zeitfenster, vor dem Ton.
+        self.app.charset_var.set(koch.lesson_charset(koch.FINAL_LESSON))
+        w.content_var.set("Wendungen")
+        rule = "Zügig heißt hier: in 2 Sekunden anfangen"
+        with mock.patch.object(w, "play_current") as play, \
+                mock.patch.object(w, "_play_intro", side_effect=lambda: w.next_sequence()):
+            w.start()
+            self.assertFalse(play.called)  # erst die Ansage, dann der Ton
+            self.assertTrue(self.pump_until(lambda: play.called))
+            self.assertIn(rule, " ".join(self.said))
+            del self.said[:]
+            w.next_sequence(waited=True)
+            self.assertEqual(play.call_count, 2)
+            w.stop()
+        self.assertNotIn(rule, " ".join(self.said))
+
     def test_qso_quiz_names_fields_and_reads_the_result(self):
         from morsetrainer.core import qso_text
         from morsetrainer.modes.qso_quiz import QuizPanel
