@@ -1507,6 +1507,20 @@ class BandWindowAnnounceTest(AnnouncerCase):
         pause = next(w for w in content.winfo_children() if w.winfo_class() == "TCheckbutton")
         self.assertLess(order.index(str(light.master)), order.index(str(pause)))
 
+    def test_level_feedback_sits_under_the_level_buttons(self):
+        # Sichtbar, ob die Wahl gegriffen hat: die Stufen-Rückmeldung gleich
+        # unter den Knöpfen, danach die Störungen; die Antwortpause gehört zu
+        # keiner Stufe und steht erst dahinter.
+        light = self.preset_buttons()[0]
+        content = light.master.master
+        shown = content.pack_slaves()
+        rank = next(w for w in shown if w.winfo_class() == "TLabel"
+                    and str(w.cget("textvariable")) == str(self.settings.rank_var))
+        pause = next(w for w in shown if w.winfo_class() == "TCheckbutton")
+        self.assertEqual(shown.index(rank), shown.index(light.master) + 1)
+        cards = [w for w in shown if w.winfo_class() == "TLabelframe"]
+        self.assertLess(shown.index(cards[0]), shown.index(pause))
+
 
 def band_rank(settings):
     from morsetrainer.core import band

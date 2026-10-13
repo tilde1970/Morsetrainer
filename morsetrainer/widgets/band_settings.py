@@ -314,12 +314,10 @@ class BandSettings:
             announcer.name(button, tr("Stufe {name}").format(name=tr(name)))
             preset_buttons.append(button)
 
-        pause = ttk.Checkbutton(frame, text=tr("Band in der Antwortpause"), variable=self.pause_var)
-        pause.pack(anchor="w")
-        theme.hint(frame, wrap=460, text=tr(
-            "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
-            "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
-            "zählt für Stufe und Diplom gleich.")).pack(anchor="w", pady=(0, 6))
+        # Welcher Stufe die Einstellung entspricht, gleich unter den Knöpfen:
+        # Dort sieht man, ob die Wahl gegriffen hat.
+        self.rank_var = tk.StringVar(value="")
+        theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(0, 6))
 
         box = theme.card(frame, tr("Störungen"), padx=0)
         box.columnconfigure(1, weight=1)
@@ -358,6 +356,13 @@ class BandSettings:
         self.extras_open = any(self.controls[key][0].get() for key, _, _ in EXTRA_OPTIONS)
         self._show_extras()
 
+        pause = ttk.Checkbutton(frame, text=tr("Band in der Antwortpause"), variable=self.pause_var)
+        pause.pack(anchor="w", pady=(6, 0))
+        theme.hint(frame, wrap=460, text=tr(
+            "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
+            "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
+            "zählt für Stufe und Diplom gleich.")).pack(anchor="w", pady=(0, 6))
+
         receiver = theme.card(frame, tr("CW-Filter"), padx=0)
         self.receiver_card = receiver
         row = ttk.Frame(receiver)
@@ -395,8 +400,6 @@ class BandSettings:
             "die normale Mischung, für das Diplom QRN-fest müssen es mindestens 100 % sein.")).pack(
             anchor="w", pady=(4, 0))
 
-        self.rank_var = tk.StringVar(value="")
-        theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(4, 0))
         buttons = ttk.Frame(bottom)
         buttons.pack(side="bottom", fill="x")
         ttk.Button(buttons, text=tr("Schließen"), command=self.close_window).pack(side="right")
