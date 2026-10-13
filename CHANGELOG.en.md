@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.51
 
 - **New English voice:** announcements with the English interface now use
   the LJ Speech voice instead of Lessac. Lessac is based on a dataset

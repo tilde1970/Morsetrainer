@@ -44,7 +44,7 @@ from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
 
 __author__ = "DL4YM"
-__version__ = "2.50"
+__version__ = "2.51"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -129,6 +129,9 @@ WHATS_NEW = {
                "ausgeschriebenen englischen QSO-Wörtern (Wörter, Am Stück, Sprechen, Netzwerk). Nach Koch "
                "wechselt der Ausklang der Tagesübung zwischen Rufzeichen, einem QSO zum Kopfhören, einem "
                "Contest-Run und Bandbedingungen. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.51": N_("Die englische Ansage spricht jetzt mit einer neuen Stimme (LJ Speech). In der Hilfe steht ein "
+               "neuer Reiter „Lizenzen“. Beim Band-Ausklang der Tagesübung zählt je Tag nur der erste ganze "
+               "Durchgang. Alles Weitere steht unter Hilfe, Änderungen."),
 }
 
 

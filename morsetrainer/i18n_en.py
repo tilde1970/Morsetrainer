@@ -869,6 +869,12 @@ EN.update({
         "with English QSO words written out (Words, Non-stop, Speak, network). After Koch the daily "
         "practice wind-down changes between callsigns, a QSO for head copy, a contest run and band "
         "conditions. Everything else is under Help, Changes.",
+    ("Die englische Ansage spricht jetzt mit einer neuen Stimme (LJ Speech). In der Hilfe steht ein "
+     "neuer Reiter „Lizenzen“. Beim Band-Ausklang der Tagesübung zählt je Tag nur der erste ganze "
+     "Durchgang. Alles Weitere steht unter Hilfe, Änderungen."):
+        "English announcements now use a new voice (LJ Speech). The help has a new “Licenses” tab. In "
+        "the band conditions wind-down of the daily practice only the first complete run of a day "
+        "counts. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",

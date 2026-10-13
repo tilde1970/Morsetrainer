@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.51
 
 - **Neue englische Stimme:** Die Ansage bei englischer Oberfläche spricht
   jetzt mit der Stimme LJ Speech statt Lessac. Lessac beruht auf einem
