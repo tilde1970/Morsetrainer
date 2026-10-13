@@ -440,6 +440,8 @@ EN.update({
         "Twice in a row below 80 % – next band conditions wind-down back to {band}.",
     "{mode} mit Band {band}": "{mode}, conditions {band}",
     "{mode}, Contest {contest}": "{mode}, contest {contest}",
+    "CW-Filter für den Ausklang in der Grundeinstellung, danach wieder deins.":
+        "CW filter at the default setting for the outro, yours again afterwards.",
     "Gesetzt von der Tagesübung: Stufe {name} für den Band-Ausklang, Filter in der Grundeinstellung. Danach gilt wieder deine eigene Einstellung.":
         "Set by the daily practice: level {name} for the band outro, filter at the default setting. Afterwards your own setting applies again.",
     "Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.":

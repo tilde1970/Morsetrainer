@@ -284,7 +284,9 @@ class DailyRunner:
         preset = settings.pop(daily.BAND_PRESET, None)
         text = block_text(block)
         if preset:
-            gain = self._set_band(preset)
+            gain, own_filter = self._set_band(preset)
+            if own_filter:
+                text += " " + tr("CW-Filter für den Ausklang in der Grundeinstellung, danach wieder deins.")
             if gain < 100:
                 text += " " + tr("Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.").format(gain=gain)
         if block.mode == "single":
@@ -293,25 +295,26 @@ class DailyRunner:
         self.mode = mode
         announcer.say(text, then=lambda: self._run_block(block, mode))
 
-    def _set_band(self, preset: str) -> int:
+    def _set_band(self, preset: str) -> tuple:
         """Stellt die Bandbedingungen für den Ausklang auf die Stufe `preset`
         (die eigene Einstellung wird gemerkt, _release_band). Das Filter steht
         auf der Grundeinstellung, für die die Stufen gelten (ein schmales
         machte aus „mittel“ „leicht“). Die Störlautstärke steht auf 100 %; wer
         sie leiser gestellt hat (etwa wegen eines Hörproblems), behält das.
-        Gibt die Störlautstärke in Prozent zurück."""
+        Gibt (Störlautstärke in Prozent, ob ein eigenes Filter zurückgestellt
+        wurde) zurück."""
         settings = self.app.band_settings
         if self.saved_band is None:
             self.saved_band = settings.spec()
         spec = settings.spec()
-        spec.pop("filter", None)
+        own_filter = spec.pop("filter", None) is not None
         spec["gain"] = min(spec["gain"], 1.0)
         settings.set_spec(spec, notify=False)
         settings.set_preset(preset)
         settings.note_var.set(tr("Gesetzt von der Tagesübung: Stufe {name} für den Band-Ausklang, Filter in der "
                                  "Grundeinstellung. Danach gilt wieder deine eigene Einstellung.").format(
             name=tr(band_settings.PRESET_NAMES[preset])))
-        return round(settings.spec()["gain"] * 100)
+        return round(settings.spec()["gain"] * 100), own_filter
 
     def _release_band(self) -> None:
         """Eigene Bandeinstellung nach dem Band-Ausklang zurück."""

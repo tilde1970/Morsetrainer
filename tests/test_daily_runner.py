@@ -306,10 +306,11 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(str(qso.replay_button["state"]), "normal")
         self.assertEqual(qso.status_var.get(), "QSO beendet.")
 
-    def _band_outro(self, gain):
+    def _band_outro(self, gain, cw_filter=500):
         """Tagesübung nur mit dem Band-Ausklang starten, ohne den Block laufen zu lassen."""
         settings = self.app.band_settings
-        settings.set_spec({"levels": {"noise": 0.1, "smps": 0.5}, "gain": gain, "filter": 500})
+        spec = {"levels": {"noise": 0.1, "smps": 0.5}, "gain": gain}
+        settings.set_spec(spec | ({"filter": cw_filter} if cw_filter else {}))
         own = settings.spec()
         with mock.patch.object(daily, "plan", lambda *args, **kwargs: [daily.band_outro("medium")]), \
                 mock.patch.object(daily_runner.announcer, "say") as say:
@@ -327,6 +328,7 @@ class DailyRunnerTest(AppTestCase):
         self.assertTrue(self.mode("Kontinuierlich").band_var.get())
         self.assertIn("Am Stück mit Band mittel, 4 Minuten.", text)
         self.assertNotIn("QRN-fest", text)
+        self.assertIn("CW-Filter für den Ausklang in der Grundeinstellung, danach wieder deins.", text)
         # Das Bandfenster sagt, wer die Einstellung gesetzt hat.
         from morsetrainer.widgets import band_settings
         with mock.patch.object(band_settings.announcer, "say") as say:
@@ -340,6 +342,11 @@ class DailyRunnerTest(AppTestCase):
         self.root.update()
         self.assertFalse(settings.note_label.winfo_ismapped())  # auch im offenen Fenster wieder weg
         settings.close_window()
+
+    def test_band_outro_without_own_filter_says_nothing_about_it(self):
+        _, text = self._band_outro(1.0, cw_filter=None)
+        self.assertNotIn("CW-Filter", text)
+        self.runner.abort()
 
     def test_band_outro_keeps_a_lower_noise_volume_and_says_so(self):
         own, text = self._band_outro(0.6)
