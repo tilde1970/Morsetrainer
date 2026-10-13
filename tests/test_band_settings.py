@@ -267,9 +267,15 @@ class FilterAndQrmTest(unittest.TestCase):
         # Pegel gleitet hinüber, die Hüllkurve springt nicht von Block zu Block.
         import numpy as np
         block = int(band.SAMPLE_RATE * band.PRESET_BLOCK_SECONDS)
+        # Statt des ungeseedeten Rauschens ein Sinus gleicher Stärke: 1 kHz hat
+        # in 5 ms ganze Perioden, der Effektivwert hängt also nicht davon ab,
+        # wo die Schleife beginnt (mit Rauschen scheiterte der Test ab und zu).
+        t = np.arange(band.SAMPLE_RATE) / band.SAMPLE_RATE
+        steady = np.sqrt(2) * np.sin(2 * np.pi * 1000 * t)
         for before, after in ((0.2, 0.9), (None, 0.6)):
             levels = {} if before is None else {"noise": before}
             conditions = band.conditions({"levels": levels, "gain": 1.0}, 600)
+            conditions.noise = (steady * np.sqrt(np.mean(conditions.noise.astype(float) ** 2))).astype(np.float32)
             silent = np.zeros(block, dtype=np.float32)
             for _ in range(5):
                 previous = conditions.mix([(silent, 0)], block)
@@ -279,12 +285,24 @@ class FilterAndQrmTest(unittest.TestCase):
 
             def rms(x):
                 return float(np.sqrt(np.mean(x ** 2)))
-            quarter = int(band.GAIN_GLIDE_SECONDS * band.SAMPLE_RATE) // 4
+            quarter = band.SAMPLE_RATE // 200  # 5 ms, ein Viertel der Gleitzeit
             start = rms(out[:quarter])
             # Kein Sprung an der Blockgrenze: Der Anfang liegt nahe am alten
             # Pegel und deutlich unter dem neuen.
             self.assertLess(start, 0.6 * rms(settled), before)
             self.assertLess(start, rms(previous[-quarter:]) * 1.8 + 0.05, before)
+
+    def test_gain_glides_linearly(self):
+        # Pegelwechsel gleitet in GAIN_GLIDE_SECONDS linear hinüber; ohne
+        # Wechsel bleibt es eine Zahl.
+        conditions = band.BandConditions(1, 1)
+        glide = int(band.GAIN_GLIDE_SECONDS * band.SAMPLE_RATE)
+        self.assertEqual(conditions._smooth("x", 0.0, 2 * glide), 0.0)
+        ramp = conditions._smooth("x", 1.0, 2 * glide)
+        self.assertEqual(ramp[0], 0.0)
+        self.assertAlmostEqual(ramp[glide // 4], 0.25, places=3)
+        self.assertEqual(ramp[glide], 1.0)
+        self.assertEqual(conditions._smooth("x", 1.0, 2 * glide), 1.0)
 
     def test_low_pitch_is_shaped_by_the_receiver_filter(self):
         # Ohne schmales Filter dämpft das Empfängerfilter einen sehr tiefen
