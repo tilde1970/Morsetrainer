@@ -1048,20 +1048,36 @@ class AnnouncerModesTest(AnnouncerCase):
     def test_qso_quiz_names_fields_and_reads_the_result(self):
         from morsetrainer.core import qso_text
         from morsetrainer.modes.qso_quiz import QuizPanel
+        from morsetrainer.widgets import announcer
         self.app.announcer.var.set(True)
         qso = mock.Mock(quiz_columns=("Station 1", "Station 2"),
                         quiz_rows=(("Rufzeichen", (("DL1ABC", qso_text.TEXT), ("DK2XY", qso_text.TEXT))),
                                    ("Name", (("Hans", qso_text.TEXT), ("Eva", qso_text.TEXT)))))
-        quiz = QuizPanel(self.root, on_checked=lambda correct, total: None)
+        playing = [False]
+        quiz = QuizPanel(self.root, on_checked=lambda correct, total: None, busy=lambda: playing[0])
         quiz.reset(qso)
         quiz._announce_field((1, 0))
-        self.assertTrue(self.pump_until(lambda: "Name, Station 1." in self.said))
+        self.assertTrue(self.pump_until(lambda: "Name, Station 1. Leer." in self.said))
+        # Tippen wird buchstabiert, Löschen gesagt – nur nicht, solange das QSO läuft.
+        quiz.vars[1, 0].set("H")
+        quiz._echo((1, 0), "h")
+        self.assertTrue(self.pump_until(lambda: announcer.change_text("", "H") in self.said))
+        playing[0] = True
+        quiz.vars[1, 0].set("Ha")
+        quiz._echo((1, 0), "a")
+        self.pump_until(lambda: False, timeout=0.3)
+        self.assertNotIn(announcer.change_text("H", "Ha"), self.said)
+        playing[0] = False
+        quiz.vars[1, 0].set("H")
+        quiz._echo((1, 0), "BackSpace")
+        self.assertTrue(self.pump_until(lambda: announcer.change_text("Ha", "H") in self.said))
         for key, typed in (((0, 0), "DL1ABC"), ((0, 1), "DK2XY"), ((1, 0), "Hans"), ((1, 1), "Ute")):
             quiz.vars[key].set(typed)
         quiz.check()
         self.assertEqual(quiz.spoken_result(), "3 von 4 richtig. Richtig wäre: Name, Station 2: Eva.")
         quiz._announce_field((1, 1))
-        self.assertTrue(self.pump_until(lambda: "Name, Station 2. Falsch. Richtig wäre: Eva." in self.said))
+        self.assertTrue(self.pump_until(
+            lambda: "Name, Station 2. Eingetragen: Ute. Falsch. Richtig wäre: Eva." in " ".join(self.said)))
 
     def test_statistics_are_read_out(self):
         text = self.app.statistics_spoken()

@@ -210,7 +210,7 @@ class QsoModeFrame(DailyModeMixin):
             anchor="w"
         )
 
-        self.quiz = QuizPanel(parent, on_checked=self._on_quiz_checked)
+        self.quiz = QuizPanel(parent, on_checked=self._on_quiz_checked, busy=lambda: self.running)
         self.quiz_box = self.quiz.box
 
         self.reveal_box = ttk.LabelFrame(parent, text=tr("QSO-Text"), padding=(8, 4, 8, 8))

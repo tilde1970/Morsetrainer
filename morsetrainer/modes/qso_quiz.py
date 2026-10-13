@@ -47,16 +47,20 @@ def is_correct(entered: str, expected: str, kind: str) -> bool:
 
 class QuizPanel:
     """Die Tabelle wird pro QSO in reset() neu aufgebaut; `on_checked(correct,
-    total)` wird nach „Prüfen“ aufgerufen."""
+    total)` wird nach „Prüfen“ aufgerufen. Solange `busy()` wahr ist (das QSO
+    läuft noch), bleibt das Tippen ungesagt, damit keine Ansage über dem
+    Morseton liegt."""
 
-    def __init__(self, parent, on_checked):
+    def __init__(self, parent, on_checked, busy=lambda: False):
         self.on_checked = on_checked
+        self.busy = busy
         self.qso = None
         self.checked = False
         self.box = ttk.LabelFrame(parent, text=tr("Abfrage – was hast du mitbekommen?"), padding=(8, 4, 8, 8))
         self.grid = ttk.Frame(self.box)
         self.grid.pack(fill="x", pady=(0, 6))
         self.vars, self.entries, self.marks = {}, {}, {}
+        self.typed = {}  # Feld -> Inhalt beim letzten Blick, für das Tipp-Echo
         self.results = {}  # (Zeile, Spalte) -> richtig? nach „Prüfen“
         self.fixes = []    # [(Zeile, Spalte, erwartet)] der falschen Felder
         self.quiet = None  # (Feld, bis wann) ohne Feldansage beim Fokus, siehe focus_first
@@ -78,6 +82,7 @@ class QuizPanel:
         for child in self.grid.winfo_children():
             child.destroy()
         self.vars, self.entries, self.marks = {}, {}, {}
+        self.typed = {}  # Feld -> Inhalt beim letzten Blick, für das Tipp-Echo
         self.results, self.fixes = {}, []
         for col, header in enumerate(qso.quiz_columns):
             ttk.Label(self.grid, text=header, style="Hint.TLabel").grid(row=0, column=1 + 2 * col, columnspan=2, sticky="w")
@@ -98,6 +103,7 @@ class QuizPanel:
                 self.entries[row - 1, col] = entry
                 # Ansage (Barrierefreiheit): welches Feld, nach dem Prüfen das Ergebnis.
                 entry.bind("<FocusIn>", lambda e, key=(row - 1, col): self._announce_field(key), add="+")
+                entry.bind("<KeyRelease>", lambda e, key=(row - 1, col): self._echo(key, e.keysym), add="+")
                 self.marks[row - 1, col] = mark
         self.score_var.set("")
         self.fix_var.set("")
@@ -124,6 +130,9 @@ class QuizPanel:
         self.entries[key].focus_set()
 
     def _announce_field(self, key) -> None:
+        """Beim Fokus: Feldname, Inhalt („leer“) und nach dem Prüfen das Ergebnis."""
+        content = self.vars[key].get()
+        self.typed[key] = content
         if self.quiet is not None:
             quiet_key, until = self.quiet
             self.quiet = None
@@ -131,13 +140,25 @@ class QuizPanel:
                 return
         row, col = key
         label, cells = self.qso.quiz_rows[row]
-        text = self._field_name(key)
+        text = self._field_name(key) + " "
+        text += (tr("Eingetragen: {value}.").format(value=announcer.value(content)) if content.strip()
+                 else tr("Leer."))
         if key in self.results:
             if self.results[key]:
                 text += " " + tr("Richtig.")
             else:
                 text += " " + tr("Falsch. Richtig wäre: {value}.").format(value=announcer.value(cells[col][0]))
         announcer.say(text)
+
+    def _echo(self, key, keysym: str) -> None:
+        """Getipptes buchstabiert, Gelöschtes mit „gelöscht“ – nicht, solange
+        das QSO läuft."""
+        before, after = self.typed.get(key), self.vars[key].get()
+        self.typed[key] = after
+        if before is None or before == after or keysym in ("Tab", "ISO_Left_Tab") or self.busy():
+            return
+        if announcer.active():
+            announcer.say(announcer.change_text(before, after))
 
     def spoken_result(self) -> str:
         """Ergebnis von „Prüfen“ zum Ansagen, mit den richtigen Werten."""

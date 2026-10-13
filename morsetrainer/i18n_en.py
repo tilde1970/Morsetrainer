@@ -703,6 +703,8 @@ EN.update({
     "Antwort (wie gesendet)": "Answer (as sent)",
     "Erst die Fragen beantworten und prüfen – dann „Nochmal“.": "Answer and check the questions first – then “Again”.",
     "In der Tagesübung zählt das erste Hören – kein „Nochmal“.": "In the daily practice the first listen counts – no “Again”.",
+    "Eingetragen: {value}.": "Entered: {value}.",
+    "Leer.": "Empty.",
     "Stop (F5)": "Stop (F5)",
     "Wiederholung – ": "Replay – ",
     "Durchgang {n} von {total}": "Transmission {n} of {total}",
