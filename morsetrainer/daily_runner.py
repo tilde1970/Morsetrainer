@@ -506,4 +506,5 @@ class DailyRunner:
             # Nur Siegel, die noch kein Diplom-Fenster gezeigt hat; es folgt beim Schließen.
             seals=[seal_name(awards.BY_KEY[key], level) for key, level, _ in self.app.pending_seals],
             on_close=self.app.show_pending_seals,
-            on_prosigns=self.app.start_prosign_lessons if prosigns else None)
+            on_prosigns=self.app.start_prosign_lessons if prosigns else None,
+            band=daily.band_change(self.state, self.today))

@@ -1,5 +1,13 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Rückmeldung zur Bandstufe:** Ändert der Band-Ausklang der Tagesübung
+  die Stufe, sagt es die Abendbilanz („Zweimal 90 % geschafft – nächster
+  Band-Ausklang: mittel“ bzw. „Zweimal hintereinander unter 80 % – nächster
+  Band-Ausklang wieder leicht“). Der erste Aufstieg auf „mittel“ bringt
+  ★ Weiter.
+
 ## 2.50
 
 - **Tagesübung nach Koch mit wechselndem Ausklang:** Nach Lektion 41

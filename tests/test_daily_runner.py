@@ -326,6 +326,16 @@ class DailyRunnerTest(AppTestCase):
         self.runner.abort()
         self.assertEqual(self.app.band_settings.spec(), own)
 
+    def test_summary_tells_the_next_band_stage(self):
+        from morsetrainer.widgets import daily_panel
+        self.runner.state, self.runner.today = daily.load(), date.today()
+        with mock.patch.object(daily, "band_change", return_value=("light", "medium")):
+            self.runner._show_summary(set(), True)
+        self.assertIn("Zweimal 90 % geschafft – nächster Band-Ausklang: mittel", self.runner.summary.spoken)
+        self.runner.summary.close()
+        self.assertIn("wieder leicht", daily_panel.band_change_line(("medium", "light")))
+        self.assertEqual(daily_panel.band_change_line(None), "")
+
     def test_band_outro_records_the_weakest_stage(self):
         with mock.patch.object(daily, "plan", lambda *args, **kwargs: [daily.band_outro("light")] * 2), \
                 mock.patch.object(daily_runner.announcer, "say"):

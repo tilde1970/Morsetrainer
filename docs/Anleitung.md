@@ -409,7 +409,7 @@ wieder wie vorher.
   zweiten Contest-Platz stattdessen **Am Stück unter Bandbedingungen**
   (Gruppen von 5): zuerst Stufe „leicht“, nach zwei Tagen mit 90 % und
   mehr „mittel“; zweimal hintereinander unter 80 % geht es zurück auf
-  „leicht“. Die Stufe wechselt am Tag danach. Dafür gilt das breite
+  „leicht“. Die Stufe wechselt am Tag danach; die Abendbilanz sagt es dir. Dafür gilt das breite
   Filter, die Störlautstärke steht auf 100 %; hast du sie leiser gestellt,
   bleibt das so, zählt dann aber nicht für das Diplom QRN-fest. Danach ist
   deine eigene Bandeinstellung wieder da. Passt ein QSO nicht, kommen
@@ -435,8 +435,9 @@ wieder wie vorher.
 - **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
   für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen
   einer neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
-  vorgemerkt, ein Zeichen erstmals in Fach 3 der Lernkartei oder ein
-  Tagestempo, das du noch nie hattest. Eine zweite Tagesübung am selben
+  vorgemerkt, ein Zeichen erstmals in Fach 3 der Lernkartei, ein
+  Tagestempo, das du noch nie hattest, oder erstmals Band „mittel“ im
+  Ausklang. Eine zweite Tagesübung am selben
   Tag kann fehlende Sterne nachholen; verdiente Sterne gehen nie verloren,
   auch nicht beim Abbrechen.
 - **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue

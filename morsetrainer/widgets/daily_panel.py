@@ -156,6 +156,19 @@ def _spoken_better(item: dict) -> str:
         char=announcer.spell(item["char"]), before=number(item["before"], 2), now=number(item["now"], 2))
 
 
+def band_change_line(change) -> str:
+    """Neue Stufe des Band-Ausklangs (daily.band_change) für die Abendbilanz;
+    leer ohne Wechsel. Nicht „ab morgen“: Der nächste Band-Ausklang kommt
+    erst nach einigen Übungstagen."""
+    if not change:
+        return ""
+    before, after = change
+    name = tr(awards.BAND_NAMES[daily.BAND_RANK[after]])
+    if daily.BAND_LEVELS.index(after) > daily.BAND_LEVELS.index(before):
+        return tr("Zweimal 90 % geschafft – nächster Band-Ausklang: {band}.").format(band=name)
+    return tr("Zweimal hintereinander unter 80 % – nächster Band-Ausklang wieder {band}.").format(band=name)
+
+
 def outlook_line(outlook) -> str:
     """Ausblick auf die nächste Lektion (geschafft oder wie viel noch fehlt);
     leer ohne Ausblick."""
@@ -335,7 +348,8 @@ class EveningSummary:
     Esc schließen; danach `on_close` (zeigt die neuen Siegel)."""
 
     def __init__(self, root, stars, comparison: dict, outlook=None, offer=None, on_extra=None,
-                 completed: bool = True, week_stars: int = None, seals=(), on_close=None, on_prosigns=None):
+                 completed: bool = True, week_stars: int = None, seals=(), on_close=None, on_prosigns=None,
+                 band=None):
         self.on_extra = on_extra
         self.on_prosigns = on_prosigns
         self.on_close = on_close
@@ -366,6 +380,10 @@ class EveningSummary:
         if outlook:
             box = theme.card(frame, tr("Fast geschafft"), padx=0, pady=(8, 0))
             ttk.Label(box, text=outlook_line(outlook)).pack(anchor="w")
+        self.band_text = band_change_line(band)
+        if self.band_text:
+            box = theme.card(frame, tr("Bandbedingungen"), padx=0, pady=(8, 0))
+            ttk.Label(box, text=self.band_text).pack(anchor="w")
         if seals:
             box = theme.card(frame, tr("Neues Siegel") if len(seals) == 1 else tr("Neue Siegel"), padx=0, pady=(8, 0))
             for line in seals:
@@ -419,6 +437,8 @@ class EveningSummary:
             parts.append(tr("Stand gehalten."))
         if outlook:
             parts.append(outlook_line(outlook))
+        if self.band_text:
+            parts.append(self.band_text)
         if self.on_prosigns:
             parts.append(tr(PROSIGN_HINT_TEXT))
         if seals:

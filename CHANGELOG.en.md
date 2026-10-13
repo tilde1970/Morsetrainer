@@ -1,5 +1,13 @@
 # Changes
 
+## Unreleased
+
+- **Feedback on the band level:** if the band conditions wind-down of the
+  daily practice changes the level, the evening summary says so (“90 %
+  twice – next band conditions wind-down: medium” or “Twice in a row below
+  80 % – next band conditions wind-down back to light”). The first step up
+  to “medium” earns ★ Ahead.
+
 ## 2.50
 
 - **Daily practice after Koch with a changing wind-down:** after lesson 41

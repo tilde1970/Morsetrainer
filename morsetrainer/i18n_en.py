@@ -434,6 +434,10 @@ EN.update({
     "Lektion {lesson}": "lesson {lesson}",
     "Jetzt: {mode}, {what}, {tempo}": "Next: {mode}, {what}, {tempo}",
     "Jetzt: {mode}, {tempo}": "Next: {mode}, {tempo}",
+    "Zweimal 90 % geschafft – nächster Band-Ausklang: {band}.":
+        "90 % twice – next band conditions wind-down: {band}.",
+    "Zweimal hintereinander unter 80 % – nächster Band-Ausklang wieder {band}.":
+        "Twice in a row below 80 % – next band conditions wind-down back to {band}.",
     "{mode} mit Band {band}": "{mode}, conditions {band}",
     "Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.":
         "Noise volume {gain} %, does not count for the QRN-proof award.",

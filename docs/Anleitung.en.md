@@ -400,7 +400,8 @@ as they were.
   15 WPM effective, every second contest slot brings **non-stop under band
   conditions** instead (groups of 5): first “light”, after two days with
   90 % or more “medium”; twice in a row below 80 % takes you back to
-  “light”. The level changes on the following day. The wide filter is
+  “light”. The level changes on the following day; the evening summary
+  tells you. The wide filter is
   used and the noise volume is set to 100 %; if you have turned it down,
   it stays that way but then does not count for the QRN-proof award.
   Afterwards your own band settings are back. If a QSO
@@ -426,8 +427,9 @@ as they were.
 - **Three stars a day:** ★ *Showed up* for the full 10 minutes, ★ *Clean*
   for 90 % on the first try in the main part (80 % in the first three days
   of a new lesson), ★ *Ahead* for real progress: next lesson earned, a
-  character reaching box 3 of the review box for the first time, or a
-  daily speed you never had before. A second daily practice on the same
+  character reaching box 3 of the review box for the first time, a
+  daily speed you never had before, or band “medium” in the wind-down for
+  the first time. A second daily practice on the same
   day can add missing stars; earned stars are never lost, not even when
   you stop early.
 - **Between the blocks** a short card shows the result, new stars and

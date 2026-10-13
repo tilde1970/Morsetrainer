@@ -121,6 +121,24 @@ class StageAndPlanTest(unittest.TestCase):
         outro(1, "light", 200)  # alte gute Tage vor dem Rückfall zählen nicht mehr
         self.assertEqual(daily.band_level(state, TODAY), "light")
 
+    def test_band_change_and_star_only_for_a_new_stage(self):
+        state = {"days": {}}
+
+        def outro(day, preset, correct):
+            today = TODAY - timedelta(days=day)
+            result = {"correct": correct, "total": 200, "extra_keys": 0, "minutes": 4.0, "band_min": preset}
+            return daily.finish_block(state, today, daily.band_outro(preset), result), daily.band_change(state, today)
+
+        self.assertEqual(outro(9, "light", 190), ([], None))  # erster guter Tag: noch kein Wechsel
+        self.assertEqual(outro(8, "light", 190), ([daily.WEITER], ("light", "medium")))
+        self.assertEqual(outro(7, "medium", 150), ([], None))
+        self.assertEqual(outro(6, "medium", 150), ([], ("medium", "light")))  # Rückfall, Sterne bleiben
+        outro(5, "light", 190)
+        stars, change = outro(4, "light", 190)
+        self.assertEqual(change, ("light", "medium"))
+        self.assertEqual(stars, [])  # wieder mittel: schon einmal erreicht, kein ★ Weiter
+        self.assertIsNone(daily.band_change(state, TODAY))  # heute kein Band-Ausklang
+
     def test_band_outro_is_stored_with_its_stage(self):
         state = {"days": {}}
         daily.finish_block(state, TODAY, daily.band_outro("medium"), {"correct": 1, "total": 1, "minutes": 4.0})

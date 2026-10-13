@@ -103,7 +103,7 @@ PROGRESS_BOX = 2
 
 DABEI, SAUBER, WEITER = "dabei", "sauber", "weiter"
 STAR_ORDER = (DABEI, SAUBER, WEITER)
-LESSON_UP, TEMPO_UP, BOX_PREFIX = "lesson_up", "tempo_up", "box:"
+LESSON_UP, TEMPO_UP, BAND_UP, BOX_PREFIX = "lesson_up", "tempo_up", "band_up", "box:"
 
 WARMUP, MAIN, OUTRO = "warmup", "main", "outro"
 BAND = "band"  # Ausklang mit Bandbedingungen (Modus des Blocks: "continuous")
@@ -243,10 +243,27 @@ def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str =
     return [warmup, Block(MAIN, main_mode, main_minutes, main_params), outro]
 
 
-def band_level(state: dict, today: date):
+def band_level(state: dict, today: date) -> str:
     """Stufe für den Band-Ausklang heute, nachgerechnet aus den Ausklängen der
     Tage vor `today` (wirksam ab dem nächsten Tag wie Lektion und Tempo)."""
+    return _band_replay(state, today)[0]
+
+
+def band_change(state: dict, today: date):
+    """(Stufe bisher, Stufe beim nächsten Band-Ausklang), wenn der heutige
+    Band-Ausklang die Stufe ändert, sonst None (für die Abendbilanz)."""
+    entry = state.get("days", {}).get(today.isoformat(), {})
+    blocks = entry.get("blocks", []) if isinstance(entry, dict) else []
+    if not any(isinstance(b, dict) and b.get("kind") == OUTRO and b.get("band") for b in blocks):
+        return None
+    before, after = band_level(state, today), band_level(state, date.fromordinal(today.toordinal() + 1))
+    return (before, after) if before != after else None
+
+
+def _band_replay(state: dict, today: date):
+    """(Stufe, höchste je erreichte Stufe) nach den Ausklängen vor `today`."""
     level, up_days, misses = BAND_LEVELS[0], set(), 0
+    best = level
     days = state.get("days", {})
     for day in sorted(d for d in days if d < today.isoformat()):
         entry = days[day]
@@ -265,13 +282,14 @@ def band_level(state: dict, today: date):
                     up_days.add(day)
                     if len(up_days) >= BAND_UP_DAYS:
                         level, up_days, misses = BAND_LEVELS[1], set(), 0
+                        best = max(best, level, key=BAND_LEVELS.index)
             elif share < BAND_DOWN_SHARE:
                 misses += 1
                 if misses >= BAND_DOWN_RUNS:
                     level, up_days, misses = BAND_LEVELS[0], set(), 0
             else:
                 misses = 0
-    return level
+    return level, best
 
 
 # --- Lektion ------------------------------------------------------------------
@@ -444,6 +462,12 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
             if following["effective"] > best:
                 progress |= _add_progress(entry, TEMPO_UP)
             state["tempo_best"] = max(best, following["effective"])
+    if BAND_PRESET in block.params:
+        # ★ Weiter nur für eine nie erreichte Stufe, nicht fürs Zurückkommen.
+        change = band_change(state, today)
+        if (change and BAND_LEVELS.index(change[1]) > BAND_LEVELS.index(change[0])
+                and _band_replay(state, today)[1] != change[1]):
+            progress |= _add_progress(entry, BAND_UP)
     if progress and _add_star(entry, WEITER):
         new_stars.append(WEITER)
     return new_stars
