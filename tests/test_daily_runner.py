@@ -250,6 +250,8 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(qso.options_card.winfo_manager(), "")  # Einstellungen ausgeblendet
         self.assertTrue(self.runner.active)  # Fragen stehen noch aus
         self.assertEqual(str(qso.replay_button["state"]), "disabled")
+        qso.on_function_key("F6")  # gesperrt, aber nicht still
+        self.assertEqual(qso.status_var.get(), "In der Tagesübung zählt das erste Hören – kein „Nochmal“.")
         first = qso.quiz.entries[min(qso.quiz.entries)]
         with mock.patch.object(first, "focus_set") as focus:
             qso.running, qso.play_thread = True, None  # das Ende noch einmal, mit beobachtetem Fokus

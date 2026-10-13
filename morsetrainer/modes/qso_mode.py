@@ -824,6 +824,12 @@ class QsoModeFrame(DailyModeMixin):
             self.toggle_running()
         elif key == "F6" and str(self.replay_button["state"]) != "disabled":
             self.replay()
+        elif key == "F6" and self.qso is not None and not self.running:
+            # Gesperrt: sagen warum, statt still zu bleiben.
+            if self.daily_minutes:
+                announcer.problem(self.status_var, tr("In der Tagesübung zählt das erste Hören – kein „Nochmal“."))
+            elif self.qso_eval == EVAL_HEAD and not self.quiz_checked:
+                announcer.problem(self.status_var, tr("Erst die Fragen beantworten und prüfen – dann „Nochmal“."))
         elif key == "F7" and str(self.reveal_button["state"]) != "disabled":
             self.toggle_reveal()
         elif key == "F8" and self._eval_mode() in QUIZ_MODES and self.quiz_ready:
