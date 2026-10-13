@@ -418,6 +418,47 @@ class ContinuousPhraseGapTest(AppTestCase):
         self.assertEqual("".join(e["char"] for e in c.sent_log), "TNXFERCALL")  # Leerzeichen nur als Pause
 
 
+class ContinuousVaryTest(AppTestCase):
+    def test_each_group_gets_its_own_voice(self):
+        import contextlib
+        from morsetrainer.modes import continuous_mode
+
+        class FakeStream:
+            latency = 0.0
+
+            def write(self, block):
+                pass
+
+        class Groups:
+            def next(self):
+                return "ABCDE", ""
+
+        c = self.mode("Kontinuierlich")
+        self.assertTrue(continuous_mode.ContinuousModeFrame.uses_vary)
+        self.assertIsNotNone(c.vary_var)  # von der App übergeben
+        c.content, c.source = "chars", Groups()
+        c.wpm, c.freq, c.fw, c.group_len, c.vary, c.band = 20, 600, None, 5, True, None
+        c.sent_log, c.running, c.deadline = [], True, None
+        c.play_thread = threading.current_thread()
+        voices = iter([(18, 520), (22, 690), (19, 610)])
+        tones = []
+        real_build = continuous_mode.build_samples
+
+        def recording_build(char, wpm, freq, *args):
+            tones.append((wpm, freq))
+            if len(tones) == 15:
+                c.running = False
+            return real_build(char, wpm, freq, *args)
+
+        with mock.patch.object(continuous_mode.audio, "output_stream", lambda: contextlib.nullcontext(FakeStream())), \
+                mock.patch.object(continuous_mode, "build_samples", recording_build), \
+                mock.patch.object(continuous_mode, "vary_voice", lambda wpm, freq: next(voices)):
+            c._play_session()
+        self.assertEqual(tones[:5], [(18, 520)] * 5)  # eine Gruppe, eine Stimme
+        self.assertEqual(tones[5:10], [(22, 690)] * 5)
+        self.assertEqual([e["wpm"] for e in c.sent_log[:6]], [18] * 5 + [22])
+
+
 class StatsTabReviewTest(AppTestCase):
     def test_review_text(self):
         today = date(2026, 9, 27)

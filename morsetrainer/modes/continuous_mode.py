@@ -37,7 +37,7 @@ from morsetrainer.core import align, audio, band, koch
 from morsetrainer.core.latency import char_latency
 from morsetrainer.core.morse import (
     END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
-    char_gap_seconds, effective_wpm, silence, tone_seconds, word_gap_extra_seconds,
+    char_gap_seconds, effective_wpm, silence, tone_seconds, vary_voice, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.i18n import N_, tr
@@ -141,10 +141,12 @@ class ContinuousModeFrame(DailyModeMixin):
     und auf Wunsch der ganzen Sitzung im eigenen Fenster."""
     daily_keys = ("content", "group_len", "band")
     uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
+    uses_vary = True
 
     def __init__(self, parent, charset_var, wpm_var, freq_var, weighted_var, farnsworth_wpm, on_start, on_stop,
-                 band_settings=None):
+                 band_settings=None, vary_var=None):
         self.root = parent.winfo_toplevel()
+        self.vary_var = vary_var
         self.band_settings = band_settings or BandSettings(self.root)
         self.charset_var = charset_var
         self.wpm_var = wpm_var
@@ -159,7 +161,9 @@ class ContinuousModeFrame(DailyModeMixin):
         self.picker = None
         self.wpm = 15
         self.freq = 600
-        self.sent_log = []    # [{"char": str, "end_time": float}]
+        self.vary = False
+        self.voice = (15, 600)  # (WpM, Tonhöhe) der gerade gesendeten Gruppe bzw. des Worts
+        self.sent_log = []    # [{"char": str, "end_time": float, "group": int, "wpm": int}]
         self.typed_log = []   # [{"char": str, "time": float}]
         self.play_thread = None
         self.session_stats = None
@@ -277,9 +281,10 @@ class ContinuousModeFrame(DailyModeMixin):
             self.band = None
         elif self.band is None:
             self.band = band.conditions(spec, self.freq)
+            self.band.prepare(self.voice[1], qrm_freq=self.freq)
         else:
             band.apply_spec(self.band, spec)
-            self.band.prepare(self.freq)
+            self.band.prepare(self.voice[1], qrm_freq=self.freq)
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
             self.band_rank_min = min(self.band_rank_min, band.preset_rank(spec, self.freq), key=BAND_ORDER.index)
@@ -317,6 +322,8 @@ class ContinuousModeFrame(DailyModeMixin):
         self.wpm = self.wpm_var.get()
         self.freq = self.freq_var.get()
         self.fw = self.farnsworth_wpm()
+        self.vary = self.vary_var is not None and self.vary_var.get()
+        self.voice = (self.wpm, self.freq)
         # Bandbedingungen laufen durchgehend unter dem ganzen Durchgang mit
         # (Rauschen und QSB reißen nicht zwischen den Zeichen ab).
         spec = self.band_settings.spec() if self.band_var.get() else None
@@ -395,6 +402,7 @@ class ContinuousModeFrame(DailyModeMixin):
         """Audio-Thread: sendet „VVV =“, dann ohne Pause Zeichen bzw. Wörter aus
         der Quelle in einem durchgehenden Strom und protokolliert das hörbare
         Ende jedes Zeichens; ist die Zeit um, folgt das Schlusszeichen."""
+        self.voice = (self.wpm, self.freq)
         with audio.output_stream() as stream:
             # Einleitung, wird nicht ausgewertet (landet nicht in sent_log).
             if not self._write(stream, build_text(START_TEXT + " ", self.wpm, self.freq, self.fw)):
@@ -406,28 +414,31 @@ class ContinuousModeFrame(DailyModeMixin):
                 token, _ = self.source.next()
                 if word_gaps or len(self.sent_log) % FULL_GROUP_LEN == 0:
                     group += 1
+                    if self.vary:
+                        self._vary_voice()
+                wpm, freq = self.voice
                 if word_gaps and not first:
                     # Wortpause zwischen Gruppen bzw. Wörtern (zusätzlich zur Zeichenpause).
-                    if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
+                    if not self._write(stream, silence(word_gap_extra_seconds(wpm, self.fw))):
                         break
                 first = False
                 for char in token:
                     if char == " ":
                         # Wortabstand innerhalb einer Wendung („TNX FER CALL“).
-                        if not self._write(stream, silence(word_gap_extra_seconds(self.wpm, self.fw))):
+                        if not self._write(stream, silence(word_gap_extra_seconds(wpm, self.fw))):
                             break
                         group += 1
                         continue
                     conditions = self.band
                     chirp = conditions.chirp_for(0) if conditions is not None else None
-                    samples = build_samples(char, self.wpm, self.freq, self.fw, chirp)
+                    samples = build_samples(char, wpm, freq, self.fw, chirp)
                     if not self._write(stream, samples):
                         break
                     # write() kehrt zurück, sobald die Samples im Puffer sind; zu
                     # hören ist ihr Ende erst nach stream.latency. Die Reaktionszeit
                     # zählt ab dem Ende des Tons, also vor der Pause dahinter.
-                    tone_end = time.time() + stream.latency - char_gap_seconds(self.wpm, self.fw)
-                    self.sent_log.append({"char": char, "end_time": tone_end, "group": group})
+                    tone_end = time.time() + stream.latency - char_gap_seconds(wpm, self.fw)
+                    self.sent_log.append({"char": char, "end_time": tone_end, "group": group, "wpm": wpm})
             if self._live():
                 # Zeit abgelaufen: Wortpause und Schlusszeichen direkt hinterher.
                 ending = np.concatenate([
@@ -435,6 +446,15 @@ class ContinuousModeFrame(DailyModeMixin):
                     build_text(END_TEXT, self.wpm, self.freq),
                 ])
                 self.end_sent = self._write(stream, ending)
+
+    def _vary_voice(self):
+        """Neue Gruppe bzw. neues Wort: leicht andere Tonhöhe und Tempo. Das
+        CW-Filter folgt der Tonhöhe wie beim Nachstimmen, das CW-QRM bleibt
+        auf seiner Frequenz."""
+        self.voice = vary_voice(self.wpm, self.freq)
+        conditions = self.band
+        if conditions is not None:
+            conditions.prepare(self.voice[1], qrm_freq=self.freq)
 
     def _time_up(self) -> bool:
         return self.deadline is not None and time.time() >= self.deadline
@@ -552,10 +572,11 @@ class ContinuousModeFrame(DailyModeMixin):
                     continue
                 previous_key = self.typed_log[op.received_index - 1]["time"] if op.received_index else None
                 latency = char_latency(typed_time, play_end, previous_key)
-                since_start = tone_seconds(expected_char, self.wpm) + (latency or 0.0)
+                sent_wpm = self.sent_log[op.expected_index].get("wpm", self.wpm)
+                since_start = tone_seconds(expected_char, sent_wpm) + (latency or 0.0)
                 self.session_stats.record_char(
                     expected_char, typed_char, correct, since_start,
-                    effective_wpm(expected_char, since_start, self.wpm), latency=latency
+                    effective_wpm(expected_char, since_start, sent_wpm), latency=latency
                 )
             elif op.kind == align.OpKind.DELETE:
                 self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
