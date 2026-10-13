@@ -11,7 +11,7 @@ from morsetrainer.core import band
 from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_preview import BandPreview
-from morsetrainer.widgets.ui_widgets import ScrollableFrame
+from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
@@ -110,7 +110,7 @@ class BandSettings:
         self.pause_var = tk.BooleanVar(value=True)
         self.listeners = []
         self.window = None
-        self.focus_before = None  # Fokus im Hauptfenster vor dem Öffnen
+        self.restore_focus = None  # gibt den Fokus von vor dem Öffnen zurück
         self.preview = None  # BandPreview, sobald attach_preview() gerufen ist
         self.preview_blocked = lambda: None  # Grund, warum gerade nicht, sonst None
         self.preview_poll = None  # after-ID der Abfrage, ob das Probehören zu Ende ist
@@ -276,9 +276,9 @@ class BandSettings:
         if self.window is not None:
             self.window.deiconify()
             self.window.lift()
-            self.window.focus_set()
+            self.window.focus_force()
             return
-        self.focus_before = self.root.focus_get()
+        self.restore_focus = focus_keeper(self.root)
         window = self.window = tk.Toplevel(self.root)
         window.title(tr("Bandbedingungen"))
         window.transient(self.root)  # bleibt über dem Hauptfenster
@@ -460,12 +460,9 @@ class BandSettings:
         if self.window is not None:
             self.window.destroy()
             self.window = None
-        focus, self.focus_before = self.focus_before, None
-        try:
-            if focus is not None and focus.winfo_exists():
-                focus.focus_set()
-        except tk.TclError:
-            pass
+        restore, self.restore_focus = self.restore_focus, None
+        if restore is not None:
+            restore()
 
     def _option_row(self, box, row: int, key: str, label: str) -> None:
         """Schalter, Regler und angezeigter Wert einer Störung."""

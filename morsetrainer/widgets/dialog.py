@@ -18,6 +18,7 @@ from tkinter import filedialog, ttk
 
 from morsetrainer.i18n import tr
 from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets.ui_widgets import focus_keeper
 
 WRAP = 480
 
@@ -29,6 +30,7 @@ class MessageDialog:
     def __init__(self, parent, title: str, text: str, question: bool):
         self.answer = False
         self.parent = parent
+        self.restore_focus = focus_keeper(parent.winfo_toplevel())
         top = self.top = tk.Toplevel(parent)
         top.title(title)
         top.configure(background=theme.BG)
@@ -55,8 +57,9 @@ class MessageDialog:
             top.bind(sequence, lambda e, a=action: a())
         top.protocol("WM_DELETE_WINDOW", self._no)
         # Fokus aufs Fenster, nicht auf „Ja“: Eine Leertaste aus dem Tippen
-        # davor soll nichts entscheiden.
-        top.focus_set()
+        # davor soll nichts entscheiden. focus_force: ohne Fenstermanager
+        # gingen Enter und Escape sonst ans Hauptfenster.
+        top.focus_force()
         self._say()
 
     def _say(self, force: bool = False) -> None:
@@ -95,7 +98,8 @@ class MessageDialog:
             self.top.grab_release()
             self.top.destroy()
         except tk.TclError:
-            pass
+            return
+        self.restore_focus()
 
     def wait(self) -> bool:
         """Wartet modal auf die Antwort."""

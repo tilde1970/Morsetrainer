@@ -41,7 +41,7 @@ from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, dialog, theme
-from morsetrainer.widgets.ui_widgets import ScrollableFrame, one_tab_stop, wrap_pair
+from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
 
 __author__ = "DL4YM"
 __version__ = "2.49"
@@ -443,7 +443,7 @@ class MorseTrainerApp:
         window.resizable(True, False)
         window.protocol("WM_DELETE_WINDOW", self.close_settings)
         window.bind("<Escape>", lambda e: self.close_settings())
-        self.settings_focus_before = None
+        self.settings_restore_focus = None
         body = ttk.Frame(window, padding=10)
         body.pack(fill="both", expand=True)
         station_card = theme.card(body, tr("Station"), padx=0)
@@ -576,22 +576,19 @@ class MorseTrainerApp:
         window = self.settings_window
         hidden = window.state() == "withdrawn"
         if hidden:
-            self.settings_focus_before = self.root.focus_get()
+            self.settings_restore_focus = focus_keeper(self.root)
         window.deiconify()
         window.lift()
-        window.focus_set()
+        window.focus_force()
         if not hidden:  # sonst sagt die Fensteransage es schon (beim Erscheinen)
             announcer.say(tr("Fenster {title}.").format(title=window.title()))
 
     def close_settings(self) -> None:
         """Ausblenden und den Fokus zurückgeben, etwa ans Eingabefeld."""
         self.settings_window.withdraw()
-        focus, self.settings_focus_before = self.settings_focus_before, None
-        try:
-            if focus is not None and focus.winfo_exists():
-                focus.focus_set()
-        except tk.TclError:
-            pass
+        restore, self.settings_restore_focus = self.settings_restore_focus, None
+        if restore is not None:
+            restore()
 
     def _choose_language(self):
         """Gewählte Sprache merken (gespeichert in _save_state); sie gilt ab

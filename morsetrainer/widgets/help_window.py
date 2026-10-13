@@ -21,6 +21,7 @@ from tkinter import ttk
 from morsetrainer import i18n
 from morsetrainer.i18n import N_, tr
 from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets.ui_widgets import focus_keeper
 
 # Die Anleitung zuerst: Wer Hilfe sucht, will wissen, wie etwas geht; was
 # neu ist, zeigt das Programm ohnehin nach einem Update.
@@ -253,6 +254,7 @@ class HelpWindow:
         cls._open.start_reading()
 
     def __init__(self, root):
+        self.restore_focus = focus_keeper(root)
         self.top = tk.Toplevel(root)
         self.top.title(tr("Morsetrainer – Hilfe"))
         self.top.configure(background=theme.BG)
@@ -338,7 +340,7 @@ class HelpWindow:
         """Fokus in den Text und ansagen, wo man ist und wie man liest (den
         Fensternamen sagt die Fensteransage davor)."""
         text = self._current_text()
-        text.focus_set()
+        text.focus_force()  # auch beim Wiederholen von F1 aus dem Hauptfenster
         announcer.say(self._line(text) + ". " + tr("Pfeil runter liest weiter, Pfeil hoch zurück. {key} sucht.")
                       .format(key=i18n.ctrl_key("F")))
 
@@ -389,8 +391,18 @@ class HelpWindow:
 
     def _forget(self, event) -> None:
         # Das geschlossene Fenster samt Texten nicht bis zum nächsten F1 festhalten.
-        if event.widget is self.top and HelpWindow._open is self:
+        if event.widget is not self.top:
+            return
+        if HelpWindow._open is self:
             HelpWindow._open = None
+        # Fokus zurück, wenn er in der Hilfe war; wer schon im Hauptfenster
+        # weitergemacht hat, behält seinen.
+        try:
+            focus = self.top.focus_get()
+        except (KeyError, tk.TclError):
+            focus = None
+        if focus is None or str(focus).startswith(str(self.top)):
+            self.restore_focus()
 
     def _current_text(self) -> tk.Text:
         return self.texts[DOCS[self.notebook.index("current")][1]]

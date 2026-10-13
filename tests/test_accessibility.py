@@ -1997,6 +1997,62 @@ class DailyAnnounceTest(AnnouncerCase):
         self.runner.abort(quiet=True)
 
 
+class FocusReturnTest(AppTestCase):
+    """Nach Rückfrage, Einstellungen, Bandfenster und Hilfe geht der Fokus
+    dorthin zurück, wo er vorher war. Ohne Fenstermanager klappt das nur mit
+    focus_force; hier zählt deshalb, wem er zurückgegeben wird."""
+
+    def setUp(self):
+        super().setUp()
+        self.entry = ttk.Entry(self.root)
+        self.entry.pack()
+        self.root.update()
+        self.returned = []
+        for patch in (mock.patch.object(self.root, "focus_get", return_value=self.entry),
+                      mock.patch.object(self.entry, "focus_force", lambda: self.returned.append("entry")),
+                      mock.patch.object(self.entry, "winfo_viewable", lambda: True),  # Hauptfenster im Test versteckt
+                      mock.patch.object(self.root, "focus_force", lambda: self.returned.append("root"))):
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def test_dialog_returns_focus(self):
+        from morsetrainer.widgets import dialog
+        window = dialog.MessageDialog(self.root, "Frage", "Weiter?", question=True)
+        window.keys["<Escape>"]()
+        self.assertEqual(self.returned, ["entry"])
+
+    def test_settings_return_focus(self):
+        self.app.open_settings()
+        self.app.close_settings()
+        self.assertEqual(self.returned, ["entry"])
+
+    def test_band_window_returns_focus(self):
+        self.app.band_settings.open_window()
+        self.app.band_settings.close_window()
+        self.assertEqual(self.returned, ["entry"])
+
+    def test_help_returns_focus_only_if_it_had_it(self):
+        from morsetrainer.widgets import help_window
+        help_window.HelpWindow.show(self.root, "Einzeln")
+        window = help_window.HelpWindow._open
+        with mock.patch.object(window.top, "focus_get", return_value=None):
+            window.top.destroy()
+        self.assertEqual(self.returned, ["entry"])
+        del self.returned[:]
+        help_window.HelpWindow.show(self.root, "Einzeln")
+        window = help_window.HelpWindow._open
+        with mock.patch.object(window.top, "focus_get", return_value=self.entry):  # schon im Hauptfenster
+            window.top.destroy()
+        self.assertEqual(self.returned, [])
+
+    def test_focus_keeper_falls_back_to_the_main_window(self):
+        from morsetrainer.widgets.ui_widgets import focus_keeper
+        restore = focus_keeper(self.root)
+        self.entry.destroy()
+        restore()
+        self.assertEqual(self.returned, ["root"])
+
+
 class DialogTest(AnnouncerCase):
     """Meldungen und Ja/Nein-Fragen (widgets/dialog.py) statt messagebox:
     angesagt, Enter und Escape entscheiden, die Leertaste nicht."""
