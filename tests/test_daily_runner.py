@@ -13,9 +13,9 @@ from tests.test_modes import AppTestCase, app_module
 REAL_PLAN = daily.plan
 
 
-def short_plan(lesson, due_count, turn):
+def short_plan(*args, **kwargs):
     """Wie daily.plan, aber Blöcke von wenigen Sekunden."""
-    return [daily.Block(b.kind, b.mode, 0.01, b.params) for b in REAL_PLAN(lesson, due_count, turn)]
+    return [daily.Block(b.kind, b.mode, 0.01, b.params) for b in REAL_PLAN(*args, **kwargs)]
 
 
 class DailyRunnerTest(AppTestCase):
@@ -217,6 +217,59 @@ class DailyRunnerTest(AppTestCase):
         self.app.lesson_var.set(koch.FINAL_LESSON)
         self.runner._show_summary(set(), True)  # nur einmal
         self.assertIsNone(self.runner.summary.prosign_button)
+        self.runner.summary.close()
+
+    def _qso_outro(self, mode):
+        """Tagesübung nur mit einem QSO-Ausklang starten und das QSO zu Ende spielen."""
+        import contextlib
+        from morsetrainer.modes import qso_mode
+
+        class FakeStream:  # spielt sofort, ohne Gerät
+            latency = 0.0
+
+            def write(self, block):
+                pass
+
+        block = daily.Block(daily.OUTRO, mode, daily.OUTRO_POST_MINUTES, {"kind": "cqww"} if mode == daily.QSO_LOG else {})
+        with mock.patch.object(daily, "plan", lambda *args, **kwargs: [block]), \
+                mock.patch.object(qso_mode.audio, "output_stream", lambda: contextlib.nullcontext(FakeStream())):
+            self.runner.start()
+            qso = self.mode("QSO")
+            self.assertIs(self.runner.mode, qso)
+            end = time.monotonic() + 20
+            while qso.running and time.monotonic() < end:
+                self.root.update()
+                time.sleep(0.01)
+        self.assertFalse(qso.running)
+        self.assertIsNone(qso.audio_error)
+        return qso
+
+    def test_qso_outro_ends_with_the_check_not_with_the_playback(self):
+        qso = self._qso_outro(daily.QSO_HEAD)
+        self.assertEqual(qso.settings()["eval"], "head")
+        self.assertEqual(qso.options_card.winfo_manager(), "")  # Einstellungen ausgeblendet
+        self.assertTrue(self.runner.active)  # Fragen stehen noch aus
+        self.assertEqual(str(qso.replay_button["state"]), "disabled")
+        first = qso.quiz.entries[min(qso.quiz.entries)]
+        with mock.patch.object(first, "focus_set") as focus:
+            qso.running, qso.play_thread = True, None  # das Ende noch einmal, mit beobachtetem Fokus
+            qso._finish()
+        focus.assert_called_once()
+        qso.quiz.check()
+        self.assertFalse(self.runner.active)
+        self.assertIn("Tagesübung geschafft", self.runner.summary.spoken)
+        block = daily.load()["days"][date.today().isoformat()]["blocks"][-1]
+        self.assertEqual((block["mode"], block["checked"], block["total"]), (daily.QSO_HEAD, True, 3))
+        self.assertEqual(block["minutes"], daily.OUTRO_POST_MINUTES)  # zählt als ganzer Ausklang
+        self.runner.summary.close()
+        self.assertEqual(qso.settings()["eval"], "quiz")  # Einstellungen des Reiters zurück
+
+    def test_qso_outro_without_check_is_not_completed(self):
+        qso = self._qso_outro(daily.QSO_LOG)
+        self.assertEqual(qso.settings()["kind"], "cqww")
+        qso.toggle_running()  # Knopf „Tagesübung beenden“ statt eines neuen QSOs
+        self.assertFalse(self.runner.active)
+        self.assertIn("abgebrochen", self.runner.summary.spoken)
         self.runner.summary.close()
 
     def test_extra_runs_one_block_once(self):

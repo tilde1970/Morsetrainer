@@ -59,6 +59,16 @@ MAIN_MIN_MINUTES = 4
 OUTRO_MINUTES = 2
 OUTRO_POST_MINUTES = 4
 
+# Ausklang nach Koch im Viererzyklus der Übungstage: Rufzeichen, QSO zum
+# Kopfhören, Rufzeichen, Contest-Run mit Log. Ein QSO kommt nur, wenn es mit
+# den Fragen in den Ausklang passt (die Tagesübung bleibt bei zehn Minuten),
+# sonst Rufzeichen. QSO_HEAD, QSO_LOG: Modus des Blocks.
+QSO_HEAD, QSO_LOG = "qso_head", "qso_quiz"
+POST_CYCLE = ("callsign", QSO_HEAD, "callsign", QSO_LOG)
+QSO_QUESTION_MINUTES = 0.5   # Fragen beantworten bzw. Log ergänzen
+QSO_MAX_MINUTES = OUTRO_POST_MINUTES - QSO_QUESTION_MINUTES
+QSO_HEAD_MIN_EFFECTIVE = 15  # vorher fehlt die Grundlage fürs Kopfhören
+
 # Tagestempo: aus dem Hauptteil eines Tages für den nächsten.
 TEMPO_MIN_CHARS = 100
 TEMPO_UP_SHARE = 0.9
@@ -149,19 +159,39 @@ def practice_days(state: dict, today: date) -> int:
                if day < before and isinstance(entry, dict) and entry.get("blocks"))
 
 
-def plan(lesson: int, due_count: int, turn: int) -> list:
+def qso_outros(effective: int, learned: str, fits) -> set:
+    """Welche QSO-Ausklänge heute gehen: QSO_HEAD ab Tagestempo
+    QSO_HEAD_MIN_EFFECTIVE und mit allen Betriebszeichen in der Lernkartei
+    (`learned`; das QSO sendet AR, KN, SK, BK), QSO_LOG ohne diese Bedingungen
+    (Contest-Runs ohne Betriebszeichen); beide nur, wenn `fits(modus)` sagt,
+    dass das QSO in QSO_MAX_MINUTES passt."""
+    found = set()
+    if (effective >= QSO_HEAD_MIN_EFFECTIVE and all(ch in learned for ch in koch.PROSIGN_ORDER)
+            and fits(QSO_HEAD)):
+        found.add(QSO_HEAD)
+    if fits(QSO_LOG):
+        found.add(QSO_LOG)
+    return found
+
+
+def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str = "cqww") -> list:
     """Die Blöcke der heutigen Tagesübung, zusammen TOTAL_MINUTES.
     `due_count`: heute fällige Zeichen der Lernkartei im Zeichensatz; ohne
     sie übt das Aufwärmen die häufigsten Verwechslungen (die App fällt auf
     die schwächsten Zeichen zurück, wenn es keine gibt). `turn`: Zahl der
     bisherigen Übungstage (practice_days); danach wechselt der Ausklang.
-    Nach dem Kalender bekäme, wer jeden zweiten Tag übt, immer denselben."""
+    Nach dem Kalender bekäme, wer jeden zweiten Tag übt, immer denselben.
+    Nach Koch: POST_CYCLE, QSOs nur, wenn sie in `qso` stehen (qso_outros);
+    `contest`: Art des Contest-Runs für QSO_LOG."""
     level = stage(lesson)
     focus = "due" if due_count else "confusions"
     warmup = Block(WARMUP, "single", warmup_minutes(lesson, due_count), {"focus": focus})
     if level == POST:
         outro_minutes = OUTRO_POST_MINUTES
-        outro = Block(OUTRO, "callsign", outro_minutes)
+        outro_mode = POST_CYCLE[turn % len(POST_CYCLE)]
+        if outro_mode not in qso and outro_mode != "callsign":
+            outro_mode = "callsign"
+        outro = Block(OUTRO, outro_mode, outro_minutes, {"kind": contest} if outro_mode == QSO_LOG else {})
         main_mode, main_params = "continuous", {"content": "chars", "group_len": 5}
     else:
         outro_minutes = OUTRO_MINUTES

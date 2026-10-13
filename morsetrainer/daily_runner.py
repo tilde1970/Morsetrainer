@@ -15,18 +15,21 @@ import time
 import tkinter as tk
 from datetime import date
 
-from morsetrainer.core import awards, daily, koch, practice, review, stats, week
+from morsetrainer.core import awards, daily, koch, practice, qso_text, review, stats, week
 from morsetrainer.i18n import short_number, tr
 from morsetrainer.widgets import announcer
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, moment_line, preview_line, review_line,
     stars_named)
+from morsetrainer.modes.qso_mode import EVAL_HEAD, EVAL_QUIZ, estimate_minutes
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 from morsetrainer.widgets.awards_panel import seal_name
 
 # Reiter je Modus der Blöcke (deutsche Titel = Schlüssel, siehe app.py).
 MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter", "callsign": "Rufzeichen",
-               "continuous": "Kontinuierlich"}
+               "continuous": "Kontinuierlich", daily.QSO_HEAD: "QSO", daily.QSO_LOG: "QSO"}
+# Contest-Arten für den Ausklang mit Log, im Wechsel über die Zyklen.
+CONTEST_KINDS = tuple(kind for kind in qso_text.QSO_TYPES if kind != qso_text.RAGCHEW)
 
 
 def block_text(block) -> str:
@@ -47,6 +50,11 @@ MODE_SETTINGS = {
     "word": {**_SEQUENCE, "input_style": MEMORIZE, "content": "words"},
     "callsign": {**_SEQUENCE, "input_style": COPY, "prefixes": "", "learned_only": True, "rufz": False},
     "continuous": {"band": False},
+    # Kurz, ohne Pile-up, ohne Tempo-Automatik; „Nochmal“ sperrt der Reiter selbst.
+    daily.QSO_HEAD: {"kind": qso_text.RAGCHEW, "eval": EVAL_HEAD, "length": qso_text.LENGTH_SHORT,
+                     "adaptive": False, "pileups": "aus", "band": False},
+    daily.QSO_LOG: {"eval": EVAL_QUIZ, "length": qso_text.LENGTH_SHORT, "adaptive": False, "pileups": "aus",
+                    "band": False},
 }
 # Ein Block, der kürzer lief, wurde von Hand gestoppt (die Reiter enden
 # sonst erst nach Ablauf der Zeit und der letzten Eingabe).
@@ -147,7 +155,13 @@ class DailyRunner:
 
         charset = daily.lesson_charset(lesson, review.boxed_chars())
         self.due = review.due_chars(known=charset)
-        self._begin(charset, daily.plan(lesson, len(self.due), daily.practice_days(self.state, self.today)))
+        turn = daily.practice_days(self.state, self.today)
+        contest = CONTEST_KINDS[turn // len(daily.POST_CYCLE) % len(CONTEST_KINDS)]
+        qso = set()
+        if daily.stage(lesson) == daily.POST:
+            qso = daily.qso_outros(self.state["tempo"]["effective"], review.boxed_chars(),
+                                   lambda mode: self._qso_fits(mode, contest))
+        self._begin(charset, daily.plan(lesson, len(self.due), turn, qso, contest))
         if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
             # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
             char = koch.newest_char(lesson)
@@ -202,6 +216,14 @@ class DailyRunner:
         self.bar.set_enabled(False)
         self.bar.show_active()
         self._tick()
+
+    def _qso_fits(self, mode: str, contest: str) -> bool:
+        """Passt ein kurzes QSO (bzw. ein kurzer Contest-Run) im Tagestempo mit
+        den Fragen in den Ausklang?"""
+        tempo = self.state["tempo"]
+        fw = tempo["effective"] if tempo["effective"] < tempo["wpm"] else None
+        kind = qso_text.RAGCHEW if mode == daily.QSO_HEAD else contest
+        return estimate_minutes(kind, qso_text.LENGTH_SHORT, tempo["wpm"], fw, samples=5) <= daily.QSO_MAX_MINUTES
 
     def _lesson_field(self) -> int:
         try:
@@ -308,8 +330,17 @@ class DailyRunner:
         self.block_started = None
         minutes = result.get("minutes", 0.0)
         self.done_minutes += minutes
-        # Ein Rufz-Durchgang endet nach seinen Rufzeichen, nicht nach der Zeit.
-        stopped_early = minutes < block.minutes - STOPPED_EARLY_MIN and not block.params.get("rufz")
+        # Ein Rufz-Durchgang endet nach seinen Rufzeichen, ein QSO mit dem
+        # Prüfen der Abfrage, nicht nach der Zeit.
+        if block.mode in (daily.QSO_HEAD, daily.QSO_LOG):
+            stopped_early = not result.get("checked")
+            if not stopped_early:
+                # Ein geprüftes QSO ist der ganze Ausklang, auch wenn der Run
+                # kürzer war; sonst kostete es den Stern Dabei.
+                result = {**result, "minutes": max(minutes, block.minutes)}
+                self.done_minutes += result["minutes"] - minutes
+        else:
+            stopped_early = minutes < block.minutes - STOPPED_EARLY_MIN and not block.params.get("rufz")
         new_stars = daily.finish_block(self.state, self.today, block, result)
         daily.save(self.state)
         if self.aborting or stopped_early:

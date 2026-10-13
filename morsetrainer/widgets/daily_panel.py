@@ -120,6 +120,8 @@ def moment_line(moment: dict) -> str:
 
 def preview_line(block, lesson: int, tempo: dict) -> str:
     """Vorschau auf den nächsten Block: Modus, Lektion bzw. alle Zeichen, Tempo."""
+    if block.mode in (daily.QSO_HEAD, daily.QSO_LOG):  # der Zeichensatz gilt im QSO nicht
+        return tr("Jetzt: {mode}, {tempo}").format(mode=tr(stats.HISTORY_MODES[block.mode]), tempo=tempo_text(tempo))
     what = (tr("alle Zeichen") if lesson >= daily.POST_KOCH
             else tr("Lektion {lesson}").format(lesson=lesson))
     return tr("Jetzt: {mode}, {what}, {tempo}").format(

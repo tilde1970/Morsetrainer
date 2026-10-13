@@ -95,14 +95,18 @@ hinaus übst, wählst du selbst.
    Farnsworth-Pausen kürzer, dann die Zeichen schneller. **Selbst dazu:**
    Am Stück mit Wendungen oder QSO-Klartext. Wegmarken: Mitschreiben im
    Fluss, QRQ.
-6. **Rufzeichen wie im Contest:** Die Tagesübung schließt mit Rufzeichen.
+6. **Rufzeichen wie im Contest:** Die Tagesübung schließt an jedem zweiten
+   Übungstag mit Rufzeichen.
    **Selbst dazu:** Rufz-Durchgänge ohne Präfix-Filter. Wegmarken: Rufz,
    WPX.
-7. **QSOs verstehen, dann im Kopf:** **Selbst** im Reiter QSO, erst
+7. **QSOs verstehen, dann im Kopf:** Die Tagesübung bringt ein kurzes QSO
+   zum Kopfhören, sobald die Betriebszeichen sitzen und das Tempo reicht.
+   **Selbst dazu** im Reiter QSO, erst
    „Abfrage/Log“ mit kurzer Länge, dann „Kopfhören + Fragen“; „Tempo
    automatisch anpassen“ hält dich an der Grenze. Wegmarken: Erstes QSO
    verstanden, Kopfhörer 15 / 20 / 25 WPM effektiv.
-8. **Contest und Pile-up:** **Selbst** im Reiter QSO als Contest-Run, erst
+8. **Contest und Pile-up:** Die Tagesübung bringt ab und zu einen kurzen
+   Contest-Run zum Mitloggen. **Selbst dazu** im Reiter QSO als Contest-Run, erst
    ohne, dann mit Pile-up, danach als Run-Station im Reiter Contest.
    Wegmarken: Contest, Worked All Contests.
 9. **Unter Bandbedingungen:** **Selbst**, sobald ein Zeichensatz ohne
@@ -385,8 +389,18 @@ wieder wie vorher.
 | Lektion 1–9 | Zeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Am Stück, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
 | Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Wechsel von Übungstag zu Übungstag, 2 Min |
-| nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
+| nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | im Wechsel: Rufzeichen, QSO zum Kopfhören, Rufzeichen, Contest-Run mit Log; 4 Min |
 
+- **Ausklang nach Koch:** Er wechselt von Übungstag zu Übungstag in vier
+  Schritten. Das **QSO zum Kopfhören** (kurz, „Kopfhören + Fragen“) kommt
+  erst, wenn du die Betriebszeichen AR, KN, SK und BK gelernt hast
+  (Lektion 42–45) und es im Tagestempo samt Fragen in die vier Minuten
+  passt, etwa ab 18 WPM effektiv. Der **Contest-Run** (kurz, ohne Pile-up,
+  wechselnde Contests) wird mitgeloggt. Passt ein QSO nicht, kommen
+  Rufzeichen; die Tagesübung bleibt bei zehn Minuten. Der Block endet mit
+  „Prüfen“ (F8); „Nochmal“ gibt es hier nicht. Das Ergebnis zählt nicht
+  für Sterne, Tempo oder Lektion, aber wie sonst für die Diplome
+  (Kopfhörer Bronze).
 - **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
   der Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
   Verwechslungen. Bei vielen fälligen Zeichen wird es etwas länger, der

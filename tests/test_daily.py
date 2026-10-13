@@ -65,6 +65,28 @@ class StageAndPlanTest(unittest.TestCase):
                   for i in (6, 4, 2)]
         self.assertEqual(outros, ["word", "callsign", "word"])
 
+    def test_post_koch_outro_cycle(self):
+        both = {daily.QSO_HEAD, daily.QSO_LOG}
+        modes = [daily.plan(daily.POST_KOCH, 0, turn, both, "wpx")[2] for turn in range(8)]
+        self.assertEqual([b.mode for b in modes[:4]], ["callsign", daily.QSO_HEAD, "callsign", daily.QSO_LOG])
+        self.assertEqual(modes[3].params, {"kind": "wpx"})
+        self.assertTrue(all(b.minutes == daily.OUTRO_POST_MINUTES for b in modes))
+        # Passt kein QSO (oder fehlen die Betriebszeichen), bleibt es bei Rufzeichen.
+        self.assertEqual({daily.plan(daily.POST_KOCH, 0, turn)[2].mode for turn in range(4)}, {"callsign"})
+        self.assertEqual(daily.plan(daily.POST_KOCH, 0, 1, {daily.QSO_LOG})[2].mode, "callsign")
+        for turn in range(4):
+            blocks = daily.plan(daily.POST_KOCH, 0, turn, both)
+            self.assertAlmostEqual(sum(b.minutes for b in blocks), daily.TOTAL_MINUTES)
+
+    def test_qso_outros_need_time_tempo_and_prosigns(self):
+        fits = lambda mode: True  # noqa: E731
+        everything = koch.FINAL_CHARSET + koch.PROSIGN_ORDER
+        self.assertEqual(daily.qso_outros(20, everything, fits), {daily.QSO_HEAD, daily.QSO_LOG})
+        self.assertEqual(daily.qso_outros(20, koch.FINAL_CHARSET + "+(*", fits), {daily.QSO_LOG})  # BK fehlt
+        self.assertEqual(daily.qso_outros(daily.QSO_HEAD_MIN_EFFECTIVE - 1, everything, fits), {daily.QSO_LOG})
+        self.assertEqual(daily.qso_outros(20, everything, lambda mode: mode == daily.QSO_LOG), {daily.QSO_LOG})
+        self.assertEqual(daily.qso_outros(20, everything, lambda mode: False), set())
+
     def test_outro_by_stage(self):
         self.assertEqual(daily.plan(5, 0, 0)[2].mode, "continuous")
         self.assertEqual(daily.plan(15, 0, 0)[2].mode, "word")

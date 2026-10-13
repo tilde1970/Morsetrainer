@@ -38,6 +38,7 @@ import numpy as np
 from morsetrainer.core.band import BandConditions, apply_spec, soft_limit
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.continuous_mode import plausible
+from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.modes.qso_quiz import QuizPanel
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
@@ -113,10 +114,15 @@ def _voice(wpm: int, freq: int, offset_range, wpm_offsets):
     return max(wpm + random.choice(wpm_offsets), 5), freq + offset
 
 
-class QsoModeFrame:
+class QsoModeFrame(DailyModeMixin):
     """Reiter QSO: ein erzeugtes QSO oder ein Contest-Run hören, auf Wunsch mit
     Abfrage der Inhalte, Mittippen oder Kopfhören mit Fragen; mit mehreren
-    Stationen, Pile-ups und Bandbedingungen."""
+    Stationen, Pile-ups und Bandbedingungen.
+
+    In der Tagesübung (Ausklang nach Koch) ist ein Block genau ein QSO: Er
+    endet, wenn die Abfrage geprüft ist, nicht schon nach dem Abspielen;
+    „Nochmal“ und ein weiteres QSO gibt es dort nicht."""
+    daily_keys = ("kind", "eval", "length", "adaptive", "pileups", "band")
     uses_tempo_adjust = True
     uses_band = True  # zentrale Bandbedingungen (widgets/band_settings.py)
 
@@ -226,7 +232,7 @@ class QsoModeFrame:
     def _build_qso_settings(self, parent):
         """Einstellungen des QSOs: Art (normal oder Contest), Auswertung, Länge,
         Pile-ups, Tempo automatisch anpassen und Bandbedingungen."""
-        box = theme.card(parent, "QSO")
+        box = self.options_card = theme.card(parent, "QSO")
         box.columnconfigure(1, weight=1)
         row_pad = {"padx": (0, 8), "pady": 2}
 
@@ -350,11 +356,37 @@ class QsoModeFrame:
 
     # --- Ablauf -----------------------------------------------------------
     def toggle_running(self):
-        """QSO starten bzw. beenden (Knopf, F5)."""
-        if self.running:
-            self._finish(stopped=True)
+        """QSO starten bzw. beenden (Knopf, F5); in der Tagesübung beendet der
+        Knopf sie, ein weiteres QSO gibt es dort nicht."""
+        if self.running or self.daily_minutes:
+            self.stop()
         else:
             self.start_new()
+
+    def start(self):
+        """Tagesübung: das QSO des Blocks beginnen."""
+        self.daily_started = time.time()
+        self.last_result = None
+        self.start_new()
+
+    def stop(self):
+        """QSO abbrechen; in der Tagesübung endet damit der Block (vor dem
+        Prüfen als nicht geschafft)."""
+        if self.running:
+            self._finish(stopped=True)
+        elif self.daily_minutes:
+            self._daily_done(None, None)
+
+    def _daily_done(self, correct, total):
+        """Tagesübung: Ergebnis für daily_result() und Ende des Blocks melden;
+        `correct` None heißt ohne Prüfen beendet."""
+        started = getattr(self, "daily_started", None) or time.time()
+        self.last_result = {
+            "correct": correct or 0, "total": total or 0, "checked": correct is not None,
+            "minutes": round((time.time() - started) / 60, 2),
+            "wpm": self.voices[0][0] if self.voices else 0, "review_events": [], "best_streak": 0, "chars": {},
+        }
+        self.on_stop_cb()
 
     def start_new(self):
         """Erzeugt ein neues QSO nach Art, Länge und Pile-up-Stufe, verteilt Tempo
@@ -409,8 +441,9 @@ class QsoModeFrame:
                                    quiz_rows=tuple((question, (cell,)) for question, cell in facts))
 
     def replay(self):
-        """Spielt das letzte QSO noch einmal ab, ohne Auswertung."""
-        if self.qso is not None and not self.running:
+        """Spielt das letzte QSO noch einmal ab, ohne Auswertung (nicht in der
+        Tagesübung: dort zählt das erste Hören)."""
+        if self.qso is not None and not self.running and not self.daily_minutes:
             if not self.quiz_checked:
                 if self.qso_eval == EVAL_HEAD:
                     # Mit den Fragen vor Augen nochmal hören wäre gezieltes
@@ -586,9 +619,9 @@ class QsoModeFrame:
         if self.play_thread is not None:
             self.play_thread.join(timeout=2)
             self.play_thread = None
-        self.start_button.config(text=tr("Neues QSO (F5)"))
+        self.start_button.config(text=tr("Tagesübung beenden") if self.daily_minutes else tr("Neues QSO (F5)"))
         head_unchecked = self.qso_eval == EVAL_HEAD and not self.quiz_checked
-        self.replay_button.config(state="disabled" if head_unchecked else "normal")
+        self.replay_button.config(state="disabled" if head_unchecked or self.daily_minutes else "normal")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):
             combo.config(state="readonly")
 
@@ -621,7 +654,15 @@ class QsoModeFrame:
         self._update_layout()
         self._update_reveal_button()
         self._render_reveal()
-        self.on_stop_cb()
+        if not self.daily_minutes:
+            self.on_stop_cb()
+        elif stopped:
+            self._daily_done(None, None)
+        elif self.quiz.entries:
+            # Der Block bleibt offen, bis die Abfrage geprüft ist. Der Fokus
+            # lag beim Hauptfenster (Tagesübung); Tab käme sonst zuerst an die
+            # Kopfleiste.
+            self.quiz.entries[min(self.quiz.entries)].focus_set()
 
     def _finalize_session(self):
         """Wertet das Mittippen aus; gibt die Trefferquote (0..1) zurück, oder
@@ -716,10 +757,12 @@ class QsoModeFrame:
         mode = "qso_head" if head else "qso_quiz"
         stats.log_result(mode, correct, total, tempo.effective(self.voices[0][0], self.fw), kind=self.qso.kind,
                          length=self.length_var.get(), replays=self.replays, char_wpm=self.voices[0][0])
-        self.on_stop_cb()  # Statistik-Reiter (Verlauf) aktualisieren
+        daily_block = bool(self.daily_minutes)
+        if not daily_block:
+            self.on_stop_cb()  # Statistik-Reiter (Verlauf) aktualisieren
         self.quiz_checked = True
         self.revealed = True
-        self.replay_button.config(state="normal")
+        self.replay_button.config(state="disabled" if daily_block else "normal")
         if self.replays:
             # Mehrfach gehört: das Ergebnis sagt wenig über das Tempo.
             note = (tr(" (vorher einmal „Nochmal“ – Tempo bleibt)") if self.replays == 1
@@ -729,10 +772,16 @@ class QsoModeFrame:
         else:
             note = self._adapt_speed(correct / total if total else None)
         self.status_var.set(tr("Abfrage ausgewertet.") + note)
-        announcer.say(self.quiz.spoken_result())
         self._render_reveal()
         self._update_layout()
         self._update_reveal_button()
+        if daily_block:
+            # Erst das Ergebnis ansagen, dann weiter in der Tagesübung (wurde
+            # sie inzwischen beendet, ist daily_minutes wieder None).
+            announcer.say(self.quiz.spoken_result(),
+                          then=lambda: self.daily_minutes and self._daily_done(correct, total))
+        else:
+            announcer.say(self.quiz.spoken_result())
 
     def _adapt_speed(self, accuracy) -> str:
         """Passt bei eingeschalteter Option das Tempo (gemeinsame Einstellung,

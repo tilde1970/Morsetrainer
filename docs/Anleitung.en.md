@@ -99,13 +99,16 @@ you choose yourself.
    Farnsworth gaps, then makes the characters faster. **On your own:**
    Non-stop with phrases or QSO plain text. Milestones: Copying in flow,
    QRQ.
-6. **Callsigns as in a contest:** daily practice ends with callsigns.
+6. **Callsigns as in a contest:** daily practice ends with callsigns on
+   every other practice day.
    **On your own:** RufZ runs without prefix filter. Milestones: Rufz, WPX.
-7. **Understanding QSOs, then in your head:** **on your own** in the QSO
-   tab, first “log check” with a short length, then “head copy +
+7. **Understanding QSOs, then in your head:** daily practice brings a short
+   QSO for head copy once the prosigns sit and your speed is high enough.
+   **On your own** in the QSO tab, first “log check” with a short length, then “head copy +
    questions”; “Adjust speed automatically” keeps you at your limit.
    Milestones: First QSO understood, Headphones 15 / 20 / 25 WPM effective.
-8. **Contest and pile-up:** **on your own** in the QSO tab as a contest
+8. **Contest and pile-up:** daily practice now and then brings a short
+   contest run to log. **On your own** in the QSO tab as a contest
    run, first without, then with pile-up, then as the run station in the
    Contest tab. Milestones: Contest, Worked All Contests.
 9. **Under band conditions:** **on your own** once a character set sits
@@ -378,8 +381,18 @@ as they were.
 | Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Non-stop, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
 | Lesson 30–41 | as above | as above | Words or callsigns alternating from one practice day to the next, 2 min |
-| after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | Callsigns, 4 min |
+| after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | in turn: callsigns, QSO for head copy, callsigns, contest run with log; 4 min |
 
+- **Wind-down after Koch:** it changes from one practice day to the next in
+  four steps. The **QSO for head copy** (short, “head copy + questions”)
+  only comes once you have learned the prosigns AR, KN, SK and BK
+  (lessons 42–45) and it fits into the four minutes at today's speed,
+  questions included, roughly from 18 WPM effective. The **contest run**
+  (short, no pile-up, changing contests) is logged as you listen. If a QSO
+  does not fit, you get callsigns; the daily practice stays at ten
+  minutes. The block ends with “Check” (F8); there is no “Again” here. The
+  result does not count for stars, speed or lesson, but counts for the
+  awards as usual (Headphones Bronze).
 - **Warm-up** with all characters of the lesson; those due today in the
   review box come more often, or, if nothing is due, your most frequent
   confusions. With many due characters it gets a little longer and the

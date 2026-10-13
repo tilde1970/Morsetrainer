@@ -426,6 +426,7 @@ EN.update({
     "alle Zeichen": "all characters",
     "Lektion {lesson}": "lesson {lesson}",
     "Jetzt: {mode}, {what}, {tempo}": "Next: {mode}, {what}, {tempo}",
+    "Jetzt: {mode}, {tempo}": "Next: {mode}, {tempo}",
     "Gruppen bei {wpm} WPM: {before} % → {now} % beim ersten Versuch":
         "Groups at {wpm} WPM: {before} % → {now} % on the first try",
     "{char} kommt schneller: {before} s → {now} s": "{char} comes faster: {before} s → {now} s",
