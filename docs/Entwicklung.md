@@ -29,6 +29,10 @@ Intel-Prozessor“.
    Sprachausgabe.
 5. Starten: `python main.py`. Das Hauptfenster öffnet sich.
 
+Nach einem `git pull` die Pakete mit `pip install -U -r requirements.txt`
+nachziehen; ohne `-U` bleiben ältere Versionen stehen, solange sie die
+Untergrenze erfüllen.
+
 Die Daten (`stats/`, `window_state.json` …) liegen dann im
 Projektverzeichnis.
 

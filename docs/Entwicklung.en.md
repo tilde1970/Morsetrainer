@@ -28,6 +28,10 @@ restrictions, see the manual, section “Older Macs with an Intel processor”.
    works.
 5. Start: `python main.py`. The main window opens.
 
+After a `git pull`, update the packages with
+`pip install -U -r requirements.txt`; without `-U`, older versions stay as
+long as they meet the lower bound.
+
 The data (`stats/`, `window_state.json` …) then lives in the project
 directory.
 

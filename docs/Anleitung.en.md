@@ -965,7 +965,9 @@ They run the Morsetrainer from source:
 
 Run this way, the data lives in the unpacked folder. To update, unpack the
 new source and copy `stats/`, `window_state.json` and, if present,
-`callsigns.scp` and `woerter.txt` from the old folder into it.
+`callsigns.scp` and `woerter.txt` from the old folder into it. The `.venv`
+environment and the voices are still in the old folder: repeat step 3 in
+the new folder, so the packages also match the new version.
 
 ### Updates
 

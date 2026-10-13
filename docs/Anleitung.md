@@ -987,6 +987,8 @@ Sie starten den Morsetrainer aus dem Quelltext:
 So gestartet liegen die Daten im entpackten Ordner. Zum Aktualisieren den
 neuen Quelltext entpacken und `stats/`, `window_state.json` und ggf.
 `callsigns.scp` und `woerter.txt` aus dem alten Ordner hineinkopieren.
+Die Umgebung `.venv` und die Stimmen liegen noch im alten Ordner: Schritt 3
+im neuen Ordner wiederholen, dann passen auch die Pakete zur neuen Version.
 
 ### Updates
 
