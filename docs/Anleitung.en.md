@@ -80,7 +80,7 @@ along the way, not requirements for the next step.
 2. **Characters and first words** (lessons 10–29, about 2–3 months): hear
    words as a whole instead of letter by letter. **Daily practice leads**
    on and ends with words. **On your own:** Words with “Listen first”,
-   from lesson 25 also phrases, Speak with words (also as MP3). Milestones: Koch Silver with lesson 25,
+   abbreviations and plain words, from lesson 25 also phrases, Speak with words (also as MP3). Milestones: Koch Silver with lesson 25,
    Copying in flow from lesson 15.
 3. **Digits, punctuation, callsigns** (lessons 30–41, about 1.5–2.5
    months): the full character set. **Daily practice leads**, with words
@@ -97,7 +97,7 @@ you choose yourself.
 
 5. **Speed and plain text in flow:** daily practice first shortens the
    Farnsworth gaps, then makes the characters faster. **On your own:**
-   Non-stop with phrases or QSO plain text. Milestones: Copying in flow,
+   Non-stop with plain words, phrases or QSO plain text. Milestones: Copying in flow,
    QRQ.
 6. **Callsigns as in a contest:** daily practice ends with callsigns on
    every other practice day.
@@ -217,14 +217,18 @@ type; a slow answer is noted. R, K and the prosigns KN and SK also appear
 more often, but in changing words. The meaning is shown after the answer.
 You can add your own words (section 11).
 
-Under **Type** you can choose **Phrases** from QSOs such as “TNX FER CALL”
-or “UR RST 599” instead of words; there are enough from lesson 25. They
+Under **Type** you choose what comes: **Abbreviations** is the list just
+described (abbreviations, Q codes and some words written out). **Plain
+words** brings about 300 English words written out as they occur in QSOs
+(WEATHER, STATION, THANKS, AGAIN …), without meanings; there are enough
+from lesson 7. **Phrases** are whole pieces of QSOs such as “TNX FER CALL”
+or “UR RST 599”; there are enough from lesson 25. They
 come with word gaps and are meant to be heard as a whole; you type them
 without spaces. Because a phrase is long, the time window has two parts:
 start within 2 s after the tone, then 0.6 s per character to type. So
 what counts is whether you recognised it, not how fast you type.
-**mixed** brings words and roughly every third sequence a phrase; if your
-characters are not enough for phrases yet, only words. The daily practice
+**mixed** brings abbreviations and roughly every third sequence a phrase;
+if your characters are not enough for phrases yet, only abbreviations. The daily practice
 mixes this way from lesson 35.
 
 **Callsigns:** real callsigns from the Super Check Partial list, by default
@@ -281,7 +285,7 @@ The audio keeps running without waiting, you type along (as when
 listening on the air); even if you fall behind, it carries on. At the top
 under **Content** you choose **Random characters** – in groups (default
 5) with a word gap in between, continuous with group length 0 – or plain
-text: **Words**, **Phrases** (typical QSO phrases such as “TNX FER CALL”,
+text: **Abbreviations**, **Plain words**, **Phrases** (typical QSO phrases such as “TNX FER CALL”,
 “UR RST 599”), **Callsigns** or **QSO plain text** (complete QSOs). Plain
 text does not count for the lesson.
 Optionally with band conditions running under the whole session.
@@ -306,7 +310,7 @@ content at the top under **Content**.
   (Alfa, Bravo …), words and phrases as a whole or with their meaning.
 - The thinking pause is deliberately short (default 1 s plus 0.3 s per
   character).
-- Content: characters, groups, words, phrases, callsigns (groups with an
+- Content: characters, groups, abbreviations, plain words, phrases, callsigns (groups with an
   adjustable length, default 5). **Count** of items: default 50.
 - Switches (all on by default): **Announce words and phrases as a whole**,
   **Add the meaning when spelling** and **Send the Morse code again
@@ -490,7 +494,7 @@ next open level – stamped “PREVIEW”, without date and number.
 |---|---|---|---|
 | Koch | Lesson 10 / 25 / 41 | 1 | Passed lesson run: ≥ 50 characters, ≥ 90 % at the first attempt, characters ≥ 18 WPM (groups or non-stop) |
 | Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts, reached with characters ≥ 18 WPM |
-| Copying in flow | 10 / 15 / 22 WPM effective | 15 | Non-stop with plain text (words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “words” does not count |
+| Copying in flow | 10 / 15 / 22 WPM effective | 15 | Non-stop with plain text (abbreviations, plain words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “abbreviations” does not count |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Non-stop with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
 | QRN-proof | conditions light 90 % / medium 90 % / heavy 85 % | 25 | Groups or non-stop with random characters, ≥ 200 characters, band conditions on for the whole run and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
@@ -655,7 +659,7 @@ itself – no dropouts, with its own headphones and its own pitch.
 
 1. In the **Network** tab choose “Trainer”, **Open session**. The address
    and a four-digit PIN for the participants are shown.
-2. Choose the **content**: characters, groups, words, callsigns, phrases,
+2. Choose the **content**: characters, groups, abbreviations, plain words, callsigns, phrases,
    QSO plain text or **own text** (one line per sequence; prosigns as + for
    AR, ( for KN, * for SK, # for BK).
 3. Choose the **number of sequences** (for QSO plain text whole QSOs, sent
@@ -708,7 +712,7 @@ computer. The next sequence comes after the tone plus a **writing pause**,
 whoever has answered.
 
 - The pause is the same for every sequence; its default depends on the
-  content (characters 2 s, words 3 s, groups, callsigns and own text 4 s,
+  content (characters 2 s, abbreviations and plain words 3 s, groups, callsigns and own text 4 s,
   phrases and QSO 5 s), because too much time invites brooding.
 - Until the end the trainer's screen shows no solution – it may be on the
   projector: the status only says “No. 7 of 20”, the table only whether an
@@ -1103,7 +1107,7 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   [supercheckpartial.com](https://www.supercheckpartial.com) and save it as
   `callsigns.scp` in the data directory. Without the file, the trainer
   generates callsigns from country patterns.
-- `woerter.txt`: your own words for Words (One by one tab) and Non-stop,
+- `woerter.txt`: your own words for “Abbreviations” in Words (One by one tab) and Non-stop,
   one per line, optionally with a meaning: `POTA = Parks on the Air`. The
   “Edit own words” button creates the file with instructions and opens it.
   The words are added to the built-in ones.

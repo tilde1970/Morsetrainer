@@ -25,7 +25,9 @@ from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import ChoiceButtons
 
 # Was der Reiter sendet: angezeigter (deutscher) Name → gespeicherter Wert.
-CONTENTS = {N_("Wörter"): "words", N_("Wendungen"): "phrases", N_("gemischt"): "mixed"}
+# „Abkürzungen“ (words.WORDS, dazu eigene Wörter), „Klartext“ (ausgeschriebene
+# Wörter, words.PLAIN_WORDS), Wendungen oder Abkürzungen gemischt mit Wendungen.
+CONTENTS = {N_("Abkürzungen"): "words", N_("Klartext"): "plain", N_("Wendungen"): "phrases", N_("gemischt"): "mixed"}
 # „gemischt“: so viele Sequenzen sind Wendungen, die übrigen Wörter.
 # Gemischt statt eigener Wendungs-Tage: Wechsel festigt besser als Blöcke,
 # und die wenigen Wendungen der ersten Lektionen lernte man sonst auswendig.
@@ -73,7 +75,7 @@ class WordModeFrame(SequenceModeFrame):
         self.user_words, self.skipped = {}, []
         self.words_mtime = -1  # Änderungszeit von woerter.txt beim letzten Einlesen (None = fehlt)
         self.phrase_list, self.phrase_picker = [], None
-        self.content_var = tk.StringVar(value=N_("Wörter"))
+        self.content_var = tk.StringVar(value=N_("Abkürzungen"))
         choice = ttk.Frame(parent)
         choice.pack(fill="x", pady=(0, 4))
         ttk.Label(choice, text=tr("Art:")).pack(side="left", padx=(0, 8))
@@ -124,6 +126,11 @@ class WordModeFrame(SequenceModeFrame):
             self.count_var.set(tr("Mit dem aktuellen Zeichensatz: {count} von {total} Wendungen").format(
                 count=count, total=len(words.PHRASES)))
             return
+        if self._content() == "plain":
+            count = len(words.words_for_charset(self._charset(), words.PLAIN_WORDS))
+            self.count_var.set(tr("Mit dem aktuellen Zeichensatz: {count} von {total} Wörtern").format(
+                count=count, total=len(words.PLAIN_WORDS)))
+            return
         user, skipped = self.user_words, self.skipped
         count = len(words.words_for_charset(self._charset(), self.all_words))
         text = tr("Mit dem aktuellen Zeichensatz: {count} von {total} Wörtern").format(
@@ -162,7 +169,8 @@ class WordModeFrame(SequenceModeFrame):
                 return False
             self.charset = charset
             return True
-        self.words = words.words_for_charset(charset, self.all_words)
+        pool = words.PLAIN_WORDS if self._content() == "plain" else self.all_words
+        self.words = words.words_for_charset(charset, pool)
         # Gemischt: Reichen die Wendungen nicht, kommen nur Wörter.
         if self._content() == "mixed":
             phrases = words.phrases_for_charset(charset)
@@ -170,7 +178,7 @@ class WordModeFrame(SequenceModeFrame):
         if not words.enough_words(self.words):
             # Mit einer Handvoll Wörter stünde die Antwort fest (bei RR und UR
             # im Wechsel); dann lieber Gruppen üben.
-            first = words.first_lesson_with_words(self.all_words)
+            first = words.first_lesson_with_words(pool)
             when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
             count = sum(1 for w in self.words if len(w) > 1)
             self.status_var.set(tr("Nur {count} Wörter mit diesen Zeichen").format(count=count) + when + ".\n"
@@ -197,6 +205,8 @@ class WordModeFrame(SequenceModeFrame):
         content = self._content()
         if content == "phrases":
             meaning = words.PHRASES.get(sequence, "")
+        elif content == "plain":
+            meaning = ""
         else:
             meaning = self.all_words.get(sequence) or (words.PHRASES.get(sequence, "") if content == "mixed" else "")
         return words.shown_meaning(sequence, meaning)

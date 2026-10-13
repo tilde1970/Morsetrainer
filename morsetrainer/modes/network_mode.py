@@ -72,7 +72,8 @@ WAIT, PACED, CONTINUOUS = "wait", "paced", "continuous"
 CONTENTS = {
     N_("Einzelzeichen"): "chars",
     N_("Gruppen"): "groups",
-    N_("Wörter"): "words",
+    N_("Abkürzungen"): "words",
+    N_("Klartext"): "plain",
     N_("Rufzeichen"): "calls",
     N_("Wendungen"): "phrases",
     N_("QSO-Klartext"): "qso",
@@ -91,7 +92,7 @@ ANSWER_RANGE = (2, 60)
 # Schreibpause im festen Takt, fest je Sequenz. Vorgabe je Inhalt: Ein
 # Zeichen ist schnell notiert, längere Pausen laden zum Grübeln ein.
 PAUSE_RANGE = (1, 30)
-PAUSE_DEFAULTS = {"chars": 2, "groups": 4, "words": 3, "calls": 4, "phrases": 5, "qso": 5, "custom": 4}
+PAUSE_DEFAULTS = {"chars": 2, "groups": 4, "words": 3, "plain": 3, "calls": 4, "phrases": 5, "qso": 5, "custom": 4}
 # Auflösungsfenster: Schriftgröße der Lösungen (Standard, kleinste, größte,
 # Schritt); die laufende Nummer ist dreimal so groß.
 SOLUTION_FONT = (28, 12, 96, 4)
@@ -2407,8 +2408,11 @@ class NetworkModeFrame:
         if data.get("role") in (TRAINER, TRAINEE):
             self.role_var.set(data["role"])
             self._show_role()
-        if data.get("content") in CONTENTS:
-            self.content_var.set(data["content"])
+        content = data.get("content")
+        if content == "Wörter":  # so hieß „Abkürzungen“, bevor es „Klartext“ gab
+            content = "Abkürzungen"
+        if content in CONTENTS:
+            self.content_var.set(content)
         if data.get("flow") in (WAIT, PACED, CONTINUOUS):
             self.flow_var.set(data["flow"])
             self._show_flow_options()

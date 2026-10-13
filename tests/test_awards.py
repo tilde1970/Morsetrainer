@@ -103,6 +103,9 @@ class AwardsTest(unittest.TestCase):
         for run in runs[2:]:
             run.config["content"] = "phrases"  # Gold an zwei Tagen
         self.assertEqual(dates("flow", data(runs)), [day(2), day(3), day(3)])
+        for run in runs[2:]:
+            run.config["content"] = "plain"  # Klartext wie Abkürzungen: höchstens Silber
+        self.assertEqual(dates("flow", data(runs)), [day(2), day(3), None])
         qrq = dict(content="chars", group_len=5, charset=koch.lesson_charset(40), completed=True,
                    duration_s=200, total=300, correct=290, extra_keys=0)
         runs = [session("continuous", 0, wpm=26, **qrq), session("continuous", 1, wpm=25, **qrq),

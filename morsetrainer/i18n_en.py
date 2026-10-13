@@ -307,6 +307,8 @@ EN.update({
     "Einzelzeichen": "Characters",  # Reitername, kurz wie die übrigen
     "Gruppen": "Groups",
     "Wörter": "Words",
+    "Abkürzungen": "Abbreviations",
+    "Klartext": "Plain words",
     "Rufzeichen": "Callsigns",
     "Kontinuierlich": "Continuous",
     "Am Stück": "Non-stop",

@@ -35,8 +35,8 @@ from morsetrainer.modes.content import ItemSource
 from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ChoiceButtons, ScrollableFrame
 
-CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Wörter"): "words", N_("Wendungen"): "phrases",
-            N_("Rufzeichen"): "calls"}
+CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Abkürzungen"): "words", N_("Klartext"): "plain",
+            N_("Wendungen"): "phrases", N_("Rufzeichen"): "calls"}
 # Buchstabiert wird immer im Buchstabieralphabet: Es ist eindeutig (B und D,
 # M und N klingen als Buchstabennamen ähnlich) und wie im Funkbetrieb.
 ALPHABET = "nato"
@@ -236,7 +236,7 @@ class ListenModeFrame:
         if lang != "de":
             meaning = words.shown_meaning(text, meaning)
         said_meaning = meaning.split("–")[-1].strip()
-        if opts.get("whole") and opts.get("kind") in ("words", "phrases"):
+        if opts.get("whole") and opts.get("kind") in ("words", "plain", "phrases"):
             return said_meaning or speech.spoken_words(text, opts["alphabet"], lang)
         said = speech.spoken(text, opts["alphabet"], lang)
         if opts["meaning"] and said_meaning:

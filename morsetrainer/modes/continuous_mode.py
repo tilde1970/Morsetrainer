@@ -62,9 +62,10 @@ DEFAULT_GROUP_LEN = 5
 GROUP_LEN_RANGE = (0, 10)
 
 # Inhalt: Zufallszeichen in Gruppen (zählt für die Koch-Lektion) oder
-# Klartext aus Wörtern, Wendungen, Rufzeichen, QSOs (siehe modes/content.py).
-CONTENTS = {N_("Zufallszeichen"): "chars", N_("Wörter"): "words", N_("Wendungen"): "phrases",
-            N_("Rufzeichen"): "calls", N_("QSO-Klartext"): "qso"}
+# Klartext aus Abkürzungen, Wörtern, Wendungen, Rufzeichen, QSOs (siehe
+# modes/content.py).
+CONTENTS = {N_("Zufallszeichen"): "chars", N_("Abkürzungen"): "words", N_("Klartext"): "plain",
+            N_("Wendungen"): "phrases", N_("Rufzeichen"): "calls", N_("QSO-Klartext"): "qso"}
 
 # Zeitliche Plausibilität einer Zuordnung Taste -> gesendetes Zeichen: so
 # viel früher als das Tonende (Messungenauigkeit) bzw. höchstens so viel

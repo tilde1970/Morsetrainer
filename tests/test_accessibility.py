@@ -891,23 +891,23 @@ class KeyboardTest(AppTestCase):
         from morsetrainer.widgets import announcer
         m = self.mode("Kontinuierlich")
         row = m.content_buttons
-        self.assertEqual(len(row.buttons), 5)
+        self.assertEqual(len(row.buttons), 6)
         self.assertNotEqual(row.master.master, m.options_card)  # oben im Reiter, nicht in den Einstellungen
-        m.content_var.set("Wörter")
-        self.assertIn("Inhalt Wörter", announcer.describe(row.buttons[1]))
+        m.content_var.set("Abkürzungen")
+        self.assertIn("Inhalt Abkürzungen", announcer.describe(row.buttons[1]))
         self.assertTrue(row.buttons[1].bind("<Right>"))
         with mock.patch.object(announcer, "say") as say:
             row.step(1)
-        self.assertEqual(m.content_var.get(), "Wendungen")
-        self.assertEqual(say.call_args.args[0], "Inhalt Wendungen.")
+        self.assertEqual(m.content_var.get(), "Klartext")
+        self.assertEqual(say.call_args.args[0], "Inhalt Klartext.")
         row.state(["disabled"])
         row.step(1)
-        self.assertEqual(m.content_var.get(), "Wendungen")  # gesperrt
+        self.assertEqual(m.content_var.get(), "Klartext")  # gesperrt
         row.state(["!disabled"])
 
     def test_content_of_speak_as_option_buttons_at_the_top(self):
         m = self.mode("Sprechen")
-        self.assertEqual(len(m.content_buttons.buttons), 5)
+        self.assertEqual(len(m.content_buttons.buttons), 6)
         self.assertNotIn(m.content_buttons.master, m.group_len_box.master.master.winfo_children())
         m.content_buttons.buttons[1].invoke()
         self.assertEqual(m.content_var.get(), "Gruppen")

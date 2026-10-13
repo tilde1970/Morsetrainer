@@ -75,7 +75,7 @@ unterwegs, keine Voraussetzung für den nächsten Schritt.
 2. **Zeichen und erste Wörter** (Lektion 10–29, etwa 2–3 Monate): Wörter
    als Ganzes hören statt Buchstabe für Buchstabe. Die **Tagesübung führt**
    weiter und schließt mit Wörtern. **Selbst dazu:** Wörter mit „Erst
-   merken“, ab Lektion 25 auch Wendungen, Sprechen mit Wörtern (auch
+   merken“, Abkürzungen und Klartext, ab Lektion 25 auch Wendungen, Sprechen mit Wörtern (auch
    als MP3). Wegmarken: Koch-Silber
    mit Lektion 25, Mitschreiben im Fluss ab Lektion 15.
 3. **Ziffern, Satzzeichen, Rufzeichen** (Lektion 30–41, etwa 1,5–2,5
@@ -93,7 +93,7 @@ hinaus übst, wählst du selbst.
 
 5. **Tempo und Klartext im Fluss:** Die Tagesübung macht erst die
    Farnsworth-Pausen kürzer, dann die Zeichen schneller. **Selbst dazu:**
-   Am Stück mit Wendungen oder QSO-Klartext. Wegmarken: Mitschreiben im
+   Am Stück mit Klartext, Wendungen oder QSO-Klartext. Wegmarken: Mitschreiben im
    Fluss, QRQ.
 6. **Rufzeichen wie im Contest:** Die Tagesübung schließt an jedem zweiten
    Übungstag mit Rufzeichen.
@@ -221,14 +221,18 @@ die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden
 Wörtern. Nach der Antwort steht die Bedeutung da. Eigene Wörter lassen sich
 ergänzen (Abschnitt 11).
 
-Unter **Art** wählst du statt Wörtern **Wendungen** aus QSOs wie „TNX FER
+Unter **Art** wählst du, was kommt: **Abkürzungen** ist die eben
+beschriebene Liste (Abkürzungen, Q-Gruppen und einige ausgeschriebene
+Wörter). **Klartext** bringt rund 300 ausgeschriebene englische Wörter, wie
+sie in QSOs fallen (WEATHER, STATION, THANKS, AGAIN …), ohne Bedeutung,
+genug gibt es ab Lektion 7. **Wendungen** sind ganze Stücke aus QSOs wie „TNX FER
 CALL“ oder „UR RST 599“, genug gibt es ab Lektion 25. Sie kommen mit
 Wortabstand und wollen als Ganzes gehört werden; getippt wird ohne
 Leerzeichen. Weil eine Wendung lang ist, ist das Zeitfenster zweigeteilt:
 Nach dem Ton in 2 s anfangen, dann 0,6 s je Zeichen zum Tippen. So zählt,
 ob du sie erkannt hast, nicht wie schnell du tippst. **gemischt** bringt
-Wörter und etwa jede dritte Sequenz eine Wendung; reichen die Zeichen für
-Wendungen noch nicht, nur Wörter. So mischt auch die Tagesübung ab
+Abkürzungen und etwa jede dritte Sequenz eine Wendung; reichen die Zeichen
+für Wendungen noch nicht, nur Abkürzungen. So mischt auch die Tagesübung ab
 Lektion 35.
 
 **Rufzeichen:** echte Rufzeichen aus der Super-Check-Partial-Liste,
@@ -286,7 +290,8 @@ bekommt die nächste Lektion angeboten.
 Der Ton läuft ohne Warten durch, du tippst mit (wie beim Mithören); auch
 wenn du hinterherhinkst, geht es weiter. Oben unter **Inhalt** wählst du
 **Zufallszeichen** – in Gruppen (Standard 5) mit Wortpause dazwischen, bei
-Gruppenlänge 0 durchgehend – oder Klartext: **Wörter**, **Wendungen**
+Gruppenlänge 0 durchgehend – oder Klartext: **Abkürzungen**, **Klartext**
+(ausgeschriebene Wörter), **Wendungen**
 (typische QSO-Wendungen wie „TNX FER CALL“, „UR RST 599“), **Rufzeichen**
 oder **QSO-Klartext** (ganze QSOs). Klartext zählt nicht für die Lektion.
 Auf Wunsch mit Bandbedingungen, die durchgehend unter dem ganzen Durchgang
@@ -312,7 +317,7 @@ du oben unter **Inhalt**.
   buchstabiert (Alfa, Bravo …), Wörter und Wendungen als Ganzes bzw. mit
   ihrer Bedeutung („TNX“ → „danke“).
 - Die Denkpause ist bewusst knapp (Standard 1 s plus 0,3 s je Zeichen).
-- Inhalte: Zeichen, Gruppen, Wörter, Wendungen, Rufzeichen (bei Gruppen
+- Inhalte: Zeichen, Gruppen, Abkürzungen, Klartext, Wendungen, Rufzeichen (bei Gruppen
   mit einstellbarer Länge, Standard 5). **Anzahl** der Einträge: Standard
   50.
 - Schalter (alle standardmäßig an): **Wörter und Wendungen als Ganzes
@@ -500,7 +505,7 @@ Nummer.
 |---|---|---|---|
 | Koch | Lektion 10 / 25 / 41 | 1 | Bestandener Aufstiegslauf: ≥ 50 Zeichen, ≥ 90 % beim ersten Versuch, Zeichen ≥ 18 WPM (Gruppen oder Am Stück) |
 | Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach, erreicht mit Zeichen ≥ 18 WPM |
-| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Am Stück mit Klartext (Wörter, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Wörter“ nicht |
+| Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Am Stück mit Klartext (Abkürzungen, Klartext, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Abkürzungen“ nicht |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Am Stück mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
 | QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
@@ -668,7 +673,7 @@ selbst – ohne Aussetzer, mit eigenem Kopfhörer und eigener Tonhöhe.
 
 1. Im Reiter **Netzwerk** „Trainer“ wählen, **Sitzung öffnen**. Angezeigt
    werden Adresse und eine vierstellige PIN für die Teilnehmer.
-2. **Inhalt** wählen: Einzelzeichen, Gruppen, Wörter, Rufzeichen,
+2. **Inhalt** wählen: Einzelzeichen, Gruppen, Abkürzungen, Klartext, Rufzeichen,
    Wendungen, QSO-Klartext oder **eigener Text** (eine Zeile je Sequenz;
    Betriebszeichen als + für AR, ( für KN, * für SK, # für BK).
 3. **Anzahl Sequenzen** (bei QSO-Klartext ganze QSOs, gesendet in
@@ -722,7 +727,7 @@ einen Rechner hat. Die nächste Sequenz kommt nach Ton plus
 **Schreibpause**, egal wer schon geantwortet hat.
 
 - Die Pause gilt gleich für jede Sequenz; die Vorgabe richtet sich nach
-  dem Inhalt (Einzelzeichen 2 s, Wörter 3 s, Gruppen, Rufzeichen und
+  dem Inhalt (Einzelzeichen 2 s, Abkürzungen und Klartext 3 s, Gruppen, Rufzeichen und
   eigener Text 4 s, Wendungen und QSO 5 s), denn wer zu lange Zeit hat,
   fängt an zu grübeln.
 - Bis zum Ende zeigt der Trainerbildschirm keine Lösung – er hängt
@@ -1130,7 +1135,7 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   [supercheckpartial.com](https://www.supercheckpartial.com) herunter und
   lege sie als `callsigns.scp` in das Datenverzeichnis. Ohne die Datei
   erzeugt der Trainer Rufzeichen nach Landesmuster.
-- `woerter.txt`: eigene Wörter für Wörter (Reiter Einzeln) und Am Stück,
+- `woerter.txt`: eigene Wörter für „Abkürzungen“ in Wörter (Reiter Einzeln) und Am Stück,
   eins pro Zeile, optional mit Bedeutung: `DOK = Distrikts-Ortsverbandskenner`.
   Der Knopf „Eigene Wörter bearbeiten“ legt die Datei mit Anleitung an und
   öffnet sie. Die Wörter kommen zu den eingebauten dazu.

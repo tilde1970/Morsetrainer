@@ -18,7 +18,7 @@ QSO_SAMPLES = 8
 QSO_SECTION_ENDS = {"=", "K", "+", "(", "*", "#"}
 # Klartext: Der Zusammenhang verrät viele Zeichen, er zählt daher nicht für
 # die Zeichenstatistik (SessionStats, char_stats). Rufzeichen zählen.
-PLAIN_TEXT = {"words", "phrases", "qso", "custom"}
+PLAIN_TEXT = {"words", "plain", "phrases", "qso", "custom"}
 
 
 def qso_sections(charset: str) -> list:
@@ -68,6 +68,9 @@ class ItemSource:
             self.items = words.words_for_charset(charset, all_words)
             self.meanings = all_words
             self.word_picker = words.WordPicker(self.items, self.picker)
+        elif kind == "plain":
+            self.items = words.words_for_charset(charset, words.PLAIN_WORDS)
+            self.word_picker = words.WordPicker(self.items, self.picker)
         elif kind == "phrases":
             self.items = words.phrases_for_charset(charset)
             self.meanings = words.PHRASES
@@ -86,7 +89,7 @@ class ItemSource:
         """Grund, warum mit diesem Zeichensatz nichts Sinnvolles kommt, sonst None."""
         if not self.charset:
             return tr("Kein gültiges Zeichen im Zeichensatz!")
-        if self.kind == "words" and not words.enough_words(self.items):
+        if self.kind in ("words", "plain") and not words.enough_words(self.items):
             return tr("Zu wenige Wörter mit diesen Zeichen – erst mit Gruppen üben.")
         if self.kind == "phrases" and len(self.items) < MIN_ITEMS:
             first = first_lesson_with_phrases()
@@ -135,6 +138,6 @@ class ItemSource:
             return self.picker.pick()
         if self.kind == "groups":
             return self.picker.pick(self.group_len)
-        if self.kind == "words":
+        if self.kind in ("words", "plain"):
             return self.word_picker.pick()
         return random.choice(self.items)

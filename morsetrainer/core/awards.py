@@ -44,7 +44,7 @@ Q_GROUPS = tuple(word for word in words.WORDS if len(word) == 3 and word.startsw
 CONTEST_KINDS = ("cqww", "wpx", "wag", "arrldx", "iaru")
 RAGCHEW = "ragchew"
 # Klartext im Reiter Kontinuierlich (ohne eigene Texte, siehe modes/content.py).
-PLAIN_CONTENT = {"words", "phrases", "qso"}
+PLAIN_CONTENT = {"words", "plain", "phrases", "qso"}
 FLOW_WORDS_MAX = 21.9  # mit Wörtern höchstens Silber (Gold: 22 WPM)
 
 
@@ -486,9 +486,9 @@ def _flow(data: Data) -> list:
                 and not c.get("user_words") and _contains(c.get("charset"), koch.lesson_charset(15))
                 and _char_wpm(c) >= MIN_CHAR_WPM and _clean_share(s.summary) >= 0.9):
             wpm = _effective_wpm(s)
-            # Gold nur mit Wendungen oder QSO-Text: Die eingebauten Wörter sind
-            # wenige und werden bei hohem Tempo eher wiedererkannt.
-            if c.get("content") == "words":
+            # Gold nur mit Wendungen oder QSO-Text: Einzelne Wörter (Abkürzungen
+            # wie Klartext) werden bei hohem Tempo eher wiedererkannt.
+            if c.get("content") in ("words", "plain"):
                 wpm = min(wpm, FLOW_WORDS_MAX)
             events.append((s.day, wpm))
     return events

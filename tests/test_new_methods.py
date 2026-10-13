@@ -315,7 +315,7 @@ class ListenModeTest(AppTestCase):
         if mp3.available():
             self.skipTest(mp3.available())
         m = self.listen
-        m.content_var.set("Wörter")
+        m.content_var.set("Abkürzungen")
         m.count_var.set(5)
         opts = m._options()
         with tempfile.TemporaryDirectory() as tmp:
@@ -446,3 +446,28 @@ class StatsTabReviewTest(AppTestCase):
         self.assertEqual(lines[0].split()[-1], "T")  # 20 Zeichen, dann umgebrochen
         self.assertEqual(lines[1].split(), list("UVWXYZ"))
         self.assertTrue(lines[2].startswith("Fach 2"))
+
+
+class PlainWordsTest(unittest.TestCase):
+    """Klartext: eigene Liste ausgeschriebener Wörter neben den Abkürzungen."""
+
+    def test_list_holds_written_out_words_only(self):
+        from morsetrainer.core import words
+        self.assertGreaterEqual(len(words.PLAIN_WORDS), 300)
+        self.assertTrue(all(w.isalpha() and w.isupper() and len(w) > 1 for w in words.PLAIN_WORDS))
+        self.assertNotIn("TNX", words.PLAIN_WORDS)
+        # Die ausgeschriebenen Wörter der Abkürzungsliste stehen auch hier.
+        written = [w for w, meaning in words.WORDS.items() if not meaning and w.isalpha() and w != "OK"]
+        self.assertEqual([w for w in written if w not in words.PLAIN_WORDS], [])
+
+    def test_item_source_and_plain_text(self):
+        from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
+        source = ItemSource("plain", koch.lesson_charset(41))
+        self.assertIsNone(source.problem())
+        self.assertFalse(source.has_user_words())
+        text, meaning = source.next()
+        self.assertIn(text, source.items)
+        self.assertEqual(meaning, "")
+        self.assertIn("plain", PLAIN_TEXT)  # zählt nicht für die Zeichenstatistik
+        self.assertIsNotNone(ItemSource("plain", "KMR").problem())
+

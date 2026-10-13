@@ -383,12 +383,12 @@ class PhraseTest(AppTestCase):
 
     def test_saved_and_daily_practice_uses_words(self):
         self.assertEqual(self.w.settings()["content"], "phrases")
-        self.w.content_var.set("Wörter")
+        self.w.content_var.set("Abkürzungen")
         self.w.restore_settings({"content": "phrases", "memorize_default": True})
         self.assertEqual(self.w.content_var.get(), "Wendungen")
         from morsetrainer import daily_runner
         self.w.daily_configure(4, **daily_runner.MODE_SETTINGS["word"])
-        self.assertEqual(self.w.content_var.get(), "Wörter")
+        self.assertEqual(self.w.content_var.get(), "Abkürzungen")
         self.w.daily_release()
         self.assertEqual(self.w.content_var.get(), "Wendungen")
 
@@ -420,13 +420,31 @@ class PhraseTest(AppTestCase):
         self.assertIsNone(w.phrase_picker)
         self.assertIn("reichen die Zeichen noch nicht", w.count_var.get())
 
+    def test_plain_words_are_their_own_list(self):
+        from morsetrainer.core import words
+        w = self.w
+        w.content_var.set("Klartext")
+        self.assertTrue(w._validate_settings())
+        self.assertEqual(set(w.words), set(words.words_for_charset(w.charset, words.PLAIN_WORDS)))
+        self.assertIn("WEATHER", w.words)
+        self.assertNotIn("TNX", w.words)
+        self.assertEqual(w._explain("KEY"), "")  # ausgeschrieben, ohne Bedeutung
+        self.assertIn(f"von {len(words.PLAIN_WORDS)} Wörtern", w.count_var.get())
+        self.assertEqual(w.settings()["content"], "plain")
+        w.restore_settings({"content": "words", "memorize_default": True})
+        self.assertEqual(w.content_var.get(), "Abkürzungen")
+        w.content_var.set("Klartext")
+        self.app.charset_var.set("KMR")
+        self.assertFalse(w._validate_settings())
+        self.assertIn("ab Koch-Lektion 7", w.status_var.get())
+
     def test_daily_word_outro_can_be_mixed(self):
         from morsetrainer import daily_runner
-        self.w.content_var.set("Wörter")
+        self.w.content_var.set("Abkürzungen")
         self.w.daily_configure(2, **{**daily_runner.MODE_SETTINGS["word"], "content": "mixed"})
         self.assertEqual(self.w.content_var.get(), "gemischt")
         self.w.daily_release()
-        self.assertEqual(self.w.content_var.get(), "Wörter")
+        self.assertEqual(self.w.content_var.get(), "Abkürzungen")
 
     def test_weighted_picker_handles_spaces(self):
         from morsetrainer.core import words

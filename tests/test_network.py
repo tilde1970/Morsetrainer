@@ -1518,6 +1518,8 @@ class NetworkTabTest(unittest.TestCase):
         self.assertEqual(self.trainee.settings(), data)
         self.trainee.restore_settings({"port": 80, "count": "x", "role": "boss"})
         self.assertEqual(self.trainee.port_var.get(), data["port"])
+        self.trainee.restore_settings({"content": "Wörter"})  # alter Name von „Abkürzungen“
+        self.assertEqual(self.trainee.content_var.get(), "Abkürzungen")
 
 
 def audio_latency():
