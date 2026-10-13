@@ -72,6 +72,21 @@ QSO_QUESTION_MINUTES = 0.5   # Fragen beantworten bzw. Log ergänzen
 QSO_MAX_MINUTES = OUTRO_POST_MINUTES - QSO_QUESTION_MINUTES
 QSO_HEAD_MIN_EFFECTIVE = 15  # vorher fehlt die Grundlage fürs Kopfhören
 
+# Platz 4 des Zyklus wechselt zwischen Contest-Run und Bandbedingungen:
+# Am Stück mit Zufallsgruppen unter einer Stufe aus band.PRESETS, ab
+# Tagestempo BAND_MIN_EFFECTIVE. Die Stufe steigt wie beim Diplom QRN-fest
+# nach zwei Tagen mit mindestens BAND_UP_SHARE auf „mittel“ und fällt nach
+# BAND_DOWN_RUNS Ausklängen in Folge unter BAND_DOWN_SHARE zurück; „stark“
+# bleibt Kür im Reiter. BAND_PRESET: Schlüssel der Stufe in Block.params.
+BAND_MIN_EFFECTIVE = 15
+BAND_LEVELS = ("light", "medium")
+BAND_PRESET = "band_preset"
+BAND_UP_SHARE = 0.9
+BAND_UP_DAYS = 2
+BAND_DOWN_SHARE = 0.8
+BAND_DOWN_RUNS = 2
+BAND_MIN_CHARS = 100  # darunter ist der Anteil zu zufällig
+
 # Tagestempo: aus dem Hauptteil eines Tages für den nächsten.
 TEMPO_MIN_CHARS = 100
 TEMPO_UP_SHARE = 0.9
@@ -91,6 +106,8 @@ STAR_ORDER = (DABEI, SAUBER, WEITER)
 LESSON_UP, TEMPO_UP, BOX_PREFIX = "lesson_up", "tempo_up", "box:"
 
 WARMUP, MAIN, OUTRO = "warmup", "main", "outro"
+BAND = "band"  # Ausklang mit Bandbedingungen (Modus des Blocks: "continuous")
+BAND_RANK = {"light": 1, "medium": 2, "heavy": 3}
 
 
 @dataclass
@@ -177,7 +194,13 @@ def qso_outros(effective: int, learned: str, fits) -> set:
     return found
 
 
-def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str = "cqww") -> list:
+def band_outro(preset: str) -> Block:
+    """Ausklang mit Bandbedingungen der Stufe `preset`."""
+    return Block(OUTRO, "continuous", OUTRO_POST_MINUTES,
+                 {"content": "chars", "group_len": 5, "band": True, BAND_PRESET: preset})
+
+
+def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str = "cqww", band=None) -> list:
     """Die Blöcke der heutigen Tagesübung, zusammen TOTAL_MINUTES.
     `due_count`: heute fällige Zeichen der Lernkartei im Zeichensatz; ohne
     sie übt das Aufwärmen die häufigsten Verwechslungen (die App fällt auf
@@ -185,16 +208,26 @@ def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str =
     bisherigen Übungstage (practice_days); danach wechselt der Ausklang.
     Nach dem Kalender bekäme, wer jeden zweiten Tag übt, immer denselben.
     Nach Koch: POST_CYCLE, QSOs nur, wenn sie in `qso` stehen (qso_outros);
-    `contest`: Art des Contest-Runs für QSO_LOG."""
+    `contest`: Art des Contest-Runs für QSO_LOG. `band`: heutige Stufe für
+    den Band-Ausklang (band_level), None: noch nicht; er ersetzt QSO_LOG in
+    jedem zweiten Zyklus. Fehlt eins von beiden, kommt das andere, sonst
+    Rufzeichen."""
     level = stage(lesson)
     focus = "due" if due_count else "confusions"
     warmup = Block(WARMUP, "single", warmup_minutes(lesson, due_count), {"focus": focus})
     if level == POST:
         outro_minutes = OUTRO_POST_MINUTES
         outro_mode = POST_CYCLE[turn % len(POST_CYCLE)]
-        if outro_mode not in qso and outro_mode != "callsign":
+        if outro_mode == QSO_LOG:
+            band_turn = turn // len(POST_CYCLE) % 2 == 1
+            if band and (band_turn or QSO_LOG not in qso):
+                outro_mode = BAND
+        if outro_mode not in qso and outro_mode not in ("callsign", BAND):
             outro_mode = "callsign"
-        outro = Block(OUTRO, outro_mode, outro_minutes, {"kind": contest} if outro_mode == QSO_LOG else {})
+        if outro_mode == BAND:
+            outro = band_outro(band)
+        else:
+            outro = Block(OUTRO, outro_mode, outro_minutes, {"kind": contest} if outro_mode == QSO_LOG else {})
         main_mode, main_params = "continuous", {"content": "chars", "group_len": 5}
     else:
         outro_minutes = OUTRO_MINUTES
@@ -208,6 +241,37 @@ def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str =
         main_mode, main_params = "group", {}
     main_minutes = max(TOTAL_MINUTES - warmup.minutes - outro_minutes, MAIN_MIN_MINUTES)
     return [warmup, Block(MAIN, main_mode, main_minutes, main_params), outro]
+
+
+def band_level(state: dict, today: date):
+    """Stufe für den Band-Ausklang heute, nachgerechnet aus den Ausklängen der
+    Tage vor `today` (wirksam ab dem nächsten Tag wie Lektion und Tempo)."""
+    level, up_days, misses = BAND_LEVELS[0], set(), 0
+    days = state.get("days", {})
+    for day in sorted(d for d in days if d < today.isoformat()):
+        entry = days[day]
+        blocks = entry.get("blocks", []) if isinstance(entry, dict) else []
+        for block in blocks:
+            if not isinstance(block, dict) or block.get("kind") != OUTRO or block.get("band") != level:
+                continue
+            correct, total = _first_try(block)
+            if not isinstance(total, (int, float)) or total < BAND_MIN_CHARS:
+                continue
+            share = correct / total
+            # Zwischendurch leichter gestellt: zählt nicht für den Aufstieg.
+            held = BAND_RANK.get(block.get("band_min"), 0) >= BAND_RANK[level]
+            if level == BAND_LEVELS[0]:
+                if held and share >= BAND_UP_SHARE:
+                    up_days.add(day)
+                    if len(up_days) >= BAND_UP_DAYS:
+                        level, up_days, misses = BAND_LEVELS[1], set(), 0
+            elif share < BAND_DOWN_SHARE:
+                misses += 1
+                if misses >= BAND_DOWN_RUNS:
+                    level, up_days, misses = BAND_LEVELS[0], set(), 0
+            else:
+                misses = 0
+    return level
 
 
 # --- Lektion ------------------------------------------------------------------
@@ -348,6 +412,7 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
     entry = day_entry(state, today)
     entry.setdefault("lesson", current_lesson(state, 1))  # für den Wochenrückblick
     entry["blocks"].append({"kind": block.kind, "mode": block.mode,
+                            **({"band": block.params[BAND_PRESET]} if BAND_PRESET in block.params else {}),
                             **{k: v for k, v in result.items() if k not in ("review_events", "chars")}})
     entry["minutes"] = round(entry["minutes"] + result.get("minutes", 0.0), 2)
     new_stars = []

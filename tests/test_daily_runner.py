@@ -6,7 +6,7 @@ from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import daily_runner
-from morsetrainer.core import daily, koch, review
+from morsetrainer.core import band, daily, koch, review
 from tests.test_modes import AppTestCase, app_module
 
 
@@ -271,6 +271,50 @@ class DailyRunnerTest(AppTestCase):
         self.assertFalse(self.runner.active)
         self.assertIn("abgebrochen", self.runner.summary.spoken)
         self.runner.summary.close()
+
+    def _band_outro(self, gain):
+        """Tagesübung nur mit dem Band-Ausklang starten, ohne den Block laufen zu lassen."""
+        settings = self.app.band_settings
+        settings.set_spec({"levels": {"noise": 0.1, "smps": 0.5}, "gain": gain, "filter": 500})
+        own = settings.spec()
+        with mock.patch.object(daily, "plan", lambda *args, **kwargs: [daily.band_outro("medium")]), \
+                mock.patch.object(daily_runner.announcer, "say") as say:
+            self.runner.start()
+        return own, say.call_args[0][0]
+
+    def test_band_outro_sets_the_stage_and_restores_own_settings(self):
+        own, text = self._band_outro(1.3)
+        settings = self.app.band_settings
+        spec = settings.spec()
+        self.assertEqual(band.preset_rank(spec, self.app.freq_var.get()), "medium")
+        self.assertNotIn("smps", spec["levels"])
+        self.assertEqual(spec["gain"], 1.0)  # lauter als 100 % nicht
+        self.assertNotIn("filter", spec)  # die Stufen gelten ohne schmales Filter
+        self.assertTrue(self.mode("Kontinuierlich").band_var.get())
+        self.assertIn("Am Stück mit Band mittel, 4 Minuten.", text)
+        self.assertNotIn("QRN-fest", text)
+        self.runner.abort()
+        self.assertEqual(settings.spec(), own)
+        self.assertFalse(self.mode("Kontinuierlich").band_var.get())
+
+    def test_band_outro_keeps_a_lower_noise_volume_and_says_so(self):
+        own, text = self._band_outro(0.6)
+        self.assertEqual(self.app.band_settings.spec()["gain"], 0.6)
+        self.assertIn("Störlautstärke 60 %, zählt nicht für das Diplom QRN-fest.", text)
+        self.runner.abort()
+        self.assertEqual(self.app.band_settings.spec(), own)
+
+    def test_band_outro_records_the_weakest_stage(self):
+        with mock.patch.object(daily, "plan", lambda *args, **kwargs: [daily.band_outro("light")] * 2), \
+                mock.patch.object(daily_runner.announcer, "say"):
+            self.runner.start()
+        mode = self.runner.mode
+        mode.band_rank_min = None  # zwischendurch ausgeschaltet
+        with mock.patch.object(mode, "daily_result", return_value={"correct": 5, "total": 5, "minutes": 4.0}):
+            self.runner.on_block_end(mode)
+        block = daily.load()["days"][date.today().isoformat()]["blocks"][-1]
+        self.assertEqual((block["band"], block["band_min"]), ("light", None))
+        self.runner.abort(quiet=True)
 
     def test_extra_runs_one_block_once(self):
         self.runner.start_extra((daily.CONFUSIONS, "BD"))

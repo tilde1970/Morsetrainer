@@ -111,7 +111,9 @@ you choose yourself.
    contest run to log. **On your own** in the QSO tab as a contest
    run, first without, then with pile-up, then as the run station in the
    Contest tab. Milestones: Contest, Worked All Contests.
-9. **Under band conditions:** **on your own** once a character set sits
+9. **Under band conditions:** from 15 WPM effective, daily practice now
+   and then ends under band conditions, first “light”, later “medium”.
+   **On your own** once a character set sits
    firmly without interference (90 % or more); start with “light”
    (section 6). Milestone: QRN-proof.
 
@@ -383,14 +385,21 @@ as they were.
 | Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Non-stop, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
 | Lesson 30–41 | as above | as above | Words (mixed with phrases from lesson 35) or callsigns alternating from one practice day to the next, 2 min |
-| after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | in turn: callsigns, QSO for head copy, callsigns, contest run with log; 4 min |
+| after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | in turn: callsigns, QSO for head copy, callsigns, contest run with log or band conditions; 4 min |
 
 - **Wind-down after Koch:** it changes from one practice day to the next in
   four steps. The **QSO for head copy** (short, “head copy + questions”)
   only comes once you have learned the prosigns AR, KN, SK and BK
   (lessons 42–45) and it fits into the four minutes at today's speed,
   questions included, roughly from 18 WPM effective. The **contest run**
-  (short, no pile-up, changing contests) is logged as you listen. If a QSO
+  (short, no pile-up, changing contests) is logged as you listen. From
+  15 WPM effective, every second contest slot brings **non-stop under band
+  conditions** instead (groups of 5): first “light”, after two days with
+  90 % or more “medium”; twice in a row below 80 % takes you back to
+  “light”. The level changes on the following day. The wide filter is
+  used and the noise volume is set to 100 %; if you have turned it down,
+  it stays that way but then does not count for the QRN-proof award.
+  Afterwards your own band settings are back. If a QSO
   does not fit, you get callsigns; the daily practice stays at ten
   minutes. The block ends with “Check” (F8); there is no “Again” here. The
   result does not count for stars, speed or lesson, but counts for the

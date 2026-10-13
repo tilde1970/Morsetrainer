@@ -19,8 +19,8 @@ from morsetrainer.core import awards, daily, koch, practice, qso_text, review, s
 from morsetrainer.i18n import short_number, tr
 from morsetrainer.widgets import announcer
 from morsetrainer.widgets.daily_panel import (
-    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, moment_line, preview_line, review_line,
-    stars_named)
+    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, mode_name, moment_line, preview_line,
+    review_line, stars_named)
 from morsetrainer.modes.qso_mode import EVAL_HEAD, EVAL_QUIZ, estimate_minutes
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 from morsetrainer.widgets.awards_panel import seal_name
@@ -36,8 +36,7 @@ def block_text(block) -> str:
     """Ansage vor einem Block, z. B. „Tagesübung, Aufwärmen: Zeichen,
     3 Minuten.“"""
     return tr("Tagesübung, {block}: {mode}, {minutes} Minuten.").format(
-        block=tr(BLOCK_LABELS[block.kind]), mode=tr(stats.HISTORY_MODES[block.mode]),
-        minutes=short_number(block.minutes))
+        block=tr(BLOCK_LABELS[block.kind]), mode=mode_name(block), minutes=short_number(block.minutes))
 
 
 # Feste Einstellungen je Modus (Schlüssel wie settings() des Reiters).
@@ -80,6 +79,7 @@ class DailyRunner:
         self.done_minutes = 0.0
         self.saved_shared = None
         self.saved_content = None  # Inhalt im Reiter „Einzeln“ vor der Tagesübung
+        self.saved_band = None  # Bandeinstellung vor dem Band-Ausklang
         self.tick_id = None
         self.card_open = False
         self.card_shown = 0.0
@@ -156,12 +156,15 @@ class DailyRunner:
         charset = daily.lesson_charset(lesson, review.boxed_chars())
         self.due = review.due_chars(known=charset)
         turn = daily.practice_days(self.state, self.today)
-        contest = CONTEST_KINDS[turn // len(daily.POST_CYCLE) % len(CONTEST_KINDS)]
-        qso = set()
+        # Jeder zweite Zyklus hat statt des Contest-Runs Bandbedingungen.
+        contest = CONTEST_KINDS[turn // (2 * len(daily.POST_CYCLE)) % len(CONTEST_KINDS)]
+        qso, band = set(), None
         if daily.stage(lesson) == daily.POST:
-            qso = daily.qso_outros(self.state["tempo"]["effective"], review.boxed_chars(),
-                                   lambda mode: self._qso_fits(mode, contest))
-        self._begin(charset, daily.plan(lesson, len(self.due), turn, qso, contest))
+            effective = self.state["tempo"]["effective"]
+            qso = daily.qso_outros(effective, review.boxed_chars(), lambda mode: self._qso_fits(mode, contest))
+            if effective >= daily.BAND_MIN_EFFECTIVE:
+                band = daily.band_level(self.state, self.today)
+        self._begin(charset, daily.plan(lesson, len(self.due), turn, qso, contest, band))
         if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
             # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
             char = koch.newest_char(lesson)
@@ -278,11 +281,40 @@ class DailyRunner:
                 app.notebook.tab(other, state="disabled")
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
         settings = {**MODE_SETTINGS[block.mode], **block.params}
+        preset = settings.pop(daily.BAND_PRESET, None)
+        text = block_text(block)
+        if preset:
+            gain = self._set_band(preset)
+            if gain < 100:
+                text += " " + tr("Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.").format(gain=gain)
         if block.mode == "single":
             settings["icr_limit"] = daily.warmup_limit(self.state)
         mode.daily_configure(block.minutes, **settings)
         self.mode = mode
-        announcer.say(block_text(block), then=lambda: self._run_block(block, mode))
+        announcer.say(text, then=lambda: self._run_block(block, mode))
+
+    def _set_band(self, preset: str) -> int:
+        """Stellt die Bandbedingungen für den Ausklang auf die Stufe `preset`
+        (die eigene Einstellung wird gemerkt, _release_band). Das Filter steht
+        auf der Grundeinstellung, für die die Stufen gelten (ein schmales
+        machte aus „mittel“ „leicht“). Die Störlautstärke steht auf 100 %; wer
+        sie leiser gestellt hat (etwa wegen eines Hörproblems), behält das.
+        Gibt die Störlautstärke in Prozent zurück."""
+        settings = self.app.band_settings
+        if self.saved_band is None:
+            self.saved_band = settings.spec()
+        spec = settings.spec()
+        spec.pop("filter", None)
+        spec["gain"] = min(spec["gain"], 1.0)
+        settings.set_spec(spec, notify=False)
+        settings.set_preset(preset)
+        return round(settings.spec()["gain"] * 100)
+
+    def _release_band(self) -> None:
+        """Eigene Bandeinstellung nach dem Band-Ausklang zurück."""
+        if self.saved_band is not None:
+            self.app.band_settings.set_spec(self.saved_band)
+            self.saved_band = None
 
     def _run_block(self, block, mode) -> None:
         """Nach der Blockansage: Reiter starten. Reichen Wörter oder
@@ -319,6 +351,10 @@ class DailyRunner:
             return
         block = self.blocks[self.index]
         result = mode.daily_result() or {}
+        if block.params.get(daily.BAND_PRESET):
+            # Schwächste Stufe im Lauf: wer leichter stellt, steigt damit nicht auf.
+            result = {**result, "band_min": getattr(mode, "band_rank_min", None)}
+            self._release_band()
         if block.mode == "single":
             self.state["icr_limit"] = mode.limit  # vor daily_release(): das ist das Limit des Reiters
         mode.daily_release()
@@ -412,6 +448,7 @@ class DailyRunner:
         if self.mode is not None:
             self.mode.daily_release()
             self.mode = None
+        self._release_band()
         review.focus = set()
         daily.finish_day(self.state, self.today, completed)
         daily.save(self.state)

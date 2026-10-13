@@ -10,7 +10,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-from morsetrainer.core import daily, stats, week
+from morsetrainer.core import awards, daily, stats, week
 from morsetrainer.i18n import N_, daily_key, number, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import focus_keeper, wrap_pair
@@ -118,14 +118,23 @@ def moment_line(moment: dict) -> str:
         char=moment["char"], now=number(moment["now"], 2), before=number(moment["before"], 2))
 
 
+def mode_name(block) -> str:
+    """Modus eines Blocks für Karte und Ansage, beim Band-Ausklang mit Stufe
+    („Am Stück mit Band leicht“)."""
+    name = tr(stats.HISTORY_MODES[block.mode])
+    preset = block.params.get(daily.BAND_PRESET)
+    if preset:
+        return tr("{mode} mit Band {band}").format(mode=name, band=tr(awards.BAND_NAMES[daily.BAND_RANK[preset]]))
+    return name
+
+
 def preview_line(block, lesson: int, tempo: dict) -> str:
     """Vorschau auf den nächsten Block: Modus, Lektion bzw. alle Zeichen, Tempo."""
     if block.mode in (daily.QSO_HEAD, daily.QSO_LOG):  # der Zeichensatz gilt im QSO nicht
-        return tr("Jetzt: {mode}, {tempo}").format(mode=tr(stats.HISTORY_MODES[block.mode]), tempo=tempo_text(tempo))
+        return tr("Jetzt: {mode}, {tempo}").format(mode=mode_name(block), tempo=tempo_text(tempo))
     what = (tr("alle Zeichen") if lesson >= daily.POST_KOCH
             else tr("Lektion {lesson}").format(lesson=lesson))
-    return tr("Jetzt: {mode}, {what}, {tempo}").format(
-        mode=tr(stats.HISTORY_MODES[block.mode]), what=what, tempo=tempo_text(tempo))
+    return tr("Jetzt: {mode}, {what}, {tempo}").format(mode=mode_name(block), what=what, tempo=tempo_text(tempo))
 
 
 def better_line(item: dict) -> str:

@@ -78,6 +78,54 @@ class StageAndPlanTest(unittest.TestCase):
             blocks = daily.plan(daily.POST_KOCH, 0, turn, both)
             self.assertAlmostEqual(sum(b.minutes for b in blocks), daily.TOTAL_MINUTES)
 
+    def test_band_outro_takes_every_second_contest_run(self):
+        both = {daily.QSO_HEAD, daily.QSO_LOG}
+        outros = [daily.plan(daily.POST_KOCH, 0, turn, both, "wpx", "light")[2] for turn in range(16)]
+        self.assertEqual([b.mode for b in outros[3::4]], [daily.QSO_LOG, "continuous", daily.QSO_LOG, "continuous"])
+        self.assertEqual(outros[7].params, {"content": "chars", "group_len": 5, "band": True,
+                                            daily.BAND_PRESET: "light"})
+        self.assertEqual(outros[7].minutes, daily.OUTRO_POST_MINUTES)
+        # Noch keine Stufe (Tempo zu niedrig): Contest-Run wie bisher.
+        self.assertEqual(daily.plan(daily.POST_KOCH, 0, 7, both)[2].mode, daily.QSO_LOG)
+        # Passt kein Contest-Run, kommt das Band, ohne beides Rufzeichen.
+        self.assertEqual(daily.plan(daily.POST_KOCH, 0, 3, set(), "wpx", "medium")[2].params[daily.BAND_PRESET],
+                         "medium")
+        self.assertEqual(daily.plan(daily.POST_KOCH, 0, 7, set())[2].mode, "callsign")
+        # Die übrigen Plätze bleiben.
+        self.assertEqual([b.mode for b in outros[:3]], ["callsign", daily.QSO_HEAD, "callsign"])
+
+    def test_band_level_rises_after_two_good_days_and_falls_back(self):
+        state = {"days": {}}
+
+        def outro(day, preset, correct, total=200, band_min=None):
+            entry = state["days"].setdefault((TODAY - timedelta(days=day)).isoformat(), {"blocks": []})
+            entry["blocks"].append({"kind": daily.OUTRO, "mode": "continuous", "band": preset, "correct": correct,
+                                    "total": total, "extra_keys": 0, "band_min": band_min or preset})
+
+        self.assertEqual(daily.band_level(state, TODAY), "light")
+        outro(9, "light", 190)
+        outro(9, "light", 195)  # derselbe Tag zählt einmal
+        outro(8, "light", 190, total=50)  # zu wenige Zeichen
+        outro(7, "light", 190, band_min=None)
+        state["days"][(TODAY - timedelta(days=7)).isoformat()]["blocks"][-1]["band_min"] = None  # zwischendurch aus
+        self.assertEqual(daily.band_level(state, TODAY), "light")
+        outro(6, "light", 180)
+        self.assertEqual(daily.band_level(state, TODAY), "medium")
+        self.assertEqual(daily.band_level(state, TODAY - timedelta(days=6)), "light")  # wirksam ab dem Tag danach
+        outro(5, "medium", 150)
+        outro(4, "medium", 170)  # dazwischen gut: kein Rückfall
+        outro(3, "medium", 150)
+        self.assertEqual(daily.band_level(state, TODAY), "medium")
+        outro(2, "medium", 150)
+        self.assertEqual(daily.band_level(state, TODAY), "light")
+        outro(1, "light", 200)  # alte gute Tage vor dem Rückfall zählen nicht mehr
+        self.assertEqual(daily.band_level(state, TODAY), "light")
+
+    def test_band_outro_is_stored_with_its_stage(self):
+        state = {"days": {}}
+        daily.finish_block(state, TODAY, daily.band_outro("medium"), {"correct": 1, "total": 1, "minutes": 4.0})
+        self.assertEqual(state["days"][TODAY.isoformat()]["blocks"][-1]["band"], "medium")
+
     def test_qso_outros_need_time_tempo_and_prosigns(self):
         fits = lambda mode: True  # noqa: E731
         everything = koch.FINAL_CHARSET + koch.PROSIGN_ORDER

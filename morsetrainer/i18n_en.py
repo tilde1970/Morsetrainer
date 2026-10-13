@@ -427,6 +427,9 @@ EN.update({
     "Lektion {lesson}": "lesson {lesson}",
     "Jetzt: {mode}, {what}, {tempo}": "Next: {mode}, {what}, {tempo}",
     "Jetzt: {mode}, {tempo}": "Next: {mode}, {tempo}",
+    "{mode} mit Band {band}": "{mode}, conditions {band}",
+    "Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.":
+        "Noise volume {gain} %, does not count for the QRN-proof award.",
     "Gruppen bei {wpm} WPM: {before} % → {now} % beim ersten Versuch":
         "Groups at {wpm} WPM: {before} % → {now} % on the first try",
     "{char} kommt schneller: {before} s → {now} s": "{char} comes faster: {before} s → {now} s",

@@ -109,7 +109,9 @@ hinaus übst, wählst du selbst.
    Contest-Run zum Mitloggen. **Selbst dazu** im Reiter QSO als Contest-Run, erst
    ohne, dann mit Pile-up, danach als Run-Station im Reiter Contest.
    Wegmarken: Contest, Worked All Contests.
-9. **Unter Bandbedingungen:** **Selbst**, sobald ein Zeichensatz ohne
+9. **Unter Bandbedingungen:** Die Tagesübung bringt ab 15 WPM effektiv
+   ab und zu einen Ausklang unter Bandbedingungen, erst „leicht“, später
+   „mittel“. **Selbst**, sobald ein Zeichensatz ohne
    Störungen sicher sitzt (90 % und mehr), mit „leicht“ beginnen
    (Abschnitt 6). Wegmarke: QRN-fest.
 
@@ -391,14 +393,21 @@ wieder wie vorher.
 | Lektion 1–9 | Zeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Am Stück, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
 | Lektion 30–41 | wie oben | wie oben | Wörter (ab Lektion 35 mit Wendungen gemischt) oder Rufzeichen im Wechsel von Übungstag zu Übungstag, 2 Min |
-| nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | im Wechsel: Rufzeichen, QSO zum Kopfhören, Rufzeichen, Contest-Run mit Log; 4 Min |
+| nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | im Wechsel: Rufzeichen, QSO zum Kopfhören, Rufzeichen, Contest-Run mit Log oder Bandbedingungen; 4 Min |
 
 - **Ausklang nach Koch:** Er wechselt von Übungstag zu Übungstag in vier
   Schritten. Das **QSO zum Kopfhören** (kurz, „Kopfhören + Fragen“) kommt
   erst, wenn du die Betriebszeichen AR, KN, SK und BK gelernt hast
   (Lektion 42–45) und es im Tagestempo samt Fragen in die vier Minuten
   passt, etwa ab 18 WPM effektiv. Der **Contest-Run** (kurz, ohne Pile-up,
-  wechselnde Contests) wird mitgeloggt. Passt ein QSO nicht, kommen
+  wechselnde Contests) wird mitgeloggt. Ab 15 WPM effektiv kommt an jedem
+  zweiten Contest-Platz stattdessen **Am Stück unter Bandbedingungen**
+  (Gruppen von 5): zuerst Stufe „leicht“, nach zwei Tagen mit 90 % und
+  mehr „mittel“; zweimal hintereinander unter 80 % geht es zurück auf
+  „leicht“. Die Stufe wechselt am Tag danach. Dafür gilt das breite
+  Filter, die Störlautstärke steht auf 100 %; hast du sie leiser gestellt,
+  bleibt das so, zählt dann aber nicht für das Diplom QRN-fest. Danach ist
+  deine eigene Bandeinstellung wieder da. Passt ein QSO nicht, kommen
   Rufzeichen; die Tagesübung bleibt bei zehn Minuten. Der Block endet mit
   „Prüfen“ (F8); „Nochmal“ gibt es hier nicht. Das Ergebnis zählt nicht
   für Sterne, Tempo oder Lektion, aber wie sonst für die Diplome
