@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.50
 
 - **Daily practice after Koch with a changing wind-down:** after lesson 41
   the wind-down (4 min) changes from one practice day to the next:

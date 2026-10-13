@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.50
 
 - **Tagesübung nach Koch mit wechselndem Ausklang:** Nach Lektion 41
   wechselt der Ausklang (4 Min.) von Übungstag zu Übungstag: Rufzeichen,
