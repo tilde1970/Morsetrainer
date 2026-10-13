@@ -285,7 +285,7 @@ class HelpWindow:
         buttons.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
         close = ttk.Button(buttons, text=tr("Schließen"), command=self.top.destroy)
         close.pack(side="right")
-        browser = ttk.Button(buttons, text=tr("Im Browser öffnen"), command=self.open_in_browser)
+        browser = ttk.Button(buttons, text=tr("Online im Browser öffnen"), command=self.open_in_browser)
         browser.pack(side="right", padx=(0, 8))
         notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
@@ -346,7 +346,15 @@ class HelpWindow:
         name = [name for _, name in DOCS][self.notebook.index("current")]
         path = doc_path(name).name if name == "CHANGELOG.md" else "docs/" + doc_path(name).name
         ref = f"v{self.version}" if self.version else "main"
-        webbrowser.open(WEB_DOC.format(ref=ref, path=path))
+        url = WEB_DOC.format(ref=ref, path=path)
+        try:
+            opened = webbrowser.open(url)
+        except webbrowser.Error:
+            opened = False
+        message = (tr("Im Browser geöffnet; braucht Internet.") if opened
+                   else tr("Kein Browser gefunden. Online steht die Anleitung unter {url}").format(url=url))
+        self.search_info_var.set(message)
+        announcer.say(message if opened else tr("Kein Browser gefunden."))
 
     # --- Vorlesen mit den Pfeiltasten ------------------------------------------------
     def _bind_reading(self, text: tk.Text) -> None:

@@ -6,8 +6,8 @@ Diese Anleitung steht auch im Programm: F1 oder der Knopf **Hilfe (F1)**
 rechts in der Fußzeile zeigt sie gleich beim Abschnitt des Reiters, in dem
 du gerade bist, daneben die Änderungen der Versionen; Strg+F sucht darin.
 Mit Sprachansage liest Pfeil runter bzw. hoch den nächsten bzw. vorigen
-Absatz vor; **Im Browser öffnen** zeigt die Anleitung im Browser, wo auch
-ein Screenreader sie liest.
+Absatz vor; **Online im Browser öffnen** zeigt die Anleitung im Browser (braucht
+Internet), wo auch ein Screenreader sie liest.
 Im Reiter Contest sendet F1 CQ, dort öffnet nur der Knopf die Hilfe.
 Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 
@@ -759,8 +759,10 @@ einschaltet und F11 sagt, wo du bist. Läuft dabei ein Screenreader (NVDA,
 JAWS, Windows-Sprachausgabe, VoiceOver oder Orca), ist die Ansage gleich
 eingeschaltet. Damit beide Stimmen nicht durcheinanderreden, stellst du
 den Screenreader beim Üben am besten stumm oder in den Schlafmodus: NVDA
-mit NVDA+S (so oft, bis der Sprachmodus „aus“ ist) oder NVDA+Umschalt+Z (Schlafmodus für das
-Programm), Orca mit Orca+S, VoiceOver mit Strg (kurz stumm).
+mit NVDA+S (so oft, bis der Sprachmodus „aus“ ist) oder NVDA+Umschalt+S
+(Schlafmodus für das Programm; Laptop-Belegung NVDA+Umschalt+Z), JAWS mit
+Einfg+Leertaste, dann S (Sprache aus und wieder an), Orca mit Orca+S,
+VoiceOver mit Strg (kurz stumm).
 
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit

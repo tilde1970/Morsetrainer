@@ -312,17 +312,20 @@ class Announcer:
         """Sprache für `text` (zwischengespeichert, höchstens CACHE_SIZE Einträge
         und CACHE_BYTES; zuerst fällt, was am längsten nicht gebraucht wurde);
         None, wenn die Stimme versagt."""
+        rate = self.rate
         with _cache_lock:
             samples = self._take_cached(text)
         if samples is None:
             with _synth_lock:
                 try:
-                    samples = self.speaker().synth(text, rate=self.rate)
+                    samples = self.speaker().synth(text, rate=rate)
                 except Exception:  # Stimme defekt: lieber still als abgestürzt
                     samples = None
         if samples is not None:
             with _cache_lock:
                 self._take_cached(text)  # inzwischen von einem anderen Thread erzeugt
+                if rate != self.rate:  # Tempo inzwischen geändert: nicht aufheben
+                    return samples
                 size = getattr(samples, "nbytes", 0)
                 while self._cache and (len(self._cache) >= CACHE_SIZE or self._cache_size + size > CACHE_BYTES):
                     self._take_cached(next(iter(self._cache)))

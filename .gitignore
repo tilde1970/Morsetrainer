@@ -15,3 +15,5 @@ fehler.log
 download_history.json
 reports/
 morsetrainer_downloads.py
+/cron.log
+/docs/bilder/Silo.jpg

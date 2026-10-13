@@ -476,8 +476,12 @@ class BandSettings:
             announcer.name(check, f"{tr(label)}. {tr(OPTION_HINTS[key])}")
         scale = ttk.Scale(box, from_=0, to=100, variable=level, length=200, command=lambda _: self._changed())
         scale.grid(row=row, column=1, sticky="we", pady=1)
-        announcer.name(scale, tr(label), value=lambda k=key, v=level: level_text(
-            k, round(v.get()) / 100, round(self.gain_var.get()) / 100))
+        if key == "noise":  # angesagt „Rauschabstand plus 8 dB“, nicht „Rauschen Rauschabstand …“
+            announcer.name(scale, tr("Rauschabstand"), value=lambda v=level: signed_db(
+                band.noise_snr_db(round(v.get()) / 100, round(self.gain_var.get()) / 100)))
+        else:
+            announcer.name(scale, tr(label), value=lambda k=key, v=level: level_text(
+                k, round(v.get()) / 100, round(self.gain_var.get()) / 100))
         shown = ttk.Label(box, width=11, anchor="e")
         shown.grid(row=row, column=2, padx=(6, 0))
         self.widgets[key] = (scale, shown)
@@ -514,7 +518,7 @@ class BandSettings:
             on, level = self.controls[key]
             scale.state(["!disabled"] if on.get() else ["disabled"])
             shown.config(text=level_text(key, round(level.get()) / 100, round(self.gain_var.get()) / 100),
-                         foreground="" if on.get() else theme.DISABLED)
+                         foreground="" if on.get() else theme.MUTED)
         self.gain_shown.config(text=f"{round(self.gain_var.get())} %")
         neighbour = self.controls["cw_qrm"][0].get() or self.controls["clicks"][0].get()
         for button in self.offset_buttons:

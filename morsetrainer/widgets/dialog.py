@@ -40,9 +40,10 @@ class MessageDialog:
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(14, 0))
         if question:
+            # „Ja“ zuerst angelegt: Tab erreicht es vor „Nein“, wie es dasteht.
+            yes = ttk.Button(buttons, text=tr("Ja"), style="Accent.TButton", command=self._yes)
             ttk.Button(buttons, text=tr("Nein"), command=self._no).pack(side="right")
-            ttk.Button(buttons, text=tr("Ja"), style="Accent.TButton", command=self._yes).pack(
-                side="right", padx=(0, 8))
+            yes.pack(side="right", padx=(0, 8))
             keys = tr("Enter: ja. Escape: nein.")
         else:
             ttk.Button(buttons, text=tr("OK"), style="Accent.TButton", command=self._yes).pack(side="right")

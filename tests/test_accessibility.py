@@ -1168,7 +1168,7 @@ class FocusAnnounceTest(AnnouncerCase):
         try:
             texts.clear()
             walk(self.app.band_settings.window)
-            self.assertTrue(any(t.startswith("Bandrauschen, Regler, S/N") for t in texts), texts)
+            self.assertTrue(any(t.startswith("Rauschabstand, Regler, +") for t in texts), texts)
             self.assertIn("Lautstärke der Störgeräusche, Regler, 100 %.", texts)
         finally:
             self.app.band_settings.close_window()
@@ -1487,6 +1487,13 @@ class BandWindowAnnounceTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: any("Stufe mittel eingestellt." in t for t in self.said)), self.said)
         self.assertEqual(band_rank(self.settings), "medium")
 
+    def test_noise_slider_says_the_snr_once(self):
+        scale = self.settings.widgets["noise"][0]
+        self.preset_buttons()[0].invoke()
+        self.root.update()
+        spoken = self.announcer.describe(scale)
+        self.assertEqual(spoken, "Rauschabstand, Regler, +8 dB.")
+
     def test_f11_tells_the_level(self):
         self.preset_buttons()[2].invoke()
         self.root.update()
@@ -1614,6 +1621,22 @@ class VoiceSettingsTest(AnnouncerCase):
         self.app.announcer.volume_var.set(75)  # Lautstärke wirkt beim Abspielen, Speicher bleibt
         self.assertIn("alt", self.app.announcer._cache)
 
+    def test_speech_made_at_the_old_rate_is_not_kept(self):
+        # Ändert sich das Tempo, während eine Ansage noch erzeugt wird, kommt
+        # sie nicht in den Speicher; sonst klänge sie später im alten Tempo.
+        import numpy as np
+        from morsetrainer.core import speech
+        announcer = self.app.announcer
+        announcer.clear_cache()
+
+        def synth(text, rate=1.0):
+            announcer.rate_var.set(140)
+            return np.zeros(10, dtype=np.float32)
+
+        with mock.patch.object(speech.speaker, "synth", synth):
+            self.assertIsNotNone(announcer._synth("Tempo"))
+        self.assertNotIn("Tempo", announcer._cache)
+
     def test_saved_and_restored(self):
         self.app.announcer.rate_var.set(175)
         self.app.announcer.volume_var.set(25)
@@ -1736,6 +1759,29 @@ class FirstStartTest(AnnouncerCase):
             with mock.patch.object(subprocess, "run", mock.Mock(side_effect=subprocess.TimeoutExpired("x", 1))):
                 self.assertFalse(screenreader.running())
 
+    def test_screen_reader_detection_reads_odd_process_names(self):
+        # Ein Prozessname, der kein UTF-8 ist, darf die Suche nach Orca nicht abbrechen.
+        import tempfile
+        from pathlib import Path
+        from morsetrainer.core import screenreader
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(screenreader, "Path", lambda path: Path(tmp)):
+                for pid, name in (("1", b"\xff\xfe\n"), ("2", b"orca\n")):
+                    (Path(tmp) / pid).mkdir()
+                    (Path(tmp) / pid / "comm").write_bytes(name)
+                    self.assertEqual(screenreader._orca_process(), name == b"orca\n")
+
+    def test_screen_reader_detection_uses_the_system_libraries(self):
+        # Im AppImage zeigt LD_LIBRARY_PATH auf die mitgelieferten Bibliotheken;
+        # gsettings bekommt den ursprünglichen Wert.
+        from morsetrainer.core import screenreader
+        env = {"LD_LIBRARY_PATH": "/tmp/_MEI/lib", "LD_LIBRARY_PATH_ORIG": "/usr/lib", "HOME": "/home/x"}
+        with mock.patch.dict(screenreader.os.environ, env, clear=True):
+            self.assertEqual(screenreader._system_env()["LD_LIBRARY_PATH"], "/usr/lib")
+        with mock.patch.dict(screenreader.os.environ, {"LD_LIBRARY_PATH": "/tmp/_MEI/lib"}, clear=True), \
+                mock.patch.object(sys, "frozen", True, create=True):
+            self.assertNotIn("LD_LIBRARY_PATH", screenreader._system_env())
+
     def test_later_starts_are_quiet(self):
         from morsetrainer import app as app_module
         self.app._save_state()
@@ -1796,6 +1842,16 @@ class HelpReadingTest(AnnouncerCase):
             self.window.open_in_browser()
         url = browser.call_args[0][0]
         self.assertTrue(url.endswith(f"/blob/v{app_module.__version__}/docs/Anleitung.md"), url)
+
+    def test_browser_button_says_what_happened(self):
+        from morsetrainer.widgets import help_window
+        with mock.patch.object(help_window.webbrowser, "open", lambda url: True):
+            spoken = self.spoken_after(self.window.open_in_browser)
+        self.assertIn("Im Browser geöffnet", spoken)
+        with mock.patch.object(help_window.webbrowser, "open", lambda url: False):
+            spoken = self.spoken_after(self.window.open_in_browser)
+        self.assertIn("Kein Browser gefunden.", spoken)
+        self.assertIn("/docs/Anleitung.md", self.window.search_info_var.get())
 
     def test_closed_help_is_not_kept(self):
         from morsetrainer.widgets import help_window
@@ -1926,6 +1982,12 @@ class DialogTest(AnnouncerCase):
         self.key(window, "<Escape>")
         self.assertFalse(window.answer)
         self.assertFalse(window.top.winfo_exists())
+
+    def test_tab_reaches_yes_before_no(self):
+        window = self.open()
+        # Tab folgt der Reihenfolge, in der die Knöpfe angelegt sind.
+        frame = window.top.winfo_children()[0].winfo_children()[1]
+        self.assertEqual([w.cget("text") for w in frame.winfo_children()], ["Ja", "Nein"])
 
     def test_file_dialog_opens_only_after_its_announcement(self):
         # Tks Dateidialog ist stumm: erst ansagen, was kommt, dann öffnen.

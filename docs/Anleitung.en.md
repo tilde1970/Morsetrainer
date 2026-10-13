@@ -6,8 +6,8 @@ contesters (people who take part in radio contests), developed by
 button on the right of the footer shows it, right at the section of the tab
 you are in, next to it the changes of the versions; Ctrl+F searches in it.
 With announcements on, the down and up arrows read the next and previous
-paragraph; **Open in browser** shows the manual in your browser, where a
-screen reader can read it too.
+paragraph; **Open online in browser** shows the manual in your browser
+(needs internet), where a screen reader can read it too.
 In the Contest tab F1 sends CQ, so there only the button opens the help. A short
 overview with pictures is in the [README](../README.en.md).
 
@@ -744,8 +744,10 @@ announcements on and F11 tells you where you are. If a screen reader is
 running (NVDA, JAWS, Windows Narrator, VoiceOver or Orca), announcements
 are switched on right away. So that the two voices do not talk over each
 other, mute your screen reader or put it to sleep while practising: NVDA
-with NVDA+S (until speech mode is “off”) or NVDA+Shift+Z (sleep mode for this
-program), Orca with Orca+S, VoiceOver with Ctrl (briefly silent).
+with NVDA+S (until speech mode is “off”) or NVDA+Shift+S (sleep mode for
+this program; laptop layout NVDA+Shift+Z), JAWS with Insert+Space, then S
+(speech off and on again), Orca with Orca+S, VoiceOver with Ctrl (briefly
+silent).
 
 **Where am I? (F11)** reads out the tab, status, last feedback and
 remaining time (in Non-stop with the provisional accuracy, in Contest with

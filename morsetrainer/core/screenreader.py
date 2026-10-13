@@ -34,7 +34,7 @@ def _windows() -> bool:
 
 def _command(args) -> str:
     result = subprocess.run(args, capture_output=True, text=True, timeout=TIMEOUT_S,
-                            stdin=subprocess.DEVNULL, check=False)
+                            stdin=subprocess.DEVNULL, check=False, env=_system_env())
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
@@ -47,8 +47,20 @@ def _orca_process() -> bool:
         if not entry.name.isdigit():
             continue
         try:
-            if entry.stat().st_uid == uid and (entry / "comm").read_text().strip() == "orca":
+            if entry.stat().st_uid == uid and (entry / "comm").read_text(errors="replace").strip() == "orca":
                 return True
         except OSError:
             continue
     return False
+
+
+def _system_env() -> dict:
+    """Umgebung für Programme des Systems: Als AppImage/PyInstaller zeigt
+    LD_LIBRARY_PATH auf die mitgelieferten Bibliotheken, mit denen z. B.
+    gsettings nicht startet."""
+    env = dict(os.environ)
+    if "LD_LIBRARY_PATH_ORIG" in env:
+        env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH_ORIG"]
+    elif getattr(sys, "frozen", False):
+        env.pop("LD_LIBRARY_PATH", None)
+    return env
