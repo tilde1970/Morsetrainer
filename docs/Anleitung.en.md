@@ -221,7 +221,7 @@ Under **Type** you choose what comes: **Abbreviations** is the list just
 described (abbreviations, Q codes and some words written out). **Plain
 words** brings about 300 English words written out as they occur in QSOs
 (WEATHER, STATION, THANKS, AGAIN …), without meanings; there are enough
-from lesson 7. **Phrases** are whole pieces of QSOs such as “TNX FER CALL”
+from lesson 10. **Phrases** are whole pieces of QSOs such as “TNX FER CALL”
 or “UR RST 599”; there are enough from lesson 25. They
 come with word gaps and are meant to be heard as a whole; you type them
 without spaces. Because a phrase is long, the time window has two parts:

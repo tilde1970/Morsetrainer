@@ -422,6 +422,7 @@ class PhraseTest(AppTestCase):
 
     def test_plain_words_are_their_own_list(self):
         from morsetrainer.core import words
+        from morsetrainer.modes import word_mode
         w = self.w
         w.content_var.set("Klartext")
         self.assertTrue(w._validate_settings())
@@ -434,9 +435,17 @@ class PhraseTest(AppTestCase):
         w.restore_settings({"content": "words", "memorize_default": True})
         self.assertEqual(w.content_var.get(), "Abkürzungen")
         w.content_var.set("Klartext")
-        self.app.charset_var.set("KMR")
-        self.assertFalse(w._validate_settings())
-        self.assertIn("ab Koch-Lektion 7", w.status_var.get())
+        self.app.charset_var.set(koch.lesson_charset(9))  # 26 Wörter: zu wenige für Klartext
+        with mock.patch.object(word_mode.announcer, "say") as say:
+            self.assertFalse(w._validate_settings())
+        self.assertIn("ab Koch-Lektion 10", w.status_var.get())
+        self.assertIn("Nur 26 Wörter", say.call_args.args[0])  # angesagt, nicht nur angezeigt
+        w.content_var.set("Abkürzungen")
+        self.assertTrue(w._validate_settings())  # Abkürzungen reichen dort schon
+        w.content_var.set("Wendungen")
+        with mock.patch.object(word_mode.announcer, "say") as say:
+            self.assertFalse(w._validate_settings())
+        self.assertIn("Wendungen mit diesen Zeichen", say.call_args.args[0])
 
     def test_daily_word_outro_can_be_mixed(self):
         from morsetrainer import daily_runner

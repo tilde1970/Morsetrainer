@@ -8,7 +8,9 @@
   kurzer **Contest-Run zum Mitloggen**. Das QSO kommt erst, wenn die
   Betriebszeichen AR, KN, SK und BK gelernt sind und es samt Fragen in die
   vier Minuten passt (etwa ab 18 WPM effektiv); sonst Rufzeichen. Der Block
-  endet mit „Prüfen“, die Tagesübung bleibt bei zehn Minuten.
+  endet mit „Prüfen“, die Tagesübung bleibt bei zehn Minuten. Nach dem QSO
+  sagt die Ansage, wie viele Fragen es gibt, welches Feld zuerst kommt und
+  dass F8 prüft; danach ist der Reiter QSO wieder wie gewohnt.
 - **Ausklang unter Bandbedingungen:** Ab 15 WPM effektiv kommt in jedem
   zweiten Durchlauf statt des Contest-Runs Am Stück unter
   Bandbedingungen: zuerst „leicht“, nach zwei Tagen mit 90 % und mehr
@@ -24,13 +26,15 @@
   42–45), mit Knopf „Lektion 42 einstellen“.
 - **Reiter Wörter mit Art: Abkürzungen / Klartext / Wendungen / gemischt.**
   „Abkürzungen“ ist die bisherige Wortliste. **Klartext** bringt rund 300
-  ausgeschriebene englische QSO-Wörter (WEATHER, STATION, THANKS …), auch
+  ausgeschriebene englische QSO-Wörter (WEATHER, STATION, THANKS …; ab
+  Lektion 10, vorher wären es zu wenige), auch
   in Am Stück, Sprechen und im Netzwerk; dort heißt „Wörter“ jetzt
   ebenfalls „Abkürzungen“. **Wendungen** wie „TNX FER CALL“ kommen mit
   Wortabstand und werden ohne Leerzeichen getippt; das Zeitfenster ist
   zweigeteilt (in 2 s anfangen, dann 0,6 s je Zeichen). **gemischt**
   bringt etwa jede dritte Sequenz eine Wendung; so mischt auch die
-  Tagesübung ab Lektion 35.
+  Tagesübung ab Lektion 35. Reichen die Zeichen nicht, sagt die Ansage
+  das beim Start. Bei großer Schrift brechen die Auswahlknöpfe um.
 - **Bandstufen bei tiefem Ton fair:** Ohne schmales Filter ist ein sehr
   tiefer Ton leiser. Die Stufenknöpfe stellen das Rauschen dann um so
   viel schwächer ein, und für QRN-fest zählt es entsprechend.

@@ -89,7 +89,8 @@ class ItemSource:
         """Grund, warum mit diesem Zeichensatz nichts Sinnvolles kommt, sonst None."""
         if not self.charset:
             return tr("Kein gültiges Zeichen im Zeichensatz!")
-        if self.kind in ("words", "plain") and not words.enough_words(self.items):
+        minimum = words.PLAIN_MIN_WORDS if self.kind == "plain" else words.MIN_WORDS
+        if self.kind in ("words", "plain") and not words.enough_words(self.items, minimum):
             return tr("Zu wenige Wörter mit diesen Zeichen – erst mit Gruppen üben.")
         if self.kind == "phrases" and len(self.items) < MIN_ITEMS:
             first = first_lesson_with_phrases()

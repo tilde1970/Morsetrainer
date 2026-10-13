@@ -9,6 +9,9 @@
   prosigns AR, KN, SK and BK are learned and it fits into the four minutes
   with its questions (roughly from 18 WPM effective); otherwise callsigns.
   The block ends with “Check”; the daily practice stays at ten minutes.
+  After the QSO the announcement says how many questions there are, which
+  field comes first and that F8 checks; afterwards the QSO tab is back to
+  normal.
 - **Wind-down under band conditions:** from 15 WPM effective, every second
   cycle brings non-stop under band conditions instead of the contest run:
   first “light”, after two days with 90 % or more “medium”, after twice in
@@ -24,13 +27,15 @@
   with a button “Set lesson 42”.
 - **Words tab with type: Abbreviations / Plain words / Phrases / mixed.**
   “Abbreviations” is the previous word list. **Plain words** brings about
-  300 English QSO words written out (WEATHER, STATION, THANKS …), also in
+  300 English QSO words written out (WEATHER, STATION, THANKS …; from
+  lesson 10, before that there would be too few), also in
   Non-stop, Speak and network; there “Words” is now called
   “Abbreviations” as well. **Phrases** such as “TNX FER CALL” come with
   word gaps and are typed without spaces; the time window has two parts
   (start within 2 s, then 0.6 s per character). **mixed** brings a phrase
   in roughly every third sequence; daily practice mixes this way from
-  lesson 35.
+  lesson 35. If your characters are not enough, the announcement says so
+  at the start. With large text the choice buttons wrap.
 - **Band levels fair with a low pitch:** without a narrow filter a very
   low tone is quieter. The level buttons then set the noise weaker by
   that amount, and it counts accordingly for QRN-proof.

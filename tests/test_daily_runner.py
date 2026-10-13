@@ -263,6 +263,24 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(block["minutes"], daily.OUTRO_POST_MINUTES)  # zählt als ganzer Ausklang
         self.runner.summary.close()
         self.assertEqual(qso.settings()["eval"], "quiz")  # Einstellungen des Reiters zurück
+        self.assertEqual(qso.start_button["text"], "Neues QSO (F5)")
+
+    def test_qso_outro_instruction_is_not_cut_by_the_field(self):
+        from morsetrainer.modes import qso_mode
+        qso = self._qso_outro(daily.QSO_HEAD)
+        key = min(qso.quiz.entries)
+        with mock.patch.object(qso_mode.announcer, "say") as say:
+            qso.running, qso.play_thread = True, None  # das Ende noch einmal, mit beobachteter Ansage
+            qso._finish()
+            qso.quiz._announce_field(key)  # FocusIn des ersten Felds: still
+        self.assertEqual(len(say.call_args_list), 1)
+        text = say.call_args.args[0]
+        self.assertTrue(text.startswith("QSO zu Ende. 3 Fragen. Erstes Feld: "), text)
+        self.assertTrue(text.endswith("Tab: nächstes Feld, F8 prüft."), text)
+        with mock.patch.object(qso_mode.announcer, "say") as say:
+            qso.quiz._announce_field(key)  # später wieder mit Feldansage
+        say.assert_called_once()
+        self.runner.abort(quiet=True)
 
     def test_qso_outro_without_check_is_not_completed(self):
         qso = self._qso_outro(daily.QSO_LOG)
@@ -271,6 +289,10 @@ class DailyRunnerTest(AppTestCase):
         self.assertFalse(self.runner.active)
         self.assertIn("abgebrochen", self.runner.summary.spoken)
         self.runner.summary.close()
+        # Danach wieder ein gewöhnlicher QSO-Reiter.
+        self.assertEqual(qso.start_button["text"], "Neues QSO (F5)")
+        self.assertEqual(str(qso.replay_button["state"]), "normal")
+        self.assertEqual(qso.status_var.get(), "QSO beendet.")
 
     def _band_outro(self, gain):
         """Tagesübung nur mit dem Band-Ausklang starten, ohne den Block laufen zu lassen."""

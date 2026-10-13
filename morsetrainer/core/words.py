@@ -216,11 +216,14 @@ def ensure_user_file(path: Path = None) -> Path:
 # Einzelzeichen (R, K, Betriebszeichen) zählen nicht mit: das wäre Zeichen-,
 # kein Wortdrill.
 MIN_WORDS = 10
+# Klartext ist vorhersagbarer als Abkürzungen: Bei wenigen Wörtern stünde
+# nach zwei Zeichen die Antwort fest. Mit dieser Grenze kommt er ab Lektion 10.
+PLAIN_MIN_WORDS = 30
 
 
-def enough_words(found) -> bool:
-    """Genug echte Wörter (mehr als ein Zeichen) zum Üben, mindestens MIN_WORDS?"""
-    return sum(1 for w in found if len(w) > 1) >= MIN_WORDS
+def enough_words(found, minimum: int = MIN_WORDS) -> bool:
+    """Genug echte Wörter (mehr als ein Zeichen) zum Üben, mindestens `minimum`?"""
+    return sum(1 for w in found if len(w) > 1) >= minimum
 
 
 def first_lesson_with_words(words=WORDS, minimum: int = MIN_WORDS):

@@ -103,6 +103,26 @@ class FontScaleTest(AppTestCase):
             mode.close_full()
         self.app.set_font_scale(100)
 
+    def test_choice_rows_wrap_at_200_percent(self):
+        # Sechs Inhalte in Am Stück passten bei großer Schrift nicht in eine Zeile.
+        self.root.geometry("1024x600")
+        self.app.set_font_scale(200)
+        try:
+            for title in ("Kontinuierlich", "Wörter", "Sprechen"):
+                self.app.show_mode(title)
+                row = self.mode(title).content_buttons
+                for _ in range(5):
+                    self.root.update()
+                right = max(b.winfo_rootx() + b.winfo_width() for b in row.buttons)
+                self.assertLessEqual(right, row.master.winfo_rootx() + row.master.winfo_width(), title)
+                self.assertTrue(all(b.winfo_width() >= b.winfo_reqwidth() for b in row.buttons), title)
+            self.assertGreater(len(self.mode("Kontinuierlich").content_buttons.rows), 1)
+        finally:
+            self.app.set_font_scale(100)
+        for _ in range(5):
+            self.root.update()
+        self.assertEqual(len(self.mode("Kontinuierlich").content_buttons.rows), 1)
+
     def test_later_windows_get_wider_wrapping(self):
         self.app.set_font_scale(200)
         window = tk.Toplevel(self.root)

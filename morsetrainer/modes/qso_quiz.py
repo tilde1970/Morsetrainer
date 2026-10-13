@@ -1,6 +1,7 @@
 """Abfrage im QSO-Modus: Tabelle zum Eintragen (normales QSO: Rufzeichen,
 Name, QTH, Rapport beider Stationen; Contest: das Log) und der Vergleich
 mit dem, was tatsächlich gesendet wurde."""
+import time
 import tkinter as tk
 from tkinter import ttk
 
@@ -58,6 +59,7 @@ class QuizPanel:
         self.vars, self.entries, self.marks = {}, {}, {}
         self.results = {}  # (Zeile, Spalte) -> richtig? nach „Prüfen“
         self.fixes = []    # [(Zeile, Spalte, erwartet)] der falschen Felder
+        self.quiet = None  # (Feld, bis wann) ohne Feldansage beim Fokus, siehe focus_first
 
         bottom = ttk.Frame(self.box)
         bottom.pack(fill="x")
@@ -102,10 +104,34 @@ class QuizPanel:
         self.checked = False
         self.set_check_enabled(True)
 
+    def _field_name(self, key) -> str:
+        row, col = key
+        return f"{self.qso.quiz_rows[row][0]}, {self.qso.quiz_columns[col]}."
+
+    def intro(self, questions: bool) -> str:
+        """Anleitung zum Ausfüllen für die Ansage nach dem QSO: Zahl der Fragen
+        bzw. Logfelder, erstes Feld, Tab und F8."""
+        count = tr("{n} Fragen.") if questions else tr("{n} Felder im Log.")
+        return " ".join((count.format(n=len(self.vars)),
+                         tr("Erstes Feld: {field}").format(field=self._field_name(min(self.entries))),
+                         tr("Tab: nächstes Feld, F8 prüft.")))
+
+    def focus_first(self) -> None:
+        """Fokus ins erste Feld, ohne dessen Feldansage: Die Anleitung (intro)
+        nennt es schon, und die Feldansage verdrängte sie sonst."""
+        key = min(self.entries)
+        self.quiet = (key, time.monotonic() + 1.0)
+        self.entries[key].focus_set()
+
     def _announce_field(self, key) -> None:
+        if self.quiet is not None:
+            quiet_key, until = self.quiet
+            self.quiet = None
+            if quiet_key == key and time.monotonic() < until:
+                return
         row, col = key
         label, cells = self.qso.quiz_rows[row]
-        text = f"{label}, {self.qso.quiz_columns[col]}."
+        text = self._field_name(key)
         if key in self.results:
             if self.results[key]:
                 text += " " + tr("Richtig.")

@@ -21,7 +21,7 @@ from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import MIN_ITEMS as MIN_PHRASES, first_lesson_with_phrases
 from morsetrainer.modes.sequence_mode import COPY, FIRST_KEY_S, MEMORIZE, SequenceModeFrame
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import ChoiceButtons
 
 # Was der Reiter sendet: angezeigter (deutscher) Name → gespeicherter Wert.
@@ -164,25 +164,27 @@ class WordModeFrame(SequenceModeFrame):
             if len(self.words) < MIN_PHRASES:
                 first = first_lesson_with_phrases()
                 when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
-                self.status_var.set(tr("Nur {count} Wendungen mit diesen Zeichen").format(count=len(self.words))
-                                    + when + ".\n" + tr("Übe bis dahin mit Wörtern."))
+                announcer.problem(self.status_var, tr("Nur {count} Wendungen mit diesen Zeichen").format(
+                    count=len(self.words)) + when + ".\n" + tr("Übe bis dahin mit Wörtern."))
                 return False
             self.charset = charset
             return True
-        pool = words.PLAIN_WORDS if self._content() == "plain" else self.all_words
+        plain = self._content() == "plain"
+        pool = words.PLAIN_WORDS if plain else self.all_words
+        minimum = words.PLAIN_MIN_WORDS if plain else words.MIN_WORDS
         self.words = words.words_for_charset(charset, pool)
         # Gemischt: Reichen die Wendungen nicht, kommen nur Wörter.
         if self._content() == "mixed":
             phrases = words.phrases_for_charset(charset)
             self.phrase_list = phrases if len(phrases) >= MIN_PHRASES else []
-        if not words.enough_words(self.words):
+        if not words.enough_words(self.words, minimum):
             # Mit einer Handvoll Wörter stünde die Antwort fest (bei RR und UR
             # im Wechsel); dann lieber Gruppen üben.
-            first = words.first_lesson_with_words(pool)
+            first = words.first_lesson_with_words(pool, minimum)
             when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
             count = sum(1 for w in self.words if len(w) > 1)
-            self.status_var.set(tr("Nur {count} Wörter mit diesen Zeichen").format(count=count) + when + ".\n"
-                                + tr("Übe bis dahin mit Gruppen."))
+            announcer.problem(self.status_var, tr("Nur {count} Wörter mit diesen Zeichen").format(count=count)
+                              + when + ".\n" + tr("Übe bis dahin mit Gruppen."))
             return False
         self.charset = charset
         return True

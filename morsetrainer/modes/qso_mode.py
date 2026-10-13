@@ -377,6 +377,19 @@ class QsoModeFrame(DailyModeMixin):
         elif self.daily_minutes:
             self._daily_done(None, None)
 
+    def daily_release(self) -> None:
+        """Wie DailyModeMixin.daily_release; danach Knöpfe und Statuszeile wie
+        nach einem gewöhnlichen QSO (der Startknopf hieße sonst weiter
+        „Tagesübung beenden“, „Nochmal“ bliebe gesperrt)."""
+        super().daily_release()
+        if self.running:
+            return
+        self.start_button.config(text=tr("Neues QSO (F5)"))
+        head_unchecked = self.qso_eval == EVAL_HEAD and not self.quiz_checked
+        self.replay_button.config(state="disabled" if head_unchecked or self.qso is None else "normal")
+        if not self.quiz_checked:
+            self.status_var.set(tr("QSO beendet."))
+
     def _daily_done(self, correct, total):
         """Tagesübung: Ergebnis für daily_result() und Ende des Blocks melden;
         `correct` None heißt ohne Prüfen beendet."""
@@ -644,6 +657,11 @@ class QsoModeFrame(DailyModeMixin):
         else:
             self.status_var.set(tr("QSO beendet."))
             spoken = tr("QSO beendet.")
+        # Tagesübung: Der Fokus geht gleich ins erste Feld; die Ansage nennt es
+        # mit, sonst verdrängte die Feldansage die Anleitung.
+        focus_quiz = bool(self.daily_minutes and not stopped and self.quiz.entries)
+        if focus_quiz and mode in (EVAL_HEAD, EVAL_QUIZ) and not self.quiz_checked:
+            spoken = tr("QSO zu Ende.") + " " + self.quiz.intro(questions=mode == EVAL_HEAD)
         if stopped:
             self.status_var.set(tr("Gestoppt. ") + self.status_var.get())
             spoken = tr("Gestoppt. ") + spoken
@@ -658,11 +676,11 @@ class QsoModeFrame(DailyModeMixin):
             self.on_stop_cb()
         elif stopped:
             self._daily_done(None, None)
-        elif self.quiz.entries:
+        elif focus_quiz:
             # Der Block bleibt offen, bis die Abfrage geprüft ist. Der Fokus
             # lag beim Hauptfenster (Tagesübung); Tab käme sonst zuerst an die
             # Kopfleiste.
-            self.quiz.entries[min(self.quiz.entries)].focus_set()
+            self.quiz.focus_first()
 
     def _finalize_session(self):
         """Wertet das Mittippen aus; gibt die Trefferquote (0..1) zurück, oder

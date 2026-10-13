@@ -225,7 +225,7 @@ Unter **Art** wählst du, was kommt: **Abkürzungen** ist die eben
 beschriebene Liste (Abkürzungen, Q-Gruppen und einige ausgeschriebene
 Wörter). **Klartext** bringt rund 300 ausgeschriebene englische Wörter, wie
 sie in QSOs fallen (WEATHER, STATION, THANKS, AGAIN …), ohne Bedeutung,
-genug gibt es ab Lektion 7. **Wendungen** sind ganze Stücke aus QSOs wie „TNX FER
+genug gibt es ab Lektion 10. **Wendungen** sind ganze Stücke aus QSOs wie „TNX FER
 CALL“ oder „UR RST 599“, genug gibt es ab Lektion 25. Sie kommen mit
 Wortabstand und wollen als Ganzes gehört werden; getippt wird ohne
 Leerzeichen. Weil eine Wendung lang ist, ist das Zeitfenster zweigeteilt:

@@ -469,5 +469,6 @@ class PlainWordsTest(unittest.TestCase):
         self.assertIn(text, source.items)
         self.assertEqual(meaning, "")
         self.assertIn("plain", PLAIN_TEXT)  # zählt nicht für die Zeichenstatistik
-        self.assertIsNotNone(ItemSource("plain", "KMR").problem())
+        self.assertIsNotNone(ItemSource("plain", koch.lesson_charset(9)).problem())  # erst ab Lektion 10
+        self.assertIsNone(ItemSource("words", koch.lesson_charset(9)).problem())
 

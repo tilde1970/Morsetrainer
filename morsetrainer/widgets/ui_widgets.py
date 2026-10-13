@@ -83,7 +83,10 @@ class ChoiceButtons(ttk.Frame):
     """Optionsfelder nebeneinander für deutsche Werte (wie ChoiceBox, aber
     alle Möglichkeiten auf einen Blick): `variable` hält den deutschen Wert,
     angezeigt wird die Übersetzung. Pfeiltasten wählen den Nachbarn, die
-    Ansage nennt `role` mit („Inhalt Wörter“)."""
+    Ansage nennt `role` mit („Inhalt Wörter“). Passen sie bei großer Schrift
+    nicht in die Breite der Zeile (`parent`), brechen sie um."""
+
+    GAP = 10  # Abstand zwischen den Feldern (Pixel)
 
     def __init__(self, parent, variable, values, role: str, **kwargs):
         super().__init__(parent, **kwargs)
@@ -91,14 +94,63 @@ class ChoiceButtons(ttk.Frame):
         self.keys = list(values)
         self.buttons = []
         self.role = role
+        self.rows = []         # Frames je Zeile, siehe _layout
+        self.layout = None     # Zahl der Felder je Zeile beim letzten Aufbau
+        self.pending = None    # after-ID des nächsten Aufbaus
         for key in self.keys:
             button = ttk.Radiobutton(self, text=tr(key), value=key, variable=variable)
-            button.pack(side="left", padx=(0, 10))
             announcer.name(button, f"{role} {tr(key)}")
             for arrow, step in (("Left", -1), ("Up", -1), ("Right", 1), ("Down", 1)):
                 button.bind(f"<{arrow}>", lambda e, d=step: self.step(d) or "break")
+            # Größere Schrift ändert die Breite der Felder.
+            button.bind("<Configure>", self._reflow, add="+")
             self.buttons.append(button)
         one_tab_stop(self.buttons, variable)
+        self._layout()
+        parent.bind("<Configure>", self._reflow, add="+")
+
+    def _reflow(self, event=None) -> None:
+        if self.pending is None:
+            self.pending = self.after_idle(self._layout)
+
+    def _layout(self) -> None:
+        """Felder der Reihe nach auf Zeilen verteilen, so viele, wie in die
+        Zeile passen (mindestens eins je Zeile)."""
+        self.pending = None
+        try:
+            available = self.master.winfo_width() - self.winfo_x()
+        except tk.TclError:
+            return
+        if available <= 1:  # noch nicht gezeichnet: alles in eine Zeile
+            available = float("inf")
+        counts, used = [], 0
+        for button in self.buttons:
+            width = button.winfo_reqwidth() + self.GAP
+            if counts and used + width > available:
+                counts.append(1)
+                used = width
+            else:
+                if not counts:
+                    counts.append(0)
+                counts[-1] += 1
+                used += width
+        if counts == self.layout:
+            return
+        self.layout = counts
+        for button in self.buttons:
+            button.pack_forget()
+        for row in self.rows:
+            row.destroy()
+        self.rows = []
+        buttons = iter(self.buttons)
+        for count in counts:
+            row = ttk.Frame(self)
+            row.pack(anchor="w")
+            self.rows.append(row)
+            for _ in range(count):
+                button = next(buttons)
+                button.pack(in_=row, side="left", padx=(0, self.GAP))
+                button.lift(row)  # sonst läge der später angelegte Zeilenrahmen darüber
 
     def step(self, step: int) -> None:
         """Den nächsten (1) bzw. vorigen (−1) Wert wählen, Fokus mitnehmen
