@@ -831,7 +831,7 @@ EN.update({
     "{n} Zeichen, {share} % richtig (Ziel {pct} %)": "{n} characters, {share} % correct (goal {pct} %)",
     "≈ {cpm} ZpM effektiv": "≈ {cpm} CPM effective",
     "Wiederholen (Leertaste)": "Repeat (space bar)",
-    "Bereit. Drücke Start.": "Ready. Press Start.",
+    "Bereit. Start mit F10.": "Ready. Start with F10.",
     "Bereit. Start mit F5.": "Ready. Start with F5.",
     "Enter bestätigt": "Enter confirms",
     "Nach dem letzten Zeichen automatisch fertig, sonst Enter":

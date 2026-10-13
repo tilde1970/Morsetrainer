@@ -8,7 +8,7 @@ hier (Stile, Schriften, Farben) statt eigener Schrift- und Farbangaben.
 Stile:
     Accent.TButton    Hauptaktion eines Reiters (Start, Neues QSO)
     Hint.TLabel       Erklärtext, Einheiten, Nebeninfos (gedämpft)
-    Status.TLabel     Statuszeile eines Reiters ("Bereit. Drücke Start.")
+    Status.TLabel     Statuszeile eines Reiters ("Bereit. Start mit F5.")
     Feedback.TLabel   große Rückmeldung (Richtig/Falsch), Farbe per foreground
     Score.TLabel      fette Zwischenstände (Punkte, x / y richtig)
     Footer.TLabel     Fußzeile"""

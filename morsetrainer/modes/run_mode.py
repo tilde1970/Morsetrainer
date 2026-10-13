@@ -318,7 +318,7 @@ class RunModeFrame:
         controls.pack(fill="x", padx=10, pady=(8, 0))
         self.start_button = ttk.Button(controls, text=tr("Start (F10)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
-        self.status_var = tk.StringVar(value=tr("Bereit. Drücke Start."))
+        self.status_var = tk.StringVar(value=tr("Bereit. Start mit F10."))
         ttk.Label(controls, textvariable=self.status_var, style="Status.TLabel").pack(side="left", padx=12)
 
         self.score_var = tk.StringVar(value="")
