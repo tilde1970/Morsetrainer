@@ -114,6 +114,7 @@ class BandSettings:
         self.preview = None  # BandPreview, sobald attach_preview() gerufen ist
         self.preview_blocked = lambda: None  # Grund, warum gerade nicht, sonst None
         self.preview_poll = None  # after-ID der Abfrage, ob das Probehören zu Ende ist
+        self.pitch = lambda: None  # Tonhöhe der Kopfleiste (setzt die App), für tiefe Töne
         self.set_preset(DEFAULT_PRESET, notify=False)
         self.controls["strength"][0].set(True)
 
@@ -154,7 +155,8 @@ class BandSettings:
         if "strength" in current["levels"]:
             spec["levels"]["strength"] = current["levels"]["strength"]
         spec |= {key: current[key] for key in ("filter", "qrm_offset") if key in current}
-        self.set_spec(spec, notify)
+        # Bei sehr tiefem Ton etwas weniger Rauschen, damit die Stufe gleich schwer bleibt.
+        self.set_spec(band.pitch_compensated(spec, self.pitch()), notify)
 
     def settings(self) -> dict:
         """Zum Speichern (window_state.json, Abschnitt shared)."""
@@ -202,7 +204,7 @@ class BandSettings:
         if "filter" in spec:
             text += " · " + tr("Filter {width}").format(width=tr(FILTER_NAMES[spec["filter"]]))
         text += " · " + tr("Lautstärke {gain} %").format(gain=round(spec["gain"] * 100))
-        rank = band.preset_rank(spec)
+        rank = band.preset_rank(spec, self.pitch())
         if rank:
             text += " · " + tr("Stufe {name}").format(name=tr(PRESET_NAMES[rank]))
         return text
@@ -268,6 +270,11 @@ class BandSettings:
         self._update_window()
         for callback in self.listeners:
             callback()
+
+    def pitch_changed(self) -> None:
+        """Tonhöhe oben geändert: Stufe im Fenster neu einordnen (bei tiefem
+        Ton zählt das Rauschen stärker, siehe band.preset_rank)."""
+        self._update_window()
 
     # --- Fenster ---------------------------------------------------------
     def open_window(self) -> None:
@@ -393,7 +400,8 @@ class BandSettings:
         theme.hint(box, wrap=440, text=tr(
             "S/N: Rauschabstand im Empfängerfilter (300–2700 Hz) gegenüber dem ungeschwächten Signal; im "
             "Ohr, das CW wie ein Filter von etwa 50 Hz hört, sind es rund 16 dB mehr. Unter 400 Hz Tonhöhe "
-            "ist dieselbe Stufe schwerer; mit CW-Filter 500 oder 250 Hz nicht.")).grid(
+            "ist das Signal etwas leiser; die Stufenknöpfe stellen dann weniger Rauschen ein, damit die Stufe "
+            "gleich schwer bleibt. Nach einem Wechsel der Tonhöhe die Stufe neu wählen.")).grid(
             row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
         theme.hint(gain, wrap=440, text=tr(
             "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist "
@@ -527,7 +535,7 @@ class BandSettings:
             self.filter_shown.config(text=tr("im Filter S/N {db}").format(db=signed_db(snr)))
         else:
             self.filter_shown.config(text="")
-        rank = band.preset_rank(spec)
+        rank = band.preset_rank(spec, self.pitch())
         if rank:
             text = tr("Entspricht mindestens Stufe {name}.").format(name=tr(PRESET_NAMES[rank]))
         else:

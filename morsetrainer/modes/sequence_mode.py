@@ -99,13 +99,13 @@ FIRST_KEY_S = 2.0
 BAND_ORDER = (None, *band.PRESETS)
 
 
-def band_config(spec) -> dict:
+def band_config(spec, freq=None) -> dict:
     """Bandbedingungen für die config-Zeile des gespeicherten Durchgangs: die erreichte
     Stufe (für das Diplom QRN-fest; "custom", wenn schwächer als die
     leichteste) und die Lautstärke; ohne Bandbedingungen band None."""
     if spec is None:
         return {"band": None}
-    return {"band": band.preset_rank(spec) or "custom", "band_gain": round(spec["gain"] * 100)}
+    return {"band": band.preset_rank(spec, freq) or "custom", "band_gain": round(spec["gain"] * 100)}
 
 
 def clean_input(text: str) -> str:
@@ -184,6 +184,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.band = None         # BandConditions, None = ohne Störungen
         self.pause_noise = PauseNoise()  # Band leiser weiter in der Antwortpause
         self.band_tracked = False  # Durchgang begann mit Bandbedingungen
+        self.band_pitch = None  # Tonhöhe beim Start, für die Einstufung
         self.repeat_pending = False
         self.deadline = None   # time.time(), ab der keine neue Sequenz mehr kommt
         self.session_id = 0    # damit ein alter Timer keine neue Sitzung anzeigt
@@ -444,7 +445,8 @@ class SequenceModeFrame(DailyModeMixin):
         # Störungen geht.
         self.band_tracked = spec is not None
         self.band_gain_min = round(spec["gain"] * 100) if spec else 0
-        self.band_rank_min = band.preset_rank(spec)
+        self.band_pitch = freq  # eingestellte Tonhöhe: Einstufung ohne „Tonhöhe variieren“
+        self.band_rank_min = band.preset_rank(spec, freq)
         self.band = None
         self._band_for_play(freq)
         self.start_button.config(text=tr("Stop (F5)"))
@@ -479,7 +481,7 @@ class SequenceModeFrame(DailyModeMixin):
     def _config_extra(self, spec, freq: float) -> dict:
         """Bedingungen des Durchgangs für seine gespeicherte config-Zeile."""
         return {"lesson": koch.lesson_of(self.charset_var.get().strip().upper()),
-                **band_config(spec), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
+                **band_config(spec, freq), "adaptive_tempo": self.tempo is not None and not self._fixed_run(),
                 **self._daily_config()}
 
     def _band_for_play(self, freq):
@@ -498,7 +500,7 @@ class SequenceModeFrame(DailyModeMixin):
             self.band.prepare(freq, qrm_freq=getattr(self, "_last_freq", freq))
         if self.band_tracked:
             self.band_gain_min = min(self.band_gain_min, round(spec["gain"] * 100) if spec else 0)
-            rank = band.preset_rank(spec)
+            rank = band.preset_rank(spec, self.band_pitch)
             self.band_rank_min = min(self.band_rank_min, rank, key=BAND_ORDER.index)
         return self.band
 

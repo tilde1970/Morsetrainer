@@ -21,6 +21,29 @@ class SpecTest(unittest.TestCase):
         self.assertIsNone(band.preset_rank({"levels": {"ssb": 1.0}, "gain": 1.0}))
         self.assertIsNone(band.preset_rank(None))
 
+    def test_low_pitch_costs_signal_only_without_narrow_filter(self):
+        self.assertAlmostEqual(band.pitch_loss_db(300), 3.0, delta=0.1)
+        self.assertLess(band.pitch_loss_db(400), 0.5)
+        self.assertEqual(band.pitch_loss_db(600), 0.0)
+        self.assertEqual(band.pitch_loss_db(800), 0.0)  # höher wird es nicht lauter
+        self.assertEqual(band.pitch_loss_db(300, 500), 0.0)  # das CW-Filter wandert mit
+        self.assertEqual(band.pitch_loss_db(None), 0.0)
+
+    def test_compensated_presets_keep_their_level_at_every_pitch(self):
+        for preset in band.PRESETS:
+            for freq in (300, 350, 400, 500, 600, 1000):
+                spec = band.pitch_compensated(band.spec_from_preset(preset), freq)
+                self.assertEqual(band.preset_rank(spec, freq), preset, (preset, freq))
+                # Nicht mehr ausgeglichen als nötig: höchstens 1 % zu wenig Rauschen.
+                credit = band.pitch_loss_db(freq) / 30
+                self.assertLessEqual(spec["levels"]["noise"] - (band.PRESETS[preset]["noise"] - credit), 0.01 + 1e-9)
+        heavy = band.pitch_compensated(band.spec_from_preset("heavy"), 300)
+        self.assertLess(heavy["levels"]["noise"], band.PRESETS["heavy"]["noise"])
+        self.assertEqual(band.preset_rank(heavy, 600), "medium")  # bei 600 Hz wäre das leichter
+        self.assertEqual(band.preset_rank(band.spec_from_preset("heavy"), 300), "heavy")  # mehr zählt weiter
+        filtered = band.spec_from_preset("heavy") | {"filter": 500}
+        self.assertEqual(band.pitch_compensated(filtered, 300), filtered)
+
     def test_clean_spec_drops_junk_and_clamps(self):
         self.assertIsNone(band.clean_spec("medium"))
         self.assertIsNone(band.clean_spec({"levels": []}))
@@ -1213,3 +1236,24 @@ class SequenceBandTrackingTest(AppTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PitchPresetTest(AppTestCase):
+    def test_level_buttons_and_runs_follow_the_pitch(self):
+        settings = self.app.band_settings
+        self.app.freq_var.set(300)
+        settings.set_preset("heavy")
+        self.assertLess(settings.spec()["levels"]["noise"], band.PRESETS["heavy"]["noise"])
+        self.assertEqual(band.preset_rank(settings.spec(), 300), "heavy")
+        groups = self.mode("Gruppen")
+        groups.band_var.set(True)
+        self.app.charset_var.set("KMURES")
+        with mock.patch.object(groups, "next_sequence"):
+            groups.start()
+        self.assertEqual(groups.band_rank_min, "heavy")
+        groups.stop()
+        self.app.freq_var.set(600)  # höher gestellt, ohne die Stufe neu zu wählen
+        settings.set_spec(settings.spec())
+        self.assertEqual(band.preset_rank(settings.spec(), self.app.freq_var.get()), "medium")
+        settings.set_preset("heavy")
+        self.assertEqual(settings.spec()["levels"]["noise"], band.PRESETS["heavy"]["noise"])

@@ -543,6 +543,8 @@ class MorseTrainerApp:
 
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)
+        self.band_settings.pitch = self._pitch_or_none
+        self.freq_var.trace_add("write", lambda *_: self.band_settings.pitch_changed())
         self.band_settings.attach_preview(
             lambda: (self.wpm_var.get(), self.freq_var.get(), self.station_call()), self._preview_blocked)
         band_row = ttk.Frame(self.more_frame)
@@ -1342,6 +1344,13 @@ class MorseTrainerApp:
     def _station_name(self) -> str:
         """Vorgabe für den Netzwerk-Reiter: der Name, sonst das Rufzeichen."""
         return self.station_name_var.get().strip() or self.station_call()
+
+    def _pitch_or_none(self):
+        """Tonhöhe der Kopfleiste, None bei ungültiger Eingabe."""
+        try:
+            return self.freq_var.get()
+        except tk.TclError:
+            return None
 
     def station_call(self) -> str:
         """Eigenes Rufzeichen aus den Einstellungen, in Großbuchstaben (leer, wenn

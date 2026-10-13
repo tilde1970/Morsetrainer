@@ -1125,6 +1125,34 @@ def spec_from_preset(preset: str) -> dict:
     return {"levels": dict(PRESETS[preset]), "gain": 1.0}
 
 
+def pitch_loss_db(freq, filter_width: int = DEFAULT_FILTER) -> float:
+    """So viel leiser ist das Signal bei der Tonhöhe `freq` als bei 600 Hz:
+    Ohne schmales Filter dämpft das Empfängerfilter sehr tiefe Töne (300 Hz
+    etwa 3 dB), das Rauschen nicht. Das schmale Filter wandert mit der
+    Tonhöhe, dann 0."""
+    if freq is None or filter_width != DEFAULT_FILTER:
+        return 0.0
+    gains = _passband_gain(np.array([float(freq), 600.0]))
+    return max(-20 * math.log10(min(float(gains[0] / gains[1]), 1.0)), 0.0)
+
+
+def _noise_level_db(db: float) -> float:
+    """`db` Rauschabstand als Pegel des Reglers Rauschen (0..1)."""
+    return db / abs(SNR_DB_RANGE[0] - SNR_DB_RANGE[1])
+
+
+def pitch_compensated(spec: dict, freq) -> dict:
+    """`spec` mit um pitch_loss_db schwächerem Rauschen (auf ganze Prozent
+    aufgerundet), damit eine Stufe bei tiefem Ton nicht schwerer ist als bei
+    600 Hz; preset_rank(…, freq) rechnet den Verlust wieder gut."""
+    loss = pitch_loss_db(freq, spec.get("filter", DEFAULT_FILTER))
+    if not loss or "noise" not in spec["levels"]:
+        return spec
+    levels = dict(spec["levels"])
+    levels["noise"] = max(math.ceil((levels["noise"] - _noise_level_db(loss)) * 100 - 1e-6) / 100, 0.0)
+    return {**spec, "levels": levels}
+
+
 def _number(value) -> bool:
     """Endliche Zahl (JSON erlaubt auch NaN und Infinity)."""
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
@@ -1182,16 +1210,17 @@ def spec_key(spec) -> tuple:
             spec.get("filter", DEFAULT_FILTER), spec.get("qrm_offset", DEFAULT_QRM_OFFSET))
 
 
-def preset_rank(spec):
+def preset_rank(spec, freq=None):
     """Schwerste Stufe aus PRESETS, die die Spec mindestens erreicht (jede
     Störung der Stufe mindestens so stark), oder None. Die Lautstärke zählt
     hier nicht; das Diplom prüft sie getrennt. Ein schmales Filter nimmt
     Rauschen weg; das Rauschen zählt dann um so viel schwächer, bei jeder
-    Tonhöhe gleich."""
+    Tonhöhe gleich. Bei sehr tiefer Tonhöhe `freq` ohne schmales Filter ist
+    das Signal leiser (pitch_loss_db); das Rauschen zählt um so viel stärker."""
     levels = dict(spec["levels"]) if spec else {}
     if spec and "noise" in levels:
-        levels["noise"] -= filter_noise_db(spec.get("filter", DEFAULT_FILTER)) / abs(
-            SNR_DB_RANGE[0] - SNR_DB_RANGE[1])
+        width = spec.get("filter", DEFAULT_FILTER)
+        levels["noise"] += _noise_level_db(pitch_loss_db(freq, width) - filter_noise_db(width))
     rank = None
     for preset, wanted in PRESETS.items():  # leicht -> stark
         if all(levels.get(effect, 0.0) >= level - 1e-9 for effect, level in wanted.items()):
