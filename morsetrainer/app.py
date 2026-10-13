@@ -623,17 +623,27 @@ class MorseTrainerApp:
     def _import_data(self):
         """Sicherung einlesen; ersetzt alle Daten, danach beendet sich das
         Programm, ohne die alten Einstellungen zurückzuschreiben."""
-        if self.running_mode or self.daily.active:
-            dialog.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
-                                parent=self.root)
+        if self._exercise_blocks_import():
             return
         dialog.askopenfilename(
             self._read_import, parent=self.root, title=tr("Daten einlesen"), initialdir=str(Path.home()),
             filetypes=[("ZIP", "*.zip"), (tr("Alle Dateien"), "*")],
         )
 
+    def _exercise_blocks_import(self) -> bool:
+        """Läuft eine Übung? Dann Hinweis und True: Das Einlesen ersetzt die
+        Daten, und das Beenden danach schriebe den laufenden Durchgang
+        bzw. den Tagesstand in die eingelesene Sicherung."""
+        if self.running_mode or self.daily.active:
+            dialog.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
+                            parent=self.root)
+            return True
+        return False
+
     def _read_import(self, path):
-        if not path:
+        # Der Dateidialog öffnet erst nach seiner Ansage; in der Zeit kann
+        # eine Übung gestartet worden sein.
+        if not path or self._exercise_blocks_import():
             return
         try:
             info = backup.read_info(Path(path))

@@ -4,9 +4,11 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 import tests  # noqa: F401  (Pfad und Sprache)
 from morsetrainer.core import backup, db
+from tests.test_modes import AppTestCase
 
 
 def make_data(root: Path, tag: str) -> None:
@@ -168,6 +170,30 @@ class DatabaseBackupTest(unittest.TestCase):
         with self.assertRaises(backup.BackupError):
             backup.import_data(self.zip, "9.9", self.new)
         self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
+
+
+
+class ImportWhileRunningTest(AppTestCase):
+    """„Daten einlesen“ während einer Übung."""
+
+    def test_exercise_started_during_the_file_dialog_blocks_import(self):
+        # Der Dateidialog öffnet erst nach seiner Ansage; wer in der Zeit eine
+        # Übung startet, darf die Sicherung nicht einlesen (das Beenden danach
+        # schriebe den laufenden Durchgang hinein).
+        from morsetrainer import app as app_module
+        chosen = []
+        with mock.patch.object(app_module.dialog, "askopenfilename", lambda then, **options: chosen.append(then)), \
+                mock.patch.object(app_module.dialog, "showinfo") as info, \
+                mock.patch.object(app_module.dialog, "askyesno", return_value=False), \
+                mock.patch.object(backup, "read_info") as read_info, \
+                mock.patch.object(backup, "import_data") as import_data:
+            self.app._import_data()
+            self.assertEqual(len(chosen), 1)
+            self.app.running_mode = True  # während der Ansage gestartet
+            chosen[0]("/irgendwo/sicherung.zip")
+        info.assert_called_once()
+        read_info.assert_not_called()
+        import_data.assert_not_called()
 
 
 if __name__ == "__main__":
