@@ -84,7 +84,7 @@ along the way, not requirements for the next step.
    Copying in flow from lesson 15.
 3. **Digits, punctuation, callsigns** (lessons 30–41, about 1.5–2.5
    months): the full character set. **Daily practice leads**, with words
-   or callsigns on alternate days. **On your own:** RufZ runs. Milestones:
+   or callsigns alternating by practice day. **On your own:** RufZ runs. Milestones:
    All digits, Koch Gold with lesson 41.
 4. **Prosigns** (lessons 42–45, a few days): AR, KN, SK and BK. **Set them
    yourself** (see “Koch lesson and moving up” in section 3); worth doing
@@ -377,7 +377,7 @@ as they were.
 |---|---|---|---|
 | Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Non-stop, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
-| Lesson 30–41 | as above | as above | Words or callsigns on alternate days, 2 min |
+| Lesson 30–41 | as above | as above | Words or callsigns alternating from one practice day to the next, 2 min |
 | after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | Callsigns, 4 min |
 
 - **Warm-up** with all characters of the lesson; those due today in the

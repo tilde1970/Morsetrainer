@@ -142,11 +142,20 @@ def warmup_minutes(lesson: int, due_count: int) -> float:
     return min(WARMUP_MINUTES + extra, WARMUP_MAX_MINUTES)
 
 
-def plan(lesson: int, due_count: int, today: date) -> list:
+def practice_days(state: dict, today: date) -> int:
+    """Tage vor `today`, an denen eine Tagesübung lief (mindestens ein Block)."""
+    before = today.isoformat()
+    return sum(1 for day, entry in state.get("days", {}).items()
+               if day < before and isinstance(entry, dict) and entry.get("blocks"))
+
+
+def plan(lesson: int, due_count: int, turn: int) -> list:
     """Die Blöcke der heutigen Tagesübung, zusammen TOTAL_MINUTES.
     `due_count`: heute fällige Zeichen der Lernkartei im Zeichensatz; ohne
     sie übt das Aufwärmen die häufigsten Verwechslungen (die App fällt auf
-    die schwächsten Zeichen zurück, wenn es keine gibt)."""
+    die schwächsten Zeichen zurück, wenn es keine gibt). `turn`: Zahl der
+    bisherigen Übungstage (practice_days); danach wechselt der Ausklang.
+    Nach dem Kalender bekäme, wer jeden zweiten Tag übt, immer denselben."""
     level = stage(lesson)
     focus = "due" if due_count else "confusions"
     warmup = Block(WARMUP, "single", warmup_minutes(lesson, due_count), {"focus": focus})
@@ -158,7 +167,7 @@ def plan(lesson: int, due_count: int, today: date) -> list:
         outro_minutes = OUTRO_MINUTES
         if level == EARLY:
             outro = Block(OUTRO, "continuous", outro_minutes, {"content": "chars", "group_len": 3})
-        elif level == WORDS or today.toordinal() % 2 == 0:
+        elif level == WORDS or turn % 2 == 0:
             outro = Block(OUTRO, "word", outro_minutes)
         else:
             outro = Block(OUTRO, "callsign", outro_minutes)

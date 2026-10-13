@@ -147,7 +147,7 @@ class DailyRunner:
 
         charset = daily.lesson_charset(lesson, review.boxed_chars())
         self.due = review.due_chars(known=charset)
-        self._begin(charset, daily.plan(lesson, len(self.due), self.today))
+        self._begin(charset, daily.plan(lesson, len(self.due), daily.practice_days(self.state, self.today)))
         if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
             # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
             char = koch.newest_char(lesson)

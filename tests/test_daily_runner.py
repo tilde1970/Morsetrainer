@@ -13,9 +13,9 @@ from tests.test_modes import AppTestCase, app_module
 REAL_PLAN = daily.plan
 
 
-def short_plan(lesson, due_count, today):
+def short_plan(lesson, due_count, turn):
     """Wie daily.plan, aber Blöcke von wenigen Sekunden."""
-    return [daily.Block(b.kind, b.mode, 0.01, b.params) for b in REAL_PLAN(lesson, due_count, today)]
+    return [daily.Block(b.kind, b.mode, 0.01, b.params) for b in REAL_PLAN(lesson, due_count, turn)]
 
 
 class DailyRunnerTest(AppTestCase):

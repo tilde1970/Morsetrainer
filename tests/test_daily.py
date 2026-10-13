@@ -37,7 +37,7 @@ class StageAndPlanTest(unittest.TestCase):
     def test_blocks_add_up_to_ten_minutes(self):
         for lesson in (3, 15, 35, 41, daily.POST_KOCH):
             for due in (0, 3, 8, 20):
-                blocks = daily.plan(lesson, due, TODAY)
+                blocks = daily.plan(lesson, due, 0)
                 self.assertEqual([b.kind for b in blocks], [daily.WARMUP, daily.MAIN, daily.OUTRO])
                 self.assertAlmostEqual(sum(b.minutes for b in blocks), daily.TOTAL_MINUTES)
                 self.assertGreaterEqual(blocks[1].minutes, daily.MAIN_MIN_MINUTES)
@@ -49,15 +49,28 @@ class StageAndPlanTest(unittest.TestCase):
         self.assertEqual(daily.warmup_minutes(daily.POST_KOCH, 30), daily.WARMUP_POST_MINUTES)
 
     def test_nothing_due_uses_confusions(self):
-        self.assertEqual(daily.plan(15, 0, TODAY)[0].params["focus"], "confusions")
-        self.assertEqual(daily.plan(15, 2, TODAY)[0].params["focus"], "due")
+        self.assertEqual(daily.plan(15, 0, 0)[0].params["focus"], "confusions")
+        self.assertEqual(daily.plan(15, 2, 0)[0].params["focus"], "due")
+
+    def test_practice_days_count_days_with_blocks_before_today(self):
+        state = {"days": {}}
+        self.assertEqual(daily.practice_days(state, TODAY), 0)
+        # Jeden zweiten Kalendertag geübt: der Ausklang wechselt trotzdem.
+        for i in (6, 4, 2):
+            state["days"][(TODAY - timedelta(days=i)).isoformat()] = {"blocks": [{"kind": daily.MAIN}]}
+        state["days"][(TODAY - timedelta(days=1)).isoformat()] = {"blocks": []}  # nur angefangen
+        state["days"][TODAY.isoformat()] = {"blocks": [{"kind": daily.MAIN}]}  # heute zählt nicht mit
+        self.assertEqual(daily.practice_days(state, TODAY), 3)
+        outros = [daily.plan(35, 0, daily.practice_days(state, TODAY - timedelta(days=i)))[2].mode
+                  for i in (6, 4, 2)]
+        self.assertEqual(outros, ["word", "callsign", "word"])
 
     def test_outro_by_stage(self):
-        self.assertEqual(daily.plan(5, 0, TODAY)[2].mode, "continuous")
-        self.assertEqual(daily.plan(15, 0, TODAY)[2].mode, "word")
-        mixed = {daily.plan(35, 0, TODAY + timedelta(days=i))[2].mode for i in range(2)}
-        self.assertEqual(mixed, {"word", "callsign"})  # im Tageswechsel
-        post = daily.plan(daily.POST_KOCH, 0, TODAY)
+        self.assertEqual(daily.plan(5, 0, 0)[2].mode, "continuous")
+        self.assertEqual(daily.plan(15, 0, 0)[2].mode, "word")
+        mixed = {daily.plan(35, 0, turn)[2].mode for turn in range(2)}
+        self.assertEqual(mixed, {"word", "callsign"})  # im Wechsel der Übungstage
+        post = daily.plan(daily.POST_KOCH, 0, 0)
         self.assertEqual((post[1].mode, post[2].mode), ("continuous", "callsign"))
 
 

@@ -384,7 +384,7 @@ wieder wie vorher.
 |---|---|---|---|
 | Lektion 1–9 | Zeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Am Stück, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
-| Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Tageswechsel, 2 Min |
+| Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Wechsel von Übungstag zu Übungstag, 2 Min |
 | nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | Rufzeichen, 4 Min |
 
 - **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
