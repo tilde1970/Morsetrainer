@@ -1,7 +1,10 @@
-"""Wörter-Modus: sendet CW-Abkürzungen, Q-Gruppen und typische QSO-Wörter,
-aber nur solche aus Zeichen des eingestellten Zeichensatzes. Brücke
-zwischen Gruppen (Zufall) und QSO (ganzer Text): man lernt, Wortbilder
+"""Wörter-Modus: sendet CW-Abkürzungen, Q-Gruppen und typische QSO-Wörter
+oder, wahlweise, kurze Wendungen aus QSOs („TNX FER CALL“), aber nur solche
+aus Zeichen des eingestellten Zeichensatzes. Brücke zwischen Gruppen
+(Zufall) und QSO (ganzer Text): man lernt, Wortbilder und ganze Wendungen
 als Ganzes zu hören. Nach der Antwort wird die Bedeutung angezeigt.
+Wendungen kommen mit Wortabstand, getippt wird ohne Leerzeichen; das
+Zeitfenster ist zweigeteilt (erste Taste, dann Tippen).
 
 Eigene Wörter kommen aus woerter.txt im Datenverzeichnis; der Knopf
 "Eigene Wörter bearbeiten" legt die Datei an und öffnet sie im Editor."""
@@ -15,8 +18,13 @@ from morsetrainer.core import koch, words
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, tr
-from morsetrainer.modes.sequence_mode import COPY, MEMORIZE, SequenceModeFrame
+from morsetrainer.modes.content import MIN_ITEMS as MIN_PHRASES, first_lesson_with_phrases
+from morsetrainer.modes.sequence_mode import COPY, FIRST_KEY_S, MEMORIZE, SequenceModeFrame
 from morsetrainer.widgets import theme
+from morsetrainer.widgets.ui_widgets import ChoiceButtons
+
+# Was der Reiter sendet: angezeigter (deutscher) Name → gespeicherter Wert.
+CONTENTS = {N_("Wörter"): "words", N_("Wendungen"): "phrases"}
 
 
 def open_in_editor(path) -> None:
@@ -37,10 +45,11 @@ def open_in_editor(path) -> None:
 
 
 class WordModeFrame(SequenceModeFrame):
-    """Reiter Wörter: Wörter, Q-Gruppen, Abkürzungen und Wendungen (oder eigene
-    Wörter aus woerter.txt) aus dem gelernten Zeichensatz; Standard ist
-    „Erst merken“, das ganze Wort hören und dann tippen."""
+    """Reiter Wörter: Wörter, Q-Gruppen und Abkürzungen (dazu eigene Wörter
+    aus woerter.txt) oder Wendungen aus dem gelernten Zeichensatz; Standard
+    ist „Erst merken“, das ganze Wort hören und dann tippen."""
     session_mode = "word"
+    daily_keys = (*SequenceModeFrame.daily_keys, "content")
     # Erst das ganze Wort hören, dann tippen: fördert das Wort als Klangbild
     # statt Buchstabe für Buchstabe.
     default_style = MEMORIZE
@@ -48,8 +57,8 @@ class WordModeFrame(SequenceModeFrame):
     # Im Wort verrät der Zusammenhang viele Buchstaben.
     char_stats = False
     intro_text = N_(
-        "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs – nur solche, die "
-        "aus den Zeichen oben bestehen. Mit jeder Koch-Lektion werden es mehr."
+        "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs, unter „Art“ auch ganze "
+        "Wendungen – nur solche, die aus den Zeichen oben bestehen. Mit jeder Koch-Lektion werden es mehr."
     )
 
     def _build_extra_settings(self, parent):
@@ -58,6 +67,13 @@ class WordModeFrame(SequenceModeFrame):
         self.all_words = dict(words.WORDS)
         self.user_words, self.skipped = {}, []
         self.words_mtime = -1  # Änderungszeit von woerter.txt beim letzten Einlesen (None = fehlt)
+        self.content_var = tk.StringVar(value=N_("Wörter"))
+        choice = ttk.Frame(parent)
+        choice.pack(fill="x", pady=(0, 4))
+        ttk.Label(choice, text=tr("Art:")).pack(side="left", padx=(0, 8))
+        self.content_buttons = ChoiceButtons(choice, self.content_var, CONTENTS, tr("Art"))
+        self.content_buttons.pack(side="left")
+        self.content_var.trace_add("write", lambda *_: self._show_count())
         row = ttk.Frame(parent)
         row.pack(fill="x", pady=(0, 4))
         self.count_var = tk.StringVar(value="")
@@ -67,6 +83,14 @@ class WordModeFrame(SequenceModeFrame):
         # Nach dem Bearbeiten im Editor: beim Zurückkehren ins Fenster neu zählen.
         self.root.bind("<FocusIn>", lambda e: self._show_count(), add="+")
         self._show_count()
+
+    def _phrases(self) -> bool:
+        return CONTENTS.get(self.content_var.get()) == "phrases"
+
+    @property
+    def first_key_limit(self):
+        # Wendungen sind lang: ein Fenster ab Tonende maße vor allem das Tippen.
+        return FIRST_KEY_S if self._phrases() else None
 
     def _charset(self) -> str:
         return "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
@@ -86,6 +110,11 @@ class WordModeFrame(SequenceModeFrame):
         """Liest woerter.txt bei Bedarf neu und zeigt, wie viele Wörter zum
         Zeichensatz passen (davon eigene) und welche Zeilen übersprungen wurden."""
         self._reload_words()
+        if self._phrases():
+            count = len(words.phrases_for_charset(self._charset()))
+            self.count_var.set(tr("Mit dem aktuellen Zeichensatz: {count} von {total} Wendungen").format(
+                count=count, total=len(words.PHRASES)))
+            return
         user, skipped = self.user_words, self.skipped
         count = len(words.words_for_charset(self._charset(), self.all_words))
         text = tr("Mit dem aktuellen Zeichensatz: {count} von {total} Wörtern").format(
@@ -109,6 +138,16 @@ class WordModeFrame(SequenceModeFrame):
         welcher Lektion es reicht."""
         self._show_count()
         charset = self._charset()
+        if self._phrases():
+            self.words = words.phrases_for_charset(charset)
+            if len(self.words) < MIN_PHRASES:
+                first = first_lesson_with_phrases()
+                when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
+                self.status_var.set(tr("Nur {count} Wendungen mit diesen Zeichen").format(count=len(self.words))
+                                    + when + ".\n" + tr("Übe bis dahin mit Wörtern."))
+                return False
+            self.charset = charset
+            return True
         self.words = words.words_for_charset(charset, self.all_words)
         if not words.enough_words(self.words):
             # Mit einer Handvoll Wörter stünde die Antwort fest (bei RR und UR
@@ -132,7 +171,11 @@ class WordModeFrame(SequenceModeFrame):
         return self.picker.pick()
 
     def _explain(self, sequence: str) -> str:
-        return words.shown_meaning(sequence, self.all_words.get(sequence, ""))
+        meaning = words.PHRASES.get(sequence, "") if self._phrases() else self.all_words.get(sequence, "")
+        return words.shown_meaning(sequence, meaning)
+
+    def _config_extra(self, spec, freq: float) -> dict:
+        return {**super()._config_extra(spec, freq), "content": CONTENTS.get(self.content_var.get(), "words")}
 
     def _log_charset(self) -> str:
         return self.charset
@@ -142,12 +185,16 @@ class WordModeFrame(SequenceModeFrame):
         auf „Erst merken“ schon erfolgt ist."""
         data = super().settings()
         data["memorize_default"] = True  # Umstellung auf „Erst merken“ erledigt
+        data["content"] = CONTENTS.get(self.content_var.get(), "words")
         return data
 
     def restore_settings(self, data: dict) -> None:
         """Wie SequenceModeFrame; alte Einstellungen ohne diese Kennung werden einmal
         auf „Erst merken“ umgestellt."""
         super().restore_settings(data)
+        chosen = {value: key for key, value in CONTENTS.items()}.get(data.get("content"))
+        if chosen:
+            self.content_var.set(chosen)
         # Gespeicherte Einstellungen ohne „memorize_default“ stammen aus der
         # Zeit, als „Mitschreiben“ Standard war: einmalig auf „Erst merken“
         # umstellen, danach gilt wieder, was gespeichert ist.

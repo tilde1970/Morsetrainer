@@ -265,7 +265,9 @@ class WordPicker:
         else:
             weight = dict(zip(self.char_picker.charset, self.char_picker.weights()))
             candidates = random.sample(pool, min(self.CANDIDATES, len(pool)))
-            scores = [0.5 * max(weight[ch] for ch in w) + 0.5 * statistics.mean(weight[ch] for ch in w)
+            # Leerzeichen (Wendungen) haben kein Gewicht.
+            scores = [0.5 * max(weight[ch] for ch in w if ch in weight)
+                      + 0.5 * statistics.mean(weight[ch] for ch in w if ch in weight)
                       for w in candidates]
             cap = min(scores) * self.MAX_SCORE_RATIO
             scores = [min(score, cap) for score in scores]

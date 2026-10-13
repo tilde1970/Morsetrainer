@@ -53,7 +53,7 @@ from morsetrainer.core.latency import copy_timing
 from morsetrainer.core.pause_noise import PauseNoise
 from morsetrainer.core.morse import (
     AUDIO_LATENCY, END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text, char_gap_seconds,
-    display_text, effective_wpm, vary_voice,
+    display_text, effective_wpm, silence, vary_voice, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
 from morsetrainer.core.weighting import CharPicker
@@ -87,6 +87,12 @@ ANSWER_PER_CHAR_S = 0.6
 def answer_limit(length: int) -> float:
     """Sekunden nach Tonende, in denen eine Antwort als flüssig gilt."""
     return ANSWER_BASE_S + ANSWER_PER_CHAR_S * length
+
+
+# Zweigeteiltes Zeitfenster (Wendungen): erkannt ist, was nach dem Ton
+# rasch angefangen wird; danach Zeit zum Tippen je Zeichen. Bei langen
+# Sequenzen misst ein einziges Fenster sonst vor allem das Tippen.
+FIRST_KEY_S = 2.0
 
 # Stufen aus band.PRESETS vom leichtesten zum schwersten (für das Schwächste
 # im Durchgang, siehe _band_for_play).
@@ -132,6 +138,9 @@ class SequenceModeFrame(DailyModeMixin):
     char_stats = True
     # Bekommt die gemeinsame Einstellung "Tonhöhe und Tempo variieren".
     uses_vary = True
+    # Sekunden bis zur ersten Taste nach dem Ton (zweigeteiltes Zeitfenster,
+    # siehe FIRST_KEY_S); None: ein Fenster für die ganze Antwort.
+    first_key_limit = None
     # Bekommt die zentralen Bandbedingungen (widgets/band_settings.py).
     uses_band = True
 
@@ -603,13 +612,38 @@ class SequenceModeFrame(DailyModeMixin):
         # wie ein vorzeitiges Enter), wie im Netzwerk-Reiter. Nach der Trace,
         # nicht mittendrin.
         if (self.running and self.input_open and self.style != HEAD and len(typed) > keep
-                and len(typed) >= len(self.current_sequence)):
+                and len(typed) >= len(self._target())):
             self._later(0, self._auto_submit)
 
     def _auto_submit(self):
         if (self.running and self.input_open and not self.submit_pending
-                and len(clean_input(self.input_var.get())) >= len(self.current_sequence)):
+                and len(clean_input(self.input_var.get())) >= len(self._target())):
             self.on_submit()
+
+    def _target(self) -> str:
+        """Was getippt werden soll: die Sequenz ohne Leerzeichen (Wendungen
+        werden mit Wortabstand gesendet, getippt zählt nur das Zeichen)."""
+        return self.current_sequence.replace(" ", "")
+
+    def _too_slow(self, answer_time: float, length: int) -> bool:
+        """Kam die Antwort außerhalb des Zeitfensters? Ein Fenster ab Tonende
+        (answer_limit) oder, mit first_key_limit, zweigeteilt: erste Taste
+        rechtzeitig, dann ANSWER_PER_CHAR_S je Zeichen zum Tippen."""
+        if not self.tone_ends:
+            return False
+        end = self.tone_ends[-1]
+        if self.first_key_limit is None:
+            return answer_time - end > answer_limit(length)
+        first = self.key_times[0] if self.key_times else answer_time
+        return first - end > self.first_key_limit or answer_time - max(first, end) > ANSWER_PER_CHAR_S * length
+
+    def _limit_text(self) -> str:
+        """Zeitfenster für die Statuszeile, etwa „zügig: 4,5 s“."""
+        length = len(self._target())
+        if self.first_key_limit is None:
+            return tr("zügig: {limit} s").format(limit=number(answer_limit(length), 1))
+        return tr("zügig: in {first} s anfangen, dann {typing} s zum Tippen").format(
+            first=number(self.first_key_limit, 0), typing=number(ANSWER_PER_CHAR_S * length, 0))
 
     def _next_after_announcement(self):
         self.next_waiting = False
@@ -719,7 +753,8 @@ class SequenceModeFrame(DailyModeMixin):
         conditions = None if listen_only else self._band_for_play(freq)
         chirp = conditions.chirp_for(0) if conditions is not None else None
         parts = [
-            build_samples(ch, wpm, freq, fw if i < last else None, chirp)
+            silence(word_gap_extra_seconds(wpm, fw)) if ch == " "
+            else build_samples(ch, wpm, freq, fw if i < last else None, chirp)
             for i, ch in enumerate(self.current_sequence)
         ]
         samples = np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
@@ -731,7 +766,10 @@ class SequenceModeFrame(DailyModeMixin):
         self.play_start_time = time.time() + AUDIO_LATENCY
         self.tone_starts, self.tone_ends = [], []
         offset = self.play_start_time + lead
-        for i, part in enumerate(parts):
+        for i, (ch, part) in enumerate(zip(self.current_sequence, parts)):
+            if ch == " ":  # Wortabstand: kein Zeichen, nur Zeit
+                offset += len(part) / SAMPLE_RATE
+                continue
             self.tone_starts.append(offset)
             offset += len(part) / SAMPLE_RATE
             self.tone_ends.append(offset - char_gap_seconds(wpm, fw if i < last else None))
@@ -776,11 +814,11 @@ class SequenceModeFrame(DailyModeMixin):
             self.on_submit()
         elif self.attempts == 0 and not self.replayed:
             # Gewertet wird nur eine zügige Antwort; das soll man wissen.
-            limit = number(answer_limit(len(self.current_sequence)), 1)
             if self.koch_progress:
+                limit = number(answer_limit(len(self._target())), 1)
                 self.status_var.set(tr("Deine Eingabe? (für die Lektion zügig: {limit} s)").format(limit=limit))
             else:
-                self.status_var.set(tr("Deine Eingabe? (zügig: {limit} s)").format(limit=limit))
+                self.status_var.set(tr("Deine Eingabe? ({limit})").format(limit=self._limit_text()))
         else:
             self.status_var.set(tr("Deine Eingabe?"))
 
@@ -813,7 +851,7 @@ class SequenceModeFrame(DailyModeMixin):
             if timing is not None:
                 return timing
         elapsed = max(time.time() - self.play_start_time, 0.001)
-        return elapsed / max(len(self.current_sequence), 1), None
+        return elapsed / max(len(self._target()), 1), None
 
     def on_submit(self, event=None):
         """Enter im Eingabefeld: die Antwort werten (während des Tons erst nach
@@ -832,9 +870,9 @@ class SequenceModeFrame(DailyModeMixin):
         self.waiting_for_input = False
         self._set_input_open(False)
 
-        sent = self.current_sequence
+        sent = self._target()
         results = align.char_results(sent, typed)
-        slow = answer_time - self.tone_ends[-1] > answer_limit(len(sent)) if self.tone_ends else False
+        slow = self._too_slow(answer_time, len(sent))
         # Nur der erste Versuch geht in die Zeichenstatistik; bei der
         # Wiederholung ist die Sequenz schon bekannt. Erst nach dem Wiederholen
         # (Leertaste) erkannt zählt wie bei Einzelzeichen als nicht erkannt.
@@ -880,7 +918,7 @@ class SequenceModeFrame(DailyModeMixin):
         self.revealed = False
         self.waiting_for_input = False
         self._set_head_buttons()
-        sent = self.current_sequence
+        sent = self._target()
         reaction_time = max(time.time() - self.play_start_time, 0.001) / max(len(sent), 1)
         for ch in sent:
             self.session_stats.record_char(
@@ -891,7 +929,8 @@ class SequenceModeFrame(DailyModeMixin):
     def _finish_attempt(self, typed: str, all_correct: bool, correct_chars: int, head=False, slow=False):
         """Gemeinsamer Abschluss eines Versuchs: Statistik, Anpassungen,
         Rückmeldung und was als Nächstes kommt."""
-        sent = self.current_sequence
+        sent = self._target()
+        shown = self.current_sequence  # mit Wortabständen, zum Zeigen und Ansagen
         # Für den Koch-Aufstieg zählt nur ein flüssiger erster Versuch: ohne
         # Wiederholen, im Zeitfenster; Kopfhören (Selbstbewertung) gar nicht.
         clean = self.attempts == 0 and not self.replayed and not slow
@@ -918,14 +957,14 @@ class SequenceModeFrame(DailyModeMixin):
         self._after_result(all_correct, rated_attempts)
         self._update_tempo(all_correct, rated_attempts)
 
-        explanation = self._explain(sent)
+        explanation = self._explain(shown)
         speaking = announcer.active()  # die Ansage ersetzt den Quittungston
         if head:
             spoken = ""  # die Lösung wurde schon beim Aufdecken angesagt
         elif all_correct:
             spoken = tr("Richtig, aber zu langsam.") if slow else tr("Richtig.")
         elif give_up:
-            spoken = tr("Falsch. Gesendet: {sent}. Getippt: {typed}.").format(sent=announcer.spell(sent),
+            spoken = tr("Falsch. Gesendet: {sent}. Getippt: {typed}.").format(sent=announcer.spell(shown),
                                                                              typed=announcer.spell(typed))
         else:
             spoken = tr("Falsch. Hör noch einmal hin.")
@@ -945,7 +984,7 @@ class SequenceModeFrame(DailyModeMixin):
             elif self.replayed and self.attempts == 1:
                 note = "\n" + tr("(mit Wiederholen – zählt nicht für die Lektion)")
             self.feedback_var.set(
-                tr("Richtig: {text}").format(text=display_text(sent)) + (f"\n{explanation}" if explanation else "") + note
+                tr("Richtig: {text}").format(text=display_text(shown)) + (f"\n{explanation}" if explanation else "") + note
             )
             self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
@@ -953,7 +992,7 @@ class SequenceModeFrame(DailyModeMixin):
             if self.sound_var.get() and not speaking:
                 sfx.play_error()
             if give_up:
-                text = tr("Lösung: {text}").format(text=display_text(sent)) + (f"\n{explanation}" if explanation else "")
+                text = tr("Lösung: {text}").format(text=display_text(shown)) + (f"\n{explanation}" if explanation else "")
             else:
                 text = tr("Leider falsch – hör noch einmal hin.")
             self.feedback_var.set(text)

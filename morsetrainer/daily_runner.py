@@ -44,7 +44,7 @@ MODE_SETTINGS = {
     # soll nicht ins Aufwärmen nachwirken.
     "single": {"icr": True},
     "group": {**_SEQUENCE, "input_style": COPY, "adaptive": True, "min_len": 2, "max_len": 6},
-    "word": {**_SEQUENCE, "input_style": MEMORIZE},
+    "word": {**_SEQUENCE, "input_style": MEMORIZE, "content": "words"},
     "callsign": {**_SEQUENCE, "input_style": COPY, "prefixes": "", "learned_only": True, "rufz": False},
     "continuous": {"band": False},
 }

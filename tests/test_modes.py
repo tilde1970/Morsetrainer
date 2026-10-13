@@ -308,6 +308,98 @@ class WordModeTest(AppTestCase):
         self.assertIn("Gruppen", w.status_var.get())
 
 
+class PhraseTest(AppTestCase):
+    """Wendungen im Reiter Wörter: mit Wortabstand gesendet, ohne Leerzeichen
+    getippt, Zeitfenster zweigeteilt."""
+
+    def setUp(self):
+        super().setUp()
+        self.w = self.mode("Wörter")
+        self.w.content_var.set("Wendungen")
+        self.app.charset_var.set(koch.lesson_charset(41))
+        self.app.farnsworth_enabled_var.set(False)
+
+    def _answer(self, phrase, typed, first_key_after, typing_s):
+        w = self.w
+        w.start()
+        w.current_sequence, w.attempts, w.replayed, w.repeat_pending = phrase, 0, False, False
+        w.voice = (20, 600)
+        now = time.time()
+        end = now - first_key_after - typing_s
+        n = len(phrase.replace(" ", ""))
+        w.tone_starts, w.tone_ends = [end - 1] * n, [end] * n
+        w.input_var.set(typed)
+        w.key_times = [end + first_key_after] * len(typed)
+        w.enter_time, w.waiting_for_input = None, True
+        w.on_submit()
+
+    def test_too_few_phrases_points_to_words(self):
+        self.app.charset_var.set(koch.lesson_charset(10))
+        self.assertFalse(self.w._validate_settings())
+        self.assertIn("Wendungen", self.w.status_var.get())
+        self.assertIn("Übe bis dahin mit Wörtern.", self.w.status_var.get())
+        self.app.charset_var.set(koch.lesson_charset(41))
+        self.assertTrue(self.w._validate_settings())
+        from morsetrainer.core import words
+        self.assertTrue(set(self.w.words) <= set(words.PHRASES))
+
+    def test_played_with_word_gaps_and_one_timing_per_character(self):
+        w = self.w
+        w.start()
+        w.current_sequence, w.voice = "TNX FER CALL", (20, 600)
+        played = []
+        with mock.patch.object(w, "_play", lambda samples: played.append(samples) or True), \
+                mock.patch.object(w, "_later"):
+            w.play_current()
+        self.assertEqual(len(w.tone_ends), 10)
+        gap = w.tone_starts[3] - w.tone_ends[2]  # zwischen TNX und FER
+        normal = w.tone_starts[2] - w.tone_ends[1]
+        self.assertAlmostEqual(gap - normal, sq.word_gap_extra_seconds(20, None), places=3)
+
+    def test_typed_without_spaces_is_right(self):
+        self._answer("TNX FER CALL", "TNXFERCALL", first_key_after=1.0, typing_s=5.0)
+        self.assertIn("Richtig: TNX FER CALL", self.w.feedback_var.get())
+        self.assertNotIn("zu langsam", self.w.feedback_var.get())
+        self.assertIn("danke für den Anruf", self.w.feedback_var.get())
+
+    def test_late_first_key_is_too_slow(self):
+        self._answer("TNX FER CALL", "TNXFERCALL", first_key_after=sq.FIRST_KEY_S + 0.5, typing_s=1.0)
+        self.assertIn("zu langsam", self.w.feedback_var.get())
+
+    def test_typing_has_its_own_window(self):
+        n = 10
+        self._answer("TNX FER CALL", "TNXFERCALL", first_key_after=0.5, typing_s=sq.ANSWER_PER_CHAR_S * n + 1)
+        self.assertIn("zu langsam", self.w.feedback_var.get())
+        self.w.stop()
+        self._answer("TNX FER CALL", "TNXFERCALL", first_key_after=1.5, typing_s=sq.ANSWER_PER_CHAR_S * n - 0.5)
+        self.assertNotIn("zu langsam", self.w.feedback_var.get())
+
+    def test_status_names_both_windows(self):
+        w = self.w
+        w.start()
+        w.current_sequence, w.attempts, w.replayed, w.submit_pending = "TNX FER CALL", 0, False, False
+        w.on_playback_done()
+        self.assertIn("in 2 s anfangen, dann 6 s zum Tippen", w.status_var.get())
+
+    def test_saved_and_daily_practice_uses_words(self):
+        self.assertEqual(self.w.settings()["content"], "phrases")
+        self.w.content_var.set("Wörter")
+        self.w.restore_settings({"content": "phrases", "memorize_default": True})
+        self.assertEqual(self.w.content_var.get(), "Wendungen")
+        from morsetrainer import daily_runner
+        self.w.daily_configure(4, **daily_runner.MODE_SETTINGS["word"])
+        self.assertEqual(self.w.content_var.get(), "Wörter")
+        self.w.daily_release()
+        self.assertEqual(self.w.content_var.get(), "Wendungen")
+
+    def test_weighted_picker_handles_spaces(self):
+        from morsetrainer.core import words
+        from morsetrainer.core.weighting import CharPicker
+        charset = koch.lesson_charset(41)
+        picker = words.WordPicker(words.phrases_for_charset(charset), CharPicker(charset, True, None))
+        self.assertIn(picker.pick(), words.PHRASES)
+
+
 class CallsignTest(AppTestCase):
     def test_learned_only_explains_missing_digit(self):
         calls = self.mode("Rufzeichen")

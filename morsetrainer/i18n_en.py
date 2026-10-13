@@ -866,7 +866,14 @@ EN.update({
     "Gewusst? J oder N": "Knew it? J or N",
     "Erkannt? Enter löst auf.": "Recognised? Enter reveals.",
     "Deine Eingabe? (für die Lektion zügig: {limit} s)": "Your answer? (quick for the lesson: {limit} s)",
-    "Deine Eingabe? (zügig: {limit} s)": "Your answer? (quick: {limit} s)",
+    "Deine Eingabe? ({limit})": "Your answer? ({limit})",
+    "zügig: {limit} s": "quick: {limit} s",
+    "zügig: in {first} s anfangen, dann {typing} s zum Tippen": "quick: start within {first} s, then {typing} s to type",
+    "Art": "Type",
+    "Mit dem aktuellen Zeichensatz: {count} von {total} Wendungen":
+        "With the current character set: {count} of {total} phrases",
+    "Nur {count} Wendungen mit diesen Zeichen": "Only {count} phrases with these characters",
+    "Übe bis dahin mit Wörtern.": "Practise with words until then.",
     "Deine Eingabe?": "Your answer?",
     "Wird nach dem Ton ausgewertet…": "Evaluated after the tone…",
     "(zu langsam – keine Punkte)": "(too slow – no points)",
@@ -899,10 +906,10 @@ EN.update({
 
 # --- modes/word_mode.py ---
 EN.update({
-    "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs – nur solche, die "
-    "aus den Zeichen oben bestehen. Mit jeder Koch-Lektion werden es mehr.":
-        "You get CW abbreviations, Q codes and words from QSOs – only those made of "
-        "the characters above. Every Koch lesson adds more.",
+    "Es kommen CW-Abkürzungen, Q-Gruppen und Wörter aus QSOs, unter „Art“ auch ganze "
+    "Wendungen – nur solche, die aus den Zeichen oben bestehen. Mit jeder Koch-Lektion werden es mehr.":
+        "You get CW abbreviations, Q codes and words from QSOs, under “Type” also whole "
+        "phrases – only those made of the characters above. Every Koch lesson adds more.",
     "Eigene Wörter bearbeiten": "Edit own words",
     "Mit dem aktuellen Zeichensatz: {count} von {total} Wörtern": "With the current character set: {count} of {total} words",
     " (davon {n} eigene)": " ({n} of them your own)",

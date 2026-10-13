@@ -75,7 +75,8 @@ unterwegs, keine Voraussetzung für den nächsten Schritt.
 2. **Zeichen und erste Wörter** (Lektion 10–29, etwa 2–3 Monate): Wörter
    als Ganzes hören statt Buchstabe für Buchstabe. Die **Tagesübung führt**
    weiter und schließt mit Wörtern. **Selbst dazu:** Wörter mit „Erst
-   merken“, Sprechen mit Wörtern (auch als MP3). Wegmarken: Koch-Silber
+   merken“, ab Lektion 25 auch Wendungen, Sprechen mit Wörtern (auch
+   als MP3). Wegmarken: Koch-Silber
    mit Lektion 25, Mitschreiben im Fluss ab Lektion 15.
 3. **Ziffern, Satzzeichen, Rufzeichen** (Lektion 30–41, etwa 1,5–2,5
    Monate): der volle Zeichensatz. Die **Tagesübung führt**, mit Wörtern
@@ -213,6 +214,14 @@ die Betriebszeichen KN und SK kommen vor (zählen aber nicht als Wörter für
 die Mindestzahl). Ein schwaches Zeichen kommt öfter, aber in wechselnden
 Wörtern. Nach der Antwort steht die Bedeutung da. Eigene Wörter lassen sich
 ergänzen (Abschnitt 11).
+
+Unter **Art** wählst du statt Wörtern **Wendungen** aus QSOs wie „TNX FER
+CALL“ oder „UR RST 599“, genug gibt es ab Lektion 25. Sie kommen mit
+Wortabstand und wollen als Ganzes gehört werden; getippt wird ohne
+Leerzeichen. Weil eine Wendung lang ist, ist das Zeitfenster zweigeteilt:
+Nach dem Ton in 2 s anfangen, dann 0,6 s je Zeichen zum Tippen. So zählt,
+ob du sie erkannt hast, nicht wie schnell du tippst. Die Tagesübung übt
+weiter Wörter.
 
 **Rufzeichen:** echte Rufzeichen aus der Super-Check-Partial-Liste,
 standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion

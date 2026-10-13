@@ -80,7 +80,7 @@ along the way, not requirements for the next step.
 2. **Characters and first words** (lessons 10–29, about 2–3 months): hear
    words as a whole instead of letter by letter. **Daily practice leads**
    on and ends with words. **On your own:** Words with “Listen first”,
-   Speak with words (also as MP3). Milestones: Koch Silver with lesson 25,
+   from lesson 25 also phrases, Speak with words (also as MP3). Milestones: Koch Silver with lesson 25,
    Copying in flow from lesson 15.
 3. **Digits, punctuation, callsigns** (lessons 30–41, about 1.5–2.5
    months): the full character set. **Daily practice leads**, with words
@@ -211,6 +211,14 @@ type; a slow answer is noted. R, K and the prosigns KN and SK also appear
 (but do not count as words for the minimum). A weak character comes up
 more often, but in changing words. The meaning is shown after the answer.
 You can add your own words (section 11).
+
+Under **Type** you can choose **Phrases** from QSOs such as “TNX FER CALL”
+or “UR RST 599” instead of words; there are enough from lesson 25. They
+come with word gaps and are meant to be heard as a whole; you type them
+without spaces. Because a phrase is long, the time window has two parts:
+start within 2 s after the tone, then 0.6 s per character to type. So
+what counts is whether you recognised it, not how fast you type. The daily
+practice keeps practising words.
 
 **Callsigns:** real callsigns from the Super Check Partial list, by default
 only from characters you have already learned (from Koch lesson 23 with
