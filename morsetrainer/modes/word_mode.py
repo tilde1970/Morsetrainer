@@ -9,6 +9,7 @@ Zeitfenster ist zweigeteilt (erste Taste, dann Tippen).
 Eigene Wörter kommen aus woerter.txt im Datenverzeichnis; der Knopf
 "Eigene Wörter bearbeiten" legt die Datei an und öffnet sie im Editor."""
 import os
+import random
 import subprocess
 import sys
 import tkinter as tk
@@ -24,7 +25,11 @@ from morsetrainer.widgets import theme
 from morsetrainer.widgets.ui_widgets import ChoiceButtons
 
 # Was der Reiter sendet: angezeigter (deutscher) Name → gespeicherter Wert.
-CONTENTS = {N_("Wörter"): "words", N_("Wendungen"): "phrases"}
+CONTENTS = {N_("Wörter"): "words", N_("Wendungen"): "phrases", N_("gemischt"): "mixed"}
+# „gemischt“: so viele Sequenzen sind Wendungen, die übrigen Wörter.
+# Gemischt statt eigener Wendungs-Tage: Wechsel festigt besser als Blöcke,
+# und die wenigen Wendungen der ersten Lektionen lernte man sonst auswendig.
+PHRASE_SHARE = 1 / 3
 
 
 def open_in_editor(path) -> None:
@@ -67,6 +72,7 @@ class WordModeFrame(SequenceModeFrame):
         self.all_words = dict(words.WORDS)
         self.user_words, self.skipped = {}, []
         self.words_mtime = -1  # Änderungszeit von woerter.txt beim letzten Einlesen (None = fehlt)
+        self.phrase_list, self.phrase_picker = [], None
         self.content_var = tk.StringVar(value=N_("Wörter"))
         choice = ttk.Frame(parent)
         choice.pack(fill="x", pady=(0, 4))
@@ -84,13 +90,16 @@ class WordModeFrame(SequenceModeFrame):
         self.root.bind("<FocusIn>", lambda e: self._show_count(), add="+")
         self._show_count()
 
+    def _content(self) -> str:
+        return CONTENTS.get(self.content_var.get(), "words")
+
     def _phrases(self) -> bool:
-        return CONTENTS.get(self.content_var.get()) == "phrases"
+        return self._content() == "phrases"
 
     @property
     def first_key_limit(self):
         # Wendungen sind lang: ein Fenster ab Tonende maße vor allem das Tippen.
-        return FIRST_KEY_S if self._phrases() else None
+        return FIRST_KEY_S if self._phrases() or " " in self.current_sequence else None
 
     def _charset(self) -> str:
         return "".join(ch for ch in self.charset_var.get().upper() if ch in MORSE_CODE)
@@ -125,6 +134,10 @@ class WordModeFrame(SequenceModeFrame):
             text += "\n" + tr("Übersprungen in {file}: ").format(file=words.USER_WORDS_FILE.name) + ", ".join(skipped[:3])
             if len(skipped) > 3:
                 text += tr(" und {n} weitere").format(n=len(skipped) - 3)
+        if self._content() == "mixed":
+            phrases = len(words.phrases_for_charset(self._charset()))
+            text += "\n" + (tr("Dazu jede dritte Sequenz eine von {n} Wendungen").format(n=phrases)
+                            if phrases >= MIN_PHRASES else tr("Für Wendungen reichen die Zeichen noch nicht."))
         self.count_var.set(text)
 
     def _edit_user_words(self):
@@ -138,6 +151,7 @@ class WordModeFrame(SequenceModeFrame):
         welcher Lektion es reicht."""
         self._show_count()
         charset = self._charset()
+        self.phrase_list = []  # Wendungen, die „gemischt“ unter die Wörter mischt
         if self._phrases():
             self.words = words.phrases_for_charset(charset)
             if len(self.words) < MIN_PHRASES:
@@ -149,6 +163,10 @@ class WordModeFrame(SequenceModeFrame):
             self.charset = charset
             return True
         self.words = words.words_for_charset(charset, self.all_words)
+        # Gemischt: Reichen die Wendungen nicht, kommen nur Wörter.
+        if self._content() == "mixed":
+            phrases = words.phrases_for_charset(charset)
+            self.phrase_list = phrases if len(phrases) >= MIN_PHRASES else []
         if not words.enough_words(self.words):
             # Mit einer Handvoll Wörter stünde die Antwort fest (bei RR und UR
             # im Wechsel); dann lieber Gruppen üben.
@@ -165,13 +183,22 @@ class WordModeFrame(SequenceModeFrame):
         # Das neueste Zeichen der Koch-Lektion bevorzugt üben.
         lesson = koch.lesson_of(self.charset)
         favor = koch.newest_char(lesson) if lesson else ""
-        self.picker = words.WordPicker(self.words, CharPicker(self.charset, weighted, self.session_stats), favor)
+        chars = CharPicker(self.charset, weighted, self.session_stats)
+        self.picker = words.WordPicker(self.words, chars, favor)
+        phrases = self.phrase_list
+        self.phrase_picker = words.WordPicker(phrases, chars, favor) if phrases else None
 
     def _generate_sequence(self) -> str:
+        if self.phrase_picker is not None and random.random() < PHRASE_SHARE:
+            return self.phrase_picker.pick()
         return self.picker.pick()
 
     def _explain(self, sequence: str) -> str:
-        meaning = words.PHRASES.get(sequence, "") if self._phrases() else self.all_words.get(sequence, "")
+        content = self._content()
+        if content == "phrases":
+            meaning = words.PHRASES.get(sequence, "")
+        else:
+            meaning = self.all_words.get(sequence) or (words.PHRASES.get(sequence, "") if content == "mixed" else "")
         return words.shown_meaning(sequence, meaning)
 
     def _config_extra(self, spec, freq: float) -> dict:

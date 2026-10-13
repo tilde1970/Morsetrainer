@@ -87,6 +87,13 @@ class StageAndPlanTest(unittest.TestCase):
         self.assertEqual(daily.qso_outros(20, everything, lambda mode: mode == daily.QSO_LOG), {daily.QSO_LOG})
         self.assertEqual(daily.qso_outros(20, everything, lambda mode: False), set())
 
+    def test_word_outro_mixes_phrases_from_lesson_35(self):
+        def word_block(lesson):
+            return next(daily.plan(lesson, 0, turn)[2] for turn in range(2) if daily.plan(lesson, 0, turn)[2].mode == "word")
+        self.assertEqual(word_block(daily.PHRASES_FROM_LESSON - 1).params, {})
+        self.assertEqual(word_block(daily.PHRASES_FROM_LESSON).params, {"content": "mixed"})
+        self.assertEqual(word_block(20).params, {})
+
     def test_outro_by_stage(self):
         self.assertEqual(daily.plan(5, 0, 0)[2].mode, "continuous")
         self.assertEqual(daily.plan(15, 0, 0)[2].mode, "word")

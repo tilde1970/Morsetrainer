@@ -224,8 +224,10 @@ CALL“ oder „UR RST 599“, genug gibt es ab Lektion 25. Sie kommen mit
 Wortabstand und wollen als Ganzes gehört werden; getippt wird ohne
 Leerzeichen. Weil eine Wendung lang ist, ist das Zeitfenster zweigeteilt:
 Nach dem Ton in 2 s anfangen, dann 0,6 s je Zeichen zum Tippen. So zählt,
-ob du sie erkannt hast, nicht wie schnell du tippst. Die Tagesübung übt
-weiter Wörter.
+ob du sie erkannt hast, nicht wie schnell du tippst. **gemischt** bringt
+Wörter und etwa jede dritte Sequenz eine Wendung; reichen die Zeichen für
+Wendungen noch nicht, nur Wörter. So mischt auch die Tagesübung ab
+Lektion 35.
 
 **Rufzeichen:** echte Rufzeichen aus der Super-Check-Partial-Liste,
 standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion
@@ -388,7 +390,7 @@ wieder wie vorher.
 |---|---|---|---|
 | Lektion 1–9 | Zeichen mit Zeitlimit, 3–4 Min | Gruppen, festes Tempo | Am Stück, Gruppen von 3, 2 Min |
 | Lektion 10–29 | wie oben | wie oben | Wörter, 2 Min |
-| Lektion 30–41 | wie oben | wie oben | Wörter oder Rufzeichen im Wechsel von Übungstag zu Übungstag, 2 Min |
+| Lektion 30–41 | wie oben | wie oben | Wörter (ab Lektion 35 mit Wendungen gemischt) oder Rufzeichen im Wechsel von Übungstag zu Übungstag, 2 Min |
 | nach Koch (Lektion 41 bestanden) | Zeichen, 2 Min | Am Stück, Gruppen von 5, 4 Min | im Wechsel: Rufzeichen, QSO zum Kopfhören, Rufzeichen, Contest-Run mit Log; 4 Min |
 
 - **Ausklang nach Koch:** Er wechselt von Übungstag zu Übungstag in vier

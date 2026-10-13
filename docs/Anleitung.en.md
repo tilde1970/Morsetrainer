@@ -220,8 +220,10 @@ or “UR RST 599” instead of words; there are enough from lesson 25. They
 come with word gaps and are meant to be heard as a whole; you type them
 without spaces. Because a phrase is long, the time window has two parts:
 start within 2 s after the tone, then 0.6 s per character to type. So
-what counts is whether you recognised it, not how fast you type. The daily
-practice keeps practising words.
+what counts is whether you recognised it, not how fast you type.
+**mixed** brings words and roughly every third sequence a phrase; if your
+characters are not enough for phrases yet, only words. The daily practice
+mixes this way from lesson 35.
 
 **Callsigns:** real callsigns from the Super Check Partial list, by default
 only from characters you have already learned (from Koch lesson 23 with
@@ -380,7 +382,7 @@ as they were.
 |---|---|---|---|
 | Lesson 1–9 | Characters with time limit, 3–4 min | Groups, fixed speed | Non-stop, groups of 3, 2 min |
 | Lesson 10–29 | as above | as above | Words, 2 min |
-| Lesson 30–41 | as above | as above | Words or callsigns alternating from one practice day to the next, 2 min |
+| Lesson 30–41 | as above | as above | Words (mixed with phrases from lesson 35) or callsigns alternating from one practice day to the next, 2 min |
 | after Koch (lesson 41 passed) | Characters, 2 min | Non-stop, groups of 5, 4 min | in turn: callsigns, QSO for head copy, callsigns, contest run with log; 4 min |
 
 - **Wind-down after Koch:** it changes from one practice day to the next in

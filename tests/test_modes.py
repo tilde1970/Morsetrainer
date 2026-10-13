@@ -392,6 +392,42 @@ class PhraseTest(AppTestCase):
         self.w.daily_release()
         self.assertEqual(self.w.content_var.get(), "Wendungen")
 
+    def test_mixed_brings_about_a_third_phrases(self):
+        from morsetrainer.core import words
+        from morsetrainer.modes import word_mode
+        w = self.w
+        w.content_var.set("gemischt")
+        self.assertTrue(w._validate_settings())
+        w._setup_pickers(False)
+        with mock.patch.object(word_mode.random, "random", side_effect=[0.1, 0.9] * 30), \
+                mock.patch.object(w.phrase_picker, "pick", wraps=w.phrase_picker.pick) as phrase_pick:
+            drawn = [w._generate_sequence() for _ in range(60)]
+        self.assertEqual(phrase_pick.call_count, 30)  # bei random() < 1/3 eine Wendung
+        phrase = next(d for d in drawn if " " in d)
+        w.current_sequence = phrase
+        self.assertEqual(w.first_key_limit, sq.FIRST_KEY_S)
+        self.assertEqual(w._explain(phrase), words.PHRASES[phrase])
+        w.current_sequence = "TNX"
+        self.assertIsNone(w.first_key_limit)  # ein Wort: ein Fenster wie bisher
+        self.assertEqual(w.settings()["content"], "mixed")
+
+    def test_mixed_without_enough_phrases_brings_words(self):
+        w = self.w
+        w.content_var.set("gemischt")
+        self.app.charset_var.set(koch.lesson_charset(20))
+        self.assertTrue(w._validate_settings())
+        w._setup_pickers(False)
+        self.assertIsNone(w.phrase_picker)
+        self.assertIn("reichen die Zeichen noch nicht", w.count_var.get())
+
+    def test_daily_word_outro_can_be_mixed(self):
+        from morsetrainer import daily_runner
+        self.w.content_var.set("Wörter")
+        self.w.daily_configure(2, **{**daily_runner.MODE_SETTINGS["word"], "content": "mixed"})
+        self.assertEqual(self.w.content_var.get(), "gemischt")
+        self.w.daily_release()
+        self.assertEqual(self.w.content_var.get(), "Wörter")
+
     def test_weighted_picker_handles_spaces(self):
         from morsetrainer.core import words
         from morsetrainer.core.weighting import CharPicker

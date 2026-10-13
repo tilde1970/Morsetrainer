@@ -47,6 +47,9 @@ POST_KOCH = koch.FINAL_LESSON + 1
 EARLY, WORDS, MIXED, POST = "early", "words", "mixed", "post"
 WORDS_FROM_LESSON = 10   # Wörter ab dieser Lektion; davor gibt es zu wenige (core/words.py)
 CALLS_FROM_LESSON = 30   # Rufzeichen ab dieser Lektion; davor zu wenige aus gelernten Zeichen
+# Ab hier mischt der Wörter-Ausklang Wendungen unter (Reiter Wörter, „gemischt“);
+# früher gäbe es zu wenige, man kennte sie bald auswendig.
+PHRASES_FROM_LESSON = 35
 
 # Aufwärmen: fällige Zeichen brauchen je MIN_ATTEMPTS Versuche für die
 # Tagesentscheidung der Lernkartei; ab MANY_DUE wird der Block länger.
@@ -198,7 +201,8 @@ def plan(lesson: int, due_count: int, turn: int, qso=frozenset(), contest: str =
         if level == EARLY:
             outro = Block(OUTRO, "continuous", outro_minutes, {"content": "chars", "group_len": 3})
         elif level == WORDS or turn % 2 == 0:
-            outro = Block(OUTRO, "word", outro_minutes)
+            outro = Block(OUTRO, "word", outro_minutes,
+                          {"content": "mixed"} if lesson >= PHRASES_FROM_LESSON else {})
         else:
             outro = Block(OUTRO, "callsign", outro_minutes)
         main_mode, main_params = "group", {}
