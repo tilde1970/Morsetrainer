@@ -7,6 +7,10 @@
   Band-Ausklang: mittel“ bzw. „Zweimal hintereinander unter 80 % – nächster
   Band-Ausklang wieder leicht“). Der erste Aufstieg auf „mittel“ bringt
   ★ Weiter.
+- **Klartext überarbeitet:** Häufige Wörter aus QSOs ergänzt (BY, DO,
+  THEIR, WHICH, SINCE, AROUND, HOMEBREW, INVERTED, MILES, TEST, OK …),
+  einige seltene Wetter- und Landschaftswörter gestrichen. Die rund 120
+  häufigsten Wörter kommen doppelt so oft.
 - **Bandstufe fairer gezählt:** Für Aufstieg und Rückfall zählt je Tag
   nur der erste ganze Band-Ausklang; abgebrochene zählen nicht, und zwei
   am selben Tag sind nicht mehr „zweimal hintereinander“. Im Ausklang

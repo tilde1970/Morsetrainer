@@ -435,11 +435,11 @@ class PhraseTest(AppTestCase):
         w.restore_settings({"content": "words", "memorize_default": True})
         self.assertEqual(w.content_var.get(), "Abkürzungen")
         w.content_var.set("Klartext")
-        self.app.charset_var.set(koch.lesson_charset(9))  # 26 Wörter: zu wenige für Klartext
+        self.app.charset_var.set(koch.lesson_charset(9))  # 27 Wörter: zu wenige für Klartext
         with mock.patch.object(word_mode.announcer, "say") as say:
             self.assertFalse(w._validate_settings())
         self.assertIn("ab Koch-Lektion 10", w.status_var.get())
-        self.assertIn("Nur 26 Wörter", say.call_args.args[0])  # angesagt, nicht nur angezeigt
+        self.assertIn("Nur 27 Wörter", say.call_args.args[0])  # angesagt, nicht nur angezeigt
         w.content_var.set("Abkürzungen")
         self.assertTrue(w._validate_settings())  # Abkürzungen reichen dort schon
         w.content_var.set("Wendungen")

@@ -199,7 +199,8 @@ class WordModeFrame(SequenceModeFrame):
         lesson = koch.lesson_of(self.charset)
         favor = koch.newest_char(lesson) if lesson else ""
         chars = CharPicker(self.charset, weighted, self.session_stats)
-        self.picker = words.WordPicker(self.words, chars, favor)
+        core = words.PLAIN_CORE if self._content() == "plain" else frozenset()
+        self.picker = words.WordPicker(self.words, chars, favor, boost=core)
         phrases = self.phrase_list
         self.phrase_picker = words.WordPicker(phrases, chars, favor) if phrases else None
 

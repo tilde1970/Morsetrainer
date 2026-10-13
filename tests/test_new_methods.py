@@ -501,6 +501,22 @@ class PlainWordsTest(unittest.TestCase):
         written = [w for w, meaning in words.WORDS.items() if not meaning and w.isalpha() and w != "OK"]
         self.assertEqual([w for w in written if w not in words.PLAIN_WORDS], [])
 
+    def test_core_vocabulary_comes_twice_as_often(self):
+        import random
+        from morsetrainer.core import words
+        self.assertLessEqual(words.PLAIN_CORE, set(words.PLAIN_WORDS))
+        self.assertTrue(110 <= len(words.PLAIN_CORE) <= 130)
+        for word in ("THEIR", "WHICH", "HOMEBREW", "TEST"):  # CW Academy, vorher gefehlt
+            self.assertIn(word, words.PLAIN_WORDS)
+        self.assertNotIn("FOG", words.PLAIN_WORDS)  # weniger Wetter und Landschaft
+        random.seed(3)
+        picker = words.WordPicker(["THE", "CAT", "DOG", "SUN"], boost=frozenset({"THE"}))
+        drawn = [picker.pick() for _ in range(4000)]
+        share = drawn.count("THE") / len(drawn)
+        self.assertGreater(share, 0.32)  # ohne Kern 25 %, mit doppeltem Gewicht gut 30 %
+        plain = words.WordPicker(["THE", "CAT", "DOG", "SUN"])
+        self.assertLess([plain.pick() for _ in range(4000)].count("THE") / 4000, 0.28)
+
     def test_item_source_and_plain_text(self):
         from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
         source = ItemSource("plain", koch.lesson_charset(41))

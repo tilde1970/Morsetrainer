@@ -7,6 +7,10 @@
   twice – next band conditions wind-down: medium” or “Twice in a row below
   80 % – next band conditions wind-down back to light”). The first step up
   to “medium” earns ★ Ahead.
+- **Plain words revised:** common QSO words added (BY, DO, THEIR,
+  WHICH, SINCE, AROUND, HOMEBREW, INVERTED, MILES, TEST, OK …), some rare
+  weather and landscape words removed. The roughly 120 most common words
+  come twice as often.
 - **Band level counted more fairly:** for stepping up and back only the
   first complete band conditions wind-down of a day counts; stopped ones
   do not, and two on the same day are no longer “twice in a row”. Strength

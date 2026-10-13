@@ -70,7 +70,7 @@ class ItemSource:
             self.word_picker = words.WordPicker(self.items, self.picker)
         elif kind == "plain":
             self.items = words.words_for_charset(charset, words.PLAIN_WORDS)
-            self.word_picker = words.WordPicker(self.items, self.picker)
+            self.word_picker = words.WordPicker(self.items, self.picker, boost=words.PLAIN_CORE)
         elif kind == "phrases":
             self.items = words.phrases_for_charset(charset)
             self.meanings = words.PHRASES
