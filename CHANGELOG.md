@@ -2,6 +2,11 @@
 
 ## Unveröffentlicht
 
+- **Neue englische Stimme:** Die Ansage bei englischer Oberfläche spricht
+  jetzt mit der Stimme LJ Speech statt Lessac. Lessac beruht auf einem
+  Datensatz, der nur für die Forschung freigegeben ist; LJ Speech ist
+  gemeinfrei. Wer aus dem Quelltext startet, lädt sie mit
+  `bash packaging/get_voice.sh`; bis dahin spricht die alte Stimme weiter.
 - **Rückmeldung zur Bandstufe:** Ändert der Band-Ausklang der Tagesübung
   die Stufe, sagt es die Abendbilanz („Zweimal 90 % geschafft – nächster
   Band-Ausklang: mittel“ bzw. „Zweimal hintereinander unter 80 % – nächster

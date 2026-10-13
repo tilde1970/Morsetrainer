@@ -41,6 +41,11 @@ def run(path: str) -> int:
         if reason:
             print(reason, file=sys.stderr)
             return 1
+    # Im Paket gehört die aktuelle Stimme dazu, nicht eine frühere.
+    for lang, name in speech.VOICES.items():
+        if speech.voice_path(lang).name != f"{name}.onnx":
+            print(f"Stimme {name} fehlt (gefunden: {speech.voice_path(lang).name}).", file=sys.stderr)
+            return 1
     voices = []
     for speaker in speakers:
         voice = speaker.synth(speech.spoken("DL4YM", lang=speaker.lang))

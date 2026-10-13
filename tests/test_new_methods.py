@@ -42,6 +42,21 @@ class SpeechTextTest(unittest.TestCase):
         out = speech.resample(np.ones(22050, dtype=np.float32), 22050)
         self.assertEqual(len(out), SAMPLE_RATE)
 
+    def test_english_voice_falls_back_to_the_former_one(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            with mock.patch.object(speech, "voice_dirs", lambda: [folder]):
+                self.assertIsNone(speech.voice_path("en"))
+                for name in ("en_US-lessac-medium.onnx", "en_US-lessac-medium.onnx.json"):
+                    (folder / name).write_bytes(b"")
+                self.assertEqual(speech.voice_path("en").name, "en_US-lessac-medium.onnx")  # noch nicht neu geladen
+                for name in ("en_US-ljspeech-medium.onnx", "en_US-ljspeech-medium.onnx.json"):
+                    (folder / name).write_bytes(b"")
+                self.assertEqual(speech.voice_path("en").name, "en_US-ljspeech-medium.onnx")
+                self.assertIsNone(speech.voice_path("de"))  # Deutsch hat keine frühere Stimme
+
     def test_missing_voice_is_reported(self):
         with mock.patch.object(speech, "voice_path", lambda lang="de": None):
             reason = speech.Speaker().available()

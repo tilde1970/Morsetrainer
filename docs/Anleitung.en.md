@@ -826,7 +826,7 @@ The program uses its built-in voice to say what is otherwise only on
 screen – no screen reader needed. F9 switches announcements on and off
 (also under “Settings …” → “Announce feedback”), and the voice confirms
 it. Announcements use the language of the interface: German with the
-Thorsten voice, English with the Lessac voice (callsigns then “Delta Lima
+Thorsten voice, English with the LJ Speech voice (callsigns then “Delta Lima
 One”). If the voice is missing, F9 and F11 play an error tone and the
 reason appears in the status line. Under “Settings …” you set the
 **Speaking rate** (70–200 %) and the **Announcement volume** (25–100 %).

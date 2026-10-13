@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **New English voice:** announcements with the English interface now use
+  the LJ Speech voice instead of Lessac. Lessac is based on a dataset
+  licensed for research only; LJ Speech is in the public domain. If you
+  run from source, fetch it with `bash packaging/get_voice.sh`; until then
+  the old voice keeps speaking.
 - **Feedback on the band level:** if the band conditions wind-down of the
   daily practice changes the level, the evening summary says so (“90 %
   twice – next band conditions wind-down: medium” or “Twice in a row below

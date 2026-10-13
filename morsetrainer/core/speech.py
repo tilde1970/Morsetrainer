@@ -1,7 +1,7 @@
 """Sprachausgabe mit Piper: neuronale Stimmen, offline, für „Hören &
 Sagen“ (Lösung ansagen), den MP3-Export und die Sprachansage zur
 Barrierefreiheit (widgets/announcer.py). Deutsch (Thorsten) für alles,
-Englisch (Lessac) für die Ansage bei englischer Oberfläche.
+Englisch (LJ Speech) für die Ansage bei englischer Oberfläche.
 
 Die Stimme (ONNX-Modell plus .json) liegt in voices/: in AppImage und exe
 mitgeliefert (sys._MEIPASS/voices), aus dem Quelltext im Datenverzeichnis
@@ -31,7 +31,11 @@ from morsetrainer.i18n import tr
 
 VOICE_NAME = "de_DE-thorsten-medium"
 # Stimme je Sprache der Oberfläche (packaging/get_voice.sh lädt sie).
-VOICES = {"de": VOICE_NAME, "en": "en_US-lessac-medium"}
+VOICES = {"de": VOICE_NAME, "en": "en_US-ljspeech-medium"}
+# Frühere Stimmen, solange die neue aus dem Quelltext noch nicht geladen ist:
+# Lessac beruht auf einem Datensatz nur für die Forschung und wird darum
+# nicht mehr mitgeliefert; eine schon vorhandene Kopie spricht weiter.
+FALLBACK_VOICES = {"en": "en_US-lessac-medium"}
 
 GERMAN = {
     "A": "A", "B": "Be", "C": "Ze", "D": "De", "E": "E", "F": "Eff", "G": "Ge", "H": "Ha", "I": "I",
@@ -134,11 +138,12 @@ def voice_dirs() -> list:
 def voice_path(lang: str = "de"):
     """Pfad zur Stimme für `lang` (.onnx, dazu muss die .onnx.json daneben
     liegen), oder None, wenn sie fehlt."""
-    name = VOICES.get(lang, VOICE_NAME)
-    for directory in voice_dirs():
-        path = directory / f"{name}.onnx"
-        if path.exists() and path.with_suffix(".onnx.json").exists():
-            return path
+    names = [VOICES.get(lang, VOICE_NAME)] + ([FALLBACK_VOICES[lang]] if lang in FALLBACK_VOICES else [])
+    for name in names:
+        for directory in voice_dirs():
+            path = directory / f"{name}.onnx"
+            if path.exists() and path.with_suffix(".onnx.json").exists():
+                return path
     return None
 
 
