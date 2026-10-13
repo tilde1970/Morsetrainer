@@ -1,5 +1,95 @@
 # Changes
 
+## Unreleased
+
+- **Messages and questions are announced:** questions such as “Next Koch
+  lesson?” are read out, including “Enter: yes. Escape: no.” The space bar
+  no longer says yes by accident; F9 and F11 work there too.
+- **Daily practice waits for its announcement:** each block is announced
+  (“Daily practice, Warm-up: Characters, 3 minutes”), and only then comes
+  the first character. Until now the announcement ran over the Morse tone,
+  and the first character counted as too slow. The new character of a
+  lesson also plays only after the announcement.
+- **Backing up and restoring data without errors:** on Linux the file
+  dialog failed with “Unexpected error” while announcements were on. The
+  file dialog is now preceded by what comes and what Enter and Escape do;
+  meanwhile the mouse pointer shows the wait, and a second press does not
+  open a second dialog. Restoring is not possible while an exercise is
+  running, even if it was started during the announcement.
+- **CW QRM follows the pitch:** if you change the pitch, the neighbour
+  keeps the chosen distance; “Zero beat” stays on your own frequency.
+- **First start no longer silent:** on the very first start the program
+  says that F9 turns on spoken feedback and F11 tells you where you are.
+  If a screen reader is running, announcements are on right away.
+- **Scroll areas follow the keyboard:** if you tab to a field that is out
+  of sight with large text (for example in Band conditions or Statistics),
+  the area now scrolls along.
+- **Help to listen to:** when it opens, the help says where it is; arrow
+  down and up read paragraph by paragraph, and a search hit reads its line.
+  New is the “Open in browser” button.
+- **F9 and F11 in every window:** in Settings, Band conditions, Help and
+  the network windows too, F9 toggles announcements and F11 says which
+  window and which control you are on.
+- **Start errors are announced:** if an exercise does not start (for
+  example without valid characters, without your own callsign in Contest
+  or without a name in Network), the announcement gives the reason instead
+  of only writing it to the status line.
+- **Daily practice with orientation:** during a block F11 says which block
+  is running, how far the practice is and which stars you have today. The
+  hint “Press Esc again to end the daily practice” and other announcements
+  are no longer cut off by the next character, and F11 right after
+  “Wrong …” or “Too slow …” no longer by the correction tone.
+- **Drop-down lists to listen to:** in an open list (font size, language,
+  mode …) the announcement reads the entry while you move, e.g. “English,
+  2 of 2”.
+- **Band conditions with feedback:** the level buttons are called “Level
+  light” and so on and confirm the choice; in that window F11 also says
+  which level the settings match. The levels are now at the top, Tab
+  starts there, and right below it says which level the settings match.
+- **Better contrast in the light colour scheme:** input fields, slider
+  handles and the focus frame stand out clearly; hints and greyed-out
+  entries are easier to read.
+- **Statistics without a mouse:** the awards table reads the condition of
+  each row, the preview is announced. The lifeline can be reached with
+  Tab; the arrow keys go through the days and announce their values. In
+  the Statistics tab F11 also gives progress and lifeline.
+- **Adjustable voice:** under “Settings …” you can choose the speaking
+  rate (70–200 %) and the announcement volume (25–100 %).
+- **Smaller improvements to announcements:** “Ctrl+,” is spoken with
+  “comma”, “20/10 WPM”, “3 / 10” and “S/N +8 dB” in an understandable way.
+  The status line says “Ready. Start with F5.” (in Contest “Start with
+  F10.”); More options open/closed, the hint on slow character speed,
+  “takes effect after restarting” and the download progress of an update
+  are announced. After the evening summary and an award the focus
+  returns. Slightly stronger accent and station colours, clearer focus on
+  the blue start button.
+- **Cleaner signals:** dots and dashes now have exactly their length
+  between the half-amplitude points (at high speed dots sounded up to a
+  quarter too short); the speed stays the same. Changing or switching on
+  noise or interference in the middle of a tone no longer clicks, the
+  levels glide over. AGC pumping starts exactly at the crash. The signal
+  to noise ratio is now given “in the receiver filter (300–2700 Hz)”, in
+  the ear about 16 instead of 17 dB more.
+- **Steeper CW filter and more realistic QRN:** the 500 Hz filter now
+  clearly removes QRM “far” (300 Hz off −13 instead of −7 dB) but rings a
+  little more. Crashes and thunderstorms crackle as a series of short
+  single discharges instead of smooth noise bursts.
+- **Fading and receiver as on the band:** QSB and flutter fading now vary
+  randomly (Rice fading): mostly shallow, now and then a deeper dip, from
+  “heavy” occasionally very deep ones. The receiver turns up the gain in
+  the gaps, so between characters the noise gets louder; during the tone
+  the set signal to noise ratio applies. This makes “light” and “medium”
+  a little harder.
+- **Low tones and sidetone:** at pitches below 400 Hz the receiver filter
+  now attenuates the signal too (−3 dB at 300 Hz); a low tone used to be a
+  little easier. The same level is then harder; the band window and the
+  manual point this out, with the 500 or 250 Hz CW filter it does not
+  apply. Your own sidetone (Contest) is 3 dB quieter and, together with
+  the band noise, limited less often.
+- **Installing from source:** now requires piper-tts 1.5 or later; with
+  1.3 and 1.4 the program quit at the first announcement. The manual says
+  that the setup has to be repeated in the new folder when updating.
+
 ## 2.48
 
 - **No more crash when closing during an announcement:** closing the

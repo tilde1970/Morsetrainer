@@ -13,7 +13,9 @@
 - **Daten sichern und einlesen ohne Fehler:** Unter Linux brach der
   Dateidialog bei eingeschalteter Ansage mit „Unerwarteter Fehler“ ab.
   Vor dem Dateidialog wird jetzt gesagt, was kommt und was Enter und
-  Escape tun.
+  Escape tun; in der Zeit zeigt der Mauszeiger das Warten, und ein zweiter
+  Druck öffnet keinen zweiten Dialog. Einlesen geht nicht, solange eine
+  Übung läuft, auch wenn sie während der Ansage gestartet wurde.
 - **CW-QRM folgt der Tonhöhe:** Wer die Tonhöhe verstellt, behält den
   gewählten Abstand zum Nachbarn; „Zero-Beat“ liegt danach weiter auf der
   eigenen Frequenz.
@@ -42,7 +44,8 @@
 - **Tagesübung mit Orientierung:** F11 sagt während eines Blocks, welcher
   Block läuft, wie weit die Übung ist und welche Sterne du heute hast. Der
   Hinweis „Noch einmal Esc beendet die Tagesübung“ und andere Ansagen
-  werden nicht mehr vom nächsten Zeichen abgeschnitten.
+  werden nicht mehr vom nächsten Zeichen abgeschnitten, F11 gleich nach
+  „Falsch …“ oder „Zu langsam …“ nicht mehr vom Korrekturton.
 
 - **Klapplisten zum Anhören:** In einer aufgeklappten Liste (Schriftgröße,
   Sprache, Modus …) sagt die Ansage beim Blättern den Eintrag an, z. B.
@@ -50,7 +53,8 @@
 - **Bandbedingungen mit Rückmeldung:** Die Stufenknöpfe heißen „Stufe
   leicht“ usw. und bestätigen die Wahl; F11 sagt im Fenster auch, welcher
   Stufe die Einstellung entspricht. Die Stufen stehen jetzt oben, Tab
-  beginnt dort.
+  beginnt dort, und gleich darunter steht, welcher Stufe die Einstellung
+  entspricht.
 - **Bessere Kontraste im hellen Farbschema:** Eingabefelder,
   Reglergriffe und der Fokusrahmen heben sich deutlich ab; Hinweise und
   abgeblendete Einträge sind besser lesbar.
@@ -66,7 +70,7 @@
 - **Kleinere Verbesserungen der Ansage:** „Strg+,“ wird mit Komma
   gesprochen, „20/10 WPM“, „3 / 10“ und „S/N +8 dB“ verständlich
   („20 WPM, effektiv 10“, „3 von 10“, „Rauschabstand plus 8 dB“). Die
-  Statuszeile sagt „Bereit. Start mit F5.“, Weitere Optionen auf/zu, der
+  Statuszeile sagt „Bereit. Start mit F5.“ (im Contest „Start mit F10.“), Weitere Optionen auf/zu, der
   Hinweis zum langsamen Zeichentempo, „wirkt nach Neustart“ und der
   Download-Fortschritt eines Updates werden angesagt, ein neues Zeichen der
   Tagesübung buchstabiert. Nach Abendbilanz und Diplom kehrt der Fokus
@@ -92,8 +96,14 @@
   dadurch etwas schwerer.
 - **Tiefe Töne und Mithörton:** Bei Tonhöhen unter 400 Hz dämpft das
   Empfängerfilter jetzt auch das Signal (bei 300 Hz −3 dB), so war ein
-  tiefer Ton bisher etwas leichter. Der eigene Mithörton (Contest) ist 3 dB
-  leiser und wird zusammen mit dem Bandgeräusch seltener begrenzt.
+  tiefer Ton bisher etwas leichter. Dieselbe Stufe ist dann schwerer;
+  Bandfenster und Anleitung weisen darauf hin, mit CW-Filter 500 oder
+  250 Hz entfällt es. Der eigene Mithörton (Contest) ist 3 dB leiser und
+  wird zusammen mit dem Bandgeräusch seltener begrenzt.
+- **Installation aus dem Quelltext:** Verlangt jetzt piper-tts ab 1.5;
+  mit 1.3 und 1.4 beendete sich das Programm bei der ersten Ansage. Die
+  Anleitung sagt, dass beim Aktualisieren die Einrichtung im neuen Ordner
+  zu wiederholen ist.
 
 ## 2.48
 
