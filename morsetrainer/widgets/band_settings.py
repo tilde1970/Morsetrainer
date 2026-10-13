@@ -387,7 +387,8 @@ class BandSettings:
         self.gain_shown.pack(side="left", padx=(6, 0))
         theme.hint(box, wrap=440, text=tr(
             "S/N: Rauschabstand im Empfängerfilter (300–2700 Hz) gegenüber dem ungeschwächten Signal; im "
-            "Ohr, das CW wie ein Filter von etwa 50 Hz hört, sind es rund 16 dB mehr.")).grid(
+            "Ohr, das CW wie ein Filter von etwa 50 Hz hört, sind es rund 16 dB mehr. Unter 400 Hz Tonhöhe "
+            "ist dieselbe Stufe schwerer; mit CW-Filter 500 oder 250 Hz nicht.")).grid(
             row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
         theme.hint(gain, wrap=440, text=tr(
             "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist "

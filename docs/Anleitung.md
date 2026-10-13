@@ -490,6 +490,9 @@ entspricht.
   das Rauschen lauter (bis zur Signalstärke, höchstens 12 dB), beim Ton gilt
   der eingestellte Rauschabstand. Bei sehr tiefer Tonhöhe (unter 400 Hz)
   dämpft das Empfängerfilter auch das Signal etwas, bei 300 Hz um 3 dB.
+  Dieselbe Stufe ist dann schwerer, bei „stark“ deutlich – auch für das
+  Diplom QRN-fest. Mit dem CW-Filter 500 Hz oder 250 Hz entfällt das, weil
+  es mit deiner Tonhöhe wandert.
 - **Fading** ist zufällig wie auf dem Band: meist flache Schwankungen, ab
   und zu ein tieferes Loch. Je höher der Regler, desto öfter und tiefer;
   ab „stark“ gibt es gelegentlich kurze, sehr tiefe Löcher. Auch
