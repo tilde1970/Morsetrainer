@@ -384,6 +384,8 @@ class DailyRunner:
                 self.done_minutes += result["minutes"] - minutes
         else:
             stopped_early = minutes < block.minutes - STOPPED_EARLY_MIN and not block.params.get("rufz")
+        if self.aborting or stopped_early:
+            result = {**result, "stopped": True}  # zählt nicht für die Bandstufe
         new_stars = daily.finish_block(self.state, self.today, block, result)
         daily.save(self.state)
         if self.aborting or stopped_early:

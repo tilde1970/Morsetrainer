@@ -343,6 +343,15 @@ class DailyRunnerTest(AppTestCase):
         self.assertFalse(settings.note_label.winfo_ismapped())  # auch im offenen Fenster wieder weg
         settings.close_window()
 
+    def test_band_outro_stopped_early_is_marked(self):
+        self._band_outro(1.0)
+        mode = self.runner.mode
+        with mock.patch.object(mode, "daily_result", return_value={"correct": 190, "total": 200, "minutes": 1.0}):
+            self.runner.on_block_end(mode)
+        block = self.runner.state["days"][self.runner.today.isoformat()]["blocks"][-1]
+        self.assertEqual((block["band"], block.get("stopped")), ("medium", True))  # zählt nicht für die Stufe
+        self.assertFalse(self.runner.active)
+
     def test_band_outro_without_own_filter_says_nothing_about_it(self):
         _, text = self._band_outro(1.0, cw_filter=None)
         self.assertNotIn("CW-Filter", text)

@@ -121,6 +121,31 @@ class StageAndPlanTest(unittest.TestCase):
         outro(1, "light", 200)  # alte gute Tage vor dem Rückfall zählen nicht mehr
         self.assertEqual(daily.band_level(state, TODAY), "light")
 
+    def test_band_level_counts_one_whole_outro_a_day(self):
+        state = {"days": {}}
+
+        def outro(day, preset, correct, **extra):
+            entry = state["days"].setdefault((TODAY - timedelta(days=day)).isoformat(), {"blocks": []})
+            entry["blocks"].append({"kind": daily.OUTRO, "mode": "continuous", "band": preset, "correct": correct,
+                                    "total": 200, "extra_keys": 0, "band_min": preset, **extra})
+
+        outro(9, "light", 190)
+        outro(8, "light", 190, stopped=True)  # abgebrochen: zählt nicht als zweiter Tag
+        self.assertEqual(daily.band_level(state, TODAY), "light")
+        outro(7, "light", 190)
+        self.assertEqual(daily.band_level(state, TODAY), "medium")
+        outro(6, "medium", 150)
+        outro(6, "medium", 150)  # zweiter am selben Tag (Zugabe): nicht „in Folge“
+        self.assertEqual(daily.band_level(state, TODAY), "medium")
+        outro(5, "medium", 150, stopped=True)
+        self.assertEqual(daily.band_level(state, TODAY), "medium")
+        outro(4, "medium", 170)
+        outro(4, "medium", 150)  # nur der erste des Tages zählt: gut
+        outro(3, "medium", 150)
+        self.assertEqual(daily.band_level(state, TODAY), "medium")
+        outro(2, "medium", 150)
+        self.assertEqual(daily.band_level(state, TODAY), "light")
+
     def test_band_change_and_star_only_for_a_new_stage(self):
         state = {"days": {}}
 

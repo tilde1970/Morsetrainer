@@ -268,8 +268,11 @@ def _band_replay(state: dict, today: date):
     for day in sorted(d for d in days if d < today.isoformat()):
         entry = days[day]
         blocks = entry.get("blocks", []) if isinstance(entry, dict) else []
+        # Je Tag zählt nur der erste ganze Band-Ausklang: Abgebrochene sagen
+        # wenig, und zwei am selben Tag (Zugabe) wären sonst schon „in Folge“.
         for block in blocks:
-            if not isinstance(block, dict) or block.get("kind") != OUTRO or block.get("band") != level:
+            if (not isinstance(block, dict) or block.get("kind") != OUTRO or block.get("band") != level
+                    or block.get("stopped")):
                 continue
             correct, total = _first_try(block)
             if not isinstance(total, (int, float)) or total < BAND_MIN_CHARS:
@@ -289,6 +292,7 @@ def _band_replay(state: dict, today: date):
                     level, up_days, misses = BAND_LEVELS[0], set(), 0
             else:
                 misses = 0
+            break
     return level, best
 
 
