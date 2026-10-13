@@ -143,7 +143,8 @@ class Announcer:
         nicht `force`) oder keine Stimme da, kommt `then` sofort. Eine neue
         Ansage verdrängt die ältere, auch eine schon sprechende; deren `then`
         kommt trotzdem, aber erst wenn die neue zu Ende ist – sonst schnitte
-        etwa der nächste Morseton die neue Ansage ab."""
+        etwa der nächste Morseton die neue Ansage ab. Das gilt auch, wenn die
+        neue erst kurz nach dem Ende dieser kommt (F11 gleich nach „Falsch …“)."""
         text = speakable(text)
         if not text or not (force or self.enabled()) or self.available() is not None:
             if force and text and self.available() is not None:
@@ -197,7 +198,7 @@ class Announcer:
                 self.done_token = token
                 if then is not None:
                     wait = max(state["free_at"] - time.time(), 0.0)
-                    self._after(int(wait * 1000) + AFTER_SPEECH_MS, then)
+                    self._after(int(wait * 1000) + AFTER_SPEECH_MS, finish)
                 return
             if index in results and time.time() >= state["free_at"]:
                 samples = results[index]
@@ -207,6 +208,12 @@ class Announcer:
                     self.speaking_until = state["free_at"]
                 state["next"] += 1
             self._after(POLL_MS, poll)
+
+        def finish():
+            if token != self.token:  # inzwischen eine neue Ansage: erst nach ihr
+                self._when_idle(then, time.time() + SUPERSEDED_MAX_WAIT_S)
+            else:
+                then()
 
         poll()
 

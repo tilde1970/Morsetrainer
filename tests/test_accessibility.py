@@ -443,6 +443,30 @@ class AnnouncerTest(AnnouncerCase):
         self.assertGreaterEqual(done["first"] - second, 1.0 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
         self.assertLessEqual(abs(done["first"] - done["second"]), 0.2)
 
+    def test_flow_after_announcement_waits_for_one_started_just_after(self):
+        # F11 gleich nach „Falsch …“: Die erste Ansage ist zu Ende gesprochen,
+        # ihr Ablauf (Korrekturton) aber noch nicht dran – er wartet nun auf
+        # die neue, statt sie abzuschneiden.
+        import time
+        import numpy as np
+        from morsetrainer.core import speech
+        announcer = self.app.announcer
+        announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        done = {}
+        with mock.patch.object(speech.speaker, "synth",
+                               lambda text, rate=1.0: np.zeros(self.announcer.SAMPLE_RATE // 2, dtype=np.float32)):
+            announcer.say("Falsch.", then=lambda: done.setdefault("first", time.monotonic()))
+            first_token = announcer.token
+            # Zu Ende gesprochen, der Ablauf kommt erst nach AFTER_SPEECH_MS.
+            self.assertTrue(self.pump_until(lambda: announcer.done_token == first_token
+                                            and time.time() >= announcer.speaking_until))
+            self.assertNotIn("first", done)
+            second = time.monotonic()
+            announcer.say("Einzeln, Zeichen.", then=lambda: done.setdefault("second", time.monotonic()))
+            self.assertTrue(self.pump_until(lambda: len(done) == 2, timeout=5))
+        self.assertGreaterEqual(done["first"] - second, 0.5 + self.announcer.AFTER_SPEECH_MS / 1000 - 0.05)
+
     def test_speech_cache_is_limited(self):
         # Der Zwischenspeicher wächst nicht unbegrenzt (Statistik-Ansagen sind
         # lang und jedes Mal anders); der älteste Eintrag fällt heraus.
@@ -1835,6 +1859,24 @@ class DailyAnnounceTest(AnnouncerCase):
             self.assertTrue(self.pump_until(lambda: played))
         self.assertIn("Neues Zeichen", " ".join(self.said[:played[0]]))
         self.assertIn("Weiter mit Enter.", " ".join(self.said[:played[0]]))
+
+    def test_new_character_is_dropped_when_the_card_was_continued(self):
+        # Enter auf der Karte, bevor ihre Ansage zu Ende ist: Das Vorspielen
+        # entfällt, sonst liefe es gleichzeitig mit dem ersten Zeichen des Blocks.
+        from morsetrainer import daily_runner
+        from morsetrainer.core import daily
+        played = []
+        with mock.patch.object(daily, "is_new_lesson", lambda state, today: True), \
+                mock.patch.object(self.app, "_play_new_char", lambda: played.append(True)):
+            self.runner.start()
+            self.assertTrue(self.runner.card_open)
+            self.runner.card_shown -= daily_runner.ENTER_GRACE_S
+            self.runner.continue_now()
+            mode = self.runner.mode
+            self.assertTrue(self.pump_until(lambda: mode.running))
+            self.pump_until(lambda: False, timeout=0.5)
+        self.assertEqual(played, [])
+        self.runner.abort(quiet=True)
 
 
 class DialogTest(AnnouncerCase):

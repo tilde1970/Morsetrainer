@@ -150,9 +150,12 @@ class DailyRunner:
         if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
             # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
             char = koch.newest_char(lesson)
-            # Vorspielen erst nach der Ansage, sie schnitte sonst das Zeichen ab.
+            # Vorspielen erst nach der Ansage, sie schnitte sonst das Zeichen ab;
+            # ist die Karte bis dahin schon weitergeschaltet, nicht mehr (der
+            # Block liefe sonst gleichzeitig an).
             self._show_card(tr("Neues Zeichen: {char}").format(char=char),
-                            [preview_line(self.blocks[0], lesson, self.state["tempo"])], then=app._play_new_char,
+                            [preview_line(self.blocks[0], lesson, self.state["tempo"])],
+                            then=lambda: self.card_open and self.active and app._play_new_char(),
                             spoken_title=tr("Neues Zeichen: {char}").format(char=announcer.spell(char)))
         else:
             self._next_block()
