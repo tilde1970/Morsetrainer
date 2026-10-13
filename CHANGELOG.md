@@ -1,6 +1,6 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.49
 
 - **Meldungen und Rückfragen mit Ansage:** Fragen wie „Nächste
   Koch-Lektion?“ werden vorgelesen, samt „Enter: ja. Escape: nein.“ Die

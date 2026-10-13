@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.49
 
 - **Messages and questions are announced:** questions such as “Next Koch
   lesson?” are read out, including “Enter: yes. Escape: no.” The space bar
