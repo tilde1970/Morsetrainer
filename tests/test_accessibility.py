@@ -1927,6 +1927,26 @@ class DialogTest(AnnouncerCase):
         self.assertIn("Dateiauswahl Daten sichern.", spoken)
         self.assertIn("Escape: abbrechen.", spoken)
 
+    def test_second_press_during_the_announcement_opens_no_second_dialog(self):
+        # Während der Ansage ist nichts zu sehen außer dem Wartezeiger; wer
+        # noch einmal drückt, bekommt trotzdem nur einen Dateidialog.
+        from morsetrainer.widgets import dialog
+        self.app.announcer.var.set(True)
+        opened, chosen = [], []
+        ask = lambda **options: (opened.append(self.root.cget("cursor")), "/tmp/x.zip")[1]
+        with mock.patch.object(dialog.filedialog, "askopenfilename", ask):
+            dialog.askopenfilename(chosen.append, parent=self.root, title="Daten einlesen")
+            self.assertEqual(self.root.cget("cursor"), "watch")
+            dialog.askopenfilename(chosen.append, parent=self.root, title="Daten einlesen")
+            self.assertTrue(self.pump_until(lambda: chosen))
+            self.pump_until(lambda: False, timeout=0.5)
+        self.assertEqual(len(opened), 1)
+        self.assertEqual(chosen, ["/tmp/x.zip"])
+        self.assertEqual(self.root.cget("cursor"), "")
+        with mock.patch.object(dialog.filedialog, "askopenfilename", ask):  # danach wieder frei
+            dialog.askopenfilename(chosen.append, parent=self.root, title="Daten einlesen")
+            self.assertTrue(self.pump_until(lambda: len(chosen) == 2))
+
     def test_space_alone_decides_nothing(self):
         # Die Leertaste wirkt nur auf einen Knopf mit Fokus; den hat beim
         # Öffnen keiner, das Fenster selbst kennt sie nicht.

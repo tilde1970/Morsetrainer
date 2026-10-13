@@ -128,12 +128,42 @@ showwarning = showinfo
 showerror = showinfo
 
 
+# Steht gerade ein Dateidialog aus (Ansage läuft oder Dialog offen)?
+_file_pending = False
+
+
+def _busy(window, busy: bool) -> None:
+    """Wartezeiger während der Ansage vor dem Dateidialog: Sonst sieht man
+    nach dem Klick sekundenlang nichts."""
+    try:
+        window.config(cursor="watch" if busy else "")
+    except tk.TclError:
+        pass
+
+
 def _choose_file(ask, keys: str, then, **options) -> None:
     # Der Dateidialog von Tk sagt nichts an; vorher sagen, was kommt und was
     # die Tasten tun, und erst nach der Ansage öffnen (sie liefe sonst
-    # über dem Dialog weiter und ginge im Tippen unter).
+    # über dem Dialog weiter und ginge im Tippen unter). Ein zweiter Druck
+    # in der Zeit öffnet keinen zweiten Dialog.
+    global _file_pending
+    if _file_pending:
+        return
+    _file_pending = True
+    window = _parent(options.get("parent"))
+    _busy(window, True)
+
+    def open_dialog():
+        global _file_pending
+        try:
+            path = ask(**options)
+        finally:
+            _file_pending = False
+            _busy(window, False)
+        then(path)
+
     text = tr("Dateiauswahl {title}.").format(title=options.get("title", "")) + " " + keys
-    announcer.say(text, then=lambda: then(ask(**options)))
+    announcer.say(text, then=open_dialog)
 
 
 def asksaveasfilename(then, **options) -> None:
