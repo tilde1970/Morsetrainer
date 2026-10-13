@@ -32,6 +32,7 @@ class DailyModeMixin:
     options_card = None
     _options_pack = None
     streak = best_streak = 0
+    next_waiting = False  # nächstes Zeichen bzw. nächste Sequenz wartet auf eine Ansage
 
     def daily_configure(self, minutes: float, **values) -> None:
         """Merkt die Werte der `daily_keys`, setzt die festen Werte `values`, die

@@ -611,6 +611,10 @@ class SequenceModeFrame(DailyModeMixin):
                 and len(clean_input(self.input_var.get())) >= len(self.current_sequence)):
             self.on_submit()
 
+    def _next_after_announcement(self):
+        self.next_waiting = False
+        self.next_sequence(waited=True)
+
     def next_sequence(self, waited=False):
         """Nächste Sequenz erzeugen und vorspielen; ist die Zeit um oder die feste
         Anzahl erreicht, endet der Durchgang. Läuft gerade eine Ansage (F11,
@@ -618,7 +622,11 @@ class SequenceModeFrame(DailyModeMixin):
         if not self.running:
             return
         if not waited and announcer.speaking():
-            announcer.when_quiet(lambda: self.next_sequence(waited=True))
+            # Nur ein Warten zugleich: F5 Stop und Start während der Ansage
+            # gäben sonst zwei Abläufe nebeneinander.
+            if not self.next_waiting:
+                self.next_waiting = True
+                announcer.when_quiet(self._next_after_announcement)
             return
         if self._time_up():
             self.stop()

@@ -1911,6 +1911,54 @@ class DailyAnnounceTest(AnnouncerCase):
             self.assertTrue(self.pump_until(lambda: played))
         self.assertEqual(played, [False])  # erst nach der Ansage
 
+    def test_only_one_character_waits_for_an_announcement(self):
+        # F5 Stop und Start während einer Ansage: danach ein Ablauf, nicht zwei.
+        from morsetrainer.widgets import announcer
+        self.runner.start()
+        mode = self.runner.mode
+        self.assertTrue(self.pump_until(lambda: mode.running))
+        played = []
+        with mock.patch.object(mode, "play_current", lambda: played.append(mode.current_char)):
+            self.app._confirm_daily_end("Escape")
+            self.assertTrue(announcer.speaking())
+            mode.next_char()
+            mode.next_char()
+            self.assertTrue(self.pump_until(lambda: played))
+            self.pump_until(lambda: False, timeout=0.5)
+        self.assertEqual(len(played), 1)
+        self.assertFalse(mode.next_waiting)
+
+    def test_next_sequence_waits_for_a_running_announcement(self):
+        from morsetrainer.widgets import announcer
+        mode = self.app.modes[self.app.mode_titles.index("Gruppen")]
+        played = []
+        with mock.patch.object(mode, "next_sequence", wraps=mode.next_sequence), \
+                mock.patch.object(mode, "_generate_sequence",
+                                  lambda: played.append(announcer.speaking()) or "ABCDE"):
+            mode.running = True
+            self.addCleanup(setattr, mode, "running", False)
+            self.app.announcer.say("Eine Ansage, die gerade läuft.")
+            self.assertTrue(announcer.speaking())
+            mode.next_sequence()
+            mode.next_sequence()
+            self.assertEqual(played, [])  # noch nicht
+            self.assertTrue(self.pump_until(lambda: played))
+            mode.running = False  # nichts weiter abspielen
+            self.pump_until(lambda: False, timeout=0.5)
+        self.assertEqual(played, [False])  # erst nach der Ansage, und nur einmal
+
+    def test_start_button_during_the_block_announcement_starts_once(self):
+        self.runner.start()
+        mode = self.runner.mode
+        starts = []
+        original = mode.start
+        with mock.patch.object(mode, "start", lambda: starts.append(1) or original()):
+            mode.start()  # Start-Knopf, während der Block noch angesagt wird
+            self.assertTrue(self.pump_until(lambda: self.runner.block_started))
+        self.assertEqual(len(starts), 1)
+        self.assertTrue(mode.running)
+        self.assertEqual(str(mode.start_button.cget("text")), "Tagesübung beenden")
+
     def test_abort_during_the_announcement_starts_nothing(self):
         self.runner.start()
         mode = self.runner.mode

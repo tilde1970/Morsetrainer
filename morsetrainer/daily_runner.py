@@ -267,7 +267,8 @@ class DailyRunner:
         if not self.active or self.mode is not mode:
             return  # während der Ansage abgebrochen
         self.block_started = time.time()
-        mode.start()
+        if not mode.running:  # sonst schon mit dem Start-Knopf während der Ansage gestartet
+            mode.start()
         if not mode.running:
             mode.daily_release()
             self.mode = None

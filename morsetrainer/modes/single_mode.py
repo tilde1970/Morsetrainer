@@ -307,6 +307,10 @@ class SingleModeFrame(DailyModeMixin):
         """Programmende: laufenden Durchgang abschließen und speichern."""
         self._finalize_session()
 
+    def _next_after_announcement(self):
+        self.next_waiting = False
+        self.next_char(waited=True)
+
     def next_char(self, waited=False):
         """Wählt das nächste Zeichen (vorgemerkte Fehler zuerst, sonst gewichtet
         zufällig) und spielt es; endet ein Block der Tagesübung, ist hier Schluss.
@@ -314,7 +318,11 @@ class SingleModeFrame(DailyModeMixin):
         if not self.running:
             return
         if not waited and announcer.speaking():
-            announcer.when_quiet(lambda: self.next_char(waited=True))
+            # Nur ein Warten zugleich: F5 Stop und Start während der Ansage
+            # gäben sonst zwei Abläufe nebeneinander.
+            if not self.next_waiting:
+                self.next_waiting = True
+                announcer.when_quiet(self._next_after_announcement)
             return
         if self.block_end is not None and time.time() >= self.block_end:
             # Tagesübung: der Block endet zwischen zwei Zeichen, nie mitten in einer Antwort.
