@@ -7,6 +7,29 @@
   Band-Ausklang: mittel“ bzw. „Zweimal hintereinander unter 80 % – nächster
   Band-Ausklang wieder leicht“). Der erste Aufstieg auf „mittel“ bringt
   ★ Weiter.
+- **Am Stück variiert je Gruppe bzw. Wort:** Mit „Tonhöhe und Tempo leicht
+  variieren“ bekommt in Am Stück jetzt jede Gruppe bzw. jedes Wort eine
+  eigene Tonhöhe und ein eigenes Tempo, nicht mehr der ganze Durchgang
+  dieselbe. Das CW-Filter folgt der Tonhöhe.
+- **Diplome zeigen den Stand jeder Stufe:** Eine gewählte Zeile zeigt je
+  Stufe, ob sie erreicht ist (mit Tag), wie weit du bist (z. B. „Silber ab
+  25 Lektionen: 18 / 25“), ob nur noch der zweite Tag fehlt oder „noch
+  offen“.
+- **Mehr Sprachansage:**
+  - In der QSO-Abfrage und im Log sagen die Felder beim Hineinspringen,
+    was eingetragen ist (oder „Leer.“); Getipptes wird buchstabiert,
+    solange das QSO nicht mehr läuft.
+  - F6 sagt, warum „Nochmal“ gesperrt ist (in der Tagesübung, beim
+    Kopfhören vor dem Prüfen).
+  - F11 nennt in der Tagesübung den Modus, beim Band-Ausklang mit Stufe;
+    der Contest-Ausklang nennt die Contest-Art.
+  - F11 liest in Einzeln mit Wörtern vor dem Start die Zählzeile mit (wie viele
+    Wörter bzw. Wendungen passen).
+  - Bei Wendungen sagt die Ansage einmal je Durchgang, wie das
+    zweigeteilte Zeitfenster zählt – vor dem ersten Ton.
+  - Das Fenster Bandbedingungen sagt im Band-Ausklang, dass die
+    Tagesübung die Stufe gesetzt hat; die Ansage vor dem Block nennt ein
+    zurückgestelltes eigenes CW-Filter.
 
 ## 2.50
 

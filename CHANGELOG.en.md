@@ -7,6 +7,27 @@
   twice – next band conditions wind-down: medium” or “Twice in a row below
   80 % – next band conditions wind-down back to light”). The first step up
   to “medium” earns ★ Ahead.
+- **Non-stop varies per group or word:** with “Vary pitch and speed
+  slightly”, Non-stop now gives each group or word its own pitch and speed
+  instead of one for the whole run. The CW filter follows the pitch.
+- **Awards show the state of every level:** a selected row shows for each
+  level whether it is achieved (with the day), how far you are (e.g.
+  “Silver from 25 lessons: 18 / 25”), whether only the second day is
+  missing, or “not yet”.
+- **More spoken feedback:**
+  - In the QSO log check the fields say what is entered when you move
+    into them (or “Empty.”); typing is spelled out once the QSO is over.
+  - F6 says why “Again” is locked (in the daily practice, and in head
+    copy before checking).
+  - In the daily practice F11 names the mode, with the level for the band
+    conditions wind-down; the contest wind-down names the contest.
+  - Before a run in One by one with Words, F11 also reads the count line (how many
+    words or phrases fit).
+  - With phrases the announcement explains the two-part time window once
+    per run – before the first tone.
+  - In the band conditions wind-down the Band conditions window says that
+    the daily practice set the level; the announcement before the block
+    mentions an own CW filter that was set back.
 
 ## 2.50
 
