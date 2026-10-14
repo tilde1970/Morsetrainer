@@ -2224,7 +2224,8 @@ class DialogTest(AnnouncerCase):
         self.said.clear()
         self.app.announcer.clear_cache()  # sonst käme die Wiederholung ohne synth aus dem Speicher
         self.key(window, "<F11>")
-        self.assertTrue(self.pump_until(lambda: any("Mit Lektion 5 weitermachen?" in s for s in self.said)))
+        # Echte Synthese ohne Speicher: auf langsamen CI-Rechnern dauert sie länger als 3 s.
+        self.assertTrue(self.pump_until(lambda: any("Mit Lektion 5 weitermachen?" in s for s in self.said), timeout=10))
         self.key(window, "<F9>")
         self.assertFalse(self.app.announcer.enabled())
         self.key(window, "<F9>")
