@@ -466,7 +466,8 @@ wieder wie vorher.
   „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ = ohne Tagesübung frei geübt, mit
   erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum
   **Wochenziel von 12 Sternen**. Das schaffst du mit vier bis fünf
-  Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Alle Sterne
+  Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Das Ziel ist
+  keine Obergrenze: Bis zu drei Sterne am Tag zählen weiter mit. Alle Sterne
   zusammen zählen für das Diplom **Sternstunden** (Abschnitt 5). Bis zur
   ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.
   „Letzte Woche: 4 Tage, 11 ★, Lektion 12 → 13“. Solange diese Woche noch

@@ -448,7 +448,7 @@ class DailyRunnerTest(AppTestCase):
         with mock.patch.object(daily, "plan", short_plan):
             self.runner.refresh_idle()
             self.assertIn("Letzte Woche: 1 Tag, 1 ★", self.app.daily_bar.note_var.get())
-            self.assertIn("0 von 12 ★", self.app.daily_bar.goal_var.get())
+            self.assertIn("0 ★ diese Woche, Ziel 12", self.app.daily_bar.goal_var.get())
             self.runner.start()
             self.runner.abort(quiet=True)
         self.assertIn("Tagesübung abgebrochen", self.app.daily_bar.note_var.get())

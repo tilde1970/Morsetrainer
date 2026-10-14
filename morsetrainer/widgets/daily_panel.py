@@ -49,10 +49,11 @@ def week_legend() -> str:
 
 
 def week_goal_text(stars: int) -> str:
-    """Stand des Wochenziels („5 von 10 ★ diese Woche“ bzw. „erreicht“)."""
+    """Stand des Wochenziels („5 ★ diese Woche, Ziel 12“ bzw. „erreicht“); das
+    Ziel steht hinten, damit es nicht wie eine Obergrenze aussieht."""
     if stars >= week.WEEK_GOAL:
         return tr("Wochenziel erreicht: {stars} {star}").format(stars=stars, star=FULL_STAR)
-    return tr("{stars} von {goal} {star} diese Woche").format(stars=stars, goal=week.WEEK_GOAL, star=FULL_STAR)
+    return tr("{stars} {star} diese Woche, Ziel {goal}").format(stars=stars, goal=week.WEEK_GOAL, star=FULL_STAR)
 
 
 def review_line(review: dict) -> str:
@@ -432,7 +433,9 @@ class EveningSummary:
         if week_stars is not None:
             parts.append(tr("Wochenziel erreicht: {stars} Sterne").format(stars=week_stars)
                          if week_stars >= week.WEEK_GOAL
-                         else tr("{stars} von {goal} Sternen diese Woche").format(stars=week_stars, goal=week.WEEK_GOAL))
+                         else (tr("1 Stern diese Woche, Ziel {goal}") if week_stars == 1
+                               else tr("{stars} Sterne diese Woche, Ziel {goal}")).format(
+                                   stars=week_stars, goal=week.WEEK_GOAL))
         better = comparison.get("better", [])
         if better:
             parts.append(tr("Besser geworden: ") + "; ".join(_spoken_better(item) for item in better))

@@ -456,7 +456,8 @@ as they were.
   “Mon ★★★  Tue ★★  Wed ✓  Thu –  Fri ·” (✓ = practised freely without the
   daily practice, daily goal reached; – = no practice), and next to it
   where you stand on the **weekly goal of 12 stars**. Four to five days of
-  practice get you there; a missed day doesn't cost you the week. All
+  practice get you there; a missed day doesn't cost you the week. The goal
+  is not a limit: up to three stars a day keep counting. All
   stars together count for the **Finest hours** award (section 5). Until
   the first daily practice of a new week it shows a look back, e.g.
   “Last week: 4 days, 11 ★, lesson 12 → 13”. As long as no star has been
