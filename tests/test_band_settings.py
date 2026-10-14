@@ -165,6 +165,13 @@ class LevelsTest(unittest.TestCase):
         self.assertLess(below_6db[0.3], 0.12)
         self.assertTrue(0.1 < below_6db[0.8] < 0.35, below_6db)
 
+    def test_rice_factor_per_level(self):
+        # Feste Werte statt nur der Reihenfolge: „stark“ ist Rayleigh (K = 0).
+        self.assertEqual(band.rice_k(0.8), 0.0)
+        self.assertEqual(band.rice_k(1.0), 0.0)
+        self.assertAlmostEqual(band.rice_k(0.3), 4.3, delta=0.1)
+        self.assertAlmostEqual(band.rice_k(0.5), 1.9, delta=0.1)
+
     def test_fading_loops_are_seamless_and_same_for_same_seed(self):
         import numpy as np
         loop = band._gauss_loop(5, band.QSB_LOOP_SECONDS, band.QSB_RATE_HZ, band.QSB_BANDWIDTH_HZ)
@@ -282,6 +289,13 @@ class FilterAndQrmTest(unittest.TestCase):
             crash = conditions._make_crash()
             envelope = np.abs(crash)
             self.assertGreater(float(np.mean(envelope < 0.01 * envelope.max())), 0.3)  # viel Stille dazwischen
+            # Echte Lücken: mindestens zwei stille 1-ms-Fenster am Stück zwischen den Entladungen.
+            ms = band.SAMPLE_RATE // 1000
+            peaks = envelope[:len(envelope) // ms * ms].reshape(-1, ms).max(axis=1)
+            quiet = peaks < 0.01 * envelope.max()
+            loud = np.flatnonzero(~quiet)
+            inner = quiet[loud[0]:loud[-1] + 1]
+            self.assertTrue(np.any(inner[:-1] & inner[1:]), "keine Lücke von 2 ms zwischen Entladungen")
             crest = envelope.max() / np.sqrt(np.mean(crash.astype(float) ** 2))
             self.assertGreater(crest, 4)
 
@@ -410,7 +424,43 @@ class FilterAndQrmTest(unittest.TestCase):
         conditions = band.conditions({"levels": {}, "gain": 1.0, "filter": 250}, 600)  # ohne zufällige Knacker
         out = self.blockwise(conditions, self.tone(1000), station=None)
         # Ungefiltert durch (1000 Hz bei 250-Hz-Filter um 600 Hz), nur 3 dB leiser.
-        self.assertAlmostEqual(float(np.max(np.abs(out))), 0.3 * band.SIDETONE_GAIN, delta=0.01)
+        self.assertAlmostEqual(float(np.max(np.abs(out))), 0.3 * 0.708, delta=0.01)  # −3 dB, nicht die Konstante
+
+    def test_signal_agc_recovers_with_its_time_constant(self):
+        # Nach dem Ton steigt die Anhebung mit SIGNAL_AGC_RELEASE_SECONDS
+        # (0,25 s): dann 63 % des Wegs zur vollen Anhebung.
+        import numpy as np
+        conditions = band.BandConditions(1)
+        full, boost = 0.5, 2.0
+        signal = np.concatenate([np.full(band.SAMPLE_RATE // 10, full), np.zeros(band.SAMPLE_RATE)])
+        gain = conditions._signal_agc(signal, boost, full, len(signal))
+        after = band.SAMPLE_RATE // 10
+        self.assertAlmostEqual(float(gain[after - 1]), 1.0, places=6)
+        self.assertAlmostEqual(float(gain[after + band.SAMPLE_RATE // 4]), 1 + (boost - 1) * (1 - np.exp(-1)),
+                               delta=0.02)
+
+    def test_agc_boost_ignores_background_gain(self):
+        # Die Anhebung richtet sich nach dem Rauschabstand bei Lautstärke
+        # 100 %; „Störgeräusche leiser“ darf sie nicht vergrößern.
+        import numpy as np
+        boosts = []
+        for gain in (1.0, 0.5):
+            conditions = band.conditions({"levels": {"noise": 0.5}, "gain": gain, "seed": 1}, 600)
+            with mock.patch.object(conditions, "_signal_agc", wraps=conditions._signal_agc) as agc:
+                conditions.mix([(self.tone(600, 0.1), 0)], 960)
+            boosts.append(agc.call_args[0][1])
+        self.assertAlmostEqual(boosts[0], boosts[1])
+        self.assertAlmostEqual(boosts[0], 10 ** (band.noise_snr_db(0.5) / 20))
+
+    def test_tone_at_600_hz_keeps_its_level(self):
+        # Bezug des Tonhöhenausgleichs: 600 Hz ohne Störungen kommt unverändert durch.
+        import numpy as np
+        conditions = band.conditions({"levels": {}, "gain": 1.0}, 600)
+        self.assertAlmostEqual(conditions.pitch_gain, 1.0, places=3)
+        t = np.arange(band.SAMPLE_RATE) / band.SAMPLE_RATE
+        tone = (band.AMPLITUDE * np.sin(2 * np.pi * 600 * t)).astype(np.float32)
+        out = self.blockwise(conditions, tone)
+        self.assertAlmostEqual(float(np.max(np.abs(out[band.SAMPLE_RATE // 4:]))), band.AMPLITUDE, delta=0.02)
 
     def test_filter_takes_away_noise(self):
         import numpy as np

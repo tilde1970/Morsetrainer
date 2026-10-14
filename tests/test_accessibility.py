@@ -545,6 +545,37 @@ class AnnouncerTest(AnnouncerCase):
         self.assertEqual(announcer._cache_size, sum(s.nbytes for s in announcer._cache.values()))
         self.assertLessEqual(announcer._cache_size, 16000)
 
+    def test_speech_cache_lock_prevents_lost_updates(self):
+        # Erzwungener Wettlauf: Das Lesen der Größe (nbytes) gibt den Thread
+        # ab, mitten in „_cache_size += size“. Ohne _cache_lock ginge eine
+        # Änderung verloren und die Summe stimmte nicht mehr.
+        import threading
+        import time
+        from morsetrainer.core import speech
+        announcer = self.app.announcer
+        announcer.clear_cache()
+
+        class Slow:
+            @property
+            def nbytes(self):
+                time.sleep(0.002)
+                return 100
+
+        start = threading.Barrier(4)
+
+        def speak(offset):
+            start.wait()
+            for i in range(25):
+                announcer._synth(f"Wettlauf {offset} {i}")
+
+        with mock.patch.object(speech.speaker, "synth", lambda text, rate=1.0: Slow()):
+            threads = [threading.Thread(target=speak, args=(n,)) for n in range(4)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        self.assertEqual(announcer._cache_size, 100 * len(announcer._cache))
+
     def test_first_announcement_waits_until_the_window_is_drawn(self):
         # Ist die Stimme noch nicht geladen, lädt die erste Ansage sie – und
         # das hält die Oberfläche an. Deshalb erst, wenn das Fenster steht.
