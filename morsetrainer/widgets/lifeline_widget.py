@@ -103,6 +103,10 @@ class LifelinePanel:
                                 highlightthickness=theme.BORDER_WIDTH + 1, highlightcolor=theme.FOCUS,
                                 highlightbackground=theme.SURFACE)
         self.canvas.pack(fill="x", pady=(4, 0))
+        # Sichtbar, nicht nur angesagt: wie man ohne Maus an die Werte eines Tages kommt.
+        theme.hint(box, wrap=520, text=tr(
+            "Werte eines Tages: mit der Maus darüber, oder mit Tab hinein und Pfeil links/rechts; "
+            "Bild auf/ab springt eine Woche.")).pack(anchor="w", pady=(2, 0))
         self.line = {"days": []}
         self.xs = []
         self.day_index = None  # mit der Tastatur gewählter Tag

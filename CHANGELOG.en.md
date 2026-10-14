@@ -5,6 +5,15 @@
 - **Band level:** if you make the band easier during the band outro of
   the daily practice, a good result no longer cancels an earlier miss; a
   failed run still counts towards falling back.
+- **Announcements:** F9 and F11 also work while a drop-down list is open.
+  Tab out of the help text says where the focus lands; the band window
+  announces the focus when it opens. F11 no longer reads doubled
+  punctuation, nor “Your answer?” once the answer is given.
+- **Greeting on first start:** also names the daily practice key; with a
+  screen reader running it suggests muting it while practising.
+- **Interface:** number and unit (“400 Hz”, “100 %”) are no longer split
+  across lines in hints; the pitch field is visibly labelled “Pitch”; below
+  the lifeline a hint explains how to go through the days by keyboard.
 
 ## 2.51
 

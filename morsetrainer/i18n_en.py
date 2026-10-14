@@ -395,11 +395,15 @@ EN.update({
         "Daily practice, {block}: {mode}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",
     "noch kein Stern": "no star yet",
     "Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
-    "{announce} schaltet sie aus. {where} sagt, wo du bist.":
+    "{announce} schaltet sie aus. {where} sagt, wo du bist. {daily} startet die Tagesübung. "
+    "Stell den Screenreader beim Üben stumm; die Anleitung sagt wie.":
         "Morsetrainer. Spoken feedback is on because a screen reader is running. "
-        "{announce} turns it off. {where} tells you where you are.",
-    "Morsetrainer. {announce} schaltet die Sprachansage ein. {where} sagt, wo du bist.":
-        "Morsetrainer. {announce} turns on spoken feedback. {where} tells you where you are.",
+        "{announce} turns it off. {where} tells you where you are. {daily} starts the daily practice. "
+        "Mute the screen reader while practising; the guide explains how.",
+    "Morsetrainer. {announce} schaltet die Sprachansage ein. {where} sagt, wo du bist. "
+    "{daily} startet die Tagesübung.":
+        "Morsetrainer. {announce} turns on spoken feedback. {where} tells you where you are. "
+        "{daily} starts the daily practice.",
     "Tagesübung, {block}: {mode}, {minutes} Minuten.": "Daily practice, {block}: {mode}, {minutes} minutes.",
     "Noch einmal {key} beendet die Tagesübung.": "Press {key} again to end the daily practice.",
     "{star} Stern aus der Tagesübung, ✓ frei geübt, – nicht geübt, · noch nicht dran":
@@ -482,6 +486,10 @@ EN.update({
     "{item}, {n} von {total}.": "{item}, {n} of {total}.",
     "Liste offen.": "List open.",
     "Vorschau im Browser geöffnet.": "Preview opened in the browser.",
+    "Werte eines Tages: mit der Maus darüber, oder mit Tab hinein und Pfeil links/rechts; "
+    "Bild auf/ab springt eine Woche.":
+        "Values of a day: hover with the mouse, or Tab into it and use the left/right arrows; "
+        "Page Up/Down jumps a week.",
     "Pfeil links und rechts gehen durch die Tage.": "Left and right arrows go through the days.",
     "Fortschritt {mode}: {info}": "Progress {mode}: {info}",
     "Lebenslinie: {info}": "Lifeline: {info}",

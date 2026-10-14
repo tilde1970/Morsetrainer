@@ -436,8 +436,8 @@ class BandSettings:
         # F11: wo man ist, dazu welcher Stufe die Einstellung entspricht
         # (der Satz steht sonst nur unten im Fenster).
         window.bind("<F11>", lambda e: self._read_where() or "break")
-        if self.note_var.get():
-            announcer.say(self.note_var.get())  # kommt mit dem Fensternamen
+        # Kommt mit dem Fensternamen; focus_set allein sagt den Fokus nicht.
+        announcer.say(" ".join(part for part in (self.note_var.get(), announcer.describe(preset_buttons[0])) if part))
 
     def _show_note(self) -> None:
         """Zeile „Gesetzt von der Tagesübung …“ nur zeigen, solange es sie gibt."""

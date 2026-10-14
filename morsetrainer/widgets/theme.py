@@ -12,6 +12,7 @@ Stile:
     Feedback.TLabel   große Rückmeldung (Richtig/Falsch), Farbe per foreground
     Score.TLabel      fette Zwischenstände (Punkte, x / y richtig)
     Footer.TLabel     Fußzeile"""
+import re
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
@@ -360,10 +361,19 @@ def _on_window_shown(event) -> None:
         scale_wraps(event.widget)
 
 
+# Zahl und Einheit bleiben beim Umbruch zusammen („400 Hz“, nicht „400“ am
+# Zeilenende und „Hz“ in der nächsten): geschütztes Leerzeichen dazwischen.
+_UNIT_SPACE = re.compile(r"(\d) (k?Hz|dB|%|WPM|s|ms|Min\.?|min)(?!\w)")
+
+
+def keep_units(text: str) -> str:
+    return _UNIT_SPACE.sub("\\1\u00a0\\2", text)
+
+
 def hint(parent, text=None, textvariable=None, wrap=None, **kwargs) -> ttk.Label:
     """Gedämpfter Erklärtext; mit `wrap` (Pixel) mehrzeilig, linksbündig."""
     if text is not None:
-        kwargs["text"] = text
+        kwargs["text"] = keep_units(text) if wrap else text
     if textvariable is not None:
         kwargs["textvariable"] = textvariable
     if wrap:

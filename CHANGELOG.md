@@ -5,6 +5,15 @@
 - **Bandstufe:** Wer im Band-Ausklang der Tagesübung das Band
   zwischendurch leichter stellt, hebt mit einem guten Ergebnis keinen
   Fehlversuch mehr auf; ein Scheitern zählt weiter für den Rückfall.
+- **Ansage:** F9 und F11 wirken auch bei aufgeklappter Klappliste. Tab
+  aus dem Hilfetext sagt, wo der Fokus landet; das Bandfenster sagt beim
+  Öffnen den Fokus. F11 liest keine doppelten Satzzeichen mehr und nicht
+  mehr „Deine Eingabe?“, wenn die Antwort schon gegeben ist.
+- **Begrüßung beim ersten Start:** nennt auch die Taste der Tagesübung;
+  läuft ein Screenreader, rät sie, ihn beim Üben stummzuschalten.
+- **Oberfläche:** Zahl und Einheit („400 Hz“, „100 %“) werden in
+  Hinweisen nicht mehr getrennt; das Tonfeld heißt sichtbar „Tonhöhe“; unter
+  der Lebenslinie steht, wie man mit der Tastatur die Tage durchgeht.
 
 ## 2.51
 

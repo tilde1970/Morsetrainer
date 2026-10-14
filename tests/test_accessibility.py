@@ -1045,6 +1045,26 @@ class AnnouncerModesTest(AnnouncerCase):
         tone = np.full(960, 0.3, dtype=np.float32)
         self.assertAlmostEqual(float(np.max(conditions.mix([(tone, band.VOICE)], 960))), 0.3, delta=0.01)
 
+    def test_f11_joins_sentences_without_double_marks(self):
+        from morsetrainer.app import sentences
+        self.assertEqual(sentences(["Reiter Einzeln", "Start mit F5.", "Deine Eingabe?", "",
+                                               "Zeile eins\nZeile zwei."]),
+                         "Reiter Einzeln. Start mit F5. Deine Eingabe? Zeile eins. Zeile zwei.")
+        # Schon beantwortet: „Deine Eingabe?“ steht noch da, gilt aber nicht mehr.
+        self.app.announcer.var.set(True)
+        self.app.show_mode("Einzelzeichen")
+        mode = self.mode("Einzelzeichen")
+        mode.status_var.set("Deine Eingabe?")
+        mode.feedback_var.set("Richtig: K")
+        for waiting, expected in ((True, True), (False, False)):
+            mode.waiting_for_input = waiting
+            with mock.patch.object(self.app.announcer, "say") as say:
+                self.app.read_status()
+            spoken = say.call_args[0][0]
+            self.assertNotIn("..", spoken)
+            self.assertNotIn("?.", spoken)
+            self.assertEqual("Deine Eingabe?" in spoken, expected, spoken)
+
     def test_words_count_line_and_split_window_are_spoken(self):
         from morsetrainer.core import koch
         self.app.announcer.var.set(True)
@@ -1441,6 +1461,24 @@ class WindowKeysTest(AnnouncerCase):
             self.root.update()
             self.assertNotEqual(self.app.announcer.var.get(), before, window)
 
+    def test_f9_and_f11_work_with_an_open_drop_down_list(self):
+        # Aufgeklappte Klappliste: Tk meldet ihre Liste nur als Pfad.
+        self.app.open_settings()
+        self.root.update()
+        box = self.app.zoom_box
+        listbox = str(box) + ".popdown.f.l"
+        before = self.app.announcer.var.get()
+        self.assertEqual(self.key(listbox, "F9"), "break")
+        self.assertNotEqual(self.app.announcer.var.get(), before)
+        self.app.announcer.var.set(before)
+        del self.said[:]
+        self.assertEqual(self.key(listbox, "F11"), "break")
+        self.assertTrue(self.pump_until(lambda: self.said))
+        spoken = " ".join(self.said)
+        self.assertIn("Fenster", spoken)
+        self.assertIn(", Auswahl, ", spoken)
+        self.assertIsNone(self.key(".unbekannt.popdown.f.l", "F9"))
+
     def test_f11_names_the_focused_control(self):
         self.app.open_settings()
         self.root.update()
@@ -1541,6 +1579,18 @@ class BandWindowAnnounceTest(AnnouncerCase):
                 yield from walk(child)
         return [w for w in walk(self.settings.window) if w.winfo_class() == "TButton"
                 and str(w.cget("text")) in ("leicht", "mittel", "stark")]
+
+    def test_opening_tells_the_focus(self):
+        # Der Fokus steht beim Öffnen auf „leicht“; ohne Ansage wüsste man
+        # nicht, wo Tab beginnt.
+        self.settings.close_window()
+        self.pump_until(lambda: False, timeout=0.3)
+        with mock.patch.object(self.app.announcer, "say", wraps=self.app.announcer.say) as say:
+            self.settings.open_window()
+            self.settings.window.event_generate("<Map>")  # Hauptfenster versteckt: Tk zeigt es nicht selbst
+            self.pump_until(lambda: False, timeout=0.3)
+        spoken = [call.args[0] for call in say.call_args_list]
+        self.assertIn("Fenster Bandbedingungen. Stufe leicht, Knopf.", spoken)
 
     def test_presets_are_named_and_confirmed(self):
         light, medium, heavy = self.preset_buttons()
@@ -1802,12 +1852,16 @@ class FirstStartTest(AnnouncerCase):
         spoken = self.greet(reader=False)
         self.assertIn("F9 schaltet die Sprachansage ein.", spoken)
         self.assertIn("F11 sagt, wo du bist.", spoken)
+        self.assertIn("F12 startet die Tagesübung.", spoken)
+        self.assertNotIn("stumm", spoken)
         self.assertFalse(self.app.announcer.var.get())  # nur gesagt, nicht eingeschaltet
 
     def test_screen_reader_switches_it_on(self):
         spoken = self.greet(reader=True)
         self.assertTrue(self.app.announcer.var.get())
         self.assertIn("weil ein Screenreader läuft", spoken)
+        self.assertIn("F12 startet die Tagesübung.", spoken)
+        self.assertIn("Stell den Screenreader beim Üben stumm", spoken)
 
     def test_screen_reader_detection_says_no_on_errors(self):
         import subprocess
@@ -1871,6 +1925,13 @@ class HelpReadingTest(AnnouncerCase):
         action()
         self.pump_until(lambda: False, timeout=0.3)
         return " ".join(self.said)
+
+    def test_tab_out_of_the_help_text_is_announced(self):
+        self.pump_until(lambda: False, timeout=0.3)
+        target = self.text.tk_focusNext()
+        spoken = self.spoken_after(lambda: self.text.event_generate("<Tab>"))
+        self.assertEqual(str(self.text.tk.call("focus")), str(target))
+        self.assertIn(self.announcer.describe(target), spoken)
 
     def test_help_is_read_with_the_arrow_keys(self):
         self.pump_until(lambda: False, timeout=0.3)

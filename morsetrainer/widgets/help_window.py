@@ -370,12 +370,9 @@ class HelpWindow:
     # --- Vorlesen mit den Pfeiltasten ------------------------------------------------
     def _bind_reading(self, text: tk.Text) -> None:
         """Pfeil runter/hoch: nächster bzw. voriger Absatz, vorgelesen. Tab
-        verlässt den Text (im Textfeld fügte er sonst ein Tabzeichen ein)."""
+        verlässt den Text über die Klassenbindung aus theme (mit Fokusansage)."""
         text.bind("<Down>", lambda e: self._read_next(text, 1) or "break")
         text.bind("<Up>", lambda e: self._read_next(text, -1) or "break")
-        text.bind("<Tab>", lambda e: text.tk_focusNext().focus_set() or "break")
-        text.bind("<Shift-Tab>", lambda e: text.tk_focusPrev().focus_set() or "break")
-        text.bind("<ISO_Left_Tab>", lambda e: text.tk_focusPrev().focus_set() or "break")
 
     def _read_next(self, text: tk.Text, direction: int) -> None:
         line = int(text.index("insert").split(".")[0])

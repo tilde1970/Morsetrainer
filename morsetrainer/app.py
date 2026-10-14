@@ -140,6 +140,14 @@ WHATS_NEW = {
 _CLOCK = re.compile(r"\b(\d+):(\d{2})\b")
 
 
+def sentences(parts) -> str:
+    """Zeilen und Teile zu Sätzen: ein Punkt nur, wo noch kein Satzzeichen
+    steht („Deine Eingabe?“, nicht „Deine Eingabe?.“). Nach „…“ kommt er
+    trotzdem: Die Aussprache macht daraus eine Satzpause („Hör zu.“)."""
+    lines = [line.strip() for part in parts for line in part.split("\n")]
+    return " ".join(line if line[-1] in ".?!:" else line + "." for line in lines if line)
+
+
 def _spoken_clock(match) -> str:
     minutes, seconds = int(match.group(1)), int(match.group(2))
     parts = ([f"{minutes} Min."] if minutes else []) + ([f"{seconds} s"] if seconds or not minutes else [])
@@ -365,6 +373,7 @@ class MorseTrainerApp:
         ttk.Label(tone_row, text="Hz").pack(side="right", padx=(4, 0))
         freq_spin = ttk.Spinbox(tone_row, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5)
         freq_spin.pack(side="right")
+        ttk.Label(tone_row, text=tr("Tonhöhe")).pack(side="right", padx=(0, 4))  # „Hz“ allein sagt es nicht
         announcer.name(freq_spin, tr("Tonhöhe"), value=lambda: f"{freq_spin.get()} Hz")
         # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
         self.wpm_var = tk.IntVar(value=koch.RECOMMENDED_WPM)
@@ -741,14 +750,16 @@ class MorseTrainerApp:
         Bildschirm von F9. Läuft ein Screenreader, gleich einschalten."""
         if self.announcer.available() is not None:
             return  # keine Stimme: statt Ansage käme nur der Fehlerton
-        keys = {"announce": i18n.announce_key(), "where": i18n.where_key()}
+        keys = {"announce": i18n.announce_key(), "where": i18n.where_key(), "daily": i18n.daily_key()}
         if screenreader.running():
             self.announcer.var.set(True)
+            # Der Screenreader spräche sonst über den Morseton.
             text = tr("Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
-                      "{announce} schaltet sie aus. {where} sagt, wo du bist.").format(**keys)
+                      "{announce} schaltet sie aus. {where} sagt, wo du bist. {daily} startet die Tagesübung. "
+                      "Stell den Screenreader beim Üben stumm; die Anleitung sagt wie.").format(**keys)
         else:
             text = tr("Morsetrainer. {announce} schaltet die Sprachansage ein. "
-                      "{where} sagt, wo du bist.").format(**keys)
+                      "{where} sagt, wo du bist. {daily} startet die Tagesübung.").format(**keys)
         self.announcer.say(text, force=True)
 
     def toggle_announce(self) -> None:
@@ -771,15 +782,30 @@ class MorseTrainerApp:
 
     def _window_key(self, event):
         """F9/F11 in einem anderen Fenster als dem Hauptfenster. Fenster mit
-        eigener Belegung (Meldungen, Abendbilanz, Diplom …) machen es selbst."""
-        top = self._window_of(event.widget)
-        if top is None or top is self.root or top.bind(f"<{event.keysym}>"):
+        eigener Belegung (Meldungen, Abendbilanz, Diplom …) machen es selbst.
+        Bei aufgeklappter Klappliste hat deren Liste den Fokus; sie gehört zu
+        keinem Fenster von uns, die Taste gilt dann dem Fenster der Klappliste."""
+        box = self._popdown_owner(event.widget)
+        top = self._window_of(box or event.widget)
+        if top is None or (top is self.root and box is None) or top.bind(f"<{event.keysym}>"):
             return None
         if event.keysym == ANNOUNCE_KEY:
             self.toggle_announce()
+        elif top is self.root:
+            self.read_status()
         else:
-            self.read_window(top)
+            self.read_window(top, box)
         return "break"
+
+    def _popdown_owner(self, widget):
+        """Die Klappliste, deren aufgeklappte Liste `widget` ist (Tk meldet sie
+        nur als Pfad „….popdown.f.l“), sonst None."""
+        if not isinstance(widget, str) or ".popdown" not in widget:
+            return None
+        try:
+            return self.root.nametowidget(widget.split(".popdown")[0])
+        except KeyError:
+            return None
 
     def _window_of(self, widget):
         """Das Fenster von `widget`, None bei Tks eigenen Dialogen."""
@@ -790,12 +816,12 @@ class MorseTrainerApp:
         except (tk.TclError, KeyError):
             return None
 
-    def read_window(self, top) -> None:
+    def read_window(self, top, focus=None) -> None:
         """F11 in einem anderen Fenster: sein Name und das Bedienelement mit
         dem Fokus („Fenster Einstellungen. Schriftgröße, Klappliste, 100 Prozent.“)."""
         try:
             text = tr("Fenster {title}.").format(title=top.title())
-            focus = top.focus_get()
+            focus = focus or top.focus_get()
             if focus is not None and focus is not top and focus.winfo_toplevel() is top:
                 text += " " + announcer.describe(focus)
         except (tk.TclError, KeyError):
@@ -834,18 +860,18 @@ class MorseTrainerApp:
             text = var.get().strip() if var is not None else ""
             if attr in ("live_var", "score_var", "remaining_var"):
                 text = _CLOCK.sub(_spoken_clock, text)
+            if (attr == "status_var" and text.startswith(tr("Deine Eingabe?"))
+                    and not getattr(mode, "waiting_for_input", True)):
+                text = ""  # schon beantwortet; die Zeile wechselt erst mit dem nächsten Ton
             if attr == "progress_var":  # „3/20“ im Reiter Sprechen
                 text = re.sub(r"^(\d+)/(\d+)$", lambda m: tr("{done} von {total}").format(
                     done=m.group(1), total=m.group(2)), text)
-            if text:
-                parts.append(text.replace("\n", ". "))
+            parts.append(text)
         # Vor dem Start: was der Reiter zur Auswahl sagt (Wörter: wie viele passen).
         idle_hint = getattr(mode, "idle_hint", None)
         if idle_hint is not None and not getattr(mode, "running", False):
-            text = idle_hint().strip().rstrip(".")
-            if text:
-                parts.append(text.replace("\n", ". "))
-        self.announcer.say(". ".join(parts) + ".", force=True)
+            parts.append(idle_hint())
+        self.announcer.say(sentences(parts), force=True)
 
     def select_tab(self, index: int) -> None:
         """Reiter Nr. `index` (ab 0, −1 der letzte) zeigen, wenn er nicht
