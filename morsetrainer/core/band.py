@@ -21,7 +21,7 @@ Weitere Störungen (nicht Teil der Stufen):
 - Gewitter: Knackstörungen in Schüben, wie ein Sommergewitter auf 80/160 m.
 - AGC-Pumpen: nach einem starken Knacker regelt der Empfänger kurz
   herunter, das Signal bricht 100–300 ms ein.
-- Flatterfading: schnelles Zittern (5–15 Hz), wie bei Aurora oder auf dem
+- Flatterfading: schnelles Zittern (rund 5 Hz), wie bei Aurora oder auf dem
   Polarweg.
 - Träger: jemand stimmt nahe der Frequenz ab, ein Dauerton kommt und geht.
 - Schaltnetzteil: rauer Brummteppich im Takt der gleichgerichteten
@@ -101,7 +101,7 @@ STRENGTH_OTHERS = (0.35, 1.0)
 # K = flache Schwankungen, 100 % = K 0 = Rayleigh mit gelegentlich sehr
 # tiefen, kurzen Löchern. Der Verlauf ist je Station eine nahtlose Schleife
 # aus dem Startwert (im Netzwerk für alle gleich).
-QSB_BANDWIDTH_HZ = 0.08  # Löcher kommen im Abstand von etwa 5–20 s
+QSB_BANDWIDTH_HZ = 0.08  # tiefe Löcher (unter −10 dB) im Mittel alle 20 s, gestreut 7–50 s
 QSB_RATE_HZ = 20  # so oft wird der Verlauf erzeugt, dazwischen interpoliert
 QSB_LOOP_SECONDS = 600
 
@@ -145,8 +145,8 @@ STORM_RATE_PER_SECOND = 6.0
 AGC_PUMP_THRESHOLD = 0.15
 AGC_PUMP_MAX_DEPTH = 0.9
 AGC_PUMP_RELEASE_SECONDS = 0.1
-# Flatterfading (Polarlicht, Mehrwege): wie QSB, aber mit rund 10 Hz
-# Spreizung.
+# Flatterfading (Polarlicht, Mehrwege): wie QSB, aber mit 8 Hz Spreizung;
+# die Stärke zittert dann rund 5-mal je Sekunde.
 FLUTTER_BANDWIDTH_HZ = 8.0
 FLUTTER_RATE_HZ = 100
 FLUTTER_LOOP_SECONDS = 60
@@ -792,6 +792,8 @@ class BandConditions:
         if boost <= 1.0:
             self.signal_hold = 0.0
             return 1.0
+        if n == 0:
+            return 1.0  # leerer Block: nichts zu regeln, die Spitze bleibt
         k = -1.0 / (SAMPLE_RATE * SIGNAL_AGC_RELEASE_SECONDS)
         t = np.arange(n)
         level = np.abs(signal)
@@ -1004,8 +1006,9 @@ class BandConditions:
 
 
 def noise_snr_db(level: float, gain: float = 1.0) -> float:
-    """Rauschabstand in dB (2,4 kHz) für Regler `level` (0..1) und die
-    Lautstärke der Störgeräusche `gain` (größer = mehr Rauschen)."""
+    """Rauschabstand in dB im Empfängerfilter (NOISE_BANDWIDTH_HZ) für Regler
+    `level` (0..1) und die Lautstärke der Störgeräusche `gain` (größer = mehr
+    Rauschen)."""
     snr = SNR_DB_RANGE[0] + (SNR_DB_RANGE[1] - SNR_DB_RANGE[0]) * level
     return snr - 20 * math.log10(gain) if gain > 0 else math.inf
 

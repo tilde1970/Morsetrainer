@@ -607,6 +607,13 @@ class ExtraInterferenceTest(unittest.TestCase):
         release = int(band.AGC_PUMP_RELEASE_SECONDS * band.SAMPLE_RATE)
         self.assertAlmostEqual(1 - gains[0][1099 + release], band.AGC_PUMP_MAX_DEPTH / np.e, delta=0.01)
 
+    def test_signal_agc_takes_an_empty_block(self):
+        import numpy as np
+        conditions = band.BandConditions(1)
+        conditions.signal_hold = 0.2
+        self.assertEqual(conditions._signal_agc(np.zeros(0), 2.0, 0.5, 0), 1.0)
+        self.assertEqual(conditions.signal_hold, 0.2)  # die Spitze bleibt für den nächsten Block
+
     def test_agc_pumps_after_crashes(self):
         import numpy as np
         tone = self.tone(20)

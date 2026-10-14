@@ -1,5 +1,5 @@
 """Selbsttest für die Release-Builds: prüft ohne Fenster und Soundkarte,
-ob beide Stimmen, der MP3-Export, PortAudio (Ton), Tcl/Tk (Oberfläche) und
+ob beide Stimmen (auch mit schnellerem Sprechtempo), der MP3-Export, PortAudio (Ton), Tcl/Tk (Oberfläche) und
 die Lizenzdatei im gepackten Programm vorhanden sind.
 
     morsetrainer --selftest ziel.mp3
@@ -59,6 +59,11 @@ def run(path: str) -> int:
             print(speaker.error or "Keine Sprache erzeugt.", file=sys.stderr)
             return 1
         voices.append(voice)
+    # Anderes Sprechtempo geht über piper.SynthesisConfig: auch das muss im Paket sein.
+    fast = speakers[0].synth(speech.spoken("DL4YM", lang=speakers[0].lang), rate=1.5)
+    if not len(fast) or len(fast) >= len(voices[0]):
+        print(speakers[0].error or "Schnellere Ansage nicht erzeugt.", file=sys.stderr)
+        return 1
     try:
         with mp3.Mp3Writer(path) as writer:
             writer.write(build_text("DL4YM", 20, 600))
