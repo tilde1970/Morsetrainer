@@ -262,7 +262,7 @@ class BandSettings:
         elif self.preview is not None and self.preview.error:
             text = self.preview.error
         else:
-            text = tr("Zählt nicht für Statistik, Übungszeit und Diplome.")
+            text = tr("Probehören zählt nicht für Statistik, Übungszeit und Diplome.")
         self.preview_var.set(text)
 
     def subscribe(self, callback) -> None:
@@ -353,8 +353,8 @@ class BandSettings:
         # für CW-QRM. Über 80 % ist das Fading reines Rayleigh (band.rice_k = 0).
         theme.hint(box, wrap=440, text=tr(
             "QSB und Flatterfading werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit "
-            "Bandbedingungen zählen nicht für deine Zeichenstatistik: Ein Zeichen im Fading-Loch sagt nichts "
-            "darüber, ob du es kannst.")).grid(
+            "Bandbedingungen zählen für Übungszeit und Diplome, aber nicht für deine Zeichenstatistik: Ein "
+            "Zeichen im Fading-Loch sagt nichts darüber, ob du es kannst.")).grid(
             row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
         ttk.Button(buttons, text=tr("Alle aus"), command=lambda: self._set_all(False)).pack(side="right")
         all_on = ttk.Button(buttons, text=tr("Alle an"), command=lambda: self._set_all(True))
@@ -463,8 +463,11 @@ class BandSettings:
     def _read_where(self) -> None:
         if self.window is None:
             return
+        # Der Hinweis zur Statistik steht sonst nur sichtbar im Fenster.
         text = " ".join(part for part in (tr("Fenster {title}.").format(title=self.window.title()),
-                                          self.note_var.get(), self.rank_var.get()) if part)
+                                          self.note_var.get(), self.rank_var.get(),
+                                          tr("Mit Bandbedingungen zählt ein Durchgang nicht für die "
+                                             "Zeichenstatistik.")) if part)
         try:
             focus = self.window.focus_get()
             if focus is not None and focus is not self.window:

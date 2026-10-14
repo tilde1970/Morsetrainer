@@ -77,6 +77,9 @@ SLOW_HINT_SPOKEN_MS = 600
 # Begrüßung beim ersten Start erst, wenn das Fenster steht (die Stimme zu
 # laden hält das Zeichnen sonst auf).
 FIRST_START_GREETING_MS = 800
+# Mit Screenreader noch etwas später: Er liest beim Erscheinen selbst den
+# Fenstertitel vor, die Begrüßung redete sonst hinein.
+SCREEN_READER_GREETING_MS = 2500
 STATUS_KEY = "F11"
 # Hilfe beim aktuellen Reiter; im Contest sendet F1 CQ wie in
 # Contest-Programmen, dort bleibt der Knopf.
@@ -766,9 +769,10 @@ class MorseTrainerApp:
             text = tr("Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
                       "{announce} schaltet sie aus. {where} sagt, wo du bist. {daily} startet die Tagesübung. "
                       "Stell den Screenreader beim Üben stumm; die Anleitung sagt wie.").format(**keys)
-        else:
-            text = tr("Morsetrainer. {announce} schaltet die Sprachansage ein. "
-                      "{where} sagt, wo du bist. {daily} startet die Tagesübung.").format(**keys)
+            self.root.after(SCREEN_READER_GREETING_MS, lambda: self.announcer.say(text, force=True))
+            return
+        text = tr("Morsetrainer. {announce} schaltet die Sprachansage ein. "
+                  "{where} sagt, wo du bist. {daily} startet die Tagesübung.").format(**keys)
         self.announcer.say(text, force=True)
 
     def toggle_announce(self) -> None:

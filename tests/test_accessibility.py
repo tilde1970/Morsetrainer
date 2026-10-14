@@ -1757,6 +1757,7 @@ class BandWindowAnnounceTest(AnnouncerCase):
         spoken = " ".join(self.said)
         self.assertIn("Fenster Bandbedingungen", spoken)
         self.assertIn("Entspricht mindestens Stufe stark", spoken)
+        self.assertIn("nicht für die Zeichenstatistik", spoken)
 
     def test_tab_starts_at_the_levels(self):
         # Erstes Bedienelement im Fenster (Tab-Folge): die Stufe „leicht“,
@@ -1931,6 +1932,33 @@ class SmallAnnounceTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: any(expected in t for t in self.said)), self.said)
         self.app._toggle_more()
 
+    def test_new_speaking_rate_is_heard_at_once(self):
+        # Die Bestätigung „130 Prozent.“ kommt schon im neuen Tempo: sie ist
+        # selbst die Hörprobe, ein eigener Probesatz braucht es nicht.
+        import numpy as np
+        from morsetrainer.core import speech
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        self.app.open_settings()
+        self.root.update()
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        box = next(w for w in walk(self.app.settings_window)
+                   if w.winfo_class() == "TCombobox" and self.announcer.describe(w).startswith("Sprechtempo"))
+        rates = []
+        with mock.patch.object(speech.speaker, "synth",
+                               lambda text, rate=1.0: (rates.append((text, rate)), np.zeros(4800, np.float32))[1]), \
+                mock.patch.object(box, "focus_get", lambda: box):  # Fenster im Test nicht gezeichnet
+            box.set("130 %")
+            box.event_generate("<<ComboboxSelected>>")
+            self.assertTrue(self.pump_until(lambda: rates))
+        self.assertIn("130", rates[-1][0])
+        self.assertAlmostEqual(rates[-1][1], 1.3)
+        self.app.announcer.rate_var.set(100)
+
     def test_settings_open_on_the_first_control(self):
         self.app.announcer.var.set(True)
         self.pump_until(lambda: False, timeout=0.3)
@@ -1996,8 +2024,11 @@ class FirstStartTest(AnnouncerCase):
 
     def greet(self, reader):
         from morsetrainer.core import screenreader
-        with mock.patch.object(screenreader, "running", lambda: reader):
+        with mock.patch.object(screenreader, "running", lambda: reader), \
+                mock.patch.object(app_module, "SCREEN_READER_GREETING_MS", 50):
             REAL_GREETING(self.app)
+            if reader:
+                self.assertEqual(self.said, [])  # erst nach der Fensteransage des Screenreaders
         self.pump_until(lambda: False, timeout=0.3)
         return " ".join(self.said)
 

@@ -492,13 +492,15 @@ EN.update({
         "Page Up/Down jumps a week.",
     "100 % ist normal.": "100 % is normal.",
     "QSB und Flatterfading werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit "
-    "Bandbedingungen zählen nicht für deine Zeichenstatistik: Ein Zeichen im Fading-Loch sagt nichts "
-    "darüber, ob du es kannst.":
-        "QSB and flutter get harder up to 80 %, not beyond. Runs with band conditions do not count for "
-        "your character statistics: a character lost in a fading dip says nothing about whether you know "
-        "it.",
+    "Bandbedingungen zählen für Übungszeit und Diplome, aber nicht für deine Zeichenstatistik: Ein "
+    "Zeichen im Fading-Loch sagt nichts darüber, ob du es kannst.":
+        "QSB and flutter get harder up to 80 %, not beyond. Runs with band conditions count for practice "
+        "time and awards, but not for your character statistics: a character lost in a fading dip says "
+        "nothing about whether you know it.",
     "Hilfetext": "Help text",
     "Liste zu.": "List closed.",
+    "Mit Bandbedingungen zählt ein Durchgang nicht für die Zeichenstatistik.":
+        "With band conditions a run does not count for the character statistics.",
     "{value} bleibt.": "{value} stays.",
     "Pfeil links und rechts gehen durch die Tage, Bild auf und ab springt eine Woche.":
         "Left and right arrows go through the days, Page Up and Page Down jump a week.",
@@ -608,7 +610,8 @@ EN.update({
     "Probehören beenden ({key})": "Stop listening ({key})",
     "CQ mit diesen Bedingungen, bis du stoppst; Änderungen sind gleich zu hören.":
         "CQ under these conditions until you stop; changes can be heard at once.",
-    "Zählt nicht für Statistik, Übungszeit und Diplome.": "Does not count for statistics, practice time or awards.",
+    "Probehören zählt nicht für Statistik, Übungszeit und Diplome.":
+        "Listening to a sample does not count for statistics, practice time or awards.",
     "Probehören erst nach dem Durchgang.": "Listening only after the run.",
     "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":
         "No listening during a network session; there the trainer sets the conditions.",

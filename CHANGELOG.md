@@ -36,6 +36,11 @@
   wenn es Tage gibt; die Ansage nennt auch Bild auf/ab.
 - **Anleitung:** Begrüßung mit F12, VoiceOver dauerhaft stummschalten, und
   wie man den Absatz zum Screenreader in der Hilfe findet.
+- **Bandfenster:** sagt klar, dass Durchgänge mit Bandbedingungen für
+  Übungszeit und Diplome zählen, nur nicht für die Zeichenstatistik (auch
+  per F11); die Fußzeile bezieht sich ausdrücklich aufs Probehören.
+- **Begrüßung mit Screenreader:** kommt etwas später, damit sie nicht in
+  dessen Fensteransage hineinredet.
 
 ## 2.51
 

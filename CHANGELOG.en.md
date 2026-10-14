@@ -36,6 +36,11 @@
   are days; the announcement also mentions Page Up/Down.
 - **Guide:** greeting with F12, muting VoiceOver for good, and how to find
   the screen reader paragraph in the help.
+- **Band window:** says clearly that runs with band conditions count for
+  practice time and awards, only not for the character statistics (also via
+  F11); the footer explicitly refers to listening to a sample.
+- **Greeting with a screen reader:** comes a little later so it does not
+  talk over the screen reader's own window announcement.
 
 ## 2.51
 
