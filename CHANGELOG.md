@@ -16,9 +16,15 @@
   der Lebenslinie steht, wie man mit der Tastatur die Tage durchgeht.
 - **Einstellungen und Bandfenster:** Sprechtempo und Lautstärke der Ansage
   stehen eingerückt unter „Rückmeldung ansagen“, mit dem Hinweis, dass sie
-  nur für die Ansage gelten. Das Bandfenster sagt, dass QSB und Flattern bis
+  nur für die Ansage gelten. Das Bandfenster sagt, dass QSB und Flatterfading bis
   80 % schwerer werden und Durchgänge mit Bandbedingungen nicht für die
   Zeichenstatistik zählen.
+- **Hilfe:** Der Hilfetext ist mit Tab wieder erreichbar, nachdem man ihn
+  verlassen hat, und sagt dabei den Absatz an der Leseposition; F1 im
+  Hilfefenster springt zurück in den Text. Die Knöpfe unten folgen beim Tab
+  der sichtbaren Reihenfolge.
+- **F11 schneidet keinen Morseton mehr ab:** Die Ansage wartet, bis das
+  laufende Zeichen oder die Korrektur zu Ende ist.
 
 ## 2.51
 

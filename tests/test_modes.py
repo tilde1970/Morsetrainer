@@ -14,7 +14,7 @@ from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import app as app_module
-from morsetrainer.core import db, koch, stats
+from morsetrainer.core import audio, db, koch, stats
 from morsetrainer.modes import continuous_mode, run_mode, single_mode
 from morsetrainer.modes import sequence_mode as sq
 from morsetrainer.widgets import theme
@@ -29,6 +29,7 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         gc.collect()  # Reste früherer Tests hier im Hauptthread einsammeln
+        audio._tone_until = 0.0  # kein „laufender“ Ton aus dem vorigen Test, auf den Ansagen warteten
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         directory = Path(self.tmp.name)

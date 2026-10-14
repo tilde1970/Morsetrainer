@@ -35,6 +35,10 @@ POLL_MS = 20
 # Verdrängte Ansage: ihr Ablauf wartet, bis die neue zu Ende ist – höchstens
 # so lange, damit nichts hängen bleibt, falls immer neue kommen.
 SUPERSEDED_MAX_WAIT_S = 30
+# Eine Ansage (etwa F11) wartet, bis ein laufender Morseton zu Ende ist –
+# sd.play schnitte ihn sonst ab. Längeres (Sprechen, ganze Texte) läuft
+# weiter wie bisher: dort käme die Ansage sonst zu spät.
+TONE_WAIT_MAX_S = 4.0
 CACHE_SIZE = 64
 # Zusätzlich nach Größe begrenzt (etwa anderthalb Minuten Sprache): Ansagen
 # mit Zahlen (F11, Statistik) kommen kaum je gleich wieder, sind aber lang.
@@ -200,7 +204,7 @@ class Announcer:
                     wait = max(state["free_at"] - time.time(), 0.0)
                     self._after(int(wait * 1000) + AFTER_SPEECH_MS, finish)
                 return
-            if index in results and time.time() >= state["free_at"]:
+            if index in results and time.time() >= state["free_at"] and not (index == 0 and _tone_playing()):
                 samples = results[index]
                 if samples is not None and len(samples):
                     audio.play_quietly(self._at_volume(samples))
@@ -976,6 +980,13 @@ def speaking() -> bool:
     if _instance is None:
         return False
     return _instance.done_token != _instance.token or remaining() > 0
+
+
+def _tone_playing() -> bool:
+    """Läuft gerade ein kurzer Morseton (bis TONE_WAIT_MAX_S), auf den die
+    Ansage warten soll?"""
+    remaining = audio.tone_remaining()
+    return 0 < remaining <= TONE_WAIT_MAX_S
 
 
 def when_quiet(then) -> None:

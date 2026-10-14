@@ -491,12 +491,13 @@ EN.update({
         "Values of a day: hover with the mouse, or Tab into it and use the left/right arrows; "
         "Page Up/Down jumps a week.",
     "Für die Ansage; 100 % ist normal.": "For spoken feedback; 100 % is normal.",
-    "QSB und Flattern werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit Bandbedingungen "
-    "zählen nicht für deine Zeichenstatistik: Ein Zeichen im Fading-Loch sagt nichts darüber, ob du "
-    "es kannst.":
+    "QSB und Flatterfading werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit "
+    "Bandbedingungen zählen nicht für deine Zeichenstatistik: Ein Zeichen im Fading-Loch sagt nichts "
+    "darüber, ob du es kannst.":
         "QSB and flutter get harder up to 80 %, not beyond. Runs with band conditions do not count for "
         "your character statistics: a character lost in a fading dip says nothing about whether you know "
         "it.",
+    "Hilfetext": "Help text",
     "Pfeil links und rechts gehen durch die Tage.": "Left and right arrows go through the days.",
     "Fortschritt {mode}: {info}": "Progress {mode}: {info}",
     "Lebenslinie: {info}": "Lifeline: {info}",

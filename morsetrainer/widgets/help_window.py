@@ -289,9 +289,10 @@ class HelpWindow:
         # Vor dem Notizbuch gepackt: bleibt auch auf kleinem Bildschirm sichtbar.
         buttons = ttk.Frame(self.top)
         buttons.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
+        # Zuerst erzeugt, was links steht: Tab folgt der Erzeugung, nicht dem Packen.
+        browser = ttk.Button(buttons, text=tr("Online im Browser öffnen"), command=self.open_in_browser)
         close = ttk.Button(buttons, text=tr("Schließen"), command=self.top.destroy)
         close.pack(side="right")
-        browser = ttk.Button(buttons, text=tr("Online im Browser öffnen"), command=self.open_in_browser)
         browser.pack(side="right", padx=(0, 8))
         notebook = self.notebook = ttk.Notebook(self.top)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
@@ -300,7 +301,10 @@ class HelpWindow:
         for title, name in DOCS:
             frame = ttk.Frame(notebook)
             notebook.add(frame, text=tr(title))
-            text = tk.Text(frame, wrap="word", padx=14, pady=10, cursor="arrow", font="TkDefaultFont")
+            # takefocus: Ein gesperrter Text fiele sonst aus der Tab-Folge, und
+            # wer ihn mit Tab verlassen hat, käme nicht mehr hinein.
+            text = tk.Text(frame, wrap="word", padx=14, pady=10, cursor="arrow", font="TkDefaultFont",
+                           takefocus=1)
             scroll = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
             text.configure(yscrollcommand=scroll.set)
             scroll.pack(side="right", fill="y")
@@ -318,9 +322,13 @@ class HelpWindow:
             render(text, content)
             text.mark_set("insert", "1.0")  # Vorlesen beginnt oben, nicht hinter dem Eingefügten
             self._bind_reading(text)
+            # Beim Hineinspringen den Absatz an der Leseposition sagen.
+            announcer.name(text, tr("Hilfetext"), value=lambda t=text: self._line(t))
             self.texts[name] = text
         buttons.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: die Knöpfe zuletzt
         self.top.bind("<Escape>", self._escape)
+        # F1 im Hilfefenster: zurück in den Text an der Leseposition.
+        self.top.bind("<F1>", lambda e: self.start_reading() or "break")
         self.top.bind("<Destroy>", self._forget, add="+")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             for key in ("f", "F"):  # auch mit Feststelltaste

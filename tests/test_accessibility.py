@@ -1076,6 +1076,31 @@ class AnnouncerModesTest(AnnouncerCase):
         tone = np.full(960, 0.3, dtype=np.float32)
         self.assertAlmostEqual(float(np.max(conditions.mix([(tone, band.VOICE)], 960))), 0.3, delta=0.01)
 
+    def test_f11_during_a_tone_waits_for_its_end(self):
+        # sd.play der Ansage schnitte den laufenden Morseton ab: F11 wartet,
+        # bis er zu Ende ist; ein langer Ton (Sprechen) wird nicht abgewartet.
+        import time
+        import numpy as np
+        from morsetrainer.core import audio
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        with mock.patch.object(audio.sd, "play"):
+            audio.play(np.zeros(int(0.6 * audio.SAMPLE_RATE), dtype=np.float32))
+        started = time.time()
+        del self.played[:]
+        self.app.read_status()
+        self.assertTrue(self.pump_until(lambda: self.played))
+        self.assertGreater(time.time() - started, 0.6)
+        with mock.patch.object(audio.sd, "play"):
+            audio.play(np.zeros(int((self.announcer.TONE_WAIT_MAX_S + 5) * audio.SAMPLE_RATE), dtype=np.float32))
+        started = time.time()
+        del self.played[:]
+        self.app.read_status()
+        self.assertTrue(self.pump_until(lambda: self.played))
+        self.assertLess(time.time() - started, 0.6)
+        audio.stop()
+        self.assertEqual(audio.tone_remaining(), 0.0)
+
     def test_f11_joins_sentences_without_double_marks(self):
         from morsetrainer.app import sentences
         self.assertEqual(sentences(["Reiter Einzeln", "Start mit F5.", "Deine Eingabe?", "",
@@ -1962,6 +1987,12 @@ class HelpReadingTest(AnnouncerCase):
         self.addCleanup(lambda: self.window.top.winfo_exists() and self.window.top.destroy())
         self.text = self.window.texts[help_window.GUIDE]
 
+    @staticmethod
+    def walk(widget):
+        for child in widget.winfo_children():
+            yield child
+            yield from HelpReadingTest.walk(child)
+
     def spoken_after(self, action):
         del self.said[:]
         action()
@@ -1974,6 +2005,38 @@ class HelpReadingTest(AnnouncerCase):
         spoken = self.spoken_after(lambda: self.text.event_generate("<Tab>"))
         self.assertEqual(str(self.text.tk.call("focus")), str(target))
         self.assertIn(self.announcer.describe(target), spoken)
+
+    def test_help_text_reachable_again_with_tab(self):
+        # Einmal mit Tab hinaus und rundherum: Der (gesperrte) Text muss
+        # wieder den Fokus bekommen und seinen Absatz sagen.
+        self.pump_until(lambda: False, timeout=0.3)
+        self.text.focus_set()
+        self.root.update()
+        order = []
+        widget = self.text
+        for _ in range(12):
+            widget = widget.tk_focusNext()
+            order.append(widget)
+            if widget is self.text:
+                break
+        self.assertIs(order[-1], self.text, order)
+        # Sichtbar links steht „Online im Browser öffnen“, rechts „Schließen“: Tab in dieser Reihenfolge.
+        labels = [str(w.cget("text")) for w in order if w.winfo_class() == "TButton"]
+        self.assertEqual(labels, ["Online im Browser öffnen", "Schließen"])
+        spoken = self.announcer.describe(self.text)
+        self.assertTrue(spoken.startswith("Hilfetext, Textfeld, "), spoken)
+        self.assertIn(self.window._line(self.text)[:20], spoken)
+
+    def test_f1_in_the_help_window_returns_to_the_text(self):
+        self.pump_until(lambda: False, timeout=0.3)
+        search = next(w for w in self.walk(self.window.top) if w.winfo_class() == "TEntry")
+        search.focus_set()
+        self.root.update()
+        from morsetrainer.widgets import help_window
+        with mock.patch.object(help_window.announcer, "say") as say:
+            self.window.top.event_generate("<F1>")
+        self.assertIn("Pfeil runter liest weiter", say.call_args[0][0])
+        self.assertEqual(str(self.root.tk.call("focus")), str(self.text))
 
     def test_help_is_read_with_the_arrow_keys(self):
         self.pump_until(lambda: False, timeout=0.3)

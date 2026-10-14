@@ -19,6 +19,12 @@
   apply to the announcements only. The band window explains that QSB and
   flutter get harder up to 80 % and that runs with band conditions do not
   count for the character statistics.
+- **Help:** the help text can be reached again with Tab after leaving it,
+  and announces the paragraph at the reading position; F1 in the help
+  window jumps back into the text. The buttons at the bottom follow the
+  visible order when tabbing.
+- **F11 no longer cuts off a Morse tone:** the announcement waits until the
+  current character or correction has finished.
 
 ## 2.51
 

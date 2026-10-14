@@ -26,6 +26,7 @@ Oberfläche das Schlusszeichen startet. Schreiben läuft ohne Sperre."""
 import contextlib
 import re
 import threading
+import time
 
 import sounddevice as sd
 
@@ -34,6 +35,8 @@ from morsetrainer.i18n import N_, tr
 
 ERRORS = (getattr(sd, "PortAudioError", OSError), OSError, ValueError)
 _lock = threading.RLock()
+# Wann der zuletzt mit play() gestartete Ton zu Ende ist (time.time()).
+_tone_until = 0.0
 
 
 class AudioError(Exception):
@@ -105,9 +108,11 @@ def play(samples) -> None:
     """Spielt `samples` ab, ohne zu warten. Wirft AudioError, wenn es keine
     Tonausgabe gibt; ist das Gerät verschwunden, wird einmal mit neu
     eingelesenen Geräten wiederholt."""
+    global _tone_until
     try:
         with _lock:
             sd.play(samples, SAMPLE_RATE, latency=AUDIO_LATENCY)
+            _tone_until = time.time() + len(samples) / SAMPLE_RATE + AUDIO_LATENCY
         return
     except ERRORS as exc:
         if _error_code(exc) not in _REINIT_CODES or not _reinit():
@@ -115,8 +120,15 @@ def play(samples) -> None:
     try:
         with _lock:
             sd.play(samples, SAMPLE_RATE, latency=AUDIO_LATENCY)
+            _tone_until = time.time() + len(samples) / SAMPLE_RATE + AUDIO_LATENCY
     except ERRORS as exc:
         raise AudioError(describe(exc)) from exc
+
+
+def tone_remaining() -> float:
+    """Sekunden, bis der mit play() gestartete Ton zu Ende ist (0, wenn keiner
+    läuft). Die Ansage wartet darauf, statt ihn mit sd.play abzuschneiden."""
+    return max(_tone_until - time.time(), 0.0)
 
 
 def play_quietly(samples) -> None:
@@ -131,6 +143,8 @@ def play_quietly(samples) -> None:
 
 def stop() -> None:
     """Bricht eine laufende Wiedergabe von play()/play_quietly() ab."""
+    global _tone_until
+    _tone_until = 0.0
     try:
         with _lock:
             sd.stop()
