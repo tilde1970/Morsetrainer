@@ -1,5 +1,11 @@
 # Changes
 
+## Unreleased
+
+- **Band level:** if you make the band easier during the band outro of
+  the daily practice, a good result no longer cancels an earlier miss; a
+  failed run still counts towards falling back.
+
 ## 2.51
 
 - **New English voice:** announcements with the English interface now use

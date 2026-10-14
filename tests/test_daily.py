@@ -121,6 +121,25 @@ class StageAndPlanTest(unittest.TestCase):
         outro(1, "light", 200)  # alte gute Tage vor dem Rückfall zählen nicht mehr
         self.assertEqual(daily.band_level(state, TODAY), "light")
 
+    def test_band_level_easier_run_counts_only_against_the_level(self):
+        # Auf „mittel“ zwischendurch leichter gestellt: Ein Scheitern ist ein
+        # Fehlversuch, ein gutes Ergebnis löscht den vorigen nicht.
+        def days(*runs):
+            # Tag 9 und 8 gut auf „leicht“: ab Tag 7 auf „mittel“.
+            runs = ((9, "light", 190, "light"), (8, "light", 190, "light")) + runs
+            state = {"days": {}}
+            for day, preset, correct, band_min in runs:
+                state["days"][(TODAY - timedelta(days=day)).isoformat()] = {"blocks": [
+                    {"kind": daily.OUTRO, "mode": "continuous", "band": preset, "correct": correct,
+                     "total": 200, "extra_keys": 0, "band_min": band_min}]}
+            return daily.band_level(state, TODAY)
+
+        self.assertEqual(days(), "medium")
+        m = "medium"
+        self.assertEqual(days((3, m, 150, m), (2, m, 170, "light"), (1, m, 150, m)), "light")
+        self.assertEqual(days((3, m, 150, m), (2, m, 170, m), (1, m, 150, m)), "medium")
+        self.assertEqual(days((2, m, 150, "light"), (1, m, 150, None)), "light")  # Scheitern trotz Erleichterung
+
     def test_band_level_counts_one_whole_outro_a_day(self):
         state = {"days": {}}
 

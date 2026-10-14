@@ -278,7 +278,8 @@ def _band_replay(state: dict, today: date):
             if not isinstance(total, (int, float)) or total < BAND_MIN_CHARS:
                 continue
             share = correct / total
-            # Zwischendurch leichter gestellt: zählt nicht für den Aufstieg.
+            # Zwischendurch leichter gestellt: zählt nicht für den Aufstieg und
+            # löscht keinen Fehlversuch, wohl aber zählt ein Scheitern trotzdem.
             held = BAND_RANK.get(block.get("band_min"), 0) >= BAND_RANK[level]
             if level == BAND_LEVELS[0]:
                 if held and share >= BAND_UP_SHARE:
@@ -290,7 +291,7 @@ def _band_replay(state: dict, today: date):
                 misses += 1
                 if misses >= BAND_DOWN_RUNS:
                     level, up_days, misses = BAND_LEVELS[0], set(), 0
-            else:
+            elif held:
                 misses = 0
             break
     return level, best

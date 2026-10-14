@@ -412,7 +412,9 @@ wieder wie vorher.
   (Gruppen von 5): zuerst Stufe „leicht“, nach zwei Tagen mit 90 % und
   mehr „mittel“; zweimal hintereinander unter 80 % geht es zurück auf
   „leicht“. Gezählt wird je Tag der erste ganze Durchgang, abgebrochene
-  nicht. Die Stufe wechselt am Tag danach; die Abendbilanz sagt es dir.
+  nicht. Stellst du das Band zwischendurch leichter, zählt der Durchgang
+  nicht für den Aufstieg; geht er trotzdem unter 80 %, zählt er für den
+  Rückfall, ein gutes Ergebnis hebt einen Fehlversuch aber nicht auf. Die Stufe wechselt am Tag danach; die Abendbilanz sagt es dir.
   Dafür gilt das breite Filter ohne Stärkeunterschiede, die
   Störlautstärke steht auf 100 %; hast du sie leiser gestellt,
   bleibt das so, zählt dann aber nicht für das Diplom QRN-fest. Danach ist

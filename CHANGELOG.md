@@ -1,5 +1,11 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- **Bandstufe:** Wer im Band-Ausklang der Tagesübung das Band
+  zwischendurch leichter stellt, hebt mit einem guten Ergebnis keinen
+  Fehlversuch mehr auf; ein Scheitern zählt weiter für den Rückfall.
+
 ## 2.51
 
 - **Neue englische Stimme:** Die Ansage bei englischer Oberfläche spricht
