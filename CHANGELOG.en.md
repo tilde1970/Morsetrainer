@@ -1,46 +1,43 @@
 # Changes
 
-## Unreleased
+## 2.52
 
-- **Band level:** if you make the band easier during the band outro of
-  the daily practice, a good result no longer cancels an earlier miss; a
-  failed run still counts towards falling back.
-- **Announcements:** F9 and F11 also work while a drop-down list is open.
-  Tab out of the help text says where the focus lands; the band window
-  announces the focus when it opens. F11 no longer reads doubled
-  punctuation, nor “Your answer?” once the answer is given.
-- **Greeting on first start:** also names the daily practice key; with a
-  screen reader running it suggests muting it while practising.
-- **Interface:** number and unit (“400 Hz”, “100 %”) are no longer split
-  across lines in hints; the pitch field is visibly labelled “Pitch”; below
-  the lifeline a hint explains how to go through the days by keyboard.
-- **Settings and band window:** speech rate and volume of the spoken
-  feedback are indented under “Announce feedback”, with the note “100 % is
-  normal”. The band window explains that QSB and
-  flutter get harder up to 80 % and that runs with band conditions do not
-  count for the character statistics.
-- **Help:** the help text can be reached again with Tab after leaving it,
-  and announces the paragraph at the reading position; F1 in the help
-  window jumps back into the text. The buttons at the bottom follow the
-  visible order when tabbing.
-- **F11 no longer cuts off a Morse tone:** the announcement waits until the
-  current character or correction has finished.
-- **Contrast:** selected text in fields without focus keeps the program's
-  colours (previously white on grey, hard to read).
-- **Announcements in lists and settings:** with a drop-down list open, F11
-  names the highlighted entry; Esc says “List closed.” and the value that
-  stays. Settings open with the focus in the call sign field and announce
-  it. F11 spells characters in the feedback (“Wrong: was period, you:
-  separator”) instead of swallowing punctuation.
-- **Lifeline:** the keyboard hint sits above the chart and only once there
-  are days; the announcement also mentions Page Up/Down.
+- **Announcements (F9, F11):**
+  - F11 no longer cuts off a Morse tone: the announcement waits until the
+    current character or correction has finished.
+  - F11 spells characters in the feedback (“Wrong: was period, you:
+    separator”) instead of swallowing punctuation, no longer reads doubled
+    punctuation, nor “Your answer?” once the answer is given.
+  - F9 and F11 also work while a drop-down list is open; F11 then names
+    the highlighted entry, Esc says “List closed.” and the value that stays.
+- **Help:** the help text can be reached again with Tab after leaving it
+  and announces the paragraph at the reading position; Tab out of the text
+  says where the focus lands; F1 in the help window jumps back into the
+  text. The buttons at the bottom follow the visible order when tabbing.
+- **Windows announce the focus when they open:** the band window names the
+  “light” level, settings open in the call sign field.
+- **Greeting on first start:** also names the daily practice key. With a
+  screen reader running it suggests muting it while practising and comes a
+  little later, so it does not talk over the screen reader's own window
+  announcement.
+- **Band window:** says that QSB and flutter get harder up to 80 % and that
+  runs with band conditions count for practice time and awards, only not
+  for the character statistics (also via F11). The footer explicitly refers
+  to listening to a sample.
+- **Band level:** if you make the band easier during the band outro of the
+  daily practice, a good result no longer cancels an earlier miss; a failed
+  run still counts towards falling back.
+- **Interface and contrast:**
+  - Selected text in fields without focus keeps the program's colours
+    (previously white on grey, hard to read).
+  - Number and unit (“400 Hz”, “100 %”) are no longer split across lines in
+    hints; the pitch field is visibly labelled “Pitch”.
+  - Speech rate and volume of the spoken feedback are indented under
+    “Announce feedback”, with the note “100 % is normal”.
+  - Above the lifeline, once there are days, a hint explains how to go
+    through the days by keyboard; the announcement also mentions Page Up/Down.
 - **Guide:** greeting with F12, muting VoiceOver for good, and how to find
   the screen reader paragraph in the help.
-- **Band window:** says clearly that runs with band conditions count for
-  practice time and awards, only not for the character statistics (also via
-  F11); the footer explicitly refers to listening to a sample.
-- **Greeting with a screen reader:** comes a little later so it does not
-  talk over the screen reader's own window announcement.
 
 ## 2.51
 

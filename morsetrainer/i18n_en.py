@@ -897,6 +897,13 @@ EN.update({
         "English announcements now use a new voice (LJ Speech). The help has a new “Licenses” tab. In "
         "the band conditions wind-down of the daily practice only the first complete run of a day "
         "counts. Everything else is under Help, Changes.",
+    ("Die Ansage ist verlässlicher: F11 wartet auf den Morseton, buchstabiert Satzzeichen in der "
+     "Rückmeldung und hilft in aufgeklappten Listen. Die Hilfe ist mit Tab wieder erreichbar, Fenster "
+     "nennen beim Öffnen den Fokus, und markierter Text ist besser lesbar. Alles Weitere steht unter "
+     "Hilfe, Änderungen."):
+        "Announcements are more reliable: F11 waits for the Morse tone, spells punctuation in the feedback "
+        "and helps in open drop-down lists. The help can be reached with Tab again, windows announce the "
+        "focus when they open, and selected text is easier to read. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",

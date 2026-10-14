@@ -1,46 +1,43 @@
 # Änderungen
 
-## Unveröffentlicht
+## 2.52
 
+- **Ansage (F9, F11):**
+  - F11 schneidet keinen Morseton mehr ab: Die Ansage wartet, bis das
+    laufende Zeichen oder die Korrektur zu Ende ist.
+  - F11 buchstabiert Zeichen in der Rückmeldung („Falsch: war Punkt, du:
+    Trennung“), statt Satzzeichen zu verschlucken, liest keine doppelten
+    Satzzeichen mehr und nicht mehr „Deine Eingabe?“, wenn die Antwort
+    schon gegeben ist.
+  - F9 und F11 wirken auch bei aufgeklappter Klappliste; F11 nennt dann den
+    markierten Eintrag, Esc sagt „Liste zu.“ und den Wert, der bleibt.
+- **Hilfe:** Der Hilfetext ist mit Tab wieder erreichbar, nachdem man ihn
+  verlassen hat, und sagt den Absatz an der Leseposition; Tab aus dem Text
+  sagt, wo der Fokus landet; F1 im Hilfefenster springt zurück in den Text.
+  Die Knöpfe unten folgen beim Tab der sichtbaren Reihenfolge.
+- **Fenster sagen beim Öffnen den Fokus:** Das Bandfenster nennt die Stufe
+  „leicht“, die Einstellungen öffnen im Rufzeichenfeld.
+- **Begrüßung beim ersten Start:** nennt auch die Taste der Tagesübung.
+  Läuft ein Screenreader, rät sie, ihn beim Üben stummzuschalten, und kommt
+  etwas später, damit sie nicht in dessen Fensteransage hineinredet.
+- **Bandfenster:** sagt, dass QSB und Flatterfading bis 80 % schwerer
+  werden und dass Durchgänge mit Bandbedingungen für Übungszeit und Diplome
+  zählen, nur nicht für die Zeichenstatistik (auch per F11). Die Fußzeile
+  bezieht sich ausdrücklich aufs Probehören.
 - **Bandstufe:** Wer im Band-Ausklang der Tagesübung das Band
   zwischendurch leichter stellt, hebt mit einem guten Ergebnis keinen
   Fehlversuch mehr auf; ein Scheitern zählt weiter für den Rückfall.
-- **Ansage:** F9 und F11 wirken auch bei aufgeklappter Klappliste. Tab
-  aus dem Hilfetext sagt, wo der Fokus landet; das Bandfenster sagt beim
-  Öffnen den Fokus. F11 liest keine doppelten Satzzeichen mehr und nicht
-  mehr „Deine Eingabe?“, wenn die Antwort schon gegeben ist.
-- **Begrüßung beim ersten Start:** nennt auch die Taste der Tagesübung;
-  läuft ein Screenreader, rät sie, ihn beim Üben stummzuschalten.
-- **Oberfläche:** Zahl und Einheit („400 Hz“, „100 %“) werden in
-  Hinweisen nicht mehr getrennt; das Tonfeld heißt sichtbar „Tonhöhe“; unter
-  der Lebenslinie steht, wie man mit der Tastatur die Tage durchgeht.
-- **Einstellungen und Bandfenster:** Sprechtempo und Lautstärke der Ansage
-  stehen eingerückt unter „Rückmeldung ansagen“, mit dem Hinweis „100 % ist
-  normal“. Das Bandfenster sagt, dass QSB und Flatterfading bis
-  80 % schwerer werden und Durchgänge mit Bandbedingungen nicht für die
-  Zeichenstatistik zählen.
-- **Hilfe:** Der Hilfetext ist mit Tab wieder erreichbar, nachdem man ihn
-  verlassen hat, und sagt dabei den Absatz an der Leseposition; F1 im
-  Hilfefenster springt zurück in den Text. Die Knöpfe unten folgen beim Tab
-  der sichtbaren Reihenfolge.
-- **F11 schneidet keinen Morseton mehr ab:** Die Ansage wartet, bis das
-  laufende Zeichen oder die Korrektur zu Ende ist.
-- **Kontrast:** Markierter Text in Feldern ohne Fokus bleibt in den Farben
-  des Programms (vorher grau auf weiß, schwer lesbar).
-- **Ansage in Listen und Einstellungen:** F11 nennt bei aufgeklappter
-  Klappliste den markierten Eintrag, Esc sagt „Liste zu.“ und den Wert, der
-  bleibt. Die Einstellungen öffnen mit dem Fokus im Rufzeichenfeld und sagen
-  es an. F11 buchstabiert Zeichen in der Rückmeldung („Falsch: war Punkt, du:
-  Trennung“), statt Satzzeichen zu verschlucken.
-- **Lebenslinie:** Der Tastaturhinweis steht über dem Diagramm und erst,
-  wenn es Tage gibt; die Ansage nennt auch Bild auf/ab.
+- **Oberfläche und Kontrast:**
+  - Markierter Text in Feldern ohne Fokus bleibt in den Farben des
+    Programms (vorher grau auf weiß, schwer lesbar).
+  - Zahl und Einheit („400 Hz“, „100 %“) werden in Hinweisen nicht mehr
+    getrennt; das Tonfeld heißt sichtbar „Tonhöhe“.
+  - Sprechtempo und Lautstärke der Ansage stehen eingerückt unter
+    „Rückmeldung ansagen“, mit dem Hinweis „100 % ist normal“.
+  - Über der Lebenslinie steht, sobald es Tage gibt, wie man mit der
+    Tastatur durch die Tage geht; die Ansage nennt auch Bild auf/ab.
 - **Anleitung:** Begrüßung mit F12, VoiceOver dauerhaft stummschalten, und
   wie man den Absatz zum Screenreader in der Hilfe findet.
-- **Bandfenster:** sagt klar, dass Durchgänge mit Bandbedingungen für
-  Übungszeit und Diplome zählen, nur nicht für die Zeichenstatistik (auch
-  per F11); die Fußzeile bezieht sich ausdrücklich aufs Probehören.
-- **Begrüßung mit Screenreader:** kommt etwas später, damit sie nicht in
-  dessen Fensteransage hineinredet.
 
 ## 2.51
 

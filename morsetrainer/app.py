@@ -44,7 +44,7 @@ from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
 
 __author__ = "DL4YM"
-__version__ = "2.51"
+__version__ = "2.52"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -135,6 +135,10 @@ WHATS_NEW = {
     "2.51": N_("Die englische Ansage spricht jetzt mit einer neuen Stimme (LJ Speech). In der Hilfe steht ein "
                "neuer Reiter „Lizenzen“. Beim Band-Ausklang der Tagesübung zählt je Tag nur der erste ganze "
                "Durchgang. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.52": N_("Die Ansage ist verlässlicher: F11 wartet auf den Morseton, buchstabiert Satzzeichen in der "
+               "Rückmeldung und hilft in aufgeklappten Listen. Die Hilfe ist mit Tab wieder erreichbar, Fenster "
+               "nennen beim Öffnen den Fokus, und markierter Text ist besser lesbar. Alles Weitere steht unter "
+               "Hilfe, Änderungen."),
 }
 
 
