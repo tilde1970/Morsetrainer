@@ -140,14 +140,6 @@ WHATS_NEW = {
 _CLOCK = re.compile(r"\b(\d+):(\d{2})\b")
 
 
-def sentences(parts) -> str:
-    """Zeilen und Teile zu Sätzen: ein Punkt nur, wo noch kein Satzzeichen
-    steht („Deine Eingabe?“, nicht „Deine Eingabe?.“). Nach „…“ kommt er
-    trotzdem: Die Aussprache macht daraus eine Satzpause („Hör zu.“)."""
-    lines = [line.strip() for part in parts for line in part.split("\n")]
-    return " ".join(line if line[-1] in ".?!:" else line + "." for line in lines if line)
-
-
 def _spoken_clock(match) -> str:
     minutes, seconds = int(match.group(1)), int(match.group(2))
     parts = ([f"{minutes} Min."] if minutes else []) + ([f"{seconds} s"] if seconds or not minutes else [])
@@ -873,7 +865,7 @@ class MorseTrainerApp:
         idle_hint = getattr(mode, "idle_hint", None)
         if idle_hint is not None and not getattr(mode, "running", False):
             parts.append(idle_hint())
-        self.announcer.say(sentences(parts), force=True)
+        self.announcer.say(announcer.sentences(parts), force=True)
 
     def select_tab(self, index: int) -> None:
         """Reiter Nr. `index` (ab 0, −1 der letzte) zeigen, wenn er nicht
@@ -930,7 +922,7 @@ class MorseTrainerApp:
         parts.append(tr("Lebenslinie: {info}").format(info=self.lifeline_panel.info_var.get()))
         if self.practice_var.get():
             parts.append(self.practice_var.get())
-        return ". ".join(part for part in parts if part) + "."
+        return announcer.sentences(parts)
 
     def _tab_name(self) -> str:
         """Name des sichtbaren Reiters, wie er angezeigt (und angesagt) wird."""

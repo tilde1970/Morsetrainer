@@ -633,7 +633,22 @@ def describe(widget) -> str:
             parts.append(tr("nicht verfügbar"))
     except (AttributeError, tk.TclError):
         pass
-    return ", ".join(part for part in parts if part) + "."
+    return sentences([", ".join(part for part in parts if part)])
+
+
+# Abkürzungspunkt, den speakable mit verschluckt („1 Min.“ → „eine Minute“):
+# beendet keinen Satz.
+_ABBREVIATION_END = re.compile(r"\b(?:Min|Sek|Std|Nr|ca|bzw|usw)\.$")
+
+
+def sentences(parts) -> str:
+    """Zeilen und Teile zu Sätzen: ein Punkt nur, wo noch kein Satzzeichen
+    steht („Deine Eingabe?“, nicht „Deine Eingabe?.“). Nach „…“ und nach
+    Abkürzungen kommt er trotzdem: Die Aussprache macht aus „…“ eine
+    Satzpause und verschluckt den Punkt von „Min.“."""
+    lines = [line.strip() for part in parts for line in part.split("\n")]
+    return " ".join(line if line[-1] in ".?!:" and not _ABBREVIATION_END.search(line) else line + "."
+                    for line in lines if line)
 
 
 def _value(widget) -> str:

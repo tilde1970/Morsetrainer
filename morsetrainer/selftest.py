@@ -59,10 +59,15 @@ def run(path: str) -> int:
             print(speaker.error or "Keine Sprache erzeugt.", file=sys.stderr)
             return 1
         voices.append(voice)
-    # Anderes Sprechtempo geht über piper.SynthesisConfig: auch das muss im Paket sein.
-    fast = speakers[0].synth(speech.spoken("DL4YM", lang=speakers[0].lang), rate=1.5)
-    if not len(fast) or len(fast) >= len(voices[0]):
-        print(speakers[0].error or "Schnellere Ansage nicht erzeugt.", file=sys.stderr)
+    # Anderes Sprechtempo geht über piper.SynthesisConfig: auch das muss im
+    # Paket sein. Ohne Zufall in den Lautdauern, sonst streut die Länge.
+    text = speech.spoken("DL4YM", lang=speakers[0].lang)
+    normal, fast = (speakers[0].synth(text, rate=rate, steady=True) for rate in (1.0, 1.5))
+    if not len(normal) or not len(fast):
+        print(speakers[0].error or "Ansage mit festem Takt nicht erzeugt.", file=sys.stderr)
+        return 1
+    if len(fast) >= 0.9 * len(normal):
+        print(f"Schnellere Ansage nicht kürzer ({len(fast)} gegen {len(normal)} Samples).", file=sys.stderr)
         return 1
     try:
         with mp3.Mp3Writer(path) as writer:

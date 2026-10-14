@@ -262,7 +262,10 @@ def apply(root) -> None:
         troughcolor=BUTTON, focuscolor=ACCENT, selectbackground=SELECT, selectforeground=TEXT,
         insertcolor=TEXT, font="TkDefaultFont", focusthickness=2,
     )
-    style.map(".", foreground=[("disabled", DISABLED)])
+    # clam färbt Markierungen in Feldern ohne Fokus grau mit weißer Schrift
+    # (2,8:1); wie mit Fokus bleibt der Kontrast so hoch.
+    style.map(".", foreground=[("disabled", DISABLED)], selectbackground=[("!focus", SELECT)],
+              selectforeground=[("!focus", TEXT)])
 
     style.configure("TFrame", background=BG)
     style.configure("TLabel", background=BG)

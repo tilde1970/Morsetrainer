@@ -25,6 +25,8 @@
   visible order when tabbing.
 - **F11 no longer cuts off a Morse tone:** the announcement waits until the
   current character or correction has finished.
+- **Contrast:** selected text in fields without focus keeps the program's
+  colours (previously white on grey, hard to read).
 
 ## 2.51
 

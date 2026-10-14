@@ -245,15 +245,18 @@ class Speaker:
         """Lädt die Stimme im Hintergrund, damit die erste Ansage nicht warten muss."""
         threading.Thread(target=self.load, daemon=True).start()
 
-    def synth(self, text: str, rate: float = 1.0) -> np.ndarray:
+    def synth(self, text: str, rate: float = 1.0, steady: bool = False) -> np.ndarray:
         """Sprache für `text`; leer, wenn keine Sprachausgabe möglich ist.
-        `rate`: Sprechtempo (1 normal, 1,5 anderthalbmal so schnell)."""
+        `rate`: Sprechtempo (1 normal, 1,5 anderthalbmal so schnell).
+        `steady`: Lautdauern ohne Zufall (gleiche Länge bei jedem Aufruf,
+        für den Selbsttest)."""
         if not text or not self.load():
             return np.zeros(0, dtype=np.float32)
         options = {}
-        if rate != 1.0:
+        if rate != 1.0 or steady:
             from piper import SynthesisConfig
-            options["syn_config"] = SynthesisConfig(length_scale=(self.voice.config.length_scale or 1.0) / rate)
+            options["syn_config"] = SynthesisConfig(length_scale=(self.voice.config.length_scale or 1.0) / rate,
+                                                    noise_w_scale=0.0 if steady else None)
         with busy() as allowed:
             if not allowed:
                 return np.zeros(0, dtype=np.float32)

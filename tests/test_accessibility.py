@@ -706,6 +706,14 @@ class ContrastTest(AppTestCase):
                        ("EDGE", "TROUGH"), ("EDGE", "BUTTON")):
             self.assertGreaterEqual(ratio(light[fg], light[bg]), 3, (fg, bg))
 
+    def test_selection_without_focus_keeps_the_palette(self):
+        # clam färbt sie sonst grau/weiß (2,8:1); TEXT auf SELECT prüft der Palettentest.
+        from tkinter import ttk
+        style = ttk.Style(self.root)
+        for widget_style in ("TEntry", "TSpinbox", "TCombobox"):
+            self.assertEqual(str(style.lookup(widget_style, "selectbackground", ["!focus"])), theme.SELECT)
+            self.assertEqual(str(style.lookup(widget_style, "selectforeground", ["!focus"])), theme.TEXT)
+
     def test_info_texts_do_not_use_the_disabled_grey(self):
         # Das Grau für gesperrte Bedienelemente ist zu blass für Text, den man
         # lesen soll (2,2:1); Hinweise und abgeblendete Einträge nehmen MUTED.
@@ -1076,6 +1084,15 @@ class AnnouncerModesTest(AnnouncerCase):
         tone = np.full(960, 0.3, dtype=np.float32)
         self.assertAlmostEqual(float(np.max(conditions.mix([(tone, band.VOICE)], 960))), 0.3, delta=0.01)
 
+    def test_no_double_marks_in_describe_and_statistics(self):
+        panel = self.app.lifeline_panel
+        panel.info_var.set("Die Lebenslinie beginnt mit dem ersten Üben.")
+        spoken = self.announcer.describe(panel.canvas)
+        self.assertNotIn("..", spoken)
+        self.assertTrue(spoken.endswith("durch die Tage."), spoken)
+        self.assertEqual(self.announcer.describe(self.app.zoom_box).count("."), 1)
+        self.assertNotIn("..", self.app.statistics_spoken())
+
     def test_f11_during_a_tone_waits_for_its_end(self):
         # sd.play der Ansage schnitte den laufenden Morseton ab: F11 wartet,
         # bis er zu Ende ist; ein langer Ton (Sprechen) wird nicht abgewartet.
@@ -1102,10 +1119,11 @@ class AnnouncerModesTest(AnnouncerCase):
         self.assertEqual(audio.tone_remaining(), 0.0)
 
     def test_f11_joins_sentences_without_double_marks(self):
-        from morsetrainer.app import sentences
+        from morsetrainer.widgets.announcer import sentences
         self.assertEqual(sentences(["Reiter Einzeln", "Start mit F5.", "Deine Eingabe?", "",
                                                "Zeile eins\nZeile zwei."]),
                          "Reiter Einzeln. Start mit F5. Deine Eingabe? Zeile eins. Zeile zwei.")
+        self.assertEqual(sentences(["Dauer 1 Min."]), "Dauer 1 Min..")  # speakable verschluckt den Abkürzungspunkt
         # Schon beantwortet: „Deine Eingabe?“ steht noch da, gilt aber nicht mehr.
         self.app.announcer.var.set(True)
         self.app.show_mode("Einzelzeichen")

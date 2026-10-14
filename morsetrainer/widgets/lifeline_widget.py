@@ -113,8 +113,8 @@ class LifelinePanel:
         self.canvas.bind("<Configure>", lambda e: self.draw())
         self.canvas.bind("<Motion>", self._motion)
         self.canvas.bind("<Leave>", lambda e: self.canvas.delete("hover"))
-        announcer.name(self.canvas, tr("Lebenslinie"), value=lambda: self.info_var.get() + ". " + tr(
-            "Pfeil links und rechts gehen durch die Tage."))
+        announcer.name(self.canvas, tr("Lebenslinie"), value=lambda: announcer.sentences([self.info_var.get(), tr(
+            "Pfeil links und rechts gehen durch die Tage.")]))
         for key, step in (("Left", -1), ("Right", 1), ("Prior", -7), ("Next", 7), ("Home", None), ("End", None)):
             self.canvas.bind(f"<{key}>", lambda e, k=key, s=step: self._step(k, s) or "break")
 

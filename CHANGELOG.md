@@ -25,6 +25,8 @@
   der sichtbaren Reihenfolge.
 - **F11 schneidet keinen Morseton mehr ab:** Die Ansage wartet, bis das
   laufende Zeichen oder die Korrektur zu Ende ist.
+- **Kontrast:** Markierter Text in Feldern ohne Fokus bleibt in den Farben
+  des Programms (vorher grau auf weiß, schwer lesbar).
 
 ## 2.51
 
