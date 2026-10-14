@@ -1027,7 +1027,8 @@ def _gauss_loop(seed: int, seconds: float, rate: float, bandwidth_hz: float) -> 
     spectrum = rng.normal(size=n) + 1j * rng.normal(size=n)
     spectrum *= np.exp(-(np.fft.fftfreq(n, 1 / rate) / bandwidth_hz) ** 2)
     z = np.fft.ifft(spectrum)
-    return z / np.sqrt(np.mean(np.abs(z) ** 2))
+    # complex64 reicht für eine Verstärkung und halbiert den Speicher (Run-Modus: viele Stationen).
+    return (z / np.sqrt(np.mean(np.abs(z) ** 2))).astype(np.complex64)
 
 
 def _loop_at(loop: np.ndarray, rate: float, start: int, n: int) -> np.ndarray:

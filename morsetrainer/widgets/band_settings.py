@@ -69,7 +69,7 @@ def signed_db(value: float) -> str:
 
 def level_text(key: str, level: float, gain: float = 1.0) -> str:
     """Anzeige eines Pegels (0..1) in der Sprache der Funkamateure:
-    Rauschen als Rauschabstand (2,4 kHz), Chirp als Frequenzablage, sonst
+    Rauschen als Rauschabstand (im Empfängerfilter), Chirp als Frequenzablage, sonst
     Prozent."""
     if key == "noise":
         return tr("S/N {db}").format(db=signed_db(band.noise_snr_db(level, gain)))
@@ -347,8 +347,14 @@ class BandSettings:
             button.pack(side="left", padx=(0, 8))
             announcer.name(button, tr("CW-QRM-Abstand") + " " + tr(name))
             self.offset_buttons.append(button)
+        # Über 80 % ist das Fading schon reines Rayleigh (band.rice_k = 0).
+        theme.hint(box, wrap=440, text=tr(
+            "QSB und Flattern werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit Bandbedingungen "
+            "zählen nicht für deine Zeichenstatistik: Ein Zeichen im Fading-Loch sagt nichts darüber, ob du "
+            "es kannst.")).grid(
+            row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="w", padx=(22, 0), pady=(2, 0))
         buttons = ttk.Frame(box)
-        buttons.grid(row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="e", pady=(6, 0))
+        buttons.grid(row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="e", pady=(6, 0))
         ttk.Button(buttons, text=tr("Alle aus"), command=lambda: self._set_all(False)).pack(side="right")
         all_on = ttk.Button(buttons, text=tr("Alle an"), command=lambda: self._set_all(True))
         all_on.pack(side="right", padx=4)
@@ -408,7 +414,7 @@ class BandSettings:
             "Ohr, das CW wie ein Filter von etwa 50 Hz hört, sind es rund 16 dB mehr. Unter 400 Hz Tonhöhe "
             "ist das Signal etwas leiser; die Stufenknöpfe stellen dann weniger Rauschen ein, damit die Stufe "
             "gleich schwer bleibt. Nach einem Wechsel der Tonhöhe die Stufe neu wählen.")).grid(
-            row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
+            row=len(BAND_OPTIONS) + 3, column=0, columnspan=3, sticky="w", pady=(6, 0))
         theme.hint(gain, wrap=440, text=tr(
             "Alle Störgeräusche gemeinsam gegenüber den Zeichen; verschiebt auch den Rauschabstand. 100 % ist "
             "die normale Mischung, für das Diplom QRN-fest müssen es mindestens 100 % sein.")).pack(

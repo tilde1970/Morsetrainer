@@ -14,6 +14,11 @@
 - **Oberfläche:** Zahl und Einheit („400 Hz“, „100 %“) werden in
   Hinweisen nicht mehr getrennt; das Tonfeld heißt sichtbar „Tonhöhe“; unter
   der Lebenslinie steht, wie man mit der Tastatur die Tage durchgeht.
+- **Einstellungen und Bandfenster:** Sprechtempo und Lautstärke der Ansage
+  stehen eingerückt unter „Rückmeldung ansagen“, mit dem Hinweis, dass sie
+  nur für die Ansage gelten. Das Bandfenster sagt, dass QSB und Flattern bis
+  80 % schwerer werden und Durchgänge mit Bandbedingungen nicht für die
+  Zeichenstatistik zählen.
 
 ## 2.51
 

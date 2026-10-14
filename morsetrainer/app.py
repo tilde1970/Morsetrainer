@@ -545,8 +545,9 @@ class MorseTrainerApp:
                         command=self._announce_toggled).pack(side="left")
         self.announce_hint_var = tk.StringVar(value=tr("F11 liest vor, wo du bist"))
         theme.hint(speak, textvariable=self.announce_hint_var, wrap=420).pack(side="left", padx=(8, 0))
+        # Eingerückt unter „Rückmeldung ansagen“: gilt nur für die Ansage.
         voice = ttk.Frame(access_card)
-        voice.pack(fill="x", pady=2)
+        voice.pack(fill="x", pady=2, padx=(24, 0))
         for label, var, steps in ((tr("Sprechtempo"), self.announcer.rate_var, VOICE_RATE_STEPS),
                                   (tr("Lautstärke der Ansage"), self.announcer.volume_var, VOICE_VOLUME_STEPS)):
             ttk.Label(voice, text=label).pack(side="left")
@@ -556,6 +557,7 @@ class MorseTrainerApp:
             box.bind("<<ComboboxSelected>>", lambda e, b=box, v=var: v.set(int(b.get().split()[0])))
             var.trace_add("write", lambda *_, b=box, v=var: b.set(f"{v.get()} %"))
             box.set(f"{var.get()} %")
+        theme.hint(access_card, text=tr("Für die Ansage; 100 % ist normal.")).pack(anchor="w", padx=(24, 0))
 
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)

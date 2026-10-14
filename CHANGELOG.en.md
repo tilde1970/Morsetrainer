@@ -14,6 +14,11 @@
 - **Interface:** number and unit (“400 Hz”, “100 %”) are no longer split
   across lines in hints; the pitch field is visibly labelled “Pitch”; below
   the lifeline a hint explains how to go through the days by keyboard.
+- **Settings and band window:** speech rate and volume of the spoken
+  feedback are indented under “Announce feedback”, with a note that they
+  apply to the announcements only. The band window explains that QSB and
+  flutter get harder up to 80 % and that runs with band conditions do not
+  count for the character statistics.
 
 ## 2.51
 

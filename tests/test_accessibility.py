@@ -1611,6 +1611,17 @@ class BandWindowAnnounceTest(AnnouncerCase):
         return [w for w in walk(self.settings.window) if w.winfo_class() == "TButton"
                 and str(w.cget("text")) in ("leicht", "mittel", "stark")]
 
+    def test_band_window_grid_cells_do_not_overlap(self):
+        # Zwei Elemente in derselben Rasterzelle überdecken sich (so verschwand
+        # einmal „Alle an“ hinter einem Hinweis).
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        for container in [self.settings.window, *walk(self.settings.window)]:
+            cells = [(int(i["row"]), int(i["column"])) for i in (c.grid_info() for c in container.grid_slaves())]
+            self.assertEqual(len(cells), len(set(cells)), container)
+
     def test_opening_tells_the_focus(self):
         # Der Fokus steht beim Öffnen auf „leicht“; ohne Ansage wüsste man
         # nicht, wo Tab beginnt.
