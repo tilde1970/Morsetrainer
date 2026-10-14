@@ -15,8 +15,8 @@
   Hinweisen nicht mehr getrennt; das Tonfeld heißt sichtbar „Tonhöhe“; unter
   der Lebenslinie steht, wie man mit der Tastatur die Tage durchgeht.
 - **Einstellungen und Bandfenster:** Sprechtempo und Lautstärke der Ansage
-  stehen eingerückt unter „Rückmeldung ansagen“, mit dem Hinweis, dass sie
-  nur für die Ansage gelten. Das Bandfenster sagt, dass QSB und Flatterfading bis
+  stehen eingerückt unter „Rückmeldung ansagen“, mit dem Hinweis „100 % ist
+  normal“. Das Bandfenster sagt, dass QSB und Flatterfading bis
   80 % schwerer werden und Durchgänge mit Bandbedingungen nicht für die
   Zeichenstatistik zählen.
 - **Hilfe:** Der Hilfetext ist mit Tab wieder erreichbar, nachdem man ihn
@@ -27,6 +27,15 @@
   laufende Zeichen oder die Korrektur zu Ende ist.
 - **Kontrast:** Markierter Text in Feldern ohne Fokus bleibt in den Farben
   des Programms (vorher grau auf weiß, schwer lesbar).
+- **Ansage in Listen und Einstellungen:** F11 nennt bei aufgeklappter
+  Klappliste den markierten Eintrag, Esc sagt „Liste zu.“ und den Wert, der
+  bleibt. Die Einstellungen öffnen mit dem Fokus im Rufzeichenfeld und sagen
+  es an. F11 buchstabiert Zeichen in der Rückmeldung („Falsch: war Punkt, du:
+  Trennung“), statt Satzzeichen zu verschlucken.
+- **Lebenslinie:** Der Tastaturhinweis steht über dem Diagramm und erst,
+  wenn es Tage gibt; die Ansage nennt auch Bild auf/ab.
+- **Anleitung:** Begrüßung mit F12, VoiceOver dauerhaft stummschalten, und
+  wie man den Absatz zum Screenreader in der Hilfe findet.
 
 ## 2.51
 

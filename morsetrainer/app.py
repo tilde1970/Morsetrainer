@@ -472,7 +472,7 @@ class MorseTrainerApp:
         self.station_call_var = tk.StringVar(value="")
         self.station_name_var = tk.StringVar(value="")
         ttk.Label(station, text=tr("Rufzeichen", context="eigenes")).pack(side="left")
-        call_entry = ttk.Entry(station, textvariable=self.station_call_var, width=12)
+        call_entry = self.settings_first = ttk.Entry(station, textvariable=self.station_call_var, width=12)
         call_entry.pack(side="left", padx=(6, 12))
         ttk.Label(station, text=tr("Name")).pack(side="left")
         name_entry = ttk.Entry(station, textvariable=self.station_name_var, width=14)
@@ -549,7 +549,8 @@ class MorseTrainerApp:
             box.bind("<<ComboboxSelected>>", lambda e, b=box, v=var: v.set(int(b.get().split()[0])))
             var.trace_add("write", lambda *_, b=box, v=var: b.set(f"{v.get()} %"))
             box.set(f"{var.get()} %")
-        theme.hint(access_card, text=tr("Für die Ansage; 100 % ist normal.")).pack(anchor="w", padx=(24, 0))
+        # Dass es um die Ansage geht, sagen Einrückung und Beschriftung schon.
+        theme.hint(access_card, text=tr("100 % ist normal.")).pack(anchor="w", padx=(24, 0))
 
         # Bandbedingungen für alle Reiter; dort nur an/aus (band_settings.py).
         self.band_settings = BandSettings(self.root)
@@ -592,8 +593,22 @@ class MorseTrainerApp:
         window.deiconify()
         window.lift()
         window.focus_force()
-        if not hidden:  # sonst sagt die Fensteransage es schon (beim Erscheinen)
-            announcer.say(tr("Fenster {title}.").format(title=window.title()))
+        if hidden:
+            # Fokus aufs erste Bedienelement und es nennen (wie im Bandfenster);
+            # den Fensternamen stellt die Fensteransage beim Erscheinen davor.
+            # Fest das Rufzeichenfeld: tk_focusNext fände im noch nicht
+            # gezeichneten Fenster nichts.
+            self.settings_first.focus_set()
+            announcer.say(announcer.describe(self.settings_first))
+            return
+        text = tr("Fenster {title}.").format(title=window.title())
+        try:
+            focus = window.focus_get()
+            if focus is not None and focus is not window and focus.winfo_toplevel() is window:
+                text += " " + announcer.describe(focus)
+        except (KeyError, tk.TclError):
+            pass
+        announcer.say(text)
 
     def close_settings(self) -> None:
         """Ausblenden und den Fokus zurückgeben, etwa ans Eingabefeld."""
@@ -786,9 +801,9 @@ class MorseTrainerApp:
         if event.keysym == ANNOUNCE_KEY:
             self.toggle_announce()
         elif top is self.root:
-            self.read_status()
+            self.read_status(listed=str(event.widget))
         else:
-            self.read_window(top, box)
+            self.read_window(top, box, listed=str(event.widget))
         return "break"
 
     def _popdown_owner(self, widget):
@@ -810,9 +825,10 @@ class MorseTrainerApp:
         except (tk.TclError, KeyError):
             return None
 
-    def read_window(self, top, focus=None) -> None:
+    def read_window(self, top, focus=None, listed=None) -> None:
         """F11 in einem anderen Fenster: sein Name und das Bedienelement mit
-        dem Fokus („Fenster Einstellungen. Schriftgröße, Klappliste, 100 Prozent.“)."""
+        dem Fokus („Fenster Einstellungen. Schriftgröße, Klappliste, 100 Prozent.“);
+        bei aufgeklappter Liste `listed` auch ihr markierter Eintrag."""
         try:
             text = tr("Fenster {title}.").format(title=top.title())
             focus = focus or top.focus_get()
@@ -820,27 +836,38 @@ class MorseTrainerApp:
                 text += " " + announcer.describe(focus)
         except (tk.TclError, KeyError):
             return
-        self.announcer.say(text, force=True)
+        self.announcer.say(text + self._list_text(listed), force=True)
 
-    def read_status(self) -> None:
+    @staticmethod
+    def _list_text(listed) -> str:
+        """„ Liste offen. 150 Prozent, 5 von 8.“ für eine aufgeklappte Liste;
+        ihr Wert gilt erst mit Enter, markiert kann ein anderer sein."""
+        item = announcer.list_item(listed) if listed else ""
+        return " " + tr("Liste offen.") + " " + item if item else ""
+
+    def read_status(self, listed=None) -> None:
         """F11: vorlesen, wo man ist – Reiter, Status, Rückmeldung, Restzeit
         oder die Karte der Tagesübung; in einem anderen Fenster dieses (auf
-        dem Mac kommt Cmd+Umschalt+W in jedem Fenster hierher)."""
+        dem Mac kommt Cmd+Umschalt+W in jedem Fenster hierher). `listed`:
+        aufgeklappte Liste, deren markierter Eintrag dazukommt."""
+        box = None
         try:
             top = self._window_of(self.root.focus_get())
-        except KeyError:
-            top = None
+        except KeyError:  # Fokus in einer aufgeklappten Liste (Tk kennt sie nur als Pfad)
+            listed = listed or str(self.root.tk.call("focus"))
+            box = self._popdown_owner(listed)
+            top = self._window_of(box) if box is not None else None
         if top is not None and top is not self.root:
             if top.bind(f"<{STATUS_KEY}>"):
                 top.event_generate(f"<{STATUS_KEY}>")
             else:
-                self.read_window(top)
+                self.read_window(top, box, listed=listed)
             return
         if self.daily.active and self.daily.card_open:
             self.announcer.say(self.daily.card_text, force=True)
             return
         if self._active_mode() is None:  # Reiter Statistik
-            self.announcer.say(self.statistics_spoken(), force=True)
+            self.announcer.say(self.statistics_spoken() + self._list_text(listed), force=True)
             return
         parts = [self._tab_name()]
         if self.daily.active and self.daily.mode is not None:
@@ -851,7 +878,7 @@ class MorseTrainerApp:
         for attr in ("status_var", "session_info_var", "feedback_var", "live_var", "score_var", "remaining_var",
                      "progress_var"):
             var = getattr(mode, attr, None)
-            text = var.get().strip() if var is not None else ""
+            text = announcer.spoken_value(var).strip() if var is not None else ""
             if attr in ("live_var", "score_var", "remaining_var"):
                 text = _CLOCK.sub(_spoken_clock, text)
             if (attr == "status_var" and text.startswith(tr("Deine Eingabe?"))
@@ -865,7 +892,7 @@ class MorseTrainerApp:
         idle_hint = getattr(mode, "idle_hint", None)
         if idle_hint is not None and not getattr(mode, "running", False):
             parts.append(idle_hint())
-        self.announcer.say(announcer.sentences(parts), force=True)
+        self.announcer.say(announcer.sentences(parts) + self._list_text(listed), force=True)
 
     def select_tab(self, index: int) -> None:
         """Reiter Nr. `index` (ab 0, −1 der letzte) zeigen, wenn er nicht

@@ -855,14 +855,17 @@ das **Sprechtempo** (70–200 %) und die **Lautstärke der Ansage** (25–100 %)
 ein.
 
 Beim allerersten Start sagt das Programm einmal an, dass F9 die Ansage
-einschaltet und F11 sagt, wo du bist. Läuft dabei ein Screenreader (NVDA,
+einschaltet, F11 sagt, wo du bist, und F12 die Tagesübung startet (Mac:
+Cmd+Umschalt+T). Läuft dabei ein Screenreader (NVDA,
 JAWS, Windows-Sprachausgabe, VoiceOver oder Orca), ist die Ansage gleich
 eingeschaltet. Damit beide Stimmen nicht durcheinanderreden, stellst du
 den Screenreader beim Üben am besten stumm oder in den Schlafmodus: NVDA
 mit NVDA+S (so oft, bis der Sprachmodus „aus“ ist) oder NVDA+Umschalt+S
 (Schlafmodus für das Programm; Laptop-Belegung NVDA+Umschalt+Z), JAWS mit
 Einfg+Leertaste, dann S (Sprache aus und wieder an), Orca mit Orca+S,
-VoiceOver mit Strg (kurz stumm).
+VoiceOver mit Strg (nur kurz still; dauerhaft stumm über das
+VoiceOver-Dienstprogramm, Bereich Sprache). In der Hilfe (F1) findest du
+diesen Absatz mit Strg+F (Mac: Cmd+F) und dem Suchwort „Schlafmodus“.
 
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit

@@ -490,7 +490,7 @@ EN.update({
     "Bild auf/ab springt eine Woche.":
         "Values of a day: hover with the mouse, or Tab into it and use the left/right arrows; "
         "Page Up/Down jumps a week.",
-    "Für die Ansage; 100 % ist normal.": "For spoken feedback; 100 % is normal.",
+    "100 % ist normal.": "100 % is normal.",
     "QSB und Flatterfading werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit "
     "Bandbedingungen zählen nicht für deine Zeichenstatistik: Ein Zeichen im Fading-Loch sagt nichts "
     "darüber, ob du es kannst.":
@@ -498,7 +498,10 @@ EN.update({
         "your character statistics: a character lost in a fading dip says nothing about whether you know "
         "it.",
     "Hilfetext": "Help text",
-    "Pfeil links und rechts gehen durch die Tage.": "Left and right arrows go through the days.",
+    "Liste zu.": "List closed.",
+    "{value} bleibt.": "{value} stays.",
+    "Pfeil links und rechts gehen durch die Tage, Bild auf und ab springt eine Woche.":
+        "Left and right arrows go through the days, Page Up and Page Down jump a week.",
     "Fortschritt {mode}: {info}": "Progress {mode}: {info}",
     "Lebenslinie: {info}": "Lifeline: {info}",
     "Sprechtempo": "Speaking rate",

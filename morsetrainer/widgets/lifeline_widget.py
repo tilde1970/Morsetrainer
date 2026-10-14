@@ -98,15 +98,20 @@ class LifelinePanel:
     def __init__(self, parent):
         box = theme.card(parent, tr("Lebenslinie"))
         self.info_var = tk.StringVar(value="")
-        theme.hint(box, textvariable=self.info_var, wrap=520).pack(anchor="w")
+        self.info_label = theme.hint(box, textvariable=self.info_var, wrap=520)
+        self.info_label.pack(anchor="w")
+        # Sichtbar, nicht nur angesagt: wie man ohne Maus an die Werte eines
+        # Tages kommt. Über dem Diagramm, damit es bei großer Schrift nicht
+        # unter den Rand rutscht; erst, wenn es Tage gibt. Tastennamen beim
+        # Umbruch nicht trennen.
+        self.keys_hint = theme.hint(box, wrap=520, text=tr(
+            "Werte eines Tages: mit der Maus darüber, oder mit Tab hinein und Pfeil links/rechts; "
+            "Bild auf/ab springt eine Woche.").replace("Pfeil links", "Pfeil\u00a0links")
+            .replace("Bild auf", "Bild\u00a0auf"))
         self.canvas = tk.Canvas(box, height=HEIGHT, background=theme.SURFACE, takefocus=1,
                                 highlightthickness=theme.BORDER_WIDTH + 1, highlightcolor=theme.FOCUS,
                                 highlightbackground=theme.SURFACE)
         self.canvas.pack(fill="x", pady=(4, 0))
-        # Sichtbar, nicht nur angesagt: wie man ohne Maus an die Werte eines Tages kommt.
-        theme.hint(box, wrap=520, text=tr(
-            "Werte eines Tages: mit der Maus darüber, oder mit Tab hinein und Pfeil links/rechts; "
-            "Bild auf/ab springt eine Woche.")).pack(anchor="w", pady=(2, 0))
         self.line = {"days": []}
         self.xs = []
         self.day_index = None  # mit der Tastatur gewählter Tag
@@ -114,7 +119,7 @@ class LifelinePanel:
         self.canvas.bind("<Motion>", self._motion)
         self.canvas.bind("<Leave>", lambda e: self.canvas.delete("hover"))
         announcer.name(self.canvas, tr("Lebenslinie"), value=lambda: announcer.sentences([self.info_var.get(), tr(
-            "Pfeil links und rechts gehen durch die Tage.")]))
+            "Pfeil links und rechts gehen durch die Tage, Bild auf und ab springt eine Woche.")]))
         for key, step in (("Left", -1), ("Right", 1), ("Prior", -7), ("Next", 7), ("Home", None), ("End", None)):
             self.canvas.bind(f"<{key}>", lambda e, k=key, s=step: self._step(k, s) or "break")
 
@@ -122,6 +127,10 @@ class LifelinePanel:
         """Daten neu laden und neu zeichnen."""
         self.line = lifeline.load()
         self.info_var.set(summary_text(self.line))
+        if self.line["days"]:
+            self.keys_hint.pack(anchor="w", pady=(2, 0), after=self.info_label)
+        else:
+            self.keys_hint.pack_forget()
         self.draw()
 
     def _x_range(self):

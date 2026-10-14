@@ -15,8 +15,8 @@
   across lines in hints; the pitch field is visibly labelled “Pitch”; below
   the lifeline a hint explains how to go through the days by keyboard.
 - **Settings and band window:** speech rate and volume of the spoken
-  feedback are indented under “Announce feedback”, with a note that they
-  apply to the announcements only. The band window explains that QSB and
+  feedback are indented under “Announce feedback”, with the note “100 % is
+  normal”. The band window explains that QSB and
   flutter get harder up to 80 % and that runs with band conditions do not
   count for the character statistics.
 - **Help:** the help text can be reached again with Tab after leaving it,
@@ -27,6 +27,15 @@
   current character or correction has finished.
 - **Contrast:** selected text in fields without focus keeps the program's
   colours (previously white on grey, hard to read).
+- **Announcements in lists and settings:** with a drop-down list open, F11
+  names the highlighted entry; Esc says “List closed.” and the value that
+  stays. Settings open with the focus in the call sign field and announce
+  it. F11 spells characters in the feedback (“Wrong: was period, you:
+  separator”) instead of swallowing punctuation.
+- **Lifeline:** the keyboard hint sits above the chart and only once there
+  are days; the announcement also mentions Page Up/Down.
+- **Guide:** greeting with F12, muting VoiceOver for good, and how to find
+  the screen reader paragraph in the help.
 
 ## 2.51
 

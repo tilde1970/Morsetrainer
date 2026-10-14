@@ -657,6 +657,26 @@ class AnnouncerTest(AnnouncerCase):
         group.stop()
         self.assertTrue(self.pump_until(lambda: any(s.startswith("Durchgang beendet.") for s in self.said)))
 
+    def test_f11_spells_punctuation_feedback(self):
+        # „Falsch: war ., du: =“ verschluckte die Stimme; F11 buchstabiert.
+        import time
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.5)
+        single = self.mode("Einzelzeichen")
+        single.start()
+        single.current_char, single.voice, single.waiting_for_input, single.replayed = ".", (20, 600), True, False
+        single.play_start_time = time.time() - 0.5
+        single.on_key(type("E", (), {"keysym": "equal", "char": "="})())
+        self.assertIn(".", single.feedback_var.get())
+        spoken = self.announcer.spoken_value(single.feedback_var)
+        self.assertIn(self.announcer.spell("."), spoken)
+        self.assertIn(self.announcer.spell("="), spoken)
+        self.assertNotIn(" .", spoken)
+        # Ändert sich die Anzeige anders, gilt wieder der angezeigte Text.
+        single.feedback_var.set("Etwas anderes")
+        self.assertEqual(self.announcer.spoken_value(single.feedback_var), "Etwas anderes")
+        single.stop()
+
     def test_single_char_error_is_named(self):
         import time
         self.app.announcer.var.set(True)
@@ -1089,7 +1109,18 @@ class AnnouncerModesTest(AnnouncerCase):
         panel.info_var.set("Die Lebenslinie beginnt mit dem ersten Üben.")
         spoken = self.announcer.describe(panel.canvas)
         self.assertNotIn("..", spoken)
-        self.assertTrue(spoken.endswith("durch die Tage."), spoken)
+        self.assertTrue(spoken.endswith("springt eine Woche."), spoken)
+        # Tastaturhinweis erst, wenn es Tage gibt.
+        from datetime import date
+        from morsetrainer.widgets import lifeline_widget
+        panel.refresh()
+        self.assertEqual(panel.keys_hint.winfo_manager(), "")
+        with mock.patch.object(lifeline_widget.lifeline, "load", lambda: {"days": [date(2026, 10, 1)]}), \
+                mock.patch.object(lifeline_widget, "summary_text", lambda line: "Seit 01.10.2026"), \
+                mock.patch.object(panel, "draw"):
+            panel.refresh()
+        self.assertEqual(panel.keys_hint.winfo_manager(), "pack")
+        self.assertIn("Pfeil\u00a0links", str(panel.keys_hint.cget("text")))
         self.assertEqual(self.announcer.describe(self.app.zoom_box).count("."), 1)
         self.assertNotIn("..", self.app.statistics_spoken())
 
@@ -1553,6 +1584,30 @@ class WindowKeysTest(AnnouncerCase):
         self.assertIn(", Auswahl, ", spoken)
         self.assertIsNone(self.key(".unbekannt.popdown.f.l", "F9"))
 
+    def test_open_list_tells_marked_item_and_closing(self):
+        # Echt aufgeklappt: F11 nennt den markierten Eintrag (der Wert gilt
+        # erst mit Enter), Esc sagt, dass die Liste zu ist und was bleibt.
+        self.app.open_settings()
+        self.root.update()
+        box = self.app.zoom_box
+        self.root.tk.call("ttk::combobox::Post", str(box))
+        self.root.update()
+        listbox = str(box) + ".popdown.f.l"
+        self.root.tk.call(listbox, "selection", "clear", 0, "end")
+        self.root.tk.call(listbox, "selection", "set", 4)
+        marked = str(self.root.tk.call(listbox, "get", 4))
+        with mock.patch.object(self.app.announcer, "say") as say:
+            self.assertEqual(self.key(listbox, "F11"), "break")
+        spoken = say.call_args[0][0]
+        self.assertIn("Fenster Einstellungen.", spoken)
+        self.assertIn(f"Liste offen. {marked}, 5 von", spoken)
+        self.app.announcer.var.set(True)
+        with mock.patch.object(self.app.announcer, "say") as say:
+            self.root.tk.call("event", "generate", listbox, "<Escape>")
+            self.root.update()
+        self.assertTrue(say.called)
+        self.assertEqual(say.call_args[0][0], f"Liste zu. {box.get()} bleibt.")
+
     def test_f11_names_the_focused_control(self):
         self.app.open_settings()
         self.root.update()
@@ -1861,6 +1916,7 @@ class SmallAnnounceTest(AnnouncerCase):
         self.assertEqual(speakable("Richtig: 3 / 10"), "Richtig: 3 von 10")
         self.assertEqual(speakable("im Filter S/N +8 dB"), "im Filter Rauschabstand plus 8 dB")
         self.assertEqual(speakable("S/N −4 dB"), "Rauschabstand minus 4 dB")
+        self.assertEqual(speakable("Lautstärke 80\u00a0%"), speakable("Lautstärke 80 %"))
         self.assertEqual(speakable("Alt+1, Strg+B, Taste +"), "Alt+1, Strg+B, Taste Plus")
 
     def test_ready_text_names_f5(self):
@@ -1875,6 +1931,20 @@ class SmallAnnounceTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: any(expected in t for t in self.said)), self.said)
         self.app._toggle_more()
 
+    def test_settings_open_on_the_first_control(self):
+        self.app.announcer.var.set(True)
+        self.pump_until(lambda: False, timeout=0.3)
+        window = self.app.settings_window
+        self.app.open_settings()
+        window.event_generate("<Map>")  # Hauptfenster versteckt: Tk zeigt es nicht selbst
+        self.pump_until(lambda: False, timeout=0.3)
+        first = self.app.settings_first
+        self.assertEqual(window.focus_lastfor(), first)
+        # Gesprochen wird die letzte Ansage; die Fensteransage steht vorn dran.
+        self.assertEqual(self.app.announcer.recent[0],
+                         f"Fenster Einstellungen. {self.announcer.speakable(self.announcer.describe(first))}")
+        self.app.close_settings()
+
     def test_settings_reopened_say_the_window_once(self):
         self.app.announcer.var.set(True)
         self.app.open_settings()
@@ -1885,7 +1955,7 @@ class SmallAnnounceTest(AnnouncerCase):
         self.app.announcer._cache.clear()
         self.app.open_settings()  # schon offen: nur nach vorn, einmal „Fenster Einstellungen.“
         self.assertTrue(self.pump_until(lambda: self.said))
-        self.assertEqual(" ".join(self.said).count("Einstellungen"), 1, self.said)
+        self.assertEqual(self.app.announcer.recent[0].count("Einstellungen"), 1, self.app.announcer.recent)
 
     def test_new_character_card_spells_the_character(self):
         from morsetrainer.core import daily, koch

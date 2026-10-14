@@ -376,13 +376,16 @@ class SingleModeFrame(DailyModeMixin):
         typed = self.last_typed
         if typed and typed != self.current_char:
             # Richtig und Getipptes direkt nacheinander: so hört man den Unterschied.
-            self.status_var.set(tr("So klingt {char} – und so {typed} (dein Tipp):").format(
-                char=display_text(self.current_char), typed=display_text(typed)))
+            message = tr("So klingt {char} – und so {typed} (dein Tipp):")
+            announcer.show(self.status_var,
+                           message.format(char=display_text(self.current_char), typed=display_text(typed)),
+                           message.format(char=announcer.spell(self.current_char), typed=announcer.spell(typed)))
             # Zum Schluss nochmal das richtige, damit dieses Klangbild bleibt.
             samples = np.concatenate([samples, silence(COMPARE_GAP_SECONDS), build_samples(typed, wpm, freq),
                                       silence(COMPARE_GAP_SECONDS), samples])
         else:
-            self.status_var.set(tr("So klingt {char}:").format(char=display_text(self.current_char)))
+            announcer.show(self.status_var, tr("So klingt {char}:").format(char=display_text(self.current_char)),
+                           tr("So klingt {char}:").format(char=announcer.spell(self.current_char)))
         try:
             audio.play(samples)
         except audio.AudioError as exc:
@@ -469,9 +472,11 @@ class SingleModeFrame(DailyModeMixin):
             sfx.play_error()
         self.last_typed = None
         text = tr("Zu langsam: war {char}").format(char=display_text(self.current_char))
+        spoken = tr("Zu langsam: war {char}").format(char=announcer.spell(self.current_char))
         if self.first_hearing and not self.daily_minutes:
-            text += "  " + tr("(Limit jetzt {limit} s)").format(limit=number(self.limit, 2))
-        self.feedback_var.set(text)
+            limit = "  " + tr("(Limit jetzt {limit} s)").format(limit=number(self.limit, 2))
+            text, spoken = text + limit, spoken + limit
+        announcer.show(self.feedback_var, text, spoken)
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
         announcer.say(tr("Zu langsam. Es war {char}.").format(char=announcer.spell(self.current_char)),
@@ -548,14 +553,16 @@ class SingleModeFrame(DailyModeMixin):
             self._show_limit()
 
         if helped:
-            self.feedback_var.set(tr("{char} – erst nach Wiederholung, kommt gleich noch mal").format(
-                char=display_text(self.current_char)))
+            message = tr("{char} – erst nach Wiederholung, kommt gleich noch mal")
+            announcer.show(self.feedback_var, message.format(char=display_text(self.current_char)),
+                           message.format(char=announcer.spell(self.current_char)))
             self.feedback_label.config(foreground=theme.MUTED)
         elif correct:
             # Mit Ansage nur der kurze Ton: ein Wort nach jedem Zeichen hielte auf.
             if self.sound_var.get() or announcer.active():
                 sfx.play_ok()
             text = tr("Richtig: {text}").format(text=display_text(self.current_char))
+            spoken = tr("Richtig: {text}").format(text=announcer.spell(self.current_char))
             if not self.daily_minutes:
                 # In der Tagesübung ohne Zahlen: bis zum nächsten Zeichen
                 # bleibt keine Zeit zum Lesen.
@@ -563,13 +570,16 @@ class SingleModeFrame(DailyModeMixin):
                 if self.icr_var.get():
                     shown += tr(", Limit {limit} s").format(limit=number(self.limit, 2))
                 text += f"  ({shown})"
-            self.feedback_var.set(text)
+                spoken += f"  ({shown})"
+            announcer.show(self.feedback_var, text, spoken)
             self.feedback_label.config(foreground=theme.OK)
         else:
             if self.sound_var.get() and not announcer.active():
                 sfx.play_error()
-            self.feedback_var.set(tr("Falsch: war {char}, du: {typed}").format(
-                char=display_text(self.current_char), typed=display_text(typed)))
+            message = tr("Falsch: war {char}, du: {typed}")
+            announcer.show(self.feedback_var,
+                           message.format(char=display_text(self.current_char), typed=display_text(typed)),
+                           message.format(char=announcer.spell(self.current_char), typed=announcer.spell(typed)))
             self.feedback_label.config(foreground=theme.ERROR)
 
         self._add_history(correct and not helped)

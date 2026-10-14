@@ -919,7 +919,9 @@ class SequenceModeFrame(DailyModeMixin):
             return
         self.revealed = True
         explanation = self._explain(self.current_sequence)
-        self.feedback_var.set(display_text(self.current_sequence) + (f"\n{explanation}" if explanation else ""))
+        extra = f"\n{explanation}" if explanation else ""
+        announcer.show(self.feedback_var, display_text(self.current_sequence) + extra,
+                       announcer.spell(self.current_sequence) + extra)
         self.feedback_label.config(foreground="")
         self.status_var.set(tr("Gewusst? J oder N"))
         self._set_head_buttons(assess=True)
@@ -999,19 +1001,20 @@ class SequenceModeFrame(DailyModeMixin):
                 note = "\n" + tr("(zu langsam – zählt nicht für die Lektion)")
             elif self.replayed and self.attempts == 1:
                 note = "\n" + tr("(mit Wiederholen – zählt nicht für die Lektion)")
-            self.feedback_var.set(
-                tr("Richtig: {text}").format(text=display_text(shown)) + (f"\n{explanation}" if explanation else "") + note
-            )
+            extra = (f"\n{explanation}" if explanation else "") + note
+            announcer.show(self.feedback_var, tr("Richtig: {text}").format(text=display_text(shown)) + extra,
+                           tr("Richtig: {text}").format(text=announcer.spell(shown)) + extra)
             self.feedback_label.config(foreground=theme.OK)
             self.diff_var.set("")
         else:
             if self.sound_var.get() and not speaking:
                 sfx.play_error()
             if give_up:
-                text = tr("Lösung: {text}").format(text=display_text(shown)) + (f"\n{explanation}" if explanation else "")
+                extra = f"\n{explanation}" if explanation else ""
+                announcer.show(self.feedback_var, tr("Lösung: {text}").format(text=display_text(shown)) + extra,
+                               tr("Lösung: {text}").format(text=announcer.spell(shown)) + extra)
             else:
-                text = tr("Leider falsch – hör noch einmal hin.")
-            self.feedback_var.set(text)
+                self.feedback_var.set(tr("Leider falsch – hör noch einmal hin."))
             self.feedback_label.config(foreground=theme.ERROR)
             if not head:
                 sent_row, typed_row, marks = align.diff_rows(sent, typed)

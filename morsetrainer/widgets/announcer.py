@@ -566,28 +566,51 @@ def _install_focus(root) -> None:
     # kennt sie nicht): beim Öffnen und beim Blättern den Eintrag sagen.
     root.bind_class("ComboboxListbox", "<FocusIn>", lambda e: _say_list_item(str(e.widget), opened=True), add="+")
     root.bind_class("ComboboxListbox", "<<ListboxSelect>>", lambda e: _say_list_item(str(e.widget)), add="+")
+    root.bind_class("ComboboxListbox", "<Escape>",
+                    lambda e: _instance.root.after_idle(_say_list_closed, str(e.widget)), add="+")
     for sequence in ("<<Increment>>", "<<Decrement>>"):
         root.bind_class("TSpinbox", sequence, lambda e: _later_value(e.widget), add="+")
     for key in ("Left", "Right", "Up", "Down", "Home", "End"):
         root.bind_class("TScale", f"<KeyRelease-{key}>", lambda e: _say_value(e.widget), add="+")
 
 
-def _say_list_item(listbox: str, opened: bool = False) -> None:
-    """„zwei, 2 von 3.“ für den gewählten Eintrag der Liste `listbox` (Tk-Name)."""
-    if not active():
-        return
+def list_item(listbox: str) -> str:
+    """„zwei, 2 von 3.“ für den markierten Eintrag der aufgeklappten Liste
+    `listbox` (Tk-Name), leer ohne Markierung."""
+    if _instance is None:
+        return ""
     try:
         call = _instance.root.tk.call
         selection = call(listbox, "curselection")
         if not selection:
-            return
+            return ""
         index = int(selection[0])
         item = str(call(listbox, "get", index))
         size = int(call(listbox, "size"))
     except (tk.TclError, ValueError):
+        return ""
+    return tr("{item}, {n} von {total}.").format(item=item, n=index + 1, total=size)
+
+
+def _say_list_item(listbox: str, opened: bool = False) -> None:
+    if not active():
         return
-    text = tr("{item}, {n} von {total}.").format(item=item, n=index + 1, total=size)
-    _instance.say((tr("Liste offen.") + " " if opened else "") + text)
+    text = list_item(listbox)
+    if text:
+        _instance.say((tr("Liste offen.") + " " if opened else "") + text)
+
+
+def _say_list_closed(listbox: str) -> None:
+    """Esc in der aufgeklappten Liste: Sie geht zu, der Wert bleibt; sonst
+    hörte man nach „110 Prozent, 4 von 8“ nichts mehr."""
+    if not active():
+        return
+    try:
+        box = _instance.root.nametowidget(listbox.split(".popdown")[0])
+        value = box.get()
+    except (KeyError, tk.TclError):
+        return
+    _instance.say(tr("Liste zu.") + (" " + tr("{value} bleibt.").format(value=value) if value else ""))
 
 
 def _later_value(widget) -> None:
@@ -946,6 +969,7 @@ def speakable(text: str) -> str:
     Leerzeichen weg."""
     if not text:
         return ""
+    text = text.replace("\u00a0", " ")  # geschützte Leerzeichen der Hinweise (theme.keep_units)
     text = _PROSIGN_SHOWN.sub(lambda m: speech.spoken(_PROSIGN_CHAR[m.group(1)], lang=i18n.LANG), text)
     text = _KEY.sub(lambda m: f"{m.group(1)} {tr(_KEY_NAMES[m.group(2)])}", text)
     for pattern, spoken in _SPOKEN_FORMS:
@@ -1021,6 +1045,25 @@ def remaining() -> float:
     if _instance is None:
         return 0.0
     return max(_instance.speaking_until - time.time(), 0.0)
+
+
+_spoken_vars = {}  # Name der Tk-Variable -> (angezeigter Text, gesprochene Fassung)
+
+
+def show(var, shown: str, spoken: str) -> None:
+    """`shown` in der Anzeige-Variable `var`, dazu die Fassung für F11
+    (Zeichen buchstabiert: „war Punkt“ statt „war .“, das die Stimme
+    verschluckt)."""
+    var.set(shown)
+    _spoken_vars[str(var)] = (shown, spoken)
+
+
+def spoken_value(var) -> str:
+    """Inhalt von `var` zum Vorlesen: die mit show() gemerkte Fassung, solange
+    die Anzeige noch dieselbe ist, sonst der angezeigte Text."""
+    text = var.get()
+    pair = _spoken_vars.get(str(var))
+    return pair[1] if pair is not None and pair[0] == text else text
 
 
 def spell(text: str) -> str:
