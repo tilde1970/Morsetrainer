@@ -53,6 +53,13 @@ DEFAULT_GEOMETRY = "720x900"
 # englisch); eine kleinere gespeicherte Breite wird angehoben.
 MIN_WIDTH = 720
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
+# Einstellungsfenster: Abstand zum Bildschirmrand (Rahmen, Rollbalken) und
+# höchster Anteil an der Bildschirmhöhe (wie das Bandfenster).
+SCREEN_MARGIN_X = 60
+SETTINGS_MAX_SCREEN_SHARE = 0.85
+# Ab dieser Schriftgröße (Prozent) zeigt die Leiste der Tagesübung nur das
+# Wochenziel, ohne Wochenstreifen und Legende: Platz für die Übung.
+COMPACT_ZOOM = 200
 # Platzhalter-Rufzeichen, das in alten Einstellungsdateien im Contest-Reiter
 # stehen kann. Beim Übernehmen in die zentralen Einstellungen gilt es nicht
 # als eigenes Rufzeichen und wird verworfen (siehe _follow_station).
@@ -208,6 +215,7 @@ class MorseTrainerApp:
                                   on_end=lambda: self.daily.abort())
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
+        self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
         self._build_notebook()
         self._follow_station()
         self._build_all_time_tab()
@@ -455,27 +463,41 @@ class MorseTrainerApp:
         window.title(tr("Einstellungen"))
         window.transient(self.root)
         window.configure(background=theme.BG)
-        window.resizable(True, False)
         window.protocol("WM_DELETE_WINDOW", self.close_settings)
         window.bind("<Escape>", lambda e: self.close_settings())
         self.settings_restore_focus = None
-        body = ttk.Frame(window, padding=10)
+        # Schließen fest unten, der Rest rollt: Bei großer Schrift oder kleinem
+        # Bildschirm passt das Fenster sonst nicht auf den Bildschirm.
+        bottom = self.settings_bottom = ttk.Frame(window, padding=(10, 6, 10, 10))
+        bottom.pack(side="bottom", fill="x")
+        ttk.Separator(window).pack(side="bottom", fill="x")
+        self.settings_scroller = ScrollableFrame(window)
+        bottom.lift()  # Tab-Reihenfolge wie auf dem Bildschirm: die Knöpfe zuletzt
+        body = self.settings_body = ttk.Frame(self.settings_scroller.inner, padding=10)
         body.pack(fill="both", expand=True)
+        # Zeilen mit Hinweis rechts daneben (Zeile, Bedienelemente, Hinweis);
+        # _fit_settings setzt den Hinweis darunter, wenn die Breite nicht reicht.
+        self.settings_hinted = []
+
+        def hinted(card, **pack):
+            row = ttk.Frame(card)
+            row.pack(fill="x", pady=2, **pack)
+            controls = ttk.Frame(row)
+            self.settings_hinted.append((row, controls))
+            return controls
+
         station_card = theme.card(body, tr("Station"), padx=0)
         practice_card = theme.card(body, tr("Üben"), padx=0)
         language_card = theme.card(body, tr("Sprache / Language"), padx=0)
         access_card = theme.card(body, tr("Barrierefreiheit"), padx=0)
         data_card = theme.card(body, tr("Daten"), padx=0)
-        bottom = ttk.Frame(body)
-        bottom.pack(fill="x", pady=(8, 0))
         ttk.Button(bottom, text=tr("Schließen"), command=self.close_settings).pack(side="right")
         # Erst sichtbar, wenn eine Einstellung erst nach einem Neustart wirkt.
         self.restart_button = ttk.Button(bottom, text=tr("Jetzt neu starten"), command=self.restart_now)
 
         # Eigenes Rufzeichen und Name: für die Diplome und als Vorgabe in
         # den Reitern Contest und Netzwerk (siehe _follow_station).
-        station = ttk.Frame(station_card)
-        station.pack(fill="x", pady=2)
+        station = hinted(station_card)
         self.station_call_var = tk.StringVar(value="")
         self.station_name_var = tk.StringVar(value="")
         ttk.Label(station, text=tr("Rufzeichen", context="eigenes")).pack(side="left")
@@ -486,25 +508,22 @@ class MorseTrainerApp:
         name_entry.pack(side="left", padx=(6, 8))
         announcer.echo(call_entry)
         announcer.echo(name_entry)
-        theme.hint(station, text=tr("falls vorhanden; für Diplome, Contest und Netzwerk")).pack(side="left")
+        theme.hint(station.master, text=tr("falls vorhanden; für Diplome, Contest und Netzwerk"))
 
         # Tagesziel, angezeigt in der Fußzeile; so lang wie die Tagesübung
         # (core/daily.py).
         self.daily_goal_var = tk.IntVar(value=10)
-        goal = ttk.Frame(practice_card)
-        goal.pack(fill="x", pady=2)
+        goal = hinted(practice_card)
         ttk.Label(goal, text=tr("Tagesziel")).pack(side="left")
         goal_spin = ttk.Spinbox(goal, from_=0, to=240, increment=5, textvariable=self.daily_goal_var, width=5)
         goal_spin.pack(side="left", padx=(6, 4))
         announcer.name(goal_spin, tr("Tagesziel"), value=lambda: tr("{n} Minuten").format(n=goal_spin.get()))
         ttk.Label(goal, text=tr("Min. pro Tag")).pack(side="left")
-        theme.hint(goal, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang.")).pack(
-            side="left", padx=(8, 0))
+        theme.hint(goal.master, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang."))
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
-        language = ttk.Frame(language_card)
-        language.pack(fill="x", pady=2)
+        language = hinted(language_card)
         self.language_var = tk.StringVar(value=i18n.LANG)
         self.language_chosen = False
         self.language_box = ttk.Combobox(language, values=list(i18n.LANGUAGES.values()), state="readonly",
@@ -513,11 +532,10 @@ class MorseTrainerApp:
         self.language_box.pack(side="left", padx=(0, 8))
         self.language_box.bind("<<ComboboxSelected>>", lambda e: self._choose_language())
         self.language_hint_var = tk.StringVar(value="")
-        theme.hint(language, textvariable=self.language_hint_var).pack(side="left")
+        theme.hint(language.master, textvariable=self.language_hint_var)
 
         # Schriftgröße (Barrierefreiheit), auch per Strg+Plus/Minus/0.
-        zoom = ttk.Frame(access_card)
-        zoom.pack(fill="x", pady=2)
+        zoom = hinted(access_card)
         ttk.Label(zoom, text=tr("Schriftgröße")).pack(side="left")
         self.font_scale_var = tk.IntVar(value=theme.NORMAL_ZOOM)
         self.zoom_box = ttk.Combobox(zoom, values=[f"{step} %" for step in theme.ZOOM_STEPS], state="readonly",
@@ -525,25 +543,23 @@ class MorseTrainerApp:
         self.zoom_box.set(f"{theme.NORMAL_ZOOM} %")
         self.zoom_box.pack(side="left", padx=(6, 8))
         self.zoom_box.bind("<<ComboboxSelected>>", lambda e: self.set_font_scale(int(self.zoom_box.get().split()[0])))
-        theme.hint(zoom, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal")).pack(side="left")
+        theme.hint(zoom.master, text=tr("Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal"))
         self.font_scale_var.trace_add("write", lambda *_: self._apply_font_scale())
 
         # Hoher Kontrast (Barrierefreiheit), ab dem nächsten Start.
-        contrast = ttk.Frame(access_card)
-        contrast.pack(fill="x", pady=2)
+        contrast = hinted(access_card)
         self.contrast_var = tk.BooleanVar(value=self.contrast_at_start)
         ttk.Checkbutton(contrast, text=tr("Hoher Kontrast (Schwarz, Weiß, Gelb)"), variable=self.contrast_var,
                         command=self._contrast_toggled).pack(side="left")
         self.contrast_hint_var = tk.StringVar(value="")
-        theme.hint(contrast, textvariable=self.contrast_hint_var).pack(side="left", padx=(8, 0))
+        theme.hint(contrast.master, textvariable=self.contrast_hint_var)
 
         # Sprachansage für Blinde und Sehbehinderte (widgets/announcer.py).
-        speak = ttk.Frame(access_card)
-        speak.pack(fill="x", pady=2)
+        speak = hinted(access_card)
         ttk.Checkbutton(speak, text=tr("Rückmeldung ansagen (F9)"), variable=self.announcer.var,
                         command=self._announce_toggled).pack(side="left")
         self.announce_hint_var = tk.StringVar(value=tr("F11 liest vor, wo du bist"))
-        theme.hint(speak, textvariable=self.announce_hint_var, wrap=420).pack(side="left", padx=(8, 0))
+        theme.hint(speak.master, textvariable=self.announce_hint_var, wrap=420)
         # Eingerückt unter „Rückmeldung ansagen“: gilt nur für die Ansage.
         voice = ttk.Frame(access_card)
         voice.pack(fill="x", pady=2, padx=(24, 0))
@@ -576,12 +592,10 @@ class MorseTrainerApp:
 
         # Sichern und Einlesen aller Einstellungen und Daten (core/backup.py),
         # etwa für den Umzug auf einen neuen Rechner.
-        data = ttk.Frame(data_card)
-        data.pack(fill="x", pady=2)
+        data = hinted(data_card)
         ttk.Button(data, text=tr("Sichern …"), command=self._export_data).pack(side="left", padx=(0, 4))
         ttk.Button(data, text=tr("Einlesen …"), command=self._import_data).pack(side="left", padx=(0, 8))
-        theme.hint(data, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner")).pack(
-            side="left")
+        theme.hint(data.master, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
 
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
                     self.weighted_var, self.vary_var):
@@ -589,6 +603,7 @@ class MorseTrainerApp:
         for var in (self.wpm_var, self.farnsworth_wpm_var, self.farnsworth_enabled_var):
             var.trace_add("write", lambda *_: self._update_cpm())
         self._update_cpm()
+        self._fit_settings()
         ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
 
     def open_settings(self) -> None:
@@ -597,6 +612,7 @@ class MorseTrainerApp:
         hidden = window.state() == "withdrawn"
         if hidden:
             self.settings_restore_focus = focus_keeper(self.root)
+            self._fit_settings()  # Hinweise können sich seit dem letzten Mal geändert haben
         window.deiconify()
         window.lift()
         window.focus_force()
@@ -999,7 +1015,10 @@ class MorseTrainerApp:
             return
         if percent != theme.scale():
             theme.set_scale(self.root, percent)
+            if getattr(self, "daily_bar", None) is not None:
+                self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
             self._fit_window()
+            self._fit_settings()
         self.zoom_box.set(f"{theme.scale()} %")
 
     def _fit_window(self) -> None:
@@ -1013,6 +1032,35 @@ class MorseTrainerApp:
         height = min(max(root.winfo_height(), root.winfo_reqheight()), root.winfo_screenheight() - 80)
         if (width, height) != (root.winfo_width(), root.winfo_height()):
             root.geometry(f"{width}x{height}")
+
+    def _place_settings_hints(self, below: bool) -> None:
+        """Hinweise im Einstellungsfenster neben (`below` False) oder unter
+        ihre Bedienelemente."""
+        for row, controls in self.settings_hinted:
+            controls.grid(row=0, column=0, sticky="w")
+            for hint in row.winfo_children():
+                if hint is not controls:
+                    if below:
+                        hint.grid(row=1, column=0, sticky="w", padx=0, pady=(2, 0))
+                    else:
+                        hint.grid(row=0, column=1, sticky="w", padx=(theme.scaled(8), 0), pady=0)
+
+    def _fit_settings(self) -> None:
+        """Einstellungsfenster so groß wie der Inhalt, aber höchstens so groß
+        wie der Bildschirm: Ist es zu breit, rutschen die Hinweise unter ihre
+        Zeile; ist es zu hoch, rollt der Inhalt (Knöpfe bleiben unten)."""
+        window, body = self.settings_window, self.settings_body
+        self._place_settings_hints(below=False)
+        window.update_idletasks()
+        max_width = window.winfo_screenwidth() - SCREEN_MARGIN_X
+        if body.winfo_reqwidth() > max_width:
+            self._place_settings_hints(below=True)
+            window.update_idletasks()
+        max_height = (int(window.winfo_screenheight() * SETTINGS_MAX_SCREEN_SHARE)
+                      - self.settings_bottom.winfo_reqheight())
+        self.settings_scroller.canvas.config(width=min(body.winfo_reqwidth(), max_width),
+                                             height=min(body.winfo_reqheight(), max_height))
+        window.geometry("")  # wieder die natürliche Größe, auch nach einer früheren Schriftgröße
 
     def _toggle_more(self):
         self.more_var.set(not self.more_var.get())

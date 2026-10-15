@@ -218,9 +218,11 @@ class DailyBar:
             style="Accent.TButton", command=on_start)
         self.start_button.pack(side="left")
         self.week_var = tk.StringVar(value="")
-        ttk.Label(week_part, textvariable=self.week_var).pack(side="left")
+        self.week_label = ttk.Label(week_part, textvariable=self.week_var)
+        self.week_label.pack(side="left", padx=(0, 12))
         self.goal_var = tk.StringVar(value="")
-        ttk.Label(week_part, textvariable=self.goal_var, style="Score.TLabel").pack(side="left", padx=(12, 0))
+        self.goal_label = ttk.Label(week_part, textvariable=self.goal_var, style="Score.TLabel")
+        self.goal_label.pack(side="left")
         # Eigene Zeile mit Umbruch: neben dem Wochenstreifen würde ein langer
         # Hinweis bei schmalem Fenster abgeschnitten.
         self.note_var = tk.StringVar(value="")
@@ -228,6 +230,10 @@ class DailyBar:
         # Erklärt die Zeichen im Wochenstreifen, solange diese Woche noch kein
         # Stern verdient ist (danach kennt man sie).
         self.legend = theme.hint(self.idle, text=week_legend(), wrap=640)
+        self.legend_wanted = False
+        # Bei sehr großer Schrift (set_compact): nur das Wochenziel, ohne
+        # Wochenstreifen und Legende, damit für die Übung Platz bleibt.
+        self.compact = False
         # Nie breiter als die Leiste, auch wenn das Fenster bei großer Schrift
         # nicht mitwachsen kann.
         self.idle.bind("<Configure>", self._fit_wraps, add="+")
@@ -288,10 +294,23 @@ class DailyBar:
         """Wochenstreifen (`days`) und Stand des Wochenziels (`stars`) anzeigen."""
         self.week_var.set(week_text(days))
         self.goal_var.set(week_goal_text(stars))
-        if stars:
-            self.legend.pack_forget()
-        else:
+        self.legend_wanted = not stars
+        self._place_week()
+
+    def set_compact(self, compact: bool) -> None:
+        """Wochenstreifen und Legende aus- (`compact`) bzw. wieder einblenden."""
+        self.compact = compact
+        self._place_week()
+
+    def _place_week(self) -> None:
+        if self.compact:
+            self.week_label.pack_forget()
+        elif not self.week_label.winfo_manager():
+            self.week_label.pack(side="left", padx=(0, 12), before=self.goal_label)
+        if self.legend_wanted and not self.compact:
             self.legend.pack(anchor="w", pady=(2, 0))
+        else:
+            self.legend.pack_forget()
 
     def show_active(self) -> None:
         """Während der Übung: Block und Fortschritt statt des Startknopfs."""

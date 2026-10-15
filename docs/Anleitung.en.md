@@ -161,7 +161,11 @@ practice options:
 (normal) the whole interface gets larger, up to 200 %; the window grows
 with it. For small screens it also goes smaller, to 90 % and 75 %. Arrows,
 scrollbars and sliders grow with it, as do the full result in Non-stop and
-the solutions window in Network. The setting is saved.
+the solutions window in Network. The setting is saved. At 200 % the daily
+practice bar shows only the weekly goal, without the week strip and
+legend, to leave more room for practice. If the settings window does not
+fit on the screen, the hints move below the fields and the content
+scrolls.
 
 ## 3. The tabs
 

@@ -1630,6 +1630,42 @@ class UsabilityTest(AppTestCase):
         variables = [str(s.cget("textvariable")) for s in spinboxes(self.app.settings_window)]
         self.assertIn(str(self.app.daily_goal_var), variables)
 
+    def test_settings_window_fits_a_small_screen_at_200_percent(self):
+        app = self.app
+        window = app.settings_window
+
+        def hints_below():
+            return all(int(hint.grid_info()["row"]) == 1 for row, controls in app.settings_hinted
+                       for hint in row.winfo_children() if hint is not controls)
+        app.font_scale_var.set(200)
+        with mock.patch.object(window, "winfo_screenwidth", return_value=1024), \
+                mock.patch.object(window, "winfo_screenheight", return_value=600):
+            app._fit_settings()
+            window.update_idletasks()
+            self.assertTrue(hints_below())
+            self.assertLessEqual(window.winfo_reqwidth(), 1024 - 40)
+            self.assertLessEqual(window.winfo_reqheight(), 600)
+            self.assertLess(int(app.settings_scroller.canvas.cget("height")), app.settings_body.winfo_reqheight())
+        app.font_scale_var.set(100)
+        with mock.patch.object(window, "winfo_screenwidth", return_value=4000), \
+                mock.patch.object(window, "winfo_screenheight", return_value=3000):
+            app._fit_settings()
+            self.assertFalse(hints_below())
+            self.assertEqual(int(app.settings_scroller.canvas.cget("height")), app.settings_body.winfo_reqheight())
+
+    def test_week_strip_and_legend_hide_at_200_percent(self):
+        bar = self.app.daily_bar
+        bar.show_week([], 0)  # noch kein Stern: Legende wird gezeigt
+        self.assertEqual((bar.week_label.winfo_manager(), bar.legend.winfo_manager()), ("pack", "pack"))
+        self.app.font_scale_var.set(200)
+        self.assertEqual((bar.week_label.winfo_manager(), bar.legend.winfo_manager()), ("", ""))
+        self.assertEqual(bar.goal_label.winfo_manager(), "pack")  # das Wochenziel bleibt
+        bar.show_week([], 0)
+        self.assertEqual(bar.legend.winfo_manager(), "")
+        self.app.font_scale_var.set(175)
+        self.assertEqual((bar.week_label.winfo_manager(), bar.legend.winfo_manager()), ("pack", "pack"))
+        self.assertEqual(bar.week_label.master.pack_slaves()[0], bar.week_label)  # wieder vor dem Ziel
+
     def test_restart_button_only_while_a_restart_is_pending(self):
         self.assertEqual(self.app.restart_button.winfo_manager(), "")
         with mock.patch.object(app_module.update, "restart_command", return_value=["morsetrainer"]):
