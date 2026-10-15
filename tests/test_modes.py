@@ -635,7 +635,7 @@ class SingleCharTest(AppTestCase):
         s = self.single
         s.icr_var.set(True)
         s.current_char, s.voice, s.waiting_for_input, s.replayed = char, (20, 600), True, False
-        s.first_hearing, s.correcting, s.answer_open, s.from_retry = True, False, True, False
+        s.first_hearing, s.correcting, s.answer_open = True, False, True
         s.play_start_time = time.time() - 0.5
 
     def test_f11_during_time_limit_drops_the_char(self):
@@ -657,10 +657,10 @@ class SingleCharTest(AppTestCase):
         self._key("K")  # Tippen während der Ansage wird nicht mehr gewertet
         self.assertEqual(s.session_stats.summary()["total"], 0)
 
-    def test_f11_keeps_a_due_retry(self):
+    def test_f11_dropped_char_comes_again_later(self):
+        # Sonst wäre F11 eine Taste zum Überspringen unbekannter Zeichen.
         s = self.single
         self._open_answer("U")
-        s.from_retry = True
         with mock.patch.object(s, "next_char"):
             self.app.read_status()
         self.assertIn("U", s.retries.waiting)

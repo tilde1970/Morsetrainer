@@ -1152,8 +1152,8 @@ EN.update({
     "Verlauf (letzte {n})": "History (last {n})",
     "So klingt {char} – und so {typed} (dein Tipp):": "This is {char} – and this is {typed} (your answer):",
     "So klingt {char}:": "This is {char}:",
-    "Zeitlimit angehalten: Dieses Zeichen zählt nicht, gleich kommt ein neues.":
-        "Time limit paused: this character does not count, a new one follows.",
+    "Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht und kommt später wieder.":
+        "Time limit paused: this character does not count now and will come again later.",
     "Zu langsam: war {char}": "Too slow: it was {char}",
     "(Limit jetzt {limit} s)": "(limit now {limit} s)",
     "{char} – erst nach Wiederholung, kommt gleich noch mal": "{char} – only after a repeat, it will come again soon",

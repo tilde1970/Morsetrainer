@@ -203,7 +203,9 @@ program suggests moving on to groups.
   characters; a confusion leaves it unchanged. “reset” sets it back to
   2 s. The space bar repeats but does not extend the deadline. F11
   (“Where am I?”) during the deadline pauses it: the character does not
-  count, the limit stays, and a new character follows the announcement.
+  count now, the limit stays, and a new character follows the announcement.
+  The paused one comes again unannounced after a few others, as after a
+  mistake.
 - **Feedback beep:** a short high beep for a correct answer, a low double
   tone for a wrong one (default off). With announcements on (F9), what
   section 8 describes under “What is announced” applies.

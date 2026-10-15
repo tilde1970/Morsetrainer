@@ -20,7 +20,10 @@ ein erst nach der Wiederholung erkanntes Zeichen gilt als nicht erkannt.
 F11 (Wo bin ich?) mitten in einer Antwort mit Zeitlimit verwirft das
 Zeichen: Die Ansage fräße sonst die Frist, und wer auf sie angewiesen ist,
 bekäme jedes Mal „zu langsam“. Es zählt nicht, das Limit bleibt, und nach
-der Ansage kommt ein neues Zeichen.
+der Ansage kommt ein neues Zeichen. Das verworfene kommt wie nach einem
+Fehler nach ein paar anderen unangekündigt wieder: Sonst wäre F11 eine Taste
+zum Überspringen unbekannter Zeichen, und Trefferquote, Koch-Aufstieg und
+Lernkartei sähen besser aus, als sie sind.
 
 Zeitlimit (Instant Character Recognition): Wer nach dem Ton nicht innerhalb
 des Limits tippt, hat das Zeichen verpasst. So bleibt keine Zeit, Punkte
@@ -163,7 +166,6 @@ class SingleModeFrame(DailyModeMixin):
         self.deadline = None        # Frist für das aktuelle Zeichen (time.time()), ab erstem Hören
         self.replayed = False       # aktuelles Zeichen mit der Leertaste wiederholt
         self.answer_open = False    # aktuelles Zeichen noch nicht beantwortet und nicht verpasst
-        self.from_retry = False     # aktuelles Zeichen ist eine erneute Abfrage
         self.last_typed = None      # falsche Antwort, zum Vergleich mit vorgespielt
         self.block_end = None       # Ende eines Tagesübungs-Blocks (time.time())
 
@@ -339,7 +341,6 @@ class SingleModeFrame(DailyModeMixin):
         self.replayed = False
         self.deadline = None
         due = self.retries.next_due()
-        self.from_retry = due is not None
         if due is not None:
             self.current_char = due
         elif len(set(self.charset)) >= RETRY_EXCLUDE_MIN:
@@ -350,7 +351,6 @@ class SingleModeFrame(DailyModeMixin):
             # Wenige Zeichen: Ausschließen machte die Folge vorhersagbar. Kommt
             # das vorgemerkte Zeichen zufällig dran, ist die Abfrage erledigt.
             self.current_char = self.picker.pick()
-            self.from_retry = self.current_char in self.retries.waiting
             self.retries.discard(self.current_char)
         self.voice = self._pick_voice()
         # Eine erneute Abfrage zählt wie ein erstes Hören (auch fürs Zeitlimit):
@@ -363,16 +363,15 @@ class SingleModeFrame(DailyModeMixin):
 
     def hold_for_status(self):
         """F11 vor der Ansage: Ist mit Zeitlimit eine Antwort offen, das Zeichen
-        verwerfen (zählt nicht, Limit bleibt) und nach der Ansage ein neues
-        spielen. Eine erneute Abfrage bleibt vorgemerkt."""
+        verwerfen (zählt nicht, Limit bleibt), zur erneuten Abfrage vormerken
+        und nach der Ansage ein neues spielen."""
         if not (self.running and self.answer_open and self.icr_var.get()):
             return
         self.answer_open = False
         self.waiting_for_input = False
         self.timeout_token += 1  # Frist und Tonende des verworfenen Zeichens verfallen
-        if self.from_retry:
-            self.retries.add(self.current_char)
-        self.status_var.set(tr("Zeitlimit angehalten: Dieses Zeichen zählt nicht, gleich kommt ein neues."))
+        self.retries.add(self.current_char)
+        self.status_var.set(tr("Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht und kommt später wieder."))
         self.root.after_idle(self.next_char)
 
     def _after_error(self, play_correction=True):
