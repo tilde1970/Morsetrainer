@@ -61,6 +61,8 @@ SETTINGS_MAX_SCREEN_SHARE = 0.85
 # Ab dieser Schriftgröße (Prozent) zeigt die Leiste der Tagesübung nur das
 # Wochenziel, ohne Wochenstreifen und Legende: Platz für die Übung.
 COMPACT_ZOOM = 200
+# So viele Zeichen des Zeichensatzes nennt die zugeklappte Kopfleiste.
+HEADER_CHARSET_CHARS = 12
 # Platzhalter-Rufzeichen, das in alten Einstellungsdateien im Contest-Reiter
 # stehen kann. Beim Übernehmen in die zentralen Einstellungen gilt es nicht
 # als eigenes Rufzeichen und wird verworfen (siehe _follow_station).
@@ -217,6 +219,7 @@ class MorseTrainerApp:
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
         self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
+        self._place_header(open_=theme.scale() < COMPACT_ZOOM)
         self._build_notebook()
         self._follow_station()
         self._build_all_time_tab()
@@ -364,9 +367,16 @@ class MorseTrainerApp:
     def _build_settings(self):
         """Kopfleiste: Koch-Lektion, Tempo, Tonhöhe und Zeichensatz immer
         sichtbar; seltener gebrauchte Optionen klappen darunter auf."""
-        header = ttk.Frame(self.root, padding=(10, 8, 10, 4))
+        # Ab COMPACT_ZOOM klappt die Kopfleiste zu einer Zeile zusammen
+        # (_place_header), damit unter großer Schrift Platz für die Übung bleibt.
+        header_box = ttk.Frame(self.root)
+        header_box.pack(fill="x")
+        self.header_toggle = ttk.Button(header_box, style="Flat.TButton", command=self._toggle_header)
+        announcer.name(self.header_toggle, tr("Kopfleiste"), value=self._header_spoken)
+        header = self.header = ttk.Frame(header_box, padding=(10, 8, 10, 4))
         header.pack(fill="x")
         header.columnconfigure(1, weight=1)
+        self.header_open = True
 
         # Lektion links, Tempo und Ton rechts; reicht die Breite nicht (große
         # Schrift, schmales Fenster), rutschen Tempo und Ton in eine zweite
@@ -604,6 +614,8 @@ class MorseTrainerApp:
         for var in (self.wpm_var, self.farnsworth_wpm_var, self.farnsworth_enabled_var):
             var.trace_add("write", lambda *_: self._update_cpm())
         self._update_cpm()
+        for var in (self.lesson_var, self.wpm_var, self.freq_var, self.charset_var):
+            var.trace_add("write", lambda *_: self._show_header_summary())
         self._fit_settings()
         ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
 
@@ -1018,6 +1030,7 @@ class MorseTrainerApp:
             theme.set_scale(self.root, percent)
             if getattr(self, "daily_bar", None) is not None:
                 self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
+                self._place_header(open_=theme.scale() < COMPACT_ZOOM)
             self._fit_window()
             self._fit_settings()
         self.zoom_box.set(f"{theme.scale()} %")
@@ -1062,6 +1075,49 @@ class MorseTrainerApp:
         self.settings_scroller.canvas.config(width=min(body.winfo_reqwidth(), max_width),
                                              height=min(body.winfo_reqheight(), max_height))
         window.geometry("")  # wieder die natürliche Größe, auch nach einer früheren Schriftgröße
+
+    def _header_summary(self) -> str:
+        """„Koch-Lektion 3 · 20 WPM · 600 Hz · KMUR“ für die zugeklappte Kopfleiste."""
+        charset = self.charset_var.get().strip().upper()
+        lesson = koch.lesson_of(charset)
+        try:
+            wpm, freq = self.wpm_var.get(), self.freq_var.get()
+        except tk.TclError:  # Feld gerade leer getippt
+            wpm, freq = "–", "–"
+        if len(charset) > HEADER_CHARSET_CHARS:
+            charset = charset[:HEADER_CHARSET_CHARS] + "…"
+        lesson_text = tr("eigene Zeichen") if lesson is None else tr("Koch-Lektion {n}").format(n=lesson)
+        return " · ".join([lesson_text, f"{wpm} WPM", f"{freq} Hz", charset])
+
+    def _header_spoken(self) -> str:
+        state = tr("offen") if self.header_open else tr("zu")
+        return f"{state}, {self._header_summary().rsplit(' · ', 1)[0].replace(' · ', ', ')}"
+
+    def _show_header_summary(self) -> None:
+        arrow = "▾" if self.header_open else "▸"
+        self.header_toggle.config(text=f"{arrow} {self._header_summary()}")
+
+    def _place_header(self, open_: bool) -> None:
+        """Kopfleiste offen oder zu; unter COMPACT_ZOOM immer offen, ohne Knopf."""
+        compact = theme.scale() >= COMPACT_ZOOM
+        self.header_open = open_ or not compact
+        if compact:
+            order = {"before": self.header} if self.header.winfo_manager() else {}
+            self.header_toggle.pack(anchor="w", padx=10, pady=(6, 0), **order)
+        else:
+            self.header_toggle.pack_forget()
+        if self.header_open:
+            self.header.pack(fill="x")
+        else:
+            focus = self.root.focus_get()
+            if focus is not None and str(focus).startswith(str(self.header) + "."):
+                self.header_toggle.focus_set()  # sonst stünde der Fokus in der unsichtbaren Leiste
+            self.header.pack_forget()
+        self._show_header_summary()
+
+    def _toggle_header(self) -> None:
+        self._place_header(open_=not self.header_open)
+        announcer.say(tr("Kopfleiste geöffnet.") if self.header_open else tr("Kopfleiste geschlossen."))
 
     def _toggle_more(self):
         self.more_var.set(not self.more_var.get())

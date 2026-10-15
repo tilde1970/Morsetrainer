@@ -161,9 +161,12 @@ practice options:
 (normal) the whole interface gets larger, up to 200 %; the window grows
 with it. For small screens it also goes smaller, to 90 % and 75 %. Arrows,
 scrollbars and sliders grow with it, as do the full result in Non-stop and
-the solutions window in Network. The setting is saved. At 200 % the daily
-practice bar shows only the weekly goal, without the week strip and
-legend, to leave more room for practice. If the settings window does not
+the solutions window in Network. The setting is saved. At 200 % the header
+(lesson, speed, pitch, characters) is collapsed to one line, such as
+“▸ Koch lesson 3 · 20 WPM · 600 Hz · KMUR”; click or press Enter on the
+line to open and close it. The daily practice bar then shows only the
+weekly goal, without the week strip and legend. This leaves room for
+practice even on small screens. If the settings window does not
 fit on the screen, the hints move below the fields and the content
 scrolls.
 

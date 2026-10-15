@@ -17,7 +17,7 @@ from morsetrainer import app as app_module
 from morsetrainer.core import audio, db, koch, stats
 from morsetrainer.modes import continuous_mode, run_mode, single_mode
 from morsetrainer.modes import sequence_mode as sq
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 
 class AppTestCase(unittest.TestCase):
@@ -1665,6 +1665,48 @@ class UsabilityTest(AppTestCase):
         self.app.font_scale_var.set(175)
         self.assertEqual((bar.week_label.winfo_manager(), bar.legend.winfo_manager()), ("pack", "pack"))
         self.assertEqual(bar.week_label.master.pack_slaves()[0], bar.week_label)  # wieder vor dem Ziel
+
+    def test_header_collapses_at_200_percent(self):
+        app = self.app
+        self.assertEqual(app.header_toggle.winfo_manager(), "")  # 100 %: kein Knopf, Leiste offen
+        self.assertEqual(app.header.winfo_manager(), "pack")
+        app.charset_var.set("KMURESNAPTLWI.JZ=FOY")
+        app.wpm_var.set(22)
+        app.font_scale_var.set(200)
+        self.assertEqual(app.header_toggle.winfo_manager(), "pack")
+        self.assertEqual(app.header.winfo_manager(), "")
+        self.assertEqual(app.header_toggle.cget("text"),
+                         "▸ Koch-Lektion 19 · 22 WPM · 600 Hz · KMURESNAPTLW…")
+        self.assertEqual(announcer.describe(app.header_toggle),
+                         "Kopfleiste, Knopf, zu, Koch-Lektion 19, 22 WPM, 600 Hz.")
+        with mock.patch.object(announcer, "say") as say:
+            app.header_toggle.invoke()
+        say.assert_called_once_with("Kopfleiste geöffnet.")
+        self.assertEqual(app.header.winfo_manager(), "pack")
+        self.assertTrue(app.header_toggle.cget("text").startswith("▾ "))
+        # Zuklappen mit dem Fokus in der Leiste: der Fokus geht auf den Knopf.
+        self.root.deiconify()
+        charset_entry = next(w for w in app.header.grid_slaves() if isinstance(w, ttk.Entry))
+        charset_entry.focus_force()
+        self.root.update()
+        app.header_toggle.invoke()
+        self.root.update()
+        self.assertEqual(self.root.focus_get(), app.header_toggle)
+        app.font_scale_var.set(175)
+        self.assertEqual(app.header_toggle.winfo_manager(), "")
+        self.assertEqual(app.header.winfo_manager(), "pack")
+
+    def test_hint_never_wraps_wider_than_its_room(self):
+        self.app.font_scale_var.set(200)
+        box = ttk.Frame(self.root, width=500, height=200)
+        box.pack_propagate(False)
+        box.pack()
+        hint = theme.hint(box, text="Eins nach dem anderen: hören, antworten, das nächste. " * 3, wrap=640)
+        hint.pack(anchor="w")
+        self.root.deiconify()
+        self.root.update()
+        self.assertLessEqual(int(float(str(hint.cget("wraplength")))), 500)
+        self.assertLessEqual(hint.winfo_width(), 500)
 
     def test_restart_button_only_while_a_restart_is_pending(self):
         self.assertEqual(self.app.restart_button.winfo_manager(), "")

@@ -161,6 +161,12 @@ def zoom_step(percent: int, direction: int) -> int:
     return next((step for step in reversed(ZOOM_STEPS) if step < percent), ZOOM_STEPS[0])
 
 
+# Umbruch an die Breite des Elternelements: Abstand zum rechten Rand und
+# kleinste Breite, ab der das gilt (darunter wäre es nur noch ein Wort je Zeile).
+WRAP_MARGIN = 4
+MIN_WRAP = 120
+
+
 def scale_wraps(widget) -> None:
     """Umbruchbreiten unter `widget` an die Schriftgröße anpassen; die
     ursprüngliche Breite merkt sich jedes Widget beim ersten Mal."""
@@ -173,8 +179,28 @@ def scale_wraps(widget) -> None:
                 base = 0
             child._mt_wrap = base
         if base:
-            child.configure(wraplength=scaled(base))
+            _set_wrap(child, base)
         scale_wraps(child)
+
+
+def _set_wrap(label, base: int) -> None:
+    """Umbruchbreite `base` für die Schriftgröße, aber nie breiter als der
+    Platz, den der Text im Fenster hat (sonst schnitte große Schrift ihn ab)."""
+    wrap = scaled(base)
+    room = getattr(label, "_mt_room", 0)
+    if room >= scaled(MIN_WRAP):
+        wrap = min(wrap, room)
+    if str(label.cget("wraplength")) != str(wrap):
+        label.configure(wraplength=wrap)
+
+
+def _fit_wrap(label, width: int) -> None:
+    """Breite des Elternelements geändert: Platz rechts vom Textanfang merken."""
+    try:
+        label._mt_room = width - max(label.winfo_x(), 0) - scaled(WRAP_MARGIN)
+        _set_wrap(label, label._mt_wrap)
+    except tk.TclError:
+        pass
 
 
 def _row_height(style, root) -> None:
@@ -381,7 +407,11 @@ def hint(parent, text=None, textvariable=None, wrap=None, **kwargs) -> ttk.Label
         kwargs["textvariable"] = textvariable
     if wrap:
         kwargs.update(wraplength=wrap, justify="left")
-    return ttk.Label(parent, style="Hint.TLabel", **kwargs)
+    label = ttk.Label(parent, style="Hint.TLabel", **kwargs)
+    if wrap:
+        label._mt_wrap = wrap
+        parent.bind("<Configure>", lambda e: _fit_wrap(label, e.width), add="+")
+    return label
 
 
 def card(parent, text: str, **pack) -> ttk.LabelFrame:

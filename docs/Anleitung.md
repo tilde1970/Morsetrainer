@@ -162,9 +162,12 @@ und Strg+0 (normal) wird die ganze Oberfläche größer, bis 200 %; das
 Fenster wächst mit. Für kleine Bildschirme geht es auch kleiner, auf 90 %
 und 75 %. Pfeile, Rollbalken und Schieberegler wachsen mit, ebenso die
 ganze Auswertung in Am Stück und die Auflösung im Netzwerk. Die
-Einstellung bleibt gespeichert. Bei 200 % zeigt die Leiste der Tagesübung
-nur das Wochenziel, ohne Wochenstreifen und Legende, damit mehr Platz für
-die Übung bleibt. Passt das Einstellungsfenster nicht auf den Bildschirm,
+Einstellung bleibt gespeichert. Bei 200 % ist die Kopfleiste (Lektion,
+Tempo, Tonhöhe, Zeichen) zu einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3
+· 20 WPM · 600 Hz · KMUR“; Klick oder Enter auf die Zeile klappt sie auf
+und wieder zu. Die Leiste der Tagesübung zeigt dann nur das Wochenziel,
+ohne Wochenstreifen und Legende. So bleibt auch auf kleinen Bildschirmen
+Platz für die Übung. Passt das Einstellungsfenster nicht auf den Bildschirm,
 stehen die Hinweise unter den Feldern, und der Inhalt rollt.
 
 ## 3. Die Reiter
