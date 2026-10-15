@@ -122,9 +122,10 @@ you choose yourself.
 
 ### Header
 
-The Koch lesson, speed in WPM (words per minute, default 20), pitch in Hz
-(default 600) and the character set in the “Characters” field are always
-at the top; they apply to all tabs. If the window is too narrow (large
+The header is the bar at the top of the window, above the tabs; it has
+no heading of its own on screen. It holds the Koch lesson, speed in WPM
+(words per minute, default 20), pitch in Hz (default 600) and the
+character set in the “Characters” field; they apply to all tabs. If the window is too narrow (large
 font), speed and pitch move to a second line. On the right is the speed in
 characters per minute, with Farnsworth the effective speed you actually
 hear (“≈ 50 CPM effective” at 20/10). **▸ More options** holds the
@@ -161,14 +162,20 @@ practice options:
 (normal) the whole interface gets larger, up to 200 %; the window grows
 with it. For small screens it also goes smaller, to 90 % and 75 %. Arrows,
 scrollbars and sliders grow with it, as do the full result in Non-stop and
-the solutions window in Network. The setting is saved. At 200 % the header
-(lesson, speed, pitch, characters) is collapsed to one line, such as
-“▸ Koch lesson 3 · 20 WPM · 600 Hz · KMUR”; click or press Enter on the
-line to open and close it. The daily practice bar then shows only the
-weekly goal, without the week strip and legend. This leaves room for
-practice even on small screens. If the settings window does not
-fit on the screen, the hints move below the fields and the content
-scrolls.
+the solutions window in Network. The setting is saved.
+
+At 200 % the header (Koch lesson, speed, pitch, characters) is collapsed
+to one line, such as “▸ Koch lesson 3 · 20 WPM · 600 Hz · KMUR”; a long
+character set ends with “…” there. The line is a button: click it or
+press Enter or the space bar to open the header (down arrow ▾) and close
+it again; the announcement says “Header opened.” or “Header closed.”
+When it is open, Tab moves from the button into the fields; Shift+Tab in
+the first field (Koch lesson) takes you back to the button. Esc does not
+close the header. At 200 % the daily practice bar shows only the weekly
+goal, without the week strip and legend. This leaves room for practice
+even on small screens. If the settings window is too wide for the screen,
+the hints move below the fields; if it is too tall, the content scrolls
+and “Close” stays at the bottom.
 
 ## 3. The tabs
 
@@ -202,10 +209,12 @@ program suggests moving on to groups.
   and 3 s: shorter while you answer reliably, longer when you miss
   characters; a confusion leaves it unchanged. “reset” sets it back to
   2 s. The space bar repeats but does not extend the deadline. F11
-  (“Where am I?”) during the deadline pauses it: the character does not
-  count now, the limit stays, and a new character follows the announcement.
-  The paused one comes again unannounced after a few others, as after a
-  mistake.
+  (“Where am I?”) pauses the time limit while a character is still waiting
+  for your answer. The status line and the announcement then say “Time
+  limit paused: this character does not count now and will come again
+  later.” The limit keeps its length. A new character follows the
+  announcement; the paused one comes again unannounced after a few others,
+  as after a mistake.
 - **Feedback beep:** a short high beep for a correct answer, a low double
   tone for a wrong one (default off). With announcements on (F9), what
   section 8 describes under “What is announced” applies.
@@ -252,11 +261,31 @@ attempt each, the speed grows, score = length × effective speed, best
 score (with starting speed) and history. Afterwards you can replay the
 missed and slowly recognised callsigns (F6): first just listen, then again
 with the solution, at the original speed.
-If the list is missing, the **“Load callsign list”** button downloads it
+
+**Loading the callsign list:** Without the list, the trainer generates
+callsigns from country patterns; the line above the **Load callsign list
+(supercheckpartial.com)** button says so. The button downloads the list
 directly from [supercheckpartial.com](https://www.supercheckpartial.com)
-(about 360 kB); once it is there, the button reads “Update callsign list”.
-This is not possible during an exercise. If the download fails, the old
-list stays.
+(about 360 kB, needs internet). Once it is there, the line above reads
+“List: … callsigns” and the button reads **Update callsign list**.
+
+- During an exercise the button does not load; the status line says “The
+  callsign list can be loaded after the exercise.” If you start an
+  exercise while the list is still loading, the new list applies only
+  after that exercise.
+- If it works, the status line shows “Callsign list loaded: …
+  callsigns.”
+- If it fails, the previous list stays unchanged. The status line and the
+  announcement say “Callsign list not loaded.”, the reason in plain words,
+  such as “No connection to supercheckpartial.com (internet or proxy).”,
+  and what you can do; the line above the button shows the reason too. The
+  status line also shows the path of the data folder in brackets and,
+  below it, for reading only, the technical text (“Technical: …”).
+- If loading does not work at all, for example behind a company or school
+  proxy: download `MASTER.SCP` from supercheckpartial.com in the browser,
+  rename it to `callsigns.scp` and put it in the data directory (the error
+  message gives the path, as does “Where the data lives” in section 11).
+  The list applies after a restart.
 
 **Options in Groups, Words and Callsigns:**
 
@@ -471,7 +500,9 @@ as they were.
 - **Week:** next to the button is the week strip from Monday, e.g.
   “Mon ★★★  Tue ★★  Wed ✓  Thu –  Fri ·” (✓ = practised freely without the
   daily practice, daily goal reached; – = no practice), and next to it
-  where you stand on the **weekly goal of 12 stars**. Four to five days of
+  where you stand on the **weekly goal of 12 stars**, e.g. “7 ★ this
+  week, goal 12”, from the twelfth star on “Weekly goal reached: 12 ★”.
+  Four to five days of
   practice get you there; a missed day doesn't cost you the week. The goal
   is not a limit: up to three stars a day keep counting. All
   stars together count for the **Finest hours** award (section 5). Until
@@ -583,8 +614,9 @@ matches at least.
 | heavy | −4 dB | 80 % (about 20 %, dips down to −40 dB) | QRN 50 %, CW QRM 30 % |
 
 From “medium” to “heavy” is the biggest step: at “medium” only about
-1–3 % of the time is lost in noise and fading, at “heavy” about one second
-in eight. Whether a dip hits a character or a gap is chance – so a single
+1–3 % of the time is lost in noise and fading, at “heavy” about an eighth
+of the time, mostly in one stretch: a dip lasts a few seconds, and whole
+characters go under. Whether a dip hits a character or a gap is chance – so a single
 run at “heavy” may go better or worse. If the QRN-proof award does not
 work out at once, a second run is worth it.
 
@@ -873,7 +905,9 @@ search word “sleep”.
 **Where am I? (F11)** reads out the tab, status, last feedback and
 remaining time (in Non-stop with the provisional accuracy, in Contest with
 QSOs and rate; with the focus in the Call or Exchange field, F11 also
-spells what is in it, since typing there is not announced), during daily practice the current card or, during a block,
+spells what is in it – the call in the phonetic alphabet, an empty field
+as “empty” – since typing there is not announced), during daily practice
+the current card or, during a block,
 which block is running, the practice time and the stars, in the Statistics
 tab an overview (overall result, most errors, confusions, review box,
 seals, practice today) – even with announcements switched off.
@@ -1138,10 +1172,13 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
 - `window_state.json`: window size and all settings, including the
   language. If it cannot be saved on exit, a message says so.
 - `callsigns.scp`: callsign list (Super Check Partial). It is **not
-  included in the repository**. The “Load callsign list” button in the One
-  by one tab (content Callsigns) fetches the current `MASTER.SCP` from
+  included in the repository**. The “Load callsign list
+  (supercheckpartial.com)” button in the One by one tab (content
+  Callsigns) fetches the current `MASTER.SCP` from
   [supercheckpartial.com](https://www.supercheckpartial.com) and saves it
-  here as `callsigns.scp`; saving it by hand works just as well. Without the file, the trainer
+  here as `callsigns.scp`. If that fails, for example behind a company or
+  school proxy, download `MASTER.SCP` in the browser and save it here as
+  `callsigns.scp`; it applies after a restart. Without the file, the trainer
   generates callsigns from country patterns.
 - `woerter.txt`: your own words for “Abbreviations” in Words (One by one tab) and Non-stop,
   one per line, optionally with a meaning: `POTA = Parks on the Air`. The

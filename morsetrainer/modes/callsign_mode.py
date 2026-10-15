@@ -54,6 +54,23 @@ REVIEW_REPLAY_MS = 600
 REVIEW_GAP_MS = 2000
 # Wie oft der GUI-Thread nach dem Laden der Liste schaut.
 SCP_POLL_MS = 200
+# Warum das Laden scheiterte (scp.ScpError.kind), in Worten; danach kommt
+# immer SCP_NEXT_STEP. Der technische Text steht nur sichtbar in Klammern.
+SCP_ERRORS = {
+    scp.OFFLINE: N_("Keine Verbindung zu supercheckpartial.com (Internet oder Proxy)."),
+    scp.TIMEOUT: N_("supercheckpartial.com antwortet nicht."),
+    scp.CERTIFICATE: N_("Keine sichere Verbindung zu supercheckpartial.com möglich (Zertifikate fehlen)."),
+    scp.SERVER: N_("supercheckpartial.com meldet Fehler {code}."),
+    scp.INCOMPLETE: N_("Die Übertragung ist abgebrochen."),
+    scp.TOO_LARGE: N_("Die geladene Datei ist viel zu groß für eine Rufzeichenliste."),
+    scp.NOT_A_LIST: N_("Statt der Rufzeichenliste kam etwas anderes, etwa die Anmeldeseite eines WLANs."),
+    scp.PERMISSION: N_("Die Liste lässt sich nicht speichern: kein Schreibrecht, oder ein anderes Programm hat "
+                       "die Datei geöffnet."),
+    scp.WRITE: N_("Die Liste lässt sich nicht speichern (Datenträger voll?)."),
+    None: N_("Unerwarteter Fehler beim Laden."),
+}
+SCP_NEXT_STEP = N_("Die bisherige Liste bleibt. Später noch einmal versuchen, oder MASTER.SCP von "
+                   "supercheckpartial.com im Browser laden und als callsigns.scp in den Datenordner legen.")
 
 
 def load_callsigns(path: Path = CALLSIGN_FILE):
@@ -249,12 +266,14 @@ class CallsignModeFrame(SequenceModeFrame):
             try:
                 status["calls"] = scp.download(CALLSIGN_FILE)
             except scp.ScpError as exc:
-                status["error"] = str(exc)
+                status["error"] = exc
             except Exception as exc:
-                status["error"] = str(exc) or type(exc).__name__
+                status["error"] = scp.ScpError(None, str(exc) or type(exc).__name__)
                 raise  # ins Fehlerprotokoll (threading.excepthook)
         self.scp_button.state(["disabled"])
-        announcer.problem(self.status_var, tr("Rufzeichenliste wird geladen …"))
+        loading = tr("Rufzeichenliste wird geladen …")
+        self.list_info_var.set(f"{self.list_text}\n{loading}")  # auch direkt über dem Knopf
+        announcer.problem(self.status_var, loading)
         threading.Thread(target=run, daemon=True).start()
         self.root.after(SCP_POLL_MS, self._await_list)
 
@@ -268,14 +287,25 @@ class CallsignModeFrame(SequenceModeFrame):
         self.scp_status = None
         self.scp_button.state(["!disabled"])
         if "error" in status:
-            announcer.problem(self.status_var, tr("Rufzeichenliste nicht geladen: {error}").format(
-                error=status["error"]))
+            self._report_scp_error(status["error"])
             return
         self.all_calls, release = load_callsigns(CALLSIGN_FILE)
         self._set_list_text(release)
         self._update_pool()
         announcer.problem(self.status_var, tr("Rufzeichenliste geladen: {n} Rufzeichen.").format(
             n=number(len(self.all_calls))))
+
+    def _report_scp_error(self, error) -> None:
+        """Warum das Laden scheiterte und was man tun kann; angezeigt mit dem
+        technischen Text in Klammern und dem Datenordner, angesagt ohne beides."""
+        reason = tr(SCP_ERRORS.get(error.kind, SCP_ERRORS[None])).format(code=error.code)
+        spoken = " ".join([tr("Rufzeichenliste nicht geladen."), reason, tr(SCP_NEXT_STEP)])
+        shown = f"{spoken} ({CALLSIGN_FILE.parent})"
+        if error.detail:
+            shown += "\n" + tr("Technisch: {detail}").format(detail=error.detail)
+        self.list_info_var.set(f"{self.list_text}\n{reason}")
+        announcer.show(self.status_var, shown, spoken)
+        announcer.say(spoken)
 
     # --- Rufz-Durchgang --------------------------------------------------------
     def _fixed_run(self) -> bool:

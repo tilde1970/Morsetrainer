@@ -31,7 +31,7 @@ from morsetrainer.modes.qso_mode import QsoModeFrame
 from morsetrainer.modes.run_mode import RunModeFrame
 from morsetrainer.modes.single_mode import SingleModeFrame
 from morsetrainer.modes.word_mode import WordModeFrame
-from morsetrainer.net import update
+from morsetrainer.net import certs, update
 from morsetrainer.widgets.awards_panel import AwardsPanel, DiplomaWindow
 from morsetrainer.widgets.band_settings import BandSettings
 from morsetrainer.widgets.daily_panel import DailyBar
@@ -2237,6 +2237,9 @@ def main():
     """Startet das Programm: Fehlerprotokoll einrichten, Reste eines Updates
     entfernen, alte Daten übernehmen, Hauptfenster öffnen."""
     sys.excepthook = _excepthook
+    # Vor jedem HTTPS-Abruf (Update-Prüfung, Rufzeichenliste): Mac-App und
+    # AppImage fänden sonst auf vielen Systemen keine Zertifikate.
+    certs.use_system_certificates()
     update.cleanup()
     # Übungsdaten aus alten JSON-Dateien in die Datenbank übernehmen
     # (core/migration.py). Scheitert das, bleiben die Dateien liegen und es

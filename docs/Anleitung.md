@@ -120,7 +120,9 @@ hinaus übst, wählst du selbst.
 
 ### Kopfleiste
 
-Oben stehen immer Koch-Lektion, Tempo in WPM (Wörter pro Minute,
+Die Kopfleiste ist die Leiste oben im Fenster, über den Reitern; eine
+eigene Überschrift hat sie auf dem Bildschirm nicht. Dort stehen
+Koch-Lektion, Tempo in WPM (Wörter pro Minute,
 Standard 20), Tonhöhe in Hz (Standard 600) und der Zeichensatz im Feld
 „Zeichen“; sie gelten für alle Reiter. Ist das Fenster zu schmal (große
 Schrift), rücken Tempo und Tonhöhe in eine zweite Zeile. Rechts steht das
@@ -162,13 +164,20 @@ und Strg+0 (normal) wird die ganze Oberfläche größer, bis 200 %; das
 Fenster wächst mit. Für kleine Bildschirme geht es auch kleiner, auf 90 %
 und 75 %. Pfeile, Rollbalken und Schieberegler wachsen mit, ebenso die
 ganze Auswertung in Am Stück und die Auflösung im Netzwerk. Die
-Einstellung bleibt gespeichert. Bei 200 % ist die Kopfleiste (Lektion,
-Tempo, Tonhöhe, Zeichen) zu einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3
-· 20 WPM · 600 Hz · KMUR“; Klick oder Enter auf die Zeile klappt sie auf
-und wieder zu. Die Leiste der Tagesübung zeigt dann nur das Wochenziel,
-ohne Wochenstreifen und Legende. So bleibt auch auf kleinen Bildschirmen
-Platz für die Übung. Passt das Einstellungsfenster nicht auf den Bildschirm,
-stehen die Hinweise unter den Feldern, und der Inhalt rollt.
+Einstellung bleibt gespeichert.
+
+Bei 200 % ist die Kopfleiste (Koch-Lektion, Tempo, Tonhöhe, Zeichen) zu
+einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3 · 20 WPM · 600 Hz · KMUR“;
+ein langer Zeichensatz endet dort mit „…“. Die Zeile ist ein Knopf:
+Klick, Enter oder Leertaste klappt die Kopfleiste auf (Pfeil nach unten ▾)
+und wieder zu, die Ansage sagt „Kopfleiste geöffnet.“ bzw. „Kopfleiste
+geschlossen.“ Aufgeklappt führt Tab vom Knopf in die Felder; Umschalt+Tab
+im ersten Feld (Koch-Lektion) führt zurück zum Knopf. Esc klappt die
+Kopfleiste nicht zu. Die Leiste der Tagesübung zeigt bei 200 % nur das
+Wochenziel, ohne Wochenstreifen und Legende. So bleibt auch auf kleinen
+Bildschirmen Platz für die Übung. Ist das Einstellungsfenster zu breit für
+den Bildschirm, stehen die Hinweise unter den Feldern; ist es zu hoch,
+rollt der Inhalt, und „Schließen“ bleibt unten stehen.
 
 ## 3. Die Reiter
 
@@ -203,9 +212,11 @@ vor, mit Gruppen weiterzumachen.
   bei 2 s und bewegt sich zwischen 0,5 und 3 s: kürzer, solange du sicher
   bist, länger, wenn du Zeichen verpasst; eine Verwechslung ändert es
   nicht. „zurücksetzen“ stellt es wieder auf 2 s. Die Leertaste wiederholt,
-  verlängert die Frist aber nicht. F11 („Wo bin ich?“) mitten in der Frist
-  hält sie an: Das Zeichen zählt jetzt nicht, das Limit bleibt, und nach
-  der Ansage kommt ein neues Zeichen. Das angehaltene kommt nach ein paar
+  verlängert die Frist aber nicht. F11 („Wo bin ich?“) hält das Zeitlimit
+  an, solange ein Zeichen noch auf deine Antwort wartet. Statuszeile und
+  Ansage sagen dann „Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht
+  und kommt später wieder.“ Das Limit bleibt so lang, wie es war. Nach der
+  Ansage kommt ein neues Zeichen; das angehaltene kommt nach ein paar
   anderen unangekündigt wieder, wie nach einem Fehler.
 - **Quittungston:** ein kurzer heller Ton bei richtiger, ein tiefer
   Doppelton bei falscher Antwort (Standard aus). Mit Ansage (F9) gilt,
@@ -254,10 +265,30 @@ ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo,
 Bestwert (mit Starttempo) und Verlauf. Danach lassen sich die verpassten
 und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören,
 dann mit Lösung noch einmal, im Originaltempo.
-Fehlt die Liste, lädt der Knopf **„Rufzeichenliste laden“** sie direkt von
-[supercheckpartial.com](https://www.supercheckpartial.com) (rund 360 kB);
-ist sie da, heißt er „Rufzeichenliste aktualisieren“. Während einer Übung
-geht das nicht. Geht beim Laden etwas schief, bleibt die alte Liste.
+
+**Rufzeichenliste laden:** Fehlt die Liste, erzeugt der Trainer Rufzeichen
+nach Landesmuster; das steht dann über dem Knopf **Rufzeichenliste laden
+(supercheckpartial.com)**. Der Knopf lädt die Liste direkt von
+[supercheckpartial.com](https://www.supercheckpartial.com) (rund 360 kB,
+braucht Internet). Ist sie da, steht darüber „Liste: … Rufzeichen“, und
+der Knopf heißt **Rufzeichenliste aktualisieren**.
+
+- Während einer Übung lädt der Knopf nicht; die Statuszeile sagt dann „Die
+  Rufzeichenliste lässt sich nach der Übung laden.“ Startest du eine Übung,
+  während die Liste noch lädt, gilt die neue Liste erst nach dieser Übung.
+- Klappt es, steht in der Statuszeile „Rufzeichenliste geladen: …
+  Rufzeichen.“
+- Klappt es nicht, bleibt die bisherige Liste unverändert. Statuszeile und
+  Ansage sagen „Rufzeichenliste nicht geladen.“, den Grund in Worten, etwa
+  „Keine Verbindung zu supercheckpartial.com (Internet oder Proxy).“, und
+  was du tun kannst; den Grund zeigt auch die Zeile über dem Knopf. In der
+  Statuszeile stehen dazu in Klammern der Pfad des Datenordners und
+  darunter, nur zum Lesen, der technische Text („Technisch: …“).
+- Klappt das Laden gar nicht, etwa hinter dem Proxy einer Firma oder
+  Schule: `MASTER.SCP` im Browser von supercheckpartial.com herunterladen,
+  in `callsigns.scp` umbenennen und in den Datenordner legen (den Pfad
+  nennt die Fehlermeldung, außerdem Abschnitt 11 unter „Wo die Daten
+  liegen“). Die Liste gilt nach einem Neustart.
 
 **Optionen bei Gruppen, Wörtern und Rufzeichen:**
 
@@ -478,7 +509,8 @@ wieder wie vorher.
 - **Woche:** Neben dem Knopf steht der Wochenstreifen ab Montag, z. B.
   „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ = ohne Tagesübung frei geübt, mit
   erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum
-  **Wochenziel von 12 Sternen**. Das schaffst du mit vier bis fünf
+  **Wochenziel von 12 Sternen**, z. B. „7 ★ diese Woche, Ziel 12“, ab dem
+  zwölften Stern „Wochenziel erreicht: 12 ★“. Das schaffst du mit vier bis fünf
   Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Das Ziel ist
   keine Obergrenze: Bis zu drei Sterne am Tag zählen weiter mit. Alle Sterne
   zusammen zählen für das Diplom **Sternstunden** (Abschnitt 5). Bis zur
@@ -593,8 +625,9 @@ entspricht.
 | stark | −4 dB | 80 % (ca. 20 %, Löcher bis −40 dB) | QRN 50 %, CW-QRM 30 % |
 
 Von „mittel“ zu „stark“ ist der größte Schritt: Bei „mittel“ gehen nur
-etwa 1–3 % der Zeit in Rauschen und Fading unter, bei „stark“ etwa jede
-achte Sekunde. Ob ein Loch auf ein Zeichen fällt oder in eine Pause, ist
+etwa 1–3 % der Zeit in Rauschen und Fading unter, bei „stark“ etwa ein
+Achtel der Zeit, meist am Stück: Ein Loch dauert ein paar Sekunden, und
+ganze Zeichen gehen unter. Ob ein Loch auf ein Zeichen fällt oder in eine Pause, ist
 Zufall – ein einzelner Lauf auf „stark“ geht deshalb mal besser, mal
 schlechter aus. Klappt es fürs Diplom QRN-fest nicht gleich, lohnt ein
 zweiter Lauf.
@@ -891,9 +924,10 @@ diesen Absatz mit Strg+F (Mac: Cmd+F) und dem Suchwort „Schlafmodus“.
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit
 QSOs und Rate; steht der Fokus im Call- oder Austauschfeld, buchstabiert
-F11 dazu, was darin steht, denn beim Tippen sagt die Ansage dort nichts),
-in der Tagesübung die aktuelle Karte bzw. während eines
-Blocks, welcher Block läuft, die Übungszeit und die Sterne, im Reiter Statistik
+F11 dazu, was darin steht – das Call im Funkalphabet, ein leeres Feld als
+„leer“ –, denn beim Tippen sagt die Ansage dort nichts), in der
+Tagesübung die aktuelle Karte bzw. während eines Blocks, welcher Block
+läuft, die Übungszeit und die Sterne, im Reiter Statistik
 eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
 Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
 F9 und F11 wirken in jedem Fenster; in Einstellungen, Bandbedingungen,
@@ -1165,10 +1199,13 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 - `window_state.json`: Fenstergröße und alle Einstellungen, auch die
   Sprache. Lässt sie sich beim Beenden nicht speichern, kommt eine Meldung.
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
-  im Repository enthalten**. Der Knopf „Rufzeichenliste laden“ im Reiter
-  Einzeln (Inhalt Rufzeichen) holt die aktuelle `MASTER.SCP` von
+  im Repository enthalten**. Der Knopf „Rufzeichenliste laden
+  (supercheckpartial.com)“ im Reiter Einzeln (Inhalt Rufzeichen) holt die
+  aktuelle `MASTER.SCP` von
   [supercheckpartial.com](https://www.supercheckpartial.com) und legt sie
-  als `callsigns.scp` hier ab; von Hand abgelegt geht es genauso. Ohne die Datei
+  als `callsigns.scp` hier ab. Scheitert das, etwa hinter dem Proxy einer
+  Firma oder Schule, lädst du `MASTER.SCP` im Browser und legst sie als
+  `callsigns.scp` hierher; sie gilt nach einem Neustart. Ohne die Datei
   erzeugt der Trainer Rufzeichen nach Landesmuster.
 - `woerter.txt`: eigene Wörter für „Abkürzungen“ in Wörter (Reiter Einzeln) und Am Stück,
   eins pro Zeile, optional mit Bedeutung: `DOK = Distrikts-Ortsverbandskenner`.

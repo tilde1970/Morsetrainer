@@ -1058,7 +1058,27 @@ EN.update({
     "Die Rufzeichenliste lässt sich nach der Übung laden.":
         "The callsign list can be loaded after the exercise.",
     "Rufzeichenliste wird geladen …": "Loading callsign list …",
-    "Rufzeichenliste nicht geladen: {error}": "Callsign list not loaded: {error}",
+    "Rufzeichenliste nicht geladen.": "Callsign list not loaded.",
+    "Technisch: {detail}": "Technical: {detail}",
+    "Keine Verbindung zu supercheckpartial.com (Internet oder Proxy).":
+        "No connection to supercheckpartial.com (internet or proxy).",
+    "supercheckpartial.com antwortet nicht.": "supercheckpartial.com does not respond.",
+    "Keine sichere Verbindung zu supercheckpartial.com möglich (Zertifikate fehlen).":
+        "No secure connection to supercheckpartial.com possible (certificates missing).",
+    "supercheckpartial.com meldet Fehler {code}.": "supercheckpartial.com reports error {code}.",
+    "Die Übertragung ist abgebrochen.": "The transfer was interrupted.",
+    "Die geladene Datei ist viel zu groß für eine Rufzeichenliste.":
+        "The downloaded file is far too large for a callsign list.",
+    "Statt der Rufzeichenliste kam etwas anderes, etwa die Anmeldeseite eines WLANs.":
+        "Something other than the callsign list arrived, such as a Wi-Fi login page.",
+    "Die Liste lässt sich nicht speichern: kein Schreibrecht, oder ein anderes Programm hat die Datei geöffnet.":
+        "The list cannot be saved: no write permission, or another program has the file open.",
+    "Die Liste lässt sich nicht speichern (Datenträger voll?).": "The list cannot be saved (disk full?).",
+    "Unerwarteter Fehler beim Laden.": "Unexpected error while loading.",
+    "Die bisherige Liste bleibt. Später noch einmal versuchen, oder MASTER.SCP von supercheckpartial.com im "
+    "Browser laden und als callsigns.scp in den Datenordner legen.":
+        "The previous list stays. Try again later, or download MASTER.SCP from supercheckpartial.com in the "
+        "browser and save it as callsigns.scp in the data folder.",
     "Rufzeichenliste geladen: {n} Rufzeichen.": "Callsign list loaded: {n} callsigns.",
     "Bestwert {score} Punkte": "Best score {score} points",
     " (Start {tempo})": " (start {tempo})",

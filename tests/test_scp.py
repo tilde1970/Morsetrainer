@@ -1,5 +1,8 @@
 """Rufzeichenliste laden: Prüfung der geladenen Datei, alte Liste bleibt bei
 Fehlern, Knopf im Rufzeichen-Modus."""
+import os
+import socket
+import ssl
 import tempfile
 import time
 import unittest
@@ -9,12 +12,15 @@ from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.modes import callsign_mode
-from morsetrainer.net import scp
+from morsetrainer.net import certs, scp
 from tests.test_modes import AppTestCase
 from tests.test_update import FakeResponse
 
-LIST = ("# Super Check Partial\n"
-        + "".join(f"DL{n}ABC\n" for n in range(scp.MIN_CALLS + 5))).encode("ascii")
+def scp_list(calls: int) -> bytes:
+    return ("# Super Check Partial\n" + "".join(f"DL{n}ABC\n" for n in range(calls))).encode("ascii")
+
+
+LIST = scp_list(scp.MIN_CALLS + 5)
 
 
 def answer(data: bytes, length=None):
@@ -42,29 +48,79 @@ class DownloadTest(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), LIST)
         self.assertFalse(self.target.with_name("callsigns.scp.new").exists())
 
-    def test_error_page_keeps_old_list(self):
-        with answer(b"<html><body>Not here</body></html>"), self.assertRaises(scp.ScpError):
+    def assert_fails(self, kind, code=None):
+        with self.assertRaises(scp.ScpError) as caught:
             scp.download(self.target)
+        self.assertEqual((caught.exception.kind, caught.exception.code), (kind, code))
         self.assert_old_list_kept()
+        return caught.exception
+
+    def test_error_page_keeps_old_list(self):
+        with answer(b"<html><body>Not here</body></html>"):
+            self.assert_fails(scp.NOT_A_LIST)
+
+    def test_min_calls_is_the_limit(self):
+        with answer(scp_list(scp.MIN_CALLS - 1)):
+            self.assert_fails(scp.NOT_A_LIST)
+        with answer(scp_list(scp.MIN_CALLS)):
+            self.assertEqual(scp.download(self.target), scp.MIN_CALLS)
 
     def test_incomplete_download_keeps_old_list(self):
-        with answer(LIST, len(LIST) + 100), self.assertRaises(scp.ScpError):
-            scp.download(self.target)
-        self.assert_old_list_kept()
+        with answer(LIST, len(LIST) + 100):
+            self.assert_fails(scp.INCOMPLETE)
 
     def test_too_large_keeps_old_list(self):
-        with mock.patch.object(scp, "MAX_BYTES", 1000), answer(LIST), \
-                self.assertRaises(scp.ScpError):
-            scp.download(self.target)
-        self.assert_old_list_kept()
+        with mock.patch.object(scp, "MAX_BYTES", len(LIST) - 1), answer(LIST):
+            self.assert_fails(scp.TOO_LARGE)
 
-    def test_network_error_becomes_scp_error(self):
-        def fail(request, timeout=None):
-            raise urllib.error.URLError("Name or service not known")
-        with mock.patch.object(scp.urllib.request, "urlopen", fail), \
-                self.assertRaisesRegex(scp.ScpError, "Name or service"):
+    def test_network_errors_get_a_kind(self):
+        cases = [
+            (urllib.error.URLError(socket.gaierror(-3, "Temporary failure in name resolution")), scp.OFFLINE, None),
+            (urllib.error.URLError(OSError("Tunnel connection failed: 407 Proxy Authentication Required")),
+             scp.OFFLINE, None),
+            (urllib.error.URLError(ssl.SSLCertVerificationError("certificate verify failed")),
+             scp.CERTIFICATE, None),
+            (urllib.error.URLError(TimeoutError("timed out")), scp.TIMEOUT, None),
+            (TimeoutError("timed out"), scp.TIMEOUT, None),
+            (urllib.error.HTTPError(scp.URL, 503, "Service Unavailable", {}, None), scp.SERVER, 503),
+        ]
+        for error, kind, code in cases:
+            def fail(request, timeout=None, error=error):
+                raise error
+            with self.subTest(kind=kind), mock.patch.object(scp.urllib.request, "urlopen", fail):
+                exc = self.assert_fails(kind, code)
+                self.assertTrue(exc.detail)  # technischer Text bleibt für die Anzeige
+
+    def test_failed_write_leaves_no_rest(self):
+        real_write = Path.write_bytes
+
+        def full(path, data):
+            real_write(path, data[:10])  # Teildatei liegt schon da
+            raise OSError(28, "No space left on device")
+        with answer(LIST), mock.patch.object(Path, "write_bytes", full):
+            self.assert_fails(scp.WRITE)
+
+    def test_locked_target_is_tried_twice(self):
+        calls = []
+        real_replace = os.replace
+
+        def locked_once(src, dst):
+            calls.append(dst)
+            if len(calls) == 1:
+                raise PermissionError(13, "in use")
+            real_replace(src, dst)
+        with answer(LIST), mock.patch.object(scp.os, "replace", locked_once), \
+                mock.patch.object(scp, "REPLACE_RETRY_S", 0):
             scp.download(self.target)
-        self.assert_old_list_kept()
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(self.target.read_bytes(), LIST)
+
+    def test_locked_target_keeps_old_list(self):
+        def locked(src, dst):
+            raise PermissionError(13, "in use")
+        with answer(LIST), mock.patch.object(scp.os, "replace", locked), \
+                mock.patch.object(scp, "REPLACE_RETRY_S", 0):
+            self.assert_fails(scp.PERMISSION)
 
     def test_missing_folder_is_created(self):
         target = Path(self.tmp.name) / "neu" / "callsigns.scp"
@@ -126,13 +182,30 @@ class ButtonTest(AppTestCase):
         old = list(self.mode.all_calls)
 
         def download(target):
-            raise scp.ScpError("Download unvollständig")
-        with mock.patch.object(scp, "download", download):
+            raise scp.ScpError(scp.OFFLINE, "<urlopen error [Errno -3] Temporary failure in name resolution>")
+        with mock.patch.object(scp, "download", download), \
+                mock.patch.object(callsign_mode.announcer, "say") as say:
             self.mode._download_list()
             self.wait_for_download()
         self.assertEqual(self.mode.all_calls, old)
         self.assertNotIn("disabled", self.mode.scp_button.state())
-        self.assertIn("Download unvollständig", self.mode.status_var.get())
+        shown = self.mode.status_var.get()
+        self.assertIn("Keine Verbindung zu supercheckpartial.com", shown)
+        self.assertIn("Die bisherige Liste bleibt.", shown)
+        self.assertIn(str(self.file.parent), shown)
+        self.assertIn("Errno -3", shown)  # technisch nur sichtbar …
+        spoken = say.call_args[0][0]
+        self.assertIn("Keine Verbindung", spoken)
+        self.assertNotIn("Errno", spoken)  # … nicht gesprochen
+        self.assertNotIn("<", spoken)
+        self.assertIn("Keine Verbindung", self.mode.list_info_var.get())  # auch über dem Knopf
+
+    def test_error_text_in_english(self):
+        from morsetrainer import i18n
+        from morsetrainer.i18n_en import EN
+        with mock.patch.object(i18n, "_TABLE", EN):
+            self.mode._report_scp_error(scp.ScpError(scp.SERVER, "HTTP Error 503", code=503))
+        self.assertIn("supercheckpartial.com reports error 503.", self.mode.status_var.get())
 
     def test_not_during_exercise(self):
         self.mode.running = True
@@ -144,6 +217,48 @@ class ButtonTest(AppTestCase):
         download.assert_not_called()
         self.assertIsNone(self.mode.scp_status)
         self.assertIn("nach der Übung", self.mode.status_var.get())
+
+
+class CertificatesTest(unittest.TestCase):
+    def setUp(self):
+        patch = mock.patch.dict(os.environ, {}, clear=False)
+        patch.start()
+        self.addCleanup(patch.stop)
+        for name in ("SSL_CERT_FILE", "SSL_CERT_DIR"):
+            os.environ.pop(name, None)
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.bundle = Path(self.tmp.name) / "cert.pem"
+        self.bundle.write_text("x")
+
+    def paths(self, cafile=None, capath=None):
+        return mock.patch.object(certs.ssl, "get_default_verify_paths",
+                                 return_value=mock.Mock(cafile=cafile, capath=capath))
+
+    def test_system_file_is_used_when_openssl_finds_none(self):
+        with self.paths(), mock.patch.object(certs.sys, "platform", "darwin"):
+            self.assertEqual(certs.use_system_certificates(["/gibt/es/nicht", str(self.bundle)]), str(self.bundle))
+        self.assertEqual(os.environ["SSL_CERT_FILE"], str(self.bundle))
+
+    def test_nothing_changes_when_openssl_has_certificates(self):
+        with self.paths(cafile="/usr/lib/ssl/cert.pem"), mock.patch.object(certs.sys, "platform", "linux"):
+            self.assertIsNone(certs.use_system_certificates([str(self.bundle)]))
+        self.assertNotIn("SSL_CERT_FILE", os.environ)
+
+    def test_empty_certificate_folder_does_not_count(self):
+        empty = Path(self.tmp.name) / "certs"
+        empty.mkdir()
+        with self.paths(capath=str(empty)), mock.patch.object(certs.sys, "platform", "linux"):
+            self.assertEqual(certs.use_system_certificates([str(self.bundle)]), str(self.bundle))
+
+    def test_own_setting_and_windows_are_left_alone(self):
+        os.environ["SSL_CERT_FILE"] = "/eigene.pem"
+        with self.paths(), mock.patch.object(certs.sys, "platform", "linux"):
+            self.assertIsNone(certs.use_system_certificates([str(self.bundle)]))
+        self.assertEqual(os.environ["SSL_CERT_FILE"], "/eigene.pem")
+        del os.environ["SSL_CERT_FILE"]
+        with self.paths(), mock.patch.object(certs.sys, "platform", "win32"):
+            self.assertIsNone(certs.use_system_certificates([str(self.bundle)]))
 
 
 if __name__ == "__main__":
