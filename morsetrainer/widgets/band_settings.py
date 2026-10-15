@@ -12,6 +12,7 @@ from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_preview import BandPreview
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper
+from morsetrainer.widgets.tkcompat import set_enabled
 
 # Störungen (Schlüssel aus band.EFFECTS, Beschriftung, Startwert in %).
 BAND_OPTIONS = (
@@ -550,13 +551,13 @@ class BandSettings:
             return
         for key, (scale, shown) in self.widgets.items():
             on, level = self.controls[key]
-            scale.state(["!disabled"] if on.get() else ["disabled"])
+            set_enabled(scale, on.get())
             shown.config(text=level_text(key, round(level.get()) / 100, round(self.gain_var.get()) / 100),
                          foreground="" if on.get() else theme.MUTED)
         self.gain_shown.config(text=f"{round(self.gain_var.get())} %")
         neighbour = self.controls["cw_qrm"][0].get() or self.controls["clicks"][0].get()
         for button in self.offset_buttons:
-            button.state(["!disabled"] if neighbour else ["disabled"])
+            set_enabled(button, neighbour)
         spec = self.spec()
         if "filter" in spec and "noise" in spec["levels"]:
             snr = (band.noise_snr_db(spec["levels"]["noise"], spec["gain"])
@@ -607,7 +608,7 @@ class BandToggle:
         """Während eines Durchgangs: an/aus gesperrt (davon hängt ab, ob er
         für die Zeichenstatistik zählt); Stärke und Lautstärke bleiben
         einstellbar."""
-        self.check.state(["disabled"] if locked else ["!disabled"])
+        set_enabled(self.check, not locked)
         if locked:
             self.locked_hint.pack(side="left", padx=(8, 0))
         else:

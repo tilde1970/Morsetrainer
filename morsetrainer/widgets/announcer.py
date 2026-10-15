@@ -28,6 +28,7 @@ from morsetrainer import i18n
 from morsetrainer.core import audio, sfx, speech
 from morsetrainer.core.morse import AUDIO_LATENCY, PROSIGN_KEYS, SAMPLE_RATE
 from morsetrainer.i18n import N_, number, tr
+from morsetrainer.widgets.tkcompat import CLASSIC, is_enabled, is_selected, widget_class
 
 # Pause nach einer Ansage, bevor es weitergeht.
 AFTER_SPEECH_MS = 250
@@ -480,7 +481,7 @@ def _known(widget) -> bool:
 
 
 def _echoes(widget) -> bool:
-    return widget.winfo_class() == "TSpinbox" or str(widget) in _echo_widgets
+    return widget_class(widget) == "TSpinbox" or str(widget) in _echo_widgets
 
 
 def _echo_start(widget) -> None:
@@ -554,13 +555,19 @@ def _install_focus(root) -> None:
     root.bind_class("Toplevel", "<Map>", lambda e: _window_shown(e.widget), add="+")
     for sequence in ("<Unmap>", "<Destroy>"):
         root.bind_class("Toplevel", sequence, lambda e: _window_closed(e.widget), add="+")
-    for cls in ("TEntry", "TSpinbox"):
+    # Mit Tk 9.1 und laufendem Screenreader werden manche ttk-Widgets zu
+    # klassischen (tkcompat.py): deren Klassen bekommen dieselben Bindungen.
+    classic = {ttk_cls: cls for cls, ttk_cls in CLASSIC.items()}
+
+    def classes(*names):
+        return [c for name in names for c in (name, classic.get(name)) if c]
+    for cls in classes("TEntry", "TSpinbox"):
         root.bind_class(cls, "<FocusIn>", lambda e: _echo_start(e.widget), add="+")
         root.bind_class(cls, "<KeyRelease>", _echo_key, add="+")
-    for cls in ROLES:
+    for cls in classes(*ROLES):
         root.bind_class(cls, "<<TraverseIn>>", lambda e: _say_focus(e.widget), add="+")
-    root.bind_class("TCheckbutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
-    root.bind_class("TRadiobutton", "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
+    for cls in classes("TCheckbutton", "TRadiobutton"):
+        root.bind_class(cls, "<KeyRelease-space>", lambda e: _later_state(e.widget), add="+")
     root.bind_class("TCombobox", "<<ComboboxSelected>>", lambda e: _say_value(e.widget), add="+")
     # Aufgeklappte Liste einer Klappliste (von Tk selbst gebaut, tkinter
     # kennt sie nicht): beim Öffnen und beim Blättern den Eintrag sagen.
@@ -570,8 +577,11 @@ def _install_focus(root) -> None:
                     lambda e: _instance.root.after_idle(_say_list_closed, str(e.widget)), add="+")
     for sequence in ("<<Increment>>", "<<Decrement>>"):
         root.bind_class("TSpinbox", sequence, lambda e: _later_value(e.widget), add="+")
+    for key in ("Up", "Down"):  # die klassische Spinbox kennt die virtuellen Ereignisse nicht
+        root.bind_class("Spinbox", f"<KeyRelease-{key}>", lambda e: _later_value(e.widget), add="+")
     for key in ("Left", "Right", "Up", "Down", "Home", "End"):
-        root.bind_class("TScale", f"<KeyRelease-{key}>", lambda e: _say_value(e.widget), add="+")
+        for cls in classes("TScale"):
+            root.bind_class(cls, f"<KeyRelease-{key}>", lambda e: _say_value(e.widget), add="+")
 
 
 def list_item(listbox: str) -> str:
@@ -646,13 +656,13 @@ def _say_value(widget) -> None:
 
 def describe(widget) -> str:
     """„Beschriftung, Rolle, Wert“, z. B. „Hoher Kontrast, Schalter, aus.“"""
-    cls = widget.winfo_class()
+    cls = widget_class(widget)
     parts = [_label(widget), tr(ROLES.get(cls, ""))]
     value = _value(widget)
     if value:
         parts.append(value)
     try:
-        if widget.instate(["disabled"]):
+        if not is_enabled(widget):
             parts.append(tr("nicht verfügbar"))
     except (AttributeError, tk.TclError):
         pass
@@ -681,9 +691,9 @@ def _value(widget) -> str:
     key = str(widget)
     if key in _values:
         return str(_values[key]())
-    cls = widget.winfo_class()
+    cls = widget_class(widget)
     if cls in ("TCheckbutton", "TRadiobutton"):
-        selected = widget.instate(["selected"])
+        selected = is_selected(widget)
         if cls == "TCheckbutton":
             return tr("an") if selected else tr("aus")
         return tr("ausgewählt") if selected else tr("nicht ausgewählt")
@@ -716,7 +726,7 @@ def _value(widget) -> str:
 
 def _text_of(widget) -> str:
     """Beschriftung eines Labels oder Schalters (ohne Doppelpunkt), sonst leer."""
-    if widget.winfo_class() not in ("TLabel", "TCheckbutton", "TRadiobutton", "TButton"):
+    if widget_class(widget) not in ("TLabel", "TCheckbutton", "TRadiobutton", "TButton"):
         return ""
     try:
         return str(widget.cget("text")).strip().rstrip(":").strip()
@@ -750,12 +760,12 @@ def _nearby(widget, depth: int = 0) -> str:
         before = siblings[:siblings.index(widget)] if widget in siblings else []
         for sibling in reversed(before):
             # Erklär- und Statuszeilen sind keine Beschriftung.
-            if (sibling.winfo_class() in ("TLabel", "TCheckbutton")
+            if (widget_class(sibling) in ("TLabel", "TCheckbutton")
                     and str(sibling.cget("style")) not in ("Hint.TLabel", "Status.TLabel")):
                 text = _text_of(sibling)
                 if text:
                     return text
-    if depth < 2 and parent.winfo_class() == "TFrame":
+    if depth < 2 and widget_class(parent) == "TFrame":
         return _nearby(parent, depth + 1)
     return ""
 
@@ -775,7 +785,7 @@ def _unit_after(widget) -> str:
     und Beschriftungen des nächsten Feldes (mit Doppelpunkt oder direkt vor
     einem weiteren Feld, wie „von [3] bis [5]“) zählen nicht."""
     parent = widget.master
-    if parent is None or widget.winfo_class() != "TSpinbox":
+    if parent is None or widget_class(widget) != "TSpinbox":
         return ""
     siblings = parent.winfo_children()
     manager = widget.winfo_manager()
@@ -786,13 +796,13 @@ def _unit_after(widget) -> str:
                      and (int(s.grid_info()["row"]), int(s.grid_info()["column"])) == (row, column + 1)]
     elif manager == "pack" and widget.pack_info().get("side") == "left" and widget in siblings:
         packed = [s for s in siblings[siblings.index(widget) + 1:] if s.winfo_manager() == "pack"]
-        if len(packed) > 1 and packed[1].winfo_class() in ("TSpinbox", "TEntry", "TCombobox"):
+        if len(packed) > 1 and widget_class(packed[1]) in ("TSpinbox", "TEntry", "TCombobox"):
             return ""
         following = packed[:1]
     else:
         return ""
     for sibling in following:
-        if sibling.winfo_class() != "TLabel" or str(sibling.cget("style")) in ("Hint.TLabel", "Status.TLabel"):
+        if widget_class(sibling) != "TLabel" or str(sibling.cget("style")) in ("Hint.TLabel", "Status.TLabel"):
             continue
         raw = str(sibling.cget("text")).strip()
         if raw and not raw.endswith(":") and len(raw) <= UNIT_MAX_CHARS:
@@ -806,7 +816,7 @@ def _label(widget) -> str:
     key = str(widget)
     if key in _names:
         return _names[key]
-    if widget.winfo_class() in ("TButton", "TCheckbutton", "TRadiobutton"):
+    if widget_class(widget) in ("TButton", "TCheckbutton", "TRadiobutton"):
         own = str(widget.cget("text")).strip()
         if own:
             return own.rstrip(" …").strip("▸▾▶ ")
@@ -815,7 +825,7 @@ def _label(widget) -> str:
         return text
     parent = widget.master
     while parent is not None:
-        if parent.winfo_class() == "TLabelframe":
+        if widget_class(parent) == "TLabelframe":
             return str(parent.cget("text")).strip()
         parent = parent.master
     return ""

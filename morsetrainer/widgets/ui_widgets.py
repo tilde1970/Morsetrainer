@@ -5,6 +5,7 @@ from tkinter import ttk
 
 from morsetrainer.i18n import tr
 from morsetrainer.widgets import announcer, theme
+from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 
 class ChoiceBox(ttk.Combobox):
@@ -155,7 +156,7 @@ class ChoiceButtons(ttk.Frame):
     def step(self, step: int) -> None:
         """Den nächsten (1) bzw. vorigen (−1) Wert wählen, Fokus mitnehmen
         und ansagen; nicht, solange die Felder gesperrt sind."""
-        if not self.buttons or self.buttons[0].instate(["disabled"]):
+        if not self.buttons or not is_enabled(self.buttons[0]):
             return
         current = self.variable.get()
         index = (self.keys.index(current) + step) % len(self.keys) if current in self.keys else 0
@@ -168,7 +169,7 @@ class ChoiceButtons(ttk.Frame):
         if statespec is None:
             return super().state()
         for button in self.buttons:
-            button.state(statespec)
+            set_enabled(button, "disabled" not in statespec)
         return None
 
 

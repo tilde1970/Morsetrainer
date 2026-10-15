@@ -34,6 +34,7 @@ from morsetrainer.i18n import N_, tr
 from morsetrainer.modes.content import ItemSource
 from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ChoiceButtons, ScrollableFrame
+from morsetrainer.widgets.tkcompat import set_enabled
 
 CONTENTS = {N_("Zeichen"): "chars", N_("Gruppen"): "groups", N_("Abkürzungen"): "words", N_("Klartext"): "plain",
             N_("Wendungen"): "phrases", N_("Rufzeichen"): "calls"}
@@ -108,8 +109,8 @@ class ListenModeFrame:
         self.group_len_box.pack(side="left")
         ttk.Label(row, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
         # Gruppenlänge gilt nur für den Inhalt Gruppen.
-        self.content_var.trace_add("write", lambda *_: self.group_len_box.state(
-            ["!disabled"] if self.content_var.get() == "Gruppen" else ["disabled"]))
+        self.content_var.trace_add("write", lambda *_: set_enabled(
+            self.group_len_box, self.content_var.get() == "Gruppen"))
         self.content_var.set(self.content_var.get())
 
         row = ttk.Frame(options)

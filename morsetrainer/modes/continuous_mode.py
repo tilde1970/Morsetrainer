@@ -45,6 +45,7 @@ from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.band_settings import BandSettings, BandToggle, toggle_value
 from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.ui_widgets import ChoiceButtons, ScrollableFrame
+from morsetrainer.widgets.tkcompat import set_enabled
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource
 from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.modes.sequence_mode import BAND_ORDER, band_config
@@ -215,8 +216,8 @@ class ContinuousModeFrame(DailyModeMixin):
                                     textvariable=self.group_len_var, width=3)
         group_len_box.pack(side="left")
         # Gruppenlänge gilt nur für Zufallszeichen; Klartext hat seine Wörter.
-        self.content_var.trace_add("write", lambda *_: group_len_box.state(
-            ["!disabled"] if self.content_var.get() == "Zufallszeichen" else ["disabled"]))
+        self.content_var.trace_add("write", lambda *_: set_enabled(
+            group_len_box, self.content_var.get() == "Zufallszeichen"))
         ttk.Label(grouping, text=tr("Zeichen", context="Einheit")).pack(side="left", padx=(4, 0))
         theme.hint(grouping, text=tr("(mit Wortpause dazwischen; 0 = durchgehend)")).pack(side="left", padx=(4, 0))
         self.band_var = tk.BooleanVar(value=False)

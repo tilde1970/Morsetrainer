@@ -42,6 +42,7 @@ from morsetrainer.widgets.stats_widget import StatsPanel
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
+from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
 __version__ = "2.52"
@@ -1794,7 +1795,7 @@ class MorseTrainerApp:
         """Im Reiter „Einzeln“ den nächsten (1) oder vorigen (−1) Inhalt
         wählen und ansagen; nicht während eines Durchgangs. `focus`: auch den
         Fokus auf dessen Optionsfeld setzen (Pfeiltasten)."""
-        if not self.one_by_one_buttons or self.one_by_one_buttons[0].instate(["disabled"]):
+        if not self.one_by_one_buttons or not is_enabled(self.one_by_one_buttons[0]):
             return False
         index = (ONE_BY_ONE.index(self.one_by_one_var.get()) + step) % len(ONE_BY_ONE)
         self.show_content(ONE_BY_ONE[index])
@@ -1834,7 +1835,7 @@ class MorseTrainerApp:
             if tab_id != current:
                 self.notebook.tab(tab_id, state="disabled")
         for button in self.one_by_one_buttons:
-            button.state(["disabled"])
+            set_enabled(button, False)
         # Eigene Tonausgabe würde die des laufenden Modus abbrechen.
         self.running_mode = True
         self.band_settings.stop_preview()
@@ -1880,7 +1881,7 @@ class MorseTrainerApp:
         for tab_id in self.notebook.tabs():
             self.notebook.tab(tab_id, state="normal")
         for button in self.one_by_one_buttons:
-            button.state(["!disabled"])
+            set_enabled(button, True)
         self.running_mode = False
         self.band_settings.stop_preview()  # Knopf wieder frei
         self.confusion_button.config(state="normal")
