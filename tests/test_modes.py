@@ -1700,22 +1700,24 @@ class UsabilityTest(AppTestCase):
 
     def test_header_collapses_at_200_percent(self):
         app = self.app
-        self.assertEqual(app.header_toggle.winfo_manager(), "")  # 100 %: kein Knopf, Leiste offen
+        self.assertEqual(app.header_row.winfo_manager(), "")  # 100 %: keine Zeile, Leiste offen
         self.assertEqual(app.header.winfo_manager(), "pack")
         app.charset_var.set("KMURESNAPTLWI.JZ=FOY")
         app.wpm_var.set(22)
         app.font_scale_var.set(200)
-        self.assertEqual(app.header_toggle.winfo_manager(), "pack")
+        self.assertEqual(app.header_row.winfo_manager(), "pack")
         self.assertEqual(app.header.winfo_manager(), "")
+        self.assertEqual(app.header_settings.winfo_manager(), "pack")  # Einstellungen auch zugeklappt
         self.assertEqual(app.header_toggle.cget("text"),
-                         "▸ Koch-Lektion 19 · 22 WPM · 600 Hz · KMURESNAPTLW…")
+                         "▸ Koch-Lektion 19 · 22/10 WPM · 600 Hz · KMURESNAPTLW…")
         self.assertEqual(announcer.describe(app.header_toggle),
-                         "Kopfleiste, Knopf, zu, Koch-Lektion 19, 22 WPM, 600 Hz.")
+                         "Kopfleiste, Knopf, zu, Koch-Lektion 19, 22 WPM, effektiv 10, 600 Hz.")
         with mock.patch.object(announcer, "say") as say:
             app.header_toggle.invoke()
         say.assert_called_once_with("Kopfleiste geöffnet.")
         self.assertEqual(app.header.winfo_manager(), "pack")
         self.assertTrue(app.header_toggle.cget("text").startswith("▾ "))
+        self.assertEqual(app.header_settings.winfo_manager(), "")  # offen steht er in der Leiste
         # Zuklappen mit dem Fokus in der Leiste: der Fokus geht auf den Knopf.
         self.root.deiconify()
         charset_entry = next(w for w in app.header.grid_slaves() if isinstance(w, ttk.Entry))
@@ -1725,7 +1727,7 @@ class UsabilityTest(AppTestCase):
         self.root.update()
         self.assertEqual(self.root.focus_get(), app.header_toggle)
         app.font_scale_var.set(175)
-        self.assertEqual(app.header_toggle.winfo_manager(), "")
+        self.assertEqual(app.header_row.winfo_manager(), "")
         self.assertEqual(app.header.winfo_manager(), "pack")
 
     def test_hint_never_wraps_wider_than_its_room(self):
@@ -1739,6 +1741,40 @@ class UsabilityTest(AppTestCase):
         self.root.update()
         self.assertLessEqual(int(float(str(hint.cget("wraplength")))), 500)
         self.assertLessEqual(hint.winfo_width(), 500)
+
+    def test_header_shows_effective_tempo_and_follows_farnsworth(self):
+        app = self.app
+        app.font_scale_var.set(200)
+        app.wpm_var.set(20)
+        app.farnsworth_enabled_var.set(True)
+        app.farnsworth_wpm_var.set(12)
+        self.assertIn("20/12 WPM", app.header_toggle.cget("text"))
+        app.farnsworth_enabled_var.set(False)
+        self.assertIn("· 20 WPM ·", app.header_toggle.cget("text"))
+
+    def test_settings_button_in_collapsed_header_opens_settings(self):
+        app = self.app
+        app.font_scale_var.set(200)
+        with mock.patch.object(app, "open_settings") as open_settings:
+            app.header_settings.invoke()
+        open_settings.assert_called_once_with()
+
+    def test_hint_wrap_settles_when_it_sets_its_parents_width(self):
+        # Ohne fill bestimmt der Hinweis die Breite seines Rahmens: nicht schrumpfen, nicht pendeln.
+        window = tk.Toplevel(self.root)
+        self.addCleanup(window.destroy)
+        window.geometry("720x600")
+        box = ttk.Frame(window)
+        box.pack(anchor="w")
+        hint = theme.hint(box, text="Eins nach dem anderen: hören, antworten, das nächste. " * 4, wrap=540)
+        hint.pack(anchor="w")
+        window.update()
+        values = set()
+        for _ in range(50):
+            self.root.update()
+            values.add(str(hint.cget("wraplength")))
+        # Weder enger (der Text steht nicht über) noch hin und her.
+        self.assertEqual(values, {str(theme.scaled(540))})
 
     def test_restart_button_only_while_a_restart_is_pending(self):
         self.assertEqual(self.app.restart_button.winfo_manager(), "")

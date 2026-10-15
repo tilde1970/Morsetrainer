@@ -167,8 +167,10 @@ ganze Auswertung in Am Stück und die Auflösung im Netzwerk. Die
 Einstellung bleibt gespeichert.
 
 Bei 200 % ist die Kopfleiste (Koch-Lektion, Tempo, Tonhöhe, Zeichen) zu
-einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3 · 20 WPM · 600 Hz · KMUR“;
-ein langer Zeichensatz endet dort mit „…“. Die Zeile ist ein Knopf:
+einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3 · 20/10 WPM · 600 Hz · KMUR“
+(mit Farnsworth Zeichen- und effektives Tempo); ein langer Zeichensatz
+endet dort mit „…“. Rechts in derselben Zeile steht „Einstellungen …
+(Strg+,)“, damit Schriftgröße und Kontrast erreichbar bleiben. Die Zeile ist ein Knopf:
 Klick, Enter oder Leertaste klappt die Kopfleiste auf (Pfeil nach unten ▾)
 und wieder zu, die Ansage sagt „Kopfleiste geöffnet.“ bzw. „Kopfleiste
 geschlossen.“ Aufgeklappt führt Tab vom Knopf in die Felder; Umschalt+Tab

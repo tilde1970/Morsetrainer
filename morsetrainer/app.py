@@ -371,8 +371,14 @@ class MorseTrainerApp:
         # (_place_header), damit unter großer Schrift Platz für die Übung bleibt.
         header_box = ttk.Frame(self.root)
         header_box.pack(fill="x")
-        self.header_toggle = ttk.Button(header_box, style="Flat.TButton", command=self._toggle_header)
+        # Zeile der zugeklappten Leiste: Aufklappen links, Einstellungen rechts
+        # (dort liegen Schriftgröße und Kontrast; sonst nur über Strg+, erreichbar).
+        self.header_row = ttk.Frame(header_box)
+        self.header_toggle = ttk.Button(self.header_row, style="Flat.TButton", command=self._toggle_header)
+        self.header_toggle.pack(side="left")
         announcer.name(self.header_toggle, tr("Kopfleiste"), value=self._header_spoken)
+        self.header_settings = ttk.Button(self.header_row, text=tr("Einstellungen … ({key})").format(
+            key=ctrl_key(",")), style="Flat.TButton", command=lambda: self.open_settings())
         header = self.header = ttk.Frame(header_box, padding=(10, 8, 10, 4))
         header.pack(fill="x")
         header.columnconfigure(1, weight=1)
@@ -614,7 +620,8 @@ class MorseTrainerApp:
         for var in (self.wpm_var, self.farnsworth_wpm_var, self.farnsworth_enabled_var):
             var.trace_add("write", lambda *_: self._update_cpm())
         self._update_cpm()
-        for var in (self.lesson_var, self.wpm_var, self.freq_var, self.charset_var):
+        for var in (self.lesson_var, self.wpm_var, self.freq_var, self.charset_var, self.farnsworth_enabled_var,
+                    self.farnsworth_wpm_var):
             var.trace_add("write", lambda *_: self._show_header_summary())
         self._fit_settings()
         ttk.Separator(self.root).pack(fill="x", padx=10, pady=(4, 0))
@@ -1076,22 +1083,33 @@ class MorseTrainerApp:
                                              height=min(body.winfo_reqheight(), max_height))
         window.geometry("")  # wieder die natürliche Größe, auch nach einer früheren Schriftgröße
 
-    def _header_summary(self) -> str:
-        """„Koch-Lektion 3 · 20 WPM · 600 Hz · KMUR“ für die zugeklappte Kopfleiste."""
+    def _header_parts(self):
+        """Lektion, Tempo (angezeigt, gesprochen), Tonhöhe und Zeichensatz der Kopfleiste."""
         charset = self.charset_var.get().strip().upper()
         lesson = koch.lesson_of(charset)
+        lesson_text = tr("eigene Zeichen") if lesson is None else tr("Koch-Lektion {n}").format(n=lesson)
         try:
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:  # Feld gerade leer getippt
-            wpm, freq = "–", "–"
+            return lesson_text, "– WPM", "– WPM", "– Hz", charset
+        # Mit Farnsworth beide Tempi („20/10 WPM“): Zu hören ist das effektive.
+        fw = self.farnsworth_wpm()
+        effective = tempo.effective(wpm, fw)
+        spoken = (f"{wpm} WPM" if effective == wpm
+                  else tr("{wpm} WPM, effektiv {effective}").format(wpm=wpm, effective=effective))
+        return lesson_text, tempo.label(wpm, fw), spoken, f"{freq} Hz", charset
+
+    def _header_summary(self) -> str:
+        """„Koch-Lektion 3 · 20/10 WPM · 600 Hz · KMUR“ für die zugeklappte Kopfleiste."""
+        lesson_text, shown, _, freq, charset = self._header_parts()
         if len(charset) > HEADER_CHARSET_CHARS:
             charset = charset[:HEADER_CHARSET_CHARS] + "…"
-        lesson_text = tr("eigene Zeichen") if lesson is None else tr("Koch-Lektion {n}").format(n=lesson)
-        return " · ".join([lesson_text, f"{wpm} WPM", f"{freq} Hz", charset])
+        return " · ".join([lesson_text, shown, freq, charset])
 
     def _header_spoken(self) -> str:
+        lesson_text, _, spoken, freq, _ = self._header_parts()
         state = tr("offen") if self.header_open else tr("zu")
-        return f"{state}, {self._header_summary().rsplit(' · ', 1)[0].replace(' · ', ', ')}"
+        return f"{state}, {lesson_text}, {spoken}, {freq}"
 
     def _show_header_summary(self) -> None:
         arrow = "▾" if self.header_open else "▸"
@@ -1107,11 +1125,17 @@ class MorseTrainerApp:
             focus = None
         if compact:
             order = {"before": self.header} if self.header.winfo_manager() else {}
-            self.header_toggle.pack(anchor="w", padx=10, pady=(6, 0), **order)
+            self.header_row.pack(fill="x", padx=10, pady=(6, 0), **order)
+            if self.header_open:
+                if focus is self.header_settings:
+                    self.header_toggle.focus_set()
+                self.header_settings.pack_forget()  # offen steht der Knopf in der Leiste
+            else:
+                self.header_settings.pack(side="right")
         else:
-            if focus is self.header_toggle:
-                self.lesson_spinbox.focus_set()  # der Knopf verschwindet: aufs erste Feld der Leiste
-            self.header_toggle.pack_forget()
+            if focus in (self.header_toggle, self.header_settings):
+                self.lesson_spinbox.focus_set()  # die Zeile verschwindet: aufs erste Feld der Leiste
+            self.header_row.pack_forget()
         if self.header_open:
             self.header.pack(fill="x")
         else:

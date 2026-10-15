@@ -195,11 +195,25 @@ def _set_wrap(label, base: int) -> None:
 
 
 def _fit_wrap(label, width: int) -> None:
-    """Breite des Elternelements geändert: Platz rechts vom Textanfang merken."""
+    """Breite des Elternelements geändert: Platz rechts vom Textanfang merken;
+    enger umbrechen nur, wenn der Text wirklich übersteht, weiter nur, wenn
+    wirklich mehr Platz da ist. Bestimmt der Text selbst die Breite seines
+    Elternelements, ändert sich so nichts – sonst würde jede Runde den Umbruch
+    um den Rand enger und das Elternelement schmaler, ohne Ende."""
     try:
-        label._mt_room = width - max(label.winfo_x(), 0) - scaled(WRAP_MARGIN)
-        _set_wrap(label, label._mt_wrap)
-    except tk.TclError:
+        room = width - max(label.winfo_x(), 0) - scaled(WRAP_MARGIN)
+        label._mt_room = room
+        full = scaled(label._mt_wrap)
+        current = int(float(str(label.cget("wraplength"))))
+        if label.winfo_reqwidth() > room + scaled(WRAP_MARGIN):
+            wrap = max(min(full, room), scaled(MIN_WRAP))
+        elif room > current:
+            wrap = min(full, room)
+        else:
+            return
+        if wrap != current:
+            label.configure(wraplength=wrap)
+    except (tk.TclError, ValueError):
         pass
 
 

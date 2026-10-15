@@ -165,8 +165,10 @@ scrollbars and sliders grow with it, as do the full result in Non-stop and
 the solutions window in Network. The setting is saved.
 
 At 200 % the header (Koch lesson, speed, pitch, characters) is collapsed
-to one line, such as “▸ Koch lesson 3 · 20 WPM · 600 Hz · KMUR”; a long
-character set ends with “…” there. The line is a button: click it or
+to one line, such as “▸ Koch lesson 3 · 20/10 WPM · 600 Hz · KMUR” (with
+Farnsworth, character and effective speed); a long character set ends
+with “…” there. “Settings … (Ctrl+,)” stays on the right of the same line,
+so font size and contrast remain within reach. The line is a button: click it or
 press Enter or the space bar to open the header (down arrow ▾) and close
 it again; the announcement says “Header opened.” or “Header closed.”
 When it is open, Tab moves from the button into the fields; Shift+Tab in

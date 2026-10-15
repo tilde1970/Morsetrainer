@@ -516,6 +516,7 @@ EN.update({
     "zu": "closed",
     "eigene Zeichen": "own characters",
     "Koch-Lektion {n}": "Koch lesson {n}",
+    "{wpm} WPM, effektiv {effective}": "{wpm} WPM, effective {effective}",
     "Weitere Optionen geschlossen.": "More options closed.",
     "Lautstärke der Ansage": "Announcement volume",
     "Stufe {name}": "Level {name}",
