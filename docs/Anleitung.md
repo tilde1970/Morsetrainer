@@ -585,6 +585,13 @@ entspricht.
 | mittel | +2 dB | 50 % (ca. 14 %) | QRN 30 % |
 | stark | −4 dB | 80 % (ca. 20 %, Löcher bis −40 dB) | QRN 50 %, CW-QRM 30 % |
 
+Von „mittel“ zu „stark“ ist der größte Schritt: Bei „mittel“ gehen nur
+etwa 1–3 % der Zeit in Rauschen und Fading unter, bei „stark“ etwa jede
+achte Sekunde. Ob ein Loch auf ein Zeichen fällt oder in eine Pause, ist
+Zufall – ein einzelner Lauf auf „stark“ geht deshalb mal besser, mal
+schlechter aus. Klappt es fürs Diplom QRN-fest nicht gleich, lohnt ein
+zweiter Lauf.
+
 - **Rauschabstand (S/N):** gemessen im Empfängerfilter (300–2700 Hz)
   gegenüber dem ungeschwächten Signal; der Regler reicht von +20 dB bis
   −10 dB. Das Ohr hört CW wie durch ein Filter von etwa 50 Hz, dort ist der

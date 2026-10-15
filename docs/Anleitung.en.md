@@ -573,6 +573,12 @@ matches at least.
 | medium | +2 dB | 50 % (about 14 %) | QRN 30 % |
 | heavy | −4 dB | 80 % (about 20 %, dips down to −40 dB) | QRN 50 %, CW QRM 30 % |
 
+From “medium” to “heavy” is the biggest step: at “medium” only about
+1–3 % of the time is lost in noise and fading, at “heavy” about one second
+in eight. Whether a dip hits a character or a gap is chance – so a single
+run at “heavy” may go better or worse. If the QRN-proof award does not
+work out at once, a second run is worth it.
+
 - **Signal-to-noise ratio (S/N):** measured in the receiver filter
   (300–2700 Hz) relative to the unfaded signal; the slider ranges from
   +20 dB to −10 dB. The ear hears CW like a filter of about 50 Hz, where the
