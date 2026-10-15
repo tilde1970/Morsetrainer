@@ -1,5 +1,42 @@
 # Änderungen
 
+## 2.53
+
+- **Rufzeichenliste per Knopf:** Im Reiter Einzeln, Inhalt Rufzeichen, lädt
+  „Rufzeichenliste laden (supercheckpartial.com)“ die aktuelle MASTER.SCP
+  direkt von der Quelle; ist eine Liste da, heißt der Knopf
+  „aktualisieren“. Nicht während einer Übung; wird während des Ladens eine
+  gestartet, gilt die neue Liste erst nach deren Ende. Geht etwas schief,
+  bleibt die alte Liste, und die Meldung sagt in Worten, was los ist (keine
+  Verbindung, Server antwortet nicht, Anmeldeseite eines WLANs …) und wie
+  man die Liste von Hand ablegt.
+- **Sichere Verbindungen auf Mac und Linux:** Mac-App und AppImage finden
+  jetzt die Zertifikate des Systems, auch unter Fedora, Arch und openSUSE.
+  Damit klappen dort Rufzeichenliste und Hinweis auf eine neue Version.
+- **F11 im Zeitlimit:** Wer mitten in der Frist F11 drückt, verliert keine
+  Antwortzeit: Das Zeichen zählt jetzt nicht, das Limit bleibt, und es
+  kommt später unangekündigt wieder.
+- **F11 im Contest:** buchstabiert, was im Call- bzw. Austauschfeld steht
+  (Call im Funkalphabet, leeres Feld als „leer“).
+- **Große Schrift (200 %):**
+  - Die Kopfleiste ist zu einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3 ·
+    20/10 WPM · 600 Hz · KMUR“; Klick oder Enter klappt sie auf.
+    „Einstellungen … (Strg+,)“ bleibt rechts daneben erreichbar.
+  - Die Leiste der Tagesübung zeigt nur das Wochenziel. So passt auch auf
+    kleinen Bildschirmen die Übung mit dem Start-Knopf ins Fenster.
+  - Das Einstellungsfenster passt auf den Bildschirm: Der Inhalt rollt,
+    „Schließen“ bleibt unten, Hinweise stehen bei Platzmangel unter den
+    Feldern.
+  - Hinweistexte werden nicht mehr rechts abgeschnitten.
+- **Wochenziel:** Der eigene Stand steht vorn („7 ★ diese Woche, Ziel 12“),
+  damit 12 nicht wie eine Obergrenze wirkt.
+- **Vorsorge für Tk 9.1:** Sperren, Zustand und Ansage funktionieren auch,
+  wenn Tk bei laufendem Screenreader klassische statt moderner
+  Bedienelemente baut.
+- **Anleitung:** Rufzeichenliste laden, Kopfleiste bei 200 %, F11 im
+  Zeitlimit und im Contest; der Sprung von „mittel“ auf „stark“ bei den
+  Bandbedingungen ist genauer erklärt.
+
 ## 2.52
 
 - **Ansage (F9, F11):**

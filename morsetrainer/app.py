@@ -45,7 +45,7 @@ from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_t
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.52"
+__version__ = "2.53"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -148,6 +148,10 @@ WHATS_NEW = {
     "2.52": N_("Die Ansage ist verlässlicher: F11 wartet auf den Morseton, buchstabiert Satzzeichen in der "
                "Rückmeldung und hilft in aufgeklappten Listen. Die Hilfe ist mit Tab wieder erreichbar, Fenster "
                "nennen beim Öffnen den Fokus, und markierter Text ist besser lesbar. Alles Weitere steht unter "
+               "Hilfe, Änderungen."),
+    "2.53": N_("Die Rufzeichenliste lässt sich jetzt per Knopf laden (Reiter Einzeln, Rufzeichen). F11 kostet im "
+               "Zeitlimit keine Antwortzeit mehr und buchstabiert im Contest das Call-Feld. Bei 200 % Schrift "
+               "ist die Kopfleiste zugeklappt, damit die Übung ins Fenster passt. Alles Weitere steht unter "
                "Hilfe, Änderungen."),
 }
 

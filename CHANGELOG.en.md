@@ -1,5 +1,42 @@
 # Changes
 
+## 2.53
+
+- **Callsign list at the push of a button:** In the One by one tab, content
+  Callsigns, “Load callsign list (supercheckpartial.com)” downloads the
+  current MASTER.SCP straight from the source; once a list is there, the
+  button reads “Update callsign list”. Not during an exercise; if one is
+  started while loading, the new list applies after it ends. If something
+  goes wrong, the old list stays, and the message says in words what
+  happened (no connection, server not responding, Wi-Fi login page …) and
+  how to save the list by hand.
+- **Secure connections on Mac and Linux:** The Mac app and the AppImage now
+  find the system certificates, also on Fedora, Arch and openSUSE. The
+  callsign list and the new-version notice now work there.
+- **F11 during the time limit:** Pressing F11 during the deadline no longer
+  costs answer time: the character does not count now, the limit stays,
+  and it comes again later unannounced.
+- **F11 in Contest:** spells what is in the Call or Exchange field (Call in
+  the phonetic alphabet, an empty field as “empty”).
+- **Large font (200 %):**
+  - The header is collapsed to one line, such as “▸ Koch lesson 3 ·
+    20/10 WPM · 600 Hz · KMUR”; click or Enter opens it. “Settings …
+    (Ctrl+,)” stays within reach on the right.
+  - The daily practice bar shows only the weekly goal. This way the
+    exercise and its Start button fit even on small screens.
+  - The settings window fits on the screen: the content scrolls, “Close”
+    stays at the bottom, and hints move below the fields when space is
+    short.
+  - Hint texts are no longer cut off on the right.
+- **Weekly goal:** Your own count comes first (“7 ★ this week, goal 12”),
+  so 12 does not look like a limit.
+- **Prepared for Tk 9.1:** Disabling, state and announcements also work
+  when Tk builds classic instead of themed controls while a screen reader
+  is running.
+- **Manual:** Loading the callsign list, header at 200 %, F11 during the
+  time limit and in Contest; the step from “medium” to “heavy” in band
+  conditions is explained more precisely.
+
 ## 2.52
 
 - **Announcements (F9, F11):**

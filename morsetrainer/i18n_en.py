@@ -913,6 +913,12 @@ EN.update({
         "Announcements are more reliable: F11 waits for the Morse tone, spells punctuation in the feedback "
         "and helps in open drop-down lists. The help can be reached with Tab again, windows announce the "
         "focus when they open, and selected text is easier to read. Everything else is under Help, Changes.",
+    ("Die Rufzeichenliste lässt sich jetzt per Knopf laden (Reiter Einzeln, Rufzeichen). F11 kostet im "
+     "Zeitlimit keine Antwortzeit mehr und buchstabiert im Contest das Call-Feld. Bei 200 % Schrift ist die "
+     "Kopfleiste zugeklappt, damit die Übung ins Fenster passt. Alles Weitere steht unter Hilfe, Änderungen."):
+        "The callsign list can now be loaded with a button (One by one tab, Callsigns). During the time limit "
+        "F11 no longer costs answer time, and in Contest it spells the Call field. At 200 % font size the header "
+        "is collapsed so the exercise fits in the window. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",
