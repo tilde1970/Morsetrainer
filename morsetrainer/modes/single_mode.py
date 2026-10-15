@@ -290,6 +290,7 @@ class SingleModeFrame(DailyModeMixin):
         """Beendet den Durchgang, speichert die Statistik und gibt die Reiter frei."""
         self.running = False
         self.waiting_for_input = False
+        self.answer_open = False  # sonst verwürfe F11 im nächsten Durchgang ein Zeichen von diesem
         self.timeout_token += 1
         self.start_button.config(text=tr("Start (F5)"))
         self.repeat_button.config(state="disabled")

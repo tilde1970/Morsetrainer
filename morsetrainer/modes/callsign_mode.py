@@ -259,9 +259,10 @@ class CallsignModeFrame(SequenceModeFrame):
         self.root.after(SCP_POLL_MS, self._await_list)
 
     def _await_list(self):
-        """Im GUI-Thread: nach dem Laden die Liste neu einlesen oder den Fehler melden."""
+        """Im GUI-Thread: nach dem Laden die Liste neu einlesen oder den Fehler melden;
+        läuft inzwischen eine Übung, erst nach deren Ende."""
         status = self.scp_status
-        if not status:
+        if not status or self.running:
             self.root.after(SCP_POLL_MS, self._await_list)
             return
         self.scp_status = None

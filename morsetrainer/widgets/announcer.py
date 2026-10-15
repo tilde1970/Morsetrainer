@@ -28,7 +28,7 @@ from morsetrainer import i18n
 from morsetrainer.core import audio, sfx, speech
 from morsetrainer.core.morse import AUDIO_LATENCY, PROSIGN_KEYS, SAMPLE_RATE
 from morsetrainer.i18n import N_, number, tr
-from morsetrainer.widgets.tkcompat import CLASSIC, is_enabled, is_selected, widget_class
+from morsetrainer.widgets.tkcompat import CLASSIC, is_classic, is_enabled, is_selected, widget_class
 
 # Pause nach einer Ansage, bevor es weitergeht.
 AFTER_SPEECH_MS = 250
@@ -760,8 +760,9 @@ def _nearby(widget, depth: int = 0) -> str:
         before = siblings[:siblings.index(widget)] if widget in siblings else []
         for sibling in reversed(before):
             # Erklär- und Statuszeilen sind keine Beschriftung.
-            if (widget_class(sibling) in ("TLabel", "TCheckbutton")
-                    and str(sibling.cget("style")) not in ("Hint.TLabel", "Status.TLabel")):
+            # Klassische Widgets (tkcompat.py) haben keinen Stil.
+            if widget_class(sibling) in ("TLabel", "TCheckbutton") and (
+                    is_classic(sibling) or str(sibling.cget("style")) not in ("Hint.TLabel", "Status.TLabel")):
                 text = _text_of(sibling)
                 if text:
                     return text

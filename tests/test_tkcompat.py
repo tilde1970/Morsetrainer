@@ -55,5 +55,14 @@ class TkCompatTest(unittest.TestCase):
         self.assertEqual(announcer.describe(check), "Hoher Kontrast, Schalter, an, nicht verfügbar.")
 
 
+    def test_field_next_to_a_classic_switch_is_named(self):
+        on = self.on = tk.BooleanVar(self.root, value=True)
+        row = ttk.Frame(self.root)
+        tk.Checkbutton(row, text="Farnsworth, effektiv", variable=on).pack(side="left")
+        spin = ttk.Spinbox(row, from_=3, to=39)
+        spin.pack(side="left")
+        self.assertTrue(announcer.describe(spin).startswith("Farnsworth, effektiv, Zahlenfeld"))
+
+
 if __name__ == "__main__":
     unittest.main()

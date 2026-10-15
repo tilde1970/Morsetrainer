@@ -1101,15 +1101,20 @@ class MorseTrainerApp:
         """Kopfleiste offen oder zu; unter COMPACT_ZOOM immer offen, ohne Knopf."""
         compact = theme.scale() >= COMPACT_ZOOM
         self.header_open = open_ or not compact
+        try:
+            focus = self.root.focus_get()
+        except KeyError:  # Fokus in einer aufgeklappten Liste (Tk kennt sie nur als Pfad)
+            focus = None
         if compact:
             order = {"before": self.header} if self.header.winfo_manager() else {}
             self.header_toggle.pack(anchor="w", padx=10, pady=(6, 0), **order)
         else:
+            if focus is self.header_toggle:
+                self.lesson_spinbox.focus_set()  # der Knopf verschwindet: aufs erste Feld der Leiste
             self.header_toggle.pack_forget()
         if self.header_open:
             self.header.pack(fill="x")
         else:
-            focus = self.root.focus_get()
             if focus is not None and str(focus).startswith(str(self.header) + "."):
                 self.header_toggle.focus_set()  # sonst stünde der Fokus in der unsichtbaren Leiste
             self.header.pack_forget()
@@ -1153,7 +1158,7 @@ class MorseTrainerApp:
         es zu keiner Lektion, steht dort "eigene Zeichen"."""
         ttk.Label(parent, text=tr("Koch-Lektion")).pack(side="left", padx=(0, 6))
         self.lesson_var = tk.IntVar(value=1)
-        spinbox = ttk.Spinbox(
+        spinbox = self.lesson_spinbox = ttk.Spinbox(
             parent, from_=1, to=koch.MAX_LESSON, textvariable=self.lesson_var, width=3, command=self._apply_lesson
         )
         spinbox.pack(side="left")

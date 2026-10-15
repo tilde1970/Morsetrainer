@@ -665,6 +665,20 @@ class SingleCharTest(AppTestCase):
             self.app.read_status()
         self.assertIn("U", s.retries.waiting)
 
+    def test_f11_after_stop_and_restart_drops_nothing_old(self):
+        # Neuer Durchgang wartet noch auf eine Ansage: kein Zeichen des alten verwerfen.
+        s = self.single
+        self._open_answer("R")
+        s.stop()
+        self.assertFalse(s.answer_open)
+        s.retries.waiting.clear()
+        with mock.patch.object(single_mode.announcer, "speaking", return_value=True), \
+                mock.patch.object(single_mode.announcer, "when_quiet"):
+            s.start()
+        with mock.patch.object(s, "next_char"):
+            self.app.read_status()
+        self.assertEqual(s.retries.waiting, {})
+
     def test_f11_without_open_answer_changes_nothing(self):
         s = self.single
         self._open_answer()
@@ -1652,6 +1666,24 @@ class UsabilityTest(AppTestCase):
             app._fit_settings()
             self.assertFalse(hints_below())
             self.assertEqual(int(app.settings_scroller.canvas.cget("height")), app.settings_body.winfo_reqheight())
+
+    def test_header_toggle_hands_focus_on_when_it_disappears(self):
+        app = self.app
+        app.font_scale_var.set(200)
+        self.root.deiconify()
+        app.header_toggle.focus_force()
+        self.root.update()
+        app.font_scale_var.set(175)
+        self.root.update()
+        self.assertEqual(self.root.focus_get(), app.lesson_spinbox)
+
+    def test_header_survives_focus_in_an_open_drop_down_list(self):
+        app = self.app
+        app.font_scale_var.set(200)
+        with mock.patch.object(self.root, "focus_get", side_effect=KeyError("popdown")):
+            app._place_header(open_=False)
+        self.assertFalse(app.header_open)
+        self.assertEqual(app.header.winfo_manager(), "")
 
     def test_week_strip_and_legend_hide_at_200_percent(self):
         bar = self.app.daily_bar

@@ -102,6 +102,26 @@ class ButtonTest(AppTestCase):
         self.assertEqual(self.mode.scp_button.cget("text"), "Rufzeichenliste aktualisieren")
         self.assertIn("geladen: 3", self.mode.status_var.get())
 
+    def test_list_waits_for_the_end_of_a_running_exercise(self):
+        old = list(self.mode.all_calls)
+
+        def download(target):
+            target.write_text("DL4YM\nDK1AB\nDJ2CD\n")
+            return 3
+        with mock.patch.object(scp, "download", download):
+            self.mode._download_list()
+            self.mode.running = True  # mit F5 gestartet, während die Liste lädt
+            try:
+                deadline = time.monotonic() + 1
+                while time.monotonic() < deadline:
+                    self.root.update()
+                    time.sleep(0.01)
+                self.assertEqual(self.mode.all_calls, old)
+            finally:
+                self.mode.running = False
+            self.wait_for_download()
+        self.assertEqual(sorted(self.mode.all_calls), ["DJ2CD", "DK1AB", "DL4YM"])
+
     def test_error_is_reported_and_button_comes_back(self):
         old = list(self.mode.all_calls)
 
