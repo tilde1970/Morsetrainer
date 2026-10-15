@@ -17,6 +17,10 @@ Korrekturton richtig – getippt – richtig: „So klingt K – und so M“.
 
 Die Leertaste wiederholt das Zeichen, verlängert aber die Frist nicht, und
 ein erst nach der Wiederholung erkanntes Zeichen gilt als nicht erkannt.
+F11 (Wo bin ich?) mitten in einer Antwort mit Zeitlimit verwirft das
+Zeichen: Die Ansage fräße sonst die Frist, und wer auf sie angewiesen ist,
+bekäme jedes Mal „zu langsam“. Es zählt nicht, das Limit bleibt, und nach
+der Ansage kommt ein neues Zeichen.
 
 Zeitlimit (Instant Character Recognition): Wer nach dem Ton nicht innerhalb
 des Limits tippt, hat das Zeichen verpasst. So bleibt keine Zeit, Punkte
@@ -158,6 +162,8 @@ class SingleModeFrame(DailyModeMixin):
         self.icr_whole_session = False  # Zeitlimit den ganzen Durchgang an
         self.deadline = None        # Frist für das aktuelle Zeichen (time.time()), ab erstem Hören
         self.replayed = False       # aktuelles Zeichen mit der Leertaste wiederholt
+        self.answer_open = False    # aktuelles Zeichen noch nicht beantwortet und nicht verpasst
+        self.from_retry = False     # aktuelles Zeichen ist eine erneute Abfrage
         self.last_typed = None      # falsche Antwort, zum Vergleich mit vorgespielt
         self.block_end = None       # Ende eines Tagesübungs-Blocks (time.time())
 
@@ -333,6 +339,7 @@ class SingleModeFrame(DailyModeMixin):
         self.replayed = False
         self.deadline = None
         due = self.retries.next_due()
+        self.from_retry = due is not None
         if due is not None:
             self.current_char = due
         elif len(set(self.charset)) >= RETRY_EXCLUDE_MIN:
@@ -343,14 +350,30 @@ class SingleModeFrame(DailyModeMixin):
             # Wenige Zeichen: Ausschließen machte die Folge vorhersagbar. Kommt
             # das vorgemerkte Zeichen zufällig dran, ist die Abfrage erledigt.
             self.current_char = self.picker.pick()
+            self.from_retry = self.current_char in self.retries.waiting
             self.retries.discard(self.current_char)
         self.voice = self._pick_voice()
         # Eine erneute Abfrage zählt wie ein erstes Hören (auch fürs Zeitlimit):
         # dazwischen lagen andere Zeichen.
         self.first_hearing = True
+        self.answer_open = True
         self.feedback_var.set("")
         self.status_var.set(tr("Höre zu…"))
         self.play_current()
+
+    def hold_for_status(self):
+        """F11 vor der Ansage: Ist mit Zeitlimit eine Antwort offen, das Zeichen
+        verwerfen (zählt nicht, Limit bleibt) und nach der Ansage ein neues
+        spielen. Eine erneute Abfrage bleibt vorgemerkt."""
+        if not (self.running and self.answer_open and self.icr_var.get()):
+            return
+        self.answer_open = False
+        self.waiting_for_input = False
+        self.timeout_token += 1  # Frist und Tonende des verworfenen Zeichens verfallen
+        if self.from_retry:
+            self.retries.add(self.current_char)
+        self.status_var.set(tr("Zeitlimit angehalten: Dieses Zeichen zählt nicht, gleich kommt ein neues."))
+        self.root.after_idle(self.next_char)
 
     def _after_error(self, play_correction=True):
         """Falsches oder verpasstes Zeichen: später erneut abfragen und es
@@ -437,12 +460,12 @@ class SingleModeFrame(DailyModeMixin):
         # Die Eingabe öffnet mit dem hörbaren Ende des letzten Elements: die
         # Reflexantwort, um die es beim Zeitlimit geht, darf nicht verfallen.
         dur_ms = int((tone_seconds(self.current_char, wpm) + AUDIO_LATENCY) * 1000)
-        self.root.after(dur_ms, self.on_playback_done)
+        self.root.after(dur_ms, self.on_playback_done, self.timeout_token)
 
-    def on_playback_done(self):
+    def on_playback_done(self, token=None):
         """Ton zu Ende: Eingabe freigeben und, mit Zeitlimit, die Frist ab dem
-        ersten Hören setzen."""
-        if not self.running:
+        ersten Hören setzen (nicht für ein inzwischen verworfenes Zeichen)."""
+        if not self.running or token not in (None, self.timeout_token):
             return
         self.waiting_for_input = True
         self.status_var.set(tr("Deine Eingabe?"))
@@ -460,6 +483,7 @@ class SingleModeFrame(DailyModeMixin):
         if not self.running or not self.waiting_for_input or token != self.timeout_token:
             return
         self.waiting_for_input = False
+        self.answer_open = False
         wpm = self.voice[0]
         reaction_time = tone_seconds(self.current_char, wpm) + self.limit
         self.session_stats.record_char(
@@ -533,6 +557,7 @@ class SingleModeFrame(DailyModeMixin):
         if not typed or typed not in MORSE_CODE:
             return
         self.waiting_for_input = False
+        self.answer_open = False
         self.timeout_token += 1
         correct = typed == self.current_char
         # Erst nach dem Wiederholen erkannt zählt als nicht erkannt.

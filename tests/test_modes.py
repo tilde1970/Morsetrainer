@@ -631,6 +631,59 @@ class SingleCharTest(AppTestCase):
         self._key("M")
         self.assertRegex(s.feedback_var.get(), r"Richtig: M  \(\d+,\d\d s, Limit \d+,\d\d s\)")
 
+    def _open_answer(self, char="K"):
+        s = self.single
+        s.icr_var.set(True)
+        s.current_char, s.voice, s.waiting_for_input, s.replayed = char, (20, 600), True, False
+        s.first_hearing, s.correcting, s.answer_open, s.from_retry = True, False, True, False
+        s.play_start_time = time.time() - 0.5
+
+    def test_f11_during_time_limit_drops_the_char(self):
+        s = self.single
+        self._open_answer()
+        limit, token = s.limit, s.timeout_token
+        with mock.patch.object(s, "next_char") as next_char:
+            self.app.read_status()
+            self.root.update()
+        next_char.assert_called_once_with()
+        self.assertFalse(s.waiting_for_input)
+        self.assertNotEqual(s.timeout_token, token)
+        s._on_timeout(token)  # die alte Frist verfällt
+        s.on_playback_done(token)  # ebenso das Tonende des verworfenen Zeichens
+        self.assertFalse(s.waiting_for_input)
+        self.assertEqual(s.session_stats.summary()["total"], 0)
+        self.assertEqual(s.limit, limit)
+        self.assertEqual(s.history, [])
+        self._key("K")  # Tippen während der Ansage wird nicht mehr gewertet
+        self.assertEqual(s.session_stats.summary()["total"], 0)
+
+    def test_f11_keeps_a_due_retry(self):
+        s = self.single
+        self._open_answer("U")
+        s.from_retry = True
+        with mock.patch.object(s, "next_char"):
+            self.app.read_status()
+        self.assertIn("U", s.retries.waiting)
+
+    def test_f11_without_open_answer_changes_nothing(self):
+        s = self.single
+        self._open_answer()
+        self._key("K")  # beantwortet
+        token = s.timeout_token
+        with mock.patch.object(s, "next_char") as next_char:
+            self.app.read_status()
+            self.root.update()
+        next_char.assert_not_called()
+        self.assertEqual(s.timeout_token, token)
+        s.icr_var.set(False)
+        self._open_answer()
+        s.icr_var.set(False)
+        with mock.patch.object(s, "next_char") as next_char:
+            self.app.read_status()
+            self.root.update()
+        next_char.assert_not_called()
+        self.assertTrue(s.waiting_for_input)
+
     def test_space_during_feedback_pause_is_ignored(self):
         s = self.single
         s.current_char, s.voice, s.waiting_for_input = "K", (20, 600), True

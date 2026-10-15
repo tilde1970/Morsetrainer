@@ -877,10 +877,13 @@ class MorseTrainerApp:
         if self._active_mode() is None:  # Reiter Statistik
             self.announcer.say(self.statistics_spoken() + self._list_text(listed), force=True)
             return
+        mode = self._active_mode()
+        hold = getattr(mode, "hold_for_status", None)
+        if hold is not None:
+            hold()  # Zeitlimit: die Ansage soll keine Antwortzeit fressen
         parts = [self._tab_name()]
         if self.daily.active and self.daily.mode is not None:
             parts.insert(0, _CLOCK.sub(_spoken_clock, self.daily.spoken_status()).rstrip("."))
-        mode = self._active_mode()
         # session_info_var: Adresse und PIN des Trainers im Netzwerk; live_var
         # (Am Stück) und score_var (Contest, Quiz) mit Zwischenstand und Restzeit.
         for attr in ("status_var", "session_info_var", "feedback_var", "live_var", "score_var", "remaining_var",

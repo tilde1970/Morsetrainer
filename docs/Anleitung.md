@@ -197,7 +197,9 @@ vor, mit Gruppen weiterzumachen.
   bei 2 s und bewegt sich zwischen 0,5 und 3 s: kürzer, solange du sicher
   bist, länger, wenn du Zeichen verpasst; eine Verwechslung ändert es
   nicht. „zurücksetzen“ stellt es wieder auf 2 s. Die Leertaste wiederholt,
-  verlängert die Frist aber nicht.
+  verlängert die Frist aber nicht. F11 („Wo bin ich?“) mitten in der Frist
+  hält sie an: Das Zeichen zählt nicht, das Limit bleibt, und nach der
+  Ansage kommt ein neues Zeichen.
 - **Quittungston:** ein kurzer heller Ton bei richtiger, ein tiefer
   Doppelton bei falscher Antwort (Standard aus). Mit Ansage (F9) gilt,
   was Abschnitt 8 unter „Was angesagt wird“ beschreibt.

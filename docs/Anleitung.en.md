@@ -194,7 +194,9 @@ program suggests moving on to groups.
   the end of the last dot or dash. It starts at 2 s and moves between 0.5
   and 3 s: shorter while you answer reliably, longer when you miss
   characters; a confusion leaves it unchanged. “reset” sets it back to
-  2 s. The space bar repeats but does not extend the deadline.
+  2 s. The space bar repeats but does not extend the deadline. F11
+  (“Where am I?”) during the deadline pauses it: the character does not
+  count, the limit stays, and a new character follows the announcement.
 - **Feedback beep:** a short high beep for a correct answer, a low double
   tone for a wrong one (default off). With announcements on (F9), what
   section 8 describes under “What is announced” applies.
