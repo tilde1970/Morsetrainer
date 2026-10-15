@@ -1,8 +1,9 @@
 """Rufzeichen-Modus: sendet echte Amateurfunk-Rufzeichen aus der Super
 Check Partial-Datenbank (callsigns.scp, ~50.000 aktive Contest-Rufzeichen,
 https://www.supercheckpartial.com – dieselbe Liste, die auch Morse Runner
-und viele Contest-Logger verwenden). Zum Aktualisieren einfach die
-aktuelle MASTER.SCP von dort als callsigns.scp ablegen.
+und viele Contest-Logger verwenden). Der Knopf „Rufzeichenliste laden“
+holt die aktuelle MASTER.SCP von dort und legt sie als callsigns.scp ab;
+von Hand dort abgelegt geht es genauso.
 
 Optional lässt sich die Liste per Präfix-Filter einschränken (z. B. nur
 DL/DK/DJ). Fehlt die Datei, werden zufällige Rufzeichen nach
@@ -20,6 +21,7 @@ Standardmäßig kommen nur Rufzeichen aus Zeichen, die im Zeichensatz oben
 stehen (auch Anhänge): Ungelernte Zeichen zu raten untergräbt die
 Koch-Methode. Abschaltbar für alle, die schon alle Zeichen können."""
 import random
+import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -27,6 +29,7 @@ from tkinter import ttk
 from morsetrainer import DATA_DIR
 from morsetrainer.core import audio, koch, stats, tempo
 from morsetrainer.core.morse import SAMPLE_RATE, build_text
+from morsetrainer.net import scp
 from morsetrainer.modes.sequence_mode import HEAD, SequenceModeFrame, clean_input
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.core.weighting import CharPicker
@@ -49,6 +52,8 @@ RUFZ_CALLS = 50
 # nächsten verpassten Rufzeichen.
 REVIEW_REPLAY_MS = 600
 REVIEW_GAP_MS = 2000
+# Wie oft der GUI-Thread nach dem Laden der Liste schaut.
+SCP_POLL_MS = 200
 
 
 def load_callsigns(path: Path = CALLSIGN_FILE):
@@ -208,17 +213,68 @@ class CallsignModeFrame(SequenceModeFrame):
         self.rufz_start_wpm = 0
         self.rufz_start_char_wpm = None
 
+        self.list_info_var = tk.StringVar(value="")
+        theme.hint(parent, textvariable=self.list_info_var, wrap=540).pack(anchor="w", pady=(0, 2))
+        self.scp_button = ttk.Button(parent, command=self._download_list)
+        self.scp_button.pack(anchor="w", pady=(0, 4))
+        self.scp_status = None  # {"calls" | "error"} während des Ladens
+        self._set_list_text(release)
+        for var in (self.prefix_var, self.learned_var, self.charset_var):
+            var.trace_add("write", lambda *_: self._update_pool())
+        self._update_pool()
+
+    def _set_list_text(self, release: str):
+        """Stand der Liste und Beschriftung des Ladeknopfs."""
         if self.all_calls:
             self.list_text = tr("Liste: {n} Rufzeichen").format(n=number(len(self.all_calls)))
             if release:
                 self.list_text += f" (SCP {release})"
+            self.scp_button.config(text=tr("Rufzeichenliste aktualisieren"))
         else:
             self.list_text = tr("callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt.")
-        self.list_info_var = tk.StringVar(value=self.list_text)
-        theme.hint(parent, textvariable=self.list_info_var, wrap=540).pack(anchor="w", pady=(0, 4))
-        for var in (self.prefix_var, self.learned_var, self.charset_var):
-            var.trace_add("write", lambda *_: self._update_pool())
+            self.scp_button.config(text=tr("Rufzeichenliste laden (supercheckpartial.com)"))
+        self.list_info_var.set(self.list_text)
+
+    def _download_list(self):
+        """Die aktuelle MASTER.SCP im Hintergrund laden; nicht während einer Übung,
+        sonst wechselte die Auswahl mitten im Durchgang."""
+        if self.scp_status is not None:
+            return
+        if self.running:
+            announcer.problem(self.status_var, tr("Die Rufzeichenliste lässt sich nach der Übung laden."))
+            return
+        status = self.scp_status = {}
+
+        def run():
+            try:
+                status["calls"] = scp.download(CALLSIGN_FILE)
+            except scp.ScpError as exc:
+                status["error"] = str(exc)
+            except Exception as exc:
+                status["error"] = str(exc) or type(exc).__name__
+                raise  # ins Fehlerprotokoll (threading.excepthook)
+        self.scp_button.state(["disabled"])
+        announcer.problem(self.status_var, tr("Rufzeichenliste wird geladen …"))
+        threading.Thread(target=run, daemon=True).start()
+        self.root.after(SCP_POLL_MS, self._await_list)
+
+    def _await_list(self):
+        """Im GUI-Thread: nach dem Laden die Liste neu einlesen oder den Fehler melden."""
+        status = self.scp_status
+        if not status:
+            self.root.after(SCP_POLL_MS, self._await_list)
+            return
+        self.scp_status = None
+        self.scp_button.state(["!disabled"])
+        if "error" in status:
+            announcer.problem(self.status_var, tr("Rufzeichenliste nicht geladen: {error}").format(
+                error=status["error"]))
+            return
+        self.all_calls, release = load_callsigns(CALLSIGN_FILE)
+        self._set_list_text(release)
         self._update_pool()
+        announcer.problem(self.status_var, tr("Rufzeichenliste geladen: {n} Rufzeichen.").format(
+            n=number(len(self.all_calls))))
 
     # --- Rufz-Durchgang --------------------------------------------------------
     def _fixed_run(self) -> bool:

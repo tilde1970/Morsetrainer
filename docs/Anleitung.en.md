@@ -241,6 +241,11 @@ attempt each, the speed grows, score = length × effective speed, best
 score (with starting speed) and history. Afterwards you can replay the
 missed and slowly recognised callsigns (F6): first just listen, then again
 with the solution, at the original speed.
+If the list is missing, the **“Load callsign list”** button downloads it
+directly from [supercheckpartial.com](https://www.supercheckpartial.com)
+(about 360 kB); once it is there, the button reads “Update callsign list”.
+This is not possible during an exercise. If the download fails, the old
+list stays.
 
 **Options in Groups, Words and Callsigns:**
 
@@ -1115,9 +1120,10 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
 - `window_state.json`: window size and all settings, including the
   language. If it cannot be saved on exit, a message says so.
 - `callsigns.scp`: callsign list (Super Check Partial). It is **not
-  included in the repository**. Download the current `MASTER.SCP` from
-  [supercheckpartial.com](https://www.supercheckpartial.com) and save it as
-  `callsigns.scp` in the data directory. Without the file, the trainer
+  included in the repository**. The “Load callsign list” button in the One
+  by one tab (content Callsigns) fetches the current `MASTER.SCP` from
+  [supercheckpartial.com](https://www.supercheckpartial.com) and saves it
+  here as `callsigns.scp`; saving it by hand works just as well. Without the file, the trainer
   generates callsigns from country patterns.
 - `woerter.txt`: your own words for “Abbreviations” in Words (One by one tab) and Non-stop,
   one per line, optionally with a meaning: `POTA = Parks on the Air`. The

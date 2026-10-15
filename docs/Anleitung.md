@@ -245,6 +245,10 @@ ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo,
 Bestwert (mit Starttempo) und Verlauf. Danach lassen sich die verpassten
 und die zu langsam erkannten Rufzeichen nachhören (F6): erst nur hören,
 dann mit Lösung noch einmal, im Originaltempo.
+Fehlt die Liste, lädt der Knopf **„Rufzeichenliste laden“** sie direkt von
+[supercheckpartial.com](https://www.supercheckpartial.com) (rund 360 kB);
+ist sie da, heißt er „Rufzeichenliste aktualisieren“. Während einer Übung
+geht das nicht. Geht beim Laden etwas schief, bleibt die alte Liste.
 
 **Optionen bei Gruppen, Wörtern und Rufzeichen:**
 
@@ -1143,9 +1147,10 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 - `window_state.json`: Fenstergröße und alle Einstellungen, auch die
   Sprache. Lässt sie sich beim Beenden nicht speichern, kommt eine Meldung.
 - `callsigns.scp`: Rufzeichenliste (Super Check Partial). Sie ist **nicht
-  im Repository enthalten**. Lade die aktuelle `MASTER.SCP` von
-  [supercheckpartial.com](https://www.supercheckpartial.com) herunter und
-  lege sie als `callsigns.scp` in das Datenverzeichnis. Ohne die Datei
+  im Repository enthalten**. Der Knopf „Rufzeichenliste laden“ im Reiter
+  Einzeln (Inhalt Rufzeichen) holt die aktuelle `MASTER.SCP` von
+  [supercheckpartial.com](https://www.supercheckpartial.com) und legt sie
+  als `callsigns.scp` hier ab; von Hand abgelegt geht es genauso. Ohne die Datei
   erzeugt der Trainer Rufzeichen nach Landesmuster.
 - `woerter.txt`: eigene Wörter für „Abkürzungen“ in Wörter (Reiter Einzeln) und Am Stück,
   eins pro Zeile, optional mit Bedeutung: `DOK = Distrikts-Ortsverbandskenner`.

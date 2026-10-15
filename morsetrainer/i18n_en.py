@@ -1046,6 +1046,13 @@ EN.update({
     "Liste: {n} Rufzeichen": "List: {n} callsigns",
     "callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt.":
         "callsigns.scp not found – callsigns are generated from patterns.",
+    "Rufzeichenliste aktualisieren": "Update callsign list",
+    "Rufzeichenliste laden (supercheckpartial.com)": "Load callsign list (supercheckpartial.com)",
+    "Die Rufzeichenliste lässt sich nach der Übung laden.":
+        "The callsign list can be loaded after the exercise.",
+    "Rufzeichenliste wird geladen …": "Loading callsign list …",
+    "Rufzeichenliste nicht geladen: {error}": "Callsign list not loaded: {error}",
+    "Rufzeichenliste geladen: {n} Rufzeichen.": "Callsign list loaded: {n} callsigns.",
     "Bestwert {score} Punkte": "Best score {score} points",
     " (Start {tempo})": " (start {tempo})",
     "Nachhören beendet. F6 fängt von vorn an.": "Replay finished. F6 starts again.",
