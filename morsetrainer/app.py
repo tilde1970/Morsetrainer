@@ -896,6 +896,10 @@ class MorseTrainerApp:
                 text = re.sub(r"^(\d+)/(\d+)$", lambda m: tr("{done} von {total}").format(
                     done=m.group(1), total=m.group(2)), text)
             parts.append(text)
+        # Contest: buchstabierter Inhalt des Call- bzw. Austauschfelds mit dem Fokus.
+        field_text = getattr(mode, "field_text", None)
+        if field_text is not None and listed is None:
+            parts.append(field_text(self.root.focus_get()))
         # Vor dem Start: was der Reiter zur Auswahl sagt (Wörter: wie viele passen).
         idle_hint = getattr(mode, "idle_hint", None)
         if idle_hint is not None and not getattr(mode, "running", False):

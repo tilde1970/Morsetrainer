@@ -855,7 +855,8 @@ search word “sleep”.
 
 **Where am I? (F11)** reads out the tab, status, last feedback and
 remaining time (in Non-stop with the provisional accuracy, in Contest with
-QSOs and rate), during daily practice the current card or, during a block,
+QSOs and rate; with the focus in the Call or Exchange field, F11 also
+spells what is in it, since typing there is not announced), during daily practice the current card or, during a block,
 which block is running, the practice time and the stars, in the Statistics
 tab an overview (overall result, most errors, confusions, review box,
 seals, practice today) – even with announcements switched off.

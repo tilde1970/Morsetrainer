@@ -638,6 +638,18 @@ class RunModeFrame:
             self._send("agn")
         return "break"
 
+    def field_text(self, focus) -> str:
+        """F11: Inhalt des Call- oder Austauschfelds, wenn der Fokus dort steht,
+        buchstabiert. Beim Tippen spricht die Ansage nicht, sie läge über den
+        Morsezeichen; so lässt sich das Getippte trotzdem prüfen."""
+        if focus is self.call_entry:
+            text = self.call_var.get().strip()
+            return "Call: " + (announcer.spell_nato(text) if text else tr("leer"))
+        if focus is self.exch_entry:
+            text = self.exch_var.get().strip()
+            return tr("Austausch") + ": " + (announcer.spell_chars(text) if text else tr("leer"))
+        return ""
+
     def _to_exchange(self, event=None):
         self.exch_entry.focus_set()
         self.exch_entry.icursor("end")

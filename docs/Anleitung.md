@@ -874,7 +874,9 @@ diesen Absatz mit Strg+F (Mac: Cmd+F) und dem Suchwort „Schlafmodus“.
 
 **Wo bin ich? (F11)** liest Reiter, Status, letzte Rückmeldung und
 Restzeit vor (in Am Stück mit vorläufiger Trefferquote, im Contest mit
-QSOs und Rate), in der Tagesübung die aktuelle Karte bzw. während eines
+QSOs und Rate; steht der Fokus im Call- oder Austauschfeld, buchstabiert
+F11 dazu, was darin steht, denn beim Tippen sagt die Ansage dort nichts),
+in der Tagesübung die aktuelle Karte bzw. während eines
 Blocks, welcher Block läuft, die Übungszeit und die Sterne, im Reiter Statistik
 eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
 Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.

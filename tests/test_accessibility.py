@@ -1170,6 +1170,25 @@ class AnnouncerModesTest(AnnouncerCase):
             self.assertNotIn("?.", spoken)
             self.assertEqual("Deine Eingabe?" in spoken, expected, spoken)
 
+    def test_f11_spells_the_contest_entry_with_focus(self):
+        self.app.show_mode("Contest")
+        mode = self.mode("Contest")
+        mode.call_var.set("DL4YM")
+        mode.exch_var.set("")
+        cases = ((mode.call_entry, "Call: Delta"), (mode.exch_entry, "Austausch: leer"))
+        for entry, expected in cases:
+            with mock.patch.object(self.root, "focus_get", return_value=entry), \
+                    mock.patch.object(self.app.announcer, "say") as say:
+                self.app.read_status()
+            self.assertIn(expected, say.call_args[0][0])
+        with mock.patch.object(self.root, "focus_get", return_value=mode.call_entry), \
+                mock.patch.object(self.app, "_window_of", return_value=self.root), \
+                mock.patch.object(self.app.announcer, "say") as say:
+            mode.exch_var.set("599 14")
+            self.app.read_status()
+        self.assertIn("Call: Delta", say.call_args[0][0])
+        self.assertNotIn("Austausch:", say.call_args[0][0])
+
     def test_words_count_line_and_split_window_are_spoken(self):
         from morsetrainer.core import koch
         self.app.announcer.var.set(True)
@@ -1388,7 +1407,7 @@ class EveningSummaryAnnounceTest(AnnouncerCase):
                                  seals=["QRN-fest, Stufe 1"])
         text = summary.spoken
         self.assertTrue(text.startswith("Tagesübung geschafft. 2 von 3 Sternen: Dabei, Sauber. "), text)
-        self.assertIn("7 von", text)
+        self.assertIn("7 Sterne diese Woche, Ziel 12", text)
         self.assertIn("Ka kommt schneller, von 0,52 auf 0,41 Sekunden", text)
         self.assertIn("Gruppen bei 20 WPM von 60 auf 75 Prozent beim ersten Versuch", text)
         self.assertIn("Neues Siegel: QRN-fest, Stufe 1", text)
