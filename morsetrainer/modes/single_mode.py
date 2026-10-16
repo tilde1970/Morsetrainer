@@ -165,6 +165,7 @@ class SingleModeFrame(DailyModeMixin):
         self.icr_whole_session = False  # Zeitlimit den ganzen Durchgang an
         self.deadline = None        # Frist für das aktuelle Zeichen (time.time()), ab erstem Hören
         self.replayed = False       # aktuelles Zeichen mit der Leertaste wiederholt
+        self.status_heard = False   # F11 bei offener Antwort ohne Zeitlimit: Zeit nicht messbar
         self.answer_open = False    # aktuelles Zeichen noch nicht beantwortet und nicht verpasst
         self.last_typed = None      # falsche Antwort, zum Vergleich mit vorgespielt
         self.block_end = None       # Ende eines Tagesübungs-Blocks (time.time())
@@ -344,6 +345,7 @@ class SingleModeFrame(DailyModeMixin):
         self.waiting_for_input = False
         self.correcting = False
         self.replayed = False
+        self.status_heard = False
         self.deadline = None
         due = self.retries.next_due()
         if due is not None:
@@ -369,8 +371,12 @@ class SingleModeFrame(DailyModeMixin):
     def hold_for_status(self):
         """F11 vor der Ansage: Ist mit Zeitlimit eine Antwort offen, das Zeichen
         verwerfen (zählt nicht, Limit bleibt), zur erneuten Abfrage vormerken
-        und nach der Ansage ein neues spielen."""
-        if not (self.running and self.answer_open and self.icr_var.get()):
+        und nach der Ansage ein neues spielen. Ohne Zeitlimit zählt die
+        Antwort, aber ohne Zeit: Die Ansage steckte sonst in ihr."""
+        if not (self.running and self.answer_open):
+            return
+        if not self.icr_var.get():
+            self.status_heard = True
             return
         self.answer_open = False
         self.waiting_for_input = False
@@ -570,7 +576,8 @@ class SingleModeFrame(DailyModeMixin):
 
         reaction_time = max(time.time() - self.play_start_time, 0.001)
         measured_wpm = effective_wpm(self.current_char, reaction_time, self.voice[0])
-        latency = max(reaction_time - tone_seconds(self.current_char, self.voice[0]), 0.0)
+        latency = None if self.status_heard else max(reaction_time - tone_seconds(self.current_char, self.voice[0]),
+                                                     0.0)
         if helped:
             self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm)
         else:
@@ -592,7 +599,7 @@ class SingleModeFrame(DailyModeMixin):
                 sfx.play_ok()
             text = tr("Richtig: {text}").format(text=display_text(self.current_char))
             spoken = tr("Richtig: {text}").format(text=announcer.spell(self.current_char))
-            if not self.daily_minutes:
+            if not self.daily_minutes and latency is not None:
                 # In der Tagesübung ohne Zahlen: bis zum nächsten Zeichen
                 # bleibt keine Zeit zum Lesen.
                 shown = f"{number(max(latency, 0), 2)} s"

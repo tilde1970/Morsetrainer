@@ -202,7 +202,7 @@ def _fit_wrap(label, width: int) -> None:
     Elternelements, ändert sich so nichts – sonst würde jede Runde den Umbruch
     um den Rand enger und das Elternelement schmaler, ohne Ende."""
     try:
-        room = width - max(label.winfo_x(), 0) - scaled(WRAP_MARGIN)
+        room = width - max(label.winfo_x(), 0) - _right_pad(label) - scaled(WRAP_MARGIN)
         label._mt_room = room
         full = scaled(label._mt_wrap)
         current = int(float(str(label.cget("wraplength"))))
@@ -216,6 +216,21 @@ def _fit_wrap(label, width: int) -> None:
             label.configure(wraplength=wrap)
     except (tk.TclError, ValueError):
         pass
+
+
+def _right_pad(widget) -> int:
+    """Rechter Außenabstand (padx) von `widget` bei pack oder grid; der Text
+    darf nicht bis in ihn hinein umbrechen, sonst fehlen rechts Buchstaben."""
+    manager = widget.winfo_manager()
+    if manager not in ("pack", "grid"):
+        return 0
+    pad = (widget.pack_info() if manager == "pack" else widget.grid_info()).get("padx", 0)
+    if isinstance(pad, (tuple, list)):
+        pad = pad[-1] if pad else 0
+    try:
+        return int(pad)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _row_height(style, root) -> None:

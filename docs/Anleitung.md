@@ -219,7 +219,9 @@ vor, mit Gruppen weiterzumachen.
   Ansage sagen dann „Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht
   und kommt später wieder.“ Das Limit bleibt so lang, wie es war. Nach der
   Ansage kommt ein neues Zeichen; das angehaltene kommt nach ein paar
-  anderen unangekündigt wieder, wie nach einem Fehler.
+  anderen unangekündigt wieder, wie nach einem Fehler. Ohne Zeitlimit
+  zählt die Antwort nach F11 weiter, nur ihre Zeit nicht (die Ansage
+  steckte in ihr).
 - **Quittungston:** ein kurzer heller Ton bei richtiger, ein tiefer
   Doppelton bei falscher Antwort (Standard aus). Mit Ansage (F9) gilt,
   was Abschnitt 8 unter „Was angesagt wird“ beschreibt.
@@ -277,7 +279,8 @@ nach Landesmuster; das steht dann über dem Knopf **Rufzeichenliste laden
 (supercheckpartial.com)**. Der Knopf lädt die Liste direkt von
 [supercheckpartial.com](https://www.supercheckpartial.com) (rund 360 kB,
 braucht Internet). Ist sie da, steht darüber „Liste: … Rufzeichen“, und
-der Knopf heißt **Rufzeichenliste aktualisieren**.
+der Knopf wird zum flachen Knopf **aktualisieren** (die Ansage nennt ihn
+„Rufzeichenliste aktualisieren“).
 
 - Während einer Übung lädt der Knopf nicht; die Statuszeile sagt dann „Die
   Rufzeichenliste lässt sich nach der Übung laden.“ Startest du eine Übung,
@@ -420,6 +423,9 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
   langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
   F11 liest die Zeile mit vor.
+- **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
+  in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
+  liest ihn mit Tagesnamen vor („Montag 3 Sterne, Dienstag frei geübt“).
 - **Reaktion: davor → zuletzt:** dasselbe je Zeichen („0,80 → 0,45“,
   kleiner ist schneller), sobald es auf jeder Seite mindestens 5
   Messungen gibt, sonst „–“.

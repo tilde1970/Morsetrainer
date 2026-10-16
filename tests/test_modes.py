@@ -65,6 +65,28 @@ class AppTestCase(unittest.TestCase):
 
 
 
+class HeaderStateTest(AppTestCase):
+    """Die Kopfleiste kommt nach dem Neustart so, wie sie beim Beenden war."""
+    def setUp(self):
+        patch = mock.patch.object(app_module.MorseTrainerApp, "_load_state",
+                                  lambda app: {"shared": {"font_scale": 200}, "header_open": True})
+        patch.start()
+        self.addCleanup(patch.stop)
+        super().setUp()
+
+    def test_open_header_is_remembered_at_200_percent(self):
+        import json
+        self.assertEqual(theme.scale(), 200)
+        self.assertTrue(self.app.header_open)  # sonst bei 200 % zugeklappt
+        self.assertEqual(self.app.header.winfo_manager(), "pack")
+        self.assertEqual(self.app.header_row.winfo_manager(), "pack")  # Knopf zum Zuklappen da
+        self.app._toggle_header()
+        self.app._save_state()
+        state = json.loads(app_module.WINDOW_STATE_FILE.read_text(encoding="utf-8"))
+        self.assertIs(state["header_open"], False)
+        self.app.font_scale_var.set(100)
+
+
 class ReleaseTest(unittest.TestCase):
     """Nach dem Test ist das Hauptfenster samt App im Hauptthread eingesammelt.
     Bliebe es liegen, sammelte es irgendwann ein Netzwerk- oder Audio-Thread
@@ -668,6 +690,19 @@ class SingleCharTest(AppTestCase):
         self.assertEqual(s.history, [])
         self._key("K")  # Tippen während der Ansage wird nicht mehr gewertet
         self.assertEqual(s.session_stats.summary()["total"], 0)
+
+    def test_f11_without_time_limit_keeps_the_answer_but_not_its_time(self):
+        s = self.single
+        self._open_answer("K")
+        s.icr_var.set(False)
+        with mock.patch.object(s, "next_char") as next_char:
+            self.app.read_status()
+        next_char.assert_not_called()  # das Zeichen bleibt offen
+        self._key("K")
+        entry = s.session_stats.rounds[-1]
+        self.assertTrue(entry["correct"])
+        self.assertNotIn("latency_s", entry)  # die Ansage steckte in der Zeit
+        self.assertNotIn(" s)", s.feedback_var.get())
 
     def test_f11_dropped_char_comes_again_later(self):
         # Sonst wäre F11 eine Taste zum Überspringen unbekannter Zeichen.
@@ -1706,13 +1741,23 @@ class UsabilityTest(AppTestCase):
 
         def hints_below():
             return all(int(hint.grid_info()["row"]) == 1 for row, controls in app.settings_hinted
-                       for hint in row.winfo_children() if hint is not controls)
+                       for hint in row.winfo_children() if hint is not controls and hint.grid_info())
+
+        def contrast_hint():
+            return next(hint for row, controls in app.settings_hinted for hint in row.winfo_children()
+                        if str(hint.cget("textvariable") if hint is not controls else "") == str(app.contrast_hint_var))
         app.font_scale_var.set(200)
         with mock.patch.object(window, "winfo_screenwidth", return_value=1024), \
                 mock.patch.object(window, "winfo_screenheight", return_value=600):
             app._fit_settings()
             window.update_idletasks()
             self.assertTrue(hints_below())
+            self.assertEqual(contrast_hint().winfo_manager(), "")  # leer: keine Leerzeile darunter
+            app.contrast_var.set(not app.contrast_var.get())
+            app._contrast_toggled()
+            self.assertEqual(int(contrast_hint().grid_info()["row"]), 1)  # „wirkt nach Neustart“ erscheint
+            app.contrast_var.set(not app.contrast_var.get())
+            app._contrast_toggled()
             self.assertLessEqual(window.winfo_reqwidth(), 1024 - 40)
             self.assertLessEqual(window.winfo_reqheight(), 600)
             self.assertLess(int(app.settings_scroller.canvas.cget("height")), app.settings_body.winfo_reqheight())
@@ -1770,6 +1815,17 @@ class UsabilityTest(AppTestCase):
             top = label.winfo_rooty() - canvas.winfo_rooty()
             self.assertGreaterEqual(top, 0, name)
             self.assertLessEqual(top + label.winfo_height(), canvas.winfo_height(), name)
+        self.app.font_scale_var.set(100)
+
+    def test_hint_wraps_inside_its_right_padding(self):
+        self.root.deiconify()
+        self.root.geometry("1024x700")
+        self.app.font_scale_var.set(200)
+        self.app.show_mode("Wörter")
+        self.root.update()
+        parent = self.mode("Wörter").scroller.inner
+        intro = parent.winfo_children()[0]  # Erklärtext, padx=10
+        self.assertLessEqual(intro.winfo_x() + intro.winfo_reqwidth(), parent.winfo_width() - 10)
         self.app.font_scale_var.set(100)
 
     def test_header_collapses_at_200_percent(self):

@@ -216,7 +216,8 @@ program suggests moving on to groups.
   limit paused: this character does not count now and will come again
   later.” The limit keeps its length. A new character follows the
   announcement; the paused one comes again unannounced after a few others,
-  as after a mistake.
+  as after a mistake. Without the time limit the answer after F11 still
+  counts, only its time does not (the announcement would be part of it).
 - **Feedback beep:** a short high beep for a correct answer, a low double
   tone for a wrong one (default off). With announcements on (F9), what
   section 8 describes under “What is announced” applies.
@@ -273,7 +274,8 @@ callsigns from country patterns; the line above the **Load callsign list
 (supercheckpartial.com)** button says so. The button downloads the list
 directly from [supercheckpartial.com](https://www.supercheckpartial.com)
 (about 360 kB, needs internet). Once it is there, the line above reads
-“List: … callsigns” and the button reads **Update callsign list**.
+“List: … callsigns” and the button becomes the flat
+**update** button (announced as “Update callsign list”).
 
 - During an exercise the button does not load; the status line says “The
   callsign list can be loaded after the exercise.” If you start an
@@ -411,6 +413,9 @@ many characters. Runs with band conditions do not count here (section 6).
   the 30 days before: reaction 0.61 s, 88 % correct”. The averages over all
   runs hardly move, because the early, slow answers always count; here you
   see whether you are getting better. F11 reads the line too.
+- **This week:** the week strip with stars and the weekly goal as in the
+  daily practice bar; with a large font it appears only here. F11 reads it
+  with day names (“Monday 3 stars, Tuesday practised freely”).
 - **Reaction: before → recent:** the same per character (“0.80 → 0.45”,
   smaller is faster) once there are at least 5 measurements on each side,
   otherwise “–”.

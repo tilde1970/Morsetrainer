@@ -17,8 +17,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import (audio, awards, backup, band, errorlog, koch, migration, practice, review,
-                                screenreader, sfx, speech, stats, storage, tempo)
+from morsetrainer.core import (audio, awards, backup, band, daily, errorlog, koch, migration, practice, review,
+                                screenreader, sfx, speech, stats, storage, tempo, week)
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, ctrl_key, tr
@@ -34,7 +34,7 @@ from morsetrainer.modes.word_mode import WordModeFrame
 from morsetrainer.net import certs, update
 from morsetrainer.widgets.awards_panel import AwardsPanel, DiplomaWindow
 from morsetrainer.widgets.band_settings import BandSettings
-from morsetrainer.widgets.daily_panel import DailyBar
+from morsetrainer.widgets.daily_panel import DailyBar, week_goal_text, week_legend, week_spoken, week_text
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
@@ -223,7 +223,8 @@ class MorseTrainerApp:
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
         self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
-        self._place_header(open_=theme.scale() < COMPACT_ZOOM)
+        # Bei großer Schrift zugeklappt, außer sie war beim Beenden aufgeklappt.
+        self._place_header(open_=theme.scale() < COMPACT_ZOOM or self.saved_state.get("header_open") is True)
         self._build_notebook()
         self._follow_station()
         self._build_all_time_tab()
@@ -347,6 +348,7 @@ class MorseTrainerApp:
             "update_declined": self.update_declined,
             "update_declined_on": self.update_declined_on.isoformat() if self.update_declined_on else None,
             "one_by_one": self.one_by_one_var.get(),
+            "header_open": self.header_open,
             "seen_version": __version__,
         }
         try:
@@ -499,6 +501,7 @@ class MorseTrainerApp:
         # Zeilen mit Hinweis rechts daneben (Zeile, Bedienelemente, Hinweis);
         # _fit_settings setzt den Hinweis darunter, wenn die Breite nicht reicht.
         self.settings_hinted = []
+        self.settings_hints_below = False
 
         def hinted(card, **pack):
             row = ttk.Frame(card)
@@ -671,6 +674,7 @@ class MorseTrainerApp:
         self.language_var.set(chosen)
         self.language_chosen = True
         self.language_hint_var.set("" if chosen == i18n.LANG else tr("wirkt nach Neustart des Programms"))
+        self._place_settings_hints(self.settings_hints_below)
         if self.language_hint_var.get():
             announcer.say(self.language_hint_var.get())
         self._show_restart_button()
@@ -782,6 +786,7 @@ class MorseTrainerApp:
     def _contrast_toggled(self) -> None:
         changed = self.contrast_var.get() != self.contrast_at_start
         self.contrast_hint_var.set(tr("wirkt nach Neustart des Programms") if changed else "")
+        self._place_settings_hints(self.settings_hints_below)
         self._show_restart_button()
         announcer.say(tr("Hoher Kontrast nach Neustart.") if changed and self.contrast_var.get() else "")
 
@@ -987,6 +992,8 @@ class MorseTrainerApp:
         comparison = comparison_text(stats.period_comparison())
         if comparison:
             parts.append(comparison)
+        days, stars = self._week()
+        parts.append(tr("Diese Woche: {days}; {goal}").format(days=week_spoken(days), goal=week_goal_text(stars)))
         pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
         if pairs:
             parts.append(tr("Häufigste Verwechslungen: ") + ", ".join(
@@ -1074,15 +1081,24 @@ class MorseTrainerApp:
 
     def _place_settings_hints(self, below: bool) -> None:
         """Hinweise im Einstellungsfenster neben (`below` False) oder unter
-        ihre Bedienelemente."""
+        ihre Bedienelemente; darunter ohne leere Hinweise (Sprache, Kontrast
+        vor einer Änderung), die sonst eine Leerzeile hinterließen."""
+        self.settings_hints_below = below
         for row, controls in self.settings_hinted:
             controls.grid(row=0, column=0, sticky="w")
             for hint in row.winfo_children():
                 if hint is not controls:
-                    if below:
+                    if below and not self._hint_text(hint):
+                        hint.grid_remove()
+                    elif below:
                         hint.grid(row=1, column=0, sticky="w", padx=0, pady=(2, 0))
                     else:
                         hint.grid(row=0, column=1, sticky="w", padx=(theme.scaled(8), 0), pady=0)
+
+    @staticmethod
+    def _hint_text(hint) -> str:
+        variable = str(hint.cget("textvariable"))
+        return hint.getvar(variable) if variable else str(hint.cget("text"))
 
     def _fit_settings(self) -> None:
         """Einstellungsfenster so groß wie der Inhalt, aber höchstens so groß
@@ -1534,6 +1550,15 @@ class MorseTrainerApp:
             frame, title=tr("Gesamtstatistik (alle Durchgänge)"), tree_height=12, show_save_label=False,
             compare=True)
 
+        # Wochenstreifen auch hier: Bei großer Schrift zeigt ihn die Leiste der
+        # Tagesübung nicht.
+        week_box = theme.card(frame, tr("Diese Woche"))
+        self.week_strip_var = tk.StringVar(value="")
+        ttk.Label(week_box, textvariable=self.week_strip_var, wraplength=560).pack(anchor="w", pady=(2, 0))
+        self.week_goal_var = tk.StringVar(value="")
+        ttk.Label(week_box, textvariable=self.week_goal_var, font=theme.HEADING).pack(anchor="w", pady=(2, 0))
+        theme.hint(week_box, text=week_legend(), wrap=560).pack(anchor="w", pady=(2, 4))
+
         self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")),
                                         station=lambda: (self.station_call(), self.station_name_var.get().strip()))
         self.lifeline_panel = LifelinePanel(frame)
@@ -1677,6 +1702,9 @@ class MorseTrainerApp:
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data),
                                     stats.period_comparison())
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
+        days, stars = self._week()
+        self.week_strip_var.set(week_text(days))
+        self.week_goal_var.set(week_goal_text(stars))
         review_data = review.load()
         self.review_var.set(self._review_text(review_data))
         self.boxes_var.set(self._boxes_text(review_data))
@@ -1684,6 +1712,12 @@ class MorseTrainerApp:
         if with_awards:
             self.awards_panel.refresh()
             self.lifeline_panel.refresh()
+
+    def _week(self):
+        """Wochenstreifen und Sterne der laufenden Woche (core/week.py)."""
+        state, today = daily.load(), date.today()
+        return (week.strip(state, practice.load(), self.daily_goal_minutes() * 60, today),
+                week.stars_in_week(state, today))
 
     @staticmethod
     def _review_text(data: dict, today=None) -> str:

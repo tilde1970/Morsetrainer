@@ -246,10 +246,14 @@ class CallsignModeFrame(SequenceModeFrame):
             self.list_text = tr("Liste: {n} Rufzeichen").format(n=number(len(self.all_calls)))
             if release:
                 self.list_text += f" (SCP {release})"
-            self.scp_button.config(text=tr("Rufzeichenliste aktualisieren"))
+            # Ist die Liste da, braucht man den Knopf selten: flach, kurz
+            # beschriftet, mit vollem Namen für die Ansage.
+            self.scp_button.config(text=tr("aktualisieren"), style="Flat.TButton")
+            announcer.name(self.scp_button, tr("Rufzeichenliste aktualisieren"))
         else:
             self.list_text = tr("Noch keine Rufzeichenliste – die Rufzeichen werden nach Muster erfunden.")
-            self.scp_button.config(text=tr("Rufzeichenliste laden (supercheckpartial.com)"))
+            self.scp_button.config(text=tr("Rufzeichenliste laden (supercheckpartial.com)"), style="TButton")
+            announcer.name(self.scp_button, tr("Rufzeichenliste laden (supercheckpartial.com)"))
         self.list_info_var.set(self.list_text)
 
     def _download_list(self):
