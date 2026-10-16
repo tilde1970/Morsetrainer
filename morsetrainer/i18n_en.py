@@ -27,6 +27,9 @@ EN.update({
     "Sprache / Language": "Sprache / Language",  # zweisprachig, damit man zurückfindet
     "Barrierefreiheit": "Accessibility",
     "Schriftgröße": "Font size",
+    "Schriftgröße {percent} %.": "Font size {percent} %.",
+    "Schriftgröße {percent} %, größte Stufe.": "Font size {percent} %, largest step.",
+    "Schriftgröße {percent} %, kleinste Stufe.": "Font size {percent} %, smallest step.",
     "Rückmeldung ansagen (F9)": "Announce feedback (F9)",
     # Sprachansage (widgets/announcer.py), gesprochen mit der Stimme der Oberflächensprache
     "Knopf": "button",
@@ -264,6 +267,7 @@ EN.update({
         "Switch to groups?",
     "Hilfe (F1)": "Help (F1)",
     "Morsetrainer {version} · entwickelt von {author} · 73!": "Morsetrainer {version} · developed by {author} · 73!",
+    "Morsetrainer {version} · {author} · 73!": "Morsetrainer {version} · {author} · 73!",
     "Heute {minutes} von {goal} Min": "Today {minutes} of {goal} min",
     "Heute {minutes} Min": "Today {minutes} min",
     "Statistik": "Statistics",
@@ -514,8 +518,8 @@ EN.update({
     "Kopfleiste": "Header",
     "Kopfleiste geöffnet.": "Header opened.",
     "Kopfleiste geschlossen.": "Header closed.",
-    "offen": "open",
-    "zu": "closed",
+    "aufgeklappt": "expanded",
+    "zugeklappt": "collapsed",
     "eigene Zeichen": "own characters",
     "Koch-Lektion {n}": "Koch lesson {n}",
     "{wpm} WPM, effektiv {effective}": "{wpm} WPM, effective {effective}",

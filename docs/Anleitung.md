@@ -961,7 +961,8 @@ Bedienelement, auf dem du gerade stehst.
   dem Pile-up („Busted. Richtig: Delta, Lima, Eins …“, „Austausch
   falsch“, „Nicht im Log“); richtig geloggte QSOs bleiben still, damit die
   Rate nicht leidet. Rufzeichen in „Mein Rufzeichen“, im Call-Feld und im
-  Log werden im Funkalphabet buchstabiert. Am Ende das Ergebnis.
+  Log werden im Funkalphabet buchstabiert. F11 nennt zuerst den Inhalt
+  des Felds mit dem Fokus, dann den Stand. Am Ende das Ergebnis.
 - **Sprechen:** Der Reiter spricht beim Üben selbst; angesagt wird nur,
   warum er nicht startet, das Ende („Fertig: 20 Einträge“), der
   MP3-Export und sein Ergebnis. F11 nennt den Fortschritt („3 von 20“).
@@ -1012,7 +1013,8 @@ Bedienelement, auf dem du gerade stehst.
 
 ### Sehen
 
-- **Schriftgröße:** Strg+Plus, Strg+Minus, Strg+0 (Abschnitt 2).
+- **Schriftgröße:** Strg+Plus, Strg+Minus, Strg+0 (Abschnitt 2); die
+  neue Größe wird angesagt („Schriftgröße 150 Prozent“).
 - **Hoher Kontrast:** „Einstellungen …“ → „Hoher Kontrast (Schwarz, Weiß,
   Gelb)“, wirkt nach einem Neustart (Knopf **Jetzt neu starten** unten im
   Fenster). Schwarzer Grund, weiße Schrift, gelbe

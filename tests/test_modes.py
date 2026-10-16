@@ -1720,10 +1720,16 @@ class UsabilityTest(AppTestCase):
         self.assertEqual(app.header_row.winfo_manager(), "pack")
         self.assertEqual(app.header.winfo_manager(), "")
         self.assertEqual(app.header_settings.winfo_manager(), "pack")  # Einstellungen auch zugeklappt
+        self.root.update_idletasks()
+        self.assertLessEqual(app.footer.winfo_reqwidth(), 1024)  # Fußzeile passt auf 1024 Pixel
+        self.assertNotIn("entwickelt", app.version_label.cget("text"))
         self.assertEqual(app.header_toggle.cget("text"),
                          "▸ Koch-Lektion 19 · 22/10 WPM · 600 Hz · KMURESNAPTLW…")
         self.assertEqual(announcer.describe(app.header_toggle),
-                         "Kopfleiste, Knopf, zu, Koch-Lektion 19, 22 WPM, effektiv 10, 600 Hz.")
+                         "Kopfleiste, Knopf, zugeklappt, Koch-Lektion 19, 22 WPM, effektiv 10, 600 Hz.")
+        app.charset_var.set("KMQ")  # eigene Zeichen werden buchstabiert
+        self.assertIn("eigene Zeichen: Ka, Emm, Ku, 22 WPM", announcer.describe(app.header_toggle))
+        app.charset_var.set("KMURESNAPTLWI.JZ=FOY")
         with mock.patch.object(announcer, "say") as say:
             app.header_toggle.invoke()
         say.assert_called_once_with("Kopfleiste geöffnet.")

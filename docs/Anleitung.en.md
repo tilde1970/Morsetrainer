@@ -941,7 +941,8 @@ are on.
   pile-up (“Busted. Correct: Delta, Lima, One …”, “Wrong exchange”, “Not in
   log”); correctly logged QSOs stay silent so the rate does not suffer.
   Callsigns in “My callsign”, the call field and the log are spelled in the
-  phonetic alphabet. The result at the end.
+  phonetic alphabet. F11 first gives the content of the field with the
+  focus, then the state. The result at the end.
 - **Speak:** the tab speaks by itself while practising; announced are only
   why it does not start, the end (“Done: 20 items”), the MP3 export and its
   result. F11 gives the progress (“3 of 20”).
@@ -989,7 +990,8 @@ are on.
 
 ### Seeing
 
-- **Font size:** Ctrl+Plus, Ctrl+Minus, Ctrl+0 (section 2).
+- **Font size:** Ctrl+Plus, Ctrl+Minus, Ctrl+0 (section 2); the new size
+  is announced (“Font size 150 percent”).
 - **High contrast:** “Settings …” → “High contrast (black, white,
   yellow)”, takes effect after a restart (**Restart now** button at the
   bottom of the window). Black background, white text,

@@ -939,10 +939,11 @@ class MorseTrainerApp:
                 text = re.sub(r"^(\d+)/(\d+)$", lambda m: tr("{done} von {total}").format(
                     done=m.group(1), total=m.group(2)), text)
             parts.append(text)
-        # Contest: buchstabierter Inhalt des Call- bzw. Austauschfelds mit dem Fokus.
+        # Contest: buchstabierter Inhalt des Call- bzw. Austauschfelds mit dem
+        # Fokus, zuerst – beim Tippen ist das die Frage, den Rest kennt man.
         field_text = getattr(mode, "field_text", None)
         if field_text is not None and listed is None:
-            parts.append(field_text(self.root.focus_get()))
+            parts.insert(0, field_text(self.root.focus_get()))
         # Vor dem Start: was der Reiter zur Auswahl sagt (Wörter: wie viele passen).
         idle_hint = getattr(mode, "idle_hint", None)
         if idle_hint is not None and not getattr(mode, "running", False):
@@ -1023,9 +1024,17 @@ class MorseTrainerApp:
         announcer.say(tr("Reiter {name}.").format(name=self._tab_name()) + hint)
 
     def zoom(self, direction: int) -> None:
-        """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal)."""
+        """Strg+Plus (1), Strg+Minus (−1), Strg+0 (0 = normal); angesagt, weil
+        man die neue Größe sonst nur sieht."""
         current = self.font_scale_var.get()
         self.set_font_scale(theme.NORMAL_ZOOM if direction == 0 else theme.zoom_step(current, direction))
+        percent = self.font_scale_var.get()
+        if percent == current and direction:
+            text = tr("Schriftgröße {percent} %, größte Stufe.") if direction > 0 else \
+                tr("Schriftgröße {percent} %, kleinste Stufe.")
+        else:
+            text = tr("Schriftgröße {percent} %.")
+        announcer.say(text.format(percent=percent))
 
     def set_font_scale(self, percent: int) -> None:
         """Schriftgröße in Prozent setzen, begrenzt auf die Stufen in
@@ -1042,6 +1051,8 @@ class MorseTrainerApp:
             if getattr(self, "daily_bar", None) is not None:
                 self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
                 self._place_header(open_=theme.scale() < COMPACT_ZOOM)
+            if getattr(self, "version_label", None) is not None:
+                self._set_version_text()
             self._fit_window()
             self._fit_settings()
         self.zoom_box.set(f"{theme.scale()} %")
@@ -1111,8 +1122,10 @@ class MorseTrainerApp:
         return " · ".join([lesson_text, shown, freq, charset])
 
     def _header_spoken(self) -> str:
-        lesson_text, _, spoken, freq, _ = self._header_parts()
-        state = tr("offen") if self.header_open else tr("zu")
+        lesson_text, _, spoken, freq, charset = self._header_parts()
+        state = tr("aufgeklappt") if self.header_open else tr("zugeklappt")
+        if koch.lesson_of(charset) is None:  # eigene Zeichen: welche, steht sonst nirgends in der Ansage
+            lesson_text = f"{lesson_text}: {announcer.spell(charset)}"
         return f"{state}, {lesson_text}, {spoken}, {freq}"
 
     def _show_header_summary(self) -> None:
@@ -1351,15 +1364,21 @@ class MorseTrainerApp:
                                         command=self.offer_update)
         ttk.Button(footer, text=tr("Hilfe (F1)"), style="Flat.TButton", command=self.open_help).pack(
             side="right", padx=(8, 0))
-        ttk.Label(
-            footer, text=tr("Morsetrainer {version} · entwickelt von {author} · 73!").format(
-                version=__version__, author=__author__), style="Footer.TLabel",
-        ).pack(side="right")
+        self.version_label = ttk.Label(footer, style="Footer.TLabel")
+        self.version_label.pack(side="right")
+        self._set_version_text()
         ttk.Separator(self.root).pack(side="bottom", fill="x", padx=10)
         self.practice_started = None  # time.time() beim Start eines Durchgangs
         self.practice_tick_id = None
         self.daily_goal_var.trace_add("write", lambda *_: self._update_practice())
         self._update_practice()
+
+    def _set_version_text(self) -> None:
+        """Version und Autor; ab COMPACT_ZOOM kürzer, sonst schneidet die
+        Fußzeile auf 1024 Pixel Breite ab."""
+        text = (tr("Morsetrainer {version} · {author} · 73!") if theme.scale() >= COMPACT_ZOOM
+                else tr("Morsetrainer {version} · entwickelt von {author} · 73!"))
+        self.version_label.config(text=text.format(version=__version__, author=__author__))
 
     def daily_goal_minutes(self) -> int:
         """Tagesziel in Minuten aus dem Reiter Statistik (0 bei ungültigem Feld)."""

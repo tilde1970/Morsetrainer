@@ -49,6 +49,18 @@ class FontScaleTest(AppTestCase):
         self.app.zoom(0)
         self.assertEqual(theme.scale(), 100)
 
+    def test_zoom_keys_are_announced(self):
+        from morsetrainer.widgets import announcer
+        with mock.patch.object(announcer, "say") as say:
+            self.app.zoom(1)
+            self.app.zoom(0)
+            for _ in range(len(theme.ZOOM_STEPS)):
+                self.app.zoom(-1)
+        spoken = [call.args[0] for call in say.call_args_list]
+        self.assertEqual(spoken[:2], ["Schriftgröße 110 %.", "Schriftgröße 100 %."])
+        self.assertEqual(spoken[-1], "Schriftgröße 75 %, kleinste Stufe.")
+        self.app.zoom(0)
+
     def test_arrow_keys_work_after_tabbing_into_a_table(self):
         # Ohne aktuelle Zeile täten die Pfeiltasten nichts (Diplome, Statistik).
         tree = ttk.Treeview(self.root, columns=("a",), show="headings")
@@ -1180,7 +1192,7 @@ class AnnouncerModesTest(AnnouncerCase):
             with mock.patch.object(self.root, "focus_get", return_value=entry), \
                     mock.patch.object(self.app.announcer, "say") as say:
                 self.app.read_status()
-            self.assertIn(expected, say.call_args[0][0])
+            self.assertTrue(say.call_args[0][0].startswith(expected), say.call_args[0][0])  # vor allem anderen
         with mock.patch.object(self.root, "focus_get", return_value=mode.call_entry), \
                 mock.patch.object(self.app, "_window_of", return_value=self.root), \
                 mock.patch.object(self.app.announcer, "say") as say:
