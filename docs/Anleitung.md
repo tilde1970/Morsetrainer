@@ -262,6 +262,10 @@ Lektion 35.
 **Rufzeichen:** echte Rufzeichen aus der Super-Check-Partial-Liste,
 standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion
 23 mit der ersten Ziffer), gelegentlich mit /P, /M, OE/… wie im Contest.
+Gibt es aus deinen Zeichen zu wenige echte Rufzeichen (unter 30, im
+Rufz-Durchgang unter 50), erfindet der Trainer passende nach Muster; das
+steht über dem Ladeknopf. Mit Präfix-Filter geht das nicht, dann nennt die
+Statuszeile beim Start, was fehlt.
 Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je
 ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo,
 Bestwert (mit Starttempo) und Verlauf. Danach lassen sich die verpassten

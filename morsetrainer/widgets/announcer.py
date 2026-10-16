@@ -919,13 +919,16 @@ _SYMBOLS = (("→", N_(" auf ")), ("↔", N_(" und ")), ("≈", N_("etwa ")), ("
 _PROSIGN_SHOWN = re.compile(r"<(" + "|".join(PROSIGN_KEYS.values()) + r")>")
 _PROSIGN_CHAR = {name: ch for ch, name in PROSIGN_KEYS.items()}
 # Schreibweisen, die die Stimme falsch oder gar nicht liest: „Strg+,“
-# (Komma fiele weg), „20/10 WPM“ (Farnsworth), „3 / 10“, „S/N“, „+8 dB“.
+# (Komma fiele weg), „20/10 WPM“ (Farnsworth), „3 / 10“, „0 ★“ (Mehrzahl),
+# „S/N“, „+8 dB“.
 _SPOKEN_FORMS = (
     (re.compile(r"\b(Strg|Ctrl|Cmd)\+,"), lambda m: f"{m.group(1)}+{tr('Komma')}"),
     (re.compile(r"\b(\d+)/(\d+) WPM\b"),
      lambda m: tr("{wpm} WPM, effektiv {effective}").format(wpm=m.group(1), effective=m.group(2))),
     (re.compile(r"(?<![\d/])(\d+) / (\d+)(?![\d/])"),
      lambda m: tr("{done} von {total}").format(done=m.group(1), total=m.group(2))),
+    (re.compile(r"\b(\d+) ★"),
+     lambda m: tr("1 Stern") if m.group(1) == "1" else tr("{n} Sterne").format(n=m.group(1))),
     (re.compile(r"\bS/N\b"), lambda m: tr("Rauschabstand")),
     (re.compile(r"(?<![\w.,+−])([+−])(\d)"),
      lambda m: (tr("plus") if m.group(1) == "+" else tr("minus")) + " " + m.group(2)),

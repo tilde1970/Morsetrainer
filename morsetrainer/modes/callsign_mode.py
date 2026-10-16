@@ -236,7 +236,7 @@ class CallsignModeFrame(SequenceModeFrame):
         self.scp_button.pack(anchor="w", pady=(0, 4))
         self.scp_status = None  # {"calls" | "error"} während des Ladens
         self._set_list_text(release)
-        for var in (self.prefix_var, self.learned_var, self.charset_var):
+        for var in (self.prefix_var, self.learned_var, self.charset_var, self.rufz_var):
             var.trace_add("write", lambda *_: self._update_pool())
         self._update_pool()
 
@@ -248,7 +248,7 @@ class CallsignModeFrame(SequenceModeFrame):
                 self.list_text += f" (SCP {release})"
             self.scp_button.config(text=tr("Rufzeichenliste aktualisieren"))
         else:
-            self.list_text = tr("callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt.")
+            self.list_text = tr("Noch keine Rufzeichenliste – die Rufzeichen werden nach Muster erfunden.")
             self.scp_button.config(text=tr("Rufzeichenliste laden (supercheckpartial.com)"))
         self.list_info_var.set(self.list_text)
 
@@ -509,9 +509,23 @@ class CallsignModeFrame(SequenceModeFrame):
         if self.all_calls:
             self.pool = filter_calls(self.all_calls, parse_prefixes(self.prefix_var.get()), allowed)
             if allowed is not None or self.prefix_var.get().strip():
-                self.list_info_var.set(self.list_text + tr(" · passend: {n}").format(n=number(len(self.pool))))
+                text = self.list_text + tr(" · passend: {n}").format(n=number(len(self.pool)))
+                if self._invents_calls(allowed):
+                    text += "\n" + tr("Zu wenige echte Rufzeichen aus deinen Zeichen – es werden passende erfunden.")
+                self.list_info_var.set(text)
             else:
                 self.list_info_var.set(self.list_text)
+
+    def _needed(self) -> int:
+        """So viele passende Rufzeichen braucht ein Durchgang."""
+        return max(MIN_POOL, RUFZ_CALLS) if self.rufz_var.get() else MIN_POOL
+
+    def _invents_calls(self, allowed) -> bool:
+        """Bei zu wenigen passenden Rufzeichen erfundene aus den gelernten
+        Zeichen nehmen (wie ohne Liste), statt den Start zu sperren – nur ohne
+        Präfix-Filter, den erfundene Rufzeichen nicht einhalten."""
+        return (len(self.pool) < self._needed() and allowed is not None and bool(allowed & set(LETTERS))
+                and bool(allowed & set(DIGITS)) and not self.prefix_var.get().strip())
 
     def _validate_settings(self) -> bool:
         """Passen Eingabeart und Zeichensatz? Rufz braucht eine Eingabe, und es muss
@@ -530,8 +544,10 @@ class CallsignModeFrame(SequenceModeFrame):
                 return False
             return True
         self._update_pool()
-        needed = max(MIN_POOL, RUFZ_CALLS) if self.rufz_var.get() else MIN_POOL
-        if len(self.pool) < needed:
+        if self._invents_calls(allowed):
+            self.pool = []
+            return True
+        if len(self.pool) < self._needed():
             if allowed is not None and not allowed & set(DIGITS):
                 first = next(n for n in range(1, koch.MAX_LESSON + 1) if koch.newest_char(n) in DIGITS)
                 hint = tr("Die erste Ziffer kommt mit Koch-Lektion {lesson}.").format(lesson=first)

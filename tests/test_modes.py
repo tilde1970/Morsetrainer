@@ -474,6 +474,18 @@ class CallsignTest(AppTestCase):
         calls.learned_var.set(False)
         self.assertTrue(calls._validate_settings())
 
+    def test_few_real_calls_from_learned_chars_are_made_up(self):
+        calls = self.mode("Rufzeichen")
+        calls.all_calls = ["DL4YM", "DK1AB"] * 40
+        self.app.charset_var.set("KMURESNAPTLWI4")  # erste Ziffer, aber kaum echte Rufzeichen
+        self.assertIn("erfunden", calls.list_info_var.get())
+        self.assertTrue(calls._validate_settings())
+        self.assertEqual(calls.pool, [])
+        calls._setup_pickers(weighted=False)
+        self.assertTrue(set(calls._pick_base_call()) <= set("KMURESNAPTLWI4"))
+        calls.prefix_var.set("DL")  # erfundene Rufzeichen hielten den Filter nicht ein
+        self.assertFalse(calls._validate_settings())
+
 
 class RufzTest(AppTestCase):
     def _answer(self, g, call, typed):

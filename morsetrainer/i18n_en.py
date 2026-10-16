@@ -34,6 +34,8 @@ EN.update({
     "MP3 gespeichert, {minutes:.0f} Minuten.": "MP3 saved, {minutes:.0f} minutes.",
     "{done} von {total}": "{done} of {total}",
     "{wpm} WPM, effektiv {effective}": "{wpm} WPM, effective {effective}",
+    "1 Stern": "1 star",
+    "{n} Sterne": "{n} stars",
     "Rauschabstand": "signal to noise",
     "plus": "plus",
     "minus": "minus",
@@ -1058,8 +1060,10 @@ EN.update({
     "▶ Verpasste nachhören (F6)": "▶ Replay missed (F6)",
     "▶ Verpasste nachhören ({n}, F6)": "▶ Replay missed ({n}, F6)",
     "Liste: {n} Rufzeichen": "List: {n} callsigns",
-    "callsigns.scp nicht gefunden – es werden Rufzeichen nach Muster erzeugt.":
-        "callsigns.scp not found – callsigns are generated from patterns.",
+    "Noch keine Rufzeichenliste – die Rufzeichen werden nach Muster erfunden.":
+        "No callsign list yet – callsigns are made up from patterns.",
+    "Zu wenige echte Rufzeichen aus deinen Zeichen – es werden passende erfunden.":
+        "Too few real callsigns from your characters – matching ones are made up.",
     "Rufzeichenliste aktualisieren": "Update callsign list",
     "Rufzeichenliste laden (supercheckpartial.com)": "Load callsign list (supercheckpartial.com)",
     "Die Rufzeichenliste lässt sich nach der Übung laden.":

@@ -4,7 +4,7 @@ __pycache__/
 stats/
 window_state.json
 .idea/
-callsigns.scp
+callsigns.scp*
 woerter.txt
 build/
 dist/

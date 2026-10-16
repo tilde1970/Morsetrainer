@@ -258,6 +258,10 @@ mixes this way from lesson 35.
 **Callsigns:** real callsigns from the Super Check Partial list, by default
 only from characters you have already learned (from Koch lesson 23 with
 the first digit), occasionally with /P, /M, OE/… as in contests.
+If there are too few real callsigns from your characters (under 30, under
+50 for a RufZ run), the trainer makes up matching ones from patterns; the
+line above the load button says so. With a prefix filter this does not
+work; the status line then tells you at the start what is missing.
 Optionally as a **RufZ run** (modelled on RufzXP): 50 callsigns, one
 attempt each, the speed grows, score = length × effective speed, best
 score (with starting speed) and history. Afterwards you can replay the

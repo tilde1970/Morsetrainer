@@ -4,7 +4,7 @@ import tkinter as tk
 import unittest
 from tkinter import ttk
 
-import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
+import tests  # Pfad und sounddevice-Attrappe
 from morsetrainer.widgets import announcer, tkcompat
 
 
@@ -14,8 +14,10 @@ class TkCompatTest(unittest.TestCase):
             self.root = tk.Tk()
         except tk.TclError:
             self.skipTest("keine Anzeige")
-        self.addCleanup(self.root.destroy)
         self.root.withdraw()
+
+    def tearDown(self):
+        tests.release_root(self.root, owner=self)
 
     def pairs(self):
         # Gemerkt: Eine eingesammelte Variable löscht ihren Tcl-Wert.

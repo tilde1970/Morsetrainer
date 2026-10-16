@@ -1421,6 +1421,8 @@ class EveningSummaryAnnounceTest(AnnouncerCase):
         self.assertEqual(announcer.speakable("84 % → 90 %"), "84 Prozent auf 90 Prozent")
         self.assertEqual(announcer.speakable("Abgebrochen – deine Sterne bleiben."), "Abgebrochen, deine Sterne bleiben.")
         self.assertEqual(announcer.speakable("✓ KM"), "richtig KM")
+        self.assertEqual(announcer.speakable("0 ★ diese Woche, Ziel 12"), "0 Sterne diese Woche, Ziel 12")
+        self.assertEqual(announcer.speakable("Letzte Woche: 1 Tag, 1 ★"), "Letzte Woche: 1 Tag, 1 Stern")
         # Einheiten als Wort, sonst buchstabiert die Stimme („HaZet“).
         self.assertEqual(announcer.speakable("Tonhöhe, Zahlenfeld, 650 Hz"), "Tonhöhe, Zahlenfeld, 650 Hertz")
         self.assertEqual(announcer.speakable("Filter 2,4 kHz, 500 Hz"), "Filter 2,4 Kilohertz, 500 Hertz")
