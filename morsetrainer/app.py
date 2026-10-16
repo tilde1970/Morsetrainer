@@ -167,6 +167,21 @@ def _spoken_clock(match) -> str:
     return " ".join(parts)
 
 
+# Zustandsbits einer Taste (Tk): Strg; Alt bzw. Cmd (Mod1) unter X11 und auf dem
+# Mac; unter Windows ist Mod1 die Num-Taste, Alt ist dort 0x20000.
+STATE_CONTROL, STATE_MOD1, STATE_WIN_ALT = 0x4, 0x8, 0x20000
+
+
+def _is_shortcut(event) -> bool:
+    """Taste mit Strg, Alt oder Cmd: ein Kürzel und nie eine Antwort. Unter
+    Windows meldet AltGr Strg und Alt zugleich; damit getippte Zeichen (etwa
+    „@“) bleiben Antworten."""
+    state = event.state if isinstance(event.state, int) else 0
+    if sys.platform == "win32":
+        return bool(state & STATE_CONTROL) != bool(state & STATE_WIN_ALT)  # beides zugleich ist AltGr
+    return bool(state & (STATE_CONTROL | STATE_MOD1))
+
+
 class MorseTrainerApp:
     """Das Hauptfenster: Kopfleiste mit den gemeinsamen Einstellungen
     (Zeichensatz, Tempo, Tonhöhe, Lektion), Tagesübung, die Übungs-Reiter und
@@ -2144,6 +2159,8 @@ class MorseTrainerApp:
         if (isinstance(event.widget, FOCUS_OWNS_KEYS)
                 and event.keysym in ("space", "Return", "KP_Enter", "Up", "Down", "Left", "Right")):
             return
+        if _is_shortcut(event):
+            return  # Strg+Plus, Strg+Komma … sind Kürzel, keine Antwort
         mode = self._active_mode()
         if mode is not None:
             mode.on_key(event)

@@ -726,6 +726,25 @@ class SingleCharTest(AppTestCase):
             self.app.read_status()
         next_char.assert_not_called()
 
+    def test_shortcuts_with_ctrl_or_alt_are_not_answers(self):
+        # Sonst zählte Strg+Plus (Schrift größer) als Antwort „+“ und Strg+Komma als „,“.
+        s = self.single
+        self._open_answer("K")
+        for keysym, char, state in (("plus", "+", 0x4), ("0", "0", 0x4), ("comma", ",", 0x4), ("1", "1", 0x8)):
+            self.app._dispatch_key(type("E", (), {"keysym": keysym, "char": char, "state": state,
+                                                  "widget": self.root})())
+        self.assertTrue(s.answer_open)
+        self.assertEqual(s.session_stats.rounds, [])
+        self.app._dispatch_key(type("E", (), {"keysym": "k", "char": "k", "state": 0, "widget": self.root})())
+        self.assertEqual(len(s.session_stats.rounds), 1)  # ohne Zusatztaste ist es die Antwort
+
+    def test_altgr_keeps_typed_characters_on_windows(self):
+        event = type("E", (), {"state": 0x4 | 0x20000})()
+        with mock.patch.object(app_module.sys, "platform", "win32"):
+            self.assertFalse(app_module._is_shortcut(event))
+            self.assertTrue(app_module._is_shortcut(type("E", (), {"state": 0x4})()))
+            self.assertFalse(app_module._is_shortcut(type("E", (), {"state": 0x8})()))  # Num-Taste
+
     def test_f11_dropped_char_comes_again_later(self):
         # Sonst wäre F11 eine Taste zum Überspringen unbekannter Zeichen.
         s = self.single
