@@ -151,8 +151,9 @@ WHATS_NEW = {
                "Hilfe, Änderungen."),
     "2.53": N_("Die Rufzeichenliste lässt sich jetzt per Knopf laden (Reiter Einzeln, Rufzeichen). F11 kostet im "
                "Zeitlimit keine Antwortzeit mehr und buchstabiert im Contest das Call-Feld. Bei 200 % Schrift "
-               "ist die Kopfleiste zugeklappt, damit die Übung ins Fenster passt. Alles Weitere steht unter "
-               "Hilfe, Änderungen."),
+               "ist die Kopfleiste zugeklappt, damit die Übung ins Fenster passt. Neu im Reiter Statistik: die "
+               "letzten 7 Tage im Vergleich zu den 30 davor, damit du siehst, ob du besser wirst. Alles Weitere "
+               "steht unter Hilfe, Änderungen."),
 }
 
 

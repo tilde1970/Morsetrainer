@@ -13,9 +13,22 @@
 - **Sichere Verbindungen auf Mac und Linux:** Mac-App und AppImage finden
   jetzt die Zertifikate des Systems, auch unter Fedora, Arch und openSUSE.
   Damit klappen dort Rufzeichenliste und Hinweis auf eine neue Version.
+- **Statistik: Wirst du besser?** Unter der Gesamtzahl steht, wie es in
+  den letzten 7 Tagen lief, gegen die 30 Tage davor: „Letzte 7 Tage:
+  Reaktion 0,48 s, 92 % richtig · die 30 Tage davor: Reaktion 0,61 s,
+  88 % richtig“. Dazu zeigt die Zeichentabelle je Zeichen „davor → jetzt
+  (s)“ (Median, erst ab 20 Messungen auf jeder Seite). Die Reaktion kommt
+  nur aus dem Reiter Einzeln, Inhalt Zeichen, damit der Vergleich ehrlich
+  bleibt; die Trefferquote zählt alle Übungen. Neu ist auch der Kasten
+  „Diese Woche“ mit Wochenstreifen und Wochenziel. F11 liest alles vor.
 - **F11 im Zeitlimit:** Wer mitten in der Frist F11 drückt, verliert keine
   Antwortzeit: Das Zeichen zählt jetzt nicht, das Limit bleibt, und es
-  kommt später unangekündigt wieder.
+  kommt später unangekündigt wieder. Ohne Zeitlimit zählt die Antwort
+  nach F11 weiter als richtig oder falsch, aber ohne Zeit: Tempo,
+  Reaktion und Lernkartei bleiben unberührt.
+- **Tastenkürzel zählen nie als Antwort:** Strg+Plus, Strg+0 oder
+  Strg+Komma mitten in einer Übung galten im Reiter Einzeln als falsche
+  Antwort.
 - **F11 im Contest:** buchstabiert, was im Call- bzw. Austauschfeld steht
   (Call im Funkalphabet, leeres Feld als „leer“).
 - **Große Schrift (200 %):**
@@ -28,14 +41,34 @@
     „Schließen“ bleibt unten, Hinweise stehen bei Platzmangel unter den
     Feldern.
   - Hinweistexte werden nicht mehr rechts abgeschnitten.
+  - Tabellen wachsen mit der Schrift; passen sie nicht, rollen sie waagerecht
+    (Rollbalken, Pfeil links und rechts).
+  - Nach jeder Antwort rollen Einzeln und Gruppen zur Rückmeldung.
+  - Die Kopfleiste merkt sich, ob sie beim Beenden offen war; der
+    Wochenstreifen steht im Reiter Statistik; die Fußzeile ist kürzer.
+  - Der Fokusrahmen an flachen Knöpfen („Hilfe“, „Einstellungen …“) ist
+    deutlich zu sehen.
+  - Strg+Plus und Strg+Minus sagen die neue Größe an, aber nie mitten in
+    einem langen Morseton.
+- **Rufzeichen:** Zu wenige echte Rufzeichen aus deinen gelernten Zeichen
+  (unter 30, im Rufz-Durchgang unter 50) sperren den Start nicht mehr; der
+  Trainer erfindet passende, und der Hinweis über dem Ladeknopf sagt es.
+  Das gilt nicht mit Präfix-Filter. Rufz-Durchgänge mit erfundenen
+  Rufzeichen zählen für das Diplom. Ohne Liste steht jetzt „Noch keine
+  Rufzeichenliste – die Rufzeichen werden nach Muster erfunden.“
+- **Datenordner öffnen:** Unter „Einstellungen … → Daten“ zeigt ein Knopf
+  den Datenordner im Dateimanager, etwa um eine Rufzeichenliste von Hand
+  abzulegen.
 - **Wochenziel:** Der eigene Stand steht vorn („7 ★ diese Woche, Ziel 12“),
   damit 12 nicht wie eine Obergrenze wirkt.
 - **Vorsorge für Tk 9.1:** Sperren, Zustand und Ansage funktionieren auch,
   wenn Tk bei laufendem Screenreader klassische statt moderner
   Bedienelemente baut.
+- **Selbsttest:** Die Release-Builds prüfen jetzt auch, ob sichere
+  Verbindungen Zertifikate finden.
 - **Anleitung:** Rufzeichenliste laden, Kopfleiste bei 200 %, F11 im
-  Zeitlimit und im Contest; der Sprung von „mittel“ auf „stark“ bei den
-  Bandbedingungen ist genauer erklärt.
+  Zeitlimit und im Contest, Statistik-Vergleich, Datenordner; der Sprung
+  von „mittel“ auf „stark“ bei den Bandbedingungen ist genauer erklärt.
 
 ## 2.52
 

@@ -13,9 +13,23 @@
 - **Secure connections on Mac and Linux:** The Mac app and the AppImage now
   find the system certificates, also on Fedora, Arch and openSUSE. The
   callsign list and the new-version notice now work there.
+- **Statistics: are you getting better?** Below the total you see how the
+  last 7 days went against the 30 days before: “Last 7 days: reaction
+  0.48 s, 92 % correct · the 30 days before: reaction 0.61 s, 88 %
+  correct”. The character table also shows “before → now (s)” per
+  character (median, only from 20 measurements on each side). The
+  reaction comes only from the One by one tab, content Characters, so the
+  comparison stays honest; the accuracy counts all exercises. There is
+  also a new “This week” box with the week strip and the weekly goal. F11
+  reads it all.
 - **F11 during the time limit:** Pressing F11 during the deadline no longer
   costs answer time: the character does not count now, the limit stays,
-  and it comes again later unannounced.
+  and it comes again later unannounced. Without the time limit the answer
+  after F11 still counts as right or wrong, but without time: speed,
+  reaction and the review box stay untouched.
+- **Shortcuts never count as an answer:** Ctrl+Plus, Ctrl+0 or Ctrl+comma
+  in the middle of an exercise counted as a wrong answer in the One by one
+  tab.
 - **F11 in Contest:** spells what is in the Call or Exchange field (Call in
   the phonetic alphabet, an empty field as “empty”).
 - **Large font (200 %):**
@@ -28,14 +42,33 @@
     stays at the bottom, and hints move below the fields when space is
     short.
   - Hint texts are no longer cut off on the right.
+  - Tables grow with the font; if they do not fit, they scroll sideways
+    (scroll bar, left and right arrow keys).
+  - After each answer, One by one and Groups scroll to the feedback.
+  - The header remembers whether it was open when you quit; the week strip
+    is in the Statistics tab; the footer is shorter.
+  - The focus frame on flat buttons (“Help”, “Settings …”) is easy to see.
+  - Ctrl+Plus and Ctrl+Minus announce the new size, but never in the middle
+    of a long Morse tone.
+- **Callsigns:** Too few real callsigns from your learned characters (under
+  30, under 50 in a RufZ run) no longer block the start; the trainer makes
+  up matching ones, and the hint above the load button says so. This does
+  not apply with a prefix filter. RufZ runs with made-up callsigns count
+  towards the diploma. Without a list it now reads “No callsign list yet –
+  callsigns are made up from patterns.”
+- **Open data folder:** Under “Settings … → Data” a button shows the data
+  folder in the file manager, for example to save a callsign list by hand.
 - **Weekly goal:** Your own count comes first (“7 ★ this week, goal 12”),
   so 12 does not look like a limit.
 - **Prepared for Tk 9.1:** Disabling, state and announcements also work
   when Tk builds classic instead of themed controls while a screen reader
   is running.
+- **Self-test:** The release builds now also check that secure connections
+  find certificates.
 - **Manual:** Loading the callsign list, header at 200 %, F11 during the
-  time limit and in Contest; the step from “medium” to “heavy” in band
-  conditions is explained more precisely.
+  time limit and in Contest, statistics comparison, data folder; the step
+  from “medium” to “heavy” in band conditions is explained more
+  precisely.
 
 ## 2.52
 
