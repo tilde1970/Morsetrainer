@@ -1,11 +1,13 @@
 """Selbsttest für die Release-Builds: prüft ohne Fenster und Soundkarte,
-ob beide Stimmen (auch mit schnellerem Sprechtempo), der MP3-Export, PortAudio (Ton), Tcl/Tk (Oberfläche) und
-die Lizenzdatei im gepackten Programm vorhanden sind.
+ob beide Stimmen (auch mit schnellerem Sprechtempo), der MP3-Export, PortAudio (Ton), Tcl/Tk (Oberfläche),
+die Zertifikate für HTTPS (Rufzeichenliste, Update) und die Lizenzdatei im
+gepackten Programm vorhanden sind.
 
     morsetrainer --selftest ziel.mp3
 
 Schreibt eine kurze Übung (Morsezeichen plus Ansage) als MP3 und endet mit
 Code 0, sonst mit 1 und dem Grund auf stderr."""
+import ssl
 import sys
 from pathlib import Path
 
@@ -30,10 +32,25 @@ def _libraries() -> str:
     return ""
 
 
+def _certificates() -> str:
+    """Leer, wenn HTTPS Zertifikate hat – wie beim Programmstart, notfalls
+    die des Systems (net/certs.py) –, sonst der Grund. Ohne sie scheiterten
+    Rufzeichenliste und Update-Prüfung mit CERTIFICATE_VERIFY_FAILED."""
+    from morsetrainer.net import certs
+    chosen = certs.use_system_certificates()
+    count = ssl.create_default_context().cert_store_stats()["x509_ca"]
+    paths = ssl.get_default_verify_paths()
+    if not count and not certs._usable(paths):
+        return f"Keine Zertifikate für HTTPS (gesucht: {paths.openssl_cafile}, {paths.openssl_capath})."
+    # Ein Ordner (capath) wird erst bei Bedarf gelesen und zählt hier noch nicht.
+    print(f"Zertifikate: {count or 'Ordner ' + str(paths.capath)}" + (f" aus {chosen}" if chosen else ""))
+    return ""
+
+
 def run(path: str) -> int:
     """Prüft PortAudio und Tcl/Tk und erzeugt mit beiden Stimmen eine kurze
     Übung als MP3 nach `path`; 0 bei Erfolg, sonst 1 (Grund auf stderr)."""
-    missing = _libraries()
+    missing = _libraries() or _certificates()
     if missing:
         print(missing, file=sys.stderr)
         return 1

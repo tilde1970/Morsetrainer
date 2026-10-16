@@ -1201,6 +1201,11 @@ class AnnouncerModesTest(AnnouncerCase):
         self.assertIn("Call: Delta", say.call_args[0][0])
         self.assertNotIn("Austausch:", say.call_args[0][0])
 
+    def test_f11_spells_spaces_in_the_exchange(self):
+        mode = self.mode("Contest")
+        mode.exch_var.set("599 14")
+        self.assertEqual(mode.field_text(mode.exch_entry), "Austausch: Fünf, Neun, Neun, Leerzeichen, Eins, Vier")
+
     def test_words_count_line_and_split_window_are_spoken(self):
         from morsetrainer.core import koch
         self.app.announcer.var.set(True)

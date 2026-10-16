@@ -17,6 +17,8 @@ import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
 
+from morsetrainer.widgets import tkcompat
+
 # Paletten. Hell: gedämpfte Flächen, ein Akzent, Grün/Rot nur für
 # Ergebnisse. Hoher Kontrast (Barrierefreiheit, für Sehbehinderte): Schwarz,
 # Weiß und Gelb, kräftige Rahmen; jede Textfarbe hat auf ihrem Grund
@@ -282,6 +284,20 @@ def apply(root) -> None:
     root.option_add("*TCombobox*Listbox.background", SURFACE)
     root.option_add("*TCombobox*Listbox.selectBackground", SELECT)
     root.option_add("*TCombobox*Listbox.selectForeground", TEXT)
+    # Schalter, Zahlenfelder und Schieberegler als klassische Widgets: So baut
+    # Tk 9.1 sie bei laufendem Screenreader statt der ttk-Widgets
+    # (tkcompat.py). Ohne diese Farben stünden sie grau im Fenster, im hohen
+    # Kontrast unlesbar, und ohne Fokusrahmen.
+    for cls in tkcompat.CLASSIC:
+        # Das Zahlenfeld mit heller Eingabefläche wie die anderen Felder.
+        for option, value in (("background", SURFACE if cls == "Spinbox" else BG), ("foreground", TEXT), ("activeBackground", BUTTON_ACTIVE),
+                              ("activeForeground", TEXT), ("disabledForeground", DISABLED),
+                              ("highlightBackground", BG), ("highlightColor", FOCUS),
+                              ("highlightThickness", max(BORDER_WIDTH, 2)), ("selectColor", SURFACE),
+                              ("troughColor", TROUGH), ("insertBackground", TEXT),
+                              ("selectBackground", SELECT), ("selectForeground", TEXT),
+                              ("buttonBackground", BUTTON), ("readonlyBackground", SURFACE)):
+            root.option_add(f"*{cls}.{option}", value)
     # Knöpfe und Schalter sind per Tab erreichbar (Tastaturbedienung), nehmen
     # beim Anklicken mit der Maus aber keinen Fokus: Die Leertaste heißt in
     # den Reitern "Wiederholen" und würde sonst den zuletzt angeklickten Knopf

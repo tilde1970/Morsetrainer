@@ -28,6 +28,8 @@ class TkCompatTest(unittest.TestCase):
              ttk.Checkbutton(self.root, text="Hoher Kontrast", variable=on), True),
             (tk.Radiobutton(self.root, text="A", value="a", variable=choice),
              ttk.Radiobutton(self.root, text="A", value="a", variable=choice), False),
+            (tk.Radiobutton(self.root, text="B", value="b", variable=choice),
+             ttk.Radiobutton(self.root, text="B", value="b", variable=choice), True),
             (tk.Spinbox(self.root, from_=0, to=9), ttk.Spinbox(self.root, from_=0, to=9), None),
             (tk.Scale(self.root, from_=0, to=100), ttk.Scale(self.root, from_=0, to=100), None),
         ]
@@ -56,6 +58,20 @@ class TkCompatTest(unittest.TestCase):
         tkcompat.set_enabled(check, False)
         self.assertEqual(announcer.describe(check), "Hoher Kontrast, Schalter, an, nicht verfügbar.")
 
+
+    def test_classic_widgets_take_the_palette(self):
+        # Hoher Kontrast: ohne die Farben stünden sie grau auf Schwarz.
+        from morsetrainer.widgets import theme
+        self.addCleanup(theme.set_palette, theme.PALETTE)
+        theme.set_palette("contrast")
+        theme.apply(self.root)
+        check = tk.Checkbutton(self.root, text="Hoher Kontrast")
+        self.assertEqual((str(check.cget("background")), str(check.cget("foreground"))), ("#000000", "#ffffff"))
+        self.assertEqual(str(check.cget("highlightcolor")), theme.FOCUS)
+        self.assertGreaterEqual(int(check.cget("highlightthickness")), 2)  # Fokus sichtbar
+        self.assertEqual(str(tk.Radiobutton(self.root).cget("selectcolor")), theme.SURFACE)
+        self.assertEqual(str(tk.Spinbox(self.root).cget("background")), theme.SURFACE)
+        self.assertEqual(str(tk.Scale(self.root).cget("troughcolor")), theme.TROUGH)
 
     def test_field_next_to_a_classic_switch_is_named(self):
         on = self.on = tk.BooleanVar(self.root, value=True)

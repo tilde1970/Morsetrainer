@@ -704,6 +704,18 @@ class SingleCharTest(AppTestCase):
         self.assertNotIn("latency_s", entry)  # die Ansage steckte in der Zeit
         self.assertNotIn(" s)", s.feedback_var.get())
 
+    def test_timeout_closes_the_answer(self):
+        # Sonst verwürfe ein F11 danach das schon als verpasst gewertete Zeichen ein zweites Mal.
+        s = self.single
+        self._open_answer("U")
+        s.running = True
+        with mock.patch.object(s, "_after_error"):
+            s._on_timeout(s.timeout_token)
+        self.assertFalse(s.answer_open)
+        with mock.patch.object(s, "next_char") as next_char:
+            self.app.read_status()
+        next_char.assert_not_called()
+
     def test_f11_dropped_char_comes_again_later(self):
         # Sonst wäre F11 eine Taste zum Überspringen unbekannter Zeichen.
         s = self.single
@@ -1768,6 +1780,19 @@ class UsabilityTest(AppTestCase):
             self.assertFalse(hints_below())
             self.assertEqual(int(app.settings_scroller.canvas.cget("height")), app.settings_body.winfo_reqheight())
 
+    def test_settings_window_fits_when_opened_after_a_zoom(self):
+        app = self.app
+        window = app.settings_window
+        app.font_scale_var.set(200)  # geschlossen vergrößert
+        with mock.patch.object(window, "winfo_screenwidth", return_value=1024), \
+                mock.patch.object(window, "winfo_screenheight", return_value=600):
+            app.open_settings()
+            window.update_idletasks()
+            self.assertLessEqual(window.winfo_reqwidth(), 1024 - 40)
+            self.assertLessEqual(window.winfo_reqheight(), 600)
+        app.close_settings()
+        app.font_scale_var.set(100)
+
     def test_header_toggle_hands_focus_on_when_it_disappears(self):
         app = self.app
         app.font_scale_var.set(200)
@@ -1827,6 +1852,17 @@ class UsabilityTest(AppTestCase):
         intro = parent.winfo_children()[0]  # Erklärtext, padx=10
         self.assertLessEqual(intro.winfo_x() + intro.winfo_reqwidth(), parent.winfo_width() - 10)
         self.app.font_scale_var.set(100)
+
+    def test_hint_beside_another_widget_wraps_at_its_own_room(self):
+        row = ttk.Frame(self.root, width=400)
+        row.pack()
+        ttk.Label(row, text="Vorne", width=20).pack(side="left")
+        hint = theme.hint(row, text="Ein langer Hinweis " * 10, wrap=560)
+        hint.pack(side="left", padx=(0, 10))
+        self.root.update_idletasks()
+        theme._fit_wrap(hint, 400)
+        room = 400 - hint.winfo_x() - 10 - theme.scaled(theme.WRAP_MARGIN)
+        self.assertEqual(int(float(str(hint.cget("wraplength")))), room)  # ab seinem Anfang, ohne rechten Rand
 
     def test_header_collapses_at_200_percent(self):
         app = self.app
