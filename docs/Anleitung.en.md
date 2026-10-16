@@ -406,6 +406,14 @@ Overall statistics per character – only from random characters and
 callsigns, because in words, phrases and QSOs the context gives away too
 many characters. Runs with band conditions do not count here (section 6).
 
+- **Comparison:** below the total you see how the last 7 days went
+  against the 30 days before: “Last 7 days: reaction 0.48 s, 92 % correct ·
+  the 30 days before: reaction 0.61 s, 88 % correct”. The averages over all
+  runs hardly move, because the early, slow answers always count; here you
+  see whether you are getting better. F11 reads the line too.
+- **Reaction: before → recent:** the same per character (“0.80 → 0.45”,
+  smaller is faster) once there are at least 5 measurements on each side,
+  otherwise “–”.
 - **Ø reaction:** the time from the last dot or dash to your input,
   averaged over the correct answers – independent of character length and
   speed. Measured in Characters, when copying without repeating, in

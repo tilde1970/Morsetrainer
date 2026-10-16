@@ -422,9 +422,16 @@ def hint(parent, text=None, textvariable=None, wrap=None, **kwargs) -> ttk.Label
     if wrap:
         kwargs.update(wraplength=wrap, justify="left")
     label = ttk.Label(parent, style="Hint.TLabel", **kwargs)
-    if wrap:
-        label._mt_wrap = wrap
-        parent.bind("<Configure>", lambda e: _fit_wrap(label, e.width), add="+")
+    return fit_wrap(label, wrap) if wrap else label
+
+
+def fit_wrap(label, wrap: int):
+    """`label` bei `wrap` Pixeln (mit der Schriftgröße wachsend) umbrechen,
+    aber nie breiter als der Platz im Elternelement – sonst schnitte große
+    Schrift den Text rechts ab. Gibt `label` zurück."""
+    label.configure(wraplength=scaled(wrap))
+    label._mt_wrap = wrap
+    label.master.bind("<Configure>", lambda e: _fit_wrap(label, e.width), add="+")
     return label
 
 

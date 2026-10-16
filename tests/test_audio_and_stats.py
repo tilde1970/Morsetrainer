@@ -165,6 +165,34 @@ class StatsTest(unittest.TestCase):
         stats.reset_all_time()
         self.assertEqual(stats.recent_char_data(), {})
 
+    def test_last_days_are_compared_with_the_days_before(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import comparison_text, trend_text
+
+        def write(days_ago, rows):
+            start = datetime.now() - timedelta(days=days_ago)
+            lines = [{"type": "config", "mode": "single", "start_time": start.isoformat(timespec="seconds")}]
+            lines += [{"type": "char", "char": c, "typed": t, "correct": c == t, **extra} for c, t, extra in rows]
+            tests.write_session(lines)
+        self.assertEqual(comparison_text(stats.period_comparison()), "")
+        write(60, [("K", "K", {"latency_s": 3.0})] * 5)  # vor beiden Zeiträumen
+        write(20, [("K", "K", {"latency_s": 0.8})] * 6 + [("K", "M", {})] * 2 + [("M", "M", {"latency_s": 0.5})])
+        write(2, [("K", "K", {"latency_s": 0.4})] * 5 + [("K", "K", {"latency_s": 2.0, "latency_assumed": True}),
+                                                         ("K", "K", {"latency_s": 9.0})])  # angenommen; gekappt
+        comparison = stats.period_comparison()
+        accuracy, latency, count = stats.period_numbers(comparison[stats.BEFORE])
+        self.assertEqual((round(accuracy), round(latency, 3), count), (78, 0.757, 7))  # (6 × 0,8 + 0,5) / 7
+        accuracy, latency, count = stats.period_numbers(comparison[stats.RECENT])
+        self.assertEqual((accuracy, round(latency, 3), count), (100.0, 1.167, 6))  # (5 × 0,4 + 5) / 6
+        before, recent = stats.char_trend(comparison["chars"], "K")
+        self.assertEqual((round(before, 3), round(recent, 3)), (0.8, 1.167))
+        self.assertIsNone(stats.char_trend(comparison["chars"], "M"))  # zu wenige Messungen
+        self.assertEqual(trend_text((0.8, 0.4)), "0,80 → 0,40")
+        self.assertEqual(comparison_text(comparison),
+                         "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig · die 30 Tage davor: Reaktion 0,76 s, 78 % richtig")
+        stats.reset_all_time()
+        self.assertEqual(comparison_text(stats.period_comparison()), "")
+
     def test_assumed_latencies_do_not_raise_the_usual_latency(self):
         from morsetrainer.core.weighting import CharPicker
         session = stats.SessionStats("group", "KM", 20, 600)

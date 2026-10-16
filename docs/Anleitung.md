@@ -414,6 +414,15 @@ Gesamtstatistik je Zeichen – nur aus Zufallszeichen und Rufzeichen, denn
 bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen.
 Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
 
+- **Vergleich:** Unter der Gesamtzahl steht, wie es in den letzten 7 Tagen
+  lief, gegen die 30 Tage davor: „Letzte 7 Tage: Reaktion 0,48 s, 92 %
+  richtig · die 30 Tage davor: Reaktion 0,61 s, 88 % richtig“. Die
+  Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
+  langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
+  F11 liest die Zeile mit vor.
+- **Reaktion: davor → zuletzt:** dasselbe je Zeichen („0,80 → 0,45“,
+  kleiner ist schneller), sobald es auf jeder Seite mindestens 5
+  Messungen gibt, sonst „–“.
 - **Ø Reaktion:** die Zeit vom letzten Punkt oder Strich bis zu deiner
   Eingabe, gemittelt über die richtigen Antworten – unabhängig von
   Zeichenlänge und Tempo. Gemessen bei Zeichen, beim Mitschreiben ohne

@@ -38,7 +38,7 @@ from morsetrainer.widgets.daily_panel import DailyBar
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
-from morsetrainer.widgets.stats_widget import StatsPanel
+from morsetrainer.widgets.stats_widget import StatsPanel, comparison_text
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, dialog, theme
 from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
@@ -984,6 +984,9 @@ class MorseTrainerApp:
                     for char, _, wrong, *_ in weak))
         else:
             parts.append(tr("Noch keine Durchgänge"))
+        comparison = comparison_text(stats.period_comparison())
+        if comparison:
+            parts.append(comparison)
         pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
         if pairs:
             parts.append(tr("Häufigste Verwechslungen: ") + ", ".join(
@@ -1528,8 +1531,8 @@ class MorseTrainerApp:
         self.notebook.add(tab, text=tr("Statistik"))
         frame = ScrollableFrame(tab).inner
         self.all_time_panel = StatsPanel(
-            frame, title=tr("Gesamtstatistik (alle Durchgänge)"), tree_height=12, show_save_label=False
-        )
+            frame, title=tr("Gesamtstatistik (alle Durchgänge)"), tree_height=12, show_save_label=False,
+            compare=True)
 
         self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")),
                                         station=lambda: (self.station_call(), self.station_name_var.get().strip()))
@@ -1671,7 +1674,8 @@ class MorseTrainerApp:
         """Reiter Statistik neu füllen; ohne `with_awards` bleiben Diplome und
         Lebenslinie für ein gleich folgendes _check_awards() liegen."""
         data = stats.load_all_time()
-        self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data))
+        self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data),
+                                    stats.period_comparison())
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
         review_data = review.load()
         self.review_var.set(self._review_text(review_data))

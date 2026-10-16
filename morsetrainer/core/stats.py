@@ -312,33 +312,106 @@ def reset_all_time() -> None:
 RECENT_DAYS = 30
 
 
+def _after_reset(cutoff: datetime) -> datetime:
+    """`cutoff`, aber nicht vor dem letzten Zurücksetzen der Gesamtstatistik."""
+    reset = db.load_state(RESET_KEY, {}).get("time")
+    try:
+        return max(cutoff, datetime.fromisoformat(reset)) if reset else cutoff
+    except (TypeError, ValueError):
+        return cutoff
+
+
+def _char_events(since: datetime):
+    """(Startzeit, Zeile) aller Zeichen-Zeilen der Durchgänge ab `since`, ohne
+    selbst bewertete Sitzungen und Klartext (zählen nicht für Zeichen)."""
+    for session in db.sessions(since=since.replace(microsecond=0), events=True):
+        if session.config.get("self_assessed") or session.config.get("char_stats") is False:
+            continue
+        try:
+            start = datetime.fromisoformat(session.config["start_time"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        for obj in session.events:
+            if obj.get("type") == "char" and "char" in obj:
+                yield start, obj
+
+
 def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     """Zeichenstatistik wie die Gesamtstatistik ({Zeichen: {"good", "wrong",
     "confusions"}}), aber nur aus den Durchgängen der letzten `days`
     Tage und nach dem letzten Zurücksetzen. Längst behobene Verwechslungen
     fallen so heraus. Selbst bewertete Sitzungen und Klartext zählen nicht."""
     now = now or datetime.now()
-    cutoff = now - timedelta(days=days)
-    reset = db.load_state(RESET_KEY, {}).get("time")
-    try:
-        cutoff = max(cutoff, datetime.fromisoformat(reset)) if reset else cutoff
-    except (TypeError, ValueError):
-        pass
     data = {}
-    for session in db.sessions(since=cutoff.replace(microsecond=0), events=True):
-        if session.config.get("self_assessed") or session.config.get("char_stats") is False:
-            continue
-        for obj in session.events:
-            if obj.get("type") != "char" or "char" not in obj:
-                continue
-            e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}})
-            if obj.get("correct"):
-                e["good"] += 1
-            else:
-                e["wrong"] += 1
-                typed = obj.get("typed", "")
-                e["confusions"][typed] = e["confusions"].get(typed, 0) + 1
+    for _start, obj in _char_events(_after_reset(now - timedelta(days=days))):
+        e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}})
+        if obj.get("correct"):
+            e["good"] += 1
+        else:
+            e["wrong"] += 1
+            typed = obj.get("typed", "")
+            e["confusions"][typed] = e["confusions"].get(typed, 0) + 1
     return data
+
+
+# Vergleich im Reiter Statistik: die letzten COMPARE_DAYS Tage gegen die
+# BEFORE_DAYS Tage davor. Der Schnitt über alle Durchgänge bewegt sich kaum,
+# weil die alten, langsamen Antworten dauerhaft mitzählen.
+COMPARE_DAYS = 7
+BEFORE_DAYS = 30
+# Trend je Zeichen erst ab so vielen gemessenen Reaktionen auf jeder Seite.
+MIN_TREND_COUNT = 5
+RECENT, BEFORE = "recent", "before"
+
+
+def _new_period() -> dict:
+    return {"good": 0, "wrong": 0, "latency_s": 0.0, "latency_count": 0}
+
+
+def period_comparison(now=None) -> dict:
+    """Trefferquote und Reaktion der letzten COMPARE_DAYS Tage (RECENT) und
+    der BEFORE_DAYS Tage davor (BEFORE), gesamt und je Zeichen:
+    {RECENT: Zahlen, BEFORE: Zahlen, "chars": {Zeichen: {RECENT, BEFORE}}}.
+    Reaktion wie in der Gesamtstatistik: richtige Antworten, gemessen (nicht
+    angenommen), gekappt bei LATENCY_CAP_S. Nach period_numbers() lesen."""
+    now = now or datetime.now()
+    split = now - timedelta(days=COMPARE_DAYS)
+    result = {RECENT: _new_period(), BEFORE: _new_period(), "chars": {}}
+    for start, obj in _char_events(_after_reset(split - timedelta(days=BEFORE_DAYS))):
+        side = RECENT if start >= split else BEFORE
+        char = result["chars"].setdefault(obj["char"], {RECENT: _new_period(), BEFORE: _new_period()})
+        for period in (result[side], char[side]):
+            if not obj.get("correct"):
+                period["wrong"] += 1
+                continue
+            period["good"] += 1
+            latency = obj.get("latency_s")
+            if isinstance(latency, (int, float)) and not obj.get("latency_assumed"):
+                period["latency_s"] += min(max(latency, 0.0), LATENCY_CAP_S)
+                period["latency_count"] += 1
+    return result
+
+
+def period_numbers(period: dict):
+    """(Trefferquote in Prozent, mittlere Reaktion in s, gemessene Reaktionen)
+    eines Zeitraums; None, wo es nichts gibt."""
+    total = period["good"] + period["wrong"]
+    accuracy = period["good"] / total * 100 if total else None
+    count = period["latency_count"]
+    return accuracy, (period["latency_s"] / count if count else None), count
+
+
+def char_trend(chars: dict, char: str):
+    """(Reaktion davor, Reaktion zuletzt) eines Zeichens oder None, solange
+    eine Seite weniger als MIN_TREND_COUNT Messungen hat."""
+    entry = chars.get(char)
+    if entry is None:
+        return None
+    _, before, before_count = period_numbers(entry[BEFORE])
+    _, recent, recent_count = period_numbers(entry[RECENT])
+    if min(before_count, recent_count) < MIN_TREND_COUNT:
+        return None
+    return before, recent
 
 
 def measured_latency(total_s: float, count: int, assumed_s: float, assumed_count: int):

@@ -1456,6 +1456,24 @@ class DecimalTest(AppTestCase):
         row = panel.char_tree.item(panel.char_tree.get_children()[0])["values"]
         self.assertEqual([str(v) for v in row[3:5]], ["2,27", "5,9"])
 
+    def test_all_time_statistics_compare_the_last_days(self):
+        from datetime import datetime, timedelta
+        for days_ago, latency in ((20, 0.8), (2, 0.45)):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            tests.write_session([{"type": "config", "mode": "single", "start_time": start}]
+                                + [{"type": "char", "char": "K", "typed": "K", "correct": True,
+                                    "latency_s": latency}] * 5)
+        db.save_state(stats.ALL_TIME_KEY, {"K": {"good": 10, "wrong": 0, "confusions": {}}})  # Tabelle: Gesamtstand
+        self.app._refresh_all_time(with_awards=False)
+        panel = self.app.all_time_panel
+        self.assertEqual(panel.compare_var.get(),
+                         "Letzte 7 Tage: Reaktion 0,45 s, 100 % richtig · die 30 Tage davor: Reaktion 0,80 s, 100 % richtig")
+        tree = panel.char_tree
+        row = dict(zip(tree["columns"], tree.item(tree.get_children()[0])["values"]))
+        self.assertEqual(row["trend"], "0,80 → 0,45")
+        self.assertIn("Letzte 7 Tage: Reaktion 0,45 s", self.app.statistics_spoken())
+        self.assertNotIn("trend", self.mode("Einzelzeichen").stats_panel.char_tree["columns"])  # nur gesamt
+
     def test_progress_text_on_a_single_day(self):
         from datetime import datetime
         from morsetrainer.widgets.progress_widget import span_text

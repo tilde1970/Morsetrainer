@@ -598,6 +598,16 @@ EN.update({
     "Richtig": "Correct",
     "Falsch": "Wrong",
     "Ø Reaktion (s)": "Ø reaction (s)",
+    "Reaktion: davor → zuletzt": "Reaction: before → recent",
+    "Reaktion {s} s": "reaction {s} s",
+    "{pct} % richtig": "{pct} % correct",
+    "Letzte {days} Tage": "Last {days} days",
+    "nicht geübt": "not practised",
+    "die {days} Tage davor": "the {days} days before",
+    ("Reaktion davor → zuletzt: die {before} Tage vor den letzten {days} Tagen gegen die letzten "
+     "{days} Tage; kleiner ist schneller. „–“: noch keine {count} Messungen auf jeder Seite."):
+        ("Reaction before → recent: the {before} days before the last {days} days against the last "
+         "{days} days; smaller is faster. “–”: not yet {count} measurements on each side."),
     "Ø WPM": "Ø WPM",
     "Verwechselt mit": "Confused with",
     "Protokoll nicht gespeichert: {error}": "Log not saved: {error}",
