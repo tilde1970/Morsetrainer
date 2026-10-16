@@ -152,6 +152,7 @@ def set_scale(root, percent: int) -> None:
         tkfont.nametofont(name, root=root).configure(size=round(size * _scale / 100))
     _row_height(ttk.Style(root), root)
     scale_wraps(root)
+    _scale_trees(root)
 
 
 def zoom_step(percent: int, direction: int) -> int:
@@ -342,8 +343,11 @@ def apply(root) -> None:
     # Flacher Knopf ohne Rahmen, z. B. zum Auf-/Zuklappen.
     style.configure("Flat.TButton", background=BG, bordercolor=BG, lightcolor=BG, darkcolor=BG,
                     foreground=ACCENT, padding=(2, 2))
-    style.map("Flat.TButton", background=[("active", BUTTON)], lightcolor=[("active", BUTTON)],
-              darkcolor=[("active", BUTTON)], bordercolor=[("focus", ACCENT), ("active", BUTTON)])
+    # Fokus wie bei den anderen Knöpfen dreifach (Rand, hell, dunkel), sonst
+    # ist der Rahmen um den flachen Knopf bei großer Schrift kaum zu sehen.
+    style.map("Flat.TButton", background=[("active", BUTTON)],
+              lightcolor=[("focus", ACCENT), ("active", BUTTON)], darkcolor=[("focus", ACCENT), ("active", BUTTON)],
+              bordercolor=[("focus", ACCENT), ("active", BUTTON)])
 
     for widget in ("TEntry", "TSpinbox", "TCombobox"):
         style.configure(widget, fieldbackground=SURFACE, background=BUTTON, bordercolor=EDGE,
@@ -433,6 +437,59 @@ def fit_wrap(label, wrap: int):
     label._mt_wrap = wrap
     label.master.bind("<Configure>", lambda e: _fit_wrap(label, e.width), add="+")
     return label
+
+
+def fit_columns(tree, widths: dict) -> None:
+    """Spalten von `tree` mindestens `widths` Pixel breit (bei 100 %) und so
+    breit wie ihre Überschrift, mit der Schriftgröße wachsend; die letzte
+    nimmt den Rest. Passt die Tabelle nicht (große Schrift, schmales
+    Fenster), rollt sie waagerecht: Rollbalken darunter, sobald nötig, und
+    Pfeil links/rechts. `tree` muss mit pack angeordnet sein."""
+    tree._mt_columns = widths
+    bar = tree._mt_xbar = ttk.Scrollbar(tree.master, orient="horizontal", command=tree.xview)
+    tree.configure(xscrollcommand=lambda first, last: _show_xbar(tree, bar, first, last))
+    for key, step in (("<Left>", -1), ("<Right>", 1)):
+        tree.bind(key, lambda e, step=step: (tree.xview_scroll(step * scaled(X_SCROLL_STEP), "units"), "break")[1])
+    _size_columns(tree)
+
+
+# So viele Pixel (bei 100 %) rollt Pfeil links/rechts eine Tabelle.
+X_SCROLL_STEP = 60
+
+
+def _show_xbar(tree, bar, first, last) -> None:
+    """Waagerechten Rollbalken nur zeigen, wenn die Tabelle nicht passt."""
+    bar.set(first, last)
+    needed = float(first) > 0 or float(last) < 1
+    try:
+        if needed and not bar.winfo_manager():
+            if tree.pack_info().get("side", "top") == "top":
+                bar.pack(after=tree, fill="x")
+            else:  # neben einem senkrechten Rollbalken: unter der Tabelle, vor ihr gepackt
+                bar.pack(before=tree, side="bottom", fill="x")
+        elif not needed and bar.winfo_manager():
+            bar.pack_forget()
+    except tk.TclError:
+        pass
+
+
+def _size_columns(tree) -> None:
+    try:
+        font = tkfont.Font(name=HEADING, exists=True)
+    except tk.TclError:  # ohne apply() (einzelne Teile, Tests)
+        font = tkfont.nametofont("TkHeadingFont")
+    columns = tree["columns"]
+    for index, column in enumerate(columns):
+        width = max(scaled(tree._mt_columns.get(column, 60)), font.measure(tree.heading(column, "text")) + scaled(14))
+        tree.column(column, width=width, minwidth=width, stretch=index == len(columns) - 1)
+
+
+def _scale_trees(widget) -> None:
+    """Spaltenbreiten aller Tabellen mit fit_columns an die Schriftgröße anpassen."""
+    for child in widget.winfo_children():
+        if getattr(child, "_mt_columns", None) is not None:
+            _size_columns(child)
+        _scale_trees(child)
 
 
 def card(parent, text: str, **pack) -> ttk.LabelFrame:

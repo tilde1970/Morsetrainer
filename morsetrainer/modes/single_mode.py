@@ -169,7 +169,8 @@ class SingleModeFrame(DailyModeMixin):
         self.last_typed = None      # falsche Antwort, zum Vergleich mit vorgespielt
         self.block_end = None       # Ende eines Tagesübungs-Blocks (time.time())
 
-        self._build_widgets(ScrollableFrame(parent).inner)
+        self.scroller = ScrollableFrame(parent)
+        self._build_widgets(self.scroller.inner)
 
     def _build_widgets(self, parent):
         """Baut den Reiter: Erklärung, Zeitlimit, Start und Wiederholen, Anzeige von
@@ -201,12 +202,15 @@ class SingleModeFrame(DailyModeMixin):
         self.progress_var = tk.StringVar(value="")
         theme.hint(controls, textvariable=self.progress_var).pack(side="right")
 
+        answer = ttk.Frame(parent)
+        answer.pack(fill="x")
         self.status_var = tk.StringVar(value=tr("Bereit. Start mit F5."))
-        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 4))
+        ttk.Label(answer, textvariable=self.status_var, style="Status.TLabel").pack(pady=(14, 4))
 
         self.feedback_var = tk.StringVar(value="")
-        self.feedback_label = ttk.Label(parent, textvariable=self.feedback_var, style="Feedback.TLabel")
+        self.feedback_label = ttk.Label(answer, textvariable=self.feedback_var, style="Feedback.TLabel")
         self.feedback_label.pack(pady=(4, 10))
+        self.scroller.follow(self.feedback_var, answer)
 
         self.stats_panel = StatsPanel(parent)
 

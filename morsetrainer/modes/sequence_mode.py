@@ -189,7 +189,8 @@ class SequenceModeFrame(DailyModeMixin):
         self.deadline = None   # time.time(), ab der keine neue Sequenz mehr kommt
         self.session_id = 0    # damit ein alter Timer keine neue Sitzung anzeigt
 
-        self._build_widgets(ScrollableFrame(parent).inner)
+        self.scroller = ScrollableFrame(parent)
+        self._build_widgets(self.scroller.inner)
 
     # --- Überschreibbar durch Subklassen -------------------------------
     def _build_extra_settings(self, parent):
@@ -323,13 +324,17 @@ class SequenceModeFrame(DailyModeMixin):
         self.remaining_var = tk.StringVar(value="")
         theme.hint(controls, textvariable=self.remaining_var).pack(side="right")
 
+        # Status bis Vergleich: ein Block, zu dem der Reiter bei jeder
+        # Rückmeldung hinrollt (große Schrift).
+        answer = ttk.Frame(parent)
+        answer.pack(fill="x")
         self.status_var = tk.StringVar(value=tr("Bereit. Start mit F5."))
-        ttk.Label(parent, textvariable=self.status_var, style="Status.TLabel", wraplength=560,
+        ttk.Label(answer, textvariable=self.status_var, style="Status.TLabel", wraplength=560,
                   justify="center").pack(pady=(14, 6))
 
         # Eingabezeile; beim Kopfhören stattdessen die Knöpfe zum Auflösen
         # und Bewerten (siehe _show_answer_row).
-        self.answer_area = ttk.Frame(parent)
+        self.answer_area = ttk.Frame(answer)
         self.answer_area.pack(pady=4)
         self.entry_frame = ttk.Frame(self.answer_area)
         self.entry_frame.pack()
@@ -357,12 +362,14 @@ class SequenceModeFrame(DailyModeMixin):
 
         self.feedback_var = tk.StringVar(value="")
         self.feedback_label = ttk.Label(
-            parent, textvariable=self.feedback_var, style="Feedback.TLabel", wraplength=560, justify="center"
+            answer, textvariable=self.feedback_var, style="Feedback.TLabel", wraplength=560, justify="center"
         )
         self.feedback_label.pack(pady=(10, 2))
         # Gesendet / getippt / Markierung untereinander, daher Festbreitenschrift.
         self.diff_var = tk.StringVar(value="")
-        ttk.Label(parent, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
+        ttk.Label(answer, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
+
+        self.scroller.follow(self.feedback_var, answer)
 
         self.stats_panel = StatsPanel(parent)
 

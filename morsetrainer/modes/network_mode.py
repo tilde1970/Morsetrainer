@@ -530,12 +530,13 @@ class NetworkModeFrame:
         widths = {"name": 100, "state": 80, "last": 150, "share": 90, "fluent": 60, "latency": 60}
         for col in columns:
             tree.heading(col, text=headings[col])
-            tree.column(col, width=widths[col], anchor="w" if col in ("name", "last") else "center")
+            tree.column(col, anchor="w" if col in ("name", "last") else "center")
         tree.tag_configure("ok", foreground=theme.OK)
         tree.tag_configure("error", foreground=theme.ERROR)
         tree.tag_configure("gone", foreground=theme.MUTED)
         scrollbar.pack(side="right", fill="y")
         tree.pack(side="left", fill="both", expand=True)
+        theme.fit_columns(tree, widths)
         tree.bind("<<TreeviewSelect>>", lambda e: (self._show_details(), self._show_kick()))
         self.tree = tree
         self.advice_button = ttk.Button(advice, command=self.apply_advice)
@@ -657,13 +658,14 @@ class NetworkModeFrame:
         self.results_card.pack_forget()
         columns = ("n", "sent", "typed", "mark")
         self.results_tree = ttk.Treeview(self.results_card, columns=columns, show="headings", height=8)
-        for col, heading, width in (("n", tr("Nr."), 40), ("sent", tr("gesendet"), 170),
-                                    ("typed", tr("getippt"), 170), ("mark", "", 60)):
+        widths = {"n": 40, "sent": 170, "typed": 170, "mark": 60}
+        for col, heading in (("n", tr("Nr.")), ("sent", tr("gesendet")), ("typed", tr("getippt")), ("mark", "")):
             self.results_tree.heading(col, text=heading)
-            self.results_tree.column(col, width=width, anchor="w" if col in ("sent", "typed") else "center")
+            self.results_tree.column(col, anchor="w" if col in ("sent", "typed") else "center")
         self.results_tree.tag_configure("ok", foreground=theme.OK)
         self.results_tree.tag_configure("error", foreground=theme.ERROR)
         self.results_tree.pack(fill="x")
+        theme.fit_columns(self.results_tree, widths)
         for sequence in ("<Double-Button-1>", "<Return>", "<space>"):
             self.results_tree.bind(sequence, lambda e: self.play_result() or "break")
         theme.hint(self.results_card, text=tr("Doppelklick oder Leertaste: noch einmal anhören")).pack(

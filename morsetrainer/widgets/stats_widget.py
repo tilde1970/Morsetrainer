@@ -3,7 +3,6 @@ Fehlertabelle je Zeichen. Dient sowohl der Statistik eines laufenden
 Durchgangs als auch der Gesamtstatistik, damit das Layout einheitlich ist
 und nicht doppelt gebaut wird."""
 import tkinter as tk
-from tkinter import font as tkfont
 from tkinter import ttk
 
 from morsetrainer.core import stats
@@ -50,8 +49,10 @@ class StatsPanel:
         ttk.Label(summary, textvariable=self.speed_var).pack(side="left", padx=(16, 0))
         self.compare_var = tk.StringVar(value="")
         if compare:
-            theme.fit_wrap(ttk.Label(box, textvariable=self.compare_var, justify="left"), 560).pack(
-                anchor="w", pady=(0, 6))
+            # Ohne Durchgänge leer und ausgeblendet (sonst bliebe eine Lücke).
+            label = theme.fit_wrap(ttk.Label(box, textvariable=self.compare_var, justify="left"), 560)
+            self.compare_var.trace_add("write", lambda *_: label.pack(after=summary, anchor="w", pady=(0, 6))
+                                       if self.compare_var.get() else label.pack_forget())
 
         theme.hint(box, text=tr("Zeichen, nach Fehlern sortiert")).pack(anchor="w")
         columns = ("char", "good", "wrong", "avg_rt", "avg_wpm", "confusions")
@@ -65,16 +66,11 @@ class StatsPanel:
             "trend": tr("Reaktion: davor → zuletzt"),
         }
         widths = {"char": 60, "good": 60, "wrong": 55, "avg_rt": 75, "avg_wpm": 60, "confusions": 140, "trend": 110}
-        # Mindestens so breit wie die Überschrift (große Schrift, Englisch).
-        try:
-            heading_font = tkfont.Font(name=theme.HEADING, exists=True)
-        except tk.TclError:  # ohne theme.apply() (einzelne Teile, Tests)
-            heading_font = tkfont.nametofont("TkHeadingFont")
         for col in columns:
             self.char_tree.heading(col, text=headings[col])
-            width = max(widths[col], heading_font.measure(headings[col]) + theme.scaled(14))
-            self.char_tree.column(col, width=width, anchor="w" if col == "confusions" else "center")
+            self.char_tree.column(col, anchor="w" if col == "confusions" else "center")
         self.char_tree.pack(fill="x", pady=(2, 0))
+        theme.fit_columns(self.char_tree, widths)
         theme.hint(box, wrap=520, text=tr(
             "Ø Reaktion: Zeit vom letzten Punkt oder Strich bis zu deiner Taste, Ø WPM: Tempo ab Beginn des "
             "Zeichens (beides nur richtige Antworten). „–“: nicht gemessen, etwa beim Kopfhören.")).pack(

@@ -175,10 +175,11 @@ class ProgressPanel:
         self.wpm_chart = _LineChart(self.charts, tr("Tempo effektiv (WPM)"), " WPM", on_hover=self._hover)
 
         self.table = ttk.Treeview(box, columns=("time", "accuracy", "wpm", "total"), show="headings", height=8)
-        for col, heading, width in (("time", tr("Zeitpunkt"), 130), ("accuracy", tr("Trefferquote"), 100),
-                                    ("wpm", tr("Tempo eff. (WPM)"), 110), ("total", tr("Umfang"), 80)):
+        for col, heading in (("time", tr("Zeitpunkt")), ("accuracy", tr("Trefferquote")),
+                             ("wpm", tr("Tempo eff. (WPM)")), ("total", tr("Umfang"))):
             self.table.heading(col, text=heading)
-            self.table.column(col, width=width, anchor="center")
+            self.table.column(col, anchor="center")
+        theme.fit_columns(self.table, {"time": 130, "accuracy": 100, "wpm": 110, "total": 80})
         self.table_visible = False
         self.history = []
 
@@ -237,5 +238,6 @@ class ProgressPanel:
             self.table_button.config(text=tr("Diagramm"))
         else:
             self.table.pack_forget()
+            self.table._mt_xbar.pack_forget()
             self.charts.pack(fill="x")
             self.table_button.config(text=tr("Tabelle"))

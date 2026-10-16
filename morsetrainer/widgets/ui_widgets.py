@@ -229,6 +229,19 @@ class ScrollableFrame:
         except tk.TclError:
             pass
 
+    def follow(self, variable, widget) -> None:
+        """Ändert sich `variable` (etwa die Rückmeldung zu einer Antwort), zu
+        `widget` hinrollen: Bei großer Schrift läge es sonst unterhalb des
+        sichtbaren Teils."""
+        def show():
+            try:
+                widget.update_idletasks()
+                self.show(widget)
+            except tk.TclError:
+                pass
+        root = widget.nametowidget(".")  # nach dem Hauptfenster geplant, das ihn auch wieder abbricht
+        variable.trace_add("write", lambda *_: root.after_idle(show))
+
     def show(self, widget):
         """So weit rollen, dass `widget` ganz zu sehen ist (wenn es passt,
         sonst sein Anfang)."""

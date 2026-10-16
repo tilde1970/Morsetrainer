@@ -363,14 +363,16 @@ class RunModeFrame:
         log_box = theme.card(parent, "Log")
         columns = ("nr", "call", "exch", "result")
         self.log_tree = ttk.Treeview(log_box, columns=columns, show="headings", height=8)
-        for col, heading, width, anchor in (("nr", tr("Nr"), 40, "center"), ("call", "Call", 100, "w"),
-                                            ("exch", tr("Austausch"), 90, "w"), ("result", tr("Ergebnis"), 200, "w")):
+        widths = {"nr": 40, "call": 100, "exch": 90, "result": 200}
+        for col, heading, anchor in (("nr", tr("Nr"), "center"), ("call", "Call", "w"),
+                                     ("exch", tr("Austausch"), "w"), ("result", tr("Ergebnis"), "w")):
             self.log_tree.heading(col, text=heading)
-            self.log_tree.column(col, width=width, anchor=anchor)
+            self.log_tree.column(col, anchor=anchor)
         self.log_tree.tag_configure("wrong", foreground=theme.ERROR)
         announcer.nato(self.log_tree)
         self.log_tree.tag_configure("ok", foreground=theme.OK)
         self.log_tree.pack(fill="x")
+        theme.fit_columns(self.log_tree, widths)
 
         # Unten, damit Eingabe und Log im laufenden Contest ohne Scrollen sichtbar sind.
         self.band_var = tk.BooleanVar(value=False)

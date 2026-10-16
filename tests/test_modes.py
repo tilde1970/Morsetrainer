@@ -1474,6 +1474,32 @@ class DecimalTest(AppTestCase):
         self.assertIn("Letzte 7 Tage: Reaktion 0,45 s", self.app.statistics_spoken())
         self.assertNotIn("trend", self.mode("Einzelzeichen").stats_panel.char_tree["columns"])  # nur gesamt
 
+    def test_table_columns_grow_with_the_font_and_scroll_sideways(self):
+        from tkinter import font as tkfont
+        panel = self.app.all_time_panel
+        tree = panel.char_tree
+        self.assertEqual(panel.compare_var.get(), "")
+        compare_label = next(w for w in tree.master.winfo_children()
+                             if str(w.cget("textvariable") if "textvariable" in w.keys() else "") == str(panel.compare_var))
+        self.assertEqual(compare_label.winfo_manager(), "")  # leer: keine Lücke
+        narrow = tree.column("trend", "width")
+        self.app.font_scale_var.set(200)
+        heading = tkfont.Font(name=theme.HEADING, exists=True).measure(tree.heading("trend", "text"))
+        self.assertGreaterEqual(tree.column("trend", "width"), heading)
+        self.assertGreater(tree.column("trend", "width"), narrow)
+        self.root.deiconify()
+        self.root.geometry("1024x700")
+        self.app.select_tab(len(self.app.notebook.tabs()) - 1)
+        self.root.update()
+        self.assertLess(tree.xview()[1], 1.0)  # passt nicht: rollt
+        self.assertEqual(tree._mt_xbar.winfo_manager(), "pack")
+        tree.focus_force()
+        self.root.update()
+        tree.event_generate("<Right>")
+        self.root.update()
+        self.assertGreater(tree.xview()[0], 0.0)
+        self.app.font_scale_var.set(100)
+
     def test_progress_text_on_a_single_day(self):
         from datetime import datetime
         from morsetrainer.widgets.progress_widget import span_text
@@ -1727,6 +1753,24 @@ class UsabilityTest(AppTestCase):
         self.app.font_scale_var.set(175)
         self.assertEqual((bar.week_label.winfo_manager(), bar.legend.winfo_manager()), ("pack", "pack"))
         self.assertEqual(bar.week_label.master.pack_slaves()[0], bar.week_label)  # wieder vor dem Ziel
+
+    def test_feedback_is_scrolled_into_view_at_200_percent(self):
+        self.root.deiconify()
+        self.root.geometry("1024x600")
+        self.app.font_scale_var.set(200)
+        for name, var in (("Einzelzeichen", "feedback_var"), ("Gruppen", "feedback_var")):
+            self.app.show_mode(name)
+            mode = self.mode(name)
+            mode.scroller.canvas.yview_moveto(0)
+            self.root.update()
+            getattr(mode, var).set("✓ K")
+            self.root.update()
+            label = mode.feedback_label
+            canvas = mode.scroller.canvas
+            top = label.winfo_rooty() - canvas.winfo_rooty()
+            self.assertGreaterEqual(top, 0, name)
+            self.assertLessEqual(top + label.winfo_height(), canvas.winfo_height(), name)
+        self.app.font_scale_var.set(100)
 
     def test_header_collapses_at_200_percent(self):
         app = self.app

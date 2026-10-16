@@ -266,9 +266,10 @@ class AwardsPanel:
         widths = {"name": 170, "seals": 140, "next": 190, "lesson": 75}
         for col in columns:
             self.tree.heading(col, text=headings[col])
-            self.tree.column(col, width=widths[col], anchor="center" if col == "lesson" else "w")
+            self.tree.column(col, anchor="center" if col == "lesson" else "w")
         self.tree.tag_configure("open", foreground=theme.MUTED)
         self.tree.pack(fill="x", pady=(2, 0))
+        theme.fit_columns(self.tree, widths)
         self.tree.bind("<<TreeviewSelect>>", lambda e: self._show_detail())
         # Sonst hieße die Tabelle beim Vorlesen wie die Zeile darüber („Noch keine Siegel“).
         announcer.name(self.tree, tr("Diplome"))
