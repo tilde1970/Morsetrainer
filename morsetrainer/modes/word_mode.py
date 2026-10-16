@@ -8,14 +8,12 @@ Zeitfenster ist zweigeteilt (erste Taste, dann Tippen).
 
 Eigene Wörter kommen aus woerter.txt im Datenverzeichnis; der Knopf
 "Eigene Wörter bearbeiten" legt die Datei an und öffnet sie im Editor."""
-import os
 import random
-import subprocess
-import sys
 import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import koch, words
+from morsetrainer.core.storage import open_with_system
 from morsetrainer.core.morse import MORSE_CODE
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, tr
@@ -32,23 +30,6 @@ CONTENTS = {N_("Abkürzungen"): "words", N_("Klartext"): "plain", N_("Wendungen"
 # Gemischt statt eigener Wendungs-Tage: Wechsel festigt besser als Blöcke,
 # und die wenigen Wendungen der ersten Lektionen lernte man sonst auswendig.
 PHRASE_SHARE = 1 / 3
-
-
-def open_in_editor(path) -> None:
-    """Öffnet `path` mit dem Standardprogramm des Systems."""
-    if sys.platform == "win32":
-        os.startfile(path)
-        return
-    command = ["open" if sys.platform == "darwin" else "xdg-open", str(path)]
-    env = dict(os.environ)
-    # Als AppImage/PyInstaller zeigt LD_LIBRARY_PATH auf die mitgelieferten
-    # Bibliotheken; damit stürzt ein Editor des Systems womöglich ab. Den
-    # ursprünglichen Wert hat der PyInstaller-Starter aufbewahrt.
-    if "LD_LIBRARY_PATH_ORIG" in env:
-        env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH_ORIG"]
-    elif getattr(sys, "frozen", False):
-        env.pop("LD_LIBRARY_PATH", None)
-    subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 class WordModeFrame(SequenceModeFrame):
@@ -154,7 +135,7 @@ class WordModeFrame(SequenceModeFrame):
 
     def _edit_user_words(self):
         try:
-            open_in_editor(words.ensure_user_file())
+            open_with_system(words.ensure_user_file())
         except OSError as exc:
             self.status_var.set(tr("{file} lässt sich nicht öffnen: {error}").format(file=words.USER_WORDS_FILE, error=exc))
 

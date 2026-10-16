@@ -70,7 +70,8 @@ SCP_ERRORS = {
     None: N_("Unerwarteter Fehler beim Laden."),
 }
 SCP_NEXT_STEP = N_("Die bisherige Liste bleibt. Später noch einmal versuchen, oder MASTER.SCP von "
-                   "supercheckpartial.com im Browser laden und als callsigns.scp in den Datenordner legen.")
+                   "supercheckpartial.com im Browser laden und als callsigns.scp in den Datenordner legen "
+                   "(Einstellungen … → Datenordner öffnen).")
 
 
 def load_callsigns(path: Path = CALLSIGN_FILE):

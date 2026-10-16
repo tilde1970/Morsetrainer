@@ -10,6 +10,8 @@ zu hindern oder beim nächsten Speichern stillschweigend überschrieben zu
 werden."""
 import json
 import os
+import subprocess
+import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -67,3 +69,21 @@ def _set_aside(path: Path) -> None:
         os.replace(path, path.with_name(f"{path.name}.defekt-{stamp}"))
     except OSError:
         pass
+
+
+def open_with_system(path) -> None:
+    """Öffnet `path` mit dem Standardprogramm des Systems (Editor, Browser,
+    bei einem Ordner der Dateimanager). Wirft OSError, wenn das nicht geht."""
+    if sys.platform == "win32":
+        os.startfile(path)
+        return
+    command = ["open" if sys.platform == "darwin" else "xdg-open", str(path)]
+    env = dict(os.environ)
+    # Als AppImage/PyInstaller zeigt LD_LIBRARY_PATH auf die mitgelieferten
+    # Bibliotheken; damit stürzt ein Editor des Systems womöglich ab. Den
+    # ursprünglichen Wert hat der PyInstaller-Starter aufbewahrt.
+    if "LD_LIBRARY_PATH_ORIG" in env:
+        env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH_ORIG"]
+    elif getattr(sys, "frozen", False):
+        env.pop("LD_LIBRARY_PATH", None)
+    subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

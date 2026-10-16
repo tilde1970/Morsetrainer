@@ -296,8 +296,8 @@ der Knopf wird zum flachen Knopf **aktualisieren** (die Ansage nennt ihn
 - Klappt das Laden gar nicht, etwa hinter dem Proxy einer Firma oder
   Schule: `MASTER.SCP` im Browser von supercheckpartial.com herunterladen,
   in `callsigns.scp` umbenennen und in den Datenordner legen (den Pfad
-  nennt die Fehlermeldung, außerdem Abschnitt 11 unter „Wo die Daten
-  liegen“). Die Liste gilt nach einem Neustart.
+  nennt die Fehlermeldung; „Einstellungen … → Daten → Datenordner
+  öffnen“ zeigt ihn im Dateimanager). Die Liste gilt nach einem Neustart.
 
 **Optionen bei Gruppen, Wörtern und Rufzeichen:**
 
@@ -1207,7 +1207,8 @@ kann, tauscht auch die Prüfsumme; eine Signatur gibt es nicht.
 Aus dem Quelltext gestartet liegen die Daten im Programmverzeichnis, beim
 AppImage in `~/.local/share/morsetrainer/`, bei der exe in
 `%APPDATA%\Morsetrainer\`, bei der Mac-App in
-`~/Library/Application Support/Morsetrainer/`.
+`~/Library/Application Support/Morsetrainer/`. „Einstellungen … → Daten
+→ **Datenordner öffnen**“ zeigt ihn im Dateimanager.
 
 - `stats/morsetrainer.db`: alle Übungsdaten in einer SQLite-Datenbank –
   jeder Durchgang mit seinen Zeichen, Ergebnisse von QSO-Abfragen und

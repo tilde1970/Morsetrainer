@@ -1780,6 +1780,27 @@ class UsabilityTest(AppTestCase):
             self.assertFalse(hints_below())
             self.assertEqual(int(app.settings_scroller.canvas.cget("height")), app.settings_body.winfo_reqheight())
 
+    def test_data_folder_button_opens_the_folder_or_names_it(self):
+        app = self.app
+
+        def find(widget):
+            for child in widget.winfo_children():
+                if isinstance(child, ttk.Button) and str(child.cget("text")) == "Datenordner öffnen":
+                    return child
+                found = find(child)
+                if found is not None:
+                    return found
+        button = find(app.settings_window)
+        with mock.patch.object(app_module.storage, "open_with_system") as opened, \
+                mock.patch.object(announcer, "say") as say:
+            button.invoke()
+        opened.assert_called_once_with(app_module.DATA_DIR)
+        say.assert_called_once_with("Datenordner geöffnet.")
+        with mock.patch.object(app_module.storage, "open_with_system", side_effect=FileNotFoundError("xdg-open")), \
+                mock.patch.object(app_module.dialog, "showerror") as error:
+            button.invoke()
+        self.assertIn(str(app_module.DATA_DIR), error.call_args[0][1])
+
     def test_settings_window_fits_when_opened_after_a_zoom(self):
         app = self.app
         window = app.settings_window

@@ -11,8 +11,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import awards, diploma, stats
+from morsetrainer.core.storage import open_with_system
 from morsetrainer.i18n import number, tr
-from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import focus_keeper
 
@@ -138,7 +138,7 @@ def _open_page(page: str, name: str):
     try:
         stats.STATS_DIR.mkdir(parents=True, exist_ok=True)
         path.write_text(page, encoding="utf-8")
-        open_in_editor(path)
+        open_with_system(path)
     except OSError as exc:
         return None, tr("Nicht gespeichert: {error}").format(error=exc)
     return path, None

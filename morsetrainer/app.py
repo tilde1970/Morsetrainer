@@ -618,7 +618,9 @@ class MorseTrainerApp:
         # etwa für den Umzug auf einen neuen Rechner.
         data = hinted(data_card)
         ttk.Button(data, text=tr("Sichern …"), command=self._export_data).pack(side="left", padx=(0, 4))
-        ttk.Button(data, text=tr("Einlesen …"), command=self._import_data).pack(side="left", padx=(0, 8))
+        ttk.Button(data, text=tr("Einlesen …"), command=self._import_data).pack(side="left", padx=(0, 4))
+        # Etwa um callsigns.scp von Hand abzulegen oder ein Fehlerprotokoll zu finden.
+        ttk.Button(data, text=tr("Datenordner öffnen"), command=self._open_data_folder).pack(side="left", padx=(0, 8))
         theme.hint(data.master, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
 
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
@@ -749,6 +751,19 @@ class MorseTrainerApp:
             "Daten eingelesen. Das Programm beendet sich jetzt; beim nächsten Start gelten die eingelesenen "
             "Einstellungen."), parent=self.root)
         self.on_close(keep_files=True)
+
+    def _open_data_folder(self) -> None:
+        """Den Datenordner im Dateimanager des Systems zeigen; geht das nicht,
+        steht der Pfad in der Meldung."""
+        try:
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            storage.open_with_system(DATA_DIR)
+        except OSError as exc:
+            dialog.showerror(tr("Datenordner"), tr(
+                "Der Datenordner lässt sich nicht öffnen ({error}). Er liegt hier:\n{folder}").format(
+                error=exc, folder=DATA_DIR), parent=self.settings_window)
+            return
+        announcer.say(tr("Datenordner geöffnet."))
 
     def _update_cpm(self):
         """ZpM-Hinweise zu den WPM-Feldern (PARIS-Umrechnung, core/tempo.py),

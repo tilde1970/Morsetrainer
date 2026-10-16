@@ -149,6 +149,11 @@ EN.update({
     "Strg+Plus größer, Strg+Minus kleiner, Strg+0 normal": "Ctrl+Plus larger, Ctrl+Minus smaller, Ctrl+0 normal",
     "Sichern …": "Back up …",
     "Einlesen …": "Restore …",
+    "Datenordner öffnen": "Open data folder",
+    "Datenordner": "Data folder",
+    "Der Datenordner lässt sich nicht öffnen ({error}). Er liegt hier:\n{folder}":
+        "The data folder cannot be opened ({error}). It is here:\n{folder}",
+    "Datenordner geöffnet.": "Data folder opened.",
     "alle Einstellungen und Statistiken, z. B. für einen neuen Rechner":
         "all settings and statistics, e.g. for a new computer",
     "Daten sichern": "Back up data",
@@ -1112,9 +1117,9 @@ EN.update({
     "Die Liste lässt sich nicht speichern (Datenträger voll?).": "The list cannot be saved (disk full?).",
     "Unerwarteter Fehler beim Laden.": "Unexpected error while loading.",
     "Die bisherige Liste bleibt. Später noch einmal versuchen, oder MASTER.SCP von supercheckpartial.com im "
-    "Browser laden und als callsigns.scp in den Datenordner legen.":
+    "Browser laden und als callsigns.scp in den Datenordner legen (Einstellungen … → Datenordner öffnen).":
         "The previous list stays. Try again later, or download MASTER.SCP from supercheckpartial.com in the "
-        "browser and save it as callsigns.scp in the data folder.",
+        "browser and save it as callsigns.scp in the data folder (Settings … → Open data folder).",
     "Rufzeichenliste geladen: {n} Rufzeichen.": "Callsign list loaded: {n} callsigns.",
     "Bestwert {score} Punkte": "Best score {score} points",
     " (Start {tempo})": " (start {tempo})",

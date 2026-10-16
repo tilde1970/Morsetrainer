@@ -1309,7 +1309,7 @@ class NetworkTabTest(unittest.TestCase):
         from morsetrainer.modes import network_mode
         self.trainer.content_var.set("Gruppen")
         self.trainer.count_var.set(30)
-        with mock.patch.object(network_mode, "open_in_editor") as opened:
+        with mock.patch.object(network_mode, "open_with_system") as opened:
             self.trainer.print_answer_sheet()
         path = Path(self.tmp.name) / "antwortbogen.html"
         opened.assert_called_once_with(path)

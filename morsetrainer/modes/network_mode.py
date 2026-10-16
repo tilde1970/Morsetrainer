@@ -46,11 +46,11 @@ from morsetrainer.core.morse import (
     display_text, duration_seconds, effective_wpm, silence, tone_seconds, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
+from morsetrainer.core.storage import open_with_system
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource, qso_sections
 from morsetrainer.modes.sequence_mode import HISTORY_LEN
-from morsetrainer.modes.word_mode import open_in_editor
 from morsetrainer.net import client as net_client
 from morsetrainer.net import protocol
 from morsetrainer.net import stream as net_stream
@@ -1625,7 +1625,7 @@ class NetworkModeFrame:
         try:
             stats.STATS_DIR.mkdir(parents=True, exist_ok=True)
             path.write_text(page, encoding="utf-8")
-            open_in_editor(path)
+            open_with_system(path)
         except OSError as exc:
             self.sheet_var.set(tr("Nicht gespeichert: {error}").format(error=exc))
             return

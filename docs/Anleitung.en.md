@@ -292,7 +292,8 @@ directly from [supercheckpartial.com](https://www.supercheckpartial.com)
 - If loading does not work at all, for example behind a company or school
   proxy: download `MASTER.SCP` from supercheckpartial.com in the browser,
   rename it to `callsigns.scp` and put it in the data directory (the error
-  message gives the path, as does “Where the data lives” in section 11).
+  message gives the path; “Settings … → Data → Open data folder” shows it
+  in the file manager).
   The list applies after a restart.
 
 **Options in Groups, Words and Callsigns:**
@@ -1178,7 +1179,8 @@ the checksum too; there is no signature.
 When started from source, the data lives in the program directory; for the
 AppImage in `~/.local/share/morsetrainer/`, for the exe in
 `%APPDATA%\Morsetrainer\`, for the Mac app in
-`~/Library/Application Support/Morsetrainer/`.
+`~/Library/Application Support/Morsetrainer/`. “Settings … → Data →
+**Open data folder**” shows it in the file manager.
 
 - `stats/morsetrainer.db`: all practice data in an SQLite database – every
   run with its characters, results of QSO checks and contests, overall
