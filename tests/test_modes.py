@@ -1888,20 +1888,25 @@ class UsabilityTest(AppTestCase):
 
     def test_feedback_is_scrolled_into_view_at_200_percent(self):
         self.root.deiconify()
-        self.root.geometry("1024x600")
+        self.root.geometry("984x520")  # 1024×600 abzüglich Rand: die kleinste Anzeige, für die das gilt
         self.app.font_scale_var.set(200)
-        for name, var in (("Einzelzeichen", "feedback_var"), ("Gruppen", "feedback_var")):
+        for name in ("Einzelzeichen", "Gruppen"):
             self.app.show_mode(name)
             mode = self.mode(name)
             mode.scroller.canvas.yview_moveto(0)
             self.root.update()
-            getattr(mode, var).set("✓ K")
+            mode.status_var.set("Höre zu…")
+            if hasattr(mode, "diff_var"):
+                mode.diff_var.set("gesendet  KMU\ngetippt   KMR\n              ^")
+            mode.feedback_var.set("Falsch: war K, du: M")
             self.root.update()
-            label = mode.feedback_label
             canvas = mode.scroller.canvas
-            top = label.winfo_rooty() - canvas.winfo_rooty()
-            self.assertGreaterEqual(top, 0, name)
-            self.assertLessEqual(top + label.winfo_height(), canvas.winfo_height(), name)
+            shown = [mode.feedback_label] + [w for w in mode.feedback_label.master.winfo_children()
+                                             if hasattr(mode, "diff_var") and w is not mode.feedback_label]
+            for label in shown:  # Rückmeldung und, in Gruppen, die Gegenüberstellung ganz im Bild
+                top = label.winfo_rooty() - canvas.winfo_rooty()
+                self.assertGreaterEqual(top, 0, name)
+                self.assertLessEqual(top + label.winfo_height(), canvas.winfo_height(), name)
         self.app.font_scale_var.set(100)
 
     def test_hint_wraps_inside_its_right_padding(self):

@@ -1008,7 +1008,8 @@ are on.
 ### Seeing
 
 - **Font size:** Ctrl+Plus, Ctrl+Minus, Ctrl+0 (section 2); the new size
-  is announced (“Font size 150 percent”). With a large font the tab
+  is announced (“Font size 150 percent”), unless a long Morse tone is
+  playing; it is never interrupted. With a large font the tab
   scrolls to the feedback after each answer; a table that does not fit the
   width scrolls with the left and right arrow keys.
 - **High contrast:** “Settings …” → “High contrast (black, white,

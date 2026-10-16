@@ -61,6 +61,18 @@ class FontScaleTest(AppTestCase):
         self.assertEqual(spoken[-1], "Schriftgröße 75 %, kleinste Stufe.")
         self.app.zoom(0)
 
+    def test_zoom_announcement_does_not_cut_a_long_tone(self):
+        from morsetrainer.core import audio
+        from morsetrainer.widgets import announcer
+        with mock.patch.object(announcer, "say") as say, mock.patch.object(audio, "tone_remaining", return_value=6.0):
+            self.app.zoom(1)
+        say.assert_not_called()  # die Größe ändert sich sichtbar, der Ton läuft weiter
+        self.assertEqual(theme.scale(), 110)
+        with mock.patch.object(announcer, "say") as say, mock.patch.object(audio, "tone_remaining", return_value=2.0):
+            self.app.zoom(1)
+        say.assert_called_once()  # kurze Töne wartet die Ansage selbst ab
+        self.app.zoom(0)
+
     def test_arrow_keys_work_after_tabbing_into_a_table(self):
         # Ohne aktuelle Zeile täten die Pfeiltasten nichts (Diplome, Statistik).
         tree = ttk.Treeview(self.root, columns=("a",), show="headings")

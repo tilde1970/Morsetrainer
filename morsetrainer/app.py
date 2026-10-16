@@ -1074,6 +1074,8 @@ class MorseTrainerApp:
                 tr("Schriftgröße {percent} %, kleinste Stufe.")
         else:
             text = tr("Schriftgröße {percent} %.")
+        if audio.tone_remaining() > announcer.TONE_WAIT_MAX_S:
+            return  # Die Ansage wartet nur auf kurze Töne und ersetzte sonst den laufenden Ton
         announcer.say(text.format(percent=percent))
 
     def set_font_scale(self, percent: int) -> None:

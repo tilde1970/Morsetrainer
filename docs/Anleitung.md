@@ -1032,7 +1032,8 @@ Bedienelement, auf dem du gerade stehst.
 ### Sehen
 
 - **Schriftgröße:** Strg+Plus, Strg+Minus, Strg+0 (Abschnitt 2); die
-  neue Größe wird angesagt („Schriftgröße 150 Prozent“). Bei großer
+  neue Größe wird angesagt („Schriftgröße 150 Prozent“), außer ein langer
+  Morseton läuft; er wird nie unterbrochen. Bei großer
   Schrift rollt der Reiter nach jeder Antwort zur Rückmeldung; passt eine
   Tabelle nicht in die Breite, rollt sie mit Pfeil links und rechts.
 - **Hoher Kontrast:** „Einstellungen …“ → „Hoher Kontrast (Schwarz, Weiß,

@@ -211,7 +211,9 @@ class SingleModeFrame(DailyModeMixin):
         self.feedback_var = tk.StringVar(value="")
         self.feedback_label = ttk.Label(answer, textvariable=self.feedback_var, style="Feedback.TLabel")
         self.feedback_label.pack(pady=(4, 10))
-        self.scroller.follow(self.feedback_var, answer)
+        # Nur zur Rückmeldung rollen: Status und Rückmeldung zusammen sind bei
+        # 200 % höher als der sichtbare Teil, dann bliebe sie halb verdeckt.
+        self.scroller.follow(self.feedback_var, self.feedback_label)
 
         self.stats_panel = StatsPanel(parent)
 

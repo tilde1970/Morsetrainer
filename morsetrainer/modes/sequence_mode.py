@@ -324,8 +324,6 @@ class SequenceModeFrame(DailyModeMixin):
         self.remaining_var = tk.StringVar(value="")
         theme.hint(controls, textvariable=self.remaining_var).pack(side="right")
 
-        # Status bis Vergleich: ein Block, zu dem der Reiter bei jeder
-        # Rückmeldung hinrollt (große Schrift).
         answer = ttk.Frame(parent)
         answer.pack(fill="x")
         self.status_var = tk.StringVar(value=tr("Bereit. Start mit F5."))
@@ -361,15 +359,17 @@ class SequenceModeFrame(DailyModeMixin):
         self.unknown_button.pack(side="left", padx=4)
 
         self.feedback_var = tk.StringVar(value="")
+        result = ttk.Frame(answer)  # Rückmeldung und Gegenüberstellung: dorthin rollt der Reiter
+        result.pack(fill="x")
         self.feedback_label = ttk.Label(
-            answer, textvariable=self.feedback_var, style="Feedback.TLabel", wraplength=560, justify="center"
+            result, textvariable=self.feedback_var, style="Feedback.TLabel", wraplength=560, justify="center"
         )
         self.feedback_label.pack(pady=(10, 2))
         # Gesendet / getippt / Markierung untereinander, daher Festbreitenschrift.
         self.diff_var = tk.StringVar(value="")
-        ttk.Label(answer, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
+        ttk.Label(result, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
 
-        self.scroller.follow(self.feedback_var, answer)
+        self.scroller.follow(self.feedback_var, result)
 
         self.stats_panel = StatsPanel(parent)
 
