@@ -48,7 +48,8 @@ it: on exit the saved language is kept unless you choose another one in the
 settings.
 
 `--selftest` checks that PortAudio, Tcl/Tk, both voices and the MP3 export
-are present, writes a short sample as MP3 and exits with code 0 (otherwise
+are present and HTTPS finds certificates (needed for the callsign list and
+update), writes a short sample as MP3 and exits with code 0 (otherwise
 1 and the reason).
 
 ## Tests
@@ -120,7 +121,9 @@ the exe and the Mac app; the PyInstaller commands for them are in
 A tag `vX.Y` starts `.github/workflows/release.yml`: it builds AppImage,
 exe and Mac app (ZIP, Apple silicon only, unsigned) with the pinned
 versions from `packaging/constraints.txt` and checks each built program
-with `--selftest`. Only if that and the tests succeed does it write
+with `--selftest`; the AppImage additionally in an environment without
+`/usr/lib/ssl` (as on Fedora, Arch, openSUSE), so that it finds the system
+certificates. Only if that and the tests succeed does it write
 `SHA256SUMS.txt` and create the release with the version's section from
 `CHANGELOG.md` and below it (from “### English”) the one from
 `CHANGELOG.en.md`; the update window in the program shows the part in the

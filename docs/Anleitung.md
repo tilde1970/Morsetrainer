@@ -157,7 +157,8 @@ einmal einstellt:
   einem Neustart; unten im Fenster erscheint dafür **Jetzt neu starten**).
   Die Stimme im Reiter Sprechen bleibt deutsch.
 - **Barrierefreiheit:** Schriftgröße, hoher Kontrast, Ansage (Abschnitt 8).
-- **Daten:** sichern und einlesen (Abschnitt 11).
+- **Daten:** sichern und einlesen, außerdem der Knopf **Datenordner öffnen**
+  (Abschnitt 11).
 
 **Schriftgröße:** Unter „Einstellungen …“ oder mit Strg+Plus, Strg+Minus
 und Strg+0 (normal) wird die ganze Oberfläche größer, bis 200 %; das
@@ -173,13 +174,20 @@ endet dort mit „…“. Rechts in derselben Zeile steht „Einstellungen …
 (Strg+,)“, damit Schriftgröße und Kontrast erreichbar bleiben. Die Zeile ist ein Knopf:
 Klick, Enter oder Leertaste klappt die Kopfleiste auf (Pfeil nach unten ▾)
 und wieder zu, die Ansage sagt „Kopfleiste geöffnet.“ bzw. „Kopfleiste
-geschlossen.“ Aufgeklappt führt Tab vom Knopf in die Felder; Umschalt+Tab
+geschlossen.“ Steht der Fokus auf der Zeile, sagt die Ansage zuerst „zugeklappt“
+oder „aufgeklappt“, dann Lektion, Tempo und Tonhöhe; bei eigenem Zeichensatz
+buchstabiert sie ihn. Das Programm merkt sich, ob die Kopfleiste beim Beenden
+offen war, und stellt das bei großer Schrift beim nächsten Start wieder her.
+Aufgeklappt führt Tab vom Knopf in die Felder; Umschalt+Tab
 im ersten Feld (Koch-Lektion) führt zurück zum Knopf. Esc klappt die
 Kopfleiste nicht zu. Die Leiste der Tagesübung zeigt bei 200 % nur das
-Wochenziel, ohne Wochenstreifen und Legende. So bleibt auch auf kleinen
+Wochenziel, ohne Wochenstreifen und Legende; Streifen und Legende stehen
+dann im Reiter Statistik unter „Diese Woche“. In der Fußzeile steht bei 200 %
+nur „Morsetrainer … · DL4YM · 73!“. So bleibt auch auf kleinen
 Bildschirmen Platz für die Übung. Ist das Einstellungsfenster zu breit für
 den Bildschirm, stehen die Hinweise unter den Feldern; ist es zu hoch,
-rollt der Inhalt, und „Schließen“ bleibt unten stehen.
+rollt der Inhalt, und „Schließen“ bleibt unten stehen. Hinweiszeilen ohne
+Text erscheinen im Einstellungsfenster nicht.
 
 ## 3. Die Reiter
 
@@ -193,7 +201,8 @@ Hören, antworten, das nächste. Oben unter **Inhalt** wählst du
 **Zeichen**, **Gruppen**, **Wörter** oder **Rufzeichen** (auch mit den
 Pfeiltasten oder mit Alt+1 noch einmal); die Wahl bleibt gespeichert. Die
 Leertaste wiederholt; erst nach der Wiederholung erkannt zählt als nicht
-erkannt. F5 oder der Knopf **Start (F5)** startet und stoppt, Esc stoppt
+erkannt. Tastenkürzel mit Strg, Alt oder Cmd (etwa Strg+Plus für die Schrift)
+zählen nie als Antwort. F5 oder der Knopf **Start (F5)** startet und stoppt, Esc stoppt
 auch. Nach dem Stoppen steht das Ergebnis in der Statuszeile, z. B.
 „Durchgang beendet: 46 von 50 Zeichen richtig (92 %).“
 
@@ -220,8 +229,9 @@ vor, mit Gruppen weiterzumachen.
   und kommt später wieder.“ Das Limit bleibt so lang, wie es war. Nach der
   Ansage kommt ein neues Zeichen; das angehaltene kommt nach ein paar
   anderen unangekündigt wieder, wie nach einem Fehler. Ohne Zeitlimit
-  zählt die Antwort nach F11 weiter, nur ihre Zeit nicht (die Ansage
-  steckte in ihr).
+  zählt die Antwort nach F11 weiter als richtig oder falsch, nur ihre Zeit
+  nicht (die Ansage steckte in ihr): keine Reaktionszeit, kein Tempo, und
+  die Lernkartei wertet sie weder als flüssig noch als langsam.
 - **Quittungston:** ein kurzer heller Ton bei richtiger, ein tiefer
   Doppelton bei falscher Antwort (Standard aus). Mit Ansage (F9) gilt,
   was Abschnitt 8 unter „Was angesagt wird“ beschreibt.
@@ -419,7 +429,7 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
 
 - **Vergleich:** Unter der Gesamtzahl steht, wie es in den letzten 7 Tagen
   lief, gegen die 30 Tage davor: „Letzte 7 Tage: Reaktion 0,48 s, 92 %
-  richtig · die 30 Tage davor: Reaktion 0,61 s, 88 % richtig“. Die
+  richtig · die 30 Tage davor: Reaktion 0,61 s, 88 % richtig“ (bei der Reaktion ist kleiner schneller). Die
   Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
   langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
   Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
@@ -604,7 +614,8 @@ Nummer.
   erst an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht. Wer
   gleich in Lektion 41 einsteigt, bekommt am ersten Tag Bronze und mit
   einem weiteren bestandenen Lauf an einem anderen Tag Silber und Gold.
-- Gezählt werden nur Durchgänge ohne Selbstbewertung.
+- Gezählt werden nur Durchgänge ohne Selbstbewertung. Rufz-Durchgänge mit
+  erfundenen Rufzeichen zählen mit.
 - Erreichte Siegel stehen mit Datum in der Datenbank und gehen nie
   verloren, auch nicht mit „Gesamtstatistik zurücksetzen“.
 - Beim ersten Start mit Diplomen wird still nachgetragen, was sich aus dem
@@ -953,7 +964,7 @@ F11 dazu, was darin steht – das Call im Funkalphabet, ein leeres Feld als
 Tagesübung die aktuelle Karte bzw. während eines Blocks, welcher Block
 läuft, die Übungszeit und die Sterne, im Reiter Statistik
 eine Übersicht (Gesamtergebnis, meiste Fehler, Verwechslungen,
-Lernkartei, Siegel, heute geübt) – auch bei ausgeschalteter Ansage.
+Lernkartei, Siegel, heute geübt, dazu Vergleich und Woche) – auch bei ausgeschalteter Ansage.
 F9 und F11 wirken in jedem Fenster; in Einstellungen, Bandbedingungen,
 Hilfe und den Netzwerk-Fenstern sagt F11 den Namen des Fensters und das
 Bedienelement, auf dem du gerade stehst.

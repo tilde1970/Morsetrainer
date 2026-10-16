@@ -156,7 +156,8 @@ practice options:
   after a restart; **Restart now** appears at the bottom of the window for
   that). The voice in the Speak tab stays German.
 - **Accessibility:** font size, high contrast, announcements (section 8).
-- **Data:** back up and restore (section 11).
+- **Data:** back up and restore, plus the **Open data folder** button
+  (section 11).
 
 **Font size:** under “Settings …” or with Ctrl+Plus, Ctrl+Minus and Ctrl+0
 (normal) the whole interface gets larger, up to 200 %; the window grows
@@ -171,13 +172,20 @@ with “…” there. “Settings … (Ctrl+,)” stays on the right of the same
 so font size and contrast remain within reach. The line is a button: click it or
 press Enter or the space bar to open the header (down arrow ▾) and close
 it again; the announcement says “Header opened.” or “Header closed.”
+With the focus on the line, the announcement first says “collapsed” or
+“expanded”, then lesson, speed and pitch; with your own character set it
+spells it out. The program remembers whether the header was open on exit and
+restores that at the next start with a large font.
 When it is open, Tab moves from the button into the fields; Shift+Tab in
 the first field (Koch lesson) takes you back to the button. Esc does not
 close the header. At 200 % the daily practice bar shows only the weekly
-goal, without the week strip and legend. This leaves room for practice
+goal, without the week strip and legend; strip and legend then appear in
+the Statistics tab under “This week”. At 200 % the footer reads only
+“Morsetrainer … · DL4YM · 73!”. This leaves room for practice
 even on small screens. If the settings window is too wide for the screen,
 the hints move below the fields; if it is too tall, the content scrolls
-and “Close” stays at the bottom.
+and “Close” stays at the bottom. Hint lines without text do not appear in
+the settings window.
 
 ## 3. The tabs
 
@@ -190,7 +198,9 @@ stop with the button or F5 (F10 in Contest).
 Listen, answer, the next one. At the top under **Content** you choose
 **Characters**, **Groups**, **Words** or **Callsigns** (also with the arrow
 keys or by pressing Alt+1 again); the choice is saved. The space bar
-repeats; recognised only after the repeat counts as not recognised. F5 or
+repeats; recognised only after the repeat counts as not recognised.
+Shortcuts with Ctrl, Alt or Cmd (such as Ctrl+Plus for the font) never
+count as an answer. F5 or
 the **Start (F5)** button starts and stops, Esc stops too. After stopping,
 the status line shows the result, e.g. “Run finished: 46 of 50 characters
 correct (92 %).”
@@ -217,7 +227,9 @@ program suggests moving on to groups.
   later.” The limit keeps its length. A new character follows the
   announcement; the paused one comes again unannounced after a few others,
   as after a mistake. Without the time limit the answer after F11 still
-  counts, only its time does not (the announcement would be part of it).
+  counts as right or wrong, only its time does not (the announcement would
+  be part of it): no reaction time, no speed, and the review box rates it
+  neither as fluent nor as slow.
 - **Feedback beep:** a short high beep for a correct answer, a low double
   tone for a wrong one (default off). With announcements on (F9), what
   section 8 describes under “What is announced” applies.
@@ -411,7 +423,8 @@ many characters. Runs with band conditions do not count here (section 6).
 
 - **Comparison:** below the total you see how the last 7 days went
   against the 30 days before: “Last 7 days: reaction 0.48 s, 92 % correct ·
-  the 30 days before: reaction 0.61 s, 88 % correct”. The averages over all
+  the 30 days before: reaction 0.61 s, 88 % correct” (for the reaction,
+  smaller is faster). The averages over all
   runs hardly move, because the early, slow answers always count; here you
   see whether you are getting better. The reaction comes only from the
   Characters content of the One by one tab: when copying along it counts from
@@ -594,7 +607,8 @@ next open level – stamped “PREVIEW”, without date and number.
   two different days** – one lucky run is not enough. Starting straight at
   lesson 41 gives Bronze on the first day and Silver and Gold with another
   passed run on a different day.
-- Only runs without self-assessment count.
+- Only runs without self-assessment count. RufZ runs with made-up
+  callsigns count too.
 - Seals achieved are kept with their date in the database and are never
   lost, not even with “Reset overall statistics”.
 - On the first start with awards, whatever follows from your practice so
@@ -933,7 +947,7 @@ as “empty” – since typing there is not announced), during daily practice
 the current card or, during a block,
 which block is running, the practice time and the stars, in the Statistics
 tab an overview (overall result, most errors, confusions, review box,
-seals, practice today) – even with announcements switched off.
+seals, practice today, plus comparison and week) – even with announcements switched off.
 F9 and F11 work in every window; in Settings, Band conditions, Help and
 the network windows F11 says the name of the window and the control you
 are on.

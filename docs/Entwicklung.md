@@ -49,7 +49,8 @@ nicht: Beim Beenden bleibt die gespeicherte Sprache, außer du wählst in den
 Einstellungen eine andere.
 
 `--selftest` prüft, ob PortAudio, Tcl/Tk, beide Stimmen und der MP3-Export
-vorhanden sind, schreibt eine kurze Probe als MP3 und endet mit Code 0
+vorhanden sind und HTTPS Zertifikate findet (nötig für Rufzeichenliste und
+Update), schreibt eine kurze Probe als MP3 und endet mit Code 0
 (sonst 1 und dem Grund).
 
 ## Tests
@@ -121,7 +122,9 @@ Mac-App baut GitHub; die PyInstaller-Befehle dafür stehen in
 Ein Tag `vX.Y` startet `.github/workflows/release.yml`: Es baut AppImage,
 exe und Mac-App (ZIP, nur Apple-Prozessor, nicht signiert) mit den festen
 Versionen aus `packaging/constraints.txt` und prüft jedes gebaute
-Programm mit `--selftest`. Nur wenn das und die Tests gelingen, schreibt es
+Programm mit `--selftest`; das AppImage zusätzlich in einer Umgebung ohne
+`/usr/lib/ssl` (wie auf Fedora, Arch, openSUSE), damit es die Zertifikate
+des Systems findet. Nur wenn das und die Tests gelingen, schreibt es
 `SHA256SUMS.txt` und legt alles mit dem Abschnitt der Version aus
 `CHANGELOG.md` und darunter (ab „### English“) aus `CHANGELOG.en.md` als Release an; das Update-Fenster im
 Programm zeigt den Teil in der Sprache der Oberfläche. Das Update im
