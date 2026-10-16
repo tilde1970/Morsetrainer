@@ -106,7 +106,8 @@ def fluent_count(e: dict) -> int:
     assumed = e.get("assumed_latencies", [])
     slow = sum(1 for lat in latencies if lat > FLUENT_LATENCY_S)
     slow += sum(1 for lat in assumed if lat <= FLUENT_LATENCY_S)  # angenommen ist nie flüssig
-    return max(e["good"] - slow, 0)
+    # Richtige ohne Zeit (F11-Ansage ohne Zeitlimit) sind weder flüssig noch langsam.
+    return max(e["good"] - e.get("untimed", 0) - slow, 0)
 
 
 def can_promote(charset: str) -> bool:
@@ -137,8 +138,8 @@ def update(per_char: dict, promote: bool = False, today=None, events=None, fast:
     day = today.isoformat()
     data = load()
     for char, e in per_char.items():
-        attempts = e["good"] + e["wrong"]
-        if not attempts:
+        attempts = e["good"] + e["wrong"] - e.get("untimed", 0)  # ohne Zeit: zählt hier nicht
+        if attempts <= 0:
             continue
         entry = data.setdefault(char, {})
         if entry.get("day") != day:

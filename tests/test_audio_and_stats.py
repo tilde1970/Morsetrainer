@@ -169,29 +169,60 @@ class StatsTest(unittest.TestCase):
         from datetime import datetime, timedelta
         from morsetrainer.widgets.stats_widget import comparison_text, trend_text
 
-        def write(days_ago, rows):
-            start = datetime.now() - timedelta(days=days_ago)
-            lines = [{"type": "config", "mode": "single", "start_time": start.isoformat(timespec="seconds")}]
+        def write(days_ago, rows, mode="single", start=None):
+            start = start or (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            lines = [{"type": "config", "mode": mode, "start_time": start}]
             lines += [{"type": "char", "char": c, "typed": t, "correct": c == t, **extra} for c, t, extra in rows]
             tests.write_session(lines)
         self.assertEqual(comparison_text(stats.period_comparison()), "")
         write(60, [("K", "K", {"latency_s": 3.0})] * 5)  # vor beiden Zeiträumen
         write(20, [("K", "K", {"latency_s": 0.8})] * 6 + [("K", "M", {})] * 2 + [("M", "M", {"latency_s": 0.5})])
         write(2, [("K", "K", {"latency_s": 0.4})] * 5 + [("K", "K", {"latency_s": 2.0, "latency_assumed": True}),
-                                                         ("K", "K", {"latency_s": 9.0})])  # angenommen; gekappt
+                                                         ("K", "K", {"latency_s": 9.0}),  # gekappt
+                                                         ("K", "K", {"latency_s": float("nan")}),
+                                                         ("K", "K", {"latency_s": True})])  # unsinnig: keine Messung
+        # Am Stück: Reaktion ab der vorigen Taste, zählt nur für die Trefferquote.
+        write(3, [("K", "K", {"latency_s": 0.1})] * 4, mode="continuous")
         comparison = stats.period_comparison()
         accuracy, latency, count = stats.period_numbers(comparison[stats.BEFORE])
         self.assertEqual((round(accuracy), round(latency, 3), count), (78, 0.757, 7))  # (6 × 0,8 + 0,5) / 7
         accuracy, latency, count = stats.period_numbers(comparison[stats.RECENT])
         self.assertEqual((accuracy, round(latency, 3), count), (100.0, 1.167, 6))  # (5 × 0,4 + 5) / 6
-        before, recent = stats.char_trend(comparison["chars"], "K")
-        self.assertEqual((round(before, 3), round(recent, 3)), (0.8, 1.167))
-        self.assertIsNone(stats.char_trend(comparison["chars"], "M"))  # zu wenige Messungen
+        self.assertEqual(comparison[stats.RECENT]["good"], 13)  # 9 Einzeln + 4 Am Stück
+        self.assertIsNone(stats.char_trend(comparison["chars"], "K"))  # zu wenige Messungen für den Trend
         self.assertEqual(trend_text((0.8, 0.4)), "0,80 → 0,40")
         self.assertEqual(comparison_text(comparison),
                          "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig · die 30 Tage davor: Reaktion 0,76 s, 78 % richtig")
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
+
+    def test_char_trend_is_a_median_from_enough_measurements(self):
+        from datetime import datetime, timedelta
+
+        def write(days_ago, latencies, start=None):
+            start = start or (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            tests.write_session([{"type": "config", "mode": "single", "start_time": start}]
+                                + [{"type": "char", "char": "K", "typed": "K", "correct": True, "latency_s": lat}
+                                   for lat in latencies])
+        write(20, [0.8] * (stats.MIN_TREND_COUNT - 1) + [5.0])  # ein Ausreißer verschiebt den Median nicht
+        write(2, [0.5] * (stats.MIN_TREND_COUNT - 1))
+        chars = stats.period_comparison()["chars"]
+        self.assertIsNone(stats.char_trend(chars, "K"))  # eine Seite hat eine Messung zu wenig
+        # Startzeit mit Zeitzone (von Hand eingetragen): zählt, statt abzubrechen.
+        write(0, [0.5], start=(datetime.now().astimezone() - timedelta(days=1)).isoformat(timespec="seconds"))
+        self.assertEqual(stats.char_trend(stats.period_comparison()["chars"], "K"), (0.8, 0.5))
+
+    def test_untimed_answers_stay_out_of_speed_and_daily_latencies(self):
+        from datetime import date
+        from morsetrainer.core import daily
+        session = stats.SessionStats("single", "K", 20, 600)
+        session.record_char("K", "K", True, 0.5, 20.0, latency=0.3)
+        session.record_char("K", "K", True, 7.0, 2.0, latency=None, timed=False)  # nach F11 ohne Zeitlimit
+        session.finalize()
+        data = stats.load_all_time()
+        self.assertEqual(stats.all_time_char_rows(data)[0][5], 20.0)  # nicht 20 / 2 richtige
+        self.assertEqual(stats.all_time_summary(data)["avg_effective_wpm"], 20.0)
+        self.assertEqual(daily.latencies(date.today(), date.today()), {"K": {20: [0.3]}})  # kein „verpasst“
 
     def test_assumed_latencies_do_not_raise_the_usual_latency(self):
         from morsetrainer.core.weighting import CharPicker

@@ -30,7 +30,7 @@ def comparison_text(comparison: dict) -> str:
 
 
 def trend_text(trend) -> str:
-    """„0,61 → 0,48“ (Reaktion davor → zuletzt) oder „–“."""
+    """„0,61 → 0,48“ (Median der Reaktion davor → jetzt) oder „–“."""
     return "–" if trend is None else f"{number(trend[0], 2)} → {number(trend[1], 2)}"
 
 
@@ -63,7 +63,7 @@ class StatsPanel:
         headings = {
             "char": tr("Zeichen", context="Spalte"), "good": tr("Richtig"), "wrong": tr("Falsch"),
             "avg_rt": tr("Ø Reaktion (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),
-            "trend": tr("Reaktion: davor → zuletzt"),
+            "trend": tr("davor → jetzt (s)"),
         }
         widths = {"char": 60, "good": 60, "wrong": 55, "avg_rt": 75, "avg_wpm": 60, "confusions": 140, "trend": 110}
         for col in columns:
@@ -77,8 +77,9 @@ class StatsPanel:
             anchor="w", pady=(2, 0))
         if compare:
             theme.hint(box, wrap=520, text=tr(
-                "Reaktion davor → zuletzt: die {before} Tage vor den letzten {days} Tagen gegen die letzten "
-                "{days} Tage; kleiner ist schneller. „–“: noch keine {count} Messungen auf jeder Seite.").format(
+                "Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
+                "schneller. Davor: die {before} Tage vor den letzten {days}. Die Spalte zeigt den Median, erst "
+                "ab {count} Messungen auf jeder Seite (sonst „–“).").format(
                 before=stats.BEFORE_DAYS, days=stats.COMPARE_DAYS, count=stats.MIN_TREND_COUNT)).pack(
                 anchor="w", pady=(2, 0))
 

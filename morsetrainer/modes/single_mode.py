@@ -576,13 +576,13 @@ class SingleModeFrame(DailyModeMixin):
 
         reaction_time = max(time.time() - self.play_start_time, 0.001)
         measured_wpm = effective_wpm(self.current_char, reaction_time, self.voice[0])
-        latency = None if self.status_heard else max(reaction_time - tone_seconds(self.current_char, self.voice[0]),
-                                                     0.0)
+        timed = not self.status_heard  # nach F11 ohne Zeitlimit steckt die Ansage in der Zeit
+        latency = max(reaction_time - tone_seconds(self.current_char, self.voice[0]), 0.0) if timed else None
         if helped:
-            self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm)
+            self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm, timed=timed)
         else:
             self.session_stats.record_char(
-                self.current_char, typed, correct, reaction_time, measured_wpm, latency=latency
+                self.current_char, typed, correct, reaction_time, measured_wpm, latency=latency, timed=timed
             )
         if self.icr_var.get() and self.first_hearing and correct:
             self.limit = next_limit(self.limit, True, self._limit_max())

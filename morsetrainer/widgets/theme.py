@@ -488,6 +488,12 @@ def fit_columns(tree, widths: dict) -> None:
 X_SCROLL_STEP = 60
 
 
+def show_xbar(tree) -> None:
+    """Rollbalken einer Tabelle mit fit_columns nach ihrer jetzigen Ansicht
+    zeigen oder verbergen (nach erneutem Einblenden)."""
+    _show_xbar(tree, tree._mt_xbar, *tree.xview())
+
+
 def _show_xbar(tree, bar, first, last) -> None:
     """Waagerechten Rollbalken nur zeigen, wenn die Tabelle nicht passt."""
     bar.set(first, last)

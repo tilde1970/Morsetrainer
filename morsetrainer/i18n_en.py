@@ -613,16 +613,18 @@ EN.update({
     "Richtig": "Correct",
     "Falsch": "Wrong",
     "Ø Reaktion (s)": "Ø reaction (s)",
-    "Reaktion: davor → zuletzt": "Reaction: before → recent",
+    "davor → jetzt (s)": "before → now (s)",
     "Reaktion {s} s": "reaction {s} s",
     "{pct} % richtig": "{pct} % correct",
     "Letzte {days} Tage": "Last {days} days",
     "nicht geübt": "not practised",
     "die {days} Tage davor": "the {days} days before",
-    ("Reaktion davor → zuletzt: die {before} Tage vor den letzten {days} Tagen gegen die letzten "
-     "{days} Tage; kleiner ist schneller. „–“: noch keine {count} Messungen auf jeder Seite."):
-        ("Reaction before → recent: the {before} days before the last {days} days against the last "
-         "{days} days; smaller is faster. “–”: not yet {count} measurements on each side."),
+    ("Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
+     "schneller. Davor: die {before} Tage vor den letzten {days}. Die Spalte zeigt den Median, erst "
+     "ab {count} Messungen auf jeder Seite (sonst „–“)."):
+        ("Reaction in the comparison line and in “before → now” only from Characters; smaller is "
+         "faster. Before: the {before} days before the last {days}. The column shows the median, only "
+         "from {count} measurements on each side (otherwise “–”)."),
     "Ø WPM": "Ø WPM",
     "Verwechselt mit": "Confused with",
     "Protokoll nicht gespeichert: {error}": "Log not saved: {error}",
@@ -1117,9 +1119,9 @@ EN.update({
     "Die Liste lässt sich nicht speichern (Datenträger voll?).": "The list cannot be saved (disk full?).",
     "Unerwarteter Fehler beim Laden.": "Unexpected error while loading.",
     "Die bisherige Liste bleibt. Später noch einmal versuchen, oder MASTER.SCP von supercheckpartial.com im "
-    "Browser laden und als callsigns.scp in den Datenordner legen (Einstellungen … → Datenordner öffnen).":
+    "Browser laden und als callsigns.scp in den Datenordner legen (Einstellungen … → Daten → Datenordner öffnen).":
         "The previous list stays. Try again later, or download MASTER.SCP from supercheckpartial.com in the "
-        "browser and save it as callsigns.scp in the data folder (Settings … → Open data folder).",
+        "browser and save it as callsigns.scp in the data folder (Settings … → Data → Open data folder).",
     "Rufzeichenliste geladen: {n} Rufzeichen.": "Callsign list loaded: {n} callsigns.",
     "Bestwert {score} Punkte": "Best score {score} points",
     " (Start {tempo})": " (start {tempo})",

@@ -12,6 +12,7 @@ Ein Durchgang besteht aus (als JSON, je eine Datenbankzeile):
 Der Zustand "all_time" in der Datenbank summiert je Zeichen über alle
 Durchgänge, auch welche Zeichen stattdessen getippt wurden ("confusions";
 "" = verpasst)."""
+import math
 import statistics
 from datetime import datetime, timedelta
 
@@ -109,7 +110,7 @@ class SessionStats:
             self.log_error = str(exc)
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
-                    latency=None, assumed=False) -> None:
+                    latency=None, assumed=False, timed=True) -> None:
         """Ergebnis für ein einzelnes Zeichen festhalten und sofort speichern.
 
         `latency` ist die Zeit vom Ende des Tons (des letzten Punkts oder
@@ -120,7 +121,10 @@ class SessionStats:
         `effective_wpm` das daraus gerechnete Tempo (morse.effective_wpm).
         `assumed`: nicht gemessen, sondern für eine richtige, aber unsichere
         Antwort gesetzt (2 × die übliche Latenz); zählt für die Gewichtung
-        dieses Zeichens, nicht für die übliche Latenz."""
+        dieses Zeichens, nicht für die übliche Latenz. `timed` False: In der
+        Zeit steckt etwas anderes (F11-Ansage ohne Zeitlimit); die Antwort
+        zählt richtig/falsch, aber in keinen Zeit- und Tempowert und in der
+        Lernkartei weder als flüssig noch als langsam."""
         entry = {
             "char": char,
             "typed": typed,
@@ -128,17 +132,28 @@ class SessionStats:
             "reaction_time_s": round(reaction_time, 3),
             "effective_wpm": round(effective_wpm, 1),
         }
-        if latency is not None:
+        if latency is not None and timed:
             entry["latency_s"] = round(latency, 3)
             if assumed:
                 entry["latency_assumed"] = True
+        if not timed:
+            entry["untimed"] = True
         self.rounds.append(entry)
         self._write_line({"type": "char", **entry})
 
         agg = self.per_char.setdefault(
             char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
-                   "correct_reaction_times": [], "latencies": [], "assumed_latencies": [], "confusions": {}}
+                   "correct_reaction_times": [], "latencies": [], "assumed_latencies": [], "confusions": {},
+                   "untimed": 0}
         )
+        if not timed:
+            if correct:
+                agg["good"] += 1
+                agg["untimed"] += 1
+            else:
+                agg["wrong"] += 1
+                agg["confusions"][typed] = agg["confusions"].get(typed, 0) + 1
+            return
         if correct:
             agg["good"] += 1
             agg["correct_effective_wpms"].append(effective_wpm)
@@ -188,9 +203,10 @@ class SessionStats:
         total = len(self.rounds)
         correct = sum(1 for r in self.rounds if r["correct"])
         accuracy = (correct / total * 100) if total else 0.0
-        wpms = [r["effective_wpm"] for r in self.rounds if r["correct"]]
+        timed = [r for r in self.rounds if r["correct"] and not r.get("untimed")]
+        wpms = [r["effective_wpm"] for r in timed]
         avg_wpm = statistics.mean(wpms) if wpms else 0.0
-        times = [r["reaction_time_s"] for r in self.rounds if r["correct"]]
+        times = [r["reaction_time_s"] for r in timed]
         return {
             "total": total,
             "correct": correct,
@@ -267,6 +283,8 @@ def _merge_all_time(session: "SessionStats") -> None:
         x["total_effective_wpm"] += sum(e["effective_wpms"])
         x["correct_effective_wpm_total"] += sum(e["correct_effective_wpms"])
         x["attempts"] += e["good"] + e["wrong"]
+        # Richtige ohne Zeit (record_char, `timed`): nicht im Tempo-Schnitt.
+        x["untimed"] = x.get("untimed", 0) + e.get("untimed", 0)
         # Für die gemessenen Zeichen pro Minute. Einträge ohne diese Felder
         # (ältere Daten) beginnen hier bei null.
         correct_times = e.get("correct_reaction_times", [])
@@ -322,8 +340,9 @@ def _after_reset(cutoff: datetime) -> datetime:
 
 
 def _char_events(since: datetime):
-    """(Startzeit, Zeile) aller Zeichen-Zeilen der Durchgänge ab `since`, ohne
-    selbst bewertete Sitzungen und Klartext (zählen nicht für Zeichen)."""
+    """(Startzeit, Modus, Zeile) aller Zeichen-Zeilen der Durchgänge ab
+    `since`, ohne selbst bewertete Sitzungen und Klartext (zählen nicht für
+    Zeichen)."""
     for session in db.sessions(since=since.replace(microsecond=0), events=True):
         if session.config.get("self_assessed") or session.config.get("char_stats") is False:
             continue
@@ -331,9 +350,11 @@ def _char_events(since: datetime):
             start = datetime.fromisoformat(session.config["start_time"])
         except (KeyError, TypeError, ValueError):
             continue
+        if start.tzinfo is not None:  # von Hand eingetragen: in Ortszeit wie alle anderen
+            start = start.astimezone().replace(tzinfo=None)
         for obj in session.events:
             if obj.get("type") == "char" and "char" in obj:
-                yield start, obj
+                yield start, session.config.get("mode"), obj
 
 
 def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
@@ -343,7 +364,7 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     fallen so heraus. Selbst bewertete Sitzungen und Klartext zählen nicht."""
     now = now or datetime.now()
     data = {}
-    for _start, obj in _char_events(_after_reset(now - timedelta(days=days))):
+    for _start, _mode, obj in _char_events(_after_reset(now - timedelta(days=days))):
         e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}})
         if obj.get("correct"):
             e["good"] += 1
@@ -359,36 +380,49 @@ def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
 # weil die alten, langsamen Antworten dauerhaft mitzählen.
 COMPARE_DAYS = 7
 BEFORE_DAYS = 30
-# Trend je Zeichen erst ab so vielen gemessenen Reaktionen auf jeder Seite.
-MIN_TREND_COUNT = 5
+# Die Reaktion nur aus diesem Modus: Beim fortlaufenden Mitschreiben zählt
+# sie ab der vorigen Taste (core/latency), ein anderer Mix der Modi in den
+# beiden Zeiträumen täuschte sonst Fortschritt vor (wie daily.latencies).
+REACTION_MODE = "single"
+# Trend je Zeichen erst ab so vielen gemessenen Reaktionen auf jeder Seite;
+# darunter ist ein Unterschied meist Zufall.
+MIN_TREND_COUNT = 20
 RECENT, BEFORE = "recent", "before"
 
 
 def _new_period() -> dict:
-    return {"good": 0, "wrong": 0, "latency_s": 0.0, "latency_count": 0}
+    return {"good": 0, "wrong": 0, "latency_s": 0.0, "latency_count": 0, "latencies": []}
+
+
+def _measured(obj: dict):
+    """Gemessene Reaktion einer richtigen Antwort, gekappt; sonst None."""
+    latency = obj.get("latency_s")
+    if (obj.get("correct") is not True or obj.get("latency_assumed") or type(latency) not in (int, float)
+            or not math.isfinite(latency)):
+        return None
+    return min(max(latency, 0.0), LATENCY_CAP_S)
 
 
 def period_comparison(now=None) -> dict:
     """Trefferquote und Reaktion der letzten COMPARE_DAYS Tage (RECENT) und
     der BEFORE_DAYS Tage davor (BEFORE), gesamt und je Zeichen:
     {RECENT: Zahlen, BEFORE: Zahlen, "chars": {Zeichen: {RECENT, BEFORE}}}.
-    Reaktion wie in der Gesamtstatistik: richtige Antworten, gemessen (nicht
-    angenommen), gekappt bei LATENCY_CAP_S. Nach period_numbers() lesen."""
+    Trefferquote aus allen Modi, Reaktion nur aus REACTION_MODE: richtige
+    Antworten, gemessen (nicht angenommen), gekappt bei LATENCY_CAP_S. Nach
+    period_numbers() bzw. char_trend() lesen."""
     now = now or datetime.now()
     split = now - timedelta(days=COMPARE_DAYS)
     result = {RECENT: _new_period(), BEFORE: _new_period(), "chars": {}}
-    for start, obj in _char_events(_after_reset(split - timedelta(days=BEFORE_DAYS))):
+    for start, mode, obj in _char_events(_after_reset(split - timedelta(days=BEFORE_DAYS))):
         side = RECENT if start >= split else BEFORE
         char = result["chars"].setdefault(obj["char"], {RECENT: _new_period(), BEFORE: _new_period()})
+        latency = _measured(obj) if mode == REACTION_MODE else None
         for period in (result[side], char[side]):
-            if not obj.get("correct"):
-                period["wrong"] += 1
-                continue
-            period["good"] += 1
-            latency = obj.get("latency_s")
-            if isinstance(latency, (int, float)) and not obj.get("latency_assumed"):
-                period["latency_s"] += min(max(latency, 0.0), LATENCY_CAP_S)
+            period["good" if obj.get("correct") is True else "wrong"] += 1
+            if latency is not None:
+                period["latency_s"] += latency
                 period["latency_count"] += 1
+                period["latencies"].append(latency)
     return result
 
 
@@ -402,16 +436,16 @@ def period_numbers(period: dict):
 
 
 def char_trend(chars: dict, char: str):
-    """(Reaktion davor, Reaktion zuletzt) eines Zeichens oder None, solange
-    eine Seite weniger als MIN_TREND_COUNT Messungen hat."""
+    """(Reaktion davor, Reaktion zuletzt) eines Zeichens als Median – robust
+    gegen einzelne lange Antworten – oder None, solange eine Seite weniger als
+    MIN_TREND_COUNT Messungen hat."""
     entry = chars.get(char)
     if entry is None:
         return None
-    _, before, before_count = period_numbers(entry[BEFORE])
-    _, recent, recent_count = period_numbers(entry[RECENT])
-    if min(before_count, recent_count) < MIN_TREND_COUNT:
+    before, recent = entry[BEFORE]["latencies"], entry[RECENT]["latencies"]
+    if min(len(before), len(recent)) < MIN_TREND_COUNT:
         return None
-    return before, recent
+    return statistics.median(before), statistics.median(recent)
 
 
 def measured_latency(total_s: float, count: int, assumed_s: float, assumed_count: int):
@@ -432,8 +466,9 @@ def all_time_char_rows(all_time: dict):
         total = e["good"] + e["wrong"]
         avg_rt = measured_latency(e.get("total_latency_s", 0.0), e.get("latency_count", 0),
                                   e.get("assumed_latency_s", 0.0), e.get("assumed_latency_count", 0))
-        # Nur richtige Antworten (wie die Zeile darüber, all_time_summary).
-        avg_wpm = e.get("correct_effective_wpm_total", 0.0) / e["good"] if e["good"] else None
+        # Nur richtige Antworten mit Zeit (wie die Zeile darüber, all_time_summary).
+        timed_good = e["good"] - e.get("untimed", 0)
+        avg_wpm = e.get("correct_effective_wpm_total", 0.0) / timed_good if timed_good > 0 else None
         rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm, format_confusions(e.get("confusions", {}))))
     rows.sort(key=lambda r: (-r[2], r[0]))
     return rows
@@ -446,7 +481,8 @@ def all_time_summary(all_time: dict):
     correct = sum(e["good"] for e in all_time.values())
     accuracy = (correct / total * 100) if total else 0.0
     correct_wpm_total = sum(e.get("correct_effective_wpm_total", 0.0) for e in all_time.values())
-    avg_wpm = (correct_wpm_total / correct) if correct else 0.0
+    timed_correct = correct - sum(e.get("untimed", 0) for e in all_time.values())
+    avg_wpm = (correct_wpm_total / timed_correct) if timed_correct > 0 else 0.0
     timed = sum(e.get("correct_timed_count", 0) for e in all_time.values())
     timed_s = sum(e.get("correct_reaction_time_s", 0.0) for e in all_time.values())
     return {

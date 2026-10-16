@@ -422,13 +422,16 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   richtig · die 30 Tage davor: Reaktion 0,61 s, 88 % richtig“. Die
   Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
   langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
-  F11 liest die Zeile mit vor.
+  Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
+  fortlaufenden Mitschreiben zählt sie ab deiner vorigen Taste und wäre
+  nicht vergleichbar. Die Trefferquote zählt alle Übungen. F11 liest die
+  Zeile mit vor.
 - **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
   in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
   liest ihn mit Tagesnamen vor („Montag 3 Sterne, Dienstag frei geübt“).
-- **Reaktion: davor → zuletzt:** dasselbe je Zeichen („0,80 → 0,45“,
-  kleiner ist schneller), sobald es auf jeder Seite mindestens 5
-  Messungen gibt, sonst „–“.
+- **davor → jetzt (s):** die Reaktion je Zeichen („0,80 → 0,45“, kleiner
+  ist schneller), als Median, damit eine einzelne lange Antwort nicht alles
+  verschiebt; erst ab 20 Messungen auf jeder Seite, sonst „–“.
 - **Ø Reaktion:** die Zeit vom letzten Punkt oder Strich bis zu deiner
   Eingabe, gemittelt über die richtigen Antworten – unabhängig von
   Zeichenlänge und Tempo. Gemessen bei Zeichen, beim Mitschreiben ohne

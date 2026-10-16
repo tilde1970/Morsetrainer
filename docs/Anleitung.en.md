@@ -413,13 +413,16 @@ many characters. Runs with band conditions do not count here (section 6).
   against the 30 days before: “Last 7 days: reaction 0.48 s, 92 % correct ·
   the 30 days before: reaction 0.61 s, 88 % correct”. The averages over all
   runs hardly move, because the early, slow answers always count; here you
-  see whether you are getting better. F11 reads the line too.
+  see whether you are getting better. The reaction comes only from the
+  Characters content of the One by one tab: when copying along it counts from
+  your previous key and would not be comparable. The accuracy counts all
+  exercises. F11 reads the line too.
 - **This week:** the week strip with stars and the weekly goal as in the
   daily practice bar; with a large font it appears only here. F11 reads it
   with day names (“Monday 3 stars, Tuesday practised freely”).
-- **Reaction: before → recent:** the same per character (“0.80 → 0.45”,
-  smaller is faster) once there are at least 5 measurements on each side,
-  otherwise “–”.
+- **before → now (s):** the reaction per character (“0.80 → 0.45”, smaller
+  is faster), as a median so that a single long answer does not shift
+  everything; only from 20 measurements on each side, otherwise “–”.
 - **Ø reaction:** the time from the last dot or dash to your input,
   averaged over the correct answers – independent of character length and
   speed. Measured in Characters, when copying without repeating, in

@@ -235,6 +235,10 @@ class ProgressPanel:
         if self.table_visible:
             self.charts.pack_forget()
             self.table.pack(fill="x", pady=4)
+            # Die Tabelle meldet ihre Ansicht nur bei Änderungen: den
+            # waagerechten Rollbalken nach dem erneuten Zeigen selbst prüfen.
+            self.table.update_idletasks()
+            theme.show_xbar(self.table)
             self.table_button.config(text=tr("Diagramm"))
         else:
             self.table.pack_forget()

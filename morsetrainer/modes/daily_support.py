@@ -111,7 +111,7 @@ class DailyModeMixin:
             "review_events": list(getattr(session, "review_events", [])),
             "best_streak": self.best_streak,
             # Je Zeichen [Versuche, flüssig richtig] für die Zwischenkarte.
-            "chars": {ch: [e["good"] + e["wrong"], review.fluent_count(e)]
+            "chars": {ch: [e["good"] + e["wrong"] - e.get("untimed", 0), review.fluent_count(e)]
                       for ch, e in getattr(session, "per_char", {}).items()},
             **extra,
         }

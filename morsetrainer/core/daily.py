@@ -541,7 +541,7 @@ def latencies(first: date, last: date) -> dict:
                 or not isinstance(wpm, int) or isinstance(wpm, bool)):
             continue
         for obj in session.events:
-            if obj.get("type") == "char":
+            if obj.get("type") == "char" and not obj.get("untimed"):  # ohne Zeit: weder schnell noch verpasst
                 value = obj.get("latency_s")
                 if obj.get("correct") and isinstance(value, (int, float)) and not isinstance(value, bool):
                     if obj.get("latency_assumed"):

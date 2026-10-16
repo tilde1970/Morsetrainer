@@ -703,6 +703,16 @@ class SingleCharTest(AppTestCase):
         self.assertTrue(entry["correct"])
         self.assertNotIn("latency_s", entry)  # die Ansage steckte in der Zeit
         self.assertNotIn(" s)", s.feedback_var.get())
+        # Weder im Tempo noch in den Zeichen pro Minute, und in der Lernkartei
+        # weder flüssig noch langsam (sonst schönte bzw. bestrafte F11).
+        summary = s.session_stats.summary()
+        self.assertEqual((summary["correct"], summary["avg_effective_wpm"], summary["cpm"]), (1, 0.0, 0.0))
+        e = s.session_stats.per_char["K"]
+        self.assertEqual((e["good"], e["untimed"], e["correct_effective_wpms"]), (1, 1, []))
+        from morsetrainer.core import review
+        self.assertEqual(review.fluent_count(e), 0)
+        review_data = review.update(s.session_stats.per_char)
+        self.assertNotIn("K", review_data)  # zählt dort nicht als Versuch
 
     def test_timeout_closes_the_answer(self):
         # Sonst verwürfe ein F11 danach das schon als verpasst gewertete Zeichen ein zweites Mal.
@@ -1509,7 +1519,7 @@ class DecimalTest(AppTestCase):
             start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
             tests.write_session([{"type": "config", "mode": "single", "start_time": start}]
                                 + [{"type": "char", "char": "K", "typed": "K", "correct": True,
-                                    "latency_s": latency}] * 5)
+                                    "latency_s": latency}] * stats.MIN_TREND_COUNT)
         db.save_state(stats.ALL_TIME_KEY, {"K": {"good": 10, "wrong": 0, "confusions": {}}})  # Tabelle: Gesamtstand
         self.app._refresh_all_time(with_awards=False)
         panel = self.app.all_time_panel
@@ -1546,6 +1556,18 @@ class DecimalTest(AppTestCase):
         self.root.update()
         self.assertGreater(tree.xview()[0], 0.0)
         self.app.font_scale_var.set(100)
+
+    def test_progress_table_shows_its_scroll_bar_again(self):
+        panel = self.app.progress_panel
+        self.root.deiconify()
+        self.root.geometry("1024x700")
+        panel.table._mt_columns = {column: 400 for column in panel.table["columns"]}  # breiter als das Fenster
+        theme._size_columns(panel.table)
+        self.app.select_tab(len(self.app.notebook.tabs()) - 1)
+        for _ in range(3):  # Tabelle, Diagramm, wieder Tabelle
+            panel._toggle_table()
+            self.root.update()
+        self.assertEqual(panel.table._mt_xbar.winfo_manager(), "pack")
 
     def test_progress_text_on_a_single_day(self):
         from datetime import datetime
