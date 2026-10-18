@@ -45,7 +45,7 @@ from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_t
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.54"
+__version__ = "2.55"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -158,6 +158,9 @@ WHATS_NEW = {
                "Einstellungen unter „Station“ deinen Locator ein (zum Beispiel JO41), sonst zählt das Land deines "
                "Rufzeichens. Die Länderliste ist von 19 auf 78 Länder gewachsen. Alles Weitere steht unter Hilfe, "
                "Änderungen."),
+    "2.55": N_("Neu in den weiteren Optionen: der Haken „Wiedereinsteiger“ für alle, die CW früher konnten (die "
+               "Tagesübung steigt schneller auf). Im Reiter Am Stück gibt es den Inhalt „Zahlen“, und neu ist "
+               "das Diplom „High-Speed“. Alles Weitere steht unter Hilfe, Änderungen."),
 }
 
 

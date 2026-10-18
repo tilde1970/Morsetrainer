@@ -1,5 +1,31 @@
 # Änderungen
 
+## 2.55
+
+- **Wiedereinsteiger:** Unter „Weitere Optionen“ gibt es den Haken
+  **Wiedereinsteiger** für alle, die CW früher konnten. Die Tagesübung
+  steigt dann schneller auf: bei mindestens 95 % beim ersten Versuch um drei
+  Lektionen, ab 85 % um eine, und beginnt, wenn noch kein Tempo gespeichert
+  ist, mit 15 WPM ohne Farnsworth. Die Abendbilanz zeigt, wie viele der 41
+  Zeichen du wiedererlangt hast.
+- **Zahlen:** Im Reiter Am Stück gibt es den neuen Inhalt **Zahlen**:
+  Rapporte, CQ-Zonen, Seriennummern, Frequenzen, Leistungen, Uhrzeiten und
+  Jahre, nur aus den gelernten Ziffern. Nach dem Stoppen erklärt eine Zeile,
+  was die letzten Zahlen waren. Sie zählen wie Klartext nicht für die Lektion.
+- **Diplom „High-Speed“:** Klartext im Höchsttempo: Am Stück mit
+  Wendungen oder QSO-Klartext bei 25, 30, 35 und 40 WPM, ab Lektion 40,
+  voller 3-Minuten-Lauf, ohne Farnsworth, mindestens 90 % richtig. Silber und
+  höher an zwei Tagen. Das Motiv zeigt einen Tacho mit Rakete.
+- **Dupes im Contest:** Sind D, U und P gelernt, ruft im Reiter QSO in einem
+  Contest-Run manchmal eine Station noch einmal, die schon im Log steht. Die
+  Run-Station sagt „DUP“, und das ist kein neues QSO: Es kommt nicht ins Log.
+  Bei „Kopfhören + Fragen“ gibt es dazu eine Frage.
+- **Abwechslungsreichere QSOs:** Mehr CQ-Rufe im Contest („CQ CQ TEST DE …“,
+  in CQ WW und WPX auch „CQ DX TEST …“), im normalen QSO ruft manchmal
+  jemand „CQ CQ DX“. Einige Stationen tragen /P oder /M hinter dem
+  Rufzeichen, aber erst, wenn der Schrägstrich in deinen gelernten Zeichen
+  (Kopfleiste) steht.
+
 ## 2.54
 
 - **Stationen aus deiner Weltgegend:** In den Einstellungen gibt es unter

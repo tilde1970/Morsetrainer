@@ -974,6 +974,12 @@ EN.update({
         "The stations generated in QSO and Contest now come from where you sit: enter your locator under "
         "“Station” in the settings (for example JO41), otherwise the country of your callsign counts. The "
         "country list has grown from 19 to 78 countries. Everything else is under Help, Changes.",
+    ("Neu in den weiteren Optionen: der Haken „Wiedereinsteiger“ für alle, die CW früher konnten (die "
+     "Tagesübung steigt schneller auf). Im Reiter Am Stück gibt es den Inhalt „Zahlen“, und neu ist "
+     "das Diplom „High-Speed“. Alles Weitere steht unter Hilfe, Änderungen."):
+        "New in the more options: the “Returning to CW” tick box for everyone who used to know CW (the daily "
+        "practice moves up faster). The Non-stop tab has the content “Numbers”, and there is a new “High-Speed” "
+        "award. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",

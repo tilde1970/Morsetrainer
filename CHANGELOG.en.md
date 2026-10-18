@@ -1,5 +1,32 @@
 # Changes
 
+## 2.55
+
+- **Returning to CW:** Under “More options” there is a new tick box
+  **Returning to CW** for everyone who used to know CW. The daily practice
+  then moves up faster: three lessons at 95 % or more on the first try, one
+  from 85 %, and – if no speed is saved yet – starts at 15 WPM without
+  Farnsworth. The evening summary shows how many of the 41 characters you
+  have regained.
+- **Numbers:** The Non-stop tab has a new content **Numbers**: signal
+  reports, CQ zones, serial numbers, frequencies, power, times and years,
+  only from the digits you have learned. After stopping, a line explains
+  what the last numbers were. Like plain text they do not count for the
+  lesson.
+- **“High-Speed” award:** plain text at top speed: Non-stop with phrases or
+  QSO plain text at 25, 30, 35 and 40 WPM, from lesson 40, full 3-minute
+  run, no Farnsworth, at least 90 % correct. Silver and above on two days.
+  The motif shows a speedometer with a rocket.
+- **Dupes in the contest:** Once D, U and P are learned, a station that is
+  already in the log sometimes calls again in a contest run in the QSO tab.
+  The running station says “DUP”, and that is not a new QSO: it does not go
+  into the log. “Head copy + questions” asks about it.
+- **More varied QSOs:** more CQ calls in the contest (“CQ CQ TEST DE …”,
+  in CQ WW and WPX also “CQ DX TEST …”), and in a normal QSO someone
+  sometimes calls “CQ CQ DX”. Some stations carry /P or /M after their
+  callsign, but only once the slash is among your learned characters
+  (header).
+
 ## 2.54
 
 - **Stations from your part of the world:** The settings have a new
