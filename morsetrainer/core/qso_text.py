@@ -424,6 +424,13 @@ POSITION_BY_DISTRICT = {
 PROXIMITY_KM = 7000
 PROXIMITY_POWER = 3
 PROXIMITY_FLOOR = 0.15
+# Anteil der Stationen mit Zusatz hinter dem Rufzeichen (nur wenn das „/“ gelernt
+# ist, siehe `slash`): portable (/P) häufiger als mobil (/M). /MM gibt es nicht:
+# Orte und Zonen passen nicht zu einem Schiff.
+# Zusatz hinter dem CQ im normalen QSO: meist keiner, manchmal „DX“ (wer ein
+# weiteres Land sucht).
+CQ_TAGS = ("", "", "", " DX")
+SLASH_SUFFIXES = (("/P", 0.07), ("/M", 0.03))
 # Das eigene Land zählt so viel mehr: die meisten QSOs laufen im Inland.
 HOME_BOOST = 3
 # HQ-Stationen der IARU-Mitgliedsverbände senden statt der Zone das
@@ -605,11 +612,22 @@ def _pool_by_country(countries) -> dict:
     return grouped
 
 
-def _pick_call(exclude=(), countries=None, arrl_dx=None, home=""):
+def _with_suffix(call: str) -> str:
+    """`call` mit Zusatz /P oder /M, gewürfelt nach SLASH_SUFFIXES."""
+    roll = random.random()
+    for suffix, share in SLASH_SUFFIXES:
+        if roll < share:
+            return call + suffix
+        roll -= share
+    return call
+
+
+def _pick_call(exclude=(), countries=None, arrl_dx=None, home="", slash=False):
     """Zufälliges Rufzeichen, optional nur aus bestimmten Ländern (Keys); mit
     `arrl_dx` nur DX- (True) oder nur W/VE-Stationen (False) im Sinne des ARRL DX.
     Das Land wird nach dem Standort `home` (sonst dem eigenen Rufzeichen aus den
-    Einstellungen) gezogen, dann ein Rufzeichen daraus."""
+    Einstellungen) gezogen, dann ein Rufzeichen daraus. Mit `slash` tragen
+    einige Rufzeichen den Zusatz /P oder /M."""
     by_country = _pool_by_country(countries)
     if by_country:
         pool_countries = [country for country, _ in by_country.values()]
@@ -619,7 +637,10 @@ def _pick_call(exclude=(), countries=None, arrl_dx=None, home=""):
     while True:
         country = random.choices(pool_countries, weights)[0]
         call = random.choice(by_country[country.key][1]) if by_country else _generated_call(country)
-        if call not in exclude and (arrl_dx is None or _arrl_dx(call, country) == arrl_dx):
+        if slash:
+            call = _with_suffix(call)
+        if call not in exclude and call.split("/")[0] not in exclude \
+                and (arrl_dx is None or _arrl_dx(call, country) == arrl_dx):
             return call, country
 
 
@@ -719,8 +740,8 @@ def _qth_for(call: str, country: Country) -> str:
     return random.choice((by_district and by_district.get(_district(call))) or country.qths)
 
 
-def _make_station(exclude=()) -> Station:
-    call, country = _pick_call(exclude)
+def _make_station(exclude=(), slash=False) -> Station:
+    call, country = _pick_call(exclude, slash=slash)
     wx = random.choice(WEATHER)
     temp = random.randint(0, 3) if wx == "SNOW" else random.randint(5, 30)
     age = random.randint(18, 85)
@@ -756,12 +777,21 @@ def _check(txs) -> None:
         assert all(ch == " " or ch in MORSE_CODE for ch in text), text
 
 
-def generate_qso(kind: str = RAGCHEW, length: int = LENGTH_NORMAL, pileup_probability: float = 0.0) -> Qso:
+def generate_qso(kind: str = RAGCHEW, length: int = LENGTH_NORMAL, pileup_probability: float = 0.0,
+                 slash: bool = False) -> Qso:
     """`pileup_probability`: Anteil der Anrufe im Contest, bei denen weitere
-    Stationen gleichzeitig rufen (0 = keine Pile-ups)."""
+    Stationen gleichzeitig rufen (0 = keine Pile-ups). `slash`: einige
+    Rufzeichen tragen /P oder /M; nur sinnvoll, wenn das „/“ gelernt ist
+    (siehe `knows_slash`)."""
     if kind == RAGCHEW:
-        return _generate_ragchew(length)
-    return _generate_contest(kind, random.randint(*CONTEST_QSO_RANGES[length]), pileup_probability)
+        return _generate_ragchew(length, slash)
+    return _generate_contest(kind, random.randint(*CONTEST_QSO_RANGES[length]), pileup_probability, slash)
+
+
+def knows_slash(charset: str) -> bool:
+    """Ist in den gelernten Zeichen der Schrägstrich, sodass Rufzeichen mit
+    /P oder /M zumutbar sind?"""
+    return "/" in charset
 
 
 # --- Normales QSO -------------------------------------------------------------
@@ -778,16 +808,17 @@ def _station_info(st: Station, length: int) -> list:
     return parts
 
 
-def _generate_ragchew(length: int) -> Qso:
+def _generate_ragchew(length: int, slash: bool = False) -> Qso:
     """Normales QSO zwischen zwei erfundenen Stationen; `length` bestimmt, was
     alles ausgetauscht wird (siehe LENGTH_*). Mit Abfrage und Kopfhör-Fragen."""
-    a = _make_station()
-    b = _make_station(exclude={a.call})
+    a = _make_station(slash=slash)
+    b = _make_station(exclude={a.call}, slash=slash)
     rst_a, rst_b = _pick_rst(), _pick_rst()
     greet = _greeting()
 
     txs = [
-        (0, f"{_repeat('CQ', random.choice([2, 3]))} DE {_repeat(a.call, random.choice([2, 3]))} K"),
+        (0, f"{_repeat('CQ', random.choice([2, 3]))}{random.choice(CQ_TAGS)} DE "
+            f"{_repeat(a.call, random.choice([2, 3]))} K"),
         (1, f"{a.call} DE {_repeat(b.call, 2)} K"),
     ]
 
@@ -909,7 +940,8 @@ class _Exchange:
         return value
 
 
-def _pick_contest_call(kind: str, exclude, countries, hq_probability: float, arrl_dx=None, home=""):
+def _pick_contest_call(kind: str, exclude, countries, hq_probability: float, arrl_dx=None, home="",
+                       slash=False):
     """Wie _pick_call; im IARU HF Contest ist es mit `hq_probability` eine
     HQ-Station."""
     if kind == "iaru" and random.random() < hq_probability:
@@ -917,10 +949,19 @@ def _pick_contest_call(kind: str, exclude, countries, hq_probability: float, arr
         if free:
             call = random.choice(free)
             return call, _country_of(call)
-    return _pick_call(exclude, countries, arrl_dx, home)
+    return _pick_call(exclude, countries, arrl_dx, home, slash)
 
 
-def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) -> Qso:
+def _cq_calls(kind: str, run: str, test: str) -> list:
+    """Wie eine Run-Station CQ ruft; „CQ DX“ nur dort, wo man es hört."""
+    calls = [f"CQ {test} {run} {run}", f"CQ {run} {run} {test}", f"CQ {test} {run}", f"{test} {run}",
+             f"CQ CQ {test} DE {run} {run}", f"{run} {test}"]
+    if kind in ("cqww", "wpx"):
+        calls.append(f"CQ DX {test} {run}")
+    return calls
+
+
+def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0, slash: bool = False) -> Qso:
     # WAG: DL arbeitet alle; ARRL DX: der Rest der Welt arbeitet W/VE.
     """Contest-Run der Art `kind` mit `count` QSOs; mit `pileup_probability`
     rufen bei einem Teil der Anrufe weitere Stationen gleichzeitig. Mit Abfrage
@@ -930,7 +971,7 @@ def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) ->
     run_dx, caller_dx = (True, False) if kind == "arrldx" else (None, None)
     test = "WAG" if kind == "wag" else "TEST"
 
-    run, run_country = _pick_contest_call(kind, (), run_countries, IARU_HQ_RUN_PROBABILITY, run_dx)
+    run, run_country = _pick_contest_call(kind, (), run_countries, IARU_HQ_RUN_PROBABILITY, run_dx, slash=slash)
     run_exchange = _Exchange(kind, run, run_country, random.randint(1, 600))
     used = {run}
     txs = []
@@ -947,19 +988,17 @@ def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0) ->
     extra_calls, pileups = [], []
     for i in range(count):
         station = i + 1
-        call, country = _pick_contest_call(kind, used, None, IARU_HQ_CALLER_PROBABILITY, caller_dx)
+        call, country = _pick_contest_call(kind, used, None, IARU_HQ_CALLER_PROBABILITY, caller_dx, slash=slash)
         used.add(call)
         exchange, exchange_kind = _Exchange(kind, call, country, random.randint(1, 1500)).next()
 
         if i == 0 or random.random() < 0.35:
-            send(0, random.choice([
-                f"CQ {test} {run} {run}", f"CQ {run} {run} {test}", f"CQ {test} {run}", f"{test} {run}",
-            ]))
+            send(0, random.choice(_cq_calls(kind, run, test)))
         send(station, call if random.random() < 0.7 else f"{call} {call}")
         if random.random() < pileup_probability:
             others = []
             for _ in range(random.randint(*PILEUP_EXTRA_CALLERS)):
-                other, _ = _pick_contest_call(kind, used, None, IARU_HQ_CALLER_PROBABILITY, caller_dx)
+                other, _ = _pick_contest_call(kind, used, None, IARU_HQ_CALLER_PROBABILITY, caller_dx, slash=slash)
                 used.add(other)
                 extra_calls.append(other)
                 others.append((count + len(extra_calls), other if random.random() < 0.6 else f"{other} {other}",
@@ -1028,7 +1067,7 @@ def default_my_exchange(kind: str, my_call: str) -> str:
     return ""  # WAG in DL: DOK
 
 
-def contest_caller(kind: str, my_call: str, exclude):
+def contest_caller(kind: str, my_call: str, exclude, slash: bool = False):
     """Ein Anrufer für die eigene Run-Station: (Rufzeichen, Austausch, Art des
     Austauschs für den Vergleich)."""
     my_country = _country_of(my_call)
@@ -1041,6 +1080,6 @@ def contest_caller(kind: str, my_call: str, exclude):
         # Im WAG arbeiten Nicht-DL-Stationen nur DL.
         countries = {"DL"}
     call, country = _pick_contest_call(kind, set(exclude) | {my_call}, countries, IARU_HQ_CALLER_PROBABILITY, arrl_dx,
-                                         my_call)
+                                         my_call, slash)
     exchange, exchange_kind = _Exchange(kind, call, country, random.randint(1, 1500)).next()
     return call, exchange, exchange_kind

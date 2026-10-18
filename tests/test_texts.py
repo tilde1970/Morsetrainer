@@ -134,6 +134,70 @@ class QsoTextTest(unittest.TestCase):
             self.assertTrue(qso_text._arrl_dx(call, qso_text._country_of(call)), call)
 
 
+class SlashAndCqVariantsTest(unittest.TestCase):
+    """Rufzeichen mit /P und /M kommen nur, wenn das „/“ gelernt ist; die CQ-Rufe
+    sind abwechslungsreicher."""
+
+    def setUp(self):
+        random.seed(99)
+
+    def _calls(self, slash, kinds=None, n=60):
+        calls = []
+        for kind in kinds or qso_text.QSO_TYPES:
+            for _ in range(n):
+                calls += qso_text.generate_qso(kind, qso_text.LENGTH_NORMAL, 0.5, slash=slash).calls
+        return calls
+
+    def test_knows_slash_follows_the_learned_characters(self):
+        self.assertFalse(qso_text.knows_slash("KMURESNAPTLWI.JZ=FOY,VG5"))
+        self.assertTrue(qso_text.knows_slash("KMURESNAPTLWI.JZ=FOY,VG5/"))
+
+    def test_no_slash_calls_without_the_slash_learned(self):
+        self.assertFalse([c for c in self._calls(False) if "/" in c])
+
+    def test_slash_calls_when_learned_are_portable_or_mobile_only(self):
+        suffixed = [c for c in self._calls(True) if "/" in c]
+        self.assertTrue(suffixed)
+        self.assertEqual({c.split("/")[1] for c in suffixed} - {"P", "M"}, set())
+        for call in suffixed:
+            self.assertIsNotNone(qso_text._country_of(call), call)
+
+    def test_slash_calls_keep_the_exchange_and_zones_of_their_country(self):
+        for call, kind, expected in (("W1AW/P", "arrldx", "TEXT"), ("DL1ABC/P", "cqww", "NUMBER")):
+            exchange = qso_text._Exchange(kind, call, qso_text._country_of(call), 1)
+            self.assertEqual(exchange.fixed[1], getattr(qso_text, expected))
+        self.assertEqual(qso_text.cq_zone("DL1ABC/M", qso_text._country_of("DL1ABC")), 14)
+
+    def test_contest_caller_can_carry_a_suffix(self):
+        callers = [qso_text.contest_caller("cqww", "DL4YM", set(), slash=True)[0] for _ in range(300)]
+        self.assertTrue([c for c in callers if "/" in c])
+        callers = [qso_text.contest_caller("cqww", "DL4YM", set())[0] for _ in range(300)]
+        self.assertFalse([c for c in callers if "/" in c])
+
+    def test_contest_cq_calls_vary_and_cq_dx_only_where_it_is_used(self):
+        seen = {}
+        for kind in qso_text.QSO_TYPES:
+            if kind == qso_text.RAGCHEW:
+                continue
+            texts = set()
+            for _ in range(60):
+                qso = qso_text.generate_qso(kind, qso_text.LENGTH_LONG)
+                texts |= {text for station, text in qso.transmissions if station == 0 and "CQ" in text.split()[:2]}
+            seen[kind] = texts
+            self.assertGreaterEqual(len({" ".join(w for w in t.split() if len(w) < 6 and w != "DE") for t in texts}), 2)
+        for kind in ("cqww", "wpx"):
+            self.assertTrue(any(t.startswith("CQ DX ") for t in seen[kind]), kind)
+        for kind in ("wag", "arrldx", "iaru"):
+            self.assertFalse(any("CQ DX" in t for t in seen[kind]), kind)
+
+    def test_ragchew_cq_sometimes_asks_for_dx(self):
+        firsts = [qso_text.generate_qso(qso_text.RAGCHEW, qso_text.LENGTH_SHORT).transmissions[0][1]
+                  for _ in range(200)]
+        self.assertTrue(any(" DX DE " in f for f in firsts))
+        self.assertTrue(any(" DX DE " not in f for f in firsts))
+        self.assertTrue(all(f.startswith("CQ CQ") and " DE " in f and f.endswith(" K") for f in firsts))
+
+
 class QuizCompareTest(unittest.TestCase):
     def test_text_ignores_case_spaces_and_umlauts(self):
         self.assertTrue(is_correct("Münster", "MUENSTER", qso_text.TEXT))

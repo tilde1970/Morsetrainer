@@ -203,6 +203,7 @@ class RunModeFrame:
                  band_settings=None):
         self.root = parent.winfo_toplevel()
         self.band_settings = band_settings or BandSettings(self.root)
+        self.charset_var = charset_var        # gelernte Zeichen: Rufzeichen mit „/“ erst, wenn es dabei ist
         self.wpm_var = wpm_var
         self.freq_var = freq_var
         self.on_start_cb = on_start
@@ -709,7 +710,8 @@ class RunModeFrame:
         """Neuer Anrufer mit Rufzeichen und Austausch passend zum Contest, Tempo und
         Tonhöhe gestreut um deine, zufälliger Stärke und Geduld."""
         call, exchange, exchange_kind = qso_text.contest_caller(
-            self.kind, self.my_call_str, {c.call for c in self.callers}
+            self.kind, self.my_call_str, {c.call for c in self.callers},
+            slash=qso_text.knows_slash(self.charset_var.get()),
         )
         freq = self.freq + random.uniform(-self.freq_spread, self.freq_spread)
         caller = Caller(

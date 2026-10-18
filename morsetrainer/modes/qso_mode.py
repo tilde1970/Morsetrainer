@@ -130,6 +130,7 @@ class QsoModeFrame(DailyModeMixin):
                  adjust_tempo=None, band_settings=None):
         self.root = parent.winfo_toplevel()
         self.band_settings = band_settings or BandSettings(self.root)
+        self.charset_var = charset_var        # gelernte Zeichen: Rufzeichen mit „/“ erst, wenn es dabei ist
         self.wpm_var = wpm_var
         self.freq_var = freq_var
         self.farnsworth_wpm = farnsworth_wpm  # callable -> effektive WPM oder None
@@ -411,7 +412,8 @@ class QsoModeFrame(DailyModeMixin):
             return
         self._log_skipped_head()
         self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()),
-                                         PILEUP_LEVELS.get(self.pileup_var.get(), 0.0))
+                                         PILEUP_LEVELS.get(self.pileup_var.get(), 0.0),
+                                         slash=qso_text.knows_slash(self.charset_var.get()))
         if self.qso.is_contest:
             offsets, wpm_offsets = CONTEST_FREQ_OFFSET_RANGE, CONTEST_WPM_OFFSETS
         else:

@@ -410,6 +410,11 @@ is shown. Evaluation is your choice:
 How often you used “Again” before checking is noted. “Adjust speed
 automatically” follows the same rule as “Speed adapts” in One by one.
 
+Some stations carry /P (portable) or /M (mobile) after their callsign. In
+QSO and Contest this only happens once the slash is among your learned
+characters (header); before that you never hear a character you don't
+know yet.
+
 ### Contest
 
 You are the running station (similar to Morse Runner): call CQ, pick up

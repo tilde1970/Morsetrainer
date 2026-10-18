@@ -415,6 +415,11 @@ Wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. „Tempo
 automatisch anpassen“ folgt derselben Regel wie „Tempo wächst mit“ im
 Reiter Einzeln.
 
+Einige Stationen tragen /P (portabel) oder /M (mobil) hinter dem
+Rufzeichen. Das kommt in QSO und Contest erst vor, wenn der Schrägstrich
+in deinen gelernten Zeichen (Kopfleiste) steht; vorher hörst du keine
+Zeichen, die du noch nicht kennst.
+
 ### Contest
 
 Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer
