@@ -962,6 +962,13 @@ EN.update({
         "F11 no longer costs answer time, and in Contest it spells the Call field. At 200 % font size the header "
         "is collapsed so the exercise fits in the window. New in the Statistics tab: the last 7 days compared "
         "with the 30 before, so you see whether you are getting better. Everything else is under Help, Changes.",
+    ("Die erzeugten Stationen in QSO und Contest kommen jetzt von dort, wo du sitzt: Trag in den "
+     "Einstellungen unter „Station“ deinen Locator ein (zum Beispiel JO41), sonst zählt das Land deines "
+     "Rufzeichens. Die Länderliste ist von 19 auf 78 Länder gewachsen. Alles Weitere steht unter Hilfe, "
+     "Änderungen."):
+        "The stations generated in QSO and Contest now come from where you sit: enter your locator under "
+        "“Station” in the settings (for example JO41), otherwise the country of your callsign counts. The "
+        "country list has grown from 19 to 78 countries. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",

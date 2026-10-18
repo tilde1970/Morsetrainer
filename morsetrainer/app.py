@@ -45,7 +45,7 @@ from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_t
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.53"
+__version__ = "2.54"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -154,6 +154,10 @@ WHATS_NEW = {
                "ist die Kopfleiste zugeklappt, damit die Übung ins Fenster passt. Neu im Reiter Statistik: die "
                "letzten 7 Tage im Vergleich zu den 30 davor, damit du siehst, ob du besser wirst. Alles Weitere "
                "steht unter Hilfe, Änderungen."),
+    "2.54": N_("Die erzeugten Stationen in QSO und Contest kommen jetzt von dort, wo du sitzt: Trag in den "
+               "Einstellungen unter „Station“ deinen Locator ein (zum Beispiel JO41), sonst zählt das Land deines "
+               "Rufzeichens. Die Länderliste ist von 19 auf 78 Länder gewachsen. Alles Weitere steht unter Hilfe, "
+               "Änderungen."),
 }
 
 

@@ -1,5 +1,26 @@
 # Änderungen
 
+## 2.54
+
+- **Stationen aus deiner Weltgegend:** In den Einstellungen gibt es unter
+  „Station“ das neue Feld **Locator** (Maidenhead, vier oder sechs
+  Zeichen, etwa JO41). Die erzeugten Stationen in QSO und Contest kommen
+  jetzt von dort, wo du sitzt: Aus Japan hörst du mehr Asien und
+  Nordamerika, aus Deutschland mehr Europa, jeweils bei besten
+  Bandbedingungen. Ohne Locator zählt das Land deines Rufzeichens; ein
+  ungültiger Locator wird unter dem Feld genannt. Das gilt mit und ohne
+  Rufzeichenliste.
+- **Länderliste von 19 auf 78 Länder:** neu sind unter anderem Kanada,
+  Mexiko, die Karibik, Südamerika, Asien, Afrika, Israel, die Türkei, der
+  Balkan und das Baltikum. Präfixe, CQ- und ITU-Zonen, Namen und Orte sind
+  nach einer Fachprüfung korrigiert. Österreich, Australien und Kanada
+  nennen Orte passend zur Ziffer im Rufzeichen (OE1 Wien, OE8 Kärnten …),
+  Kanada im ARRL DX seine Provinz. Hawaii, Alaska, Puerto Rico und Guam
+  zählen im ARRL DX als DX (Rapport plus Leistung) und nicht mehr als USA.
+- **Zonen nach Ziffer:** CQ- und ITU-Zone richten sich in den USA, Kanada,
+  Russland (Kaliningrad, Sibirien) und Australien nach der Ziffer im
+  Rufzeichen; die US-Gebiete haben eigene Zonen.
+
 ## 2.53
 
 - **Rufzeichenliste per Knopf:** Im Reiter Einzeln, Inhalt Rufzeichen, lädt

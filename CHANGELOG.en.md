@@ -1,5 +1,26 @@
 # Changes
 
+## 2.54
+
+- **Stations from your part of the world:** The settings have a new
+  **Locator** field under “Station” (Maidenhead, four or six characters,
+  e.g. JO41). The stations generated in QSO and Contest now come from where
+  you sit: from Japan you hear more of Asia and North America, from
+  Germany more of Europe, always with the best band conditions. Without a
+  locator the country of your callsign counts; an invalid locator is named
+  below the field. This applies with and without a callsign list.
+- **Country list from 19 to 78 countries:** new are, among others, Canada,
+  Mexico, the Caribbean, South America, Asia, Africa, Israel, Turkey, the
+  Balkans and the Baltic states. Prefixes, CQ and ITU zones, names and
+  places were corrected after a technical review. Austria, Australia and
+  Canada name places that fit the digit in the callsign (OE1 Vienna, OE8
+  Carinthia …), Canada its province in ARRL DX. Hawaii, Alaska, Puerto
+  Rico and Guam count as DX in ARRL DX (report plus power) and no longer
+  as USA.
+- **Zones by digit:** CQ and ITU zone depend on the digit in the callsign
+  in the USA, Canada, Russia (Kaliningrad, Siberia) and Australia; the US
+  territories have zones of their own.
+
 ## 2.53
 
 - **Callsign list at the push of a button:** In the One by one tab, content
