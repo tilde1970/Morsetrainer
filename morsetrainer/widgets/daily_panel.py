@@ -197,9 +197,19 @@ def band_change_line(change) -> str:
 
 def outlook_line(outlook) -> str:
     """Ausblick auf die nächste Lektion (geschafft oder wie viel noch fehlt);
-    leer ohne Ausblick."""
+    als Wiedereinsteiger mit den bisher wiedererlangten Zeichen; leer ohne
+    Ausblick."""
     if not outlook:
         return ""
+    line = _outlook_text(outlook)
+    if outlook.get("refresh"):
+        known, total = outlook["refresh"]
+        line += " · " + tr("Wiedereinsteiger: {known} von {total} Zeichen wiedererlangt").format(
+            known=known, total=total)
+    return line
+
+
+def _outlook_text(outlook) -> str:
     done = outlook["lesson"] >= daily.POST_KOCH  # nach der Abschlusslektion: Koch geschafft
     if outlook.get("pending"):
         if done:

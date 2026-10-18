@@ -98,6 +98,13 @@ CLEAN_SHARE = 0.9
 CLEAN_SHARE_NEW_LESSON = 0.8
 NEW_LESSON_DAYS = 3
 
+# Wiedereinsteiger („Auffrischung“, Haken in den weiteren Optionen): wer CW schon
+# kann, steigt schneller auf – bei mindestens 95 % beim ersten Versuch um drei
+# Lektionen, ab 85 % um eine, sonst nicht – und beginnt mit REFRESH_WPM ohne
+# Farnsworth. Das Tempo bleibt wie sonst bis Koch fest.
+REFRESH_STEPS = ((95.0, 3), (85.0, 1))
+REFRESH_WPM = 15
+
 # ★ Weiter: ein Zeichen erreicht erstmals dieses Fach (Index, 2 = Fach 3).
 PROGRESS_BOX = 2
 
@@ -338,6 +345,19 @@ def is_new_lesson(state: dict, today: date) -> bool:
     return 0 <= (today - since).days < NEW_LESSON_DAYS
 
 
+def lesson_steps(result: dict, char_wpm: int, refresh: bool = False) -> int:
+    """Um wie viele Lektionen es nach dem Hauptteil weitergeht: normal eine,
+    wenn passes_lesson gilt; als Wiedereinsteiger nach REFRESH_STEPS. 0 bei
+    zu wenigen Zeichen oder zu langsamen Zeichen."""
+    if not refresh:
+        return 1 if passes_lesson(result, char_wpm) else 0
+    correct, total = _first_try(result)
+    if char_wpm < koch.SLOW_CHAR_WPM or total < koch.ADVANCE_MIN_CHARS:
+        return 0
+    share = correct / total * 100
+    return next((steps for minimum, steps in REFRESH_STEPS if share >= minimum), 0)
+
+
 def passes_lesson(result: dict, char_wpm: int) -> bool:
     """Koch-Kriterium im Hauptteil: genug Zeichen, 90 % beim ersten
     Versuch, Zeichen nicht so langsam, dass man mitzählen kann."""
@@ -364,14 +384,16 @@ def initial_tempo(wpm: int, fw) -> dict:
     return {"wpm": char, "effective": min(tempo.effective(wpm, fw), char)}
 
 
-def current_tempo(state: dict, wpm: int, fw) -> dict:
+def current_tempo(state: dict, wpm: int, fw, refresh: bool = False) -> dict:
     """Tempo der Tagesübung {"wpm", "effective"}: das gespeicherte, wenn es
     gültig ist, sonst ein Startwert aus den Einstellungen (`wpm`, Farnsworth
-    `fw`)."""
+    `fw`); als Wiedereinsteiger REFRESH_WPM ohne Farnsworth."""
     saved = state.get("tempo")
     if (isinstance(saved, dict) and all(isinstance(saved.get(k), int) for k in ("wpm", "effective"))
             and tempo.LIMITS[0] <= saved["effective"] <= saved["wpm"] <= tempo.LIMITS[1]):
         return {"wpm": saved["wpm"], "effective": saved["effective"]}
+    if refresh:
+        return {"wpm": REFRESH_WPM, "effective": REFRESH_WPM}
     return initial_tempo(wpm, fw)
 
 
@@ -427,11 +449,12 @@ def _add_progress(entry: dict, item: str) -> bool:
     return True
 
 
-def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
+def finish_block(state: dict, today: date, block: Block, result: dict, refresh: bool = False) -> list:
     """Ergebnis eines Blocks übernehmen. `result` aus dem Modus: richtig,
     gesamt, Erstversuche, überzählige Tasten, Minuten, Zeichentempo,
     Hochstufungen der Lernkartei („review_events“). Gibt die dabei neu
-    verdienten Sterne zurück (für die Zwischenkarte)."""
+    verdienten Sterne zurück (für die Zwischenkarte). `refresh`: Wiedereinsteiger
+    (siehe REFRESH_STEPS)."""
     entry = day_entry(state, today)
     entry.setdefault("lesson", current_lesson(state, 1))  # für den Wochenrückblick
     entry["blocks"].append({"kind": block.kind, "mode": block.mode,
@@ -449,9 +472,9 @@ def finish_block(state: dict, today: date, block: Block, result: dict) -> list:
         share = CLEAN_SHARE_NEW_LESSON if is_new_lesson(state, today) else CLEAN_SHARE
         if total >= CLEAN_MIN_CHARS and correct / total >= share and _add_star(entry, SAUBER):
             new_stars.append(SAUBER)
-        if (lesson < POST_KOCH and state.get("pending_lesson") is None
-                and passes_lesson(result, result.get("wpm", 0))):
-            state.update(pending_lesson=lesson + 1, pending_since=today.isoformat())
+        steps = lesson_steps(result, result.get("wpm", 0), refresh)
+        if lesson < POST_KOCH and state.get("pending_lesson") is None and steps:
+            state.update(pending_lesson=min(lesson + steps, POST_KOCH), pending_since=today.isoformat())
             progress |= _add_progress(entry, LESSON_UP)
         current = state.get("tempo") or {}
         if current.get("effective"):
@@ -662,22 +685,32 @@ def _main_result(entry: dict):
     return mains[-1] if mains else None
 
 
-def lesson_outlook(state: dict, today: date):
+def refresh_known(state: dict) -> tuple:
+    """(gelernte, alle) Koch-Zeichen als Wiedereinsteiger: die der heutigen
+    Lektion, nach Koch alle."""
+    total = len(koch.FINAL_CHARSET)
+    return min(len(koch.lesson_charset(min(current_lesson(state, 1), koch.FINAL_LESSON))), total), total
+
+
+def lesson_outlook(state: dict, today: date, refresh: bool = False):
     """„Fast geschafft“: {"lesson", "pending": True} wenn der Aufstieg
     vorgemerkt ist, sonst {"lesson", "missing": Prozentpunkte} bis zum
     Koch-Kriterium im heutigen Hauptteil; None nach Koch oder ohne genug
-    Zeichen."""
+    Zeichen. Als Wiedereinsteiger gilt die niedrigste Stufe von REFRESH_STEPS
+    und es kommt "refresh": (gelernte, alle) Zeichen dazu."""
     lesson = current_lesson(state, 1)
+    known = {"refresh": refresh_known(state)} if refresh else {}
     if state.get("pending_lesson"):
-        return {"lesson": state["pending_lesson"], "pending": True}
+        return {"lesson": state["pending_lesson"], "pending": True, **known}
     main = _main_result(state.get("days", {}).get(today.isoformat(), {}))
     if lesson >= POST_KOCH or main is None:
         return None
     correct, total = _first_try(main)
     if total < CLEAN_MIN_CHARS:
         return None
-    missing = max(round(koch.ADVANCE_ACCURACY_PCT - correct / total * 100), 1)
-    return {"lesson": lesson + 1, "missing": missing}
+    goal = REFRESH_STEPS[-1][0] if refresh else koch.ADVANCE_ACCURACY_PCT
+    missing = max(round(goal - correct / total * 100), 1)
+    return {"lesson": lesson + 1, "missing": missing, **known}
 
 
 def prosign_hint_due(state: dict, header_lesson: int, learned: str) -> bool:

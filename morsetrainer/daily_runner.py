@@ -130,6 +130,10 @@ class DailyRunner:
             elapsed=minutes_text(min(elapsed, daily.TOTAL_MINUTES)), minutes=daily.TOTAL_MINUTES,
             stars=stars_named(stars) if stars else tr("noch kein Stern"))
 
+    def _refresh(self) -> bool:
+        """Ist „Wiedereinsteiger“ in den weiteren Optionen angehakt?"""
+        return bool(self.app.refresh_var.get())
+
     # --- Start ---------------------------------------------------------------------
     def start(self) -> None:
         """Beginnt die Tagesübung (nicht während eines Durchgangs): Lektion und
@@ -150,7 +154,7 @@ class DailyRunner:
             wpm = app.wpm_var.get()
         except Exception:
             wpm = koch.RECOMMENDED_WPM
-        self.state["tempo"] = daily.current_tempo(self.state, wpm, app.farnsworth_wpm())
+        self.state["tempo"] = daily.current_tempo(self.state, wpm, app.farnsworth_wpm(), self._refresh())
         daily.save(self.state)
 
         charset = daily.lesson_charset(lesson, review.boxed_chars())
@@ -389,7 +393,7 @@ class DailyRunner:
             stopped_early = minutes < block.minutes - STOPPED_EARLY_MIN and not block.params.get("rufz")
         if self.aborting or stopped_early:
             result = {**result, "stopped": True}  # zählt nicht für die Bandstufe
-        new_stars = daily.finish_block(self.state, self.today, block, result)
+        new_stars = daily.finish_block(self.state, self.today, block, result, self._refresh())
         daily.save(self.state)
         if self.aborting or stopped_early:
             self._finish(completed=False)
@@ -513,7 +517,7 @@ class DailyRunner:
                 self.state[daily.PROSIGN_HINT] = self.today.isoformat()
                 daily.save(self.state)
         self.summary = EveningSummary(
-            self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today),
+            self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today, self._refresh()),
             offer, self.start_extra, completed, week.stars_in_week(self.state, self.today),
             # Nur Siegel, die noch kein Diplom-Fenster gezeigt hat; es folgt beim Schließen.
             seals=[seal_name(awards.BY_KEY[key], level) for key, level, _ in self.app.pending_seals],

@@ -497,6 +497,13 @@ class MorseTrainerApp:
             variable=self.vary_var,
         ).pack(anchor="w", pady=2)
 
+        # Wer CW schon kann: die Tagesübung steigt schneller auf (core/daily.py, REFRESH_STEPS).
+        self.refresh_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            self.more_frame, text=tr("Wiedereinsteiger: Tagesübung steigt schneller auf (drei Lektionen bei 95 %)"),
+            variable=self.refresh_var,
+        ).pack(anchor="w", pady=2)
+
         # Einstellungen, die man einmal vornimmt (Station, Sprache,
         # Barrierefreiheit, Daten): eigenes Fenster (Strg+Komma), damit der
         # Bereich über den Reitern nur Übungsoptionen enthält. Beim Start
@@ -656,7 +663,7 @@ class MorseTrainerApp:
         theme.hint(data.master, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
 
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
-                    self.weighted_var, self.vary_var):
+                    self.weighted_var, self.vary_var, self.refresh_var):
             var.trace_add("write", lambda *_: self._update_more())
         for var in (self.wpm_var, self.farnsworth_wpm_var, self.farnsworth_enabled_var):
             var.trace_add("write", lambda *_: self._update_cpm())
@@ -1259,6 +1266,8 @@ class MorseTrainerApp:
             active.append(tr("schwache bevorzugt"))
         if self.vary_var.get():
             active.append(tr("variiert"))
+        if self.refresh_var.get():
+            active.append(tr("Wiedereinsteiger"))
         self.extras_var.set(" · ".join(active))
 
     def _build_koch_row(self, parent):
@@ -1498,6 +1507,7 @@ class MorseTrainerApp:
             "farnsworth_wpm": (self.farnsworth_wpm_var, (3, 39)),
             "weighted": (self.weighted_var, None),
             "vary": (self.vary_var, None),
+            "refresh": (self.refresh_var, None),
             "daily_goal": (self.daily_goal_var, (0, 240)),
             "more_options": (self.more_var, None),
             "station_call": (self.station_call_var, None),

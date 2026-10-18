@@ -138,6 +138,13 @@ Optionen** liegen die Übungsoptionen:
   langsam erkennst, und die heute fälligen der Lernkartei kommen öfter.
 - **Tonhöhe und Tempo leicht variieren:** Wer immer nur genau einen Klang
   hört, tut sich auf dem Band schwerer.
+- **Wiedereinsteiger:** Für alle, die CW früher konnten. Die Tagesübung steigt
+  dann schneller auf: bei mindestens 95 % beim ersten Versuch um drei
+  Lektionen, ab 85 % um eine (sonst bei 90 % um eine), und beginnt – wenn
+  noch kein Tempo gespeichert ist – mit 15 WPM ohne Farnsworth. Das Tempo
+  bleibt wie sonst bis Koch fest. Die Abendbilanz zeigt, wie viele von den
+  41 Zeichen du wiedererlangt hast. Ist Koch geschafft, übst du wie
+  gewohnt weiter; den Haken kannst du jederzeit wieder wegnehmen.
 - **Bandbedingungen:** Einstellen der Störungen (Abschnitt 6).
 
 ### Einstellungen

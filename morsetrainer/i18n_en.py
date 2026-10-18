@@ -24,6 +24,10 @@ EN.update({
     "{n} Minuten": "{n} minutes",
     "Jetzt neu starten": "Restart now",
     "Station": "Station",
+    "Wiedereinsteiger: Tagesübung steigt schneller auf (drei Lektionen bei 95 %)":
+        "Returning to CW: the daily practice moves up faster (three lessons at 95 %)",
+    "Wiedereinsteiger": "returning",
+    "Wiedereinsteiger: {known} von {total} Zeichen wiedererlangt": "Returning: {known} of {total} characters regained",
     "Locator": "Locator",
     "Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen":
         "Maidenhead, e.g. JO41: decides where the generated stations come from",

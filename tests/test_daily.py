@@ -281,6 +281,59 @@ class LessonTest(unittest.TestCase):
         self.assertEqual(state["lesson"], daily.POST_KOCH)
 
 
+class RefresherTest(unittest.TestCase):
+    """Wiedereinsteiger: schneller Aufstieg und Start mit 15 WPM."""
+
+    def test_lessons_per_day_by_first_try_share(self):
+        steps = lambda correct, **kw: daily.lesson_steps(main_result(correct, 100, **kw), 20, True)
+        self.assertEqual([steps(c) for c in (100, 95, 94, 90, 85, 84, 0)], [3, 3, 1, 1, 1, 0, 0])
+        # Zu wenige Zeichen oder zu langsame Zeichen zählen nicht.
+        self.assertEqual(daily.lesson_steps(main_result(40, 40), 20, True), 0)
+        self.assertEqual(daily.lesson_steps(main_result(100, 100), koch.SLOW_CHAR_WPM - 1, True), 0)
+        # Ohne den Haken gilt die Regel wie bisher: eine Lektion bei 90 %.
+        self.assertEqual([daily.lesson_steps(main_result(c, 100), 20) for c in (100, 90, 89)], [1, 1, 0])
+
+    def test_pending_lesson_jumps_and_stops_at_koch_end(self):
+        state = {"days": {}, "lesson": 12, "tempo": {"wpm": 15, "effective": 15}}
+        daily.finish_block(state, TODAY, main_block(), main_result(97, 100), refresh=True)
+        self.assertEqual(state["pending_lesson"], 15)
+        state = {"days": {}, "lesson": 40, "tempo": {"wpm": 15, "effective": 15}}
+        daily.finish_block(state, TODAY, main_block(), main_result(100, 100), refresh=True)
+        self.assertEqual(state["pending_lesson"], daily.POST_KOCH)
+        # Ohne den Haken bleibt es bei einer Lektion.
+        state = {"days": {}, "lesson": 12}
+        daily.finish_block(state, TODAY, main_block(), main_result(97, 100))
+        self.assertEqual(state["pending_lesson"], 13)
+
+    def test_only_one_jump_per_day(self):
+        state = {"days": {}, "lesson": 12, "tempo": {"wpm": 15, "effective": 15}}
+        daily.finish_block(state, TODAY, main_block(), main_result(97, 100), refresh=True)
+        daily.finish_block(state, TODAY, main_block(), main_result(100, 100), refresh=True)
+        self.assertEqual(state["pending_lesson"], 15)
+
+    def test_start_tempo_is_15_without_farnsworth_only_when_nothing_saved(self):
+        self.assertEqual(daily.current_tempo({}, 20, 10, refresh=True), {"wpm": 15, "effective": 15})
+        self.assertEqual(daily.current_tempo({}, 20, 10), {"wpm": 20, "effective": 10})
+        saved = {"tempo": {"wpm": 22, "effective": 18}}
+        self.assertEqual(daily.current_tempo(saved, 20, 10, refresh=True), {"wpm": 22, "effective": 18})
+
+    def test_outlook_names_the_regained_characters(self):
+        state = {"days": {}, "lesson": 12}
+        self.assertEqual(daily.refresh_known(state), (13, 41))
+        self.assertEqual(daily.refresh_known({"lesson": daily.POST_KOCH}), (41, 41))
+        daily.finish_block(state, TODAY, main_block(), main_result(80, 100), refresh=True)
+        outlook = daily.lesson_outlook(state, TODAY, refresh=True)
+        self.assertEqual((outlook["lesson"], outlook["missing"], outlook["refresh"]), (13, 5, (13, 41)))
+        self.assertNotIn("refresh", daily.lesson_outlook(state, TODAY))
+
+    def test_outlook_line_shows_progress(self):
+        from morsetrainer.widgets import daily_panel
+        line = daily_panel.outlook_line({"lesson": 13, "missing": 5, "refresh": (13, 41)})
+        self.assertIn("Noch 5 %", line)
+        self.assertIn("13 von 41 Zeichen wiedererlangt", line)
+        self.assertNotIn("wiedererlangt", daily_panel.outlook_line({"lesson": 13, "missing": 5}))
+
+
 class StarsTest(unittest.TestCase):
     def setUp(self):
         # Nach Koch: kein Aufstieg, der ★ Weiter nebenbei brächte.

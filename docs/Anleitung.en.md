@@ -139,6 +139,13 @@ practice options:
   slowly, and those due today in the review box, come more often.
 - **Vary pitch and speed slightly:** if you only ever hear exactly one
   sound, you will find it harder on the band.
+- **Returning to CW:** for everyone who used to know CW. The daily practice
+  then moves up faster: three lessons at 95 % or more on the first try, one
+  from 85 % (otherwise one at 90 %), and – if no speed is saved yet – starts
+  at 15 WPM without Farnsworth. The speed stays fixed until Koch is done, as
+  usual. The evening summary shows how many of the 41 characters you have
+  regained. Once Koch is done you carry on as usual; you can untick the box
+  at any time.
 - **Band conditions:** adjusting the interference (section 6).
 
 ### Settings
