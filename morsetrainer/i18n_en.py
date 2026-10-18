@@ -410,6 +410,7 @@ EN.update({
     "Run-Station": "Run station",
     "Rufzeichen der Run-Station": "Callsign of the run station",
     "Wie viele QSOs hat die Run-Station geloggt?": "How many QSOs did the run station log?",
+    "Welche Station hat noch einmal gerufen und „DUP“ bekommen?": "Which station called again and was told “DUP”?",
     "Austausch von {call}": "Exchange of {call}",
     "Austausch": "Exchange",
 })

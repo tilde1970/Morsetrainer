@@ -415,6 +415,12 @@ QSO and Contest this only happens once the slash is among your learned
 characters (header); before that you never hear a character you don't
 know yet.
 
+Once D, U and P are learned, a station that is already in the log
+occasionally calls again in a contest run. The running station says
+“DUP”, and that is not a new QSO: it does not go into the log, and the
+check has no row for it. With “head copy + questions” you are also asked
+which station called again.
+
 ### Contest
 
 You are the running station (similar to Morse Runner): call CQ, pick up

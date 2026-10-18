@@ -413,7 +413,8 @@ class QsoModeFrame(DailyModeMixin):
         self._log_skipped_head()
         self.qso = qso_text.generate_qso(self._kind(), LENGTH_LABELS.index(self.length_var.get()),
                                          PILEUP_LEVELS.get(self.pileup_var.get(), 0.0),
-                                         slash=qso_text.knows_slash(self.charset_var.get()))
+                                         slash=qso_text.knows_slash(self.charset_var.get()),
+                                         dup=qso_text.knows_dup(self.charset_var.get()))
         if self.qso.is_contest:
             offsets, wpm_offsets = CONTEST_FREQ_OFFSET_RANGE, CONTEST_WPM_OFFSETS
         else:

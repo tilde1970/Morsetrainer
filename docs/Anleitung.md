@@ -420,6 +420,12 @@ Rufzeichen. Das kommt in QSO und Contest erst vor, wenn der Schrägstrich
 in deinen gelernten Zeichen (Kopfleiste) steht; vorher hörst du keine
 Zeichen, die du noch nicht kennst.
 
+Sind D, U und P gelernt, ruft in einem Contest-Run ab und zu eine Station
+noch einmal, die schon im Log steht. Die Run-Station sagt „DUP“, und das ist
+kein neues QSO: Es kommt nicht ins Log, und in der Abfrage gibt es dafür
+keine Zeile. Bei „Kopfhören + Fragen“ wird dann auch gefragt, welche
+Station noch einmal gerufen hat.
+
 ### Contest
 
 Du bist selbst die Run-Station (ähnlich Morse Runner): CQ rufen, Anrufer

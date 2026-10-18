@@ -198,6 +198,60 @@ class SlashAndCqVariantsTest(unittest.TestCase):
         self.assertTrue(all(f.startswith("CQ CQ") and " DE " in f and f.endswith(" K") for f in firsts))
 
 
+class DupTest(unittest.TestCase):
+    """Im Contest ruft ab und zu eine schon geloggte Station noch einmal und
+    bekommt „DUP“; das ist kein neues QSO."""
+
+    def setUp(self):
+        random.seed(7)
+
+    def _runs(self, dup, n=150, kinds=("cqww", "wpx", "wag", "arrldx", "iaru")):
+        return [qso_text.generate_qso(kind, qso_text.LENGTH_LONG, 0.3, dup=dup) for kind in kinds for _ in range(n)]
+
+    def test_knows_dup_needs_d_u_and_p(self):
+        self.assertFalse(qso_text.knows_dup("KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1"))
+        self.assertTrue(qso_text.knows_dup("KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D"))
+        self.assertTrue(qso_text.knows_dup("dup"))
+
+    def test_no_dup_unless_learned(self):
+        for qso in self._runs(False):
+            self.assertFalse(any("DUP" in text for _, text in qso.transmissions))
+            self.assertNotIn("DUP", " ".join(q for q, _ in qso.facts))
+
+    def test_dup_is_a_second_call_of_a_logged_station_and_no_new_row(self):
+        seen = 0
+        for qso in self._runs(True):
+            dups = [i for i, (_, text) in enumerate(qso.transmissions) if text.endswith(" DUP")]
+            if not dups:
+                continue
+            seen += 1
+            self.assertEqual(len(dups), 1, "höchstens einmal je Run")
+            i = dups[0]
+            call = qso.transmissions[i][1].split()[0]
+            caller, calling = qso.transmissions[i - 1]
+            self.assertEqual(qso.calls[caller], call)
+            self.assertEqual(calling.split()[0], call)
+            logged = [cells[0][0] for _, cells in qso.quiz_rows[1:]]
+            self.assertEqual(len(logged), len(set(logged)), "der Dupe ist keine zweite Zeile")
+            self.assertIn(call, logged)
+            self.assertGreaterEqual(logged.index(call) + 1, 1)
+            self.assertGreaterEqual(len(logged), qso_text.DUP_AFTER_QSOS)
+            # Die Station antwortet kurz, dann ruft die Run-Station wieder CQ.
+            self.assertEqual(qso.transmissions[i + 1][0], caller)
+            if i + 2 < len(qso.transmissions):
+                station, cq = qso.transmissions[i + 2]
+                self.assertEqual(station, 0)
+                self.assertIn(qso.calls[0], cq)
+                self.assertTrue("TEST" in cq or "WAG" in cq, cq)
+            self.assertIn(call, [answer for question, (answer, _) in qso.facts if "DUP" in question])
+        self.assertGreater(seen, 100)
+
+    def test_ragchew_never_has_dup(self):
+        for _ in range(100):
+            qso = qso_text.generate_qso(qso_text.RAGCHEW, qso_text.LENGTH_LONG, dup=True)
+            self.assertFalse(any("DUP" in text for _, text in qso.transmissions))
+
+
 class QuizCompareTest(unittest.TestCase):
     def test_text_ignores_case_spaces_and_umlauts(self):
         self.assertTrue(is_correct("Münster", "MUENSTER", qso_text.TEXT))

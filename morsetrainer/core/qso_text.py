@@ -778,14 +778,20 @@ def _check(txs) -> None:
 
 
 def generate_qso(kind: str = RAGCHEW, length: int = LENGTH_NORMAL, pileup_probability: float = 0.0,
-                 slash: bool = False) -> Qso:
+                 slash: bool = False, dup: bool = False) -> Qso:
     """`pileup_probability`: Anteil der Anrufe im Contest, bei denen weitere
     Stationen gleichzeitig rufen (0 = keine Pile-ups). `slash`: einige
     Rufzeichen tragen /P oder /M; nur sinnvoll, wenn das „/“ gelernt ist
-    (siehe `knows_slash`)."""
+    (siehe `knows_slash`). `dup`: im Contest ruft einmal eine Station, die schon
+    im Log steht, noch einmal an und bekommt „DUP“ (siehe `knows_dup`)."""
     if kind == RAGCHEW:
         return _generate_ragchew(length, slash)
-    return _generate_contest(kind, random.randint(*CONTEST_QSO_RANGES[length]), pileup_probability, slash)
+    return _generate_contest(kind, random.randint(*CONTEST_QSO_RANGES[length]), pileup_probability, slash, dup)
+
+
+def knows_dup(charset: str) -> bool:
+    """Sind D, U und P gelernt, sodass „DUP“ im Contest zumutbar ist?"""
+    return set("DUP") <= set(charset.upper())
 
 
 def knows_slash(charset: str) -> bool:
@@ -961,7 +967,14 @@ def _cq_calls(kind: str, run: str, test: str) -> list:
     return calls
 
 
-def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0, slash: bool = False) -> Qso:
+# Ein Dupe (zweites Rufen einer schon geloggten Station) kommt frühestens nach
+# DUP_AFTER_QSOS QSOs, höchstens einmal je Run.
+DUP_PROBABILITY = 0.08
+DUP_AFTER_QSOS = 3
+
+
+def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0, slash: bool = False,
+                      dup: bool = False) -> Qso:
     # WAG: DL arbeitet alle; ARRL DX: der Rest der Welt arbeitet W/VE.
     """Contest-Run der Art `kind` mit `count` QSOs; mit `pileup_probability`
     rufen bei einem Teil der Anrufe weitere Stationen gleichzeitig. Mit Abfrage
@@ -986,14 +999,16 @@ def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0, sl
     rows = [(tr("Run-Station"), ((run, TEXT), run_exchange.fixed))]
 
     extra_calls, pileups = [], []
+    dup_call, cq_next = None, False
     for i in range(count):
         station = i + 1
         call, country = _pick_contest_call(kind, used, None, IARU_HQ_CALLER_PROBABILITY, caller_dx, slash=slash)
         used.add(call)
         exchange, exchange_kind = _Exchange(kind, call, country, random.randint(1, 1500)).next()
 
-        if i == 0 or random.random() < 0.35:
+        if i == 0 or cq_next or random.random() < 0.35:
             send(0, random.choice(_cq_calls(kind, run, test)))
+            cq_next = False
         send(station, call if random.random() < 0.7 else f"{call} {call}")
         if random.random() < pileup_probability:
             others = []
@@ -1019,11 +1034,21 @@ def _generate_contest(kind: str, count: int, pileup_probability: float = 0.0, sl
             ]))
         send(0, random.choice(["TU", f"TU {run}", f"TU {run}", f"TU {run} {test}", "R TU"]))
         rows.append((f"QSO {station}", ((call, TEXT), (exchange, exchange_kind))))
+        if dup and dup_call is None and i + 1 >= DUP_AFTER_QSOS and random.random() < DUP_PROBABILITY:
+            # Eine Station aus dem Log ruft noch einmal: Run-Station sagt DUP, kein neues QSO.
+            again = random.randrange(1, station)
+            dup_call = rows[again][1][0][0]
+            send(again, dup_call if random.random() < 0.7 else f"{dup_call} {dup_call}")
+            send(0, f"{dup_call} DUP")
+            send(again, random.choice(["OK", "R", "TU"]))
+            cq_next = True
 
     _check(txs)
     facts = [(tr("Rufzeichen der Run-Station"), (run, TEXT)),
              (tr("Wie viele QSOs hat die Run-Station geloggt?"), (str(count), NUMBER))]
     facts += [(tr("Austausch von {call}").format(call=cells[0][0]), cells[1]) for _, cells in rows[1:]]
+    if dup_call is not None:
+        facts.append((tr("Welche Station hat noch einmal gerufen und „DUP“ bekommen?"), (dup_call, TEXT)))
     return Qso(
         kind=kind, calls=(run, *(cells[0][0] for _, cells in rows[1:]), *extra_calls), facts=tuple(facts),
         pileups=tuple(pileups),
