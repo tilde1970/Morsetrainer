@@ -625,6 +625,7 @@ Nummer.
 | Worked All Letters | 10 / alle 26 Buchstaben in Fach 3; Gold: alle in Fach 6 und alle Ziffern in Fach 4 | 1 | Lernkartei; es zählt das höchste je erreichte Fach, erreicht mit Zeichen ≥ 18 WPM |
 | Mitschreiben im Fluss | 10 / 15 / 22 WPM effektiv | 15 | Am Stück mit Klartext (Abkürzungen, Klartext, Wendungen, QSO; Gold nur Wendungen oder QSO), Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM. Mit eigenen Wörtern aus `woerter.txt` zählt „Abkürzungen“ nicht |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Am Stück mit Zufallsgruppen (≥ 5 Zeichen) aus dem vollen Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
+| High-Speed | 25 / 30 / 35 / 40 WPM | 40 | Am Stück mit Wendungen oder QSO-Klartext (keine einzelnen Wörter, keine eigenen Wörter), voller Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
 | QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
 | Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
@@ -640,7 +641,7 @@ Nummer.
 | Q-Gruppen-Kenner | – | 40 | Jede der 20 Q-Gruppen 3× beim ersten Hören richtig, an mindestens 2 Tagen, Zeichen ≥ 18 WPM |
 | Alle Ziffern | – | 39 | Alle 10 Ziffern mindestens in Fach 3, erreicht mit Zeichen ≥ 18 WPM |
 
-- Bei Koch, Fluss, QRQ, QRN-fest, Rufz und Contest gilt **Silber und höher
+- Bei Koch, Fluss, QRQ, High-Speed, QRN-fest, Rufz und Contest gilt **Silber und höher
   erst an zwei verschiedenen Tagen** – ein Glückstreffer reicht nicht. Wer
   gleich in Lektion 41 einsteigt, bekommt am ersten Tag Bronze und mit
   einem weiteren bestandenen Lauf an einem anderen Tag Silber und Gold.

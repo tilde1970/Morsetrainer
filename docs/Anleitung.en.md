@@ -619,6 +619,7 @@ next open level – stamped “PREVIEW”, without date and number.
 | Worked All Letters | 10 / all 26 letters in box 3; Gold: all in box 6 and all digits in box 4 | 1 | Spaced repetition; the highest box ever reached counts, reached with characters ≥ 18 WPM |
 | Copying in flow | 10 / 15 / 22 WPM effective | 15 | Non-stop with plain text (abbreviations, plain words, phrases, QSO; Gold only phrases or QSO), character set at least lesson 15, full 3-min run, ≥ 90 % minus extra keys, characters ≥ 18 WPM. With your own words from `woerter.txt`, “abbreviations” does not count |
 | QRQ | 20 / 25 / 30 / 35 WPM | 40 | Non-stop with random groups (≥ 5 characters) from the full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
+| High-Speed | 25 / 30 / 35 / 40 WPM | 40 | Non-stop with phrases or QSO plain text (no single words, no own words), full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
 | QRN-proof | conditions light 90 % / medium 90 % / heavy 85 % | 25 | Groups or non-stop with random characters, ≥ 200 characters, band conditions on for the whole run and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
 | Contest | see right | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
@@ -634,7 +635,7 @@ next open level – stamped “PREVIEW”, without date and number.
 | Q-code expert | – | 40 | Each of the 20 Q codes right 3× at the first hearing, on at least 2 days, characters ≥ 18 WPM |
 | All digits | – | 39 | All 10 digits at least in box 3, reached with characters ≥ 18 WPM |
 
-- For Koch, flow, QRQ, QRN-proof, Rufz and contest, **Silver and above need
+- For Koch, flow, QRQ, high speed, QRN-proof, Rufz and contest, **Silver and above need
   two different days** – one lucky run is not enough. Starting straight at
   lesson 41 gives Bronze on the first day and Silver and Gold with another
   passed run on a different day.

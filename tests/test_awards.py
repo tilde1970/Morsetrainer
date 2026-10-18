@@ -113,6 +113,26 @@ class AwardsTest(unittest.TestCase):
                 session("continuous", 3, wpm=30, **{**qrq, "charset": "KMURES"})]
         self.assertEqual(dates("qrq", data(runs)), [day(0), day(1), None, None])
 
+    def test_highspeed_needs_connected_text_at_full_speed(self):
+        hs = dict(content="qso", charset=koch.lesson_charset(40), completed=True, duration_s=200, total=300,
+                  correct=290, extra_keys=0)
+        runs = [session("continuous", 0, wpm=31, **hs), session("continuous", 1, wpm=30, **{**hs, "content": "phrases"}),
+                session("continuous", 2, wpm=40, farnsworth_wpm=25, **hs),                    # Farnsworth
+                session("continuous", 3, wpm=40, **{**hs, "content": "words"}),               # einzelne Wörter
+                session("continuous", 4, wpm=40, **{**hs, "content": "plain"}),
+                session("continuous", 5, wpm=40, **{**hs, "charset": "KMURES"}),              # kleiner Zeichensatz
+                session("continuous", 6, wpm=40, **{**hs, "user_words": True}),
+                session("continuous", 7, wpm=40, **{**hs, "extra_keys": 40}),                 # zu viele überzählige
+                session("continuous", 8, wpm=40, **{**hs, "completed": False})]
+        self.assertEqual(dates("highspeed", data(runs)), [day(0), day(1), None, None])
+        # Gold und Platin erst an einem zweiten Tag mit 35 bzw. 40 WPM.
+        runs += [session("continuous", 9, wpm=36, **hs), session("continuous", 10, wpm=40, **hs)]
+        self.assertEqual(dates("highspeed", data(runs)), [day(0), day(1), day(10), None])
+        runs.append(session("continuous", 11, wpm=41, **hs))
+        self.assertEqual(dates("highspeed", data(runs)), [day(0), day(1), day(10), day(11)])
+        self.assertEqual(awards.BY_KEY["highspeed"].targets, (25, 30, 35, 40))
+        self.assertEqual(awards.BY_KEY["highspeed"].from_lesson, koch.LCWO_LESSONS)
+
     def test_qrn_levels(self):
         base = dict(charset=koch.lesson_charset(30), total=200, correct=180, accuracy_pct=90.0,
                     farnsworth_wpm=12, band_gain=100)

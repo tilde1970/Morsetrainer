@@ -45,6 +45,7 @@ CONTEST_KINDS = ("cqww", "wpx", "wag", "arrldx", "iaru")
 RAGCHEW = "ragchew"
 # Klartext im Reiter Kontinuierlich (ohne eigene Texte, siehe modes/content.py).
 PLAIN_CONTENT = {"words", "plain", "phrases", "qso"}
+HIGHSPEED_CONTENT = {"phrases", "qso"}  # nur zusammenhängender Text, keine einzelnen Wörter
 FLOW_WORDS_MAX = 21.9  # mit Wörtern höchstens Silber (Gold: 22 WPM)
 
 
@@ -90,6 +91,10 @@ AWARDS = (
     Award("qrq", N_("QRQ"), N_("Am Stück mit Zufallsgruppen (≥ 5 Zeichen), voller Zeichensatz, ohne "
                                "Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten"),
           (20, 25, 30, 35), N_("WPM"), 40, two_days=True),
+    Award("highspeed", N_("High-Speed"), N_("Am Stück mit Wendungen oder QSO-Klartext ohne eigene Wörter, "
+                                            "voller Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % "
+                                            "abzüglich überzähliger Tasten"),
+          (25, 30, 35, 40), N_("WPM"), koch.LCWO_LESSONS, two_days=True),
     Award("qrn", N_("QRN-fest"), N_("Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, "
                                     "Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, "
                                     "Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM, bei Gruppen "
@@ -506,6 +511,20 @@ def _qrq(data: Data) -> list:
         if (c.get("mode") == "continuous" and c.get("content", "chars") == "chars"
                 and _num(c.get("group_len")) >= 5 and _contains(c.get("charset"), FULL_CHARSET)
                 and not _farnsworth(c) and _full_run(s) and _clean_share(s.summary) >= 0.9):
+            events.append((s.day, _char_wpm(c)))
+    return events
+
+
+def _highspeed(data: Data) -> list:
+    """High-Speed: [(Tag, Zeichentempo)] je voller, sauberer Klartext-Lauf in
+    Kontinuierlich mit Wendungen oder QSO-Text (einzelne Wörter werden bei
+    hohem Tempo eher wiedererkannt), voller Zeichensatz, ohne Farnsworth."""
+    events = []
+    for s in data.sessions:
+        c = s.config
+        if (c.get("mode") == "continuous" and c.get("content") in HIGHSPEED_CONTENT and _full_run(s)
+                and not c.get("user_words") and _contains(c.get("charset"), FULL_CHARSET)
+                and not _farnsworth(c) and _clean_share(s.summary) >= 0.9):
             events.append((s.day, _char_wpm(c)))
     return events
 
@@ -933,7 +952,7 @@ def evaluate(data: Data = None, today: date = None) -> dict:
     confusion = _guarded("confusion", lambda: _confusion_state(data), None)
     checks = {
         "koch": lambda: _koch(data), "wal": lambda: _wal(data, today), "flow": lambda: _flow(data),
-        "qrq": lambda: _qrq(data), "qrn": lambda: _qrn(qrn_runs), "rufz": lambda: _rufz(data),
+        "qrq": lambda: _qrq(data), "highspeed": lambda: _highspeed(data), "qrn": lambda: _qrn(qrn_runs), "rufz": lambda: _rufz(data),
         "contest": lambda: _contest(contest_runs), "wpx": lambda: _wpx(data),
         "headphones": lambda: _headphones(data),
         "confusion": lambda: _cumulative(confusion[0]) if confusion else [],

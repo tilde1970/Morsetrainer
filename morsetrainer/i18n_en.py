@@ -1592,6 +1592,11 @@ EN.update({
     "alle 26 Buchstaben in Fach 3": "all 26 letters in box 3",
     "alle Buchstaben in Fach 6 und alle Ziffern in Fach 4": "all letters in box 6 and all digits in box 4",
     "Mitschreiben im Fluss": "Copying in flow",
+    "High-Speed": "High speed",
+    ("Am Stück mit Wendungen oder QSO-Klartext ohne eigene Wörter, voller Zeichensatz, ohne Farnsworth, voller "
+     "3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten"):
+        ("Non-stop with phrases or QSO plain text without own words, full character set, no Farnsworth, full "
+         "3-minute run, ≥ 90 % minus extra keys"),
     "Am Stück mit Klartext ohne eigene Wörter, Zeichensatz mindestens Lektion 15, voller 3-Min.-Lauf, "
     "≥ 90 % abzüglich überzähliger Tasten, Zeichen ≥ 18 WPM; Gold nur mit Wendungen oder QSO":
         "Non-stop with plain text without your own words, character set at least lesson 15, full 3-min run, "
