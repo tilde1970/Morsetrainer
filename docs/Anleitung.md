@@ -371,8 +371,13 @@ wenn du hinterherhinkst, geht es weiter. Oben unter **Inhalt** wählst du
 **Zufallszeichen** – in Gruppen (Standard 5) mit Wortpause dazwischen, bei
 Gruppenlänge 0 durchgehend – oder Klartext: **Abkürzungen**, **Klartext**
 (ausgeschriebene Wörter), **Wendungen**
-(typische QSO-Wendungen wie „TNX FER CALL“, „UR RST 599“), **Rufzeichen**
-oder **QSO-Klartext** (ganze QSOs). Klartext zählt nicht für die Lektion.
+(typische QSO-Wendungen wie „TNX FER CALL“, „UR RST 599“), **Rufzeichen**,
+**Zahlen** oder **QSO-Klartext** (ganze QSOs). **Zahlen** mischt, was im
+Funk als Zahl vorkommt: Rapporte (599), CQ-Zonen, Seriennummern,
+Frequenzen in kHz (14035) und MHz (14.035, mit gelerntem Punkt),
+Leistungen, Uhrzeiten und Jahre – nur aus den gelernten Ziffern (mindestens
+vier). Nach dem Stoppen erklärt eine Zeile, was die letzten Zahlen waren.
+Klartext und Zahlen zählen nicht für die Lektion.
 Auf Wunsch mit Bandbedingungen, die durchgehend unter dem ganzen Durchgang
 liegen.
 

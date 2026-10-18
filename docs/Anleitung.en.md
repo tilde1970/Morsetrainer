@@ -369,8 +369,13 @@ listening on the air); even if you fall behind, it carries on. At the top
 under **Content** you choose **Random characters** – in groups (default
 5) with a word gap in between, continuous with group length 0 – or plain
 text: **Abbreviations**, **Plain words**, **Phrases** (typical QSO phrases such as “TNX FER CALL”,
-“UR RST 599”), **Callsigns** or **QSO plain text** (complete QSOs). Plain
-text does not count for the lesson.
+“UR RST 599”), **Callsigns**, **Numbers** or **QSO plain text** (complete
+QSOs). **Numbers** mixes what turns up as a number on the air: signal
+reports (599), CQ zones, serial numbers, frequencies in kHz (14035) and
+MHz (14.035, once the dot is learned), power, times and years – only from
+the digits you have learned (at least four). After stopping, a line
+explains what the last numbers were. Plain text and numbers do not count
+for the lesson.
 Optionally with band conditions running under the whole session.
 
 - A key only counts if it fits the character: not guessed in advance and

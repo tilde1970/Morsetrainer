@@ -15,6 +15,8 @@ import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer import i18n
 from morsetrainer.core import koch, mp3, review, speech, stats, words
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE
+from morsetrainer.core import qso_text
+from morsetrainer.modes import content
 from morsetrainer.modes.content import ItemSource
 from tests.test_modes import AppTestCase
 
@@ -113,6 +115,57 @@ class ItemSourceTest(unittest.TestCase):
         random.seed(3)
         source = ItemSource("words", koch.lesson_charset(30))
         picks = [source.next()[0] for _ in range(100)]
+        self.assertFalse(any(a == b for a, b in zip(picks, picks[1:])))
+
+
+class NumbersContentTest(unittest.TestCase):
+    """Inhalt „Zahlen“: Rapporte, Zonen, Nummern, Frequenzen … mit Bedeutung."""
+
+    def test_numbers_have_a_meaning_and_stay_in_the_charset(self):
+        random.seed(11)
+        for lesson in (30, 35, 40, 41):
+            charset = koch.lesson_charset(lesson)
+            source = ItemSource("numbers", charset)
+            self.assertIsNone(source.problem())
+            for _ in range(200):
+                text, meaning = source.next()
+                self.assertTrue(text and set(text) <= set(charset), (lesson, text))
+                self.assertTrue(meaning)
+
+    def test_all_kinds_appear_and_mhz_needs_the_dot(self):
+        random.seed(12)
+        full = ItemSource("numbers", koch.lesson_charset(41))
+        meanings = {full.next()[1] for _ in range(600)}
+        self.assertEqual(len(meanings), len(content.NUMBER_KINDS))
+        without_dot = ItemSource("numbers", "".join(ch for ch in koch.lesson_charset(41) if ch != "."))
+        picks = [without_dot.next() for _ in range(600)]
+        self.assertFalse(any("." in text for text, _ in picks))
+        self.assertTrue(any("." in text for text, _ in (full.next() for _ in range(600))))
+
+    def test_frequencies_are_in_the_amateur_bands_and_rst_is_common(self):
+        random.seed(13)
+        source = ItemSource("numbers", koch.lesson_charset(41))
+        picks = [source.next() for _ in range(1000)]
+        for text, meaning in picks:
+            if meaning.startswith("Frequenz in kHz"):
+                self.assertTrue(any(low <= int(text) <= high for low, high in content.BAND_RANGES_KHZ), text)
+            if meaning == "Rapport":
+                self.assertIn(text, qso_text.RST_WEIGHTS)
+        self.assertGreater(sum(1 for _, m in picks if m == "Rapport"), 150)
+
+    def test_too_few_digits_are_explained_with_the_first_lesson(self):
+        problem = ItemSource("numbers", "KMURESNAP5").problem()
+        self.assertIn("vier Ziffern", problem)
+        self.assertIn(str(content.first_lesson_with_digits()), problem)
+        self.assertIsNone(ItemSource("numbers", "5927").problem())
+
+    def test_numbers_are_plain_text_for_the_statistics(self):
+        self.assertIn("numbers", content.PLAIN_TEXT)
+
+    def test_no_direct_repeats(self):
+        random.seed(14)
+        source = ItemSource("numbers", "59271")
+        picks = [source.next()[0] for _ in range(300)]
         self.assertFalse(any(a == b for a, b in zip(picks, picks[1:])))
 
 

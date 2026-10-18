@@ -1067,6 +1067,28 @@ class ContinuousFullViewTest(AppTestCase):
         self.assertFalse(window.winfo_exists())
 
 
+class ContinuousNumbersTest(AppTestCase):
+    def test_numbers_are_offered_and_the_result_explains_them(self):
+        c = self.mode("Kontinuierlich")
+        self.assertIn("Zahlen", continuous_mode.CONTENTS)
+        now = 1000.0
+        c.charset = "5927"
+        c.content = "numbers"
+        c.session_stats = stats.SessionStats("continuous", "5927", 20, 600)
+        c.number_meanings = [("599", "Rapport"), ("14", "CQ-Zone")]
+        c.sent_log = [{"char": ch, "end_time": now + i, "group": 0} for i, ch in enumerate("59914")]
+        c.typed_log = [{"char": ch, "time": now + i + 0.5} for i, ch in enumerate("59914")]
+        c._finalize_session()
+        shown = c.diff_var.get()
+        self.assertIn("599 = Rapport", shown)
+        self.assertIn("14 = CQ-Zone", shown)
+        # Zufallszeichen haben keine Legende.
+        c.content = "chars"
+        c.session_stats = stats.SessionStats("continuous", "5927", 20, 600)
+        c._finalize_session()
+        self.assertNotIn("Bedeutung", c.diff_var.get())
+
+
 class SequenceBandTest(AppTestCase):
     def test_start_and_end_signs_carry_the_band_conditions(self):
         from morsetrainer.core import band

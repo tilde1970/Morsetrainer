@@ -5,7 +5,7 @@ import random
 
 from morsetrainer.core import qso_text, words
 from morsetrainer.core.weighting import CharPicker
-from morsetrainer.i18n import tr
+from morsetrainer.i18n import N_, tr
 from morsetrainer.modes import callsign_mode
 
 # Unter so vielen passenden Wendungen stünde die Antwort fest.
@@ -18,7 +18,45 @@ QSO_SAMPLES = 8
 QSO_SECTION_ENDS = {"=", "K", "+", "(", "*", "#"}
 # Klartext: Der Zusammenhang verrät viele Zeichen, er zählt daher nicht für
 # die Zeichenstatistik (SessionStats, char_stats). Rufzeichen zählen.
-PLAIN_TEXT = {"words", "plain", "phrases", "qso", "custom"}
+PLAIN_TEXT = {"words", "plain", "phrases", "qso", "custom", "numbers"}
+
+# Zahlen: so viele Ziffern müssen gelernt sein, damit es genug Auswahl gibt.
+MIN_NUMBER_DIGITS = 4
+# Frequenzbereiche der Kurzwellenbänder in kHz (Telegrafieteil und darüber).
+BAND_RANGES_KHZ = ((3500, 3800), (7000, 7200), (10100, 10150), (14000, 14350), (18068, 18168),
+                   (21000, 21450), (24890, 24990), (28000, 29000))
+WATTS = (5, 10, 20, 50, 100, 200, 400, 750, 1000)
+
+
+def _frequency_khz() -> str:
+    return str(random.randint(*random.choice(BAND_RANGES_KHZ)))
+
+
+def _frequency_mhz() -> str:
+    return f"{random.randint(*random.choice(BAND_RANGES_KHZ)) / 1000:.3f}"
+
+
+# Zahlen, wie sie im Funk vorkommen: (Gewicht, Erzeuger, Bedeutung). Die
+# Bedeutung steht nach dem Üben in der Legende; die MHz-Schreibweise braucht
+# den Punkt unter den gelernten Zeichen.
+NUMBER_KINDS = (
+    (5, lambda: random.choices(list(qso_text.RST_WEIGHTS), weights=list(qso_text.RST_WEIGHTS.values()))[0],
+     N_("Rapport")),
+    (3, lambda: str(random.randint(1, 40)), N_("CQ-Zone")),
+    (4, lambda: str(random.randint(1, 999)), N_("Seriennummer")),
+    (4, _frequency_khz, N_("Frequenz in kHz")),
+    (2, _frequency_mhz, N_("Frequenz in MHz")),
+    (2, lambda: str(random.choice(WATTS)), N_("Leistung in Watt")),
+    (2, lambda: f"{random.randint(0, 23):02d}{random.randint(0, 59):02d}", N_("Uhrzeit in UTC")),
+    (1, lambda: str(random.randint(1950, 2026)), N_("Jahr")),
+)
+
+
+def first_lesson_with_digits(count: int = MIN_NUMBER_DIGITS):
+    """Erste Koch-Lektion mit mindestens `count` Ziffern, oder None."""
+    from morsetrainer.core import koch
+    return next((lesson for lesson in range(1, koch.MAX_LESSON + 1)
+                 if sum(ch.isdigit() for ch in koch.lesson_charset(lesson)) >= count), None)
 
 
 def qso_sections(charset: str) -> list:
@@ -52,8 +90,9 @@ class ItemSource:
     von `charset`. Gleiche Wörter, Wendungen und Rufzeichen nicht direkt
     hintereinander.
 
-    Arten: chars, groups, words, phrases, calls und qso (Klartext eines
-    normalen QSOs, Wort für Wort; braucht alle Buchstaben und Ziffern)."""
+    Arten: chars, groups, words, phrases, calls, numbers (Zahlen wie Rapport,
+    Zone, Frequenz mit ihrer Bedeutung) und qso (Klartext eines normalen
+    QSOs, Wort für Wort; braucht alle Buchstaben und Ziffern)."""
 
     def __init__(self, kind: str, charset: str, group_len: int = 5, weighted: bool = False):
         self.kind = kind
@@ -100,6 +139,10 @@ class ItemSource:
             if not (set(self.charset) & set("0123456789")):
                 return tr("Rufzeichen brauchen eine Ziffer im Zeichensatz (ab Koch-Lektion 23).")
             return tr("Zu wenige Rufzeichen mit diesen Zeichen (callsigns.scp fehlt oder Zeichensatz zu klein).")
+        if self.kind == "numbers" and sum(ch.isdigit() for ch in self.charset) < MIN_NUMBER_DIGITS:
+            first = first_lesson_with_digits()
+            when = tr(" – genug gibt es ab Koch-Lektion {lesson}").format(lesson=first) if first else ""
+            return tr("Zahlen brauchen mindestens vier Ziffern im Zeichensatz") + when + "."
         if self.kind == "qso":
             needed = set()
             for _ in range(QSO_SAMPLES):
@@ -112,6 +155,13 @@ class ItemSource:
     def next(self):
         """Nächster Eintrag als (Text, Bedeutung); Wörter, Wendungen und Rufzeichen
         nicht zweimal hintereinander."""
+        if self.kind == "numbers":
+            for _ in range(20):
+                text, meaning = self._number()
+                if text != self.last:
+                    break
+            self.last = text
+            return text, meaning
         if self.kind in ("qso", "chars", "groups"):
             # Klartext: Wiederholungen gehören dazu; Zufallszeichen: bei
             # kleinem Zeichensatz stünde sonst die Antwort fest (K M K M …).
@@ -123,6 +173,18 @@ class ItemSource:
                 break
         self.last = text
         return text, self.meanings.get(text, "")
+
+    def _number(self):
+        """Eine Zahl mit ihrer Bedeutung, nur aus gelernten Zeichen; fehlt zu
+        vielen Arten ein Zeichen, kommen Zufallsziffern."""
+        allowed = set(self.charset)
+        for _ in range(60):
+            _, make, meaning = random.choices(NUMBER_KINDS, weights=[kind[0] for kind in NUMBER_KINDS])[0]
+            text = make()
+            if set(text) <= allowed:
+                return text, tr(meaning)
+        digits = "".join(ch for ch in self.charset if ch.isdigit())
+        return "".join(random.choice(digits) for _ in range(3)), tr("Zahl")
 
     def _draw(self) -> str:
         """Ein Eintrag der gewählten Art: Zeichen, Gruppe, Wort (gewichtet), Wort

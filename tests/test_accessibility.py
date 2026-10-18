@@ -994,7 +994,7 @@ class KeyboardTest(AppTestCase):
         from morsetrainer.widgets import announcer
         m = self.mode("Kontinuierlich")
         row = m.content_buttons
-        self.assertEqual(len(row.buttons), 6)
+        self.assertEqual(len(row.buttons), 7)
         self.assertNotEqual(row.master.master, m.options_card)  # oben im Reiter, nicht in den Einstellungen
         m.content_var.set("Abkürzungen")
         self.assertIn("Inhalt Abkürzungen", announcer.describe(row.buttons[1]))

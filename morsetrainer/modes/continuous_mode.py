@@ -60,13 +60,15 @@ WRITE_CHUNK_SECONDS = 0.02
 FINISH_GRACE_SECONDS = 3
 
 DEFAULT_GROUP_LEN = 5
+NUMBER_LEGEND = 8  # so viele der letzten Zahlen erklärt die Auswertung
 GROUP_LEN_RANGE = (0, 10)
 
 # Inhalt: Zufallszeichen in Gruppen (zählt für die Koch-Lektion) oder
 # Klartext aus Abkürzungen, Wörtern, Wendungen, Rufzeichen, QSOs (siehe
 # modes/content.py).
 CONTENTS = {N_("Zufallszeichen"): "chars", N_("Abkürzungen"): "words", N_("Klartext"): "plain",
-            N_("Wendungen"): "phrases", N_("Rufzeichen"): "calls", N_("QSO-Klartext"): "qso"}
+            N_("Wendungen"): "phrases", N_("Rufzeichen"): "calls", N_("Zahlen"): "numbers",
+            N_("QSO-Klartext"): "qso"}
 
 # Zeitliche Plausibilität einer Zuordnung Taste -> gesendetes Zeichen: so
 # viel früher als das Tonende (Messungenauigkeit) bzw. höchstens so viel
@@ -334,6 +336,7 @@ class ContinuousModeFrame(DailyModeMixin):
         self.band_rank_min = band.preset_rank(spec, self.freq)
         self.sent_log = []
         self.typed_log = []
+        self.number_meanings = []  # [(Zahl, Bedeutung)] im Inhalt „Zahlen“
         try:
             self.group_len = min(max(self.group_len_var.get(), GROUP_LEN_RANGE[0]), GROUP_LEN_RANGE[1])
         except tk.TclError:
@@ -412,7 +415,9 @@ class ContinuousModeFrame(DailyModeMixin):
             first = True
             group = -1  # für die ganze Auswertung: gesendete Gruppe bzw. Wort
             while self._live() and not self._time_up():
-                token, _ = self.source.next()
+                token, meaning = self.source.next()
+                if self.content == "numbers":
+                    self.number_meanings.append((token, meaning))
                 if word_gaps or len(self.sent_log) % FULL_GROUP_LEN == 0:
                     group += 1
                     if self.vary:
@@ -598,8 +603,14 @@ class ContinuousModeFrame(DailyModeMixin):
                     f"{tr('gesendet'):<10}" + " ".join(r[0] for r in line)
                     + f"\n{tr('getippt'):<10}" + " ".join(r[1] for r in line)
                     + "\n" + (" " * 10 + " ".join(r[2] for r in line)).rstrip())
+            legend = ""
+            if getattr(self, "content", "chars") == "numbers" and self.number_meanings:
+                # Die letzten Zahlen mit ihrer Bedeutung, damit man Rapport, Zone
+                # und Frequenz im Kopf auseinanderhält.
+                last = self.number_meanings[-NUMBER_LEGEND:]
+                legend = "\n\n" + tr("Bedeutung:") + " " + " · ".join(f"{token} = {meaning}" for token, meaning in last)
             self.diff_var.set("\n\n".join(blocks)
-                              + "\n" + " " * 10 + tr("– fehlt/zu viel, ^ falsch oder nicht rechtzeitig"))
+                              + "\n" + " " * 10 + tr("– fehlt/zu viel, ^ falsch oder nicht rechtzeitig") + legend)
         summary = self.session_stats.summary()
         if getattr(self, "content", "chars") == "chars":  # Klartext ist vorhersagbarer
             self.koch_result = (self.charset, max(summary["correct"] - extra, 0), summary["total"])

@@ -1175,6 +1175,18 @@ EN.update({
 
 # --- modes/content.py, modes/continuous_mode.py ---
 EN.update({
+    "Zahlen": "Numbers",
+    "Zahl": "Number",
+    "Rapport": "Signal report",
+    "CQ-Zone": "CQ zone",
+    "Seriennummer": "Serial number",
+    "Frequenz in kHz": "Frequency in kHz",
+    "Frequenz in MHz": "Frequency in MHz",
+    "Leistung in Watt": "Power in watts",
+    "Uhrzeit in UTC": "Time in UTC",
+    "Jahr": "Year",
+    "Bedeutung:": "Meaning:",
+    "Zahlen brauchen mindestens vier Ziffern im Zeichensatz": "Numbers need at least four digits in the character set",
     "Zu wenige Wörter mit diesen Zeichen – erst mit Gruppen üben.":
         "Too few words with these characters – practise with groups first.",
     "Zu wenige Wendungen mit diesen Zeichen": "Too few phrases with these characters",
