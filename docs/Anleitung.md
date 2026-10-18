@@ -150,7 +150,14 @@ einmal einstellt:
   ohne Name das Rufzeichen). Beide Felder ziehen mit, bis du dort etwas
   anderes einträgst, etwa ein Contest-Rufzeichen. Ohne eigenes Rufzeichen
   genügt der Name; für den Contest trägst du dann ein ausgedachtes
-  Rufzeichen ein.
+  Rufzeichen ein. Der **Locator** (Maidenhead, vier oder sechs Zeichen,
+  etwa `JO41`) ist freiwillig. Er bestimmt, woher die erzeugten
+  Stationen in QSO und Contest kommen: Wer in Japan sitzt, hört mehr
+  Asien und Nordamerika, wer in Deutschland sitzt, mehr Europa; es wird
+  mit besten Bandbedingungen gerechnet. Ohne Locator zählt das Land deines
+  Rufzeichens, bei einem Rufzeichen außerhalb der Liste verteilt der
+  Trainer die Länder nach ihrer Aktivität auf der ganzen Welt. Ein
+  ungültiger Locator wird unter dem Feld genannt und nicht verwendet.
 - **Üben:** das Tagesziel in Minuten (Standard 10, 0 = ohne Ziel); die
   Fußzeile zeigt, wie viel du heute schon geübt hast.
 - **Sprache / Language:** Oberfläche auf Englisch umstellen (wirkt nach

@@ -17,7 +17,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import (audio, awards, backup, band, daily, errorlog, koch, migration, practice, review,
+from morsetrainer.core import (audio, awards, backup, band, daily, errorlog, koch, migration, practice, qso_text, review,
                                 screenreader, sfx, speech, stats, storage, tempo, week)
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
@@ -540,6 +540,7 @@ class MorseTrainerApp:
         station = hinted(station_card)
         self.station_call_var = tk.StringVar(value="")
         self.station_name_var = tk.StringVar(value="")
+        self.station_locator_var = tk.StringVar(value="")
         ttk.Label(station, text=tr("Rufzeichen", context="eigenes")).pack(side="left")
         call_entry = self.settings_first = ttk.Entry(station, textvariable=self.station_call_var, width=12)
         call_entry.pack(side="left", padx=(6, 12))
@@ -549,6 +550,17 @@ class MorseTrainerApp:
         announcer.echo(call_entry)
         announcer.echo(name_entry)
         theme.hint(station.master, text=tr("falls vorhanden; für Diplome, Contest und Netzwerk"))
+        # Der Locator bestimmt, aus welchen Weltgegenden die erzeugten Stationen
+        # stammen; ohne ihn zählt das Land des Rufzeichens (core/qso_text.py).
+        locator = hinted(station_card)
+        ttk.Label(locator, text=tr("Locator")).pack(side="left")
+        locator_entry = ttk.Entry(locator, textvariable=self.station_locator_var, width=8)
+        locator_entry.pack(side="left", padx=(6, 8))
+        announcer.echo(locator_entry)
+        self.locator_hint_var = tk.StringVar(value="")
+        theme.hint(locator.master, textvariable=self.locator_hint_var, wrap=420)
+        self.station_locator_var.trace_add("write", lambda *_: self._apply_locator())
+        self._apply_locator()
 
         # Tagesziel, angezeigt in der Fußzeile; so lang wie die Tagesübung
         # (core/daily.py).
@@ -1486,6 +1498,7 @@ class MorseTrainerApp:
             "more_options": (self.more_var, None),
             "station_call": (self.station_call_var, None),
             "station_name": (self.station_name_var, None),
+            "station_locator": (self.station_locator_var, None),
             "font_scale": (self.font_scale_var, (theme.ZOOM_STEPS[0], theme.ZOOM_STEPS[-1])),
             "announce": (self.announcer.var, None),
             "announce_rate": (self.announcer.rate_var, (VOICE_RATE_STEPS[0], VOICE_RATE_STEPS[-1])),
@@ -1645,6 +1658,18 @@ class MorseTrainerApp:
         except tk.TclError:
             return None
 
+    def _apply_locator(self):
+        """Locator an die Rufzeichenwahl weitergeben; ein ungültiger wird
+        im Hinweis genannt, dann zählt das Land des Rufzeichens."""
+        locator = self.station_locator_var.get()
+        if qso_text.set_station_locator(locator):
+            self.locator_hint_var.set(tr("Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen")
+                                      if not locator.strip() else
+                                      tr("Locator gilt: die erzeugten Stationen kommen aus Ihrer Weltgegend"))
+        else:
+            self.locator_hint_var.set(tr("Kein gültiger Locator (4 oder 6 Zeichen, z. B. JO41); es zählt das "
+                                         "Land des Rufzeichens"))
+
     def station_call(self) -> str:
         """Eigenes Rufzeichen aus den Einstellungen, in Großbuchstaben (leer, wenn
         keins eingetragen ist)."""
@@ -1687,6 +1712,8 @@ class MorseTrainerApp:
         contest_follow = follow(contest, self.station_call)
         network_follow = follow(network, self._station_name)
         self.station_call_var.trace_add("write", contest_follow)
+        self.station_call_var.trace_add("write", lambda *_: qso_text.set_station_call(self.station_call()))
+        qso_text.set_station_call(self.station_call())
         self.station_call_var.trace_add("write", network_follow)
         self.station_name_var.trace_add("write", network_follow)
 

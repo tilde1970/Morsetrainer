@@ -129,9 +129,9 @@ class QsoTextTest(unittest.TestCase):
     def test_arrldx_callers_are_on_the_other_side(self):
         for _ in range(30):
             call, _, _ = qso_text.contest_caller("arrldx", "DL4YM", set())
-            self.assertEqual(qso_text._country_of(call).key, "W")
+            self.assertFalse(qso_text._arrl_dx(call, qso_text._country_of(call)), call)
             call, _, _ = qso_text.contest_caller("arrldx", "W1AW", set())
-            self.assertNotEqual(qso_text._country_of(call).key, "W")
+            self.assertTrue(qso_text._arrl_dx(call, qso_text._country_of(call)), call)
 
 
 class QuizCompareTest(unittest.TestCase):

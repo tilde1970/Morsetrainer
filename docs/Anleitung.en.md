@@ -150,6 +150,14 @@ practice options:
   if there is no name). Both fields follow along until you enter something
   else there, such as a contest callsign. Without a callsign of your own
   the name is enough; for the contest you then enter a made-up callsign.
+  The **locator** (Maidenhead, four or six characters, e.g. `JO41`) is
+  optional. It decides where the generated stations in QSO and Contest
+  come from: someone in Japan hears more of Asia and North America,
+  someone in Germany more of Europe; the calculation assumes the best band
+  conditions. Without a locator the country of your callsign counts; for a
+  callsign outside the list the trainer spreads the countries over the
+  whole world by their activity. An invalid locator is named below the
+  field and not used.
 - **Practice:** the daily goal in minutes (default 10, 0 = no goal); the
   footer shows how much you have practised today.
 - **Sprache / Language:** switch the interface to English (takes effect

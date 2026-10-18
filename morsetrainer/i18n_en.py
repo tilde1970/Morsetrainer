@@ -24,6 +24,13 @@ EN.update({
     "{n} Minuten": "{n} minutes",
     "Jetzt neu starten": "Restart now",
     "Station": "Station",
+    "Locator": "Locator",
+    "Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen":
+        "Maidenhead, e.g. JO41: decides where the generated stations come from",
+    "Locator gilt: die erzeugten Stationen kommen aus Ihrer Weltgegend":
+        "Locator in use: the generated stations come from your part of the world",
+    "Kein gültiger Locator (4 oder 6 Zeichen, z. B. JO41); es zählt das Land des Rufzeichens":
+        "Not a valid locator (4 or 6 characters, e.g. JO41); the country of the call sign is used",
     "Sprache / Language": "Sprache / Language",  # zweisprachig, damit man zurückfindet
     "Barrierefreiheit": "Accessibility",
     "Schriftgröße": "Font size",
