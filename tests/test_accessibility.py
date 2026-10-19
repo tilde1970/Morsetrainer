@@ -2585,6 +2585,85 @@ class DialogTest(AnnouncerCase):
         self.assertFalse(window.answer)
         self.assertFalse(window.top.winfo_exists())
 
+    def send(self, window, key):
+        """Eine Taste als echtes Ereignis an das Element mit Fokus im Dialog
+        (sonst an das Fenster): über Fokus, Bindungsreihenfolge und
+        Klassenbindungen, nicht an der Bindung vorbei."""
+        self.root.update()
+        target = self.root.focus_displayof()
+        if target is None or target.winfo_toplevel() is not window.top:
+            window.top.focus_force()
+            self.root.update()
+            target = window.top
+        target.event_generate(key, when="now")
+        self.root.update()
+
+    def test_dialog_keys_by_real_events(self):
+        # Mit echten Tastenereignissen statt direktem Aufruf der Bindung:
+        # Enter = Ja, Escape = Nein, die Leertaste entscheidet nichts, und mit
+        # Tab auf „Nein“ gilt Enter diesem Knopf – genau einmal.
+        self.root.deiconify()
+        self.addCleanup(self.root.withdraw)
+        window = self.open()
+        self.send(window, "<space>")
+        self.assertTrue(window.top.winfo_exists())  # Leertaste aus dem Tippen entscheidet nichts
+        self.send(window, "<Return>")
+        self.assertTrue(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+
+        window = self.open()
+        self.send(window, "<Escape>")
+        self.assertFalse(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+
+        window = self.open()
+        self.send(window, "<Tab>")
+        self.assertEqual(self.root.focus_get(), self.button(window, "Ja"))  # „Ja“ vor „Nein“
+        self.send(window, "<Tab>")
+        self.assertEqual(self.root.focus_get(), self.button(window, "Nein"))
+        self.send(window, "<Return>")
+        self.assertFalse(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+
+        window = self.open()
+        self.send(window, "<Tab>")  # auf „Ja“: Enter und Leertaste gelten dem Knopf
+        self.send(window, "<space>")
+        self.assertTrue(window.answer)
+        self.assertFalse(window.top.winfo_exists())
+
+        window = self.open(question=False)  # Meldung: Enter schließt
+        self.send(window, "<Return>")
+        self.assertFalse(window.top.winfo_exists())
+
+    def test_dialog_announcement_keys_by_real_events(self):
+        # F11 wiederholt die Ansage, F9 schaltet sie aus und wieder an; der
+        # Dialog bleibt dabei offen.
+        self.root.deiconify()
+        self.addCleanup(self.root.withdraw)
+        self.app.announcer.var.set(True)
+        window = self.open()
+        self.assertTrue(self.pump_until(lambda: any("Mit Lektion 5 weitermachen?" in s for s in self.said)))
+        # Erst den Fokus holen und die Fenstertitel-Ansage ausklingen lassen:
+        # Eine neue Ansage verdrängt die ältere, F11 käme sonst darunter.
+        window.top.focus_force()
+        self.pump_until(lambda: False, timeout=0.5)
+        # Die Taste muss den Dialog erreichen (nicht erst die Bindung des
+        # Hauptfensters): Er wiederholt seine Ansage.
+        with mock.patch.object(window, "_say") as say:
+            self.send(window, "<F11>")
+        say.assert_called_once_with(force=True)
+        # Und gesprochen wird der Text noch einmal; er kommt aus dem Sprachspeicher
+        # (nicht neu erzeugt, also nicht in self.said), wird aber abgespielt.
+        before = len(self.played)
+        self.send(window, "<F11>")
+        self.assertTrue(self.pump_until(lambda: len(self.played) > before), (self.played, self.said))
+        self.send(window, "<F9>")
+        self.assertFalse(self.app.announcer.var.get())
+        self.send(window, "<F9>")
+        self.assertTrue(self.app.announcer.var.get())
+        self.assertTrue(self.pump_until(lambda: any(s.startswith("Ansage an.") for s in self.said)), self.said)
+        self.assertTrue(window.top.winfo_exists())
+
     def test_tab_reaches_yes_before_no(self):
         window = self.open()
         # Tab folgt der Reihenfolge, in der die Knöpfe angelegt sind.
