@@ -403,9 +403,11 @@ def apply(root) -> None:
                     lightcolor=BUTTON, darkcolor=BUTTON)
     style.map("TScale", background=[("disabled", BG), ("active", ACCENT)], troughcolor=[("focus", ACCENT)],
               bordercolor=[("disabled", BORDER)])
-    style.configure("TScrollbar", background=BUTTON, troughcolor=BG, bordercolor=BG, arrowcolor=MUTED,
-                    lightcolor=BUTTON, darkcolor=BUTTON)
-    style.map("TScrollbar", background=[("active", BUTTON_ACTIVE)])
+    # Griff in EDGE: mindestens 3:1 gegen die Schiene (WCAG 1.4.11).
+    style.configure("TScrollbar", background=EDGE, troughcolor=BG, bordercolor=BG, arrowcolor=MUTED,
+                    lightcolor=EDGE, darkcolor=EDGE)
+    style.map("TScrollbar", background=[("active", TEXT)], lightcolor=[("active", TEXT)],
+              darkcolor=[("active", TEXT)])
     style.configure("TSeparator", background=BORDER)
 
     style.configure("TNotebook", background=BG, bordercolor=BORDER, tabmargins=(2, 4, 2, 0))

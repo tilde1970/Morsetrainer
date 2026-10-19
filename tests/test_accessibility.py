@@ -750,6 +750,12 @@ class ContrastTest(AppTestCase):
                        ("EDGE", "TROUGH"), ("EDGE", "BUTTON")):
             self.assertGreaterEqual(ratio(light[fg], light[bg]), 3, (fg, bg))
 
+    def test_scrollbar_thumb_stands_out_from_its_trough(self):
+        from tkinter import ttk
+        style = ttk.Style(self.root)
+        self.assertEqual(str(style.lookup("TScrollbar", "background")), theme.EDGE)
+        self.assertEqual(str(style.lookup("TScrollbar", "troughcolor")), theme.BG)
+
     def test_selection_without_focus_keeps_the_palette(self):
         # clam färbt sie sonst grau/weiß (2,8:1); TEXT auf SELECT prüft der Palettentest.
         from tkinter import ttk
