@@ -105,6 +105,7 @@ EN.update({
     "nicht ausgewählt": "not selected",
     "leer": "empty",
     "Pfeiltasten wählen eine Zeile": "arrow keys choose a row",
+    ", Pfeil links und rechts zeigen weitere Spalten": ", left and right arrow show more columns",
     "Hoher Kontrast nach Neustart.": "High contrast after restart.",
     "Ansage an.": "Announcements on.",
     "Ansage aus.": "Announcements off.",

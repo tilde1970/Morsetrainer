@@ -720,7 +720,11 @@ def _value(widget) -> str:
             return spell(text)
         return text
     if cls == "Treeview":
-        return tr("Pfeiltasten wählen eine Zeile")
+        hint = tr("Pfeiltasten wählen eine Zeile")
+        bar = getattr(widget, "_mt_xbar", None)  # Tabelle mit verdeckten Spalten (theme.fit_columns)
+        if bar is not None and bar.winfo_manager():
+            hint += tr(", Pfeil links und rechts zeigen weitere Spalten")
+        return hint
     return ""
 
 

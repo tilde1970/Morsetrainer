@@ -838,6 +838,23 @@ class KeyboardTest(AppTestCase):
         self.assertTrue(visible(entries[0]))
         self.assertEqual(scroller.canvas.yview()[0], 0.0)
 
+    def test_table_with_hidden_columns_announces_the_arrow_keys(self):
+        from morsetrainer.widgets import announcer
+        window = tk.Toplevel(self.root)
+        self.addCleanup(window.destroy)
+        window.geometry("200x150")
+        columns = ("a", "b", "c", "d")
+        tree = ttk.Treeview(window, columns=columns, show="headings", height=3)
+        for column in columns:
+            tree.heading(column, text=column)
+        tree.pack(fill="x")
+        theme.fit_columns(tree, dict.fromkeys(columns, 150))
+        window.update()
+        self.assertIn("Pfeil links und rechts", announcer.describe(tree))
+        window.geometry("900x150")
+        window.update()
+        self.assertNotIn("Pfeil links und rechts", announcer.describe(tree))
+
     def test_selected_table_row_is_scrolled_into_view(self):
         # Eine Tabelle mit eigenem Rollbalken zeigt die gewählte Zeile, und eine
         # Tabelle, die höher ist als das Fenster, rollt die Seite zur Zeile.
