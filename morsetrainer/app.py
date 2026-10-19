@@ -45,7 +45,7 @@ from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_t
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.55"
+__version__ = "2.56"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -166,6 +166,9 @@ WHATS_NEW = {
     "2.55": N_("Neu in den weiteren Optionen: der Haken „Wiedereinsteiger“ für alle, die CW früher konnten (die "
                "Tagesübung steigt schneller auf). Im Reiter Am Stück gibt es den Inhalt „Zahlen“, und neu ist "
                "das Diplom „High-Speed“. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.56": N_("Die Statistik nennt jetzt bei jedem Vergleich, aus wie vielen Zeichen er stammt, und F11 liest sie "
+               "kürzer vor. Auf niedrigen Bildschirmen klappt die Kopfleiste von selbst zu, und das Fenster ist nie "
+               "größer als der Bildschirm. Alles Weitere steht unter Hilfe, Änderungen."),
 }
 
 

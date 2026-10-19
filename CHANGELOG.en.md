@@ -1,5 +1,30 @@
 # Changes
 
+## 2.56
+
+- **Statistics, comparison:** The comparison line says how many characters
+  each period is based on (“Before (30 days): … (from 412 characters) · Last
+  7 days: …”). A period appears only from 10 characters, otherwise it reads
+  “too few characters (3 of 10)”. It never shows “100 %” while there were
+  errors. “Smaller is faster” sits on the line, and a note explains that
+  new characters make the average slower at first.
+- **F11 in the Statistics tab is shorter:** The comparison comes right after
+  the overall result, and the week is one sentence (“practised on 3 of 4
+  days, today still open”) instead of every day separately.
+- **Small screens:** The header collapses to one line not only from 200 %
+  but earlier, when the window would otherwise be taller than the screen.
+  A remembered open header opens only if there is room. The start window is
+  never larger than the screen. When you enlarge the font and the header
+  collapses, the announcement says “Header collapsed.”.
+- **Tables:** The selected row scrolls into view, in the table and on the
+  page. If columns are hidden, the announcement says that left and right
+  arrow show more columns.
+- **Announcements and display:** “Header” and “More options” say “expanded”
+  and “collapsed”, the data folder “is being opened”. The speed in the
+  statistics wraps at large font sizes instead of being cut off. The
+  scroll bar thumb is more subtle in the normal theme, its arrows are easy to
+  read.
+
 ## 2.55
 
 - **Returning to CW:** Under “More options” there is a new tick box

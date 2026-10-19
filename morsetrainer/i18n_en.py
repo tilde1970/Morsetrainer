@@ -981,6 +981,12 @@ EN.update({
         "New in the more options: the “Returning to CW” tick box for everyone who used to know CW (the daily "
         "practice moves up faster). The Non-stop tab has the content “Numbers”, and there is a new “High-Speed” "
         "award. Everything else is under Help, Changes.",
+    ("Die Statistik nennt jetzt bei jedem Vergleich, aus wie vielen Zeichen er stammt, und F11 liest sie "
+     "kürzer vor. Auf niedrigen Bildschirmen klappt die Kopfleiste von selbst zu, und das Fenster ist nie "
+     "größer als der Bildschirm. Alles Weitere steht unter Hilfe, Änderungen."):
+        "The statistics now say how many characters each comparison is based on, and F11 reads them out more "
+        "briefly. On low screens the header collapses by itself, and the window is never larger than the "
+        "screen. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",

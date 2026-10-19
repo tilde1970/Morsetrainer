@@ -1,5 +1,31 @@
 # Änderungen
 
+## 2.56
+
+- **Statistik, Vergleich:** Die Vergleichszeile nennt je Zeitraum, aus wie
+  vielen Zeichen sie stammt („Davor (30 Tage): … (aus 412 Zeichen) · Letzte
+  7 Tage: …“). Ein Zeitraum erscheint erst ab 10 Zeichen, sonst steht „zu
+  wenig Zeichen (3 von 10)“. Es gibt nie „100 %“, solange Fehler dabei waren.
+  „Kleiner ist schneller“ steht an der Zeile, und ein Hinweis erklärt, dass
+  neue Zeichen den Schnitt anfangs langsamer machen.
+- **F11 im Reiter Statistik kürzer:** Der Vergleich kommt gleich nach dem
+  Gesamtergebnis, die Woche als ein Satz („3 von 4 Tagen geübt, heute noch
+  offen“) statt jeden Tag einzeln.
+- **Kleine Bildschirme:** Die Kopfleiste klappt nicht nur ab 200 %, sondern
+  schon früher zu einer Zeile zusammen, wenn das Fenster sonst höher würde
+  als der Bildschirm. Eine gemerkte offene Kopfleiste öffnet sich nur, wenn
+  der Platz reicht. Das Startfenster ist nie größer als der Bildschirm.
+  Beim Vergrößern der Schrift sagt die Ansage „Kopfleiste zugeklappt.“, wenn
+  sie zuklappt.
+- **Tabellen:** Die gewählte Zeile rollt in den Blick, in der Tabelle und
+  auf der Seite. Sind Spalten verdeckt, sagt die Ansage, dass Pfeil links und
+  rechts weitere Spalten zeigen.
+- **Ansagen und Anzeige:** „Kopfleiste“ und „Weitere Optionen“ sagen
+  „aufgeklappt“ und „zugeklappt“, der Datenordner „wird geöffnet“. Die
+  Geschwindigkeitsangabe in der Statistik bricht bei großer Schrift um
+  statt abgeschnitten zu werden. Der Griff der Rollbalken ist im normalen
+  Thema dezenter, ihre Pfeile sind gut lesbar.
+
 ## 2.55
 
 - **Wiedereinsteiger:** Unter „Weitere Optionen“ gibt es den Haken
