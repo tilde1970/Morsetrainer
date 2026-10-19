@@ -186,7 +186,7 @@ Farnsworth, character and effective speed); a long character set ends
 with “…” there. “Settings … (Ctrl+,)” stays on the right of the same line,
 so font size and contrast remain within reach. The line is a button: click it or
 press Enter or the space bar to open the header (down arrow ▾) and close
-it again; the announcement says “Header opened.” or “Header closed.”
+it again; the announcement says “Header expanded.” or “Header collapsed.”
 With the focus on the line, the announcement first says “collapsed” or
 “expanded”, then lesson, speed and pitch; with your own character set it
 spells it out. The program remembers whether the header was open on exit and

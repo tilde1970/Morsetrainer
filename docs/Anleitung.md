@@ -187,8 +187,8 @@ einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3 · 20/10 WPM · 600 Hz · KMU
 endet dort mit „…“. Rechts in derselben Zeile steht „Einstellungen …
 (Strg+,)“, damit Schriftgröße und Kontrast erreichbar bleiben. Die Zeile ist ein Knopf:
 Klick, Enter oder Leertaste klappt die Kopfleiste auf (Pfeil nach unten ▾)
-und wieder zu, die Ansage sagt „Kopfleiste geöffnet.“ bzw. „Kopfleiste
-geschlossen.“ Steht der Fokus auf der Zeile, sagt die Ansage zuerst „zugeklappt“
+und wieder zu, die Ansage sagt „Kopfleiste aufgeklappt.“ bzw. „Kopfleiste
+zugeklappt.“ Steht der Fokus auf der Zeile, sagt die Ansage zuerst „zugeklappt“
 oder „aufgeklappt“, dann Lektion, Tempo und Tonhöhe; bei eigenem Zeichensatz
 buchstabiert sie ihn. Das Programm merkt sich, ob die Kopfleiste beim Beenden
 offen war, und stellt das bei großer Schrift beim nächsten Start wieder her.

@@ -1565,7 +1565,8 @@ class DecimalTest(AppTestCase):
         self.app._refresh_all_time(with_awards=False)
         panel = self.app.all_time_panel
         self.assertEqual(panel.compare_var.get(),
-                         "Letzte 7 Tage: Reaktion 0,45 s, 100 % richtig · die 30 Tage davor: Reaktion 0,80 s, 100 % richtig")
+                         "Davor (30 Tage): Reaktion 0,80 s, 100 % richtig (aus 20 Zeichen) · "
+                         "Letzte 7 Tage: Reaktion 0,45 s, 100 % richtig (aus 20 Zeichen). Reaktion: kleiner ist schneller.")
         tree = panel.char_tree
         row = dict(zip(tree["columns"], tree.item(tree.get_children()[0])["values"]))
         self.assertEqual(row["trend"], "0,80 → 0,45")
@@ -1858,7 +1859,7 @@ class UsabilityTest(AppTestCase):
                 mock.patch.object(announcer, "say") as say:
             button.invoke()
         opened.assert_called_once_with(app_module.DATA_DIR)
-        say.assert_called_once_with("Datenordner geöffnet.")
+        say.assert_called_once_with("Datenordner wird geöffnet.")
         with mock.patch.object(app_module.storage, "open_with_system", side_effect=FileNotFoundError("xdg-open")), \
                 mock.patch.object(app_module.dialog, "showerror") as error:
             button.invoke()
@@ -1975,7 +1976,7 @@ class UsabilityTest(AppTestCase):
         app.charset_var.set("KMURESNAPTLWI.JZ=FOY")
         with mock.patch.object(announcer, "say") as say:
             app.header_toggle.invoke()
-        say.assert_called_once_with("Kopfleiste geöffnet.")
+        say.assert_called_once_with("Kopfleiste aufgeklappt.")
         self.assertEqual(app.header.winfo_manager(), "pack")
         self.assertTrue(app.header_toggle.cget("text").startswith("▾ "))
         self.assertEqual(app.header_settings.winfo_manager(), "")  # offen steht er in der Leiste

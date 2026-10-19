@@ -805,7 +805,7 @@ class MorseTrainerApp:
                 "Der Datenordner lässt sich nicht öffnen ({error}). Er liegt hier:\n{folder}").format(
                 error=exc, folder=DATA_DIR), parent=self.settings_window)
             return
-        announcer.say(tr("Datenordner geöffnet."))
+        announcer.say(tr("Datenordner wird geöffnet."))
 
     def _update_cpm(self):
         """ZpM-Hinweise zu den WPM-Feldern (PARIS-Umrechnung, core/tempo.py),
@@ -1241,15 +1241,15 @@ class MorseTrainerApp:
 
     def _toggle_header(self) -> None:
         self._place_header(open_=not self.header_open)
-        announcer.say(tr("Kopfleiste geöffnet.") if self.header_open else tr("Kopfleiste geschlossen."))
+        announcer.say(tr("Kopfleiste aufgeklappt.") if self.header_open else tr("Kopfleiste zugeklappt."))
 
     def _toggle_more(self):
         self.more_var.set(not self.more_var.get())
         if self.more_var.get():
-            announcer.say(tr("Weitere Optionen geöffnet."))
+            announcer.say(tr("Weitere Optionen aufgeklappt."))
         else:
             active = self.extras_var.get()
-            announcer.say(tr("Weitere Optionen geschlossen.") + (" " + active if active else ""))
+            announcer.say(tr("Weitere Optionen zugeklappt.") + (" " + active if active else ""))
 
     def _update_more(self):
         """Weitere Optionen ein-/ausklappen; zugeklappt steht daneben, was

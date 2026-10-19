@@ -1993,7 +1993,7 @@ class SmallAnnounceTest(AnnouncerCase):
         self.app.announcer.var.set(True)
         before = self.app.more_var.get()
         self.app._toggle_more()
-        expected = "Weitere Optionen geöffnet." if not before else "Weitere Optionen geschlossen."
+        expected = "Weitere Optionen aufgeklappt." if not before else "Weitere Optionen zugeklappt."
         self.assertTrue(self.pump_until(lambda: any(expected in t for t in self.said)), self.said)
         self.app._toggle_more()
 
