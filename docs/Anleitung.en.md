@@ -453,9 +453,10 @@ callsigns, because in words, phrases and QSOs the context gives away too
 many characters. Runs with band conditions do not count here (section 6).
 
 - **Comparison:** below the total you see how the last 7 days went
-  against the 30 days before: “Last 7 days: reaction 0.48 s, 92 % correct ·
-  the 30 days before: reaction 0.61 s, 88 % correct” (for the reaction,
-  smaller is faster). The averages over all
+  against the 30 days before: “Before (30 days): reaction 0.61 s, 88 %
+  correct (from 412 characters) · Last 7 days: reaction 0.48 s, 92 % correct
+  (from 96 characters)” (for the reaction, smaller is faster). A period
+  appears only from 10 characters. The averages over all
   runs hardly move, because the early, slow answers always count; here you
   see whether you are getting better. The reaction comes only from the
   Characters content of the One by one tab: when copying along it counts from

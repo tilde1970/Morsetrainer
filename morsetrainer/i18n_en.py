@@ -630,7 +630,10 @@ EN.update({
     "{pct} % richtig": "{pct} % correct",
     "Letzte {days} Tage": "Last {days} days",
     "nicht geübt": "not practised",
-    "die {days} Tage davor": "the {days} days before",
+    "Davor ({days} Tage)": "Before ({days} days)",
+    "(aus {n} Zeichen)": "(from {n} characters)",
+    "zu wenig Zeichen": "too few characters",
+    "Reaktion: kleiner ist schneller.": "Reaction: smaller is faster.",
     ("Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
      "schneller. Davor: die {before} Tage vor den letzten {days}. Die Spalte zeigt den Median, erst "
      "ab {count} Messungen auf jeder Seite (sonst „–“)."):

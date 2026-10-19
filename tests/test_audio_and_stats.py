@@ -176,7 +176,7 @@ class StatsTest(unittest.TestCase):
             tests.write_session(lines)
         self.assertEqual(comparison_text(stats.period_comparison()), "")
         write(60, [("K", "K", {"latency_s": 3.0})] * 5)  # vor beiden Zeiträumen
-        write(20, [("K", "K", {"latency_s": 0.8})] * 6 + [("K", "M", {})] * 2 + [("M", "M", {"latency_s": 0.5})])
+        write(20, [("K", "K", {"latency_s": 0.8})] * 6 + [("K", "M", {})] * 2 + [("M", "M", {"latency_s": 0.5})] * 2)
         write(2, [("K", "K", {"latency_s": 0.4})] * 5 + [("K", "K", {"latency_s": 2.0, "latency_assumed": True}),
                                                          ("K", "K", {"latency_s": 9.0}),  # gekappt
                                                          ("K", "K", {"latency_s": float("nan")}),
@@ -185,14 +185,15 @@ class StatsTest(unittest.TestCase):
         write(3, [("K", "K", {"latency_s": 0.1})] * 4, mode="continuous")
         comparison = stats.period_comparison()
         accuracy, latency, count = stats.period_numbers(comparison[stats.BEFORE])
-        self.assertEqual((round(accuracy), round(latency, 3), count), (78, 0.757, 7))  # (6 × 0,8 + 0,5) / 7
+        self.assertEqual((round(accuracy), round(latency, 3), count), (80, 0.725, 8))  # (6 × 0,8 + 2 × 0,5) / 8
         accuracy, latency, count = stats.period_numbers(comparison[stats.RECENT])
         self.assertEqual((accuracy, round(latency, 3), count), (100.0, 1.167, 6))  # (5 × 0,4 + 5) / 6
         self.assertEqual(comparison[stats.RECENT]["good"], 13)  # 9 Einzeln + 4 Am Stück
         self.assertIsNone(stats.char_trend(comparison["chars"], "K"))  # zu wenige Messungen für den Trend
         self.assertEqual(trend_text((0.8, 0.4)), "0,80 → 0,40")
         self.assertEqual(comparison_text(comparison),
-                         "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig · die 30 Tage davor: Reaktion 0,76 s, 78 % richtig")
+                         "Davor (30 Tage): Reaktion 0,72 s, 80 % richtig (aus 10 Zeichen) · "
+                         "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig (aus 13 Zeichen). Reaktion: kleiner ist schneller.")
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
 

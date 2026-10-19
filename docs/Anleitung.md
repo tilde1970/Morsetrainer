@@ -458,8 +458,10 @@ bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen.
 Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
 
 - **Vergleich:** Unter der Gesamtzahl steht, wie es in den letzten 7 Tagen
-  lief, gegen die 30 Tage davor: „Letzte 7 Tage: Reaktion 0,48 s, 92 %
-  richtig · die 30 Tage davor: Reaktion 0,61 s, 88 % richtig“ (bei der Reaktion ist kleiner schneller). Die
+  lief, gegen die 30 Tage davor: „Davor (30 Tage): Reaktion 0,61 s, 88 %
+  richtig (aus 412 Zeichen) · Letzte 7 Tage: Reaktion 0,48 s, 92 % richtig
+  (aus 96 Zeichen)“ (bei der Reaktion ist kleiner schneller). Ein Zeitraum
+  erscheint erst ab 10 Zeichen. Die
   Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
   langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
   Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim

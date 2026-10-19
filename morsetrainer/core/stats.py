@@ -387,6 +387,8 @@ REACTION_MODE = "single"
 # Trend je Zeichen erst ab so vielen gemessenen Reaktionen auf jeder Seite;
 # darunter ist ein Unterschied meist Zufall.
 MIN_TREND_COUNT = 20
+# Die Vergleichszeile nennt einen Zeitraum erst ab so vielen Antworten.
+MIN_COMPARE_COUNT = 10
 RECENT, BEFORE = "recent", "before"
 
 

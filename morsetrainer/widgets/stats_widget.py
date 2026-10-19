@@ -12,21 +12,33 @@ from morsetrainer.widgets import theme
 
 
 def comparison_text(comparison: dict) -> str:
-    """„Letzte 7 Tage: Reaktion 0,48 s, 92 % richtig · die 30 Tage davor:
-    0,61 s, 88 %“ (stats.period_comparison); leer ohne Durchgänge."""
+    """„Davor (30 Tage): Reaktion 0,61 s, 88 % richtig (aus 412 Zeichen) · Letzte
+    7 Tage: Reaktion 0,48 s, 92 % richtig (aus 96 Zeichen). Reaktion: kleiner ist
+    schneller.“ (stats.period_comparison); leer, wenn kein Zeitraum genug
+    Zeichen hat."""
     def numbers(period):
         accuracy, latency, _ = stats.period_numbers(period)
+        # Nie auf 100 % runden, solange es Fehler gab.
+        pct = 100 if accuracy >= 100 else min(int(accuracy + 0.5), 99)
         parts = [] if latency is None else [tr("Reaktion {s} s").format(s=number(latency, 2))]
-        return parts + ([] if accuracy is None else [tr("{pct} % richtig").format(pct=number(accuracy, 0))])
+        return ", ".join(parts + [tr("{pct} % richtig").format(pct=pct)]
+                         ) + " " + tr("(aus {n} Zeichen)").format(n=period["good"] + period["wrong"])
 
-    recent, before = numbers(comparison[stats.RECENT]), numbers(comparison[stats.BEFORE])
-    if not recent and not before:
+    def enough(period):
+        return period["good"] + period["wrong"] >= stats.MIN_COMPARE_COUNT
+
+    recent, before = comparison[stats.RECENT], comparison[stats.BEFORE]
+    if not enough(recent) and not enough(before):
         return ""
+    parts = []
+    if enough(before):
+        parts.append(tr("Davor ({days} Tage)").format(days=stats.BEFORE_DAYS) + ": " + numbers(before))
     head = tr("Letzte {days} Tage").format(days=stats.COMPARE_DAYS)
-    text = f"{head}: " + (", ".join(recent) if recent else tr("nicht geübt"))
-    if before:
-        text += " · " + tr("die {days} Tage davor").format(days=stats.BEFORE_DAYS) + ": " + ", ".join(before)
-    return text
+    if enough(recent):
+        parts.append(f"{head}: " + numbers(recent))
+    else:
+        parts.append(f"{head}: " + (tr("zu wenig Zeichen") if recent["good"] + recent["wrong"] else tr("nicht geübt")))
+    return " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
 
 
 def trend_text(trend) -> str:
