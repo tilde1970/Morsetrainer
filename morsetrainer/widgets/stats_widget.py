@@ -58,11 +58,12 @@ class StatsPanel:
         summary = ttk.Frame(box)
         summary.pack(fill="x", pady=(0, 6))
         self.stats_var = tk.StringVar(value="0 / 0 (0 %)")
-        ttk.Label(summary, textvariable=self.stats_var, style="Score.TLabel").pack(side="left")
+        ttk.Label(summary, textvariable=self.stats_var, style="Score.TLabel").pack(anchor="w")
         self.speed_var = tk.StringVar(value=tr("Ø effektive Geschwindigkeit: –"))
-        # Bricht bei großer Schrift um, statt rechts abgeschnitten zu werden.
-        self.speed_label = theme.fit_wrap(ttk.Label(summary, textvariable=self.speed_var), 420)
-        self.speed_label.pack(side="left", padx=(16, 0))
+        # Unter dem Ergebnis, damit der Umbruch bei großer Schrift vom linken Rand
+        # ausgeht (neben ihm ließe sich der Platz erst nach dem Umbruch messen).
+        self.speed_label = theme.fit_wrap(ttk.Label(summary, textvariable=self.speed_var), 560)
+        self.speed_label.pack(anchor="w")
         self.compare_var = tk.StringVar(value="")
         if compare:
             # Ohne Durchgänge leer und ausgeblendet (sonst bliebe eine Lücke).
