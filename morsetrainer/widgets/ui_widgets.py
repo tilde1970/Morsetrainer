@@ -219,6 +219,8 @@ class ScrollableFrame:
         # Teils: hinrollen, sonst arbeitet man bei großer Schrift blind. Die
         # Bindung am Fenster sieht FocusIn aller Bedienelemente darin.
         parent.winfo_toplevel().bind("<FocusIn>", self._follow_focus, add="+")
+        # Ebenso die gewählte Zeile einer hohen Tabelle (bei großer Schrift).
+        parent.winfo_toplevel().bind("<<TreeviewSelect>>", self._follow_row, add="+")
 
     def _follow_focus(self, event):
         widget = event.widget
@@ -226,6 +228,21 @@ class ScrollableFrame:
             return
         try:
             self.show(widget)
+        except tk.TclError:
+            pass
+
+    def _follow_row(self, event):
+        tree = event.widget
+        if not isinstance(tree, ttk.Treeview) or not str(tree).startswith(str(self.inner) + "."):
+            return
+        try:
+            if not tree.selection():
+                return
+            tree.update_idletasks()
+            box = tree.bbox(tree.selection()[0])  # leer, solange die Zeile nicht zu sehen ist
+            if box:
+                top = tree.winfo_rooty() - self.inner.winfo_rooty() + box[1]
+                self._reveal(top, top + box[3])
         except tk.TclError:
             pass
 
@@ -245,12 +262,15 @@ class ScrollableFrame:
     def show(self, widget):
         """So weit rollen, dass `widget` ganz zu sehen ist (wenn es passt,
         sonst sein Anfang)."""
+        top = widget.winfo_rooty() - self.inner.winfo_rooty()
+        self._reveal(top, top + widget.winfo_height())
+
+    def _reveal(self, top, bottom):
+        """Den Bereich von `top` bis `bottom` (im Inhalt) ins Bild rollen."""
         total = self.inner.winfo_height()
         visible = self.canvas.winfo_height()
         if total <= visible or visible <= 1:
             return
-        top = widget.winfo_rooty() - self.inner.winfo_rooty()
-        bottom = top + widget.winfo_height()
         shown_top = self.canvas.canvasy(0)
         margin = FOCUS_MARGIN
         if top - margin < shown_top:

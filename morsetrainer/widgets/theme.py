@@ -254,12 +254,24 @@ def _tree_focus_row(event) -> None:
     tree = event.widget
     try:
         if tree.focus():
+            tree.see(tree.focus())
             return
         rows = tree.selection() or tree.get_children()
         if rows:
             tree.focus(rows[0])
             if not tree.selection():
                 tree.selection_set(rows[0])
+            tree.see(rows[0])
+    except tk.TclError:
+        pass
+
+
+def _tree_see_selection(event) -> None:
+    """Gewählte Zeile in der Tabelle ins Bild rollen (auch bei Wahl per Programm)."""
+    tree = event.widget
+    try:
+        if tree.selection():
+            tree.see(tree.selection()[0])
     except tk.TclError:
         pass
 
@@ -317,6 +329,7 @@ def apply(root) -> None:
     # Tabellen: Die Pfeiltasten wandern von der aktuellen Zeile aus; ohne
     # eine (mit Tab hineingesprungen) täten sie nichts.
     root.bind_class("Treeview", "<FocusIn>", _tree_focus_row, add="+")
+    root.bind_class("Treeview", "<<TreeviewSelect>>", _tree_see_selection, add="+")
     # In Textfeldern (Notizen, eigener Text) führt Tab weiter, statt ein
     # Tabzeichen einzufügen; wie Tk selbst über tk::TabToWindow, damit das
     # Ziel <<TraverseIn>> bekommt (Fokus-Ansage).

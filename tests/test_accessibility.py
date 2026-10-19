@@ -838,6 +838,29 @@ class KeyboardTest(AppTestCase):
         self.assertTrue(visible(entries[0]))
         self.assertEqual(scroller.canvas.yview()[0], 0.0)
 
+    def test_selected_table_row_is_scrolled_into_view(self):
+        # Eine Tabelle mit eigenem Rollbalken zeigt die gewählte Zeile, und eine
+        # Tabelle, die höher ist als das Fenster, rollt die Seite zur Zeile.
+        from morsetrainer.widgets.ui_widgets import ScrollableFrame
+        window = tk.Toplevel(self.root)
+        self.addCleanup(window.destroy)
+        window.geometry("300x150")
+        scroller = ScrollableFrame(window)
+        small = ttk.Treeview(scroller.inner, columns=("a",), show="headings", height=3)
+        small.pack()
+        tall = ttk.Treeview(scroller.inner, columns=("a",), show="headings", height=30)
+        tall.pack()
+        small_rows = [small.insert("", "end", values=(n,)) for n in range(20)]
+        tall_rows = [tall.insert("", "end", values=(n,)) for n in range(30)]
+        window.update()
+        small.selection_set(small_rows[-1])
+        window.update()
+        self.assertTrue(small.bbox(small_rows[-1]))
+        tall.selection_set(tall_rows[-1])
+        window.update()
+        top = tall.winfo_rooty() - scroller.canvas.winfo_rooty() + tall.bbox(tall_rows[-1])[1]
+        self.assertTrue(0 <= top < scroller.canvas.winfo_height(), top)
+
     def test_enter_presses_a_focused_button(self):
         # ttk kennt von sich aus nur die Leertaste; Enter soll genauso gehen
         # (z. B. „Schließen“ im Einstellungsfenster nach dem Durchtabben).
