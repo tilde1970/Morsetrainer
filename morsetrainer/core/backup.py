@@ -46,7 +46,7 @@ DB_COMPANIONS = ("-wal", "-shm", "-journal")
 
 def _wanted(path: Path) -> bool:
     return (path.is_file() and not path.name.endswith(".tmp") and ".defekt-" not in path.name
-            and not path.name.endswith(DB_COMPANIONS))
+            and ".vor-v" not in path.name and not path.name.endswith(DB_COMPANIONS))
 
 
 def _members(data_dir: Path):

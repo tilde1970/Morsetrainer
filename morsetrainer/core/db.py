@@ -47,6 +47,13 @@ class SchemaTooNew(sqlite3.OperationalError):
     unberührt (wie eine gesperrte), das Programm schreibt nicht hinein."""
 
 
+class MigrationError(sqlite3.OperationalError):
+    """Die Migration einer älteren Datei ist gescheitert. Wie bei SchemaTooNew
+    bleibt die Datei unberührt: Ein Fehler im Schritt (auch ein
+    IntegrityError) macht sie nicht zu einer „kaputten“, die beiseitegelegt
+    würde."""
+
+
 # MIGRATIONS[n](conn) hebt eine Datenbank von Schema n auf n + 1 (nur die
 # Änderung, ohne eigene Transaktion); SCHEMA beschreibt den neuesten Stand.
 MIGRATIONS = {}
@@ -170,6 +177,10 @@ def _open(file: Path) -> sqlite3.Connection:
         # Eine Datei, die keine Datenbank ist, fällt erst beim ersten Befehl auf.
         if conn.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise sqlite3.DatabaseError("quick_check")
+        # Eine zu neue Datei bleibt unberührt, auch ihr Journal-Modus.
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        if version > SCHEMA_VERSION:
+            raise SchemaTooNew(f"Datenbank hat Schema {version}, dieses Programm kennt nur {SCHEMA_VERSION}")
         # WAL braucht gemeinsamen Speicher und arbeitet auf Netzlaufwerken
         # unzuverlässig; dort das klassische Journal (ein Schreiber zur Zeit).
         mode = "DELETE" if _on_network_drive(file) else "WAL"
@@ -179,14 +190,11 @@ def _open(file: Path) -> sqlite3.Connection:
             pass  # z. B. ein anderes Fenster hält die Datei noch im alten Modus offen
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA foreign_keys = ON")
-        version = conn.execute("PRAGMA user_version").fetchone()[0]
-        if version > SCHEMA_VERSION:
-            raise SchemaTooNew(f"Datenbank hat Schema {version}, dieses Programm kennt nur {SCHEMA_VERSION}")
         if version == 0:
             conn.executescript(SCHEMA)
             conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         elif version < SCHEMA_VERSION:
-            _migrate(conn, file, version)
+            _migrate(conn, file)
     except Error:
         conn.close()
         raise
@@ -216,27 +224,57 @@ def _on_network_drive(file: Path) -> bool:
         return False
 
 
-def _migrate(conn: sqlite3.Connection, file: Path, version: int) -> None:
+def _migrate(conn: sqlite3.Connection, file: Path) -> None:
     """Hebt eine ältere Datenbank Schritt für Schritt auf SCHEMA_VERSION.
-    Vorher bleibt eine Kopie "<Name>.vor-v<Nummer>" liegen; jeder Schritt
-    läuft samt neuer user_version in einer Transaktion, bei einem Fehler
-    bleibt der Stand vor diesem Schritt."""
-    copy = sqlite3.connect(file.with_name(f"{file.name}.vor-v{version}"))
-    try:
-        conn.backup(copy)
-    finally:
-        copy.close()
-    while version < SCHEMA_VERSION:
+    Jeder Schritt läuft samt neuer user_version in einer Transaktion; bei
+    einem Fehler bleibt der Stand vor diesem Schritt, und es geht
+    MigrationError weiter (die Datei wird nicht beiseitegelegt). Die Version
+    wird unter der Schreibsperre gelesen: Hat ein anderes Programmfenster
+    inzwischen migriert, läuft kein Schritt ein zweites Mal. Vor dem ersten
+    Schritt bleibt eine Kopie "<Name>.vor-v<Nummer>" liegen."""
+    copied = False
+    while True:
         conn.execute("BEGIN IMMEDIATE")
         try:
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            if version >= SCHEMA_VERSION:
+                conn.execute("ROLLBACK")
+                return
+            if not copied:
+                _copy_before_migration(file, version)
+                copied = True
             MIGRATIONS[version](conn)
             conn.execute(f"PRAGMA user_version = {version + 1}")
             conn.execute("COMMIT")
-        except BaseException:
+        except BaseException as exc:
             if conn.in_transaction:
                 conn.execute("ROLLBACK")
+            if isinstance(exc, Exception):
+                raise MigrationError(f"Migration von Schema {version}: {exc!r}") from exc
             raise
-        version += 1
+
+
+def _copy_before_migration(file: Path, version: int) -> None:
+    """Stimmige Kopie des Stands vor der Migration nach "<Name>.vor-v<version>".
+    Gelesen wird über eine zweite, schreibgeschützte Verbindung: Die
+    Schreibsperre der Migration hindert Leser nicht, und die Kopie enthält
+    auch, was noch in der WAL steht. Sie entsteht erst unter einem
+    Hilfsnamen und ersetzt eine ältere erst, wenn sie geprüft ist."""
+    target = file.with_name(f"{file.name}.vor-v{version}")
+    partial = target.with_name(target.name + ".tmp")
+    source = sqlite3.connect(file.as_uri() + "?mode=ro", uri=True, timeout=BUSY_TIMEOUT_MS / 1000)
+    try:
+        dest = sqlite3.connect(partial)
+        try:
+            source.backup(dest)
+            if dest.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise sqlite3.DatabaseError("Kopie vor der Migration ist beschädigt")
+        finally:
+            dest.close()
+        os.replace(partial, target)
+    finally:
+        source.close()
+        partial.unlink(missing_ok=True)
 
 
 def _set_aside(file: Path) -> None:

@@ -64,6 +64,12 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(info["version"], "9.9")
         self.assertEqual(backup.read_info(self.zip)["format"], backup.FORMAT)
 
+    def test_export_leaves_out_copies_made_before_a_migration(self):
+        (self.old / "stats" / f"{db.DB_FILE_NAME}.vor-v1").write_bytes(b"alte Kopie")
+        backup.export_data(self.zip, "9.9", self.old)
+        with zipfile.ZipFile(self.zip) as archive:
+            self.assertFalse([n for n in archive.namelist() if ".vor-v" in n])
+
     def test_import_replaces_data_and_keeps_previous(self):
         backup.export_data(self.zip, "9.9", self.old)
         (self.new / "callsigns.scp").write_text("DL4YM\n", encoding="utf-8")

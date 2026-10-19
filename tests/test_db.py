@@ -297,6 +297,137 @@ class DbTest(unittest.TestCase):
         self.assertEqual(raw.execute("SELECT name FROM sqlite_master WHERE name = 'neu'").fetchall(), [])
         raw.close()
 
+    def migrate_with(self, step, version=2):
+        """Öffnet die Datenbank mit `step` als Migration von Schema 1."""
+        return (mock.patch.object(db, "SCHEMA_VERSION", version), mock.patch.dict(db.MIGRATIONS, {1: step}))
+
+    def old_database(self, **state):
+        """Datenbank im Schema 1 mit Zuständen; danach geschlossen."""
+        for key, value in state.items():
+            db.save_state(key, value)
+        db.close()
+
+    def test_every_version_has_a_migration_step(self):
+        self.assertEqual(set(db.MIGRATIONS), set(range(1, db.SCHEMA_VERSION)))
+
+    def test_constraint_error_in_a_step_does_not_set_the_file_aside(self):
+        # Ein IntegrityError ist eine DatabaseError: Er darf die gesunde Datei
+        # nicht zur „kaputten“ machen, die beiseitegelegt wird.
+        self.old_database(daily={"days": {}})
+
+        def step(conn):
+            conn.execute("CREATE TABLE neu (x INTEGER NOT NULL)")
+            conn.execute("INSERT INTO neu VALUES (NULL)")
+        patches = self.migrate_with(step)
+        with patches[0], patches[1]:
+            with self.assertRaises(db.MigrationError):
+                db.save_state("daily", {"days": {"x": 1}})
+            with self.assertRaises(db.Error):
+                db._connection()  # auch beim nächsten Versuch: nicht beiseitegelegt
+        self.assertEqual(list(self.file.parent.glob("*.defekt-*")), [])
+        db.close()
+        raw = sqlite3.connect(self.file)
+        self.assertEqual(raw.execute("PRAGMA user_version").fetchone(), (1,))
+        self.assertEqual(raw.execute("SELECT data FROM state").fetchone(), ('{"days": {}}',))
+        raw.close()
+
+    def test_missing_step_is_a_migration_error_and_leaves_the_file(self):
+        self.old_database(daily={"days": {}})
+        with mock.patch.object(db, "SCHEMA_VERSION", 2), mock.patch.dict(db.MIGRATIONS, {}, clear=True):
+            with self.assertRaises(db.MigrationError):
+                db.save_state("daily", {})
+        self.assertEqual(list(self.file.parent.glob("*.defekt-*")), [])
+        db.close()
+        self.assertEqual(db.load_state("daily", {}), {"days": {}})
+
+    def test_overlapping_migration_runs_the_step_once(self):
+        # Zwei Programmfenster öffnen dieselbe alte Datei fast gleichzeitig:
+        # Der Schritt läuft einmal, das zweite Fenster wartet und übernimmt.
+        import threading
+        import time
+        self.old_database(daily={"days": {}})
+        calls, errors, results = [], [], {}
+
+        def step(conn):
+            calls.append(1)
+            time.sleep(0.8)
+            conn.execute("CREATE TABLE neu (x INTEGER)")
+
+        def open_window(name):
+            try:
+                conn = db._open(self.file)
+                results[name] = conn.execute("PRAGMA user_version").fetchone()[0]
+                conn.close()
+            except Exception as exc:  # noqa: BLE001 (der Test meldet jeden)
+                errors.append((name, repr(exc)))
+        patches = self.migrate_with(step)
+        with patches[0], patches[1]:
+            first = threading.Thread(target=open_window, args=("a",))
+            first.start()
+            time.sleep(0.3)
+            open_window("b")
+            first.join()
+        self.assertEqual(errors, [])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(results, {"a": 2, "b": 2})
+        # Die Kopie hält den Stand vor dem Schritt.
+        copy = sqlite3.connect(self.file.with_name("morsetrainer.db.vor-v1"))
+        self.assertEqual(copy.execute("SELECT name FROM sqlite_master WHERE name = 'neu'").fetchall(), [])
+        self.assertEqual(copy.execute("PRAGMA user_version").fetchone(), (1,))
+        copy.close()
+
+    def test_copy_before_migration_replaces_an_older_one_without_leftovers(self):
+        self.old_database(daily={"days": {"neu": 1}})
+        old_copy = self.file.with_name("morsetrainer.db.vor-v1")
+        raw = sqlite3.connect(old_copy)
+        raw.execute("CREATE TABLE alt (x)")
+        raw.close()
+        patches = self.migrate_with(lambda conn: None)
+        with patches[0], patches[1]:
+            self.assertEqual(db.load_state("daily", {}), {"days": {"neu": 1}})
+        copy = sqlite3.connect(old_copy)
+        self.assertEqual(copy.execute("SELECT data FROM state").fetchone(), ('{"days": {"neu": 1}}',))
+        self.assertEqual(copy.execute("SELECT name FROM sqlite_master WHERE name = 'alt'").fetchall(), [])
+        copy.close()
+        self.assertEqual(list(self.file.parent.glob("*.tmp")), [])
+
+    def test_failed_copy_keeps_the_old_copy_and_the_file(self):
+        self.old_database(daily={"days": {}})
+        old_copy = self.file.with_name("morsetrainer.db.vor-v1")
+        raw = sqlite3.connect(old_copy)
+        raw.execute("CREATE TABLE alt (x)")
+        raw.close()
+        patches = self.migrate_with(lambda conn: None)
+        real = sqlite3.connect
+
+        def connect(target, *args, **kwargs):
+            if str(target).endswith(".vor-v1.tmp"):  # Platte voll beim Anlegen der Kopie
+                raise sqlite3.OperationalError("database or disk is full")
+            return real(target, *args, **kwargs)
+        with patches[0], patches[1], mock.patch.object(db.sqlite3, "connect", connect):
+            with self.assertRaises(db.MigrationError):
+                db.save_state("daily", {})
+        raw = sqlite3.connect(old_copy)
+        self.assertEqual(raw.execute("SELECT name FROM sqlite_master WHERE name = 'alt'").fetchall(), [("alt",)])
+        raw.close()
+        self.assertEqual(list(self.file.parent.glob("*.defekt-*")), [])
+        db.close()
+        raw = sqlite3.connect(self.file)
+        self.assertEqual(raw.execute("PRAGMA user_version").fetchone(), (1,))
+        raw.close()
+
+    def test_newer_schema_keeps_the_journal_mode(self):
+        self.old_database(daily={"days": {}})
+        raw = sqlite3.connect(self.file)
+        raw.execute("PRAGMA journal_mode = DELETE")
+        raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
+        raw.close()
+        before = self.file.read_bytes()[:100]
+        with self.assertRaises(db.SchemaTooNew):
+            db._connection()
+        db.close()
+        self.assertEqual(self.file.read_bytes()[:100], before)  # Kopfbytes 18/19: Journal-Modus
+
     def test_close_empties_the_wal(self):
         db.save_state("x", {"a": 1})
         db.close()
