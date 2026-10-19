@@ -1249,7 +1249,11 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   speed, practice time per day and the awards achieved. Every line is
   saved immediately; a crash costs at most the current one. If the file is
   damaged, it is set aside as `morsetrainer.db.defekt-<time>` and a new
-  one is started.
+  one is started. If a newer version needs a different database format, a
+  copy `morsetrainer.db.vor-v<number>` is left behind first; it is not
+  part of the data backup and may be deleted once everything works. An
+  older version does not open a database from a newer one and leaves it
+  untouched.
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
   tables from the Network tab (`…-netzwerk.csv`). Practice data from
   version 2.27 and older (separate files) is taken over into the database

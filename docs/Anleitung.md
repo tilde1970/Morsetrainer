@@ -1275,6 +1275,11 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Zeile wird sofort gespeichert; ein Absturz kostet höchstens die
   laufende. Ist die Datei beschädigt, wird sie als
   `morsetrainer.db.defekt-<Zeit>` beiseitegelegt und eine neue begonnen.
+  Braucht eine neuere Programmfassung ein anderes Format der Datenbank,
+  bleibt davor eine Kopie `morsetrainer.db.vor-v<Nummer>` liegen; sie
+  kommt nicht in die Datensicherung und darf gelöscht werden, wenn alles
+  läuft. Eine Datenbank aus einer neueren Fassung öffnet eine ältere
+  Fassung nicht und lässt sie unberührt.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start
