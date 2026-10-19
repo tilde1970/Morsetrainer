@@ -193,7 +193,9 @@ With the focus on the line, the announcement first says “collapsed” or
 spells it out. The program remembers whether the header was open on exit and
 restores that at the next start with a large font, provided the screen is tall
 enough (the header then takes at most about a third of the height); otherwise it
-starts collapsed so that some of the tab stays visible.
+starts collapsed so that some of the tab stays visible. If you switch to the compact
+layout with Ctrl+Plus, the announcement adds “Header collapsed.”; a header you opened by
+hand stays open while you zoom, as long as there is room.
 When it is open, Tab moves from the button into the fields; Shift+Tab in
 the first field (Koch lesson) takes you back to the button. Esc does not
 close the header. At 200 % the daily practice bar shows only the weekly
@@ -459,7 +461,8 @@ many characters. Runs with band conditions do not count here (section 6).
   against the 30 days before: “Before (30 days): reaction 0.61 s, 88 %
   correct (from 412 characters) · Last 7 days: reaction 0.48 s, 92 % correct
   (from 96 characters)” (for the reaction, smaller is faster). A period
-  appears only from 10 characters. The averages over all
+  appears only from 10 characters; a smaller one reads “too few characters (n of
+  10)”, with no practice “not practised”. The averages over all
   runs hardly move, because the early, slow answers always count; here you
   see whether you are getting better. The reaction comes only from the
   Characters content of the One by one tab: when copying along it counts from
@@ -467,10 +470,13 @@ many characters. Runs with band conditions do not count here (section 6).
   exercises. F11 reads the line too.
 - **This week:** the week strip with stars and the weekly goal as in the
   daily practice bar; with a large font it appears only here. F11 reads it
-  with day names (“Monday 3 stars, Tuesday practised freely”).
+  in one sentence (“practised on 3 of 4 days, today still open”; on the
+  first day of the week only “today still open” or “practised today”).
 - **before → now (s):** the reaction per character (“0.80 → 0.45”, smaller
   is faster), as a median so that a single long answer does not shift
-  everything; only from 20 measurements on each side, otherwise “–”.
+  everything; only from 20 measurements on each side, otherwise “–”. “Now” is
+  the last 7 days, “before” the 30 days before. New characters make the
+  average slower at first; that is normal.
 - **Ø reaction:** the time from the last dot or dash to your input,
   averaged over the correct answers – independent of character length and
   speed. Measured in Characters, when copying without repeating, in
@@ -1052,7 +1058,8 @@ are on.
   tone. The “Characters” field reads its content character by character.
 - **Tables** (statistics, awards, contest log): when you Tab into one, the
   first row is selected; with the arrow keys each row is read out with the
-  column names.
+  column names. If columns are hidden, the announcement adds that the left and
+  right arrow keys show more columns.
 - All keyboard shortcuts are in section 9.
 
 ### Seeing

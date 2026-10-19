@@ -194,7 +194,9 @@ oder „aufgeklappt“, dann Lektion, Tempo und Tonhöhe; bei eigenem Zeichensat
 buchstabiert sie ihn. Das Programm merkt sich, ob die Kopfleiste beim Beenden
 offen war, und stellt das bei großer Schrift beim nächsten Start wieder her, sofern der
 Bildschirm hoch genug ist (die Leiste nimmt dann höchstens gut ein Drittel der Höhe ein);
-sonst startet sie zugeklappt, damit vom Reiter etwas zu sehen bleibt.
+sonst startet sie zugeklappt, damit vom Reiter etwas zu sehen bleibt. Wechselst du mit Strg+Plus
+in den Kompaktmodus, sagt die Ansage zusätzlich „Kopfleiste zugeklappt.“; eine von Hand
+aufgeklappte Kopfleiste bleibt beim Zoomen offen, solange der Platz reicht.
 Aufgeklappt führt Tab vom Knopf in die Felder; Umschalt+Tab
 im ersten Feld (Koch-Lektion) führt zurück zum Knopf. Esc klappt die
 Kopfleiste nicht zu. Die Leiste der Tagesübung zeigt bei 200 % nur das
@@ -467,16 +469,20 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   erscheint erst ab 10 Zeichen. Die
   Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
   langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
-  Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
+  Ist ein Zeitraum zu klein, steht dort „zu wenig Zeichen (n von 10)“, bei
+  keiner Übung „nicht geübt“. Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
   fortlaufenden Mitschreiben zählt sie ab deiner vorigen Taste und wäre
   nicht vergleichbar. Die Trefferquote zählt alle Übungen. F11 liest die
   Zeile mit vor.
 - **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
   in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
-  liest ihn mit Tagesnamen vor („Montag 3 Sterne, Dienstag frei geübt“).
+  liest ihn in einem Satz vor („3 von 4 Tagen geübt, heute noch offen“; am
+  ersten Wochentag nur „heute noch offen“ bzw. „heute geübt“).
 - **davor → jetzt (s):** die Reaktion je Zeichen („0,80 → 0,45“, kleiner
   ist schneller), als Median, damit eine einzelne lange Antwort nicht alles
-  verschiebt; erst ab 20 Messungen auf jeder Seite, sonst „–“.
+  verschiebt; erst ab 20 Messungen auf jeder Seite, sonst „–“. „jetzt“ sind
+  die letzten 7 Tage, „davor“ die 30 Tage davor. Neue Zeichen machen den
+  Schnitt anfangs langsamer; das ist normal.
 - **Ø Reaktion:** die Zeit vom letzten Punkt oder Strich bis zu deiner
   Eingabe, gemittelt über die richtigen Antworten – unabhängig von
   Zeichenlänge und Tempo. Gemessen bei Zeichen, beim Mitschreiben ohne
@@ -1073,7 +1079,8 @@ Bedienelement, auf dem du gerade stehst.
   Zeichen vor.
 - **Tabellen** (Statistik, Diplome, Contest-Log): Springst du mit Tab
   hinein, ist die erste Zeile gewählt; mit den Pfeiltasten wird jede Zeile
-  mit den Spaltennamen vorgelesen.
+  mit den Spaltennamen vorgelesen. Sind Spalten verdeckt, sagt die Ansage
+  beim Fokus dazu, dass Pfeil links und rechts weitere Spalten zeigen.
 - Alle Tastenkürzel stehen in Abschnitt 9.
 
 ### Sehen
