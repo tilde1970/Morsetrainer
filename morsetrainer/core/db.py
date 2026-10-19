@@ -170,7 +170,13 @@ def _open(file: Path) -> sqlite3.Connection:
         # Eine Datei, die keine Datenbank ist, fällt erst beim ersten Befehl auf.
         if conn.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise sqlite3.DatabaseError("quick_check")
-        conn.execute("PRAGMA journal_mode = WAL")
+        # WAL braucht gemeinsamen Speicher und arbeitet auf Netzlaufwerken
+        # unzuverlässig; dort das klassische Journal (ein Schreiber zur Zeit).
+        mode = "DELETE" if _on_network_drive(file) else "WAL"
+        try:
+            conn.execute(f"PRAGMA journal_mode = {mode}")
+        except sqlite3.OperationalError:
+            pass  # z. B. ein anderes Fenster hält die Datei noch im alten Modus offen
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA foreign_keys = ON")
         version = conn.execute("PRAGMA user_version").fetchone()[0]
@@ -185,6 +191,29 @@ def _open(file: Path) -> sqlite3.Connection:
         conn.close()
         raise
     return conn
+
+
+NETWORK_FILESYSTEMS = ("nfs", "nfs4", "cifs", "smb", "smb2", "smb3", "smbfs", "afs", "9p", "ceph",
+                       "glusterfs", "fuse.sshfs")
+
+
+def _on_network_drive(file: Path) -> bool:
+    """Liegt `file` auf einem Netzlaufwerk? Erkannt werden UNC-Pfade (Windows)
+    und Netzdateisysteme in /proc/mounts (Linux); sonst gilt "nein"."""
+    try:
+        resolved = file.resolve()
+        if str(resolved).startswith("\\\\"):
+            return True
+        best, kind = "", ""
+        with open("/proc/mounts", encoding="utf-8") as mounts:
+            for line in mounts:
+                parts = line.split()
+                point = parts[1].replace("\\040", " ") if len(parts) > 2 else ""
+                if len(point) >= len(best) and resolved.is_relative_to(point):
+                    best, kind = point, parts[2]
+        return kind in NETWORK_FILESYSTEMS
+    except (OSError, ValueError):
+        return False
 
 
 def _migrate(conn: sqlite3.Connection, file: Path, version: int) -> None:

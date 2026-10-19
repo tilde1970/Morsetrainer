@@ -303,6 +303,21 @@ class DbTest(unittest.TestCase):
         wal = self.file.with_name(self.file.name + "-wal")
         self.assertFalse(wal.exists() and wal.stat().st_size > 0)
 
+    def test_network_drive_uses_classic_journal(self):
+        db.close()
+        with mock.patch.object(db, "_on_network_drive", return_value=True):
+            db.save_state("x", {})
+            self.assertEqual(db._read("PRAGMA journal_mode"), [("delete",)])
+        db.close()
+        db.save_state("x", {})  # wieder lokal: zurück auf WAL
+        self.assertEqual(db._read("PRAGMA journal_mode"), [("wal",)])
+
+    def test_network_drive_detection(self):
+        mounts = "srv:/home /home nfs4 rw 0 0\n/dev/sda1 / ext4 rw 0 0\n"
+        with mock.patch("builtins.open", mock.mock_open(read_data=mounts)):
+            self.assertTrue(db._on_network_drive(Path("/home/x/stats/m.db")))
+            self.assertFalse(db._on_network_drive(Path("/opt/m.db")))
+
 
 if __name__ == "__main__":
     unittest.main()
