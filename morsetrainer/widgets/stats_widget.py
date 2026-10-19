@@ -58,7 +58,9 @@ class StatsPanel:
         self.stats_var = tk.StringVar(value="0 / 0 (0 %)")
         ttk.Label(summary, textvariable=self.stats_var, style="Score.TLabel").pack(side="left")
         self.speed_var = tk.StringVar(value=tr("Ø effektive Geschwindigkeit: –"))
-        ttk.Label(summary, textvariable=self.speed_var).pack(side="left", padx=(16, 0))
+        # Bricht bei großer Schrift um, statt rechts abgeschnitten zu werden.
+        self.speed_label = theme.fit_wrap(ttk.Label(summary, textvariable=self.speed_var), 420)
+        self.speed_label.pack(side="left", padx=(16, 0))
         self.compare_var = tk.StringVar(value="")
         if compare:
             # Ohne Durchgänge leer und ausgeblendet (sonst bliebe eine Lücke).

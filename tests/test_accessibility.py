@@ -855,6 +855,17 @@ class KeyboardTest(AppTestCase):
         window.update()
         self.assertNotIn("Pfeil links und rechts", announcer.describe(tree))
 
+    def test_statistics_summary_wraps_instead_of_being_cut_off(self):
+        from morsetrainer.widgets.stats_widget import StatsPanel
+        window = tk.Toplevel(self.root)
+        self.addCleanup(window.destroy)
+        window.geometry("360x300")
+        panel = StatsPanel(window)
+        panel.speed_var.set("Ø effektive Geschwindigkeit: 123,4 WPM · 456 ZpM gemessen")
+        summary = panel.speed_label.master
+        window.update()
+        self.assertLessEqual(panel.speed_label.winfo_x() + panel.speed_label.winfo_reqwidth(), summary.winfo_width())
+
     def test_selected_table_row_is_scrolled_into_view(self):
         # Eine Tabelle mit eigenem Rollbalken zeigt die gewählte Zeile, und eine
         # Tabelle, die höher ist als das Fenster, rollt die Seite zur Zeile.
