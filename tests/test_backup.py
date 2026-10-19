@@ -2,6 +2,7 @@
 import json
 import tempfile
 import unittest
+import sqlite3
 import zipfile
 from pathlib import Path
 from unittest import mock
@@ -171,6 +172,22 @@ class DatabaseBackupTest(unittest.TestCase):
             backup.import_data(self.zip, "9.9", self.new)
         self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
 
+    def test_rejects_database_of_newer_version(self):
+        backup.export_data(self.zip, "9.9", self.old)
+        target = self.old.parent / "neuer.db"
+        with zipfile.ZipFile(self.zip) as archive:
+            members = {n: archive.read(n) for n in archive.namelist()}
+        target.write_bytes(members[f"stats/{db.DB_FILE_NAME}"])
+        raw = sqlite3.connect(target)
+        raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
+        raw.close()
+        members[f"stats/{db.DB_FILE_NAME}"] = target.read_bytes()
+        with zipfile.ZipFile(self.zip, "w") as archive:
+            for name, data in members.items():
+                archive.writestr(name, data)
+        with self.assertRaises(backup.BackupError):
+            backup.import_data(self.zip, "9.9", self.new)
+        self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
 
 
 class ImportWhileRunningTest(AppTestCase):

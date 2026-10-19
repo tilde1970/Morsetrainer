@@ -157,12 +157,15 @@ def _check_database(database: Path) -> None:
         conn = sqlite3.connect(database)
         try:
             ok = conn.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
         finally:
             conn.close()
     except sqlite3.Error as exc:
         raise BackupError(str(exc)) from exc
     if not ok:
         raise BackupError("database")
+    if version > db.SCHEMA_VERSION:
+        raise BackupError("Die Sicherung stammt von einer neueren Programmfassung; bitte erst das Programm aktualisieren.")
 
 
 def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:

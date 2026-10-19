@@ -41,6 +41,16 @@ BUSY_TIMEOUT_MS = 5000
 
 Error = sqlite3.Error
 
+
+class SchemaTooNew(sqlite3.OperationalError):
+    """Die Datei stammt von einer neueren Programmfassung. Sie bleibt
+    unberührt (wie eine gesperrte), das Programm schreibt nicht hinein."""
+
+
+# MIGRATIONS[n](conn) hebt eine Datenbank von Schema n auf n + 1 (nur die
+# Änderung, ohne eigene Transaktion); SCHEMA beschreibt den neuesten Stand.
+MIGRATIONS = {}
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (
     id INTEGER PRIMARY KEY,
@@ -135,6 +145,14 @@ def close() -> None:
     with _lock:
         if _conn is not None:
             try:
+                # Ohne Wartezeit: hält ein anderes Fenster die Datei offen,
+                # bleibt der Abgleich der WAL eben ihm überlassen.
+                _conn.execute("PRAGMA busy_timeout = 0")
+                _conn.execute("PRAGMA optimize")
+                _conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except Error:
+                pass
+            try:
                 _conn.close()
             except Error:
                 pass
@@ -155,13 +173,41 @@ def _open(file: Path) -> sqlite3.Connection:
         conn.execute("PRAGMA journal_mode = WAL")
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA foreign_keys = ON")
-        conn.executescript(SCHEMA)
-        if conn.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        if version > SCHEMA_VERSION:
+            raise SchemaTooNew(f"Datenbank hat Schema {version}, dieses Programm kennt nur {SCHEMA_VERSION}")
+        if version == 0:
+            conn.executescript(SCHEMA)
             conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        elif version < SCHEMA_VERSION:
+            _migrate(conn, file, version)
     except Error:
         conn.close()
         raise
     return conn
+
+
+def _migrate(conn: sqlite3.Connection, file: Path, version: int) -> None:
+    """Hebt eine ältere Datenbank Schritt für Schritt auf SCHEMA_VERSION.
+    Vorher bleibt eine Kopie "<Name>.vor-v<Nummer>" liegen; jeder Schritt
+    läuft samt neuer user_version in einer Transaktion, bei einem Fehler
+    bleibt der Stand vor diesem Schritt."""
+    copy = sqlite3.connect(file.with_name(f"{file.name}.vor-v{version}"))
+    try:
+        conn.backup(copy)
+    finally:
+        copy.close()
+    while version < SCHEMA_VERSION:
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            MIGRATIONS[version](conn)
+            conn.execute(f"PRAGMA user_version = {version + 1}")
+            conn.execute("COMMIT")
+        except BaseException:
+            if conn.in_transaction:
+                conn.execute("ROLLBACK")
+            raise
+        version += 1
 
 
 def _set_aside(file: Path) -> None:

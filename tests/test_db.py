@@ -248,6 +248,61 @@ class DbTest(unittest.TestCase):
         self.assertEqual(db._read("PRAGMA journal_mode"), [("wal",)])
         self.assertEqual(db._read("PRAGMA user_version"), [(db.SCHEMA_VERSION,)])
 
+    def test_newer_schema_is_refused_and_untouched(self):
+        db.save_state("daily", {"days": {}})
+        db.close()
+        raw = sqlite3.connect(self.file)
+        raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
+        raw.close()
+        self.assertEqual(db.load_state("daily", {}), {})
+        with self.assertRaises(db.SchemaTooNew):
+            db.save_state("daily", {"days": {"x": 1}})
+        self.assertEqual(list(self.file.parent.glob("*.defekt-*")), [])
+        raw = sqlite3.connect(self.file)
+        self.assertEqual(raw.execute("SELECT data FROM state").fetchone(), ('{"days": {}}',))
+        raw.close()
+
+    def test_migration_runs_stepwise_with_copy(self):
+        db.save_state("daily", {"days": {}})
+        db.close()
+        raw = sqlite3.connect(self.file)
+        raw.execute("PRAGMA user_version = 1")
+        raw.close()
+        steps = []
+
+        def step(conn):
+            steps.append(1)
+            conn.execute("CREATE TABLE neu (x INTEGER)")
+        with mock.patch.object(db, "SCHEMA_VERSION", 2), mock.patch.dict(db.MIGRATIONS, {1: step}):
+            self.assertEqual(db.load_state("daily", {}), {"days": {}})
+            self.assertEqual(db._read("PRAGMA user_version"), [(2,)])
+            self.assertEqual(db._read("SELECT COUNT(*) FROM neu"), [(0,)])
+        self.assertEqual(steps, [1])
+        self.assertTrue(self.file.with_name("morsetrainer.db.vor-v1").is_file())
+
+    def test_failed_migration_step_keeps_old_state(self):
+        db.save_state("daily", {"days": {}})
+        db.close()
+
+        def step(conn):
+            conn.execute("CREATE TABLE neu (x INTEGER)")
+            raise sqlite3.OperationalError("kaputt")
+        with mock.patch.object(db, "SCHEMA_VERSION", 2), mock.patch.dict(db.MIGRATIONS, {1: step}):
+            with self.assertRaises(db.Error):
+                db.save_state("daily", {"days": {"x": 1}})
+        self.assertEqual(list(self.file.parent.glob("*.defekt-*")), [])
+        db.close()
+        raw = sqlite3.connect(self.file)
+        self.assertEqual(raw.execute("PRAGMA user_version").fetchone(), (1,))
+        self.assertEqual(raw.execute("SELECT name FROM sqlite_master WHERE name = 'neu'").fetchall(), [])
+        raw.close()
+
+    def test_close_empties_the_wal(self):
+        db.save_state("x", {"a": 1})
+        db.close()
+        wal = self.file.with_name(self.file.name + "-wal")
+        self.assertFalse(wal.exists() and wal.stat().st_size > 0)
+
 
 if __name__ == "__main__":
     unittest.main()
