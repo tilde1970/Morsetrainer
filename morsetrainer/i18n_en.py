@@ -636,10 +636,12 @@ EN.update({
     "Reaktion: kleiner ist schneller.": "Reaction: smaller is faster.",
     ("Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
      "schneller. Davor: die {before} Tage vor den letzten {days}. Die Spalte zeigt den Median, erst "
-     "ab {count} Messungen auf jeder Seite (sonst „–“)."):
+     "ab {count} Messungen auf jeder Seite (sonst „–“). Neue Zeichen machen den Schnitt anfangs langsamer; "
+     "das ist normal."):
         ("Reaction in the comparison line and in “before → now” only from Characters; smaller is "
          "faster. Before: the {before} days before the last {days}. The column shows the median, only "
-         "from {count} measurements on each side (otherwise “–”)."),
+         "from {count} measurements on each side (otherwise “–”). New characters make the average slower at "
+         "first; that is normal."),
     "Ø WPM": "Ø WPM",
     "Verwechselt mit": "Confused with",
     "Protokoll nicht gespeichert: {error}": "Log not saved: {error}",
