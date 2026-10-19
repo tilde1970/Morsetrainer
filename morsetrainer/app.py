@@ -250,6 +250,7 @@ class MorseTrainerApp:
                                   on_end=lambda: self.daily.abort())
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
+        self.compact_note = ""  # Ansage nach dem Wechsel in den Kompaktmodus (zoom)
         self.compact = theme.scale() >= COMPACT_ZOOM  # vorläufig; genau erst mit dem Reiter (unten)
         self.daily_bar.set_compact(self.compact)
         self._place_header(open_=not self.compact)
@@ -341,8 +342,15 @@ class MorseTrainerApp:
     def _initial_geometry(self) -> str:
         geometry = self.saved_state.get("geometry")
         if isinstance(geometry, str) and self._geometry_fits_screen(geometry):
-            return re.sub(r"^\d+", lambda m: str(max(int(m.group()), MIN_WIDTH)), geometry)
-        return DEFAULT_GEOMETRY
+            geometry = re.sub(r"^\d+", lambda m: str(max(int(m.group()), MIN_WIDTH)), geometry)
+        else:
+            geometry = DEFAULT_GEOMETRY
+        # Nie größer als der Bildschirm (Standard 720×900 auf kleinen Anzeigen,
+        # gemerkte Größe von einem größeren Monitor).
+        max_width = self.root.winfo_screenwidth() - 40
+        max_height = self.root.winfo_screenheight() - SCREEN_MARGIN
+        return re.sub(r"^(\d+)x(\d+)", lambda m: f"{min(int(m.group(1)), max_width)}x{min(int(m.group(2)), max_height)}",
+                      geometry)
 
     def _geometry_fits_screen(self, geometry: str) -> bool:
         match = re.match(r"(\d+)x(\d+)(?:\+(-?\d+)\+(-?\d+))?", geometry)
@@ -1111,7 +1119,8 @@ class MorseTrainerApp:
             text = tr("Schriftgröße {percent} %.")
         if audio.tone_remaining() > announcer.TONE_WAIT_MAX_S:
             return  # Die Ansage wartet nur auf kurze Töne und ersetzte sonst den laufenden Ton
-        announcer.say(text.format(percent=percent))
+        note, self.compact_note = self.compact_note, ""
+        announcer.say(announcer.sentences([text.format(percent=percent), note]))
 
     def set_font_scale(self, percent: int) -> None:
         """Schriftgröße in Prozent setzen, begrenzt auf die Stufen in
@@ -1126,7 +1135,11 @@ class MorseTrainerApp:
         if percent != theme.scale():
             theme.set_scale(self.root, percent)
             if getattr(self, "daily_bar", None) is not None:
-                self._update_compact()
+                was_compact, was_open = self.compact, self.header_open
+                # Eine von Hand aufgeklappte Leiste bleibt offen, solange der Platz reicht.
+                self._update_compact(header_open=was_compact and was_open)
+                if not was_compact and self.compact:
+                    self.compact_note = tr("Kopfleiste zugeklappt.")  # sagt zoom() mit an
             if getattr(self, "version_label", None) is not None:
                 self._set_version_text()
             self._fit_window()
@@ -1230,7 +1243,13 @@ class MorseTrainerApp:
             self.root.update_idletasks()
             self.compact = self.root.winfo_reqheight() > self.root.winfo_screenheight() - SCREEN_MARGIN
         self.daily_bar.set_compact(self.compact)
-        self._place_header(open_=header_open and self._header_fits_screen())
+        open_ = header_open and self._header_fits_screen()
+        self._place_header(open_=open_)
+        if open_ and self.compact:
+            # Auch offen muss das ganze Fenster noch auf den Bildschirm passen.
+            self.root.update_idletasks()
+            if self.root.winfo_reqheight() > self.root.winfo_screenheight() - SCREEN_MARGIN:
+                self._place_header(open_=False)
 
     def _header_fits_screen(self) -> bool:
         """Lässt die aufgeklappte Kopfleiste genug Bildschirmhöhe für den Reiter?"""

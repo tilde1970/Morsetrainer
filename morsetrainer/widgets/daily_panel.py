@@ -49,6 +49,8 @@ def week_spoken(days: list) -> str:
     if not elapsed:
         return ""
     practiced = [item for item in elapsed if item["stars"] or item["status"] == week.PRACTICED]
+    if len(elapsed) == 1:  # erster Tag der Woche: „0 von 1 Tagen“ wäre schief
+        return tr("heute geübt") if practiced else tr("heute noch offen")
     text = tr("{n} von {total} Tagen geübt").format(n=len(practiced), total=len(elapsed))
     if elapsed[-1] not in practiced:
         text += ", " + tr("heute noch offen")

@@ -627,14 +627,15 @@ EN.update({
     "nicht geübt": "not practised",
     "Davor ({days} Tage)": "Before ({days} days)",
     "(aus {n} Zeichen)": "(from {n} characters)",
-    "zu wenig Zeichen": "too few characters",
+    "zu wenig Zeichen ({n} von {min})": "too few characters ({n} of {min})",
+    "heute geübt": "practised today",
     "Reaktion: kleiner ist schneller.": "Reaction: smaller is faster.",
     ("Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
-     "schneller. Davor: die {before} Tage vor den letzten {days}. Die Spalte zeigt den Median, erst "
+     "schneller. Davor: die {before} Tage vor den letzten {days}, jetzt: die letzten {days}. Die Spalte zeigt den Median, erst "
      "ab {count} Messungen auf jeder Seite (sonst „–“). Neue Zeichen machen den Schnitt anfangs langsamer; "
      "das ist normal."):
         ("Reaction in the comparison line and in “before → now” only from Characters; smaller is "
-         "faster. Before: the {before} days before the last {days}. The column shows the median, only "
+         "faster. Before: the {before} days before the last {days}, now: the last {days}. The column shows the median, only "
          "from {count} measurements on each side (otherwise “–”). New characters make the average slower at "
          "first; that is normal."),
     "Ø WPM": "Ø WPM",

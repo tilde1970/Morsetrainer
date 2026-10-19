@@ -34,6 +34,7 @@ PALETTES = {
         # Hintergrund, Feld und Schiene (WCAG 1.4.11), sonst sieht man bei
         # schwachem Sehen nicht, wo ein Feld ist.
         "EDGE": "#6b7380",
+        "THUMB_ARROW": "#1d2127",  # Pfeile der Rollbalken auf dem Griff
         "THUMB": "#a8aeb8",  # Griff der Rollbalken, bewusst dezent (2,0:1); der hohe Kontrast nimmt Weiß
         "SELECT": "#d7e6fa", "OK": "#1e7e34", "ERROR": "#c0392b", "OK_BG": "#d9f2dd", "ERROR_BG": "#f9dcd9",
         "GRID": "#e4e6ea",  # Hilfslinien in Diagrammen
@@ -48,7 +49,7 @@ PALETTES = {
         "ACCENT": "#ffd400", "ACCENT_ACTIVE": "#ffe766", "FOCUS": "#ffd400", "SELECT": "#00468c",
         "OK": "#6cf06c", "ERROR": "#ff8080", "OK_BG": "#003d00", "ERROR_BG": "#5c0000",
         "GRID": "#5a5a5a", "TROUGH": "#4d4d4d", "STATION_COLORS": ("#80c8ff", "#ffb84d", "#7cfc9a"),
-        "EDGE": "#ffffff", "THUMB": "#ffffff",
+        "EDGE": "#ffffff", "THUMB": "#ffffff", "THUMB_ARROW": "#000000",
         "BORDER_WIDTH": 2,
     },
 }
@@ -418,7 +419,7 @@ def apply(root) -> None:
     style.map("TScale", background=[("disabled", BG), ("active", ACCENT)], troughcolor=[("focus", ACCENT)],
               bordercolor=[("disabled", BORDER)])
     # Griff in THUMB: in der hellen Palette dezent, im hohen Kontrast weiß.
-    style.configure("TScrollbar", background=THUMB, troughcolor=BG, bordercolor=BG, arrowcolor=MUTED,
+    style.configure("TScrollbar", background=THUMB, troughcolor=BG, bordercolor=BG, arrowcolor=THUMB_ARROW,
                     lightcolor=THUMB, darkcolor=THUMB)
     style.map("TScrollbar", background=[("active", EDGE)], lightcolor=[("active", EDGE)],
               darkcolor=[("active", EDGE)])

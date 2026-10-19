@@ -37,7 +37,9 @@ def comparison_text(comparison: dict) -> str:
     if enough(recent):
         parts.append(f"{head}: " + numbers(recent))
     else:
-        parts.append(f"{head}: " + (tr("zu wenig Zeichen") if recent["good"] + recent["wrong"] else tr("nicht geübt")))
+        parts.append(f"{head}: " + (tr("zu wenig Zeichen ({n} von {min})").format(
+            n=recent["good"] + recent["wrong"], min=stats.MIN_COMPARE_COUNT)
+            if recent["good"] + recent["wrong"] else tr("nicht geübt")))
     return " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
 
 
@@ -92,7 +94,7 @@ class StatsPanel:
         if compare:
             theme.hint(box, wrap=520, text=tr(
                 "Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
-                "schneller. Davor: die {before} Tage vor den letzten {days}. Die Spalte zeigt den Median, erst "
+                "schneller. Davor: die {before} Tage vor den letzten {days}, jetzt: die letzten {days}. Die Spalte zeigt den Median, erst "
                 "ab {count} Messungen auf jeder Seite (sonst „–“). Neue Zeichen machen den Schnitt anfangs langsamer; "
                 "das ist normal.").format(
                 before=stats.BEFORE_DAYS, days=stats.COMPARE_DAYS, count=stats.MIN_TREND_COUNT)).pack(

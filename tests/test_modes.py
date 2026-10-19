@@ -72,6 +72,10 @@ class HeaderStateTest(AppTestCase):
                                   lambda app: {"shared": {"font_scale": 200}, "header_open": True})
         patch.start()
         self.addCleanup(patch.stop)
+        # Ein hoher Bildschirm: sonst klappt der Kompaktmodus die Leiste wieder zu.
+        tall = mock.patch.object(tk.Misc, "winfo_screenheight", lambda widget: 4000)
+        tall.start()
+        self.addCleanup(tall.stop)
         super().setUp()
 
     def test_open_header_is_remembered_at_200_percent(self):
@@ -111,6 +115,35 @@ class CompactByHeightTest(AppTestCase):
         self.assertFalse(app.compact)
         self.assertEqual(app.header.winfo_manager(), "pack")
         self.assertEqual(app.header_row.winfo_manager(), "")
+
+
+    def test_open_header_is_closed_again_when_the_window_would_not_fit(self):
+        app = self.app
+        app.font_scale_var.set(100)
+        with mock.patch.object(app.root, "winfo_screenheight", return_value=768):
+            app._update_compact(header_open=True)  # gemerkt offen, Leiste allein klein genug
+            self.assertTrue(app.compact)
+            self.assertFalse(app.header_open)
+        app._update_compact()
+
+    def test_initial_geometry_is_capped_to_the_screen(self):
+        app = self.app
+        with mock.patch.object(app.root, "winfo_screenheight", return_value=600), \
+                mock.patch.object(app.root, "winfo_screenwidth", return_value=1024):
+            app.saved_state = {}
+            self.assertEqual(app._initial_geometry(), "720x520")
+            app.saved_state = {"geometry": "1600x1000+10+10"}
+            with mock.patch.object(app, "_geometry_fits_screen", return_value=True):
+                self.assertEqual(app._initial_geometry(), "984x520+10+10")
+
+    def test_zoom_into_compact_mode_says_the_header_is_collapsed(self):
+        app = self.app
+        app.font_scale_var.set(100)
+        app.compact_note = ""
+        with mock.patch.object(app.root, "winfo_screenheight", return_value=768):
+            app.font_scale_var.set(125)
+        self.assertEqual(app.compact_note, "Kopfleiste zugeklappt.")
+        app.font_scale_var.set(100)
 
 
 class ReleaseTest(unittest.TestCase):

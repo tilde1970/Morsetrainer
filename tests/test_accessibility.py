@@ -756,6 +756,30 @@ class ContrastTest(AppTestCase):
         self.assertEqual(str(style.lookup("TScrollbar", "background")), theme.THUMB)
         self.assertEqual(str(style.lookup("TScrollbar", "troughcolor")), theme.BG)
 
+    def test_scrollbar_arrows_are_readable_on_the_thumb(self):
+        # Die Pfeilknöpfe haben die Farbe des Griffs (auch beim Darüberfahren).
+        def luminance(color):
+            channels = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+        def ratio(a, b):
+            high, low = sorted((luminance(a), luminance(b)), reverse=True)
+            return (high + 0.05) / (low + 0.05)
+        for name, palette in theme.PALETTES.items():
+            for ground in ("THUMB", "EDGE"):
+                self.assertGreaterEqual(ratio(palette["THUMB_ARROW"], palette[ground]), 3, (name, ground))
+
+    def test_week_spoken_on_the_first_day(self):
+        from datetime import date
+        from morsetrainer.core import week
+        from morsetrainer.widgets.daily_panel import week_spoken
+        days = [{"day": date(2026, 10, 12), "stars": 0, "status": week.NONE}] + [
+            {"day": date(2026, 10, 13 + n), "stars": 0, "status": week.FUTURE} for n in range(6)]
+        self.assertEqual(week_spoken(days), "heute noch offen")
+        days[0]["stars"] = 1
+        self.assertEqual(week_spoken(days), "heute geübt")
+
     def test_selection_without_focus_keeps_the_palette(self):
         # clam färbt sie sonst grau/weiß (2,8:1); TEXT auf SELECT prüft der Palettentest.
         from tkinter import ttk
