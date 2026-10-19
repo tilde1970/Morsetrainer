@@ -24,6 +24,28 @@ class FilterCalibrationTest(unittest.TestCase):
             measured = 10 * np.log10(passband / band._noise_bandwidth(response, f))
             self.assertAlmostEqual(band.filter_noise_db(width), measured, delta=0.3, msg=width)
 
+    def test_snr_at_tone(self):
+        # Am Ton selbst, durchs ganze Mischen gemessen, liegt der Rauschabstand
+        # um die Rauschminderung des Filters über dem angezeigten Wert: Der
+        # Ton kommt mit Verstärkung 1 durch, das Rauschen nicht. Bei jeder
+        # Tonhöhe, weil das Filter mit ihr wandert.
+        block = int(RATE * band.PRESET_BLOCK_SECONDS)
+        seconds = 5
+        t = np.arange(seconds * RATE) / RATE
+        for pitch in (300, 600, 900):
+            tone = (band.AMPLITUDE * np.sin(2 * np.pi * pitch * t)).astype(np.float32)
+            for width in (500, 250):
+                spec = {"levels": {"noise": 0.6}, "gain": 1.0, "filter": width}
+                quiet = band.conditions(spec, pitch)  # nur Rauschen, ohne Station und ohne AGC
+                noise = np.concatenate([quiet.mix([], block, receiver_agc=False) for _ in range(len(tone) // block)])
+                loud = band.conditions(spec, pitch)
+                both = np.concatenate([loud.mix([(tone[i:i + block], 0)], block) for i in range(0, len(tone), block)])
+                settled = slice(RATE // 2, None)  # Einschwingen von Filter und Gleiten der Pegel
+                signal_rms = np.sqrt(max(np.mean(both[settled] ** 2) - np.mean(noise[settled] ** 2), 1e-12))
+                measured = 20 * np.log10(signal_rms / np.sqrt(np.mean(noise[settled] ** 2)))
+                expected = band.noise_snr_db(0.6) + band.filter_noise_db(width)
+                self.assertAlmostEqual(measured, expected, delta=1.0, msg=(pitch, width))
+
     def test_filter_has_unity_gain_at_the_own_pitch(self):
         for width in (500, 250):
             h = band.filter_ir(width, 600)
