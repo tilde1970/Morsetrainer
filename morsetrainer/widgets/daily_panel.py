@@ -42,26 +42,17 @@ def week_text(days: list) -> str:
     return "  ".join(parts)
 
 
-# Ausgeschrieben für die Ansage („Mo“ läse die Stimme als Silbe).
-WEEKDAY_NAMES = (N_("Montag"), N_("Dienstag"), N_("Mittwoch"), N_("Donnerstag"), N_("Freitag"), N_("Samstag"),
-                 N_("Sonntag"))
-
-
 def week_spoken(days: list) -> str:
-    """Der Wochenstreifen zum Vorlesen, bis heute: „Montag 3 Sterne,
-    Dienstag frei geübt, Mittwoch nicht geübt“."""
-    parts = []
-    for item in days:
-        if item["status"] == week.FUTURE and not item["stars"]:
-            continue
-        if item["stars"]:
-            mark = tr("1 Stern") if item["stars"] == 1 else tr("{n} Sterne").format(n=item["stars"])
-        elif item["status"] == week.PRACTICED:
-            mark = tr("frei geübt")
-        else:
-            mark = tr("nicht geübt")
-        parts.append(f"{tr(WEEKDAY_NAMES[item['day'].weekday()])} {mark}")
-    return ", ".join(parts)
+    """Der Wochenstreifen zum Vorlesen in einem Satz, bis heute: „3 von 4 Tagen
+    geübt, heute noch offen“ (statt jeden Tag einzeln zu nennen)."""
+    elapsed = [item for item in days if item["stars"] or item["status"] != week.FUTURE]
+    if not elapsed:
+        return ""
+    practiced = [item for item in elapsed if item["stars"] or item["status"] == week.PRACTICED]
+    text = tr("{n} von {total} Tagen geübt").format(n=len(practiced), total=len(elapsed))
+    if elapsed[-1] not in practiced:
+        text += ", " + tr("heute noch offen")
+    return text
 
 
 def week_legend() -> str:

@@ -1293,7 +1293,7 @@ class AnnouncerModesTest(AnnouncerCase):
         self.assertIn("0 ★ diese Woche, Ziel 12", text)  # angesagt als „0 Sterne“ (speakable)
         self.assertTrue(self.app.week_strip_var.get().startswith("Mo "))  # auch bei 200 % sichtbar
 
-    def test_week_strip_is_spoken_with_day_names(self):
+    def test_week_strip_is_spoken_in_one_sentence(self):
         from datetime import date
         from morsetrainer.core import week
         from morsetrainer.widgets.daily_panel import week_spoken
@@ -1303,7 +1303,9 @@ class AnnouncerModesTest(AnnouncerCase):
                 {"day": date(2026, 10, 15), "stars": 0, "status": week.NONE},
                 {"day": date(2026, 10, 16), "stars": 0, "status": week.FUTURE}]
         self.assertEqual(week_spoken(days),
-                         "Montag 3 Sterne, Dienstag 1 Stern, Mittwoch frei geübt, Donnerstag nicht geübt")
+                         "3 von 4 Tagen geübt, heute noch offen")
+        days[3] = {"day": date(2026, 10, 15), "stars": 2, "status": week.NONE}
+        self.assertEqual(week_spoken(days), "4 von 4 Tagen geübt")
         self.app.select_tab(len(self.app.notebook.tabs()) - 1)
         self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
         self.assertTrue(self.pump_until(lambda: any(s.startswith("Statistik.") for s in self.said)))

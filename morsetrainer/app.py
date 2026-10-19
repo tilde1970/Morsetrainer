@@ -1030,8 +1030,8 @@ class MorseTrainerApp:
             self.notebook.select(tabs[index])
 
     def statistics_spoken(self) -> str:
-        """Der Reiter Statistik zum Vorlesen (F11): Gesamtergebnis, schwächste
-        Zeichen, häufigste Verwechslungen, Lernkartei, Siegel, heute geübt."""
+        """Der Reiter Statistik zum Vorlesen (F11): Gesamtergebnis, Vergleich mit
+        davor, schwächste Zeichen, häufigste Verwechslungen, Lernkartei, Siegel, heute geübt."""
         spell = announcer.spell
         data = stats.load_all_time()
         summary = stats.all_time_summary(data)
@@ -1039,6 +1039,9 @@ class MorseTrainerApp:
         if summary["total"]:
             parts.append(tr("Insgesamt {correct} von {total} Zeichen richtig, {percent} Prozent").format(
                 correct=summary["correct"], total=summary["total"], percent=round(summary["accuracy_pct"])))
+            comparison = comparison_text(stats.period_comparison())
+            if comparison:
+                parts.append(comparison)
             weak = [row for row in stats.all_time_char_rows(data) if row[2]][:3]
             if weak:
                 parts.append(tr("Die meisten Fehler: ") + ", ".join(
@@ -1046,9 +1049,6 @@ class MorseTrainerApp:
                     for char, _, wrong, *_ in weak))
         else:
             parts.append(tr("Noch keine Durchgänge"))
-        comparison = comparison_text(stats.period_comparison())
-        if comparison:
-            parts.append(comparison)
         days, stars = self._week()
         parts.append(tr("Diese Woche: {days}; {goal}").format(days=week_spoken(days), goal=week_goal_text(stars)))
         pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
