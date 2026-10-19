@@ -63,6 +63,9 @@ SETTINGS_MAX_SCREEN_SHARE = 0.85
 COMPACT_ZOOM = 200
 # Höchstens so viel der Bildschirmhöhe darf die aufgeklappte Kopfleiste beim Start einnehmen.
 HEADER_MAX_SCREEN_SHARE = 0.35
+# Platz, den Fensterrahmen, Leisten und Taskleiste vom Bildschirm nehmen: Was
+# ausgeklappt höher ist als Bildschirm minus dies, wird zusammengeklappt.
+SCREEN_MARGIN = 80
 # So viele Zeichen des Zeichensatzes nennt die zugeklappte Kopfleiste.
 HEADER_CHARSET_CHARS = 12
 # Platzhalter-Rufzeichen, das in alten Einstellungsdateien im Contest-Reiter
@@ -247,14 +250,15 @@ class MorseTrainerApp:
                                   on_end=lambda: self.daily.abort())
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
-        self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
-        # Bei großer Schrift zugeklappt, außer sie war beim Beenden aufgeklappt
-        # und der Bildschirm hat Platz dafür (sonst sähe man vom Reiter nichts).
-        self._place_header(open_=theme.scale() < COMPACT_ZOOM or (
-            self.saved_state.get("header_open") is True and self._header_fits_screen()))
+        self.compact = theme.scale() >= COMPACT_ZOOM  # vorläufig; genau erst mit dem Reiter (unten)
+        self.daily_bar.set_compact(self.compact)
+        self._place_header(open_=not self.compact)
         self._build_notebook()
         self._follow_station()
         self._build_all_time_tab()
+        # Bei großer Schrift oder wenig Bildschirmhöhe zugeklappt, außer die
+        # Leiste war beim Beenden aufgeklappt und der Bildschirm hat Platz dafür.
+        self._update_compact(header_open=self.saved_state.get("header_open") is True)
         # Diplome und Lebenslinie füllt _check_awards_at_start, wenn das
         # Fenster schon steht: Die Auswertung braucht nach Jahren Übung Zeit.
         self._refresh_all_time(with_awards=False)
@@ -1122,8 +1126,7 @@ class MorseTrainerApp:
         if percent != theme.scale():
             theme.set_scale(self.root, percent)
             if getattr(self, "daily_bar", None) is not None:
-                self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
-                self._place_header(open_=theme.scale() < COMPACT_ZOOM)
+                self._update_compact()
             if getattr(self, "version_label", None) is not None:
                 self._set_version_text()
             self._fit_window()
@@ -1214,14 +1217,29 @@ class MorseTrainerApp:
         arrow = "▾" if self.header_open else "▸"
         self.header_toggle.config(text=f"{arrow} {self._header_summary()}")
 
+    def _update_compact(self, header_open: bool = False) -> None:
+        """Kompakte Anordnung (Kopfleiste zu einer Zeile, Tagesübung ohne
+        Wochenstreifen) ab COMPACT_ZOOM oder wenn die Fenster sonst höher
+        würde als der Bildschirm. `header_open`: im Kompaktmodus aufgeklappt
+        lassen, wenn der Platz reicht."""
+        self.compact = theme.scale() >= COMPACT_ZOOM
+        if not self.compact:
+            # Probe: so hoch wie ausgeklappt?
+            self.daily_bar.set_compact(False)
+            self._place_header(open_=True)
+            self.root.update_idletasks()
+            self.compact = self.root.winfo_reqheight() > self.root.winfo_screenheight() - SCREEN_MARGIN
+        self.daily_bar.set_compact(self.compact)
+        self._place_header(open_=header_open and self._header_fits_screen())
+
     def _header_fits_screen(self) -> bool:
         """Lässt die aufgeklappte Kopfleiste genug Bildschirmhöhe für den Reiter?"""
         self.header.update_idletasks()
         return self.header.winfo_reqheight() <= self.root.winfo_screenheight() * HEADER_MAX_SCREEN_SHARE
 
     def _place_header(self, open_: bool) -> None:
-        """Kopfleiste offen oder zu; unter COMPACT_ZOOM immer offen, ohne Knopf."""
-        compact = theme.scale() >= COMPACT_ZOOM
+        """Kopfleiste offen oder zu; außerhalb des Kompaktmodus immer offen, ohne Knopf."""
+        compact = self.compact
         self.header_open = open_ or not compact
         try:
             focus = self.root.focus_get()

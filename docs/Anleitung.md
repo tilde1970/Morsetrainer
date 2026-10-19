@@ -181,7 +181,8 @@ und 75 %. Pfeile, Rollbalken und Schieberegler wachsen mit, ebenso die
 ganze Auswertung in Am Stück und die Auflösung im Netzwerk. Die
 Einstellung bleibt gespeichert.
 
-Bei 200 % ist die Kopfleiste (Koch-Lektion, Tempo, Tonhöhe, Zeichen) zu
+Bei 200 % – und schon früher, wenn das Fenster sonst höher würde als der
+Bildschirm – ist die Kopfleiste (Koch-Lektion, Tempo, Tonhöhe, Zeichen) zu
 einer Zeile zugeklappt, etwa „▸ Koch-Lektion 3 · 20/10 WPM · 600 Hz · KMUR“
 (mit Farnsworth Zeichen- und effektives Tempo); ein langer Zeichensatz
 endet dort mit „…“. Rechts in derselben Zeile steht „Einstellungen …

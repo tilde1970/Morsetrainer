@@ -93,6 +93,26 @@ class HeaderStateTest(AppTestCase):
         self.assertTrue(self.app._header_fits_screen())  # Testbildschirm 1000 px hoch
 
 
+class CompactByHeightTest(AppTestCase):
+    """Der Kompaktmodus hängt an der Bildschirmhöhe, nicht nur an der Schriftgröße."""
+
+    def test_small_screen_compacts_below_200_percent(self):
+        app = self.app
+        app.font_scale_var.set(100)
+        app._update_compact()
+        self.assertFalse(app.compact)
+        self.assertEqual(app.header.winfo_manager(), "pack")
+        with mock.patch.object(app.root, "winfo_screenheight", return_value=600):
+            app._update_compact()
+        self.assertTrue(app.compact)
+        self.assertEqual(app.header.winfo_manager(), "")  # zugeklappt
+        self.assertEqual(app.header_row.winfo_manager(), "pack")  # Knopf zum Aufklappen
+        app._update_compact()  # wieder der normale Bildschirm
+        self.assertFalse(app.compact)
+        self.assertEqual(app.header.winfo_manager(), "pack")
+        self.assertEqual(app.header_row.winfo_manager(), "")
+
+
 class ReleaseTest(unittest.TestCase):
     """Nach dem Test ist das Hauptfenster samt App im Hauptthread eingesammelt.
     Bliebe es liegen, sammelte es irgendwann ein Netzwerk- oder Audio-Thread
@@ -1884,7 +1904,14 @@ class UsabilityTest(AppTestCase):
         app.close_settings()
         app.font_scale_var.set(100)
 
+    def tall_screen(self):
+        """Ein hoher Bildschirm: der Kompaktmodus hängt dann nur an der Schriftgröße."""
+        patch = mock.patch.object(self.root, "winfo_screenheight", return_value=4000)
+        patch.start()
+        self.addCleanup(patch.stop)
+
     def test_header_toggle_hands_focus_on_when_it_disappears(self):
+        self.tall_screen()
         app = self.app
         app.font_scale_var.set(200)
         self.root.deiconify()
@@ -1903,6 +1930,7 @@ class UsabilityTest(AppTestCase):
         self.assertEqual(app.header.winfo_manager(), "")
 
     def test_week_strip_and_legend_hide_at_200_percent(self):
+        self.tall_screen()
         bar = self.app.daily_bar
         bar.show_week([], 0)  # noch kein Stern: Legende wird gezeigt
         self.assertEqual((bar.week_label.winfo_manager(), bar.legend.winfo_manager()), ("pack", "pack"))
@@ -1961,6 +1989,7 @@ class UsabilityTest(AppTestCase):
         self.assertEqual(int(float(str(hint.cget("wraplength")))), room)  # ab seinem Anfang, ohne rechten Rand
 
     def test_header_collapses_at_200_percent(self):
+        self.tall_screen()
         app = self.app
         self.assertEqual(app.header_row.winfo_manager(), "")  # 100 %: keine Zeile, Leiste offen
         self.assertEqual(app.header.winfo_manager(), "pack")

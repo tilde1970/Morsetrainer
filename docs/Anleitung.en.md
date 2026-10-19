@@ -180,7 +180,8 @@ with it. For small screens it also goes smaller, to 90 % and 75 %. Arrows,
 scrollbars and sliders grow with it, as do the full result in Non-stop and
 the solutions window in Network. The setting is saved.
 
-At 200 % the header (Koch lesson, speed, pitch, characters) is collapsed
+At 200 % – and earlier if the window would otherwise be taller than the
+screen – the header (Koch lesson, speed, pitch, characters) is collapsed
 to one line, such as “▸ Koch lesson 3 · 20/10 WPM · 600 Hz · KMUR” (with
 Farnsworth, character and effective speed); a long character set ends
 with “…” there. “Settings … (Ctrl+,)” stays on the right of the same line,
