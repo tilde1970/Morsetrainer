@@ -191,7 +191,9 @@ und wieder zu, die Ansage sagt „Kopfleiste aufgeklappt.“ bzw. „Kopfleiste
 zugeklappt.“ Steht der Fokus auf der Zeile, sagt die Ansage zuerst „zugeklappt“
 oder „aufgeklappt“, dann Lektion, Tempo und Tonhöhe; bei eigenem Zeichensatz
 buchstabiert sie ihn. Das Programm merkt sich, ob die Kopfleiste beim Beenden
-offen war, und stellt das bei großer Schrift beim nächsten Start wieder her.
+offen war, und stellt das bei großer Schrift beim nächsten Start wieder her, sofern der
+Bildschirm hoch genug ist (die Leiste nimmt dann höchstens gut ein Drittel der Höhe ein);
+sonst startet sie zugeklappt, damit vom Reiter etwas zu sehen bleibt.
 Aufgeklappt führt Tab vom Knopf in die Felder; Umschalt+Tab
 im ersten Feld (Koch-Lektion) führt zurück zum Knopf. Esc klappt die
 Kopfleiste nicht zu. Die Leiste der Tagesübung zeigt bei 200 % nur das

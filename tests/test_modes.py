@@ -86,6 +86,12 @@ class HeaderStateTest(AppTestCase):
         self.assertIs(state["header_open"], False)
         self.app.font_scale_var.set(100)
 
+    def test_open_header_stays_closed_when_the_screen_is_too_small(self):
+        # Auf kleinem Bildschirm (hier gespielt) bliebe vom Reiter sonst nichts sichtbar.
+        with mock.patch.object(self.app.root, "winfo_screenheight", return_value=600):
+            self.assertFalse(self.app._header_fits_screen())
+        self.assertTrue(self.app._header_fits_screen())  # Testbildschirm 1000 px hoch
+
 
 class ReleaseTest(unittest.TestCase):
     """Nach dem Test ist das Hauptfenster samt App im Hauptthread eingesammelt.

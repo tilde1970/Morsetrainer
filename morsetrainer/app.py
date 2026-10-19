@@ -61,6 +61,8 @@ SETTINGS_MAX_SCREEN_SHARE = 0.85
 # Ab dieser Schriftgröße (Prozent) zeigt die Leiste der Tagesübung nur das
 # Wochenziel, ohne Wochenstreifen und Legende: Platz für die Übung.
 COMPACT_ZOOM = 200
+# Höchstens so viel der Bildschirmhöhe darf die aufgeklappte Kopfleiste beim Start einnehmen.
+HEADER_MAX_SCREEN_SHARE = 0.35
 # So viele Zeichen des Zeichensatzes nennt die zugeklappte Kopfleiste.
 HEADER_CHARSET_CHARS = 12
 # Platzhalter-Rufzeichen, das in alten Einstellungsdateien im Contest-Reiter
@@ -246,8 +248,10 @@ class MorseTrainerApp:
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
         self.daily_bar.set_compact(theme.scale() >= COMPACT_ZOOM)
-        # Bei großer Schrift zugeklappt, außer sie war beim Beenden aufgeklappt.
-        self._place_header(open_=theme.scale() < COMPACT_ZOOM or self.saved_state.get("header_open") is True)
+        # Bei großer Schrift zugeklappt, außer sie war beim Beenden aufgeklappt
+        # und der Bildschirm hat Platz dafür (sonst sähe man vom Reiter nichts).
+        self._place_header(open_=theme.scale() < COMPACT_ZOOM or (
+            self.saved_state.get("header_open") is True and self._header_fits_screen()))
         self._build_notebook()
         self._follow_station()
         self._build_all_time_tab()
@@ -1209,6 +1213,11 @@ class MorseTrainerApp:
     def _show_header_summary(self) -> None:
         arrow = "▾" if self.header_open else "▸"
         self.header_toggle.config(text=f"{arrow} {self._header_summary()}")
+
+    def _header_fits_screen(self) -> bool:
+        """Lässt die aufgeklappte Kopfleiste genug Bildschirmhöhe für den Reiter?"""
+        self.header.update_idletasks()
+        return self.header.winfo_reqheight() <= self.root.winfo_screenheight() * HEADER_MAX_SCREEN_SHARE
 
     def _place_header(self, open_: bool) -> None:
         """Kopfleiste offen oder zu; unter COMPACT_ZOOM immer offen, ohne Knopf."""

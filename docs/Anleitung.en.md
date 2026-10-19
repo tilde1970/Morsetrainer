@@ -190,7 +190,9 @@ it again; the announcement says “Header expanded.” or “Header collapsed.�
 With the focus on the line, the announcement first says “collapsed” or
 “expanded”, then lesson, speed and pitch; with your own character set it
 spells it out. The program remembers whether the header was open on exit and
-restores that at the next start with a large font.
+restores that at the next start with a large font, provided the screen is tall
+enough (the header then takes at most about a third of the height); otherwise it
+starts collapsed so that some of the tab stays visible.
 When it is open, Tab moves from the button into the fields; Shift+Tab in
 the first field (Koch lesson) takes you back to the button. Esc does not
 close the header. At 200 % the daily practice bar shows only the weekly
