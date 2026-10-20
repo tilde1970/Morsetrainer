@@ -994,6 +994,11 @@ EN.update({
         "The statistics now say how many characters each comparison is based on, and F11 reads them out more "
         "briefly. On low screens the header collapses by itself, and the window is never larger than the "
         "screen. Everything else is under Help, Changes.",
+    ("Die Datenbank ist sicherer: Ein Hinweis meldet Daten von einer neueren Version, vor einem "
+     "Format-Wechsel bleibt eine Kopie liegen, und ein beschädigtes Journal geht nicht mehr verloren. "
+     "Alles Weitere steht unter Hilfe, Änderungen."):
+        "The database is safer: a notice reports data from a newer version, a copy is left behind before a "
+        "format change, and a damaged journal is no longer lost. Everything else is under Help, Changes.",
     "Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).":
         "Run finished: {correct} of {total} characters correct ({share} %).",
     "{n} von {need} Zeichen, Ziel {pct} %": "{n} of {need} characters, goal {pct} %",

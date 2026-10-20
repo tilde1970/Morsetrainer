@@ -1,5 +1,26 @@
 # Changes
 
+## 2.57
+
+- **Data from a newer version:** If the data comes from a newer version of
+  Morsetrainer, a notice at start says that statistics, awards and the daily
+  practice are therefore empty and nothing is saved. It is spoken even with
+  the announcer off; at the very first start the greeting follows only after
+  it. The data stays unchanged.
+- **Database, format change:** An older database is raised to the new format
+  step by step. A checked copy `morsetrainer.db.vor-v<number>` is left
+  behind first. If a step fails, the file stays untouched and is not set
+  aside as “defekt”; a second window does not run a step twice.
+- **Database, network drives:** If the data folder is on a network drive, the
+  database uses the classic journal instead of WAL. On Linux `vboxsf`,
+  `virtiofs` and GVfs shares are now recognised too, on macOS SMB, NFS and
+  AFP. If the `mount` command hangs there, startup does not stall.
+- **Damaged database:** Its journal (`-wal`) is set aside with it
+  (`….defekt-<time>-wal`) instead of being lost. The data backup includes
+  neither `.defekt-*` nor `.vor-v*`, and the database is merged when closing.
+- **Manual:** It explains how to bring a set-aside database back by hand and
+  which helper files may be deleted.
+
 ## 2.56
 
 - **Statistics, comparison:** The comparison line says how many characters

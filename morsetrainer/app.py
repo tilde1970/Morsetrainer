@@ -169,6 +169,9 @@ WHATS_NEW = {
     "2.56": N_("Die Statistik nennt jetzt bei jedem Vergleich, aus wie vielen Zeichen er stammt, und F11 liest sie "
                "kürzer vor. Auf niedrigen Bildschirmen klappt die Kopfleiste von selbst zu, und das Fenster ist nie "
                "größer als der Bildschirm. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.57": N_("Die Datenbank ist sicherer: Ein Hinweis meldet Daten von einer neueren Version, vor einem "
+               "Format-Wechsel bleibt eine Kopie liegen, und ein beschädigtes Journal geht nicht mehr verloren. "
+               "Alles Weitere steht unter Hilfe, Änderungen."),
 }
 
 

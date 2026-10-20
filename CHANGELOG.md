@@ -1,5 +1,28 @@
 # Änderungen
 
+## 2.57
+
+- **Daten von einer neueren Version:** Stammen die Daten von einer neueren
+  Fassung des Morsetrainers, sagt beim Start ein Hinweis, dass Statistik,
+  Diplome und Tagesübung deshalb leer sind und nichts gespeichert wird. Er
+  wird auch bei ausgeschalteter Ansage gesprochen; beim allerersten Start
+  folgt die Begrüßung erst danach. Die Daten bleiben unverändert.
+- **Datenbank, Format-Wechsel:** Eine ältere Datenbank wird Schritt für Schritt
+  auf das neue Format gehoben. Davor bleibt eine geprüfte Kopie
+  `morsetrainer.db.vor-v<Nummer>` liegen. Scheitert ein Schritt, bleibt die
+  Datei unberührt und wird nicht als „defekt“ beiseitegelegt; ein zweites
+  Fenster führt keinen Schritt doppelt aus.
+- **Datenbank, Netzlaufwerke:** Liegt der Datenordner auf einem Netzlaufwerk,
+  nutzt die Datenbank das klassische Journal statt WAL. Erkannt werden unter
+  Linux auch `vboxsf`, `virtiofs` und GVfs-Freigaben, unter macOS SMB, NFS und
+  AFP. Hängt dort der Befehl `mount`, bleibt der Start nicht stehen.
+- **Defekte Datenbank:** Ihr Journal (`-wal`) wird mit beiseitegelegt
+  (`….defekt-<Zeit>-wal`), statt verloren zu gehen. Die Datensicherung nimmt
+  weder `.defekt-*` noch `.vor-v*` mit, die Datenbank wird beim Schließen
+  abgeglichen.
+- **Anleitung:** Sie erklärt, wie man eine beiseitegelegte Datenbank von Hand
+  zurückholt und welche Hilfsdateien gelöscht werden dürfen.
+
 ## 2.56
 
 - **Statistik, Vergleich:** Die Vergleichszeile nennt je Zeitraum, aus wie
