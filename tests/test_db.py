@@ -471,6 +471,32 @@ class DbTest(unittest.TestCase):
             self.assertTrue(db._on_network_drive(Path("/home/x/stats/m.db")))
             self.assertFalse(db._on_network_drive(Path("/opt/m.db")))
 
+    def test_network_drive_detection_decodes_escapes_and_new_types(self):
+        mounts = ("/dev/sda1 / ext4 rw 0 0\n"
+                  "share /media/a\\040b\\011c vboxsf rw 0 0\n"
+                  "gvfsd-fuse /run/user/1000/gvfs fuse.gvfsd-fuse rw 0 0\n"
+                  "tag /mnt/vm virtiofs rw 0 0\n")
+        with mock.patch("builtins.open", mock.mock_open(read_data=mounts)):
+            self.assertTrue(db._on_network_drive(Path("/media/a b\tc/stats/m.db")))
+            self.assertTrue(db._on_network_drive(Path("/run/user/1000/gvfs/x/m.db")))
+            self.assertTrue(db._on_network_drive(Path("/mnt/vm/m.db")))
+            self.assertFalse(db._on_network_drive(Path("/media/a/m.db")))  # nicht der Punkt „a b<Tab>c“
+
+    def test_network_drive_detection_on_macos(self):
+        out = ("/dev/disk3s1s1 on / (apfs, sealed, local, read-only, journaled)\n"
+               "//nutzer@nas/freigabe on /Volumes/freigabe (smbfs, nodev, nosuid, mounted by nutzer)\n"
+               "srv:/export on /Volumes/nfs dir (nfs, nodev, nosuid)\n")
+        with mock.patch.object(db.sys, "platform", "darwin"), \
+                mock.patch.object(db.subprocess, "run", return_value=mock.Mock(stdout=out)):
+            self.assertTrue(db._on_network_drive(Path("/Volumes/freigabe/stats/m.db")))
+            self.assertTrue(db._on_network_drive(Path("/Volumes/nfs dir/m.db")))
+            self.assertFalse(db._on_network_drive(Path("/Users/x/m.db")))
+
+    def test_network_drive_detection_survives_a_failing_mount_command(self):
+        with mock.patch.object(db.sys, "platform", "darwin"), \
+                mock.patch.object(db.subprocess, "run", side_effect=FileNotFoundError("mount")):
+            self.assertFalse(db._on_network_drive(Path("/Users/x/m.db")))
+
 
 if __name__ == "__main__":
     unittest.main()

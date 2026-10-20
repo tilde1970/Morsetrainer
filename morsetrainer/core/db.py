@@ -27,7 +27,10 @@ Schreibfunktionen werfen bei Fehlern db.Error (Datenbank) oder OSError
 (Ordner nicht anlegbar); Lesefunktionen liefern dann leere Ergebnisse."""
 import json
 import os
+import re
 import sqlite3
+import subprocess
+import sys
 import threading
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -201,26 +204,47 @@ def _open(file: Path) -> sqlite3.Connection:
     return conn
 
 
-NETWORK_FILESYSTEMS = ("nfs", "nfs4", "cifs", "smb", "smb2", "smb3", "smbfs", "afs", "9p", "ceph",
-                       "glusterfs", "fuse.sshfs")
+NETWORK_FILESYSTEMS = ("nfs", "nfs4", "cifs", "smb", "smb2", "smb3", "smbfs", "afs", "afpfs", "webdav", "9p",
+                       "ceph", "glusterfs", "davfs", "fuse.sshfs", "fuse.gvfsd-fuse", "fuse.rclone", "fuse.s3fs",
+                       "vboxsf", "virtiofs", "vmhgfs", "fuse.vmhgfs-fuse")
+
+
+def _unescape_mount(text: str) -> str:
+    """/proc/mounts schreibt Leerzeichen, Tabulator, Zeilenumbruch und
+    Rückwärtsstrich als dreistellige Oktalzahl (\\040 …)."""
+    return re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), text)
+
+
+def _mount_table() -> list:
+    """(Einhängepunkt, Dateisystemtyp) aller eingehängten Laufwerke: aus
+    /proc/mounts (Linux) oder der Ausgabe von `mount` (macOS)."""
+    if sys.platform == "darwin":
+        out = subprocess.run(["mount"], capture_output=True, text=True, timeout=5, check=False).stdout
+        # "//nutzer@host/freigabe on /Volumes/freigabe (smbfs, nodev, …)"
+        return [(m.group(1), m.group(2)) for m in re.finditer(r" on (.+) \(([^,)]+)", out)]
+    table = []
+    with open("/proc/mounts", encoding="utf-8") as mounts:
+        for line in mounts:
+            parts = line.split()
+            if len(parts) > 2:
+                table.append((_unescape_mount(parts[1]), parts[2]))
+    return table
 
 
 def _on_network_drive(file: Path) -> bool:
     """Liegt `file` auf einem Netzlaufwerk? Erkannt werden UNC-Pfade (Windows)
-    und Netzdateisysteme in /proc/mounts (Linux); sonst gilt "nein"."""
+    und Netzdateisysteme in der Liste der eingehängten Laufwerke (Linux,
+    macOS); sonst gilt "nein"."""
     try:
         resolved = file.resolve()
         if str(resolved).startswith("\\\\"):
             return True
         best, kind = "", ""
-        with open("/proc/mounts", encoding="utf-8") as mounts:
-            for line in mounts:
-                parts = line.split()
-                point = parts[1].replace("\\040", " ") if len(parts) > 2 else ""
-                if len(point) >= len(best) and resolved.is_relative_to(point):
-                    best, kind = point, parts[2]
+        for point, fs_type in _mount_table():
+            if len(point) >= len(best) and resolved.is_relative_to(point):
+                best, kind = point, fs_type
         return kind in NETWORK_FILESYSTEMS
-    except (OSError, ValueError):
+    except (OSError, ValueError, subprocess.SubprocessError):
         return False
 
 
