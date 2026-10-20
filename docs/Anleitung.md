@@ -1275,11 +1275,20 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Zeile wird sofort gespeichert; ein Absturz kostet höchstens die
   laufende. Ist die Datei beschädigt, wird sie als
   `morsetrainer.db.defekt-<Zeit>` beiseitegelegt und eine neue begonnen.
+  Liegt dazu eine Datei `…defekt-<Zeit>-wal` da, gehören beide zusammen:
+  Wer die Datei von Hand zurückholen will, benennt beide um
+  (`morsetrainer.db` und `morsetrainer.db-wal`) und löscht vorher die
+  vorhandenen `morsetrainer.db-wal` und `morsetrainer.db-shm`. Sonst wirkt
+  ein fremdes Journal ohne Meldung auf die Datei. Die Dateien `.defekt-*`
+  und die `vor-import-<Zeit>.zip` kommen nicht in die Datensicherung und
+  dürfen gelöscht werden, wenn alles läuft.
   Braucht eine neuere Programmfassung ein anderes Format der Datenbank,
   bleibt davor eine Kopie `morsetrainer.db.vor-v<Nummer>` liegen; sie
   kommt nicht in die Datensicherung und darf gelöscht werden, wenn alles
   läuft. Eine Datenbank aus einer neueren Fassung öffnet eine ältere
-  Fassung nicht und lässt sie unberührt.
+  Fassung nicht und lässt sie unberührt; beim Start sagt ein Hinweis, dass
+  Statistik, Diplome und Tagesübung deshalb leer sind und nichts
+  gespeichert wird.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start
