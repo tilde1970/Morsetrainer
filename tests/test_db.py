@@ -487,15 +487,24 @@ class DbTest(unittest.TestCase):
                "//nutzer@nas/freigabe on /Volumes/freigabe (smbfs, nodev, nosuid, mounted by nutzer)\n"
                "srv:/export on /Volumes/nfs dir (nfs, nodev, nosuid)\n")
         with mock.patch.object(db.sys, "platform", "darwin"), \
-                mock.patch.object(db.subprocess, "run", return_value=mock.Mock(stdout=out)):
+                mock.patch.object(db.subprocess, "Popen",
+                                  return_value=mock.Mock(communicate=mock.Mock(return_value=(out, None)))):
             self.assertTrue(db._on_network_drive(Path("/Volumes/freigabe/stats/m.db")))
             self.assertTrue(db._on_network_drive(Path("/Volumes/nfs dir/m.db")))
             self.assertFalse(db._on_network_drive(Path("/Users/x/m.db")))
 
     def test_network_drive_detection_survives_a_failing_mount_command(self):
         with mock.patch.object(db.sys, "platform", "darwin"), \
-                mock.patch.object(db.subprocess, "run", side_effect=FileNotFoundError("mount")):
+                mock.patch.object(db.subprocess, "Popen", side_effect=FileNotFoundError("mount")):
             self.assertFalse(db._on_network_drive(Path("/Users/x/m.db")))
+
+    def test_hanging_mount_command_is_killed_and_not_waited_for(self):
+        proc = mock.Mock(communicate=mock.Mock(side_effect=db.subprocess.TimeoutExpired("mount", 3)))
+        with mock.patch.object(db.sys, "platform", "darwin"), \
+                mock.patch.object(db.subprocess, "Popen", return_value=proc):
+            self.assertFalse(db._on_network_drive(Path("/Users/x/m.db")))
+        proc.kill.assert_called_once()
+        proc.wait.assert_not_called()
 
 
 if __name__ == "__main__":

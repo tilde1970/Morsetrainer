@@ -209,17 +209,33 @@ NETWORK_FILESYSTEMS = ("nfs", "nfs4", "cifs", "smb", "smb2", "smb3", "smbfs", "a
                        "vboxsf", "virtiofs", "vmhgfs", "fuse.vmhgfs-fuse")
 
 
+# So lange darf `mount` (macOS) für die Netzlaufwerk-Erkennung brauchen.
+MOUNT_TIMEOUT_S = 3
+
+
 def _unescape_mount(text: str) -> str:
     """/proc/mounts schreibt Leerzeichen, Tabulator, Zeilenumbruch und
     Rückwärtsstrich als dreistellige Oktalzahl (\\040 …)."""
     return re.sub(r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), text)
 
 
+def _run_mount() -> str:
+    """Ausgabe von `mount`. Hängt der Befehl (etwa bei einer toten Netzfreigabe),
+    wird er nach der Frist beendet und nicht weiter abgewartet: subprocess.run
+    wartete nach dem Abbruch ohne Grenze auf sein Ende und fror den Start ein."""
+    proc = subprocess.Popen(["mount"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    try:
+        return proc.communicate(timeout=MOUNT_TIMEOUT_S)[0]
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise
+
+
 def _mount_table() -> list:
     """(Einhängepunkt, Dateisystemtyp) aller eingehängten Laufwerke: aus
     /proc/mounts (Linux) oder der Ausgabe von `mount` (macOS)."""
     if sys.platform == "darwin":
-        out = subprocess.run(["mount"], capture_output=True, text=True, timeout=5, check=False).stdout
+        out = _run_mount()
         # "//nutzer@host/freigabe on /Volumes/freigabe (smbfs, nodev, …)"
         return [(m.group(1), m.group(2)) for m in re.finditer(r" on (.+) \(([^,)]+)", out)]
     table = []
