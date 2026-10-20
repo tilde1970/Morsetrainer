@@ -45,7 +45,7 @@ DB_COMPANIONS = ("-wal", "-shm", "-journal")
 
 
 def _wanted(path: Path) -> bool:
-    return (path.is_file() and not path.name.endswith(".tmp") and ".defekt-" not in path.name
+    return (path.is_file() and not path.name.endswith((".tmp", ".halt")) and ".defekt-" not in path.name
             and ".vor-v" not in path.name and not path.name.endswith(DB_COMPANIONS))
 
 

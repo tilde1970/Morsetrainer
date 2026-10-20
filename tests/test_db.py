@@ -210,7 +210,21 @@ class DbTest(unittest.TestCase):
         self.assertEqual(db.load_state("daily", {}), {})
         db.save_state("daily", {"days": {}})
         self.assertEqual(db.load_state("daily", {}), {"days": {}})
-        self.assertEqual(len(list(self.file.parent.glob("morsetrainer.db.defekt-*"))), 1)
+        self.assertEqual(len(list(self.file.parent.glob("morsetrainer.db.defekt-*[0-9]"))), 1)
+
+    def test_journal_of_a_broken_file_goes_with_it(self):
+        self.file.parent.mkdir(parents=True)
+        self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)
+        wal = self.file.with_name(self.file.name + "-wal")
+        wal.write_bytes(b"altes Journal")
+        self.file.with_name(self.file.name + "-shm").write_bytes(b"index")
+        db.close()
+        db.save_state("daily", {"days": {}})
+        aside = list(self.file.parent.glob("morsetrainer.db.defekt-*-wal"))
+        self.assertEqual([p.read_bytes() for p in aside], [b"altes Journal"])
+        self.assertEqual(db.load_state("daily", {}), {"days": {}})
+        self.assertFalse(self.file.with_name(self.file.name + "-shm").read_bytes() == b"index"
+                         if self.file.with_name(self.file.name + "-shm").exists() else False)
 
     def test_locked_file_is_not_set_aside(self):
         db.save_state("daily", {"days": {}})

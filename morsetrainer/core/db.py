@@ -277,10 +277,31 @@ def _copy_before_migration(file: Path, version: int) -> None:
         partial.unlink(missing_ok=True)
 
 
-def _set_aside(file: Path) -> None:
+def _hold_journal(file: Path):
+    """Hält das Journal (-wal) mit einem zweiten Namen fest: SQLite löscht es
+    beim Schließen einer Verbindung, die die Datei nicht öffnen konnte. Liefert
+    den Zweitnamen, oder None (kein Journal, Dateisystem ohne harte Links)."""
+    wal = file.with_name(file.name + "-wal")
+    held = wal.with_name(wal.name + ".halt")
+    try:
+        held.unlink(missing_ok=True)
+        os.link(wal, held)
+    except OSError:
+        return None
+    return held
+
+
+def _set_aside(file: Path, held_journal=None) -> None:
+    """Legt die Datei als "<Name>.defekt-<Zeitstempel>" beiseite. Ihr Journal
+    (`held_journal`, siehe _hold_journal) kommt unter dem passenden Namen mit,
+    denn SQLite ordnet es über den Dateinamen zu und dort kann noch
+    Nicht-Zurückgeschriebenes stehen; auf die neue Datei wirken darf es nicht.
+    Der Wal-Index (-shm) ist wiederherstellbar und wird gelöscht."""
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    os.replace(file, file.with_name(f"{file.name}.defekt-{stamp}"))
-    # Das Journal gehört zur alten Datei und darf nicht auf die neue wirken.
+    aside = file.with_name(f"{file.name}.defekt-{stamp}")
+    os.replace(file, aside)
+    if held_journal is not None:
+        os.replace(held_journal, aside.with_name(aside.name + "-wal"))
     for suffix in ("-wal", "-shm"):
         file.with_name(file.name + suffix).unlink(missing_ok=True)
 
@@ -296,13 +317,19 @@ def _connection() -> sqlite3.Connection:
         close()
     if _conn is None:
         file.parent.mkdir(parents=True, exist_ok=True)
+        held = _hold_journal(file)
         try:
-            _conn = _open(file)
-        except sqlite3.OperationalError:
-            raise  # gesperrt, keine Rechte …: Datei nicht anrühren
-        except sqlite3.DatabaseError:
-            _set_aside(file)
-            _conn = _open(file)
+            try:
+                _conn = _open(file)
+            except sqlite3.OperationalError:
+                raise  # gesperrt, keine Rechte …: Datei nicht anrühren
+            except sqlite3.DatabaseError:
+                _set_aside(file, held)
+                held = None
+                _conn = _open(file)
+        finally:
+            if held is not None:
+                held.unlink(missing_ok=True)
         _conn_path = file
         generation += 1
     return _conn
