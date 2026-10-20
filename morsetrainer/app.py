@@ -272,9 +272,11 @@ class MorseTrainerApp:
         self.daily = DailyRunner(self, self.daily_bar)
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
-        self.root.after(300, self._warn_if_database_too_new)
         self.root.after(500, self._check_awards_at_start)
-        if self.first_start:
+        if db.too_new():
+            # Der Hinweis zuerst und allein: Die Begrüßung käme sonst mitten hinein.
+            self.root.after(300, self._warn_if_database_too_new)
+        elif self.first_start:
             self.root.after(FIRST_START_GREETING_MS, self._greet_first_start)
         # Ausgabegerät wach halten, damit kein Zeichenanfang verloren geht.
         audio.keep_awake()
@@ -1799,13 +1801,17 @@ class MorseTrainerApp:
 
     def _warn_if_database_too_new(self):
         """Stammen die Daten von einer neueren Version, sind Statistik, Diplome
-        und Tagesübung leer und Speichern scheitert: das einmal beim Start sagen."""
-        if not db.too_new():
-            return
-        dialog.showwarning(tr("Daten von neuerer Version"), tr(
-            "Die Daten stammen von einer neueren Version des Morsetrainers. Statistik, Diplome und "
-            "Tagesübung erscheinen deshalb leer, und neue Ergebnisse werden nicht gespeichert. Die Daten "
-            "bleiben unverändert. Bitte aktualisiere den Morsetrainer."), parent=self.root)
+        und Tagesübung leer und Speichern scheitert: das einmal beim Start sagen,
+        auch bei ausgeschalteter Ansage. Beim allerersten Start folgt danach die
+        Begrüßung."""
+        if db.too_new():
+            dialog.showwarning(tr("Daten von neuerer Version"), tr(
+                "Die Daten stammen von einer neueren Version des Morsetrainers. Statistik, Diplome und "
+                "Tagesübung erscheinen deshalb leer, und neue Ergebnisse werden nicht gespeichert. Die Daten "
+                "bleiben unverändert. Bitte aktualisiere den Morsetrainer."), parent=self.root,
+                always_speak=True)
+        if self.first_start:
+            self._greet_first_start()
 
     def _check_awards_at_start(self):
         """Beim allerersten Start still nachtragen, mit einem Hinweis."""

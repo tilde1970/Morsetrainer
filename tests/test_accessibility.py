@@ -1666,6 +1666,49 @@ class ListenAnnounceTest(AnnouncerCase):
 REAL_GREETING = app_module.MorseTrainerApp._greet_first_start
 
 
+class DialogSpeechTest(AnnouncerCase):
+    """Eine wichtige Meldung wird auch bei ausgeschalteter Ansage gesprochen,
+    eine gewöhnliche nicht."""
+
+    def open(self, **kwargs):
+        from morsetrainer.widgets import dialog
+        self.app.announcer.var.set(False)
+        del self.said[:]
+        message = dialog.MessageDialog(self.root, "Titel", "Wichtiger Text", question=False, **kwargs)
+        self.addCleanup(message.close)
+
+    def test_important_message_is_spoken_with_announcer_off(self):
+        self.open(always_speak=True)
+        self.assertTrue(self.pump_until(lambda: any("Wichtiger Text" in s for s in self.said)))
+
+    def test_ordinary_message_stays_silent_with_announcer_off(self):
+        self.open()
+        self.assertFalse(self.pump_until(lambda: self.said, timeout=0.5))
+
+
+class DatabaseWarningTest(AnnouncerCase):
+    """Der Hinweis auf zu neue Daten kommt vor der Begrüßung und wird gesprochen."""
+
+    def test_warning_is_forced_and_greeting_follows_it(self):
+        order = []
+        self.app.first_start = True
+        with mock.patch.object(app_module.db, "too_new", return_value=True), \
+                mock.patch.object(app_module.dialog, "showwarning",
+                                  lambda *a, **k: order.append(("warnung", k.get("always_speak")))), \
+                mock.patch.object(self.app, "_greet_first_start", lambda: order.append(("begrüßung", None))):
+            self.app._warn_if_database_too_new()
+        self.assertEqual(order, [("warnung", True), ("begrüßung", None)])
+
+    def test_no_warning_still_greets_at_first_start(self):
+        order = []
+        self.app.first_start = True
+        with mock.patch.object(app_module.db, "too_new", return_value=False), \
+                mock.patch.object(app_module.dialog, "showwarning", lambda *a, **k: order.append("warnung")), \
+                mock.patch.object(self.app, "_greet_first_start", lambda: order.append("begrüßung")):
+            self.app._warn_if_database_too_new()
+        self.assertEqual(order, ["begrüßung"])
+
+
 class WindowKeysTest(AnnouncerCase):
     """F9 und F11 wirken in jedem Fenster, nicht nur im Hauptfenster."""
 

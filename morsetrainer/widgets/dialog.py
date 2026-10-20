@@ -27,7 +27,7 @@ class MessageDialog:
     """Modales Fenster mit `text` und einem Knopf (Meldung) oder zweien
     (Frage). `answer` ist nach dem Schließen True (Ja/OK) oder False."""
 
-    def __init__(self, parent, title: str, text: str, question: bool):
+    def __init__(self, parent, title: str, text: str, question: bool, always_speak: bool = False):
         self.answer = False
         self.parent = parent
         self.restore_focus = focus_keeper(parent.winfo_toplevel())
@@ -60,7 +60,7 @@ class MessageDialog:
         # davor soll nichts entscheiden. focus_force: ohne Fenstermanager
         # gingen Enter und Escape sonst ans Hauptfenster.
         top.focus_force()
-        self._say()
+        self._say(force=always_speak)
 
     def _say(self, force: bool = False) -> None:
         instance = announcer.get()
@@ -123,9 +123,10 @@ def askyesno(title: str, text: str, parent=None) -> bool:
     return MessageDialog(_parent(parent), title, text, question=True).wait()
 
 
-def showinfo(title: str, text: str, parent=None) -> None:
-    """Hinweis mit einem Knopf „OK“."""
-    MessageDialog(_parent(parent), title, text, question=False).wait()
+def showinfo(title: str, text: str, parent=None, always_speak: bool = False) -> None:
+    """Hinweis mit einem Knopf „OK“. `always_speak`: auch bei ausgeschalteter
+    Ansage sprechen, für Meldungen, die man ohne Hinsehen nicht verpassen darf."""
+    MessageDialog(_parent(parent), title, text, question=False, always_speak=always_speak).wait()
 
 
 # Warnung und Fehler sehen gleich aus; was los ist, sagen Titel und Text.
