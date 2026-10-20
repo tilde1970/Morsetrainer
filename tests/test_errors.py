@@ -97,6 +97,17 @@ class AppErrorTest(AppTestCase):
             self.app._save_state_or_warn()
         self.assertIn("schreibgeschützt", warned.call_args.args[1])
 
+    def test_newer_database_is_announced_at_start(self):
+        with mock.patch.object(app_module.db, "too_new", return_value=True), \
+                mock.patch.object(app_module.dialog, "showwarning") as warned:
+            self.app._warn_if_database_too_new()
+        warned.assert_called_once()
+        self.assertIn("neueren Version", warned.call_args.args[1])
+        with mock.patch.object(app_module.db, "too_new", return_value=False), \
+                mock.patch.object(app_module.dialog, "showwarning") as warned:
+            self.app._warn_if_database_too_new()
+        warned.assert_not_called()
+
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.dialog, "showerror") as shown:
             for _ in range(2):

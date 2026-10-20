@@ -248,6 +248,14 @@ class DbTest(unittest.TestCase):
         self.assertEqual(db._read("PRAGMA journal_mode"), [("wal",)])
         self.assertEqual(db._read("PRAGMA user_version"), [(db.SCHEMA_VERSION,)])
 
+    def test_too_new_tells_a_newer_file_from_a_normal_one(self):
+        self.assertFalse(db.too_new())
+        db.close()
+        raw = sqlite3.connect(self.file)
+        raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
+        raw.close()
+        self.assertTrue(db.too_new())
+
     def test_newer_schema_is_refused_and_untouched(self):
         db.save_state("daily", {"days": {}})
         db.close()

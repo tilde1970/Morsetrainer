@@ -163,6 +163,13 @@ EN.update({
     "alle Einstellungen und Statistiken, z. B. für einen neuen Rechner":
         "all settings and statistics, e.g. for a new computer",
     "Daten sichern": "Back up data",
+    "Daten von neuerer Version": "Data from a newer version",
+    "Die Daten stammen von einer neueren Version des Morsetrainers. Statistik, Diplome und "
+    "Tagesübung erscheinen deshalb leer, und neue Ergebnisse werden nicht gespeichert. Die Daten "
+    "bleiben unverändert. Bitte aktualisiere den Morsetrainer.":
+        "The data comes from a newer version of Morsetrainer. Statistics, diplomas and the daily "
+        "practice therefore appear empty, and new results are not saved. The data stays unchanged. "
+        "Please update Morsetrainer.",
     "Morsetrainer-Sicherung-{date}.zip": "Morsetrainer-backup-{date}.zip",
     "Die Sicherung konnte nicht geschrieben werden:\n{error}": "The backup could not be written:\n{error}",
     "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "

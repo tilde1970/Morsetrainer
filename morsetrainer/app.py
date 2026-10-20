@@ -17,7 +17,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import (audio, awards, backup, band, daily, errorlog, koch, migration, practice, qso_text, review,
+from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog, koch, migration, practice, qso_text, review,
                                 screenreader, sfx, speech, stats, storage, tempo, week)
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
@@ -272,6 +272,7 @@ class MorseTrainerApp:
         self.daily = DailyRunner(self, self.daily_bar)
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
+        self.root.after(300, self._warn_if_database_too_new)
         self.root.after(500, self._check_awards_at_start)
         if self.first_start:
             self.root.after(FIRST_START_GREETING_MS, self._greet_first_start)
@@ -1795,6 +1796,16 @@ class MorseTrainerApp:
         self.awards_panel.refresh(awards.overview(statuses=statuses))
         self.lifeline_panel.refresh()
         return seeded
+
+    def _warn_if_database_too_new(self):
+        """Stammen die Daten von einer neueren Version, sind Statistik, Diplome
+        und Tagesübung leer und Speichern scheitert: das einmal beim Start sagen."""
+        if not db.too_new():
+            return
+        dialog.showwarning(tr("Daten von neuerer Version"), tr(
+            "Die Daten stammen von einer neueren Version des Morsetrainers. Statistik, Diplome und "
+            "Tagesübung erscheinen deshalb leer, und neue Ergebnisse werden nicht gespeichert. Die Daten "
+            "bleiben unverändert. Bitte aktualisiere den Morsetrainer."), parent=self.root)
 
     def _check_awards_at_start(self):
         """Beim allerersten Start still nachtragen, mit einem Hinweis."""

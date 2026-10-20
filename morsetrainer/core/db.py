@@ -308,6 +308,19 @@ def _connection() -> sqlite3.Connection:
     return _conn
 
 
+def too_new() -> bool:
+    """True, wenn die Datenbank von einer neueren Programmfassung stammt
+    (sie bleibt unberührt, Lesen zeigt dann nur „leer“, Schreiben scheitert)."""
+    with _lock:
+        try:
+            _connection()
+        except SchemaTooNew:
+            return True
+        except (Error, OSError):
+            return False
+    return False
+
+
 @contextmanager
 def transaction():
     """Alle Schreibvorgänge im Block gemeinsam festschreiben oder bei einem
