@@ -1,5 +1,26 @@
 # Änderungen
 
+## 2.59
+
+- **Statistik:** Die Vergleichszeile nennt Zeichen, die erst in den letzten
+  7 Tagen dazugekommen sind, und erinnert daran, dass neue Zeichen den
+  Schnitt anfangs langsamer machen. F11 sagt nur den Satz, ohne die Zeichen.
+- **Tabellen:** Bei großer Schrift zeigen sie weniger Zeilen (mindestens 4),
+  damit sie nicht höher werden als der Bildschirm; die übrigen Zeilen rollen.
+  Beim Tab in eine Tabelle sagt die Ansage Name, Rolle und erste Zeile
+  zusammen, statt dass die Zeile den Namen verdrängt.
+- **Ansage:** Dateipfade liest die Stimme nur noch mit dem letzten Teil
+  („fehler.log“ statt jedes Ordners davor).
+- **Rufzeichen:** Im Durchgang bleibt die Auswahl der Rufzeichen fest, auch
+  wenn du oben das Feld „Zeichen“ änderst; sie gilt erst nach dem Durchgang.
+  Im Rufz-Durchgang kamen sonst erfundene Rufzeichen dazu. Bei erfundenen
+  Rufzeichen nennt die gespeicherte Sitzung jetzt auch „nur gelernte
+  Zeichen“ und den Zeichensatz.
+- **Zertifikate:** Eine leere Zertifikatsdatei zählt nicht mehr als brauchbar;
+  dann greift der Rückfall auf die Zertifikate des Systems (Rufzeichenliste,
+  Update-Prüfung).
+- **GitHub:** Sponsor-Knopf und ein Hinweis oben in der README (Ko-fi).
+
 ## 2.58
 
 - **Automatische Sicherung:** Beim Beenden legt der Morsetrainer höchstens alle

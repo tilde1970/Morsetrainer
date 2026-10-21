@@ -1014,6 +1014,12 @@ EN.update({
         "The statistics now say how many characters each comparison is based on, and F11 reads them out more "
         "briefly. On low screens the header collapses by itself, and the window is never larger than the "
         "screen. Everything else is under Help, Changes.",
+    ("Die Vergleichszeile im Reiter Statistik nennt neue Zeichen. Tabellen sind bei großer Schrift "
+     "niedriger, und die Ansage nennt beim Tab in eine Tabelle Name und erste Zeile zusammen. Die "
+     "Rufzeichen-Auswahl bleibt im Durchgang fest. Alles Weitere steht unter Hilfe, Änderungen."):
+        "The comparison line in the Statistics tab names new characters. Tables are shorter at large font "
+        "sizes, and when you Tab into a table the announcement gives name and first row together. The "
+        "callsign choice stays fixed during a run. Everything else is under Help, Changes.",
     ("Der Morsetrainer sichert deine Daten jetzt von selbst, höchstens einmal pro Woche beim Beenden "
      "(Einstellungen, Daten). Meldungen beim Start sind klarer, und das Rauschen in der Antwortpause "
      "bleibt gleich laut. Alles Weitere steht unter Hilfe, Änderungen."):

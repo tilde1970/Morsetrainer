@@ -1,5 +1,26 @@
 # Changes
 
+## 2.59
+
+- **Statistics:** The comparison line names characters that only appeared in
+  the last 7 days and reminds you that new characters slow the average down
+  at first. F11 says only the sentence, without the characters.
+- **Tables:** At large font sizes they show fewer rows (at least 4) so they do
+  not grow taller than the screen; the other rows scroll. When you Tab into a
+  table, the announcement gives name, role and first row together instead of
+  the row replacing the name.
+- **Announcements:** The voice reads file paths with their last part only
+  (“fehler.log” instead of every folder before it).
+- **Callsigns:** During a run the choice of callsigns stays fixed, even if you
+  change the “Zeichen” field at the top; it applies after the run. In a Rufz
+  run, made-up callsigns could otherwise slip in. For made-up callsigns the
+  saved session now also names “learned characters only” and the character
+  set.
+- **Certificates:** An empty certificate file no longer counts as usable; the
+  fallback to the system's certificates then applies (callsign list, update
+  check).
+- **GitHub:** Sponsor button and a note at the top of the README (Ko-fi).
+
 ## 2.58
 
 - **Automatic backup:** On exit, Morsetrainer makes a backup by itself at most

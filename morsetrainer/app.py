@@ -184,6 +184,9 @@ WHATS_NEW = {
     "2.56": N_("Die Statistik nennt jetzt bei jedem Vergleich, aus wie vielen Zeichen er stammt, und F11 liest sie "
                "kürzer vor. Auf niedrigen Bildschirmen klappt die Kopfleiste von selbst zu, und das Fenster ist nie "
                "größer als der Bildschirm. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.59": N_("Die Vergleichszeile im Reiter Statistik nennt neue Zeichen. Tabellen sind bei großer Schrift "
+               "niedriger, und die Ansage nennt beim Tab in eine Tabelle Name und erste Zeile zusammen. Die "
+               "Rufzeichen-Auswahl bleibt im Durchgang fest. Alles Weitere steht unter Hilfe, Änderungen."),
     "2.58": N_("Der Morsetrainer sichert deine Daten jetzt von selbst, höchstens einmal pro Woche beim Beenden "
                "(Einstellungen, Daten). Meldungen beim Start sind klarer, und das Rauschen in der Antwortpause "
                "bleibt gleich laut. Alles Weitere steht unter Hilfe, Änderungen."),
