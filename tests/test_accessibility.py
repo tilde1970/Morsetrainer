@@ -379,6 +379,11 @@ class AnnouncerTest(AnnouncerCase):
         self.assertEqual(announcer._cell_spoken("B (9), 5 (2)"), "Be gleich 9 mal, Fünf gleich 2 mal")
         self.assertEqual(announcer._cell_spoken("? (3)"), "Fragezeichen gleich 3 mal")
         self.assertEqual(announcer._cell_spoken("N (1)"), "Enn gleich einmal")  # nicht „1 mal“
+        # Dateipfade: nur der letzte Teil, nicht „home oder maik oder …“.
+        self.assertEqual(announcer.speakable("Einzelheiten stehen in\n/home/maik/.local/share/morsetrainer/fehler.log\n\nBitte"),
+                         "Einzelheiten stehen in\nfehler.log\n\nBitte")
+        self.assertEqual(announcer.speakable("Gespeichert: C:\\Users\\Max\\Musik\\cw.mp3."), "Gespeichert: cw.mp3.")
+        self.assertEqual(announcer.speakable("Ordner /tmp, Seite https://github.com/a/b"), "Ordner /tmp, Seite https://github.com/a/b")
         # Spaltenköpfe der Statistik.
         self.assertEqual(announcer.speakable("Ø Zeit (s)"), "Durchschnittszeit in Sekunden")
         self.assertEqual(announcer.speakable("Ø effektive Geschwindigkeit: 18 WPM"),

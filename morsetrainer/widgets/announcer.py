@@ -979,6 +979,8 @@ _CONFUSION = re.compile(r"(\S+) \((\d+)\)")
 _CONFUSIONS = re.compile(r"^\S+ \(\d+\)(, \S+ \(\d+\))*$")
 # Rufzeichen in einer Tabellenzelle (Buchstaben und Ziffern, ggf. mit /).
 _CALLSIGN = re.compile(r"^(?=.*\d)(?=.*[A-Z])[A-Z0-9/]{3,}$")
+# Dateipfad (POSIX ab zwei Teilen, Windows mit Laufwerk) ohne Leerzeichen; der Schluss ohne Satzzeichen.
+_PATH = re.compile(r"(?<![\w/.:~\\])(?:~?(?:/[^\s/]+)+/|[A-Za-z]:\\(?:[^\s\\]+\\)*)([^\s/\\]*[^\s/\\.,;:)!?])")
 _WORD_SLASH = re.compile(r"(?<=[a-zäöüß]{2})/(?=[^\W\d_]{2})")
 # Zeiteinheiten nur direkt hinter einer Zahl (sonst ist „s“ ein Buchstabe);
 # (Muster, Einzahl, Mehrzahl).
@@ -1009,6 +1011,7 @@ def speakable(text: str) -> str:
     text = _IP_ADDRESS.sub(lambda m: f"{tr('IP-Adresse')} " + f" {tr('Punkt')} ".join(m.group(1).split("."))
                            + (f", {tr('Port')} {m.group(2)}" if m.group(2) else ""), text)
     text = _PIN.sub(lambda m: f"{tr('PIN-Nummer')} {spell_chars(m.group(1))}", text)
+    text = _PATH.sub(r"\1", text)  # nur der letzte Teil: „home oder maik oder …“ hilft nicht
     text = _WORD_SLASH.sub(" " + tr("oder") + " ", text)
     for pattern, word in _UNITS:
         text = pattern.sub(tr(word), text)
