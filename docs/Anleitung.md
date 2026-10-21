@@ -756,6 +756,9 @@ hindurch, dein eigener Mithörton im Contest nicht.
 - Es klingelt aber leicht, und Stationen neben deiner Tonhöhe (Anrufer im
   Contest, die Gegenstation im QSO) werden leiser. Gegen QRM nah oder auf
   Zero-Beat hilft es nicht.
+- Das ganze Bild wird mit einem schmalen Filter leiser, weil die
+  Lautstärkeregelung (AGC) wie im Empfänger vor dem Filter sitzt. Stell
+  bei Bedarf die Lautstärke im Bandfenster nach.
 - Der S/N-Wert bezieht sich weiter auf 2,4 kHz; das Fenster zeigt
   zusätzlich den Wert im Filter. Für die Stufen und das Diplom zählt der
   Wert im Filter: „mittel“ mit 500-Hz-Filter entspricht etwa „leicht“.

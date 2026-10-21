@@ -747,6 +747,9 @@ it, your own sidetone in the contest does not.
 - But it rings slightly, and stations off your pitch (callers in the
   contest, the other station in a QSO) get quieter. It does not help
   against close or zero-beat QRM.
+- With a narrow filter the whole picture gets quieter, because the volume
+  control (AGC) sits in front of the filter, as in a receiver. Raise the
+  volume in the band window if needed.
 - The S/N value still refers to 2.4 kHz; the window also shows the value
   inside the filter. The levels and the award count the value inside the
   filter: “medium” with a 500 Hz filter is about “light”.
