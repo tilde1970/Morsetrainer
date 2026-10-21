@@ -7,6 +7,9 @@ From learning single characters with the Koch method up to running your own
 contest pile-up under realistic HF conditions – alone at your own computer
 or together at a club evening on the local network.
 
+> **Do you like the Morsetrainer?** It is free and stays free. If you would like
+> to say thanks: **[Support me on Ko-fi](https://ko-fi.com/dl4ym)**.
+
 **Language:** the program starts in German. Switch to English with
 Ctrl+Comma (or the “Einstellungen …” button at the top right) → “Sprache /
 Language”; it takes effect after a restart. The screenshots show the German

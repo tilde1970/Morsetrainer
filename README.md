@@ -8,6 +8,9 @@ Vom Lernen einzelner Zeichen nach der Koch-Methode bis zum eigenen
 Contest-Pile-up unter realistischen Kurzwellenbedingungen – allein am
 eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
+> **Gefällt dir der Morsetrainer?** Er ist kostenlos und bleibt es. Wenn du dich
+> bedanken möchtest: **[Mich auf Ko-fi unterstützen](https://ko-fi.com/dl4ym)**.
+
 **English:** The program can be switched to English under
 „Einstellungen …“ (or Ctrl+Comma) → „Sprache / Language“. English overview: [README.en.md](README.en.md).
 
