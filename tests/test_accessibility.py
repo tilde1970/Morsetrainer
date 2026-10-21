@@ -89,6 +89,22 @@ class FontScaleTest(AppTestCase):
         tree.destroy()
         self.root.withdraw()
 
+    def test_tall_tables_show_fewer_rows_at_large_font(self):
+        tree = ttk.Treeview(self.root, columns=("a",), show="headings", height=12)
+        tree.heading("a", text="a")
+        tree.pack()
+        theme.fit_columns(tree, {"a": 60})
+        small = ttk.Treeview(self.root, columns=("a",), show="headings", height=3)
+        small.heading("a", text="a")
+        small.pack()
+        theme.fit_columns(small, {"a": 60})
+        self.addCleanup(tree.destroy)
+        self.addCleanup(small.destroy)
+        self.app.set_font_scale(200)
+        self.assertEqual((int(tree.cget("height")), int(small.cget("height"))), (6, 3))
+        self.app.set_font_scale(100)
+        self.assertEqual(int(tree.cget("height")), 12)
+
     def test_tables_and_wrapped_texts_grow(self):
         row = int(ttk.Style(self.root).lookup("Treeview", "rowheight"))
         label = theme.hint(self.root, text="x", wrap=400)
@@ -2035,6 +2051,27 @@ class StatisticsAnnounceTest(AnnouncerCase):
         spoken = " ".join(self.said)
         self.assertIn("Diplom:", spoken)
         self.assertIn(detail.split(".")[0][:25], spoken)
+
+    def test_first_row_after_tabbing_in_keeps_name_and_role(self):
+        # Die Tabelle wählt beim Tab die erste Zeile und liest sie vor; Name und
+        # Rolle (eben angesagt) sind sonst weg.
+        tree = ttk.Treeview(self.root, columns=("a",), show="headings")
+        tree.heading("a", text="Spalte")
+        tree.insert("", "end", values=("Wert",))
+        tree.pack()
+        self.addCleanup(tree.destroy)
+        self.announcer.name(tree, "Meine Tabelle")
+        self.app.announcer.var.set(True)
+        self.root.update()
+        tree.selection_set(tree.get_children()[0])
+        instance = self.announcer._instance
+        with mock.patch.object(tree, "focus_get", lambda: tree), \
+                mock.patch.object(instance, "say", wraps=instance.say) as say:
+            self.announcer._say_focus(tree)
+            tree.event_generate("<<TreeviewSelect>>")
+        spoken = say.call_args_list[-1].args[0]  # die letzte Ansage verdrängt die erste
+        self.assertIn("Meine Tabelle, Tabelle", spoken)
+        self.assertIn("Spalte: Wert", spoken)
 
     def test_lifeline_days_with_the_arrow_keys(self):
         from datetime import date, timedelta

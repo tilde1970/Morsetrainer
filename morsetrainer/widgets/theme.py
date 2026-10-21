@@ -494,12 +494,17 @@ def fit_columns(tree, widths: dict) -> None:
     Fenster), rollt sie waagerecht: Rollbalken darunter, sobald nötig, und
     Pfeil links/rechts. `tree` muss mit pack angeordnet sein."""
     tree._mt_columns = widths
+    tree._mt_rows = int(tree.cget("height"))
     bar = tree._mt_xbar = ttk.Scrollbar(tree.master, orient="horizontal", command=tree.xview)
     tree.configure(xscrollcommand=lambda first, last: _show_xbar(tree, bar, first, last))
     for key, step in (("<Left>", -1), ("<Right>", 1)):
         tree.bind(key, lambda e, step=step: (tree.xview_scroll(step * scaled(X_SCROLL_STEP), "units"), "break")[1])
     _size_columns(tree)
 
+
+# Bei großer Schrift zeigt eine Tabelle weniger Zeilen (nie unter dieser Zahl), damit sie
+# nicht höher wird als der Bildschirm; die übrigen Zeilen rollen.
+MIN_TREE_ROWS = 4
 
 # So viele Pixel (bei 100 %) rollt Pfeil links/rechts eine Tabelle.
 X_SCROLL_STEP = 60
@@ -536,6 +541,8 @@ def _size_columns(tree) -> None:
     for index, column in enumerate(columns):
         width = max(scaled(tree._mt_columns.get(column, 60)), font.measure(tree.heading(column, "text")) + scaled(14))
         tree.column(column, width=width, minwidth=width, stretch=index == len(columns) - 1)
+    rows = tree._mt_rows
+    tree.configure(height=min(rows, max(MIN_TREE_ROWS, round(rows * 100 / _scale))))
 
 
 def _scale_trees(widget) -> None:

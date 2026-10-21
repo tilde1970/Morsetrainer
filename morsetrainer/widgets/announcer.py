@@ -55,6 +55,7 @@ CHUNK_CHARS = 150
 # etwa die Ansage eines eben gewechselten Reiters nicht dazukommt.
 WINDOW_JOIN_BEFORE_S = 0.25
 WINDOW_JOIN_AFTER_S = 0.4
+TABLE_JOIN_AFTER_S = 0.5  # so kurz nach Name und Rolle einer Tabelle gehört die erste Zeile dazu
 # Die Stimme erst so lange nach dem Zeichnen laden: Ihr Laden hält alle
 # Python-Threads knapp 1 s an, auch die Oberfläche (core/speech.py); so
 # steht das Fenster schon, statt erst danach zu erscheinen.
@@ -853,7 +854,14 @@ def _read_row(event) -> None:
     extra = _row_extras.get(str(tree))
     if extra is not None and extra():
         parts.append(extra().rstrip("."))
-    _instance.say(". ".join(parts) + ".")
+    text = ". ".join(parts) + "."
+    # Der Tab in die Tabelle wählt die erste Zeile gleich nach der Ansage von
+    # Name und Rolle; die Zeile verdrängte sie. Dann beides in einer Ansage.
+    recent = _instance.recent
+    intro = describe(tree)
+    if recent is not None and recent[0] == speakable(intro) and time.time() - recent[1] < TABLE_JOIN_AFTER_S:
+        text = f"{intro} {text}"
+    _instance.say(text)
 
 
 def times(count: int) -> str:
