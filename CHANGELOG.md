@@ -1,5 +1,33 @@
 # Änderungen
 
+## 2.60
+
+- **Tabellen bei großer Schrift:** Unter einer gekürzten Tabelle steht, welche
+  Zeilen zu sehen sind („Zeilen 1 bis 4 von 15, weitere mit Pfeil abwärts“);
+  passen alle Zeilen, fehlt die Zeile. Die Tabellen im Netzwerk (Teilnehmer,
+  Ergebnisse) werden bei großer Schrift ebenfalls gekürzt, und ein Wechsel der
+  Schriftgröße setzt ihre Höhe nicht mehr zurück.
+- **Ansage der Tabellen:** Beim Tab in eine Tabelle nennt die Ansage jetzt
+  auch die Zeilenzahl („15 Zeilen, Pfeiltasten wählen eine Zeile“). Die
+  Zeichen-Tabelle der Statistik heißt „Zeichen nach Fehlern sortiert“ statt
+  wie die lange Vergleichszeile darüber; der falsche Punkt vor dem Komma in
+  Tabellennamen ist weg.
+- **Dateipfade in der Ansage:** Fehlermeldungen (Fehlerfenster, rote
+  Statusmeldungen) lesen den ganzen Pfad vor, die Teile mit Pausen; sonst
+  war bei einem nicht erreichbaren Ordner nur sein letzter Name zu hören.
+  Andere Meldungen nennen weiter nur den letzten Teil. Ordner mit Leerzeichen
+  („Application Support“) und ein Schrägstrich am Ende werden richtig
+  behandelt. „und/oder“ spricht die Stimme als „und oder“.
+- **Statistik:** Bei „Neu dabei“ stehen die Buchstaben vor Ziffern und
+  Sonderzeichen; was über sechs hinausgeht, heißt „und 2 weitere“.
+- **Reiter Rufzeichen:** Die Anhänge (/P, Gast-Präfixe) folgen im Durchgang
+  dem Zeichensatz vom Start, nicht mehr dem Feld „Zeichen“.
+- **Daten einlesen:** Die Frage nennt jetzt die Datei `vor-import-….zip` im
+  Datenordner, in die der bisherige Stand vorher gesichert wird.
+- **Anleitung:** Neue Zeichen in der Vergleichszeile, gekürzte Tabellen,
+  Dateipfade in der Ansage und die feste Auswahl der Rufzeichen im Durchgang
+  sind beschrieben.
+
 ## 2.59
 
 - **Statistik:** Die Vergleichszeile nennt Zeichen, die erst in den letzten

@@ -184,6 +184,9 @@ WHATS_NEW = {
     "2.56": N_("Die Statistik nennt jetzt bei jedem Vergleich, aus wie vielen Zeichen er stammt, und F11 liest sie "
                "kürzer vor. Auf niedrigen Bildschirmen klappt die Kopfleiste von selbst zu, und das Fenster ist nie "
                "größer als der Bildschirm. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.60": N_("Unter einer gekürzten Tabelle steht bei großer Schrift, welche Zeilen zu sehen sind, und die Ansage "
+               "nennt beim Tab in eine Tabelle die Zeilenzahl. Fehlermeldungen lesen den ganzen Pfad vor. Alles "
+               "Weitere steht unter Hilfe, Änderungen."),
     "2.59": N_("Die Vergleichszeile im Reiter Statistik nennt neue Zeichen. Tabellen sind bei großer Schrift "
                "niedriger, und die Ansage nennt beim Tab in eine Tabelle Name und erste Zeile zusammen. Die "
                "Rufzeichen-Auswahl bleibt im Durchgang fest. Alles Weitere steht unter Hilfe, Änderungen."),

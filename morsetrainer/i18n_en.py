@@ -1020,6 +1020,12 @@ EN.update({
         "The statistics now say how many characters each comparison is based on, and F11 reads them out more "
         "briefly. On low screens the header collapses by itself, and the window is never larger than the "
         "screen. Everything else is under Help, Changes.",
+    ("Unter einer gekürzten Tabelle steht bei großer Schrift, welche Zeilen zu sehen sind, und die Ansage "
+     "nennt beim Tab in eine Tabelle die Zeilenzahl. Fehlermeldungen lesen den ganzen Pfad vor. Alles "
+     "Weitere steht unter Hilfe, Änderungen."):
+        "Below a shortened table, at large font sizes, a line says which rows are visible, and when you Tab "
+        "into a table the announcement gives the number of rows. Error messages read the whole path. "
+        "Everything else is under Help, Changes.",
     ("Die Vergleichszeile im Reiter Statistik nennt neue Zeichen. Tabellen sind bei großer Schrift "
      "niedriger, und die Ansage nennt beim Tab in eine Tabelle Name und erste Zeile zusammen. Die "
      "Rufzeichen-Auswahl bleibt im Durchgang fest. Alles Weitere steht unter Hilfe, Änderungen."):

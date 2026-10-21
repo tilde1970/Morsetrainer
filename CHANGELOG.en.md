@@ -1,5 +1,32 @@
 # Changes
 
+## 2.60
+
+- **Tables at large font sizes:** Below a shortened table, a line says which
+  rows are visible (“Rows 1 to 4 of 15, more with arrow down”); when all rows
+  fit, the line is not shown. The tables on the network (participants,
+  results) are shortened at large font sizes as well, and changing the font
+  size no longer resets their height.
+- **Table announcements:** When you Tab into a table, the announcement now
+  also gives the number of rows (“15 rows, arrow keys choose a row”). The
+  character table in the statistics is called “Characters sorted by errors”
+  instead of taking the name of the long comparison line above it; the stray
+  period before the comma in table names is gone.
+- **File paths in announcements:** Error messages (error window, red status
+  messages) read the whole path, with pauses between the parts; before, only
+  the last name of an unreachable folder was heard. Other messages still give
+  only the last part. Folders with spaces (“Application Support”) and a
+  trailing slash are handled correctly. The voice says “and/or” as “and or”.
+- **Statistics:** In “New:” the letters come before digits and special
+  characters; anything beyond six is “and 2 more”.
+- **Callsigns tab:** During a run the affixes (/P, guest prefixes) follow the
+  character set from the start, not the “Zeichen” field.
+- **Restoring data:** The question now names the file `vor-import-….zip` in
+  the data folder, where the current state is backed up first.
+- **Guide:** New characters in the comparison line, shortened tables, file
+  paths in announcements and the fixed callsign choice during a run are
+  described.
+
 ## 2.59
 
 - **Statistics:** The comparison line names characters that only appeared in
