@@ -11,6 +11,9 @@ from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import theme
 
 
+NEW_CHARS_SHOWN = 6  # so viele neue Zeichen nennt die Vergleichszeile
+
+
 def comparison_text(comparison: dict, spoken: bool = False) -> str:
     """„Davor (30 Tage): Reaktion 0,61 s, 88 % richtig (aus 412 Zeichen) · Letzte
     7 Tage: Reaktion 0,48 s, 92 % richtig (aus 96 Zeichen). Reaktion: kleiner ist
@@ -42,9 +45,16 @@ def comparison_text(comparison: dict, spoken: bool = False) -> str:
         parts.append(f"{head}: " + (tr("zu wenig Zeichen ({n} von {min})").format(
             n=recent["good"] + recent["wrong"], min=stats.MIN_COMPARE_COUNT)
             if recent["good"] + recent["wrong"] else tr("nicht geübt")))
+    # Neue Zeichen drücken den Schnitt; sonst wirkt der Vergleich wie ein Rückschritt.
+    fresh = stats.new_chars(comparison) if enough(before) and enough(recent) else []
     if spoken:
-        return ". ".join(parts) + "."
-    return " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
+        text = ". ".join(parts) + "."
+        return text + " " + tr("Neue Zeichen machen den Schnitt anfangs langsamer.") if fresh else text
+    text = " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
+    if fresh:
+        shown = " ".join(fresh[:NEW_CHARS_SHOWN]) + (" …" if len(fresh) > NEW_CHARS_SHOWN else "")
+        text += " " + tr("Neu dabei: {chars}. Neue Zeichen machen den Schnitt anfangs langsamer.").format(chars=shown)
+    return text
 
 
 def trend_text(trend) -> str:

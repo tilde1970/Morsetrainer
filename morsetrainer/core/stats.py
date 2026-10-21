@@ -432,6 +432,18 @@ def period_comparison(now=None) -> dict:
     return result
 
 
+# So viele Antworten in den letzten Tagen, damit ein Zeichen als „neu“ gilt (kein Ausreißer).
+NEW_CHAR_MIN_COUNT = 3
+
+
+def new_chars(comparison: dict) -> list:
+    """Zeichen, die in den letzten COMPARE_DAYS Tagen mindestens NEW_CHAR_MIN_COUNT
+    mal vorkamen, davor aber gar nicht (nach period_comparison())."""
+    return sorted(char for char, entry in comparison.get("chars", {}).items()
+                  if entry[BEFORE]["good"] + entry[BEFORE]["wrong"] == 0
+                  and entry[RECENT]["good"] + entry[RECENT]["wrong"] >= NEW_CHAR_MIN_COUNT)
+
+
 def period_numbers(period: dict):
     """(Trefferquote in Prozent, mittlere Reaktion in s, gemessene Reaktionen)
     eines Zeitraums; None, wo es nichts gibt."""

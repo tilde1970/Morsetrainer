@@ -654,6 +654,9 @@ EN.update({
     "zu wenig Zeichen ({n} von {min})": "too few characters ({n} of {min})",
     "heute geübt": "practised today",
     "Reaktion: kleiner ist schneller.": "Reaction: smaller is faster.",
+    "Neu dabei: {chars}. Neue Zeichen machen den Schnitt anfangs langsamer.":
+        "New: {chars}. New characters slow the average down at first.",
+    "Neue Zeichen machen den Schnitt anfangs langsamer.": "New characters slow the average down at first.",
     ("Reaktion in der Vergleichszeile und in „davor → jetzt“ nur aus Einzelzeichen; kleiner ist "
      "schneller. Davor: die {before} Tage vor den letzten {days}, jetzt: die letzten {days}. Die Spalte zeigt den Median, erst "
      "ab {count} Messungen auf jeder Seite (sonst „–“). Neue Zeichen machen den Schnitt anfangs langsamer; "

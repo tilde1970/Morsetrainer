@@ -201,6 +201,24 @@ class StatsTest(unittest.TestCase):
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
 
+    def test_comparison_names_characters_that_are_new(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import comparison_text
+
+        def write(days_ago, rows):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            lines = [{"type": "config", "mode": "single", "start_time": start}]
+            lines += [{"type": "char", "char": c, "typed": c, "correct": True, "latency_s": 0.5} for c in rows]
+            tests.write_session(lines + [{"type": "summary"}])
+        write(20, "K" * 12)
+        write(2, "K" * 10 + "R" * 3 + "M")  # R neu und oft genug, M nur einmal
+        comparison = stats.period_comparison()
+        self.assertEqual(stats.new_chars(comparison), ["R"])
+        self.assertTrue(comparison_text(comparison).endswith(
+            "Neu dabei: R. Neue Zeichen machen den Schnitt anfangs langsamer."))
+        self.assertTrue(comparison_text(comparison, spoken=True).endswith(
+            "Neue Zeichen machen den Schnitt anfangs langsamer."))
+
     def test_comparison_skips_runs_that_were_never_finished(self):
         from datetime import datetime, timedelta
         start = (datetime.now() - timedelta(days=2)).isoformat(timespec="seconds")
