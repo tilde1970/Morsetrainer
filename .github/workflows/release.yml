@@ -36,11 +36,12 @@ jobs:
       - run: test -f dist/Morsetrainer-x86_64.AppImage.zsync
       # Wie auf Fedora, Arch, openSUSE: Dort fehlt /usr/lib/ssl, wo die
       # mitgelieferte OpenSSL die Zertifikate sucht. Der Selbsttest muss sie
-      # trotzdem finden, über die des Systems (net/certs.py).
+      # trotzdem finden, über die des Systems (net/certs.py). Mit sudo, weil
+      # ab ubuntu-24.04 AppArmor `unshare -r` (User-Namespace) sperrt.
       - run: |
           set -o pipefail
           mkdir -p /tmp/empty-ssl
-          unshare -rm sh -c 'mount --bind /tmp/empty-ssl /usr/lib/ssl && dist/morsetrainer/morsetrainer --selftest /tmp/selftest-tls.mp3' | tee /tmp/selftest-tls.log
+          sudo unshare -m sh -c 'mount --bind /tmp/empty-ssl /usr/lib/ssl && dist/morsetrainer/morsetrainer --selftest /tmp/selftest-tls.mp3' | tee /tmp/selftest-tls.log
           grep -q "^Zertifikate: .* aus /etc/ssl/" /tmp/selftest-tls.log
       - uses: actions/upload-artifact@v7
         with:

@@ -18,10 +18,10 @@ SYSTEM_CA_FILES = ("/etc/ssl/cert.pem", "/etc/ssl/certs/ca-certificates.crt",
 
 
 def _usable(paths) -> bool:
-    """Ob OpenSSL von sich aus Zertifikate findet (Datei, oder Ordner mit Inhalt)."""
-    if paths.cafile:
-        return True
+    """Ob OpenSSL von sich aus Zertifikate findet (Datei oder Ordner, jeweils mit Inhalt)."""
     try:
+        if paths.cafile:
+            return os.path.getsize(paths.cafile) > 0
         return bool(paths.capath and os.listdir(paths.capath))
     except OSError:
         return False

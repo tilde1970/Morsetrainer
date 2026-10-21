@@ -244,7 +244,7 @@ class CertificatesTest(unittest.TestCase):
         self.assertEqual(os.environ["SSL_CERT_FILE"], str(self.bundle))
 
     def test_nothing_changes_when_openssl_has_certificates(self):
-        with self.paths(cafile="/usr/lib/ssl/cert.pem"), mock.patch.object(certs.sys, "platform", "linux"):
+        with self.paths(cafile=str(self.bundle)), mock.patch.object(certs.sys, "platform", "linux"):
             self.assertIsNone(certs.use_system_certificates([str(self.bundle)]))
         self.assertNotIn("SSL_CERT_FILE", os.environ)
 
@@ -252,6 +252,12 @@ class CertificatesTest(unittest.TestCase):
         empty = Path(self.tmp.name) / "certs"
         empty.mkdir()
         with self.paths(capath=str(empty)), mock.patch.object(certs.sys, "platform", "linux"):
+            self.assertEqual(certs.use_system_certificates([str(self.bundle)]), str(self.bundle))
+
+    def test_empty_certificate_file_does_not_count(self):
+        empty = Path(self.tmp.name) / "leer.pem"
+        empty.write_text("")
+        with self.paths(cafile=str(empty)), mock.patch.object(certs.sys, "platform", "linux"):
             self.assertEqual(certs.use_system_certificates([str(self.bundle)]), str(self.bundle))
 
     def test_own_setting_and_windows_are_left_alone(self):
