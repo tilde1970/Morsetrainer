@@ -131,6 +131,22 @@ class AppErrorTest(AppTestCase):
             self.app._warn_if_database_too_new()
         warned.assert_not_called()
 
+    def test_whats_new_and_awards_wait_for_the_start_notice(self):
+        self.app.saved_state = {"seen_version": "2.0"}
+        self.app.start_notice_open = True
+        with mock.patch.object(app_module.dialog, "showinfo") as shown, \
+                mock.patch.object(self.app, "_check_awards") as checked, \
+                mock.patch.object(self.app.root, "after") as later:
+            self.app.show_whats_new()
+            self.app._check_awards_at_start()
+        shown.assert_not_called()
+        checked.assert_not_called()
+        self.assertEqual(later.call_count, 2)  # beide planen sich neu
+        self.app.start_notice_open = False
+        with mock.patch.object(app_module.dialog, "showinfo") as shown:
+            self.app.show_whats_new()
+        shown.assert_called_once()
+
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.dialog, "showerror") as shown:
             for _ in range(2):

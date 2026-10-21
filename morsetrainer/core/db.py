@@ -294,7 +294,7 @@ def _migrate(conn: sqlite3.Connection, file: Path) -> None:
             if conn.in_transaction:
                 conn.execute("ROLLBACK")
             if isinstance(exc, Exception):
-                raise MigrationError(f"Migration von Schema {version}: {exc!r}") from exc
+                raise MigrationError(f"Migration von Schema {version if version is not None else '?'}: {exc!r}") from exc
             raise
 
 
@@ -338,8 +338,22 @@ def _hold_journal(file: Path):
         except OSError:
             shutil.copy2(wal, held)
     except OSError:
+        held.unlink(missing_ok=True)  # halb kopiert
         return None
     return held
+
+
+def _remove_stale_holds(file: Path) -> None:
+    """Räumt festgehaltene Journale (-wal.halt<PID>) auf, die ein abgestürzter
+    Prozess hinterließ: ältere als ein Tag. Der Name des eigenen Prozesses wird
+    ohnehin beim Festhalten ersetzt."""
+    cutoff = datetime.now().timestamp() - 24 * 3600
+    for held in file.parent.glob(file.name + "-wal.halt*"):
+        try:
+            if held.stat().st_mtime < cutoff:
+                held.unlink()
+        except OSError:
+            pass
 
 
 def _set_aside(file: Path, held_journal=None) -> Path:
@@ -378,6 +392,7 @@ def _connection() -> sqlite3.Connection:
     if _conn is None:
         aside_file = None
         file.parent.mkdir(parents=True, exist_ok=True)
+        _remove_stale_holds(file)
         held = _hold_journal(file)
         try:
             try:

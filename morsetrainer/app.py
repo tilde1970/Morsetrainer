@@ -426,6 +426,9 @@ class MorseTrainerApp:
         hat (WHATS_NEW); bei einer frischen Installation nichts."""
         if not self.saved_state:
             return
+        if self.start_notice_open:
+            self.root.after(UPDATE_POLL_MS, self.show_whats_new)  # erst nach dem Hinweis
+            return
         seen = self.saved_state.get("seen_version")
         versions = sorted(WHATS_NEW, key=update.parse_version)
         notes = [tr(WHATS_NEW[version]) for version in versions
@@ -708,7 +711,8 @@ class MorseTrainerApp:
         self.auto_backup_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(data_card, text=tr("Automatisch sichern (wöchentlich, beim Beenden)"),
                         variable=self.auto_backup_var).pack(anchor="w", pady=2)
-        theme.hint(data.master, text=tr("Sichern und Einlesen: alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
+        theme.hint(data.master, text=tr("Sichern und Einlesen: alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"),
+                   wrap=440)
 
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
                     self.weighted_var, self.vary_var, self.refresh_var):
@@ -1856,6 +1860,9 @@ class MorseTrainerApp:
 
     def _check_awards_at_start(self):
         """Beim allerersten Start still nachtragen, mit einem Hinweis."""
+        if self.start_notice_open:
+            self.root.after(UPDATE_POLL_MS, self._check_awards_at_start)  # erst nach dem Hinweis
+            return
         if self.running_mode:
             return  # nach der Übung prüft _handle_mode_stop
         seeded = self._check_awards()
@@ -2454,9 +2461,12 @@ class MorseTrainerApp:
         scheitert sie, steht es im Fehlerprotokoll, das Schließen läuft weiter."""
         if not self.auto_backup_var.get():
             return
+        data_dir = stats.STATS_DIR.parent
         try:
-            backup.auto_backup(__version__, stats.STATS_DIR.parent)
-        except OSError:
+            if backup.auto_backup_due(data_dir):
+                self.root.withdraw()  # sonst steht das Fenster ohne Rückmeldung da, bis die Sicherung fertig ist
+            backup.auto_backup(__version__, data_dir)
+        except Exception:
             errorlog.record(*sys.exc_info(), version=__version__)
 
     def _save_state_or_warn(self) -> None:

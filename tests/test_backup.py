@@ -181,6 +181,72 @@ class DatabaseBackupTest(unittest.TestCase):
         self.assertIsNotNone(backup.auto_backup("9.9", self.old, today=day))
         self.assertIsNone(backup.auto_backup_failure(self.old))
 
+    def test_future_or_unreadable_names_neither_block_nor_count(self):
+        folder = self.old / backup.AUTO_DIR
+        folder.mkdir()
+        today = date(2026, 10, 21)
+        for name in ("auto-2099-01-01.zip", "auto-xxxx-xx-xx.zip", "auto-2026-13-45.zip"):
+            (folder / name).write_bytes(b"fremd")
+        made = backup.auto_backup("9.9", self.old, today=today)
+        self.assertEqual(made, folder / "auto-2026-10-21.zip")
+        self.assertIsNone(backup.auto_backup("9.9", self.old, today=today))  # und drosselt wie sonst
+        for week in range(1, 7):
+            backup.auto_backup("9.9", self.old, today=today + timedelta(days=7 * week))
+        self.assertTrue((folder / "auto-2099-01-01.zip").exists())  # fremde bleiben, zählen nicht
+        self.assertTrue((folder / "auto-xxxx-xx-xx.zip").exists())
+        real = [p for p in folder.glob("auto-2026-1?-??.zip") if p.name != "auto-2026-13-45.zip"]
+        self.assertEqual(len(real), backup.AUTO_KEEP)
+
+    def test_leftover_holds_and_temp_files_stay_out_of_backups(self):
+        stats_dir = self.old / "stats"
+        for name in ("morsetrainer.db-wal.halt4711", "x.zip.tmp123", "y.json.tmp"):
+            (stats_dir / name).write_bytes(b"Rest")
+        backup.export_data(self.zip, "9.9", self.old)
+        with zipfile.ZipFile(self.zip) as archive:
+            self.assertFalse(any(("halt" in n or ".tmp" in n) for n in archive.namelist()))
+
+    def test_lost_race_is_not_a_failure(self):
+        # Ein anderes Fenster war schneller: Sein Ergebnis liegt da, der Rest ist kein Fehler.
+        folder = self.old / backup.AUTO_DIR
+        target = folder / "auto-2026-10-21.zip"
+        real_export = backup.export_data
+
+        def other_window_wins(path, version, data_dir):
+            real_export(target, "9.9", data_dir)
+            raise FileNotFoundError(2, "No such file or directory")
+        with mock.patch.object(backup, "export_data", side_effect=other_window_wins):
+            self.assertIsNone(backup.auto_backup("9.9", self.old, today=date(2026, 10, 21)))
+        self.assertIsNone(backup.auto_backup_failure(self.old))
+        self.assertTrue(target.exists())
+
+    def test_unreadable_new_backup_does_not_push_out_old_ones(self):
+        folder = self.old / backup.AUTO_DIR
+        day = date(2026, 10, 1)
+        for week in range(4):
+            backup.auto_backup("9.9", self.old, today=day + timedelta(days=7 * week))
+        with mock.patch.object(backup, "read_info", side_effect=backup.BackupError("kaputt")):
+            with self.assertRaises(backup.BackupError):
+                backup.auto_backup("9.9", self.old, today=day + timedelta(days=28))
+        self.assertEqual(len(list(folder.glob("auto-*.zip"))), 4)
+        self.assertFalse((folder / "auto-2026-10-29.zip").exists())
+        self.assertIn("kaputt", backup.auto_backup_failure(self.old))
+
+    def test_no_backup_while_a_broken_database_was_set_aside(self):
+        with mock.patch.object(db, "aside_file", self.old / "x"):
+            self.assertIsNone(backup.auto_backup("9.9", self.old, today=date(2026, 10, 1)))
+        self.assertFalse((self.old / backup.AUTO_DIR).exists())
+
+    def test_other_errors_leave_a_note_without_path(self):
+        with mock.patch.object(backup, "export_data", side_effect=ValueError("zip64 fehlt")):
+            with self.assertRaises(ValueError):
+                backup.auto_backup("9.9", self.old, today=date(2026, 10, 1))
+        self.assertEqual(backup.auto_backup_failure(self.old), "zip64 fehlt")
+        with mock.patch.object(backup, "export_data",
+                               side_effect=OSError(28, "No space left on device", "/home/x/geheim")):
+            with self.assertRaises(OSError):
+                backup.auto_backup("9.9", self.old, today=date(2026, 10, 1))
+        self.assertEqual(backup.auto_backup_failure(self.old), "No space left on device")
+
     def test_auto_backup_needs_a_database_and_stays_out_of_manual_backup(self):
         self.assertIsNone(backup.auto_backup("9.9", self.new, today=date(2026, 10, 1)))
         backup.auto_backup("9.9", self.old, today=date(2026, 10, 1))

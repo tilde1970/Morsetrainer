@@ -1,5 +1,6 @@
 """Tests für die Datenbank (core/db.py): Zustände, Durchgänge, Ergebnisse,
 Transaktionen, kaputte Dateien und zwei Fenster gleichzeitig."""
+import os
 import sqlite3
 import tempfile
 import unittest
@@ -260,6 +261,30 @@ class DbTest(unittest.TestCase):
         raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
         raw.close()
         self.assertEqual(db.problem(), "too_new")
+
+    def test_old_holds_of_dead_processes_are_removed(self):
+        import time
+        self.file.parent.mkdir(parents=True)
+        old = self.file.with_name(self.file.name + "-wal.halt99999")
+        young = self.file.with_name(self.file.name + "-wal.halt99998")
+        old.write_bytes(b"alt")
+        young.write_bytes(b"jung")
+        long_ago = time.time() - 3 * 24 * 3600
+        os.utime(old, (long_ago, long_ago))
+        db.close()
+        db.save_state("x", {})
+        self.assertFalse(old.exists())
+        self.assertTrue(young.exists())
+
+    def test_half_copied_journal_is_removed(self):
+        self.file.parent.mkdir(parents=True)
+        self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)
+        self.file.with_name(self.file.name + "-wal").write_bytes(b"Journal")
+        db.close()
+        with mock.patch.object(db.os, "link", side_effect=PermissionError), \
+                mock.patch.object(db.shutil, "copy2", side_effect=OSError(28, "voll")):
+            db.save_state("daily", {"days": {}})
+        self.assertEqual(list(self.file.parent.glob("*.halt*")), [])
 
     def test_locked_file_is_not_set_aside(self):
         db.save_state("daily", {"days": {}})

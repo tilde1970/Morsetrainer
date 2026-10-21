@@ -22,6 +22,7 @@ Zusätzlich legt das Programm beim Beenden höchstens alle 7 Tage eine
 Sicherung in "auto-sicherung/" an (die letzten 4 bleiben), siehe auto_backup."""
 import json
 import os
+import re
 import shutil
 import sqlite3
 import tempfile
@@ -54,8 +55,12 @@ class BackupError(Exception):
 DB_COMPANIONS = ("-wal", "-shm", "-journal")
 
 
+# Hilfsdateien: "….tmp<PID>" (halb geschriebene Sicherung), "….halt<PID>" (festgehaltenes Journal).
+TEMP_NAME = re.compile(r"\.(tmp|halt)\d*$")
+
+
 def _wanted(path: Path) -> bool:
-    return (path.is_file() and not path.name.endswith((".tmp", ".halt")) and ".defekt-" not in path.name
+    return (path.is_file() and not TEMP_NAME.search(path.name) and ".defekt-" not in path.name
             and ".vor-v" not in path.name and not path.name.endswith(DB_COMPANIONS))
 
 
@@ -96,7 +101,7 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
     dann die alte ersetzt) und gibt die Zahl der Dateien zurück. Wirft
     OSError, wenn das Schreiben scheitert."""
     target = Path(target)
-    tmp = target.with_name(target.name + ".tmp")
+    tmp = target.with_name(f"{target.name}.tmp{os.getpid()}")
     count = 0
     try:
         with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -109,7 +114,8 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
                 count += 1
             database = data_dir / STATS / db.DB_FILE_NAME
             if database.is_file():
-                with tempfile.TemporaryDirectory() as folder:
+                # Der Schnappschuss liegt neben den Daten, nicht im oft kleinen /tmp.
+                with tempfile.TemporaryDirectory(dir=data_dir) as folder:
                     copy = Path(folder) / db.DB_FILE_NAME
                     _snapshot(database, copy)
                     archive.write(copy, f"{STATS}/{db.DB_FILE_NAME}")
@@ -121,39 +127,83 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
     return count
 
 
-def auto_backup(version: str, data_dir: Path = DATA_DIR, today: date = None):
-    """Legt "<data_dir>/auto-sicherung/auto-<Datum>.zip" an, wenn die letzte
-    automatische Sicherung mindestens AUTO_INTERVAL_DAYS zurückliegt (oder es
-    keine gibt) und eine Datenbank da ist; die ältesten über AUTO_KEEP hinaus
-    werden gelöscht. Gibt den Pfad zurück, sonst None. Wirft OSError, wenn das
-    Schreiben scheitert. Der Ordner liegt außerhalb von stats/ und kommt nicht
-    in die manuelle Sicherung."""
-    today = today or date.today()
-    folder = data_dir / AUTO_DIR
-    if not (data_dir / STATS / db.DB_FILE_NAME).is_file():
-        return None
-    existing = sorted(folder.glob("auto-????-??-??.zip")) if folder.is_dir() else []
-    if existing:
+def _auto_files(folder: Path, today: date) -> list:
+    """Die automatischen Sicherungen im Ordner, älteste zuerst: nur Namen
+    "auto-<Datum>.zip" mit lesbarem Datum, nicht in der Zukunft (eine falsch
+    gestellte Uhr soll die Sicherung weder bremsen noch die Auswahl der zu
+    löschenden verschieben)."""
+    found = []
+    for path in folder.glob("auto-*.zip") if folder.is_dir() else ():
+        if not re.fullmatch(r"auto-\d{4}-\d{2}-\d{2}\.zip", path.name):
+            continue
         try:
-            last = date.fromisoformat(existing[-1].name[5:15])
+            day = date.fromisoformat(path.name[5:15])
         except ValueError:
-            last = None
-        if last is not None and (today - last).days < AUTO_INTERVAL_DAYS:
-            return None
+            continue
+        if day <= today:
+            found.append((day, path))
+    return [path for _day, path in sorted(found)]
+
+
+def auto_backup_due(data_dir: Path = DATA_DIR, today: date = None) -> bool:
+    """Ist eine automatische Sicherung fällig: Datenbank da, keine beiseitegelegt
+    (die neue wäre leer und verdrängte die guten) und die letzte mindestens
+    AUTO_INTERVAL_DAYS her?"""
+    today = today or date.today()
+    if db.aside_file is not None or not (data_dir / STATS / db.DB_FILE_NAME).is_file():
+        return False
+    existing = _auto_files(data_dir / AUTO_DIR, today)
+    return not existing or (today - date.fromisoformat(existing[-1].name[5:15])).days >= AUTO_INTERVAL_DAYS
+
+
+def auto_backup(version: str, data_dir: Path = DATA_DIR, today: date = None):
+    """Legt "<data_dir>/auto-sicherung/auto-<Datum>.zip" an, wenn eine fällig ist
+    (auto_backup_due); die ältesten über AUTO_KEEP hinaus werden erst gelöscht,
+    wenn die neue sich als Sicherung lesen lässt. Gibt den Pfad zurück, sonst
+    None. Wirft bei einem Fehler (nach dem Merkzettel AUTO_FAILED) eine
+    Ausnahme; hat ein anderes Fenster die Sicherung inzwischen angelegt, ist
+    das kein Fehler. Der Ordner liegt außerhalb von stats/ und kommt nicht in
+    die manuelle Sicherung."""
+    today = today or date.today()
+    if not auto_backup_due(data_dir, today):
+        return None
+    folder = data_dir / AUTO_DIR
     target = folder / f"auto-{today.isoformat()}.zip"
     try:
         folder.mkdir(parents=True, exist_ok=True)
+        _remove_old_temp_files(folder)
         export_data(target, version, data_dir)
-    except OSError as exc:
+        read_info(target)  # nur eine lesbare Sicherung darf ältere verdrängen
+    except Exception as exc:
+        if not isinstance(exc, BackupError):
+            try:
+                read_info(target)
+                return None  # ein anderes Fenster war fertig
+            except (BackupError, OSError):
+                pass
+        target.unlink(missing_ok=True)
+        reason = (exc.strerror if isinstance(exc, OSError) and exc.strerror else None) or str(exc) or type(exc).__name__
         try:
-            (data_dir / AUTO_FAILED).write_text(str(exc), encoding="utf-8")
+            (data_dir / AUTO_FAILED).write_text(reason, encoding="utf-8")
         except OSError:
             pass
         raise
     (data_dir / AUTO_FAILED).unlink(missing_ok=True)
-    for old in sorted(folder.glob("auto-????-??-??.zip"))[:-AUTO_KEEP]:
+    for old in _auto_files(folder, today)[:-AUTO_KEEP]:
         old.unlink(missing_ok=True)
     return target
+
+
+def _remove_old_temp_files(folder: Path) -> None:
+    """Reste halb geschriebener Sicherungen (hartes Beenden), nicht die eines
+    gerade laufenden anderen Fensters (die sind jung)."""
+    cutoff = datetime.now().timestamp() - 24 * 3600
+    for path in folder.glob("*.zip.tmp*"):
+        try:
+            if path.stat().st_mtime < cutoff:
+                path.unlink()
+        except OSError:
+            pass
 
 
 def auto_backup_failure(data_dir: Path = DATA_DIR):

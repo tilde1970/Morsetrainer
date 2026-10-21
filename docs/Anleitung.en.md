@@ -1275,6 +1275,9 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   If the backup fails (say, the disk is full), Morsetrainer notes it in
   `auto-sicherung-fehler.txt` and says so at the next start; the note
   disappears with the next successful backup.
+  Anyone who wants to delete all their data should also delete
+  `auto-sicherung/`, the `vor-import-<time>.zip` files and the `.defekt-*`
+  files in the data folder: they hold copies of the practice data.
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
   tables from the Network tab (`…-netzwerk.csv`). Practice data from
   version 2.27 and older (separate files) is taken over into the database

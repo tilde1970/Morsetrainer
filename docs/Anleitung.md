@@ -1303,6 +1303,9 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Scheitert die Sicherung (etwa weil die Platte voll ist), merkt sich der
   Morsetrainer das in `auto-sicherung-fehler.txt` und sagt es beim nächsten
   Start; der Zettel verschwindet mit der nächsten gelungenen Sicherung.
+  Wer alle seine Daten löschen will, löscht auch `auto-sicherung/`, die
+  `vor-import-<Zeit>.zip` und die Dateien `.defekt-*` im Datenordner: Sie
+  enthalten Kopien der Übungsdaten.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start

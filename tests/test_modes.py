@@ -1619,7 +1619,8 @@ class DecimalTest(AppTestCase):
             start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
             tests.write_session([{"type": "config", "mode": "single", "start_time": start}]
                                 + [{"type": "char", "char": "K", "typed": "K", "correct": True,
-                                    "latency_s": latency}] * stats.MIN_TREND_COUNT)
+                                    "latency_s": latency}] * stats.MIN_TREND_COUNT
+                                + [{"type": "summary"}])
         db.save_state(stats.ALL_TIME_KEY, {"K": {"good": 10, "wrong": 0, "confusions": {}}})  # Tabelle: Gesamtstand
         self.app._refresh_all_time(with_awards=False)
         panel = self.app.all_time_panel
