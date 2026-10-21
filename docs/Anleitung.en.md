@@ -294,7 +294,9 @@ the first digit), occasionally with /P, /M, OE/… as in contests.
 If there are too few real callsigns from your characters (under 30, under
 50 for a RufZ run), the trainer makes up matching ones from patterns; the
 line above the load button says so. With a prefix filter this does not
-work; the status line then tells you at the start what is missing.
+work; the status line then tells you at the start what is missing. During
+a run the choice of callsigns stays fixed, even if you change the
+“Characters” field at the top; the change applies from the next run.
 Optionally as a **RufZ run** (modelled on RufzXP): 50 callsigns, one
 attempt each, the speed grows, score = length × effective speed, best
 score (with starting speed) and history. Afterwards you can replay the
@@ -467,9 +469,16 @@ many characters. Runs with band conditions do not count here (section 6).
   see whether you are getting better. The reaction comes only from the
   Characters content of the One by one tab: when copying along it counts from
   your previous key and would not be comparable. The accuracy counts all
-  exercises. F11 reads the line in
-  a shorter form: without the character count of the earlier period and
-  without the hint about the reaction.
+  exercises. If characters have appeared only in the last 7 days (at least
+  3 answers per character, none before), the line ends with “New: R M. New
+  characters slow the average down at first.” This appears only if both
+  periods have enough characters. At most 6 characters are named, letters
+  first, then “and 2 more”. F11 reads the line in a shorter form: without
+  the character count of the earlier period, without the hint about the
+  reaction and, for new characters, only the sentence “New characters slow
+  the average down at first.” without the characters.
+- **Characters sorted by errors:** this is what the announcement calls the
+  table below.
 - **This week:** the week strip with stars and the weekly goal as in the
   daily practice bar; with a large font it appears only here. F11 reads it
   in one sentence (“practised on 3 of 4 days, today still open”; on the
@@ -1065,9 +1074,14 @@ are on.
   fields of the exercises: there the announcement would cut off the Morse
   tone. The “Characters” field reads its content character by character.
 - **Tables** (statistics, awards, contest log): when you Tab into one, the
-  first row is selected; with the arrow keys each row is read out with the
-  column names. If columns are hidden, the announcement adds that the left and
+  announcement gives name, role and number of rows (“15 rows, arrow keys
+  choose a row”) and the first row right away in one announcement; with the
+  arrow keys each row is read out with the column names. If columns are hidden, the announcement adds that the left and
   right arrow keys show more columns.
+- **File paths:** messages such as “Saved: …” read out only the last part
+  of the path (file or folder name). For errors (error window, red status
+  messages) the announcement reads the whole path, the parts separated by
+  pauses. The full path is always on the screen as well.
 - All keyboard shortcuts are in section 9.
 
 ### Seeing
@@ -1077,6 +1091,12 @@ are on.
   playing; it is never interrupted. With a large font the tab
   scrolls to the feedback after each answer; a table that does not fit the
   width scrolls with the left and right arrow keys.
+  At 150 to 200 % tables show fewer rows (at least 4) so that they do not
+  grow taller than the screen. Below a shortened table a line reads “Rows 1
+  to 4 of 15, more with arrow down”; if all rows fit, the line is absent.
+  This applies to statistics, awards, progress, log and the results in the
+  network tab; the participants table in the network tab has its own
+  scroll bar.
 - **High contrast:** “Settings …” → “High contrast (black, white,
   yellow)”, takes effect after a restart (**Restart now** button at the
   bottom of the window). Black background, white text,

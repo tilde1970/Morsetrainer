@@ -296,7 +296,9 @@ standardmäßig nur aus Zeichen, die du schon gelernt hast (ab Koch-Lektion
 Gibt es aus deinen Zeichen zu wenige echte Rufzeichen (unter 30, im
 Rufz-Durchgang unter 50), erfindet der Trainer passende nach Muster; das
 steht über dem Ladeknopf. Mit Präfix-Filter geht das nicht, dann nennt die
-Statuszeile beim Start, was fehlt.
+Statuszeile beim Start, was fehlt. Während eines Durchgangs bleibt die
+Auswahl der Rufzeichen fest, auch wenn du oben im Feld „Zeichen“ etwas
+änderst; die Änderung gilt erst im nächsten Durchgang.
 Wahlweise als **Rufz-Durchgang** (angelehnt an RufzXP): 50 Rufzeichen, je
 ein Versuch, das Tempo wächst mit, Punkte = Länge × effektives Tempo,
 Bestwert (mit Starttempo) und Verlauf. Danach lassen sich die verpassten
@@ -472,9 +474,17 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   Ist ein Zeitraum zu klein, steht dort „zu wenig Zeichen (n von 10)“, bei
   keiner Übung „nicht geübt“. Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
   fortlaufenden Mitschreiben zählt sie ab deiner vorigen Taste und wäre
-  nicht vergleichbar. Die Trefferquote zählt alle Übungen. F11 liest
-  die Zeile kürzer vor: ohne die Zeichenzahl des Zeitraums davor und ohne
-  den Merksatz zur Reaktion.
+  nicht vergleichbar. Die Trefferquote zählt alle Übungen. Sind Zeichen
+  erst in den letzten 7 Tagen dazugekommen (mindestens 3 Antworten je
+  Zeichen, davor keine), steht hinten dran: „Neu dabei: R M. Neue Zeichen
+  machen den Schnitt anfangs langsamer.“ Das gibt es nur, wenn beide
+  Zeiträume genug Zeichen haben. Genannt werden höchstens 6 Zeichen,
+  Buchstaben zuerst, dann „und 2 weitere“. F11 liest die Zeile kürzer
+  vor: ohne die Zeichenzahl des Zeitraums davor, ohne den Merksatz zur
+  Reaktion und bei neuen Zeichen nur den Satz „Neue Zeichen machen den
+  Schnitt anfangs langsamer.“, ohne die Zeichen.
+- **Zeichen nach Fehlern sortiert:** So heißt die Tabelle darunter in der
+  Ansage.
 - **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
   in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
   liest ihn in einem Satz vor („3 von 4 Tagen geübt, heute noch offen“; am
@@ -1086,9 +1096,15 @@ Bedienelement, auf dem du gerade stehst.
   Morseton abbrechen. Das Feld „Zeichen“ liest seinen Inhalt Zeichen für
   Zeichen vor.
 - **Tabellen** (Statistik, Diplome, Contest-Log): Springst du mit Tab
-  hinein, ist die erste Zeile gewählt; mit den Pfeiltasten wird jede Zeile
+  hinein, sagt die Ansage Name, Rolle und Zeilenzahl („15 Zeilen,
+  Pfeiltasten wählen eine Zeile“) und gleich die erste Zeile in einer
+  Ansage; mit den Pfeiltasten wird jede Zeile
   mit den Spaltennamen vorgelesen. Sind Spalten verdeckt, sagt die Ansage
   beim Fokus dazu, dass Pfeil links und rechts weitere Spalten zeigen.
+- **Dateipfade:** Meldungen wie „Gespeichert: …“ lesen nur den letzten
+  Teil des Pfads vor (Dateiname bzw. Ordnername). Bei Fehlern (Fehlerfenster,
+  rote Statusmeldungen) liest die Ansage den ganzen Pfad, die Teile mit
+  Pausen. Der volle Pfad steht immer auch auf dem Bildschirm.
 - Alle Tastenkürzel stehen in Abschnitt 9.
 
 ### Sehen
@@ -1098,6 +1114,12 @@ Bedienelement, auf dem du gerade stehst.
   Morseton läuft; er wird nie unterbrochen. Bei großer
   Schrift rollt der Reiter nach jeder Antwort zur Rückmeldung; passt eine
   Tabelle nicht in die Breite, rollt sie mit Pfeil links und rechts.
+  Bei 150 bis 200 % zeigen Tabellen weniger Zeilen (mindestens 4), damit sie nicht
+  höher werden als der Bildschirm. Unter einer gekürzten Tabelle steht
+  „Zeilen 1 bis 4 von 15, weitere mit Pfeil abwärts“; passen alle Zeilen,
+  fehlt die Zeile. Das gilt für Statistik, Diplome, Fortschritt, Protokoll
+  und die Ergebnisse im Netzwerk; die Teilnehmertabelle im Netzwerk hat
+  einen eigenen Rollbalken.
 - **Hoher Kontrast:** „Einstellungen …“ → „Hoher Kontrast (Schwarz, Weiß,
   Gelb)“, wirkt nach einem Neustart (Knopf **Jetzt neu starten** unten im
   Fenster). Schwarzer Grund, weiße Schrift, gelbe
