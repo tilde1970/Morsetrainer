@@ -501,6 +501,7 @@ class CallsignModeFrame(SequenceModeFrame):
         if self.rufz_summary:
             self.status_var.set(self.rufz_summary)
         self.rufz_active = False
+        self._update_pool()
 
     def _allowed(self):
         """Erlaubte Zeichen (Zeichensatz oben) oder None, wenn alle."""
@@ -509,7 +510,12 @@ class CallsignModeFrame(SequenceModeFrame):
         return set(self.charset_var.get().upper())
 
     def _update_pool(self):
-        """Passende Rufzeichen neu bestimmen und die Anzahl anzeigen."""
+        """Passende Rufzeichen neu bestimmen und die Anzahl anzeigen. Nicht
+        während eines Durchgangs: Das Feld „Zeichen“ oben bleibt bedienbar, und
+        eine geänderte Auswahl mischte erfundene oder fremde Rufzeichen in
+        einen laufenden Rufz-Durchgang; stop() holt es nach."""
+        if self.running:
+            return
         allowed = self._allowed()
         if self.all_calls:
             self.pool = filter_calls(self.all_calls, parse_prefixes(self.prefix_var.get()), allowed)
@@ -610,7 +616,9 @@ class CallsignModeFrame(SequenceModeFrame):
 
     def _session_group_len(self):
         if not self.pool:
-            return {"pattern": "prefix(1-2 Buchstaben) + Ziffer + suffix(1-3 Buchstaben)"}
+            return {"pattern": "prefix(1-2 Buchstaben) + Ziffer + suffix(1-3 Buchstaben)",
+                    "learned_only": self.learned_var.get(),
+                    "charset": "".join(sorted(self._allowed())) if self.learned_var.get() else None}
         return {"source": "callsigns.scp", "prefixes": parse_prefixes(self.prefix_var.get()),
                 "pool_size": len(self.pool), "affixes": self.affix_var.get(),
                 "learned_only": self.learned_var.get()}

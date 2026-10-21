@@ -672,6 +672,24 @@ class RufzTest(AppTestCase):
         result = db.results()[-1]
         self.assertEqual((result["start_wpm"], result["prefixes"], result["learned_only"]), (20, [], False))
 
+    def test_pool_stays_fixed_during_a_run_and_catches_up_after(self):
+        # Das Feld „Zeichen“ oben ist im Durchgang bedienbar; die Auswahl darf sich nicht ändern.
+        g = self._start_rufz([f"DL{i}ABC" for i in range(60)] + [f"DK{i}ABC" for i in range(60)])
+        self.assertEqual(len(g.pool), 120)
+        g.prefix_var.set("DK")
+        self.assertEqual(len(g.pool), 120)
+        self.assertIn(g._generate_sequence()[:2], ("DL", "DK"))
+        g.stop()
+        self.assertEqual(len(g.pool), 60)
+
+    def test_made_up_pattern_run_records_charset(self):
+        g = self.mode("Rufzeichen")
+        g.all_calls = []
+        g.learned_var.set(True)
+        self.app.charset_var.set("KMURESNAPTLWI4")
+        info = g._session_group_len()
+        self.assertEqual((info["learned_only"], info["charset"]), (True, "".join(sorted("KMURESNAPTLWI4"))))
+
     def test_rufz_needs_enough_calls(self):
         g = self.mode("Rufzeichen")
         g.all_calls = [f"DL{i}ABC" for i in range(40)]
