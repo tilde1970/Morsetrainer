@@ -292,7 +292,7 @@ class MorseTrainerApp:
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
         self.root.after(500, self._check_awards_at_start)
-        if db.problem():
+        if db.problem() or self._auto_backup_failure():
             # Der Hinweis zuerst und allein: Begrüßung und Update-Angebot kämen sonst mitten hinein.
             self.root.after(300, self._warn_if_database_too_new)
         elif self.first_start:
@@ -1836,8 +1836,23 @@ class MorseTrainerApp:
                                    parent=self.root, always_speak=True)
             finally:
                 self.start_notice_open = False
+        reason = self._auto_backup_failure()
+        if reason:
+            self.start_notice_open = True
+            try:
+                dialog.showwarning(tr("Automatische Sicherung gescheitert"), tr(
+                    "Die automatische Sicherung beim letzten Beenden ist nicht gelungen: {error}. Bitte "
+                    "prüfe den Platz im Datenordner oder sichere von Hand: Einstellungen, Daten, Sichern.")
+                    .format(error=reason), parent=self.root, always_speak=True)
+            finally:
+                self.start_notice_open = False
         if self.first_start:
             self._greet_first_start()
+
+    def _auto_backup_failure(self):
+        """Grund der gescheiterten automatischen Sicherung vom letzten Beenden,
+        sonst None (auch, wenn sie abgeschaltet ist)."""
+        return backup.auto_backup_failure(stats.STATS_DIR.parent) if self.auto_backup_var.get() else None
 
     def _check_awards_at_start(self):
         """Beim allerersten Start still nachtragen, mit einem Hinweis."""

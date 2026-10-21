@@ -1269,6 +1269,9 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   **Back up automatically**”. It sits in the data folder, so it protects
   against a damaged database, not against a failing disk: for that, back
   up by hand (see below). Restore it with **Restore …**.
+  If the backup fails (say, the disk is full), Morsetrainer notes it in
+  `auto-sicherung-fehler.txt` and says so at the next start; the note
+  disappears with the next successful backup.
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
   tables from the Network tab (`…-netzwerk.csv`). Practice data from
   version 2.27 and older (separate files) is taken over into the database

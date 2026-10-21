@@ -36,6 +36,9 @@ from morsetrainer.core import db
 AUTO_DIR = "auto-sicherung"
 AUTO_INTERVAL_DAYS = 7
 AUTO_KEEP = 4
+# Merkzettel im Datenordner: die letzte automatische Sicherung ist gescheitert
+# (beim Beenden lässt sich das nicht mehr melden; der nächste Start tut es).
+AUTO_FAILED = "auto-sicherung-fehler.txt"
 
 MARKER = "morsetrainer-sicherung.json"
 FORMAT = 1
@@ -137,12 +140,30 @@ def auto_backup(version: str, data_dir: Path = DATA_DIR, today: date = None):
             last = None
         if last is not None and (today - last).days < AUTO_INTERVAL_DAYS:
             return None
-    folder.mkdir(parents=True, exist_ok=True)
     target = folder / f"auto-{today.isoformat()}.zip"
-    export_data(target, version, data_dir)
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        export_data(target, version, data_dir)
+    except OSError as exc:
+        try:
+            (data_dir / AUTO_FAILED).write_text(str(exc), encoding="utf-8")
+        except OSError:
+            pass
+        raise
+    (data_dir / AUTO_FAILED).unlink(missing_ok=True)
     for old in sorted(folder.glob("auto-????-??-??.zip"))[:-AUTO_KEEP]:
         old.unlink(missing_ok=True)
     return target
+
+
+def auto_backup_failure(data_dir: Path = DATA_DIR):
+    """Der Grund, warum die letzte automatische Sicherung scheiterte, oder
+    None, wenn sie nicht gescheitert ist. Der Merkzettel verschwindet mit der
+    nächsten gelungenen Sicherung."""
+    try:
+        return (data_dir / AUTO_FAILED).read_text(encoding="utf-8").strip() or "?"
+    except OSError:
+        return None
 
 
 # Was zipfile bei kaputten oder ungewöhnlichen Archiven wirft: verschlüsselt

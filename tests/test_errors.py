@@ -116,6 +116,21 @@ class AppErrorTest(AppTestCase):
             self.assertIn(word, warned.call_args.args[1])
             self.assertTrue(warned.call_args.kwargs["always_speak"])
 
+    def test_failed_auto_backup_is_announced_at_start(self):
+        self.app.auto_backup_var.set(True)
+        with mock.patch.object(app_module.db, "problem", return_value=None), \
+                mock.patch.object(app_module.backup, "auto_backup_failure", return_value="Platte voll"), \
+                mock.patch.object(app_module.dialog, "showwarning") as warned:
+            self.app._warn_if_database_too_new()
+        self.assertIn("Platte voll", warned.call_args.args[1])
+        self.assertTrue(warned.call_args.kwargs["always_speak"])
+        self.app.auto_backup_var.set(False)  # abgeschaltet: kein Hinweis
+        with mock.patch.object(app_module.db, "problem", return_value=None), \
+                mock.patch.object(app_module.backup, "auto_backup_failure", return_value="Platte voll"), \
+                mock.patch.object(app_module.dialog, "showwarning") as warned:
+            self.app._warn_if_database_too_new()
+        warned.assert_not_called()
+
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.dialog, "showerror") as shown:
             for _ in range(2):

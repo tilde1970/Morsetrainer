@@ -1297,6 +1297,9 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   **Automatisch sichern**“. Sie liegt im Datenordner, schützt also vor
   einer beschädigten Datenbank, nicht vor dem Ausfall der Festplatte:
   Dafür sicherst du von Hand (siehe unten). Zurückholen mit **Einlesen …**.
+  Scheitert die Sicherung (etwa weil die Platte voll ist), merkt sich der
+  Morsetrainer das in `auto-sicherung-fehler.txt` und sagt es beim nächsten
+  Start; der Zettel verschwindet mit der nächsten gelungenen Sicherung.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start

@@ -171,6 +171,16 @@ class DatabaseBackupTest(unittest.TestCase):
         names = sorted(p.name for p in folder.iterdir())
         self.assertEqual(names, [f"auto-2026-{m}.zip" for m in ("10-15", "10-22", "10-29", "11-05")])
 
+    def test_failed_auto_backup_leaves_a_note_until_one_works(self):
+        day = date(2026, 10, 1)
+        self.assertIsNone(backup.auto_backup_failure(self.old))
+        with mock.patch.object(backup, "export_data", side_effect=OSError("Platte voll")):
+            with self.assertRaises(OSError):
+                backup.auto_backup("9.9", self.old, today=day)
+        self.assertEqual(backup.auto_backup_failure(self.old), "Platte voll")
+        self.assertIsNotNone(backup.auto_backup("9.9", self.old, today=day))
+        self.assertIsNone(backup.auto_backup_failure(self.old))
+
     def test_auto_backup_needs_a_database_and_stays_out_of_manual_backup(self):
         self.assertIsNone(backup.auto_backup("9.9", self.new, today=date(2026, 10, 1)))
         backup.auto_backup("9.9", self.old, today=date(2026, 10, 1))

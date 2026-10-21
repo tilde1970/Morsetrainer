@@ -165,6 +165,11 @@ EN.update({
     "Daten sichern": "Back up data",
     "Daten von neuerer Version": "Data from a newer version",
     "Automatisch sichern (wöchentlich, beim Beenden)": "Back up automatically (weekly, on exit)",
+    "Automatische Sicherung gescheitert": "Automatic backup failed",
+    "Die automatische Sicherung beim letzten Beenden ist nicht gelungen: {error}. Bitte "
+    "prüfe den Platz im Datenordner oder sichere von Hand: Einstellungen, Daten, Sichern.":
+        "The automatic backup at the last exit did not work: {error}. Please check the free space in "
+        "the data folder or back up by hand: Settings, Data, Back up.",
     "Daten nicht aktualisiert": "Data not updated",
     "Daten beiseitegelegt": "Data set aside",
     "Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "
