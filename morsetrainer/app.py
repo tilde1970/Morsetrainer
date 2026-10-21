@@ -704,6 +704,10 @@ class MorseTrainerApp:
         ttk.Button(data, text=tr("Einlesen …"), command=self._import_data).pack(side="left", padx=(0, 4))
         # Etwa um callsigns.scp von Hand abzulegen oder ein Fehlerprotokoll zu finden.
         ttk.Button(data, text=tr("Datenordner öffnen"), command=self._open_data_folder).pack(side="left", padx=(0, 8))
+        # Beim Beenden, höchstens alle 7 Tage, die letzten 4 bleiben (core/backup.py).
+        self.auto_backup_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(data_card, text=tr("Automatisch sichern (wöchentlich, beim Beenden)"),
+                        variable=self.auto_backup_var).pack(anchor="w", pady=2)
         theme.hint(data.master, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
 
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
@@ -1592,6 +1596,7 @@ class MorseTrainerApp:
             "announce_rate": (self.announcer.rate_var, (VOICE_RATE_STEPS[0], VOICE_RATE_STEPS[-1])),
             "announce_volume": (self.announcer.volume_var, (VOICE_VOLUME_STEPS[0], VOICE_VOLUME_STEPS[-1])),
             "contrast": (self.contrast_var, None),
+            "auto_backup": (self.auto_backup_var, None),
         }
 
     def _shared_settings(self) -> dict:
@@ -2421,12 +2426,23 @@ class MorseTrainerApp:
         speichern (außer `keep_files`), alle Reiter schließen, Fenster zu."""
         saving = () if keep_files else (self._record_practice, self._save_state_or_warn)
         for step in (lambda: self.daily.abort(quiet=True), *saving,
-                     *(mode.on_close for mode in self.modes), audio.release):
+                     *(mode.on_close for mode in self.modes),
+                     *(() if keep_files else (self._auto_backup,)), audio.release):
             try:
                 step()
             except Exception:
                 errorlog.record(*sys.exc_info(), version=__version__)
         self.root.destroy()
+
+    def _auto_backup(self) -> None:
+        """Beim Beenden die wöchentliche Sicherung anlegen (falls gewünscht);
+        scheitert sie, steht es im Fehlerprotokoll, das Schließen läuft weiter."""
+        if not self.auto_backup_var.get():
+            return
+        try:
+            backup.auto_backup(__version__, stats.STATS_DIR.parent)
+        except OSError:
+            errorlog.record(*sys.exc_info(), version=__version__)
 
     def _save_state_or_warn(self) -> None:
         """Einstellungen speichern; geht das nicht (etwa ein schreibgeschützter

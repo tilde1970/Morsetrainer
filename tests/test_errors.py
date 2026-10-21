@@ -98,15 +98,23 @@ class AppErrorTest(AppTestCase):
         self.assertIn("schreibgeschützt", warned.call_args.args[1])
 
     def test_newer_database_is_announced_at_start(self):
-        with mock.patch.object(app_module.db, "too_new", return_value=True), \
+        with mock.patch.object(app_module.db, "problem", return_value="too_new"), \
                 mock.patch.object(app_module.dialog, "showwarning") as warned:
             self.app._warn_if_database_too_new()
         warned.assert_called_once()
         self.assertIn("neueren Version", warned.call_args.args[1])
-        with mock.patch.object(app_module.db, "too_new", return_value=False), \
+        with mock.patch.object(app_module.db, "problem", return_value=None), \
                 mock.patch.object(app_module.dialog, "showwarning") as warned:
             self.app._warn_if_database_too_new()
         warned.assert_not_called()
+
+    def test_set_aside_and_failed_migration_are_announced_too(self):
+        for kind, word in (("aside", "beiseitegelegt"), ("migration", "aktualisieren")):
+            with mock.patch.object(app_module.db, "problem", return_value=kind), \
+                    mock.patch.object(app_module.dialog, "showwarning") as warned:
+                self.app._warn_if_database_too_new()
+            self.assertIn(word, warned.call_args.args[1])
+            self.assertTrue(warned.call_args.kwargs["always_speak"])
 
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.dialog, "showerror") as shown:
@@ -127,6 +135,22 @@ class AppErrorTest(AppTestCase):
         later.assert_called_once()
         destroy.assert_called_once()
         self.assertIn("Reiter kaputt", errorlog.LOG_FILE.read_text(encoding="utf-8"))
+
+    def test_close_makes_the_weekly_backup_only_when_wanted(self):
+        for wanted, calls in ((True, 1), (False, 0)):
+            self.app.auto_backup_var.set(wanted)
+            with mock.patch.object(app_module.backup, "auto_backup") as made, \
+                    mock.patch.object(self.root, "destroy"):
+                self.app.on_close()
+            self.assertEqual(made.call_count, calls)
+
+    def test_failing_backup_does_not_stop_closing(self):
+        self.app.auto_backup_var.set(True)
+        with mock.patch.object(app_module.backup, "auto_backup", side_effect=OSError("Platte voll")), \
+                mock.patch.object(self.root, "destroy") as destroy:
+            self.app.on_close()
+        destroy.assert_called_once()
+        self.assertIn("Platte voll", errorlog.LOG_FILE.read_text(encoding="utf-8"))
 
     def test_export_does_not_hang_on_unexpected_error(self):
         listen = self.mode("Sprechen")

@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import sqlite3
 import zipfile
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -156,6 +157,26 @@ class DatabaseBackupTest(unittest.TestCase):
         copy.write_bytes(raw)
         db.use(copy)
         self.assertEqual(db.load_state("all_time", {}), {"tag": "alt"})
+
+    def test_auto_backup_waits_a_week_and_keeps_four(self):
+        folder = self.old / backup.AUTO_DIR
+        day = date(2026, 10, 1)
+        first = backup.auto_backup("9.9", self.old, today=day)
+        self.assertEqual(first, folder / "auto-2026-10-01.zip")
+        with zipfile.ZipFile(first) as archive:
+            self.assertIn(f"stats/{db.DB_FILE_NAME}", archive.namelist())
+        self.assertIsNone(backup.auto_backup("9.9", self.old, today=day + timedelta(days=6)))
+        for week in range(1, 6):
+            self.assertIsNotNone(backup.auto_backup("9.9", self.old, today=day + timedelta(days=7 * week)))
+        names = sorted(p.name for p in folder.iterdir())
+        self.assertEqual(names, [f"auto-2026-{m}.zip" for m in ("10-15", "10-22", "10-29", "11-05")])
+
+    def test_auto_backup_needs_a_database_and_stays_out_of_manual_backup(self):
+        self.assertIsNone(backup.auto_backup("9.9", self.new, today=date(2026, 10, 1)))
+        backup.auto_backup("9.9", self.old, today=date(2026, 10, 1))
+        backup.export_data(self.zip, "9.9", self.old)
+        with zipfile.ZipFile(self.zip) as archive:
+            self.assertFalse(any(backup.AUTO_DIR in n for n in archive.namelist()))
 
     def test_import_brings_database_and_reopens(self):
         backup.export_data(self.zip, "9.9", self.old)

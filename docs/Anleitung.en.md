@@ -171,8 +171,8 @@ practice options:
   after a restart; **Restart now** appears at the bottom of the window for
   that). The voice in the Speak tab stays German.
 - **Accessibility:** font size, high contrast, announcements (section 8).
-- **Data:** back up and restore, plus the **Open data folder** button
-  (section 11).
+- **Data:** back up and restore, the **Open data folder** button and the
+  **Back up automatically** switch (section 11).
 
 **Font size:** under “Settings …” or with Ctrl+Plus, Ctrl+Minus and Ctrl+0
 (normal) the whole interface gets larger, up to 200 %; the window grows
@@ -1262,9 +1262,13 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   from a newer one and leaves it untouched; at start a notice says that
   statistics, awards and the daily practice are therefore empty and
   nothing is saved. The same notice appears when a damaged file was set
-  aside or the format update failed. Morsetrainer does **not** make
-  regular backups by itself: back up your data now and then with
-  “Settings … → Data → **Back up …**” (see below).
+  aside or the format update failed.
+- `auto-sicherung/`: On exit, Morsetrainer makes a backup
+  `auto-<date>.zip` by itself at most every 7 days; the last 4 are kept,
+  older ones are deleted. Switch it off under “Settings … → Data →
+  **Back up automatically**”. It sits in the data folder, so it protects
+  against a damaged database, not against a failing disk: for that, back
+  up by hand (see below). Restore it with **Restore …**.
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
   tables from the Network tab (`…-netzwerk.csv`). Practice data from
   version 2.27 and older (separate files) is taken over into the database
@@ -1299,6 +1303,8 @@ them back on the new computer: `stats/` is replaced completely, the other
 files if they are in the backup. The current state is saved first as
 `vor-import-<time>.zip` in the data directory. The program then quits; the
 restored settings apply from the next start.
+The weekly automatic backup (`auto-sicherung/`, see above) is restored the
+same way; it is not part of the backup made by hand.
 
 - The database goes into the backup as a consistent state, even during
   practice; when restoring, it is checked first.

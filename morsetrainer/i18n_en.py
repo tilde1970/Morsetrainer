@@ -164,6 +164,7 @@ EN.update({
         "all settings and statistics, e.g. for a new computer",
     "Daten sichern": "Back up data",
     "Daten von neuerer Version": "Data from a newer version",
+    "Automatisch sichern (wöchentlich, beim Beenden)": "Back up automatically (weekly, on exit)",
     "Daten nicht aktualisiert": "Data not updated",
     "Daten beiseitegelegt": "Data set aside",
     "Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "

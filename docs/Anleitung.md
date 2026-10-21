@@ -171,8 +171,8 @@ einmal einstellt:
   einem Neustart; unten im Fenster erscheint dafür **Jetzt neu starten**).
   Die Stimme im Reiter Sprechen bleibt deutsch.
 - **Barrierefreiheit:** Schriftgröße, hoher Kontrast, Ansage (Abschnitt 8).
-- **Daten:** sichern und einlesen, außerdem der Knopf **Datenordner öffnen**
-  (Abschnitt 11).
+- **Daten:** sichern und einlesen, der Knopf **Datenordner öffnen** und der
+  Schalter **Automatisch sichern** (Abschnitt 11).
 
 **Schriftgröße:** Unter „Einstellungen …“ oder mit Strg+Plus, Strg+Minus
 und Strg+0 (normal) wird die ganze Oberfläche größer, bis 200 %; das
@@ -1290,9 +1290,13 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Statistik, Diplome und Tagesübung deshalb leer sind und nichts
   gespeichert wird. Dasselbe Hinweisfenster erscheint, wenn eine
   beschädigte Datei beiseitegelegt wurde oder die Aktualisierung des
-  Formats scheiterte. Der Morsetrainer legt **keine** Sicherung von selbst
-  regelmäßig an: Sichere die Daten mit „Einstellungen … → Daten →
-  **Sichern …**“ (siehe unten) von Zeit zu Zeit.
+  Formats scheiterte.
+- `auto-sicherung/`: Beim Beenden legt der Morsetrainer höchstens alle
+  7 Tage von selbst eine Sicherung `auto-<Datum>.zip` an; die letzten 4
+  bleiben, ältere werden gelöscht. Abschalten: „Einstellungen … → Daten →
+  **Automatisch sichern**“. Sie liegt im Datenordner, schützt also vor
+  einer beschädigten Datenbank, nicht vor dem Ausfall der Festplatte:
+  Dafür sicherst du von Hand (siehe unten). Zurückholen mit **Einlesen …**.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start
@@ -1327,7 +1331,9 @@ in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
 vollständig ersetzt, die anderen Dateien, soweit sie in der Sicherung
 sind. Der bisherige Stand landet vorher als `vor-import-<Zeit>.zip` im
 Datenverzeichnis. Danach beendet sich das Programm; beim nächsten Start
-gelten die eingelesenen Einstellungen.
+gelten die eingelesenen Einstellungen. Die automatische Wochensicherung
+(`auto-sicherung/`, siehe oben) liest du auf demselben Weg ein; sie ist
+nicht Teil der von Hand erzeugten Sicherung.
 
 - Die Datenbank kommt als stimmiger Stand in die Sicherung, auch wenn
   gerade geübt wird; beim Einlesen wird sie vorher geprüft.

@@ -16,7 +16,10 @@ Beim Einlesen wird stats/ vollständig ersetzt; die übrigen Dateien nur,
 wenn die Sicherung sie enthält. Vorher landet der bisherige Stand als
 "vor-import-<Zeitstempel>.zip" in DATA_DIR, damit sich ein versehentlicher
 Import rückgängig machen lässt. Vor dem Ersetzen wird die mitgelieferte
-Datenbank geprüft und die eigene Verbindung geschlossen."""
+Datenbank geprüft und die eigene Verbindung geschlossen.
+
+Zusätzlich legt das Programm beim Beenden höchstens alle 7 Tage eine
+Sicherung in "auto-sicherung/" an (die letzten 4 bleiben), siehe auto_backup."""
 import json
 import os
 import shutil
@@ -24,11 +27,15 @@ import sqlite3
 import tempfile
 import zipfile
 import zlib
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path, PurePosixPath
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core import db
+
+AUTO_DIR = "auto-sicherung"
+AUTO_INTERVAL_DAYS = 7
+AUTO_KEEP = 4
 
 MARKER = "morsetrainer-sicherung.json"
 FORMAT = 1
@@ -109,6 +116,33 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
         tmp.unlink(missing_ok=True)
         raise
     return count
+
+
+def auto_backup(version: str, data_dir: Path = DATA_DIR, today: date = None):
+    """Legt "<data_dir>/auto-sicherung/auto-<Datum>.zip" an, wenn die letzte
+    automatische Sicherung mindestens AUTO_INTERVAL_DAYS zurückliegt (oder es
+    keine gibt) und eine Datenbank da ist; die ältesten über AUTO_KEEP hinaus
+    werden gelöscht. Gibt den Pfad zurück, sonst None. Wirft OSError, wenn das
+    Schreiben scheitert. Der Ordner liegt außerhalb von stats/ und kommt nicht
+    in die manuelle Sicherung."""
+    today = today or date.today()
+    folder = data_dir / AUTO_DIR
+    if not (data_dir / STATS / db.DB_FILE_NAME).is_file():
+        return None
+    existing = sorted(folder.glob("auto-????-??-??.zip")) if folder.is_dir() else []
+    if existing:
+        try:
+            last = date.fromisoformat(existing[-1].name[5:15])
+        except ValueError:
+            last = None
+        if last is not None and (today - last).days < AUTO_INTERVAL_DAYS:
+            return None
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / f"auto-{today.isoformat()}.zip"
+    export_data(target, version, data_dir)
+    for old in sorted(folder.glob("auto-????-??-??.zip"))[:-AUTO_KEEP]:
+        old.unlink(missing_ok=True)
+    return target
 
 
 # Was zipfile bei kaputten oder ungewöhnlichen Archiven wirft: verschlüsselt
