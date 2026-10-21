@@ -113,6 +113,21 @@ ICON_SIZES = (128, 64, 32)
 # Updateprüfung beim Start: so lange nach dem Öffnen, Abfrage alle
 # UPDATE_POLL_MS (die Anfrage selbst gibt ohne Internet nach 5 s auf).
 UPDATE_CHECK_DELAY_MS = 1500
+# Hinweis beim Start, wenn die Datenbank nicht wie gewohnt geöffnet wurde.
+DATABASE_PROBLEM_TITLES = {
+    "too_new": N_("Daten von neuerer Version"),
+    "migration": N_("Daten nicht aktualisiert"),
+    "aside": N_("Daten beiseitegelegt"),
+}
+DATABASE_PROBLEMS = {
+    "too_new": N_("Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "
+                  "Statistik, Diplome und Tagesübung bleiben leer. Bitte den Morsetrainer aktualisieren: "
+                  "Hilfe, F1."),
+    "migration": N_("Die Daten ließen sich nicht auf diese Version aktualisieren. Neue Ergebnisse werden nicht "
+                    "gespeichert, die Daten bleiben unverändert. Bitte den Morsetrainer aktualisieren: Hilfe, F1."),
+    "aside": N_("Die Datei mit deinen Daten war beschädigt und wurde beiseitegelegt. Statistik, Diplome und "
+                "Tagesübung beginnen leer. Wie du sie zurückholst, steht in der Anleitung unter Hilfe, F1."),
+}
 WHATS_NEW_DELAY_MS = 800  # Hinweis nach einem Update, wenn das Fenster steht
 # So oft wird nachgesehen, ob ein Hintergrund-Thread einen Fehler protokolliert hat.
 ERROR_POLL_MS = 1000
@@ -235,6 +250,7 @@ class MorseTrainerApp:
         except (TypeError, ValueError):
             self.update_declined_on = date.today() if self.update_declined else None
         self.update_available = None  # (Version, Neuerungen) des neueren Releases
+        self.start_notice_open = False  # Start-Hinweis zur Datenbank steht auf dem Schirm
         self.update_checked = False  # Updateprüfung beim Start abgeschlossen
         root.geometry(self._initial_geometry())
         root.resizable(True, True)
@@ -276,8 +292,8 @@ class MorseTrainerApp:
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
         self.root.after(500, self._check_awards_at_start)
-        if db.too_new():
-            # Der Hinweis zuerst und allein: Die Begrüßung käme sonst mitten hinein.
+        if db.problem():
+            # Der Hinweis zuerst und allein: Begrüßung und Update-Angebot kämen sonst mitten hinein.
             self.root.after(300, self._warn_if_database_too_new)
         elif self.first_start:
             self.root.after(FIRST_START_GREETING_MS, self._greet_first_start)
@@ -1803,16 +1819,18 @@ class MorseTrainerApp:
         return seeded
 
     def _warn_if_database_too_new(self):
-        """Stammen die Daten von einer neueren Version, sind Statistik, Diplome
-        und Tagesübung leer und Speichern scheitert: das einmal beim Start sagen,
-        auch bei ausgeschalteter Ansage. Beim allerersten Start folgt danach die
-        Begrüßung."""
-        if db.too_new():
-            dialog.showwarning(tr("Daten von neuerer Version"), tr(
-                "Die Daten stammen von einer neueren Version des Morsetrainers. Statistik, Diplome und "
-                "Tagesübung erscheinen deshalb leer, und neue Ergebnisse werden nicht gespeichert. Die Daten "
-                "bleiben unverändert. Bitte aktualisiere den Morsetrainer."), parent=self.root,
-                always_speak=True)
+        """Ging beim Öffnen der Daten etwas schief (neuere Version, gescheiterte
+        Migration, beiseitegelegte Datei), ist die Statistik leer: das einmal
+        beim Start sagen, auch bei ausgeschalteter Ansage. Beim allerersten
+        Start folgt danach die Begrüßung, das Update-Angebot wartet."""
+        kind = db.problem()
+        if kind:
+            self.start_notice_open = True
+            try:
+                dialog.showwarning(tr(DATABASE_PROBLEM_TITLES[kind]), tr(DATABASE_PROBLEMS[kind]),
+                                   parent=self.root, always_speak=True)
+            finally:
+                self.start_notice_open = False
         if self.first_start:
             self._greet_first_start()
 
@@ -2330,7 +2348,7 @@ class MorseTrainerApp:
         """Wartet auf das Ergebnis der Updateprüfung beim Start; bei neuerer
         Version Frage, ob geladen werden soll, sonst Hinweis und Knopf in
         der Fußzeile."""
-        if "version" not in result:
+        if "version" not in result or self.start_notice_open:
             self.root.after(UPDATE_POLL_MS, lambda: self._await_update_check(result))
             return
         version = result["version"]

@@ -1692,7 +1692,7 @@ class DatabaseWarningTest(AnnouncerCase):
     def test_warning_is_forced_and_greeting_follows_it(self):
         order = []
         self.app.first_start = True
-        with mock.patch.object(app_module.db, "too_new", return_value=True), \
+        with mock.patch.object(app_module.db, "problem", return_value="too_new"), \
                 mock.patch.object(app_module.dialog, "showwarning",
                                   lambda *a, **k: order.append(("warnung", k.get("always_speak")))), \
                 mock.patch.object(self.app, "_greet_first_start", lambda: order.append(("begrüßung", None))):
@@ -1702,7 +1702,7 @@ class DatabaseWarningTest(AnnouncerCase):
     def test_no_warning_still_greets_at_first_start(self):
         order = []
         self.app.first_start = True
-        with mock.patch.object(app_module.db, "too_new", return_value=False), \
+        with mock.patch.object(app_module.db, "problem", return_value=None), \
                 mock.patch.object(app_module.dialog, "showwarning", lambda *a, **k: order.append("warnung")), \
                 mock.patch.object(self.app, "_greet_first_start", lambda: order.append("begrüßung")):
             self.app._warn_if_database_too_new()

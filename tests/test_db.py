@@ -226,6 +226,41 @@ class DbTest(unittest.TestCase):
         self.assertFalse(self.file.with_name(self.file.name + "-shm").read_bytes() == b"index"
                          if self.file.with_name(self.file.name + "-shm").exists() else False)
 
+    def test_journal_is_copied_when_hard_links_fail(self):
+        self.file.parent.mkdir(parents=True)
+        self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)
+        self.file.with_name(self.file.name + "-wal").write_bytes(b"altes Journal")
+        db.close()
+        with mock.patch.object(db.os, "link", side_effect=PermissionError):
+            db.save_state("daily", {"days": {}})
+        aside = list(self.file.parent.glob("morsetrainer.db.defekt-*-wal"))
+        self.assertEqual([p.read_bytes() for p in aside], [b"altes Journal"])
+        self.assertEqual(list(self.file.parent.glob("*.halt*")), [])
+
+    def test_two_set_asides_in_one_second_keep_both(self):
+        fixed = datetime(2026, 10, 21, 12, 0, 0)
+        for text in (b"eins " * 500, b"zwei " * 500):
+            db.close()
+            self.file.parent.mkdir(parents=True, exist_ok=True)
+            for suffix in ("-wal", "-shm"):
+                self.file.with_name(self.file.name + suffix).unlink(missing_ok=True)
+            self.file.write_bytes(text)
+            with mock.patch.object(db, "datetime", wraps=datetime) as fake:
+                fake.now.return_value = fixed
+                db.load_state("daily", {})
+        self.assertEqual(len(list(self.file.parent.glob("morsetrainer.db.defekt-*"))), 2)
+
+    def test_problem_names_what_went_wrong(self):
+        self.assertIsNone(db.problem())
+        db.close()
+        self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)
+        self.assertEqual(db.problem(), "aside")
+        db.close()
+        raw = sqlite3.connect(self.file)
+        raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
+        raw.close()
+        self.assertEqual(db.problem(), "too_new")
+
     def test_locked_file_is_not_set_aside(self):
         db.save_state("daily", {"days": {}})
         db.close()
@@ -352,6 +387,11 @@ class DbTest(unittest.TestCase):
         self.assertEqual(raw.execute("PRAGMA user_version").fetchone(), (1,))
         self.assertEqual(raw.execute("SELECT data FROM state").fetchone(), ('{"days": {}}',))
         raw.close()
+
+    def test_problem_reports_a_failed_migration(self):
+        self.old_database(daily={"days": {}})
+        with mock.patch.object(db, "SCHEMA_VERSION", 2), mock.patch.dict(db.MIGRATIONS, {}, clear=True):
+            self.assertEqual(db.problem(), "migration")
 
     def test_missing_step_is_a_migration_error_and_leaves_the_file(self):
         self.old_database(daily={"days": {}})

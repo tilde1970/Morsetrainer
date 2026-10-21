@@ -164,12 +164,21 @@ EN.update({
         "all settings and statistics, e.g. for a new computer",
     "Daten sichern": "Back up data",
     "Daten von neuerer Version": "Data from a newer version",
-    "Die Daten stammen von einer neueren Version des Morsetrainers. Statistik, Diplome und "
-    "Tagesübung erscheinen deshalb leer, und neue Ergebnisse werden nicht gespeichert. Die Daten "
-    "bleiben unverändert. Bitte aktualisiere den Morsetrainer.":
-        "The data comes from a newer version of Morsetrainer. Statistics, diplomas and the daily "
-        "practice therefore appear empty, and new results are not saved. The data stays unchanged. "
-        "Please update Morsetrainer.",
+    "Daten nicht aktualisiert": "Data not updated",
+    "Daten beiseitegelegt": "Data set aside",
+    "Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "
+    "Statistik, Diplome und Tagesübung bleiben leer. Bitte den Morsetrainer aktualisieren: "
+    "Hilfe, F1.":
+        "The data comes from a newer version. New results are not saved; statistics, diplomas and the "
+        "daily practice stay empty. Please update Morsetrainer: Help, F1.",
+    "Die Daten ließen sich nicht auf diese Version aktualisieren. Neue Ergebnisse werden nicht "
+    "gespeichert, die Daten bleiben unverändert. Bitte den Morsetrainer aktualisieren: Hilfe, F1.":
+        "The data could not be updated to this version. New results are not saved; the data stays "
+        "unchanged. Please update Morsetrainer: Help, F1.",
+    "Die Datei mit deinen Daten war beschädigt und wurde beiseitegelegt. Statistik, Diplome und "
+    "Tagesübung beginnen leer. Wie du sie zurückholst, steht in der Anleitung unter Hilfe, F1.":
+        "The file with your data was damaged and has been set aside. Statistics, diplomas and the daily "
+        "practice start empty. How to get it back is in the manual under Help, F1.",
     "Morsetrainer-Sicherung-{date}.zip": "Morsetrainer-backup-{date}.zip",
     "Die Sicherung konnte nicht geschrieben werden:\n{error}": "The backup could not be written:\n{error}",
     "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "

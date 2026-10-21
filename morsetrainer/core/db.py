@@ -28,6 +28,7 @@ Schreibfunktionen werfen bei Fehlern db.Error (Datenbank) oder OSError
 import json
 import os
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -110,6 +111,8 @@ _conn_path = None
 # zwischenspeichert, erkennt daran eine andere Datei (Tests, Import einer
 # Sicherung), in der dieselbe id einen anderen Durchgang meint.
 generation = 0
+# Wohin die letzte kaputte Datei gelegt wurde (None: nichts beiseitegelegt).
+aside_file = None
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
 # Gelesene config/summary abgeschlossener Durchgänge, {id: (config, summary)}:
 # Die ändern sich nicht mehr, sessions() muss sie nicht jedes Mal neu aus
@@ -273,6 +276,7 @@ def _migrate(conn: sqlite3.Connection, file: Path) -> None:
     inzwischen migriert, läuft kein Schritt ein zweites Mal. Vor dem ersten
     Schritt bleibt eine Kopie "<Name>.vor-v<Nummer>" liegen."""
     copied = False
+    version = None
     while True:
         conn.execute("BEGIN IMMEDIATE")
         try:
@@ -320,30 +324,46 @@ def _copy_before_migration(file: Path, version: int) -> None:
 def _hold_journal(file: Path):
     """Hält das Journal (-wal) mit einem zweiten Namen fest: SQLite löscht es
     beim Schließen einer Verbindung, die die Datei nicht öffnen konnte. Liefert
-    den Zweitnamen, oder None (kein Journal, Dateisystem ohne harte Links)."""
+    den Zweitnamen, oder None (kein Journal). Ohne harte Links (FAT, manche
+    Netzfreigaben) wird das Journal kopiert. Die Prozessnummer im Namen hält
+    zwei Fenster auseinander."""
     wal = file.with_name(file.name + "-wal")
-    held = wal.with_name(wal.name + ".halt")
+    held = wal.with_name(f"{wal.name}.halt{os.getpid()}")
     try:
         held.unlink(missing_ok=True)
-        os.link(wal, held)
+        try:
+            os.link(wal, held)
+        except FileNotFoundError:
+            return None
+        except OSError:
+            shutil.copy2(wal, held)
     except OSError:
         return None
     return held
 
 
-def _set_aside(file: Path, held_journal=None) -> None:
-    """Legt die Datei als "<Name>.defekt-<Zeitstempel>" beiseite. Ihr Journal
-    (`held_journal`, siehe _hold_journal) kommt unter dem passenden Namen mit,
-    denn SQLite ordnet es über den Dateinamen zu und dort kann noch
-    Nicht-Zurückgeschriebenes stehen; auf die neue Datei wirken darf es nicht.
-    Der Wal-Index (-shm) ist wiederherstellbar und wird gelöscht."""
+def _set_aside(file: Path, held_journal=None) -> Path:
+    """Legt die Datei als "<Name>.defekt-<Zeitstempel>" beiseite und gibt den
+    neuen Pfad zurück. Ihr Journal (`held_journal`, siehe _hold_journal) kommt
+    unter dem passenden Namen mit, denn SQLite ordnet es über den Dateinamen zu
+    und dort kann noch Nicht-Zurückgeschriebenes stehen; auf die neue Datei
+    wirken darf es nicht. Der Wal-Index (-shm) ist wiederherstellbar und wird
+    gelöscht. Gleicher Zeitstempel bekommt einen Zähler."""
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     aside = file.with_name(f"{file.name}.defekt-{stamp}")
+    count = 1
+    while aside.exists():
+        count += 1
+        aside = file.with_name(f"{file.name}.defekt-{stamp}-{count}")
     os.replace(file, aside)
     if held_journal is not None:
-        os.replace(held_journal, aside.with_name(aside.name + "-wal"))
+        try:
+            os.replace(held_journal, aside.with_name(aside.name + "-wal"))
+        except FileNotFoundError:
+            pass  # ein anderes Fenster war schneller
     for suffix in ("-wal", "-shm"):
         file.with_name(file.name + suffix).unlink(missing_ok=True)
+    return aside
 
 
 def _connection() -> sqlite3.Connection:
@@ -351,11 +371,12 @@ def _connection() -> sqlite3.Connection:
     Ist die Datei kaputt, wird sie beiseitegelegt und eine neue begonnen; ist
     sie nur gesperrt oder nicht lesbar, bleibt sie unberührt und der Fehler
     geht weiter."""
-    global _conn, _conn_path, generation
+    global _conn, _conn_path, generation, aside_file
     file = path()
     if _conn is not None and file != _conn_path:
         close()
     if _conn is None:
+        aside_file = None
         file.parent.mkdir(parents=True, exist_ok=True)
         held = _hold_journal(file)
         try:
@@ -364,7 +385,7 @@ def _connection() -> sqlite3.Connection:
             except sqlite3.OperationalError:
                 raise  # gesperrt, keine Rechte …: Datei nicht anrühren
             except sqlite3.DatabaseError:
-                _set_aside(file, held)
+                aside_file = _set_aside(file, held)
                 held = None
                 _conn = _open(file)
         finally:
@@ -375,17 +396,27 @@ def _connection() -> sqlite3.Connection:
     return _conn
 
 
-def too_new() -> bool:
-    """True, wenn die Datenbank von einer neueren Programmfassung stammt
-    (sie bleibt unberührt, Lesen zeigt dann nur „leer“, Schreiben scheitert)."""
+def problem():
+    """Was beim Öffnen der Datenbank schiefging, für einen Hinweis an die
+    Person: "too_new" (Datei von neuerer Programmfassung, bleibt unberührt,
+    Lesen zeigt „leer“, Schreiben scheitert), "migration" (Aufwertung einer
+    älteren Datei gescheitert, bleibt unberührt), "aside" (Datei war kaputt
+    und liegt jetzt beiseite, die Statistik beginnt leer) oder None."""
     with _lock:
         try:
             _connection()
         except SchemaTooNew:
-            return True
+            return "too_new"
+        except MigrationError:
+            return "migration"
         except (Error, OSError):
-            return False
-    return False
+            return None
+    return "aside" if aside_file is not None else None
+
+
+def too_new() -> bool:
+    """True, wenn die Datenbank von einer neueren Programmfassung stammt."""
+    return problem() == "too_new"
 
 
 @contextmanager
