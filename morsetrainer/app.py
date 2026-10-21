@@ -45,7 +45,7 @@ from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_t
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.59"
+__version__ = "2.60"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
