@@ -113,6 +113,7 @@ _conn_path = None
 generation = 0
 # Wohin die letzte kaputte Datei gelegt wurde (None: nichts beiseitegelegt).
 aside_file = None
+_failures = {}  # Datei -> "too_new"/"migration": nicht bei jedem Lesen neu öffnen
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
 # Gelesene config/summary abgeschlossener Durchgänge, {id: (config, summary)}:
 # Die ändern sich nicht mehr, sessions() muss sie nicht jedes Mal neu aus
@@ -156,6 +157,7 @@ def close() -> None:
     öffnet sie wieder."""
     global _conn, _depth
     with _lock:
+        _failures.clear()
         if _conn is not None:
             try:
                 # Ohne Wartezeit: hält ein anderes Fenster die Datei offen,
@@ -240,7 +242,7 @@ def _mount_table() -> list:
     if sys.platform == "darwin":
         out = _run_mount()
         # "//nutzer@host/freigabe on /Volumes/freigabe (smbfs, nodev, …)"
-        return [(m.group(1), m.group(2)) for m in re.finditer(r" on (.+) \(([^,)]+)", out)]
+        return [(m.group(1), m.group(2)) for m in re.finditer(r"^.* on (/.*) \(([^,)]+)[^)]*\)\s*$", out, re.M)]
     table = []
     with open("/proc/mounts", encoding="utf-8") as mounts:
         for line in mounts:
@@ -256,7 +258,9 @@ def _on_network_drive(file: Path) -> bool:
     macOS); sonst gilt "nein"."""
     try:
         resolved = file.resolve()
-        if str(resolved).startswith("\\\\"):
+        text = str(resolved)
+        # \\?\C:\… ist ein Langpfad auf einem lokalen Laufwerk, \\?\UNC\… eine Freigabe.
+        if text.startswith("\\\\") and (not text.startswith("\\\\?\\") or text.upper().startswith("\\\\?\\UNC\\")):
             return True
         best, kind = "", ""
         for point, fs_type in _mount_table():
@@ -321,13 +325,14 @@ def _copy_before_migration(file: Path, version: int) -> None:
         partial.unlink(missing_ok=True)
 
 
-def _hold_journal(file: Path):
-    """Hält das Journal (-wal) mit einem zweiten Namen fest: SQLite löscht es
+def _hold_journal(file: Path, suffix: str = "-wal"):
+    """Hält das Journal (-wal, im Netzlaufwerk-Modus -journal) mit einem zweiten
+    Namen fest: SQLite löscht es
     beim Schließen einer Verbindung, die die Datei nicht öffnen konnte. Liefert
     den Zweitnamen, oder None (kein Journal). Ohne harte Links (FAT, manche
     Netzfreigaben) wird das Journal kopiert. Die Prozessnummer im Namen hält
     zwei Fenster auseinander."""
-    wal = file.with_name(file.name + "-wal")
+    wal = file.with_name(file.name + suffix)
     held = wal.with_name(f"{wal.name}.halt{os.getpid()}")
     try:
         held.unlink(missing_ok=True)
@@ -348,7 +353,7 @@ def _remove_stale_holds(file: Path) -> None:
     Prozess hinterließ: ältere als ein Tag. Der Name des eigenen Prozesses wird
     ohnehin beim Festhalten ersetzt."""
     cutoff = datetime.now().timestamp() - 24 * 3600
-    for held in file.parent.glob(file.name + "-wal.halt*"):
+    for held in file.parent.glob(file.name + "-*.halt*"):
         try:
             if held.stat().st_mtime < cutoff:
                 held.unlink()
@@ -356,27 +361,52 @@ def _remove_stale_holds(file: Path) -> None:
             pass
 
 
-def _set_aside(file: Path, held_journal=None) -> Path:
-    """Legt die Datei als "<Name>.defekt-<Zeitstempel>" beiseite und gibt den
-    neuen Pfad zurück. Ihr Journal (`held_journal`, siehe _hold_journal) kommt
-    unter dem passenden Namen mit, denn SQLite ordnet es über den Dateinamen zu
-    und dort kann noch Nicht-Zurückgeschriebenes stehen; auf die neue Datei
-    wirken darf es nicht. Der Wal-Index (-shm) ist wiederherstellbar und wird
-    gelöscht. Gleicher Zeitstempel bekommt einen Zähler."""
+def _aside_name(file: Path) -> Path:
+    """"<Name>.defekt-<Zeitstempel>", mit Zähler, wenn es den schon gibt."""
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     aside = file.with_name(f"{file.name}.defekt-{stamp}")
     count = 1
     while aside.exists():
         count += 1
         aside = file.with_name(f"{file.name}.defekt-{stamp}-{count}")
+    return aside
+
+
+def _set_aside(file: Path, held_journal=None, held_rollback=None) -> Path:
+    """Legt die Datei als "<Name>.defekt-<Zeitstempel>" beiseite und gibt den
+    neuen Pfad zurück. Ihr Journal (`held_journal`, siehe _hold_journal) kommt
+    unter dem passenden Namen mit, denn SQLite ordnet es über den Dateinamen zu
+    und dort kann noch Nicht-Zurückgeschriebenes stehen; auf die neue Datei
+    wirken darf es nicht. Der Wal-Index (-shm) ist wiederherstellbar und wird
+    gelöscht. Gleicher Zeitstempel bekommt einen Zähler."""
+    aside = _aside_name(file)
     os.replace(file, aside)
     if held_journal is not None:
         try:
             os.replace(held_journal, aside.with_name(aside.name + "-wal"))
         except FileNotFoundError:
             pass  # ein anderes Fenster war schneller
+    if held_rollback is not None:  # Netzlaufwerk-Modus: -journal statt -wal
+        try:
+            os.replace(held_rollback, aside.with_name(aside.name + "-journal"))
+        except FileNotFoundError:
+            pass
     for suffix in ("-wal", "-shm"):
         file.with_name(file.name + suffix).unlink(missing_ok=True)
+    return aside
+
+
+def _set_aside_orphan_journal(file: Path):
+    """Liegt ein Journal (-wal) ohne Hauptdatei da (von Hand gelöscht), gehört es
+    zu keiner neuen Datei: als "<Name>.defekt-<Zeit>-wal" beiseitelegen, statt es
+    still zu verlieren. Gibt den neuen Pfad zurück, sonst None."""
+    wal = file.with_name(file.name + "-wal")
+    if file.exists() or not wal.is_file():
+        return None
+    name = _aside_name(file)
+    aside = name.with_name(name.name + "-wal")
+    os.replace(wal, aside)
+    file.with_name(file.name + "-shm").unlink(missing_ok=True)
     return aside
 
 
@@ -393,21 +423,26 @@ def _connection() -> sqlite3.Connection:
         aside_file = None
         file.parent.mkdir(parents=True, exist_ok=True)
         _remove_stale_holds(file)
+        orphan = _set_aside_orphan_journal(file)
         held = _hold_journal(file)
+        held_rollback = _hold_journal(file, "-journal")
         try:
             try:
                 _conn = _open(file)
             except sqlite3.OperationalError:
                 raise  # gesperrt, keine Rechte …: Datei nicht anrühren
             except sqlite3.DatabaseError:
-                aside_file = _set_aside(file, held)
-                held = None
+                aside_file = _set_aside(file, held, held_rollback)
+                held = held_rollback = None
                 _conn = _open(file)
         finally:
-            if held is not None:
-                held.unlink(missing_ok=True)
+            for rest in (held, held_rollback):
+                if rest is not None:
+                    rest.unlink(missing_ok=True)
         _conn_path = file
         generation += 1
+        if orphan is not None and aside_file is None:
+            aside_file = orphan
     return _conn
 
 
@@ -418,11 +453,16 @@ def problem():
     älteren Datei gescheitert, bleibt unberührt), "aside" (Datei war kaputt
     und liegt jetzt beiseite, die Statistik beginnt leer) oder None."""
     with _lock:
+        file = path()
+        if file in _failures:
+            return _failures[file]
         try:
             _connection()
         except SchemaTooNew:
+            _failures[file] = "too_new"
             return "too_new"
         except MigrationError:
+            _failures[file] = "migration"
             return "migration"
         except (Error, OSError):
             return None

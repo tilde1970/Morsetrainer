@@ -1686,6 +1686,37 @@ class DialogSpeechTest(AnnouncerCase):
         self.assertFalse(self.pump_until(lambda: self.said, timeout=0.5))
 
 
+class DialogSymbolTest(AnnouncerCase):
+    """Warnung und Fehler tragen ein Zeichen vor dem Text; gesprochen wird es nicht."""
+
+    def labels(self, symbol):
+        from morsetrainer.widgets import dialog
+        message = dialog.MessageDialog(self.root, "Titel", "Text", question=False, symbol=symbol)
+        self.addCleanup(message.close)
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        return message, [str(w.cget("text")) for w in walk(message.top) if w.winfo_class() == "TLabel"]
+
+    def test_warning_and_error_show_a_symbol_that_is_not_spoken(self):
+        message, texts = self.labels("\u26a0")
+        self.assertIn("\u26a0", texts)
+        self.assertNotIn("\u26a0", message.spoken)
+
+    def test_plain_message_has_no_symbol(self):
+        _message, texts = self.labels("")
+        self.assertEqual(texts, ["Text"])
+
+    def test_show_functions_pass_their_symbol(self):
+        from morsetrainer.widgets import dialog
+        for function, symbol in ((dialog.showwarning, "\u26a0"), (dialog.showerror, "\u2716")):
+            with mock.patch.object(dialog, "MessageDialog") as made:
+                function("T", "x", parent=self.root)
+            self.assertEqual(made.call_args.kwargs["symbol"], symbol)
+
+
 class DatabaseWarningTest(AnnouncerCase):
     """Der Hinweis auf zu neue Daten kommt vor der Begrüßung und wird gesprochen."""
 

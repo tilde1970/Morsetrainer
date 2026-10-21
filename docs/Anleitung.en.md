@@ -172,7 +172,7 @@ practice options:
   that). The voice in the Speak tab stays German.
 - **Accessibility:** font size, high contrast, announcements (section 8).
 - **Data:** back up and restore, the **Open data folder** button and the
-  **Back up automatically** switch (section 11).
+  **Back up automatically (weekly, on exit)** switch (section 11).
 
 **Font size:** under “Settings …” or with Ctrl+Plus, Ctrl+Minus and Ctrl+0
 (normal) the whole interface gets larger, up to 200 %; the window grows
@@ -307,7 +307,7 @@ callsigns from country patterns; the line above the **Load callsign list
 directly from [supercheckpartial.com](https://www.supercheckpartial.com)
 (about 360 kB, needs internet). Once it is there, the line above reads
 “List: … callsigns” and the button becomes the flat
-**update** button (announced as “Update callsign list”).
+**update list** button (announced as “Update callsign list”).
 
 - During an exercise the button does not load; the status line says “The
   callsign list can be loaded after the exercise.” If you start an
@@ -461,8 +461,8 @@ many characters. Runs with band conditions do not count here (section 6).
   against the 30 days before: “Before (30 days): reaction 0.61 s, 88 %
   correct (from 412 characters) · Last 7 days: reaction 0.48 s, 92 % correct
   (from 96 characters)” (for the reaction, smaller is faster). A period
-  appears only from 10 characters; only completed runs count. A smaller one reads “too few characters (n of
-  10)”, with no practice “not practised”. The averages over all
+  appears only from 10 characters; only completed runs count. A smaller one
+  reads “too few characters (n of 10)”, with no practice “not practised”. The averages over all
   runs hardly move, because the early, slow answers always count; here you
   see whether you are getting better. The reaction comes only from the
   Characters content of the One by one tab: when copying along it counts from
@@ -1250,34 +1250,16 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   run with its characters, results of QSO checks and contests, overall
   statistics, review box, daily practice with stars, lesson and daily
   speed, practice time per day and the awards achieved. Every line is
-  saved immediately; a crash costs at most the current one. If the file is
-  damaged, it is set aside as `morsetrainer.db.defekt-<time>` and a new
-  one is started. If a file `…defekt-<time>-wal` is there too, the two
-  belong together: to bring the file back by hand, rename both
-  (`morsetrainer.db` and `morsetrainer.db-wal`) and delete any existing
-  `morsetrainer.db-wal` and `morsetrainer.db-shm` first. Otherwise a
-  foreign journal is applied to the file without any message. The
-  `.defekt-*` files and `vor-import-<time>.zip` are not part of the data
-  backup and may be deleted once everything works. If a newer version
-  needs a different database format, a copy `morsetrainer.db.vor-v<number>`
-  is left behind first; it is not part of the data backup and may be
-  deleted once everything works. An older version does not open a database
-  from a newer one and leaves it untouched; at start a notice says that
-  statistics, awards and the daily practice are therefore empty and
-  nothing is saved. The same notice appears when a damaged file was set
-  aside or the format update failed.
-- `auto-sicherung/`: On exit, Morsetrainer makes a backup
-  `auto-<date>.zip` by itself at most every 7 days; the last 4 are kept,
-  older ones are deleted. Switch it off under “Settings … → Data →
-  **Back up automatically**”. It sits in the data folder, so it protects
-  against a damaged database, not against a failing disk: for that, back
-  up by hand (see below). Restore it with **Restore …**.
-  If the backup fails (say, the disk is full), Morsetrainer notes it in
-  `auto-sicherung-fehler.txt` and says so at the next start; the note
-  disappears with the next successful backup.
-  Anyone who wants to delete all their data should also delete
-  `auto-sicherung/`, the `vor-import-<time>.zip` files and the `.defekt-*`
-  files in the data folder: they hold copies of the practice data.
+  saved immediately; a crash costs at most the current one.
+- Copies next to the database: `morsetrainer.db.defekt-<time>` (with
+  `…-wal`) is a damaged file that Morsetrainer has set aside, that is,
+  renamed and no longer uses; it then starts a new one.
+  `morsetrainer.db.vor-v<number>` is the copy from before a format
+  update. `vor-import-<time>.zip` in the data folder is the state from
+  before a backup was restored. None of the three is part of a backup, and
+  all may be deleted once everything works.
+- `auto-sicherung/`: the automatic weekly backups (see “Automatic backup”
+  below) and, if one failed, `auto-sicherung-fehler.txt`.
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
   tables from the Network tab (`…-netzwerk.csv`). Practice data from
   version 2.27 and older (separate files) is taken over into the database
@@ -1303,21 +1285,94 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   the error (issues on GitHub, see the README). Once it grows beyond 1 MB,
   it starts afresh.
 
+### Notices at start
+
+If the database cannot be opened as usual, a notice window appears at
+start. Its title says what it is about:
+
+- **Data from a newer version:** The data comes from a newer version of
+  Morsetrainer. The older version leaves it untouched. Statistics, awards
+  and daily practice are empty, and new results are not saved. Remedy:
+  update Morsetrainer (section 10, “Updates”).
+- **Data not updated:** The data could not be converted to the format of
+  this version. It stays unchanged, and new results are not saved.
+  Remedy: update Morsetrainer. Before a conversion, the copy
+  `morsetrainer.db.vor-v<number>` is left behind.
+- **Data set aside:** The file was damaged. Morsetrainer has set it aside
+  as `morsetrainer.db.defekt-<time>` and starts afresh; statistics,
+  awards and daily practice are empty at first. How to get your data back
+  is described below under “Restoring a backup” and “Bringing data back
+  by hand”.
+- **Automatic backup failed:** The backup at the last exit did not work;
+  the window names the reason. Check the free space on the disk or back up
+  by hand (see below).
+
 ### Backing up and moving to a new computer
 
 Under “Settings … → Data”, **Back up …** saves all settings and data
 (`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`) to a ZIP
-file in a place of your choice, e.g. a USB stick. **Restore …** brings
-them back on the new computer: `stats/` is replaced completely, the other
-files if they are in the backup. The current state is saved first as
-`vor-import-<time>.zip` in the data directory. The program then quits; the
-restored settings apply from the next start.
-The weekly automatic backup (`auto-sicherung/`, see above) is restored the
-same way; it is not part of the backup made by hand.
+file in a place of your choice, e.g. a USB stick.
 
 - The database goes into the backup as a consistent state, even during
-  practice; when restoring, it is checked first.
-- Backups from version 2.27 and older can still be restored; the next
-  start takes over their files.
+  practice.
 - The voice for speech output (`voices/`) is not included, it ships with
   the AppImage or exe.
+
+### Restoring a backup
+
+To restore a backup on the same or on a new computer:
+
+1. Open “Settings … → Data” and choose **Restore …**.
+2. Choose the ZIP file. The database is checked first.
+3. Confirm the question. The current state is saved first as
+   `vor-import-<time>.zip` in the data folder.
+4. The program quits. Start it again; the restored settings now apply.
+
+`stats/` is replaced completely, the other files if they are in the
+backup. An automatic backup is restored the same way. Backups from
+version 2.27 and older can still be restored; the next start takes over
+their files.
+
+### Automatic backup
+
+Morsetrainer backs up by itself; you do not have to do anything. On exit
+it creates a backup `auto-<date>.zip` in the `auto-sicherung/` folder of
+the data folder, at most every 7 days. The last 4 are kept, older ones
+are deleted. You can switch this off under “Settings … → Data” with the
+switch **Back up automatically (weekly, on exit)**.
+
+- The automatic backup sits in the data folder. It protects against a
+  damaged database, not against a failing disk. For that, also back up by
+  hand with **Back up …** to a USB stick.
+- It contains the same files as a backup made by hand; the automatic
+  backups themselves are not part of a backup made by hand.
+- To restore: as above, with **Restore …**; the files are in the
+  `auto-sicherung/` folder, which **Open data folder** shows you.
+- If the backup fails, for example because the disk is full, Morsetrainer
+  notes it in `auto-sicherung-fehler.txt` and reports it at the next start
+  in the window “Automatic backup failed”. The file disappears with the
+  next successful backup.
+
+### Bringing data back by hand
+
+You only need this if a damaged database was set aside and you hope to
+rescue something from it. Usually, **Restore …** with a backup is the
+easier way. The files are in the `stats/` folder of the data folder.
+
+1. Quit Morsetrainer.
+2. Delete the existing files `morsetrainer.db-wal` and
+   `morsetrainer.db-shm`, if there are any. Otherwise a foreign journal is
+   applied to the restored file without any message.
+3. Move the new `morsetrainer.db` somewhere else (or delete it if the new
+   data is worthless). Then rename `morsetrainer.db.defekt-<time>` to
+   `morsetrainer.db`. If
+   `morsetrainer.db.defekt-<time>-wal` is next to it, it belongs to the
+   file: rename it to `morsetrainer.db-wal`.
+4. Start Morsetrainer.
+
+### Deleting all data
+
+Anyone who wants to delete all their data should delete not only `stats/`
+but also the `auto-sicherung/` folder, the `vor-import-<time>.zip` files
+and the `.defekt-*` files in the data folder: they hold copies of the
+practice data.

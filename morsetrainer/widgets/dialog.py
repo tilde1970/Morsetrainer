@@ -27,7 +27,8 @@ class MessageDialog:
     """Modales Fenster mit `text` und einem Knopf (Meldung) oder zweien
     (Frage). `answer` ist nach dem Schließen True (Ja/OK) oder False."""
 
-    def __init__(self, parent, title: str, text: str, question: bool, always_speak: bool = False):
+    def __init__(self, parent, title: str, text: str, question: bool, always_speak: bool = False,
+                 symbol: str = ""):
         self.answer = False
         self.parent = parent
         self.restore_focus = focus_keeper(parent.winfo_toplevel())
@@ -38,7 +39,15 @@ class MessageDialog:
         top.resizable(False, False)
         frame = ttk.Frame(top, padding=14)
         frame.pack(fill="both", expand=True)
-        ttk.Label(frame, text=text, wraplength=WRAP, justify="left").pack(anchor="w")
+        # Warnung und Fehler tragen ein Zeichen vor dem Text (nicht nur Farbe oder Titel);
+        # gesprochen wird es nicht, Titel und Text sagen, was los ist.
+        if symbol:
+            body = ttk.Frame(frame)
+            body.pack(anchor="w")
+            ttk.Label(body, text=symbol, font=theme.STATUS).pack(side="left", anchor="n", padx=(0, 10))
+            ttk.Label(body, text=text, wraplength=WRAP, justify="left").pack(side="left")
+        else:
+            ttk.Label(frame, text=text, wraplength=WRAP, justify="left").pack(anchor="w")
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(14, 0))
         if question:
@@ -123,15 +132,20 @@ def askyesno(title: str, text: str, parent=None) -> bool:
     return MessageDialog(_parent(parent), title, text, question=True).wait()
 
 
-def showinfo(title: str, text: str, parent=None, always_speak: bool = False) -> None:
+def showinfo(title: str, text: str, parent=None, always_speak: bool = False, symbol: str = "") -> None:
     """Hinweis mit einem Knopf „OK“. `always_speak`: auch bei ausgeschalteter
     Ansage sprechen, für Meldungen, die man ohne Hinsehen nicht verpassen darf."""
-    MessageDialog(_parent(parent), title, text, question=False, always_speak=always_speak).wait()
+    MessageDialog(_parent(parent), title, text, question=False, always_speak=always_speak, symbol=symbol).wait()
 
 
-# Warnung und Fehler sehen gleich aus; was los ist, sagen Titel und Text.
-showwarning = showinfo
-showerror = showinfo
+def showwarning(title: str, text: str, parent=None, always_speak: bool = False) -> None:
+    """Wie showinfo, mit Warnzeichen vor dem Text."""
+    showinfo(title, text, parent, always_speak, symbol="\u26a0")
+
+
+def showerror(title: str, text: str, parent=None, always_speak: bool = False) -> None:
+    """Wie showinfo, mit Fehlerzeichen vor dem Text."""
+    showinfo(title, text, parent, always_speak, symbol="\u2716")
 
 
 # Steht gerade ein Dateidialog aus (Ansage läuft oder Dialog offen)?

@@ -172,7 +172,7 @@ einmal einstellt:
   Die Stimme im Reiter Sprechen bleibt deutsch.
 - **Barrierefreiheit:** Schriftgröße, hoher Kontrast, Ansage (Abschnitt 8).
 - **Daten:** sichern und einlesen, der Knopf **Datenordner öffnen** und der
-  Schalter **Automatisch sichern** (Abschnitt 11).
+  Schalter **Automatisch sichern (wöchentlich, beim Beenden)** (Abschnitt 11).
 
 **Schriftgröße:** Unter „Einstellungen …“ oder mit Strg+Plus, Strg+Minus
 und Strg+0 (normal) wird die ganze Oberfläche größer, bis 200 %; das
@@ -308,7 +308,7 @@ nach Landesmuster; das steht dann über dem Knopf **Rufzeichenliste laden
 (supercheckpartial.com)**. Der Knopf lädt die Liste direkt von
 [supercheckpartial.com](https://www.supercheckpartial.com) (rund 360 kB,
 braucht Internet). Ist sie da, steht darüber „Liste: … Rufzeichen“, und
-der Knopf wird zum flachen Knopf **aktualisieren** (die Ansage nennt ihn
+der Knopf wird zum flachen Knopf **Liste aktualisieren** (die Ansage nennt ihn
 „Rufzeichenliste aktualisieren“).
 
 - Während einer Übung lädt der Knopf nicht; die Statuszeile sagt dann „Die
@@ -1276,36 +1276,17 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   Contests, Gesamtstatistik, Lernkartei, Tagesübung mit Sternen, Lektion
   und Tagestempo, Übungszeit pro Tag und die erreichten Diplome. Jede
   Zeile wird sofort gespeichert; ein Absturz kostet höchstens die
-  laufende. Ist die Datei beschädigt, wird sie als
-  `morsetrainer.db.defekt-<Zeit>` beiseitegelegt und eine neue begonnen.
-  Liegt dazu eine Datei `…defekt-<Zeit>-wal` da, gehören beide zusammen:
-  Wer die Datei von Hand zurückholen will, benennt beide um
-  (`morsetrainer.db` und `morsetrainer.db-wal`) und löscht vorher die
-  vorhandenen `morsetrainer.db-wal` und `morsetrainer.db-shm`. Sonst wirkt
-  ein fremdes Journal ohne Meldung auf die Datei. Die Dateien `.defekt-*`
-  und die `vor-import-<Zeit>.zip` kommen nicht in die Datensicherung und
-  dürfen gelöscht werden, wenn alles läuft.
-  Braucht eine neuere Programmfassung ein anderes Format der Datenbank,
-  bleibt davor eine Kopie `morsetrainer.db.vor-v<Nummer>` liegen; sie
-  kommt nicht in die Datensicherung und darf gelöscht werden, wenn alles
-  läuft. Eine Datenbank aus einer neueren Fassung öffnet eine ältere
-  Fassung nicht und lässt sie unberührt; beim Start sagt ein Hinweis, dass
-  Statistik, Diplome und Tagesübung deshalb leer sind und nichts
-  gespeichert wird. Dasselbe Hinweisfenster erscheint, wenn eine
-  beschädigte Datei beiseitegelegt wurde oder die Aktualisierung des
-  Formats scheiterte.
-- `auto-sicherung/`: Beim Beenden legt der Morsetrainer höchstens alle
-  7 Tage von selbst eine Sicherung `auto-<Datum>.zip` an; die letzten 4
-  bleiben, ältere werden gelöscht. Abschalten: „Einstellungen … → Daten →
-  **Automatisch sichern**“. Sie liegt im Datenordner, schützt also vor
-  einer beschädigten Datenbank, nicht vor dem Ausfall der Festplatte:
-  Dafür sicherst du von Hand (siehe unten). Zurückholen mit **Einlesen …**.
-  Scheitert die Sicherung (etwa weil die Platte voll ist), merkt sich der
-  Morsetrainer das in `auto-sicherung-fehler.txt` und sagt es beim nächsten
-  Start; der Zettel verschwindet mit der nächsten gelungenen Sicherung.
-  Wer alle seine Daten löschen will, löscht auch `auto-sicherung/`, die
-  `vor-import-<Zeit>.zip` und die Dateien `.defekt-*` im Datenordner: Sie
-  enthalten Kopien der Übungsdaten.
+  laufende.
+- Kopien neben der Datenbank: `morsetrainer.db.defekt-<Zeit>` (mit
+  `…-wal`) ist eine beschädigte Datei, die der Morsetrainer beiseitegelegt
+  hat, also umbenannt und nicht mehr benutzt; danach beginnt er eine neue.
+  `morsetrainer.db.vor-v<Nummer>` ist die Kopie von vor einer
+  Formatumstellung. `vor-import-<Zeit>.zip` im Datenordner ist der Stand
+  von vor dem Einlesen einer Sicherung. Alle drei sind nicht Teil der
+  Sicherung und dürfen gelöscht werden, wenn alles läuft.
+- `auto-sicherung/`: die automatischen Wochensicherungen (siehe
+  „Automatische Sicherung“ unten) und, falls eine misslang,
+  `auto-sicherung-fehler.txt`.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start
@@ -1331,22 +1312,97 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   den Fehler meldest (Issues auf GitHub, siehe README). Wird sie größer als
   1 MB, beginnt sie neu.
 
+### Hinweise beim Start
+
+Lässt sich die Datenbank nicht wie gewohnt öffnen, erscheint beim Start ein
+Hinweisfenster. Sein Titel sagt, worum es geht:
+
+- **Daten von neuerer Version:** Die Daten stammen aus einer neueren
+  Fassung des Morsetrainers. Die ältere Fassung lässt sie unberührt.
+  Statistik, Diplome und Tagesübung sind leer, neue Ergebnisse werden nicht
+  gespeichert. Abhilfe: den Morsetrainer aktualisieren (Abschnitt 10,
+  „Updates“).
+- **Daten nicht aktualisiert:** Die Daten ließen sich nicht auf das Format
+  dieser Fassung umstellen. Sie bleiben unverändert, neue Ergebnisse werden
+  nicht gespeichert. Abhilfe: den Morsetrainer aktualisieren. Vor einer
+  Umstellung bleibt die Kopie `morsetrainer.db.vor-v<Nummer>` liegen.
+- **Daten beiseitegelegt:** Die Datei war beschädigt. Der Morsetrainer hat
+  sie als `morsetrainer.db.defekt-<Zeit>` beiseitegelegt und beginnt neu;
+  Statistik, Diplome und Tagesübung sind zunächst leer. Wie du Daten
+  zurückholst, steht unten unter „Sicherung zurückholen“ und „Daten von
+  Hand zurückholen“.
+- **Automatische Sicherung gescheitert:** Die Sicherung beim letzten
+  Beenden ist nicht gelungen, das Fenster nennt den Grund. Prüfe den
+  Platz auf der Festplatte oder sichere von Hand (siehe unten).
+
 ### Sichern und auf einen neuen Rechner umziehen
 
 Unter „Einstellungen … → Daten“ sichert **Sichern …** alle Einstellungen
 und Daten (`stats/`, `window_state.json`, `woerter.txt`, `callsigns.scp`)
 in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
-**Einlesen …** holt sie auf dem neuen Rechner zurück: `stats/` wird
-vollständig ersetzt, die anderen Dateien, soweit sie in der Sicherung
-sind. Der bisherige Stand landet vorher als `vor-import-<Zeit>.zip` im
-Datenverzeichnis. Danach beendet sich das Programm; beim nächsten Start
-gelten die eingelesenen Einstellungen. Die automatische Wochensicherung
-(`auto-sicherung/`, siehe oben) liest du auf demselben Weg ein; sie ist
-nicht Teil der von Hand erzeugten Sicherung.
 
 - Die Datenbank kommt als stimmiger Stand in die Sicherung, auch wenn
-  gerade geübt wird; beim Einlesen wird sie vorher geprüft.
-- Sicherungen von Version 2.27 und älter lassen sich weiter einlesen,
-  ihre Dateien übernimmt der nächste Start.
+  gerade geübt wird.
 - Die Stimme für die Sprachausgabe (`voices/`) ist nicht dabei, sie
   steckt im AppImage bzw. in der exe.
+
+### Sicherung zurückholen
+
+So holst du eine Sicherung auf demselben oder einem neuen Rechner zurück:
+
+1. Öffne „Einstellungen … → Daten“ und wähle **Einlesen …**.
+2. Wähle die ZIP-Datei. Beim Einlesen wird die Datenbank vorher geprüft.
+3. Bestätige die Rückfrage. Der bisherige Stand landet vorher als
+   `vor-import-<Zeit>.zip` im Datenordner.
+4. Das Programm beendet sich. Starte es neu; jetzt gelten die
+   eingelesenen Einstellungen.
+
+`stats/` wird dabei vollständig ersetzt, die anderen Dateien, soweit sie
+in der Sicherung sind. Auch eine automatische Sicherung liest du auf diesem
+Weg ein. Sicherungen von Version 2.27 und älter lassen sich weiter
+einlesen, ihre Dateien übernimmt der nächste Start.
+
+### Automatische Sicherung
+
+Der Morsetrainer sichert von selbst, du musst nichts tun: Beim Beenden legt
+er höchstens alle 7 Tage eine Sicherung `auto-<Datum>.zip` im Ordner
+`auto-sicherung/` des Datenordners an. Die letzten 4 bleiben, ältere
+werden gelöscht. Abschalten kannst du das unter „Einstellungen … → Daten“
+mit dem Schalter **Automatisch sichern (wöchentlich, beim Beenden)**.
+
+- Die automatische Sicherung liegt im Datenordner. Sie schützt vor einer
+  beschädigten Datenbank, nicht vor dem Ausfall der Festplatte. Dafür
+  sicherst du zusätzlich von Hand mit **Sichern …** auf einen USB-Stick.
+- Sie enthält dieselben Dateien wie die Sicherung von Hand; die
+  automatischen Sicherungen selbst sind nicht Teil einer Sicherung von
+  Hand.
+- Zurückholen: wie oben, mit **Einlesen …**; die Dateien liegen im Ordner
+  `auto-sicherung/`, den du über **Datenordner öffnen** findest.
+- Scheitert die Sicherung, etwa weil die Festplatte voll ist, vermerkt der
+  Morsetrainer das in `auto-sicherung-fehler.txt` und meldet es beim
+  nächsten Start im Fenster „Automatische Sicherung gescheitert“. Die
+  Datei verschwindet mit der nächsten gelungenen Sicherung.
+
+### Daten von Hand zurückholen
+
+Das brauchst du nur, wenn eine beschädigte Datenbank beiseitegelegt wurde
+und du hoffst, doch noch etwas daraus zu retten. Meist ist **Einlesen …**
+einer Sicherung der einfachere Weg. Die Dateien liegen im Ordner `stats/`
+des Datenordners.
+
+1. Beende den Morsetrainer.
+2. Lösche die vorhandenen Dateien `morsetrainer.db-wal` und
+   `morsetrainer.db-shm`, falls es sie gibt. Sonst wirkt ein fremdes
+   Journal ohne Meldung auf die zurückgeholte Datei.
+3. Verschiebe die neue `morsetrainer.db` an einen anderen Ort (oder lösche
+   sie, wenn die neuen Daten nichts wert sind). Benenne dann
+   `morsetrainer.db.defekt-<Zeit>` in `morsetrainer.db` um. Liegt
+   daneben `morsetrainer.db.defekt-<Zeit>-wal`, gehört sie dazu: Benenne
+   sie in `morsetrainer.db-wal` um.
+4. Starte den Morsetrainer.
+
+### Alle Daten löschen
+
+Wer alle seine Daten löschen will, löscht nicht nur `stats/`, sondern auch
+den Ordner `auto-sicherung/`, die Dateien `vor-import-<Zeit>.zip` und die
+Dateien `.defekt-*` im Datenordner: Sie enthalten Kopien der Übungsdaten.

@@ -19,3 +19,8 @@ morsetrainer_downloads.py
 /docs/bilder/Silo.jpg
 /THIRD_PARTY_LICENSES.md
 /sources/
+
+# Eigene Daten, wenn aus dem Quelltext gestartet (Datenordner = Projektordner)
+/auto-sicherung/
+/auto-sicherung-fehler.txt
+/vor-import-*.zip

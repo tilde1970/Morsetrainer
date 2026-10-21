@@ -286,6 +286,48 @@ class DbTest(unittest.TestCase):
             db.save_state("daily", {"days": {}})
         self.assertEqual(list(self.file.parent.glob("*.halt*")), [])
 
+    def test_journal_without_main_file_is_set_aside_not_lost(self):
+        self.file.parent.mkdir(parents=True)
+        self.file.with_name(self.file.name + "-wal").write_bytes(b"verwaist")
+        db.close()
+        self.assertEqual(db.problem(), "aside")
+        aside = list(self.file.parent.glob("morsetrainer.db.defekt-*-wal"))
+        self.assertEqual([p.read_bytes() for p in aside], [b"verwaist"])
+
+    def test_rollback_journal_of_a_broken_file_goes_with_it(self):
+        self.file.parent.mkdir(parents=True)
+        self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)
+        self.file.with_name(self.file.name + "-journal").write_bytes(b"Rollback")
+        db.close()
+        db.save_state("daily", {"days": {}})
+        aside = list(self.file.parent.glob("morsetrainer.db.defekt-*-journal"))
+        self.assertEqual([p.read_bytes() for p in aside], [b"Rollback"])
+        self.assertFalse(self.file.with_name(self.file.name + "-journal").exists())
+
+    def test_problem_is_remembered_until_the_file_is_closed(self):
+        db.save_state("x", {})
+        db.close()
+        raw = sqlite3.connect(self.file)
+        raw.execute(f"PRAGMA user_version = {db.SCHEMA_VERSION + 1}")
+        raw.close()
+        self.assertEqual(db.problem(), "too_new")
+        with mock.patch.object(db, "_connection", side_effect=AssertionError("nicht erneut öffnen")):
+            self.assertEqual(db.problem(), "too_new")
+
+    def test_windows_long_path_is_local_unless_unc(self):
+        with mock.patch.object(Path, "resolve", lambda self: Path("\\\\?\\C:\\Daten\\x.db")), \
+                mock.patch.object(db, "_mount_table", return_value=[]):
+            self.assertFalse(db._on_network_drive(self.file))
+        with mock.patch.object(Path, "resolve", lambda self: Path("\\\\?\\UNC\\server\\freigabe\\x.db")):
+            self.assertTrue(db._on_network_drive(self.file))
+
+    def test_macos_mount_table_with_on_in_the_device_name(self):
+        out = ("/dev/disk3s1 on / (apfs, local, journaled)\n"
+               "//nutzer@host/Daten on Server on /Volumes/Daten (smbfs, nodev, nosuid)\n")
+        with mock.patch.object(db.sys, "platform", "darwin"), mock.patch.object(db, "_run_mount", return_value=out):
+            table = db._mount_table()
+        self.assertEqual(table, [("/", "apfs"), ("/Volumes/Daten", "smbfs")])
+
     def test_locked_file_is_not_set_aside(self):
         db.save_state("daily", {"days": {}})
         db.close()

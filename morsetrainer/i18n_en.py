@@ -170,6 +170,8 @@ EN.update({
     "prüfe den Platz im Datenordner oder sichere von Hand: Einstellungen, Daten, Sichern.":
         "The automatic backup at the last exit did not work: {error}. Please check the free space in "
         "the data folder or back up by hand: Settings, Data, Back up.",
+    "Die Sicherung stammt von einer neueren Programmfassung; bitte erst das Programm aktualisieren.":
+        "The backup comes from a newer version of the program; please update the program first.",
     "Daten nicht aktualisiert": "Data not updated",
     "Daten beiseitegelegt": "Data set aside",
     "Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "
