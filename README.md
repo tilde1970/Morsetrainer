@@ -137,6 +137,9 @@ Fehler, Wünsche und Fragen bitte als
 Bei einem Programmfehler zeigt der Morsetrainer, wo die Datei `fehler.log`
 liegt; leg sie dem Issue bei.
 
+Der Morsetrainer ist und bleibt kostenlos. Wer sich bedanken möchte, kann mich
+auf [Ko-fi](https://ko-fi.com/dl4ym) unterstützen.
+
 ## Lizenz
 
 Der Quelltext steht unter der MIT-Lizenz, siehe [LICENSE](LICENSE).
