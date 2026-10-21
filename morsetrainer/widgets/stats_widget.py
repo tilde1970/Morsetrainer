@@ -8,7 +8,7 @@ from tkinter import ttk
 from morsetrainer.core import stats
 from morsetrainer.core.morse import display_text
 from morsetrainer.i18n import number, tr
-from morsetrainer.widgets import theme
+from morsetrainer.widgets import announcer, theme
 
 
 NEW_CHARS_SHOWN = 6  # so viele neue Zeichen nennt die Vergleichszeile
@@ -52,7 +52,10 @@ def comparison_text(comparison: dict, spoken: bool = False) -> str:
         return text + " " + tr("Neue Zeichen machen den Schnitt anfangs langsamer.") if fresh else text
     text = " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
     if fresh:
-        shown = " ".join(fresh[:NEW_CHARS_SHOWN]) + (" …" if len(fresh) > NEW_CHARS_SHOWN else "")
+        letters_first = sorted(fresh, key=lambda char: (not char.isalpha(), char))
+        shown = " ".join(letters_first[:NEW_CHARS_SHOWN])
+        if len(fresh) > NEW_CHARS_SHOWN:
+            shown += " " + tr("und {n} weitere").format(n=len(fresh) - NEW_CHARS_SHOWN)
         text += " " + tr("Neu dabei: {chars}. Neue Zeichen machen den Schnitt anfangs langsamer.").format(chars=shown)
     return text
 
@@ -91,6 +94,8 @@ class StatsPanel:
             columns = columns[:4] + ("trend",) + columns[4:]
         self.compare = compare
         self.char_tree = ttk.Treeview(box, columns=columns, show="headings", height=tree_height)
+        # Sonst hieße die Tabelle beim Vorlesen wie die Vergleichszeile darüber (rund 330 Zeichen).
+        announcer.name(self.char_tree, tr("Zeichen nach Fehlern sortiert"))
         headings = {
             "char": tr("Zeichen", context="Spalte"), "good": tr("Richtig"), "wrong": tr("Falsch"),
             "avg_rt": tr("Ø Reaktion (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),

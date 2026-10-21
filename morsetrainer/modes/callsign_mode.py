@@ -225,6 +225,7 @@ class CallsignModeFrame(SequenceModeFrame):
         self.review_token = 0
         self.review_index = None  # gerade nachgehörtes Rufzeichen
         self.rufz_done = self.rufz_correct = self.rufz_score = 0
+        self._run_allowed = None  # erlaubte Zeichen beim Start des Durchgangs
         self.rufz_active = False  # Rufz-Durchgang läuft (Schalter beim Start)
         self.rufz_summary = ""
         self.rufz_used = set()
@@ -573,7 +574,7 @@ class CallsignModeFrame(SequenceModeFrame):
 
     def _setup_pickers(self, weighted: bool):
         self.weighted = weighted
-        allowed = self._allowed()
+        allowed = self._run_allowed = self._allowed()  # Anhänge folgen dem Zeichensatz vom Start
         letters = "".join(ch for ch in LETTERS if allowed is None or ch in allowed)
         digits = "".join(ch for ch in DIGITS if allowed is None or ch in allowed)
         self.char_picker = CharPicker(CALL_CHARS, weighted, self.session_stats)
@@ -582,7 +583,8 @@ class CallsignModeFrame(SequenceModeFrame):
 
     def _generate_sequence(self) -> str:
         call = self._pick_base_call()
-        return add_affix(call, self._allowed()) if self.affix_var.get() else call
+        allowed = self._run_allowed if self.running else self._allowed()
+        return add_affix(call, allowed) if self.affix_var.get() else call
 
     def _pick_base_call(self) -> str:
         if not self.pool:

@@ -28,8 +28,9 @@ class MessageDialog:
     (Frage). `answer` ist nach dem Schließen True (Ja/OK) oder False."""
 
     def __init__(self, parent, title: str, text: str, question: bool, always_speak: bool = False,
-                 symbol: str = ""):
+                 symbol: str = "", full_paths: bool = False):
         self.answer = False
+        self.full_paths = full_paths
         self.parent = parent
         self.restore_focus = focus_keeper(parent.winfo_toplevel())
         top = self.top = tk.Toplevel(parent)
@@ -74,7 +75,7 @@ class MessageDialog:
     def _say(self, force: bool = False) -> None:
         instance = announcer.get()
         if instance is not None:
-            instance.say(self.spoken, force=force)
+            instance.say(self.spoken, force=force, full_paths=self.full_paths)
 
     def _toggle_announce(self) -> None:
         """F9 wie im Hauptfenster; eingeschaltet gleich die Meldung dazu."""
@@ -83,7 +84,7 @@ class MessageDialog:
             return
         instance.var.set(not instance.var.get())
         if instance.enabled():
-            instance.say(f"{tr('Ansage an.')} {self.spoken}", force=True)
+            instance.say(f"{tr('Ansage an.')} {self.spoken}", force=True, full_paths=self.full_paths)
         else:
             instance.say(tr("Ansage aus."), force=True)
 
@@ -132,10 +133,13 @@ def askyesno(title: str, text: str, parent=None) -> bool:
     return MessageDialog(_parent(parent), title, text, question=True).wait()
 
 
-def showinfo(title: str, text: str, parent=None, always_speak: bool = False, symbol: str = "") -> None:
+def showinfo(title: str, text: str, parent=None, always_speak: bool = False, symbol: str = "",
+             full_paths: bool = False) -> None:
     """Hinweis mit einem Knopf „OK“. `always_speak`: auch bei ausgeschalteter
-    Ansage sprechen, für Meldungen, die man ohne Hinsehen nicht verpassen darf."""
-    MessageDialog(_parent(parent), title, text, question=False, always_speak=always_speak, symbol=symbol).wait()
+    Ansage sprechen, für Meldungen, die man ohne Hinsehen nicht verpassen darf.
+    `full_paths`: Dateipfade ganz vorlesen statt nur ihren letzten Teil."""
+    MessageDialog(_parent(parent), title, text, question=False, always_speak=always_speak, symbol=symbol,
+                  full_paths=full_paths).wait()
 
 
 def showwarning(title: str, text: str, parent=None, always_speak: bool = False) -> None:
@@ -144,8 +148,9 @@ def showwarning(title: str, text: str, parent=None, always_speak: bool = False) 
 
 
 def showerror(title: str, text: str, parent=None, always_speak: bool = False) -> None:
-    """Wie showinfo, mit Fehlerzeichen vor dem Text."""
-    showinfo(title, text, parent, always_speak, symbol="\u2716")
+    """Wie showinfo, mit Fehlerzeichen vor dem Text; Pfade werden ganz vorgelesen,
+    denn bei einem Fehler ist der Ort oft die Ursache."""
+    showinfo(title, text, parent, always_speak, symbol="\u2716", full_paths=True)
 
 
 # Steht gerade ein Dateidialog aus (Ansage läuft oder Dialog offen)?

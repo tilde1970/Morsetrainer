@@ -833,8 +833,9 @@ class MorseTrainerApp:
             return
         if not dialog.askyesno(tr("Daten einlesen"), tr(
                 "Sicherung vom {created} (Version {version}) einlesen?\n\nAlle bisherigen Einstellungen und "
-                "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher in {folder} "
-                "gesichert. Danach beendet sich das Programm, bitte neu starten.").format(
+                "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher als Datei "
+                "vor-import-….zip im Datenordner {folder} gesichert. Danach beendet sich das Programm, bitte neu "
+                "starten.").format(
                 created=str(info.get("created", "?")).replace("T", " "), version=info.get("version", "?"),
                 folder=DATA_DIR), parent=self.root):
             return

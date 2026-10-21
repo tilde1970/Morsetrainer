@@ -1284,7 +1284,7 @@ class NetworkModeFrame:
                 self.tree.selection_set(row)
         if self.table_window is None:
             # Im Reiter wächst die Tabelle mit, darüber hinaus scrollt sie.
-            self.tree.configure(height=min(max(len(self.board.names), TABLE_ROWS[0]), TABLE_ROWS[1]))
+            theme.set_tree_rows(self.tree, min(max(len(self.board.names), TABLE_ROWS[0]), TABLE_ROWS[1]))
         self.group_var.set("" if hiding else self._group_text())
         self._show_details()
         self._show_kick()
@@ -2292,7 +2292,7 @@ class NetworkModeFrame:
             mark = ("✓" if result.correct else "✗") + (" ↻" if replayed else "")
             tree.insert("", "end", iid=str(item["n"]), tags=("ok" if result.correct else "error",),
                         values=(item["n"], display_text(item["text"]), display_text(result.typed) or "–", mark))
-        tree.configure(height=min(max(len(self.paced_results), 4), 15))
+        theme.set_tree_rows(tree, min(max(len(self.paced_results), 4), 15))
         self.results_card.pack(fill="x", padx=10, pady=5)
         wrong = next((str(item["n"]) for item, result, _ in self.paced_results if not result.correct), None)
         first = wrong or tree.get_children()[0]

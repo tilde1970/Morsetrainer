@@ -105,6 +105,11 @@ EN.update({
     "nicht ausgewählt": "not selected",
     "leer": "empty",
     "Pfeiltasten wählen eine Zeile": "arrow keys choose a row",
+    "{n} Zeilen, ": "{n} rows, ",
+    "Zeilen {first} bis {last} von {total}, weitere mit Pfeil abwärts":
+        "Rows {first} to {last} of {total}, more with arrow down",
+    "Zeichen nach Fehlern sortiert": "Characters sorted by errors",
+    "und {n} weitere": "and {n} more",
     ", Pfeil links und rechts zeigen weitere Spalten": ", left and right arrow show more columns",
     "Hoher Kontrast nach Neustart.": "High contrast after restart.",
     "Ansage an.": "Announcements on.",
@@ -198,11 +203,12 @@ EN.update({
     "Alle Dateien": "All files",
     "Das ist keine Sicherung des Morsetrainers.": "This is not a Morse trainer backup.",
     "Sicherung vom {created} (Version {version}) einlesen?\n\nAlle bisherigen Einstellungen und "
-    "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher in {folder} "
-    "gesichert. Danach beendet sich das Programm, bitte neu starten.":
+    "Statistiken auf diesem Rechner werden ersetzt; der bisherige Stand wird vorher als Datei "
+    "vor-import-….zip im Datenordner {folder} gesichert. Danach beendet sich das Programm, bitte neu "
+    "starten.":
         "Restore the backup from {created} (version {version})?\n\nAll current settings and statistics on "
-        "this computer will be replaced; the current state is backed up to {folder} first. The program "
-        "then quits, please start it again.",
+        "this computer will be replaced; the current state is first backed up as the file vor-import-….zip "
+        "in the data folder {folder}. The program then quits, please start it again.",
     "Einlesen fehlgeschlagen:\n{error}": "Restore failed:\n{error}",
     "Daten eingelesen. Das Programm beendet sich jetzt; beim nächsten Start gelten die eingelesenen "
     "Einstellungen.":

@@ -105,6 +105,50 @@ class FontScaleTest(AppTestCase):
         self.app.set_font_scale(100)
         self.assertEqual(int(tree.cget("height")), 12)
 
+    def test_tree_rows_follow_the_zoom_from_the_wanted_height(self):
+        self.app.set_font_scale(150)
+        self.assertEqual((theme.tree_rows(20), theme.tree_rows(3)), (13, 3))
+        self.app.set_font_scale(200)
+        self.assertEqual((theme.tree_rows(7), theme.tree_rows(5), theme.tree_rows(20)), (4, 4, 10))
+        self.app.set_font_scale(100)
+        self.assertEqual(theme.tree_rows(20), 20)
+
+    def test_table_height_set_by_the_program_survives_a_zoom_change(self):
+        tree = ttk.Treeview(self.root, columns=("a",), show="headings", height=6)
+        tree.heading("a", text="a")
+        tree.pack()
+        theme.fit_columns(tree, {"a": 60})
+        self.addCleanup(tree.destroy)
+        theme.set_tree_rows(tree, 12)
+        self.assertEqual(int(tree.cget("height")), 12)
+        self.app.set_font_scale(200)
+        self.assertEqual(int(tree.cget("height")), 6)
+        theme.set_tree_rows(tree, 12)  # Auffrischen bei großer Schrift: gleich gekürzt
+        self.assertEqual(int(tree.cget("height")), 6)
+        self.app.set_font_scale(100)
+        self.assertEqual(int(tree.cget("height")), 12)
+
+    def test_shortened_table_says_which_rows_are_missing(self):
+        window = tk.Toplevel(self.root)
+        self.addCleanup(window.destroy)
+        tree = ttk.Treeview(window, columns=("a",), show="headings", height=4)
+        tree.heading("a", text="a")
+        tree.pack(fill="x")
+        theme.fit_columns(tree, {"a": 60})
+        for i in range(15):
+            tree.insert("", "end", values=(i,))
+        window.update()
+        more = tree._mt_more
+        self.assertEqual(more.winfo_manager(), "pack")
+        self.assertIn("Zeilen 1 bis 4 von 15", str(more.cget("text")))
+        tree.yview_moveto(1.0)
+        window.update()
+        self.assertIn("von 15", str(more.cget("text")))
+        self.assertNotIn("Zeilen 1 bis", str(more.cget("text")))
+        tree.configure(height=15)
+        window.update()
+        self.assertEqual(more.winfo_manager(), "")  # alles zu sehen: keine Zeile
+
     def test_tables_and_wrapped_texts_grow(self):
         row = int(ttk.Style(self.root).lookup("Treeview", "rowheight"))
         label = theme.hint(self.root, text="x", wrap=400)
@@ -384,6 +428,16 @@ class AnnouncerTest(AnnouncerCase):
                          "Einzelheiten stehen in\nfehler.log\n\nBitte")
         self.assertEqual(announcer.speakable("Gespeichert: C:\\Users\\Max\\Musik\\cw.mp3."), "Gespeichert: cw.mp3.")
         self.assertEqual(announcer.speakable("Ordner /tmp, Seite https://github.com/a/b"), "Ordner /tmp, Seite https://github.com/a/b")
+        self.assertEqual(announcer.speakable("Ordner ~/Musik/cw_neu.mp3."), "Ordner cw_neu.mp3.")
+        self.assertEqual(announcer.speakable("Datei (/home/maik/x.log) fehlt"), "Datei, x.log, fehlt")
+        self.assertEqual(announcer.speakable("Daten in /home/maik/.local/share/morsetrainer/."), "Daten in morsetrainer.")
+        self.assertEqual(announcer.speakable("In /Users/maik/Library/Application Support/Morsetrainer/x.db"), "In x.db")
+        self.assertEqual(announcer.speakable("In C:\\Users\\Max Muster\\AppData\\x.db"), "In x.db")
+        self.assertEqual(announcer.speakable("Rufzeichen DL4YM/P, Zeit 10:30/11:00, Seite 3/5"),
+                         "Rufzeichen DL4YM/P, Zeit 10:30/11:00, Seite 3/5")
+        self.assertEqual(announcer.speakable("In /home/maik/.local/share/x/f.log", True),
+                         "In home, maik, Punkt local, share, x, f.log")
+        self.assertEqual(announcer.speakable("Mitschreiben und/oder Hören an/aus"), "Mitschreiben und oder Hören an oder aus")
         # Spaltenköpfe der Statistik.
         self.assertEqual(announcer.speakable("Ø Zeit (s)"), "Durchschnittszeit in Sekunden")
         self.assertEqual(announcer.speakable("Ø effektive Geschwindigkeit: 18 WPM"),
@@ -1071,7 +1125,7 @@ class KeyboardTest(AppTestCase):
             m.start()
         self.assertFalse(m.running)
         self.assertTrue(m.status_var.get())
-        say.assert_called_with(m.status_var.get())
+        say.assert_called_with(m.status_var.get(), full_paths=True)
 
     def test_one_before_a_unit_is_spoken_as_a_word(self):
         from morsetrainer.widgets import announcer
@@ -2077,6 +2131,60 @@ class StatisticsAnnounceTest(AnnouncerCase):
         spoken = say.call_args_list[-1].args[0]  # die letzte Ansage verdrängt die erste
         self.assertIn("Meine Tabelle, Tabelle", spoken)
         self.assertIn("Spalte: Wert", spoken)
+
+    def _tabbed_table(self):
+        tree = ttk.Treeview(self.root, columns=("a",), show="headings")
+        tree.heading("a", text="Spalte")
+        tree.insert("", "end", values=("Wert",))
+        tree.pack()
+        self.addCleanup(tree.destroy)
+        self.announcer.name(tree, "Meine Tabelle.")
+        tree.selection_set(tree.get_children()[0])
+        return tree
+
+    def _row_said(self, tree, recent):
+        instance = self.announcer._instance
+        instance.recent = recent
+        with mock.patch.object(tree, "focus_get", lambda: tree), \
+                mock.patch.object(instance, "say") as say:
+            tree.event_generate("<<TreeviewSelect>>")
+        return say.call_args.args[0]
+
+    def test_row_is_not_joined_to_a_foreign_or_old_announcement(self):
+        tree = self._tabbed_table()
+        intro = self.announcer.speakable(self.announcer.describe(tree))
+        self.assertEqual(self._row_said(tree, ("andere Ansage", time.time(), 0)), "Spalte: Wert.")
+        self.assertEqual(self._row_said(tree, (intro, time.time() - 5, 0)), "Spalte: Wert.")
+        self.assertEqual(self._row_said(tree, None), "Spalte: Wert.")
+        joined = self._row_said(tree, (intro, time.time(), 0))
+        self.assertTrue(joined.startswith(self.announcer.describe(tree)) and joined.endswith("Spalte: Wert."))
+        # Mit Fensterkopf davor gilt es auch.
+        self.assertIn("Meine Tabelle, Tabelle", self._row_said(tree, ("Fenster. " + intro, time.time(), 0)))
+
+    def test_table_name_has_no_stray_period_and_says_the_row_count(self):
+        tree = self._tabbed_table()
+        self.assertTrue(self.announcer.describe(tree).startswith("Meine Tabelle, Tabelle, Pfeiltasten wählen"))
+        tree.insert("", "end", values=("Zwei",))
+        tree.insert("", "end", values=("Drei",))
+        self.assertIn("3 Zeilen, Pfeiltasten wählen eine Zeile", self.announcer.describe(tree))
+
+    def test_errors_speak_the_whole_path_and_other_messages_only_its_last_part(self):
+        from tkinter import StringVar
+        var = StringVar(master=self.root)
+        with mock.patch.object(self.announcer, "say") as say:
+            self.announcer.problem(var, "Kein Zugriff auf /media/maik/NAS/x.zip")
+        say.assert_called_once_with("Kein Zugriff auf /media/maik/NAS/x.zip", full_paths=True)
+        self.assertEqual(self.announcer.speakable("Gespeichert: /media/maik/NAS/x.zip"), "Gespeichert: x.zip")
+        self.assertEqual(self.announcer.speakable("Kein Zugriff auf /media/maik/NAS/x.zip", True),
+                         "Kein Zugriff auf media, maik, NAS, x.zip")
+
+    def test_error_dialog_passes_full_paths_to_the_voice(self):
+        from morsetrainer.widgets import dialog
+        with mock.patch.object(self.announcer, "get") as get:
+            for full in (True, False):
+                box = dialog.MessageDialog(self.root, "Titel", "Pfad /a/b/c.txt", question=False, full_paths=full)
+                self.addCleanup(box.top.destroy)
+                self.assertEqual(get.return_value.say.call_args.kwargs["full_paths"], full)
 
     def test_lifeline_days_with_the_arrow_keys(self):
         from datetime import date, timedelta

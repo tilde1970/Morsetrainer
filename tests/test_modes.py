@@ -682,6 +682,25 @@ class RufzTest(AppTestCase):
         g.stop()
         self.assertEqual(len(g.pool), 60)
 
+    def test_made_up_run_without_learned_only_records_no_charset(self):
+        g = self.mode("Rufzeichen")
+        g.all_calls = []
+        g.learned_var.set(False)
+        info = g._session_group_len()
+        self.assertEqual((info["learned_only"], info["charset"]), (False, None))
+
+    def test_affixes_use_the_characters_from_the_start(self):
+        from unittest import mock
+        from morsetrainer.modes import callsign_mode
+        g = self._start_rufz([f"DL{i}ABC" for i in range(60)])
+        g._run_allowed = {"K", "M"}  # beim Start gemerkt
+        g.learned_var.set(True)
+        self.app.charset_var.set("AB")  # später im Feld geändert
+        g.affix_var.set(True)
+        with mock.patch.object(callsign_mode, "add_affix", side_effect=lambda call, allowed: call) as affix:
+            g._generate_sequence()
+        self.assertEqual(affix.call_args.args[1], {"K", "M"})
+
     def test_made_up_pattern_run_records_charset(self):
         g = self.mode("Rufzeichen")
         g.all_calls = []

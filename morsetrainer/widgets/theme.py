@@ -17,6 +17,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import ttk
 
+from morsetrainer.i18n import tr
 from morsetrainer.widgets import tkcompat
 
 # Paletten. Hell: gedämpfte Flächen, ein Akzent, Grün/Rot nur für
@@ -495,6 +496,10 @@ def fit_columns(tree, widths: dict) -> None:
     Pfeil links/rechts. `tree` muss mit pack angeordnet sein."""
     tree._mt_columns = widths
     tree._mt_rows = int(tree.cget("height"))
+    if not tree.cget("yscrollcommand"):
+        # Ohne eigenen senkrechten Rollbalken: bei gekürzter Tabelle sagt eine Zeile darunter, was fehlt.
+        more = tree._mt_more = ttk.Label(tree.master, style="Hint.TLabel")
+        tree.configure(yscrollcommand=lambda first, last: _show_more(tree, more, first, last))
     bar = tree._mt_xbar = ttk.Scrollbar(tree.master, orient="horizontal", command=tree.xview)
     tree.configure(xscrollcommand=lambda first, last: _show_xbar(tree, bar, first, last))
     for key, step in (("<Left>", -1), ("<Right>", 1)):
@@ -505,6 +510,35 @@ def fit_columns(tree, widths: dict) -> None:
 # Bei großer Schrift zeigt eine Tabelle weniger Zeilen (nie unter dieser Zahl), damit sie
 # nicht höher wird als der Bildschirm; die übrigen Zeilen rollen.
 MIN_TREE_ROWS = 4
+
+def tree_rows(rows: int) -> int:
+    """Zeilen, die eine Tabelle für `rows` Zeilen bei der jetzigen Schriftgröße zeigt."""
+    return min(rows, max(MIN_TREE_ROWS, round(rows * 100 / _scale)))
+
+
+def set_tree_rows(tree, rows: int) -> None:
+    """Höhe einer Tabelle mit fit_columns auf `rows` Zeilen setzen (wächst mit dem Inhalt),
+    bei großer Schrift gekürzt; ein Zoomwechsel rechnet von diesem Wert aus."""
+    tree._mt_rows = rows
+    tree.configure(height=tree_rows(rows))
+
+
+def _show_more(tree, label, first, last) -> None:
+    """Zeile unter einer gekürzten Tabelle: welche Zeilen zu sehen sind; weg, wenn alle passen."""
+    try:
+        total = len(tree.get_children())
+        if (float(first) <= 0 and float(last) >= 1) or total == 0:
+            if label.winfo_manager():
+                label.pack_forget()
+            return
+        label.configure(text=tr("Zeilen {first} bis {last} von {total}, weitere mit Pfeil abwärts").format(
+            first=round(float(first) * total) + 1, last=round(float(last) * total), total=total))
+        if not label.winfo_manager() and tree.pack_info().get("side", "top") == "top":
+            bar = getattr(tree, "_mt_xbar", None)
+            label.pack(after=bar if bar is not None and bar.winfo_manager() else tree, anchor="w")
+    except tk.TclError:
+        pass
+
 
 # So viele Pixel (bei 100 %) rollt Pfeil links/rechts eine Tabelle.
 X_SCROLL_STEP = 60
@@ -541,8 +575,7 @@ def _size_columns(tree) -> None:
     for index, column in enumerate(columns):
         width = max(scaled(tree._mt_columns.get(column, 60)), font.measure(tree.heading(column, "text")) + scaled(14))
         tree.column(column, width=width, minwidth=width, stretch=index == len(columns) - 1)
-    rows = tree._mt_rows
-    tree.configure(height=min(rows, max(MIN_TREE_ROWS, round(rows * 100 / _scale))))
+    tree.configure(height=tree_rows(tree._mt_rows))
 
 
 def _scale_trees(widget) -> None:

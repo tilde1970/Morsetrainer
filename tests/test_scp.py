@@ -260,6 +260,11 @@ class CertificatesTest(unittest.TestCase):
         with self.paths(cafile=str(empty)), mock.patch.object(certs.sys, "platform", "linux"):
             self.assertEqual(certs.use_system_certificates([str(self.bundle)]), str(self.bundle))
 
+    def test_missing_certificate_file_does_not_count(self):
+        with self.paths(cafile=str(Path(self.tmp.name) / "gibt-es-nicht.pem")), \
+                mock.patch.object(certs.sys, "platform", "linux"):
+            self.assertEqual(certs.use_system_certificates([str(self.bundle)]), str(self.bundle))
+
     def test_own_setting_and_windows_are_left_alone(self):
         os.environ["SSL_CERT_FILE"] = "/eigene.pem"
         with self.paths(), mock.patch.object(certs.sys, "platform", "linux"):

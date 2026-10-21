@@ -144,14 +144,14 @@ class Announcer:
         """None, wenn angesagt werden kann, sonst der Grund."""
         return self.speaker().available()
 
-    def say(self, text: str, then=None, force: bool = False) -> None:
+    def say(self, text: str, then=None, force: bool = False, full_paths: bool = False) -> None:
         """`text` ansagen, danach `then()` aufrufen. Ist die Ansage aus (und
         nicht `force`) oder keine Stimme da, kommt `then` sofort. Eine neue
         Ansage verdrängt die ältere, auch eine schon sprechende; deren `then`
         kommt trotzdem, aber erst wenn die neue zu Ende ist – sonst schnitte
         etwa der nächste Morseton die neue Ansage ab. Das gilt auch, wenn die
         neue erst kurz nach dem Ende dieser kommt (F11 gleich nach „Falsch …“)."""
-        text = speakable(text)
+        text = speakable(text, full_paths)
         if not text or not (force or self.enabled()) or self.available() is not None:
             if force and text and self.available() is not None:
                 sfx.play_error()  # ausdrücklich verlangt (F9, F11), aber keine Stimme: hörbar melden
@@ -658,7 +658,7 @@ def _say_value(widget) -> None:
 def describe(widget) -> str:
     """„Beschriftung, Rolle, Wert“, z. B. „Hoher Kontrast, Schalter, aus.“"""
     cls = widget_class(widget)
-    parts = [_label(widget), tr(ROLES.get(cls, ""))]
+    parts = [_label(widget).rstrip("."), tr(ROLES.get(cls, ""))]  # „…langsamer., Tabelle“ wäre eine falsche Pause
     value = _value(widget)
     if value:
         parts.append(value)
@@ -722,6 +722,12 @@ def _value(widget) -> str:
         return text
     if cls == "Treeview":
         hint = tr("Pfeiltasten wählen eine Zeile")
+        try:
+            rows = len(widget.get_children())
+        except tk.TclError:
+            rows = 0
+        if rows > 1:  # wie weit es geht, sagt sonst nur die Kürzung bei großer Schrift
+            hint = tr("{n} Zeilen, ").format(n=rows) + hint
         bar = getattr(widget, "_mt_xbar", None)  # Tabelle mit verdeckten Spalten (theme.fit_columns)
         if bar is not None and bar.winfo_manager():
             hint += tr(", Pfeil links und rechts zeigen weitere Spalten")
@@ -849,18 +855,20 @@ def _read_row(event) -> None:
         nato_calls = str(tree) in _nato_widgets
         parts = [f"{tree.heading(column, 'text')}: {_cell_spoken(str(value), nato_calls)}"
                  for column, value in zip(columns, values) if str(value).strip()]
+        extra = _row_extras.get(str(tree))
+        if extra is not None and extra():
+            parts.append(extra().rstrip("."))
+        text = ". ".join(parts) + "."
+        # Der Tab in die Tabelle wählt die erste Zeile gleich nach der Ansage von
+        # Name und Rolle; die Zeile verdrängte sie. Dann beides in einer Ansage
+        # (endswith: ein Fensterkopf kann davor stehen).
+        recent = _instance.recent
+        if recent is not None and time.time() - recent[1] < TABLE_JOIN_AFTER_S:
+            intro = describe(tree)
+            if recent[0].endswith(speakable(intro)):
+                text = f"{intro} {text}"
     except tk.TclError:
         return
-    extra = _row_extras.get(str(tree))
-    if extra is not None and extra():
-        parts.append(extra().rstrip("."))
-    text = ". ".join(parts) + "."
-    # Der Tab in die Tabelle wählt die erste Zeile gleich nach der Ansage von
-    # Name und Rolle; die Zeile verdrängte sie. Dann beides in einer Ansage.
-    recent = _instance.recent
-    intro = describe(tree)
-    if recent is not None and recent[0] == speakable(intro) and time.time() - recent[1] < TABLE_JOIN_AFTER_S:
-        text = f"{intro} {text}"
     _instance.say(text)
 
 
@@ -897,13 +905,14 @@ def active() -> bool:
     return _instance is not None and _instance.enabled() and _instance.available() is None
 
 
-def say(text: str, then=None) -> None:
-    """Ansagen, falls eingeschaltet; `then` kommt in jedem Fall."""
+def say(text: str, then=None, full_paths: bool = False) -> None:
+    """Ansagen, falls eingeschaltet; `then` kommt in jedem Fall. `full_paths`:
+    Dateipfade ganz sprechen (Fehler), sonst nur ihren letzten Teil."""
     if _instance is None:
         if then is not None:
             then()
         return
-    _instance.say(text, then)
+    _instance.say(text, then, full_paths=full_paths)
 
 
 def problem(variable, text: str) -> None:
@@ -911,7 +920,7 @@ def problem(variable, text: str) -> None:
     hinsieht, merkt sonst nur, dass nichts passiert (ungültige Eingabe, zu
     wenige Zeichen für den Inhalt, keine Tonausgabe)."""
     variable.set(text)
-    say(text)
+    say(text, full_paths=True)  # bei einem Fehler ist der Ort oft die Ursache
 
 
 def render(text: str, deliver) -> None:
@@ -979,8 +988,23 @@ _CONFUSION = re.compile(r"(\S+) \((\d+)\)")
 _CONFUSIONS = re.compile(r"^\S+ \(\d+\)(, \S+ \(\d+\))*$")
 # Rufzeichen in einer Tabellenzelle (Buchstaben und Ziffern, ggf. mit /).
 _CALLSIGN = re.compile(r"^(?=.*\d)(?=.*[A-Z])[A-Z0-9/]{3,}$")
-# Dateipfad (POSIX ab zwei Teilen, Windows mit Laufwerk) ohne Leerzeichen; der Schluss ohne Satzzeichen.
-_PATH = re.compile(r"(?<![\w/.:~\\])(?:~?(?:/[^\s/]+)+/|[A-Za-z]:\\(?:[^\s\\]+\\)*)([^\s/\\]*[^\s/\\.,;:)!?])")
+# Dateipfad (POSIX ab zwei Teilen, Windows mit Laufwerk): Ordner dürfen bis zu vier Wörter mit
+# Leerzeichen haben („Application Support“), der letzte Teil nicht; er endet ohne Satzzeichen.
+_PATH_DIR = r"[^\s/\\]+(?: [^\s/\\]+){0,3}"
+_PATH_LAST = r"[^\s/\\]*[^\s/\\.,;:)!?]"
+_PATH = re.compile(
+    r"(?<![\w/.:~\\])(?:~?(?:/" + _PATH_DIR + r")+/|[A-Za-z]:\\(?:" + _PATH_DIR + r"\\)*)(" + _PATH_LAST + r")/?")
+_AND_OR = re.compile(r"\b(und|and)/or?(?:der)?\b")
+
+
+def _path_spoken_full(match) -> str:
+    """Ganzer Pfad für die Stimme: die Teile mit Pausen statt Schrägstrichen."""
+    parts = [part for part in re.split(r"[/\\]+", match.group(0).rstrip("/\\")) if part not in ("", "~")]
+    # „.local“ liest die Stimme sonst ohne den Punkt (die Pause davor verschluckt ihn).
+    return ", ".join(tr("Punkt") + " " + part[1:] if part.startswith(".") and len(part) > 1 else part
+                     for part in parts)
+
+
 _WORD_SLASH = re.compile(r"(?<=[a-zäöüß]{2})/(?=[^\W\d_]{2})")
 # Zeiteinheiten nur direkt hinter einer Zahl (sonst ist „s“ ein Buchstabe);
 # (Muster, Einzahl, Mehrzahl).
@@ -992,9 +1016,10 @@ _NUMBER_UNITS = (
 )
 
 
-def speakable(text: str) -> str:
+def speakable(text: str, full_paths: bool = False) -> str:
     """Text für die Stimme: Symbole und Einheiten als Wort, doppelte
-    Leerzeichen weg."""
+    Leerzeichen weg. Dateipfade: nur der letzte Teil („home oder maik oder …“
+    hilft nicht); `full_paths` (Fehler) spricht alle Teile als Pausen."""
     if not text:
         return ""
     text = text.replace("\u00a0", " ")  # geschützte Leerzeichen der Hinweise (theme.keep_units)
@@ -1011,7 +1036,8 @@ def speakable(text: str) -> str:
     text = _IP_ADDRESS.sub(lambda m: f"{tr('IP-Adresse')} " + f" {tr('Punkt')} ".join(m.group(1).split("."))
                            + (f", {tr('Port')} {m.group(2)}" if m.group(2) else ""), text)
     text = _PIN.sub(lambda m: f"{tr('PIN-Nummer')} {spell_chars(m.group(1))}", text)
-    text = _PATH.sub(r"\1", text)  # nur der letzte Teil: „home oder maik oder …“ hilft nicht
+    text = _PATH.sub(_path_spoken_full if full_paths else r"\1", text)
+    text = _AND_OR.sub(lambda m: m.group(1) + " " + tr("oder") if m.group(1) == "und" else "and or", text)
     text = _WORD_SLASH.sub(" " + tr("oder") + " ", text)
     for pattern, word in _UNITS:
         text = pattern.sub(tr(word), text)

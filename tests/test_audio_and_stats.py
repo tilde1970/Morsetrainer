@@ -219,6 +219,46 @@ class StatsTest(unittest.TestCase):
         self.assertTrue(comparison_text(comparison, spoken=True).endswith(
             "Neue Zeichen machen den Schnitt anfangs langsamer."))
 
+    def test_new_chars_directly(self):
+        def period(count):
+            return {"good": count, "wrong": 0}
+        both = lambda before, recent: {stats.BEFORE: period(before), stats.RECENT: period(recent)}  # noqa: E731
+        self.assertEqual(stats.new_chars({}), [])
+        chars = {"R": both(0, 3), "M": both(0, 2), "5": both(1, 9), "K": both(9, 9), "A": both(0, 4), "?": both(0, 3)}
+        self.assertEqual(stats.new_chars({"chars": chars}), ["?", "A", "R"])  # 2 Antworten und „davor einmal“ zählen nicht
+
+    def test_comparison_lists_at_most_six_new_characters_letters_first(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import comparison_text
+
+        def write(days_ago, rows):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            lines = [{"type": "config", "mode": "single", "start_time": start}]
+            lines += [{"type": "char", "char": c, "typed": c, "correct": True, "latency_s": 0.5} for c in rows]
+            tests.write_session(lines + [{"type": "summary"}])
+        write(20, "K" * 12)
+        write(2, "K" * 10 + "5" * 3 + "B" * 3 + "C" * 3 + "D" * 3 + "E" * 3 + "F" * 3)
+        self.assertIn("Neu dabei: B C D E F 5.", comparison_text(stats.period_comparison()))  # genau 6: nichts weiter
+        write(2, "G" * 3)
+        self.assertIn("Neu dabei: B C D E F G und 1 weitere.", comparison_text(stats.period_comparison()))
+
+    def test_comparison_names_no_new_characters_without_enough_in_both_periods(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import comparison_text
+
+        def write(days_ago, rows):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            lines = [{"type": "config", "mode": "single", "start_time": start}]
+            lines += [{"type": "char", "char": c, "typed": c, "correct": True, "latency_s": 0.5} for c in rows]
+            tests.write_session(lines + [{"type": "summary"}])
+        write(20, "K" * 3)  # davor zu wenig: alles wäre „neu“
+        write(2, "K" * 20 + "R" * 3)
+        self.assertNotIn("Neu dabei", comparison_text(stats.period_comparison()))
+        stats.reset_all_time()
+        write(20, "K" * 20)
+        write(2, "K" * 4 + "R" * 3)  # jetzt zu wenig
+        self.assertNotIn("Neu dabei", comparison_text(stats.period_comparison()))
+
     def test_comparison_skips_runs_that_were_never_finished(self):
         from datetime import datetime, timedelta
         start = (datetime.now() - timedelta(days=2)).isoformat(timespec="seconds")
