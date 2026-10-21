@@ -249,7 +249,7 @@ class CallsignModeFrame(SequenceModeFrame):
                 self.list_text += f" (SCP {release})"
             # Ist die Liste da, braucht man den Knopf selten: flach, kurz
             # beschriftet, mit vollem Namen für die Ansage.
-            self.scp_button.config(text=tr("aktualisieren"), style="Flat.TButton")
+            self.scp_button.config(text=tr("Liste aktualisieren"), style="Flat.TButton")
             announcer.name(self.scp_button, tr("Rufzeichenliste aktualisieren"))
         else:
             self.list_text = tr("Noch keine Rufzeichenliste – die Rufzeichen werden nach Muster erfunden.")

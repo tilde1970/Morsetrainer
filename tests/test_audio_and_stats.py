@@ -173,7 +173,7 @@ class StatsTest(unittest.TestCase):
             start = start or (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
             lines = [{"type": "config", "mode": mode, "start_time": start}]
             lines += [{"type": "char", "char": c, "typed": t, "correct": c == t, **extra} for c, t, extra in rows]
-            tests.write_session(lines)
+            tests.write_session(lines + [{"type": "summary"}])
         self.assertEqual(comparison_text(stats.period_comparison()), "")
         write(60, [("K", "K", {"latency_s": 3.0})] * 5)  # vor beiden Zeiträumen
         write(20, [("K", "K", {"latency_s": 0.8})] * 6 + [("K", "M", {})] * 2 + [("M", "M", {"latency_s": 0.5})] * 2)
@@ -197,6 +197,16 @@ class StatsTest(unittest.TestCase):
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
 
+    def test_comparison_skips_runs_that_were_never_finished(self):
+        from datetime import datetime, timedelta
+        start = (datetime.now() - timedelta(days=2)).isoformat(timespec="seconds")
+        rows = [{"type": "config", "mode": "single", "start_time": start}]
+        rows += [{"type": "char", "char": "K", "typed": "K", "correct": True, "latency_s": 0.4}] * 12
+        tests.write_session(rows)  # kein summary: Absturz oder Programm beendet
+        self.assertEqual(stats.period_numbers(stats.period_comparison()[stats.RECENT]), (None, None, 0))
+        tests.write_session(rows + [{"type": "summary"}])
+        self.assertEqual(stats.period_numbers(stats.period_comparison()[stats.RECENT])[0], 100.0)
+
     def test_char_trend_is_a_median_from_enough_measurements(self):
         from datetime import datetime, timedelta
 
@@ -204,7 +214,7 @@ class StatsTest(unittest.TestCase):
             start = start or (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
             tests.write_session([{"type": "config", "mode": "single", "start_time": start}]
                                 + [{"type": "char", "char": "K", "typed": "K", "correct": True, "latency_s": lat}
-                                   for lat in latencies])
+                                   for lat in latencies] + [{"type": "summary"}])
         write(20, [0.8] * (stats.MIN_TREND_COUNT - 1) + [5.0])  # ein Ausreißer verschiebt den Median nicht
         write(2, [0.5] * (stats.MIN_TREND_COUNT - 1))
         chars = stats.period_comparison()["chars"]

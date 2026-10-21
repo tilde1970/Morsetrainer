@@ -155,7 +155,7 @@ class ButtonTest(AppTestCase):
             self.wait_for_download()
         self.assertEqual(sorted(self.mode.all_calls), ["DJ2CD", "DK1AB", "DL4YM"])
         self.assertNotIn("disabled", self.mode.scp_button.state())
-        self.assertEqual(self.mode.scp_button.cget("text"), "aktualisieren")  # flach, kurz
+        self.assertEqual(self.mode.scp_button.cget("text"), "Liste aktualisieren")  # flach, kurz
         self.assertEqual(str(self.mode.scp_button.cget("style")), "Flat.TButton")
         from morsetrainer.widgets import announcer
         self.assertTrue(announcer.describe(self.mode.scp_button).startswith("Rufzeichenliste aktualisieren"))

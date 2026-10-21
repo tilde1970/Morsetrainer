@@ -461,7 +461,7 @@ many characters. Runs with band conditions do not count here (section 6).
   against the 30 days before: “Before (30 days): reaction 0.61 s, 88 %
   correct (from 412 characters) · Last 7 days: reaction 0.48 s, 92 % correct
   (from 96 characters)” (for the reaction, smaller is faster). A period
-  appears only from 10 characters; a smaller one reads “too few characters (n of
+  appears only from 10 characters; only completed runs count. A smaller one reads “too few characters (n of
   10)”, with no practice “not practised”. The averages over all
   runs hardly move, because the early, slow answers always count; here you
   see whether you are getting better. The reaction comes only from the
@@ -1028,6 +1028,9 @@ are on.
   after the announcement.
 - **Network as trainer:** when the session opens, address and PIN are
   announced; F11 repeats them.
+- **Stars:** the card before a block names the stars already earned or
+  “no star yet”; the evening summary says “2 of 3 stars: …” or “No star
+  yet today”.
 - **Evening summary:** read out in full – stars, weekly goal, what has
   improved, what is almost done, new seals – then “Enter: Done” and, if
   offered, “With Tab: 5 more min …”. F11 in the window repeats it.

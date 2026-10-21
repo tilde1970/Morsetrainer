@@ -466,8 +466,8 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   lief, gegen die 30 Tage davor: „Davor (30 Tage): Reaktion 0,61 s, 88 %
   richtig (aus 412 Zeichen) · Letzte 7 Tage: Reaktion 0,48 s, 92 % richtig
   (aus 96 Zeichen)“ (bei der Reaktion ist kleiner schneller). Ein Zeitraum
-  erscheint erst ab 10 Zeichen. Die
-  Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
+  erscheint erst ab 10 Zeichen. Es zählen nur abgeschlossene Durchgänge.
+  Die Schnitte über alle Durchgänge bewegen sich kaum, weil die frühen,
   langsamen Antworten immer mitzählen; hier siehst du, ob du besser wirst.
   Ist ein Zeitraum zu klein, steht dort „zu wenig Zeichen (n von 10)“, bei
   keiner Übung „nicht geübt“. Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
@@ -1046,6 +1046,9 @@ Bedienelement, auf dem du gerade stehst.
   Ansage nachgespielt.
 - **Netzwerk als Trainer:** Beim Öffnen der Sitzung werden Adresse und
   PIN angesagt, F11 wiederholt sie.
+- **Sterne:** Die Karte vor einem Block nennt die schon verdienten Sterne
+  oder „noch kein Stern“; die Abendbilanz „2 von 3 Sternen: …“ bzw.
+  „Heute noch kein Stern“.
 - **Abendbilanz:** wird ganz vorgelesen – Sterne, Wochenziel, was besser
   geworden ist, was fast geschafft ist, neue Siegel –, dann „Enter:
   Fertig“ und, falls angeboten, „Mit Tab: Noch 5 Min …“. F11 im Fenster

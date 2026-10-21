@@ -708,7 +708,7 @@ class MorseTrainerApp:
         self.auto_backup_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(data_card, text=tr("Automatisch sichern (wöchentlich, beim Beenden)"),
                         variable=self.auto_backup_var).pack(anchor="w", pady=2)
-        theme.hint(data.master, text=tr("alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
+        theme.hint(data.master, text=tr("Sichern und Einlesen: alle Einstellungen und Statistiken, z. B. für einen neuen Rechner"))
 
         for var in (self.more_var, self.farnsworth_enabled_var, self.farnsworth_wpm_var, self.wpm_var,
                     self.weighted_var, self.vary_var, self.refresh_var):

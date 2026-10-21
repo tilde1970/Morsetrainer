@@ -160,8 +160,8 @@ EN.update({
     "Der Datenordner lässt sich nicht öffnen ({error}). Er liegt hier:\n{folder}":
         "The data folder cannot be opened ({error}). It is here:\n{folder}",
     "Datenordner wird geöffnet.": "Opening data folder.",
-    "alle Einstellungen und Statistiken, z. B. für einen neuen Rechner":
-        "all settings and statistics, e.g. for a new computer",
+    "Sichern und Einlesen: alle Einstellungen und Statistiken, z. B. für einen neuen Rechner":
+        "Back up and restore: all settings and statistics, e.g. for a new computer",
     "Daten sichern": "Back up data",
     "Daten von neuerer Version": "Data from a newer version",
     "Automatisch sichern (wöchentlich, beim Beenden)": "Back up automatically (weekly, on exit)",
@@ -1158,7 +1158,7 @@ EN.update({
     "Zu wenige echte Rufzeichen aus deinen Zeichen – es werden passende erfunden.":
         "Too few real callsigns from your characters – matching ones are made up.",
     "Rufzeichenliste aktualisieren": "Update callsign list",
-    "aktualisieren": "update",
+    "Liste aktualisieren": "update list",
     "Rufzeichenliste laden (supercheckpartial.com)": "Load callsign list (supercheckpartial.com)",
     "Die Rufzeichenliste lässt sich nach der Übung laden.":
         "The callsign list can be loaded after the exercise.",

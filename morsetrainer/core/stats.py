@@ -339,12 +339,15 @@ def _after_reset(cutoff: datetime) -> datetime:
         return cutoff
 
 
-def _char_events(since: datetime):
+def _char_events(since: datetime, completed_only: bool = False):
     """(Startzeit, Modus, Zeile) aller Zeichen-Zeilen der Durchgänge ab
     `since`, ohne selbst bewertete Sitzungen und Klartext (zählen nicht für
-    Zeichen)."""
+    Zeichen); mit `completed_only` auch ohne Durchgänge, die nie abgeschlossen
+    wurden (Absturz, Programm beendet)."""
     for session in db.sessions(since=since.replace(microsecond=0), events=True):
         if session.config.get("self_assessed") or session.config.get("char_stats") is False:
+            continue
+        if completed_only and not session.summary:
             continue
         try:
             start = datetime.fromisoformat(session.config["start_time"])
@@ -410,12 +413,13 @@ def period_comparison(now=None) -> dict:
     der BEFORE_DAYS Tage davor (BEFORE), gesamt und je Zeichen:
     {RECENT: Zahlen, BEFORE: Zahlen, "chars": {Zeichen: {RECENT, BEFORE}}}.
     Trefferquote aus allen Modi, Reaktion nur aus REACTION_MODE: richtige
-    Antworten, gemessen (nicht angenommen), gekappt bei LATENCY_CAP_S. Nach
+    Antworten, gemessen (nicht angenommen), gekappt bei LATENCY_CAP_S. Nur
+    abgeschlossene Durchgänge zählen. Nach
     period_numbers() bzw. char_trend() lesen."""
     now = now or datetime.now()
     split = now - timedelta(days=COMPARE_DAYS)
     result = {RECENT: _new_period(), BEFORE: _new_period(), "chars": {}}
-    for start, mode, obj in _char_events(_after_reset(split - timedelta(days=BEFORE_DAYS))):
+    for start, mode, obj in _char_events(_after_reset(split - timedelta(days=BEFORE_DAYS)), completed_only=True):
         side = RECENT if start >= split else BEFORE
         char = result["chars"].setdefault(obj["char"], {RECENT: _new_period(), BEFORE: _new_period()})
         latency = _measured(obj) if mode == REACTION_MODE else None
