@@ -1088,7 +1088,7 @@ class MorseTrainerApp:
         if summary["total"]:
             parts.append(tr("Insgesamt {correct} von {total} Zeichen richtig, {percent} Prozent").format(
                 correct=summary["correct"], total=summary["total"], percent=round(summary["accuracy_pct"])))
-            comparison = comparison_text(stats.period_comparison())
+            comparison = comparison_text(stats.period_comparison(), spoken=True)
             if comparison:
                 parts.append(comparison)
             weak = [row for row in stats.all_time_char_rows(data) if row[2]][:3]

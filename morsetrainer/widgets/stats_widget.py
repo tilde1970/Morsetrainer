@@ -11,18 +11,19 @@ from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import theme
 
 
-def comparison_text(comparison: dict) -> str:
+def comparison_text(comparison: dict, spoken: bool = False) -> str:
     """„Davor (30 Tage): Reaktion 0,61 s, 88 % richtig (aus 412 Zeichen) · Letzte
     7 Tage: Reaktion 0,48 s, 92 % richtig (aus 96 Zeichen). Reaktion: kleiner ist
     schneller.“ (stats.period_comparison); leer, wenn kein Zeitraum genug
-    Zeichen hat."""
-    def numbers(period):
+    Zeichen hat. `spoken` (F11): kürzer, ohne die Stichprobe des Vergleichszeitraums
+    und ohne den Merksatz."""
+    def numbers(period, with_count=True):
         accuracy, latency, _ = stats.period_numbers(period)
         # Nie auf 100 % runden, solange es Fehler gab.
         pct = 100 if accuracy >= 100 else min(int(accuracy + 0.5), 99)
         parts = [] if latency is None else [tr("Reaktion {s} s").format(s=number(latency, 2))]
-        return ", ".join(parts + [tr("{pct} % richtig").format(pct=pct)]
-                         ) + " " + tr("(aus {n} Zeichen)").format(n=period["good"] + period["wrong"])
+        text = ", ".join(parts + [tr("{pct} % richtig").format(pct=pct)])
+        return text + " " + tr("(aus {n} Zeichen)").format(n=period["good"] + period["wrong"]) if with_count else text
 
     def enough(period):
         return period["good"] + period["wrong"] >= stats.MIN_COMPARE_COUNT
@@ -32,7 +33,8 @@ def comparison_text(comparison: dict) -> str:
         return ""
     parts = []
     if enough(before):
-        parts.append(tr("Davor ({days} Tage)").format(days=stats.BEFORE_DAYS) + ": " + numbers(before))
+        parts.append(tr("Davor ({days} Tage)").format(days=stats.BEFORE_DAYS) + ": "
+                     + numbers(before, with_count=not spoken))
     head = tr("Letzte {days} Tage").format(days=stats.COMPARE_DAYS)
     if enough(recent):
         parts.append(f"{head}: " + numbers(recent))
@@ -40,6 +42,8 @@ def comparison_text(comparison: dict) -> str:
         parts.append(f"{head}: " + (tr("zu wenig Zeichen ({n} von {min})").format(
             n=recent["good"] + recent["wrong"], min=stats.MIN_COMPARE_COUNT)
             if recent["good"] + recent["wrong"] else tr("nicht geübt")))
+    if spoken:
+        return ". ".join(parts) + "."
     return " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
 
 

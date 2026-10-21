@@ -472,8 +472,9 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   Ist ein Zeitraum zu klein, steht dort „zu wenig Zeichen (n von 10)“, bei
   keiner Übung „nicht geübt“. Die Reaktion kommt dabei nur aus dem Reiter Einzeln, Inhalt Zeichen: beim
   fortlaufenden Mitschreiben zählt sie ab deiner vorigen Taste und wäre
-  nicht vergleichbar. Die Trefferquote zählt alle Übungen. F11 liest die
-  Zeile mit vor.
+  nicht vergleichbar. Die Trefferquote zählt alle Übungen. F11 liest
+  die Zeile kürzer vor: ohne die Zeichenzahl des Zeitraums davor und ohne
+  den Merksatz zur Reaktion.
 - **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
   in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
   liest ihn in einem Satz vor („3 von 4 Tagen geübt, heute noch offen“; am

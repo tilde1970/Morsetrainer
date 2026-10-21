@@ -467,7 +467,9 @@ many characters. Runs with band conditions do not count here (section 6).
   see whether you are getting better. The reaction comes only from the
   Characters content of the One by one tab: when copying along it counts from
   your previous key and would not be comparable. The accuracy counts all
-  exercises. F11 reads the line too.
+  exercises. F11 reads the line in
+  a shorter form: without the character count of the earlier period and
+  without the hint about the reaction.
 - **This week:** the week strip with stars and the weekly goal as in the
   daily practice bar; with a large font it appears only here. F11 reads it
   in one sentence (“practised on 3 of 4 days, today still open”; on the

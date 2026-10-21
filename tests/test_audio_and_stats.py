@@ -194,6 +194,10 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(comparison_text(comparison),
                          "Davor (30 Tage): Reaktion 0,72 s, 80 % richtig (aus 10 Zeichen) · "
                          "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig (aus 13 Zeichen). Reaktion: kleiner ist schneller.")
+        # Vorlesen (F11): ohne Stichprobe des Vergleichszeitraums, ohne Merksatz
+        self.assertEqual(comparison_text(comparison, spoken=True),
+                         "Davor (30 Tage): Reaktion 0,72 s, 80 % richtig. "
+                         "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig (aus 13 Zeichen).")
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
 
