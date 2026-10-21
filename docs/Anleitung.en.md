@@ -1261,7 +1261,10 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   deleted once everything works. An older version does not open a database
   from a newer one and leaves it untouched; at start a notice says that
   statistics, awards and the daily practice are therefore empty and
-  nothing is saved.
+  nothing is saved. The same notice appears when a damaged file was set
+  aside or the format update failed. Morsetrainer does **not** make
+  regular backups by itself: back up your data now and then with
+  “Settings … → Data → **Back up …**” (see below).
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
   tables from the Network tab (`…-netzwerk.csv`). Practice data from
   version 2.27 and older (separate files) is taken over into the database

@@ -1288,7 +1288,11 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   läuft. Eine Datenbank aus einer neueren Fassung öffnet eine ältere
   Fassung nicht und lässt sie unberührt; beim Start sagt ein Hinweis, dass
   Statistik, Diplome und Tagesübung deshalb leer sind und nichts
-  gespeichert wird.
+  gespeichert wird. Dasselbe Hinweisfenster erscheint, wenn eine
+  beschädigte Datei beiseitegelegt wurde oder die Aktualisierung des
+  Formats scheiterte. Der Morsetrainer legt **keine** Sicherung von selbst
+  regelmäßig an: Sichere die Daten mit „Einstellungen … → Daten →
+  **Sichern …**“ (siehe unten) von Zeit zu Zeit.
 - Außerdem in `stats/`: das zuletzt geöffnete Diplom (`diplom.html`) und
   die CSV-Tabellen aus dem Reiter Netzwerk (`…-netzwerk.csv`). Übungsdaten
   aus Version 2.27 und älter (einzelne Dateien) übernimmt der erste Start
