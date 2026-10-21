@@ -704,11 +704,11 @@ EN.update({
     "Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der CW-QRM-Abstand gilt für sie.":
         "Clicks of a neighbour keying hard, even when its tone is off; the CW QRM offset applies to them.",
     "Band in der Antwortpause": "Band in the answer pause",
-    "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
-    "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
+    "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen unverändert weiter; "
+    "mit der nächsten Gruppe kommt wieder ein Signal. Aus: Stille zwischen den Gruppen; "
     "zählt für Stufe und Diplom gleich.":
-        "In Groups, Words and Callsigns the band keeps running a little quieter (6 dB) while you type; "
-        "when it gets louder again, the next group is coming. Off: silence between the groups; "
+        "In Groups, Words and Callsigns the band keeps running unchanged while you type; "
+        "the next group brings a signal again. Off: silence between the groups; "
         "counts the same for level and award.",
     "Abstand {name}": "offset {name}",
     "Kilohertz": "kilohertz",

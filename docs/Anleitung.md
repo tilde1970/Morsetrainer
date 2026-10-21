@@ -788,9 +788,10 @@ auch ohne Störungen besser als nach Training in sehr starkem Rauschen.
   Durchgängen, in QSO und Contest jederzeit.
 - **In der Antwortpause** laufen Fading, Rauschen und Nachbar-QRM weiter
   wie auf dem Band; jede Sequenz trifft eine andere Stelle. In Gruppen,
-  Wörtern und Rufzeichen hörst du das Band dabei 6 dB leiser, damit das
-  Ohr beim Tippen etwas Ruhe hat; mit der nächsten Sequenz wird es wieder
-  lauter. Mit Sprachansage (F9) wird es vor der Rückmeldung ausgeblendet.
+  Wörtern und Rufzeichen bleibt das Rauschen dabei so laut, wie es am Ende
+  der Sequenz klang (die Empfänger-AGC klingt ab, wie im Funkgerät); die
+  Pause ändert den Pegel nicht. Mit Sprachansage (F9) wird es vor der
+  Rückmeldung ausgeblendet.
   Wer zwischen den Sequenzen Stille braucht (etwa bei Tinnitus), schaltet
   „Band in der Antwortpause“ im Fenster aus; für Stufe und Diplom ändert
   das nichts.

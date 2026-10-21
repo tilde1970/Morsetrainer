@@ -16,9 +16,10 @@ import numpy as np
 from morsetrainer.core import audio
 from morsetrainer.core.morse import SAMPLE_RATE
 
-# So viel leiser als während der Sequenz (das Ohr soll sich beim Tippen
-# erholen, das Band aber nicht verschwinden).
-PAUSE_GAIN_DB = -6.0
+# Das Rauschen ändert sich zwischen Sequenz und Pause nicht: Die Pause läuft
+# mit derselben Verstärkung weiter, die das Band am Ende der Sequenz hat
+# (die AGC klingt wie im Empfänger ab), ohne Absenkung.
+PAUSE_GAIN_DB = 0.0
 PAUSE_GAIN = 10 ** (PAUSE_GAIN_DB / 20)
 BLOCK_SECONDS = 0.02
 # Über- und Ausblenden; so lang wie das Ausblenden am Ende der Sequenz
@@ -103,7 +104,7 @@ class PauseNoise:
             return np.zeros(n, dtype=np.float32)
         step = PAUSE_GAIN * n / (FADE_SECONDS * SAMPLE_RATE)
         after = min(before + step, target) if target > before else max(before - step, target)
-        out = source.mix([], n, receiver_agc=False) * np.linspace(before, after, n, dtype=np.float32)
+        out = source.mix([], n) * np.linspace(before, after, n, dtype=np.float32)
         with self.lock:
             self.gain = after
             if after == 0.0 and self.target == 0.0:

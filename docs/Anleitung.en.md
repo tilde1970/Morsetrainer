@@ -778,9 +778,9 @@ over to quiet conditions better than practising in very heavy noise.
   between runs, in QSO and Contest at any time.
 - **In the answer pause** fading, noise and neighbouring QRM keep running
   as on the air; each sequence hits a different spot. In Groups, Words and
-  Callsigns you hear the band 6 dB quieter meanwhile, so your ear gets some
-  rest while typing; it comes back up with the next sequence. With
-  announcements (F9) it fades out before the feedback. If you need silence
+  Callsigns the noise stays as loud as it was at the end of the sequence
+  (the receiver AGC decays as in a real radio); the pause does not change
+  the level. With announcements (F9) it fades out before the feedback. If you need silence
   between sequences (with tinnitus, for example), switch off “Band in the
   answer pause” in the window; it makes no difference to the level or the
   award.

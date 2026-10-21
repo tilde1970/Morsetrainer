@@ -716,8 +716,7 @@ class BandConditions:
         CW-Filter. Station None steht für den eigenen Mithörton (kein QSB,
         keine AGC, nicht gefiltert). Die signalgeführte AGC regelt auch in
         Blöcken ohne Station weiter (das Rauschen steigt dann weich an);
-        `receiver_agc=False` lässt sie aus, etwa für das bewusst leisere
-        Bandgeräusch in der Antwortpause."""
+        `receiver_agc=False` lässt sie aus (Messungen des reinen Rauschens)."""
         noise_rms, agc = self.noise_and_agc()
         # Die AGC hebt höchstens bis zur Signalstärke, gemessen beim
         # Rauschabstand mit Lautstärke 100 %: So bleibt „Lautstärke der

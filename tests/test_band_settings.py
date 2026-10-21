@@ -829,8 +829,11 @@ class PauseNoiseTest(unittest.TestCase):
         with self.noise.lock:
             self.noise.pending = (self.band.fork(), 0.0)
         quiet = [self.noise.block(n) for _ in range(50)]
-        rms_full, _ = self.band.noise_and_agc()
-        self.assertAlmostEqual(self.rms(quiet[10:]), rms_full * self.pause_noise.PAUSE_GAIN, delta=rms_full * 0.1)
+        # Dasselbe Band ohne Pause weitergelaufen: die Pause klingt genauso laut.
+        reference = self.band.fork()
+        tail = [reference.mix([], n) for _ in range(50)]
+        self.assertEqual(self.pause_noise.PAUSE_GAIN, 1.0)
+        self.assertAlmostEqual(self.rms(quiet[10:]), self.rms(tail[10:]), delta=self.rms(tail[10:]) * 0.05)
         self.assertLess(self.rms(quiet[:1]), self.rms(quiet[10:11]))  # weich eingeblendet
         self.noise.fade_out()
         out = [self.noise.block(n) for _ in range(10)]

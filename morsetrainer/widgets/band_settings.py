@@ -105,7 +105,7 @@ class BandSettings:
         self.gain_var = tk.DoubleVar(value=100)
         self.filter_var = tk.IntVar(value=band.DEFAULT_FILTER)
         self.qrm_offset_var = tk.StringVar(value=band.DEFAULT_QRM_OFFSET)
-        # Band in der Antwortpause leiser weiter (Gruppen, Wörter, Rufzeichen);
+        # Band in der Antwortpause weiter (Gruppen, Wörter, Rufzeichen);
         # abschaltbar, wer zwischen den Sequenzen Ruhe braucht (Tinnitus,
         # Ermüdung). Gehört nicht zur Spec: zählt für keine Stufe.
         self.pause_var = tk.BooleanVar(value=True)
@@ -380,8 +380,8 @@ class BandSettings:
         pause = ttk.Checkbutton(frame, text=tr("Band in der Antwortpause"), variable=self.pause_var)
         pause.pack(anchor="w", pady=(6, 0))
         theme.hint(frame, wrap=460, text=tr(
-            "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen etwas leiser (6 dB) weiter; "
-            "wird es wieder lauter, kommt die nächste Gruppe. Aus: Stille zwischen den Gruppen; "
+            "In Gruppen, Wörtern und Rufzeichen läuft das Band beim Tippen unverändert weiter; "
+            "mit der nächsten Gruppe kommt wieder ein Signal. Aus: Stille zwischen den Gruppen; "
             "zählt für Stufe und Diplom gleich.")).pack(anchor="w", pady=(0, 6))
 
         receiver = theme.card(frame, tr("CW-Filter"), padx=0)
