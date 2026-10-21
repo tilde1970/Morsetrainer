@@ -1,5 +1,38 @@
 # Änderungen
 
+## 2.58
+
+- **Automatische Sicherung:** Beim Beenden legt der Morsetrainer höchstens alle
+  7 Tage von selbst eine Sicherung im Ordner `auto-sicherung/` des
+  Datenordners an; die letzten 4 bleiben. Abschalten unter „Einstellungen …
+  → Daten → Automatisch sichern“. Zurückholen mit „Einlesen …“. Scheitert
+  die Sicherung, sagt es der nächste Start (Merkzettel
+  `auto-sicherung-fehler.txt`).
+- **Hinweise beim Start:** Außer bei Daten von einer neueren Version meldet der
+  Start auch, wenn die Aktualisierung des Datenformats scheiterte oder eine
+  beschädigte Datenbank beiseitegelegt wurde. Die Texte sind kürzer und nennen
+  den nächsten Schritt; sie werden immer gesprochen. „Neu in Version“, die
+  Diplom-Nachtragung und das Update-Angebot warten, bis der Hinweis
+  geschlossen ist. Warnungen und Fehler tragen ein Zeichen (⚠, ✖) vor dem
+  Text.
+- **Datenbank:** Das Journal einer defekten Datei wird auch ohne harte Links
+  (FAT, manche Netzfreigaben) mitgenommen, ebenso das Rollback-Journal im
+  Netzlaufwerk-Modus und ein verwaistes `-wal`. Zwei Beiseitelegungen in
+  derselben Sekunde überschreiben sich nicht mehr. Windows-Langpfade
+  (`\\?\C:\…`) gelten nicht als Netzlaufwerk; die macOS-Erkennung kommt mit
+  „ on “ im Gerätenamen zurecht.
+- **Bandbedingungen, Antwortpause:** Das Rauschen in der Antwortpause
+  (Gruppen, Wörter, Rufzeichen) bleibt so laut wie am Ende der Sequenz, statt
+  um bis zu 12 dB zu fallen.
+- **Statistik:** Der Vergleich der letzten Tage zählt nur abgeschlossene
+  Durchgänge. F11 liest ihn kürzer vor (ohne Zeichenzahl des Zeitraums davor
+  und ohne Merksatz).
+- **Reiter Rufzeichen:** Der Knopf heißt „Liste aktualisieren“.
+- **Anleitung:** Der Datenordner-Abschnitt ist gegliedert (Hinweise beim
+  Start, Sicherung zurückholen, automatische Sicherung, Daten von Hand
+  zurückholen, alle Daten löschen). Neu: Sterne in der Ansage, Lautstärke bei
+  schmalem CW-Filter.
+
 ## 2.57
 
 - **Daten von einer neueren Version:** Stammen die Daten von einer neueren

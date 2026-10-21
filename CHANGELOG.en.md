@@ -1,5 +1,33 @@
 # Changes
 
+## 2.58
+
+- **Automatic backup:** On exit, Morsetrainer makes a backup by itself at most
+  every 7 days in the folder `auto-sicherung/` of the data folder; the last 4
+  are kept. Switch it off under “Settings … → Data → Back up automatically”.
+  Restore with “Restore …”. If the backup fails, the next start says so (note
+  file `auto-sicherung-fehler.txt`).
+- **Notices at start:** Besides data from a newer version, the start now also
+  reports when the data format update failed or a damaged database was set
+  aside. The texts are shorter and name the next step; they are always
+  spoken. “What's new”, the award catch-up and the update offer wait until the
+  notice is closed. Warnings and errors carry a symbol (⚠, ✖) before the text.
+- **Database:** The journal of a damaged file is kept even without hard links
+  (FAT, some network shares), as are the rollback journal in network-drive mode
+  and an orphaned `-wal`. Two set-asides within the same second no longer
+  overwrite each other. Windows long paths (`\\?\C:\…`) are not taken for
+  network drives; the macOS detection copes with “ on ” in the device name.
+- **Band conditions, answer pause:** The noise in the answer pause (Groups,
+  Words, Callsigns) stays as loud as at the end of the sequence instead of
+  dropping by up to 12 dB.
+- **Statistics:** The comparison of the last days counts only completed runs.
+  F11 reads it in a shorter form (without the character count of the earlier
+  period and without the hint).
+- **Callsigns tab:** The button is called “Liste aktualisieren”.
+- **Manual:** The data folder section is structured (notices at start, restore
+  a backup, automatic backup, restore data by hand, delete all data). New:
+  stars in the announcements, volume with a narrow CW filter.
+
 ## 2.57
 
 - **Data from a newer version:** If the data comes from a newer version of

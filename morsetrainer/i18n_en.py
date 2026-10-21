@@ -1011,6 +1011,12 @@ EN.update({
         "The statistics now say how many characters each comparison is based on, and F11 reads them out more "
         "briefly. On low screens the header collapses by itself, and the window is never larger than the "
         "screen. Everything else is under Help, Changes.",
+    ("Der Morsetrainer sichert deine Daten jetzt von selbst, höchstens einmal pro Woche beim Beenden "
+     "(Einstellungen, Daten). Meldungen beim Start sind klarer, und das Rauschen in der Antwortpause "
+     "bleibt gleich laut. Alles Weitere steht unter Hilfe, Änderungen."):
+        "Morsetrainer now backs up your data by itself, at most once a week on exit (Settings, Data). "
+        "Notices at start are clearer, and the noise in the answer pause stays equally loud. "
+        "Everything else is under Help, Changes.",
     ("Die Datenbank ist sicherer: Ein Hinweis meldet Daten von einer neueren Version, vor einem "
      "Format-Wechsel bleibt eine Kopie liegen, und ein beschädigtes Journal geht nicht mehr verloren. "
      "Alles Weitere steht unter Hilfe, Änderungen."):
