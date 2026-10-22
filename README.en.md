@@ -139,9 +139,6 @@ Please report bugs, wishes and questions as an
 After a program error the Morsetrainer shows where the file `fehler.log`
 is; please attach it to the issue.
 
-The Morsetrainer is and stays free. If you would like to say thanks, you can
-support me on [Ko-fi](https://ko-fi.com/dl4ym).
-
 ## License
 
 The source code is licensed under the MIT license, see [LICENSE](LICENSE).
