@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.61
+
+- **Statistik:** Die Reaktion in der Vergleichszeile ist jetzt der Median, wie
+  in der Zeichen-Tabelle darunter. Einzelne sehr lange Antworten ziehen den
+  Wert nicht mehr nach oben.
+- **Hinweisfenster bei großer Schrift:** Meldungen wie der Hinweis zu den
+  Daten beim Start werden bei 200 % Schrift nie breiter als der Bildschirm.
+
 ## 2.60
 
 - **Tabellen bei großer Schrift:** Unter einer gekürzten Tabelle steht, welche

@@ -1,5 +1,13 @@
 # Changes
 
+## 2.61
+
+- **Statistics:** The reaction time in the comparison line is now the median,
+  like in the character table below it. A few very long answers no longer pull
+  the value up.
+- **Message windows at large font sizes:** Messages such as the notice about
+  your data at start-up are never wider than the screen at 200 % font size.
+
 ## 2.60
 
 - **Tables at large font sizes:** Below a shortened table, a line says which
