@@ -445,12 +445,13 @@ def new_chars(comparison: dict) -> list:
 
 
 def period_numbers(period: dict):
-    """(Trefferquote in Prozent, mittlere Reaktion in s, gemessene Reaktionen)
-    eines Zeitraums; None, wo es nichts gibt."""
+    """(Trefferquote in Prozent, Reaktion als Median in s, gemessene Reaktionen)
+    eines Zeitraums; None, wo es nichts gibt. Median wie in der Zeichentabelle
+    (char_trend), robust gegen einzelne lange Antworten."""
     total = period["good"] + period["wrong"]
     accuracy = period["good"] / total * 100 if total else None
     count = period["latency_count"]
-    return accuracy, (period["latency_s"] / count if count else None), count
+    return accuracy, (statistics.median(period["latencies"]) if count else None), count
 
 
 def char_trend(chars: dict, char: str):

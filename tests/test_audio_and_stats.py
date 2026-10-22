@@ -185,19 +185,19 @@ class StatsTest(unittest.TestCase):
         write(3, [("K", "K", {"latency_s": 0.1})] * 4, mode="continuous")
         comparison = stats.period_comparison()
         accuracy, latency, count = stats.period_numbers(comparison[stats.BEFORE])
-        self.assertEqual((round(accuracy), round(latency, 3), count), (80, 0.725, 8))  # (6 × 0,8 + 2 × 0,5) / 8
+        self.assertEqual((round(accuracy), round(latency, 3), count), (80, 0.8, 8))  # Median, nicht Mittel (0,725)
         accuracy, latency, count = stats.period_numbers(comparison[stats.RECENT])
-        self.assertEqual((accuracy, round(latency, 3), count), (100.0, 1.167, 6))  # (5 × 0,4 + 5) / 6
+        self.assertEqual((accuracy, round(latency, 3), count), (100.0, 0.4, 6))  # Median, nicht Mittel (1,167)
         self.assertEqual(comparison[stats.RECENT]["good"], 13)  # 9 Einzeln + 4 Am Stück
         self.assertIsNone(stats.char_trend(comparison["chars"], "K"))  # zu wenige Messungen für den Trend
         self.assertEqual(trend_text((0.8, 0.4)), "0,80 → 0,40")
         self.assertEqual(comparison_text(comparison),
-                         "Davor (30 Tage): Reaktion 0,72 s, 80 % richtig (aus 10 Zeichen) · "
-                         "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig (aus 13 Zeichen). Reaktion: kleiner ist schneller.")
+                         "Davor (30 Tage): Reaktion 0,80 s, 80 % richtig (aus 10 Zeichen) · "
+                         "Letzte 7 Tage: Reaktion 0,40 s, 100 % richtig (aus 13 Zeichen). Reaktion: kleiner ist schneller.")
         # Vorlesen (F11): ohne Stichprobe des Vergleichszeitraums, ohne Merksatz
         self.assertEqual(comparison_text(comparison, spoken=True),
-                         "Davor (30 Tage): Reaktion 0,72 s, 80 % richtig. "
-                         "Letzte 7 Tage: Reaktion 1,17 s, 100 % richtig (aus 13 Zeichen).")
+                         "Davor (30 Tage): Reaktion 0,80 s, 80 % richtig. "
+                         "Letzte 7 Tage: Reaktion 0,40 s, 100 % richtig (aus 13 Zeichen).")
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
 
