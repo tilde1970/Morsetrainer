@@ -2822,6 +2822,21 @@ class DialogTest(AnnouncerCase):
         target.event_generate(key, when="now")
         self.root.update()
 
+    def test_long_message_stays_narrower_than_the_screen_at_200_percent(self):
+        # Der Umbruch wächst mit der Schrift; auf 1024 px Breite darf das Fenster
+        # (Hinweis zur Datenbank beim Start) trotzdem nicht darüber hinausragen.
+        from morsetrainer.widgets import dialog
+        self.root.deiconify()
+        self.addCleanup(self.root.withdraw)
+        self.addCleanup(theme.set_scale, self.root, theme.scale())
+        theme.set_scale(self.root, 200)
+        text = i18n.tr(app_module.DATABASE_PROBLEMS["aside"])
+        with mock.patch.object(tk.Misc, "winfo_screenwidth", return_value=1024):
+            window = dialog.MessageDialog(self.root, "Daten", text, question=False, symbol="⚠")
+            self.addCleanup(window.close)
+            self.root.update()
+        self.assertLessEqual(window.top.winfo_reqwidth(), 1024 - 2 * dialog.SCREEN_GAP + 2 * 14)
+
     def test_dialog_keys_by_real_events(self):
         # Mit echten Tastenereignissen statt direktem Aufruf der Bindung:
         # Enter = Ja, Escape = Nein, die Leertaste entscheidet nichts, und mit

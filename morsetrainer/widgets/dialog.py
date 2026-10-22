@@ -21,6 +21,7 @@ from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import focus_keeper
 
 WRAP = 480
+SCREEN_GAP = 40  # je Seite: Fensterrahmen, Innenabstand und ein Rest Bildschirmrand
 
 
 class MessageDialog:
@@ -42,13 +43,21 @@ class MessageDialog:
         frame.pack(fill="both", expand=True)
         # Warnung und Fehler tragen ein Zeichen vor dem Text (nicht nur Farbe oder Titel);
         # gesprochen wird es nicht, Titel und Text sagen, was los ist.
+        taken = 2 * SCREEN_GAP  # Rand des Bildschirms, Fensterrahmen und Innenabstand
         if symbol:
             body = ttk.Frame(frame)
             body.pack(anchor="w")
-            ttk.Label(body, text=symbol, font=theme.STATUS).pack(side="left", anchor="n", padx=(0, 10))
-            ttk.Label(body, text=text, wraplength=WRAP, justify="left").pack(side="left")
+            mark = ttk.Label(body, text=symbol, font=theme.STATUS)
+            mark.pack(side="left", anchor="n", padx=(0, 10))
+            taken += mark.winfo_reqwidth() + 10
+            message = ttk.Label(body, text=text, wraplength=WRAP, justify="left")
+            message.pack(side="left")
         else:
-            ttk.Label(frame, text=text, wraplength=WRAP, justify="left").pack(anchor="w")
+            message = ttk.Label(frame, text=text, wraplength=WRAP, justify="left")
+            message.pack(anchor="w")
+        # Große Schrift lässt den Umbruch mitwachsen (theme.scale_wraps); das Fenster
+        # bleibt dabei schmaler als der Bildschirm.
+        message._mt_room = top.winfo_screenwidth() - taken
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(14, 0))
         if question:
