@@ -231,6 +231,59 @@ class DatabaseBackupTest(unittest.TestCase):
         self.assertFalse((folder / "auto-2026-10-29.zip").exists())
         self.assertIn("kaputt", backup.auto_backup_failure(self.old))
 
+    def _mark_set_aside(self, day):
+        conn = sqlite3.connect(self.old / "stats" / db.DB_FILE_NAME)
+        conn.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        conn.execute("INSERT INTO meta VALUES (?, ?)", (db.ASIDE_KEY, day.isoformat()))
+        conn.commit()
+        conn.close()
+
+    def test_backups_from_before_a_set_aside_file_are_not_pushed_out(self):
+        folder = self.old / backup.AUTO_DIR
+        (self.old / "stats" / db.DB_FILE_NAME).unlink(missing_ok=True)
+        day = date(2026, 9, 1)
+        for week in range(4):  # vier gute Sicherungen vor dem Beiseitelegen
+            sqlite3.connect(self.old / "stats" / db.DB_FILE_NAME).close()
+            backup.auto_backup("9.9", self.old, today=day + timedelta(days=7 * week))
+        self._mark_set_aside(day + timedelta(days=21))  # die Datei war kaputt, die neue ist leer
+        for week in range(4, 10):  # danach sichert der Start die leere Datei weiter
+            backup.auto_backup("9.9", self.old, today=day + timedelta(days=7 * week))
+        names = sorted(p.name for p in folder.glob("auto-*.zip"))
+        for week in range(4):
+            self.assertIn(f"auto-{day + timedelta(days=7 * week)}.zip", names)
+        self.assertLess(len(names), 10)  # die leeren werden weiter beschnitten
+
+    def test_import_keeps_set_aside_files_in_a_rescue_folder(self):
+        backup.export_data(self.zip, "9.9", self.new)
+        stats_dir = self.old / "stats"
+        (stats_dir / "morsetrainer.db.defekt-20261001-120000").write_text("kaputt", encoding="utf-8")
+        (stats_dir / "morsetrainer.db.defekt-20261001-120000-wal").write_text("wal", encoding="utf-8")
+        (stats_dir / "morsetrainer.db.vor-v1").write_text("kopie", encoding="utf-8")
+        backup.import_data(self.zip, "9.9", self.old)
+        rescue = self.old / backup.RESCUE_DIR
+        self.assertEqual(sorted(p.name for p in rescue.iterdir()),
+                         ["awards.json.defekt-20261001-120000", "morsetrainer.db.defekt-20261001-120000",
+                          "morsetrainer.db.defekt-20261001-120000-wal", "morsetrainer.db.vor-v1"])
+        self.assertFalse(any(".defekt-" in p.name for p in (self.old / "stats").iterdir()))
+
+    def test_leftover_work_folders_are_removed_after_a_day(self):
+        import os
+        import time
+        old_snapshot = self.old / ".snapshot-abc"
+        old_import = self.old / ".import-20260101-000000"
+        young = self.old / ".snapshot-jung"
+        alt = self.old / ".stats-alt-20260101-000000"
+        for folder in (old_snapshot, old_import, young, alt):
+            folder.mkdir()
+            (folder / "x").write_text("daten", encoding="utf-8")
+        long_ago = time.time() - 3 * 86400
+        for folder in (old_snapshot, old_import, alt):
+            os.utime(folder, (long_ago, long_ago))
+        backup._remove_old_work_dirs(self.old)
+        self.assertFalse(old_snapshot.exists() or old_import.exists())
+        self.assertTrue(young.exists())  # könnte ein anderes Fenster gerade benutzen
+        self.assertTrue(alt.exists())  # kann der einzige Stand sein
+
     def test_no_backup_while_a_broken_database_was_set_aside(self):
         with mock.patch.object(db, "aside_file", self.old / "x"):
             self.assertIsNone(backup.auto_backup("9.9", self.old, today=date(2026, 10, 1)))

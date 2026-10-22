@@ -315,6 +315,11 @@ class AppErrorTest(AppTestCase):
         destroy.assert_called_once()
         self.assertIn("Reiter kaputt", errorlog.LOG_FILE.read_text(encoding="utf-8"))
 
+    def test_close_writes_the_database_back_before_a_hard_exit(self):
+        with mock.patch.object(app_module.db, "close") as closed, mock.patch.object(self.root, "destroy"):
+            self.app.on_close()
+        closed.assert_called_once()
+
     def test_close_makes_the_weekly_backup_only_when_wanted(self):
         for wanted, calls in ((True, 1), (False, 0)):
             self.app.auto_backup_var.set(wanted)

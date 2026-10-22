@@ -165,6 +165,46 @@ class StatsTest(unittest.TestCase):
         stats.reset_all_time()
         self.assertEqual(stats.recent_char_data(), {})
 
+    def _crashed_session(self, chars="KMK", hours_ago=5, mode="single"):
+        """Durchgang, der nie abgeschlossen wurde: Zeichen gespeichert, keine Zusammenfassung."""
+        from datetime import datetime, timedelta
+        start = datetime.now() - timedelta(hours=hours_ago)
+        session = stats.SessionStats(mode, "KM", 20, 600)
+        session.start_time = start
+        db._write("UPDATE sessions SET start_time = ?, config = json_set(config, '$.start_time', ?) WHERE id = ?",
+                  (start.isoformat(timespec="seconds"),) * 2 + (session.session_id,))
+        for char in chars:
+            session.record_char(char, char, True, 0.8, 18.0, latency=0.5)
+        return session
+
+    def test_crashed_session_is_completed_at_the_next_start(self):
+        crashed = self._crashed_session("KMK")
+        self.assertIsNone(db.sessions()[0].summary)
+        self.assertEqual(stats.load_all_time(), {})
+        self.assertEqual(stats.recover_unfinished(), 1)
+        summary = db.sessions()[0].summary
+        self.assertEqual((summary["total"], summary["correct"], summary["recovered"]), (3, 3, True))
+        self.assertEqual(stats.load_all_time()["K"]["good"], 2)
+        self.assertEqual(stats.recover_unfinished(), 0)  # nicht noch einmal
+        self.assertEqual(stats.load_all_time()["K"]["good"], 2)
+        self.assertEqual(crashed.finalize(), crashed.session_id)  # ein anderes Fenster war schneller: kein Doppelzählen
+        self.assertEqual(stats.load_all_time()["K"]["good"], 2)
+
+    def test_recent_or_empty_sessions_are_handled_carefully(self):
+        self._crashed_session("KM", hours_ago=0)  # könnte in einem anderen Fenster noch laufen
+        self.assertEqual(stats.recover_unfinished(), 0)
+        self.assertIsNone(db.sessions()[0].summary)
+        empty = self._crashed_session("", hours_ago=9)
+        self.assertEqual(stats.recover_unfinished(), 0)
+        self.assertNotIn(empty.session_id, [s.id for s in db.sessions()])  # ohne eine Zeile entfernt
+
+    def test_sessions_before_a_reset_do_not_come_back(self):
+        self._crashed_session("KMK", hours_ago=30)
+        stats.reset_all_time()
+        stats.recover_unfinished()
+        self.assertIsNotNone(db.sessions()[0].summary)  # abgeschlossen ...
+        self.assertEqual(stats.load_all_time(), {})  # ... aber nicht zurückgeholt
+
     def test_last_days_are_compared_with_the_days_before(self):
         from datetime import datetime, timedelta
         from morsetrainer.widgets.stats_widget import comparison_text, trend_text

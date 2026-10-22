@@ -47,7 +47,8 @@ class SessionStats:
     Ende die Zusammenfassung samt Übernahme in Gesamtstatistik und Lernkartei
     (finalize)."""
     def __init__(self, mode: str, charset: str, wpm: int, freq: int, group_len=None, farnsworth_wpm=None,
-                 self_assessed=False, in_history=True, review_promote=False, char_stats=True, config_extra=None):
+                 self_assessed=False, in_history=True, review_promote=False, char_stats=True, config_extra=None,
+                 persist=True):
         """`self_assessed`: Ergebnisse beruhen auf eigener Bewertung (Kopfhören,
         J/N). Sie werden protokolliert, aber nicht in die Gesamtstatistik und den
         Fortschrittsverlauf übernommen. `in_history=False`: Die Sitzung hat
@@ -93,7 +94,8 @@ class SessionStats:
             **(config_extra or {}),
         }
         try:
-            self.session_id = db.start_session(config)
+            if persist:  # False: ein abgestürzter Durchgang wird nur nachgerechnet (recover_unfinished)
+                self.session_id = db.start_session(config)
         except (db.Error, OSError) as exc:
             self.log_error = str(exc)
         # Hochstufungen in der Lernkartei durch diese Sitzung (review.update).
@@ -250,18 +252,82 @@ class SessionStats:
             "type": "summary", **self.summary(), "duration_s": self.duration_s, **(extra or {}),
             "per_char": self._per_char_summary(),
         }
+        return self._commit(summary)
+
+    def _commit(self, summary: dict, merge: bool = True, promote=None, events=None):
+        """Zusammenfassung schreiben und, mit `merge`, in Gesamtstatistik und Lernkartei
+        übernehmen, in einer Transaktion: ein Durchgang mit Zusammenfassung ist übernommen,
+        einer ohne nicht (daran erkennt recover_unfinished, was fehlt)."""
         try:
             with db.transaction():
-                if self.session_id is not None and self.log_error is None:
+                # Hat ihn inzwischen ein anderes Fenster als abgestürzt abgeschlossen, nicht doppelt zählen.
+                if self.session_id is not None and db.is_finished(self.session_id):
+                    return self.session_id
+                if self.session_id is not None:
                     db.finish_session(self.session_id, summary)
-                if not self.self_assessed and self.char_stats:
+                if merge and not self.self_assessed and self.char_stats:
                     _merge_all_time(self)
                     from morsetrainer.core import review  # review importiert stats
-                    review.update(self.per_char, promote=self.review_promote and review.can_promote(self.charset),
-                                  events=self.review_events, fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
+                    if promote is None:
+                        promote = self.review_promote and review.can_promote(self.charset)
+                    review.update(self.per_char, promote=promote,
+                                  events=self.review_events if events is None else events,
+                                  fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
         except (db.Error, OSError) as exc:
             self.log_error = self.log_error or str(exc)
         return self.session_id if self.log_error is None else None
+
+
+# Ein Durchgang ohne Zusammenfassung gilt erst nach so langer Zeit als abgestürzt
+# (ein anderes Fenster könnte ihn noch üben).
+RECOVER_AFTER = timedelta(hours=2)
+
+
+def recover_unfinished(now=None) -> int:
+    """Schließt Durchgänge ab, die ohne Zusammenfassung blieben (Absturz, hartes
+    Beenden): Aus ihren gespeicherten Zeichen entsteht die Zusammenfassung, und sie
+    gehen in die Gesamtstatistik und die Lernkartei ein, als wären sie normal zu Ende
+    gegangen (ohne Hochstufungen; die Dauer ist die Summe der Reaktionszeiten).
+    Durchgänge vor dem letzten Zurücksetzen der Gesamtstatistik bekommen nur die
+    Zusammenfassung. Ohne eine einzige Zeile werden sie entfernt. Gibt die Zahl der
+    nachgetragenen Durchgänge zurück."""
+    now = now or datetime.now()
+    reset = _after_reset(datetime.min)
+    done = 0
+    for session_id, config in db.unfinished_sessions():
+        try:
+            start = datetime.fromisoformat(config["start_time"])
+            if now - start < RECOVER_AFTER:
+                continue
+            events = db.session_events(session_id)
+            if not events:
+                db.delete_session(session_id)
+                continue
+            rows = [e for e in events if e.get("type") == "char"]
+            if not rows:
+                continue  # nur Gruppen o. Ä.: daraus lässt sich nichts nachrechnen
+            session = SessionStats(
+                config.get("mode", ""), config.get("charset", ""), config.get("wpm"), config.get("freq"),
+                group_len=config.get("group_len"), farnsworth_wpm=config.get("farnsworth_wpm"),
+                self_assessed=bool(config.get("self_assessed")), in_history=config.get("in_history") is not False,
+                char_stats=config.get("char_stats") is not False, persist=False)
+            session.start_time = start
+            for e in rows:
+                session.record_char(e.get("char", ""), e.get("typed", ""), bool(e.get("correct")),
+                                    float(e.get("reaction_time_s") or 0), float(e.get("effective_wpm") or 0),
+                                    latency=e.get("latency_s"), assumed=bool(e.get("latency_assumed")),
+                                    timed=not e.get("untimed"))
+            session.session_id = session_id
+            session.duration_s = round(sum(r["reaction_time_s"] for r in session.rounds), 1)
+            summary = {"type": "summary", **session.summary(), "duration_s": session.duration_s,
+                       "per_char": session._per_char_summary(), "recovered": True}
+            if session._commit(summary, merge=start >= reset, promote=False, events=[]) is not None:
+                done += 1
+        except (TypeError, ValueError, KeyError, AttributeError):
+            continue  # unlesbare Zeilen: dieser Durchgang bleibt, wie er ist
+        except (db.Error, OSError):
+            break
+    return done
 
 
 def _merge_all_time(session: "SessionStats") -> None:

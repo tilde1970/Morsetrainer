@@ -127,7 +127,8 @@ DATABASE_PROBLEMS = {
     "migration": N_("Die Daten ließen sich nicht auf diese Version aktualisieren. Neue Ergebnisse werden nicht "
                     "gespeichert, die Daten bleiben unverändert. Bitte den Morsetrainer aktualisieren: Hilfe, F1."),
     "aside": N_("Die Datei mit deinen Daten war beschädigt und wurde beiseitegelegt. Statistik, Diplome und "
-                "Tagesübung beginnen leer. Wie du sie zurückholst, steht in der Anleitung unter Hilfe, F1."),
+                "Tagesübung beginnen leer. Ältere Sicherungen bleiben im Ordner auto-sicherung erhalten. Wie du "
+                "sie zurückholst, steht in der Anleitung unter Hilfe, F1."),
 }
 WHATS_NEW_DELAY_MS = 800  # Hinweis nach einem Update, wenn das Fenster steht
 # So oft wird nachgesehen, ob ein Hintergrund-Thread einen Fehler protokolliert hat.
@@ -292,6 +293,10 @@ class MorseTrainerApp:
         # Bei großer Schrift oder wenig Bildschirmhöhe zugeklappt, außer die
         # Leiste war beim Beenden aufgeklappt und der Bildschirm hat Platz dafür.
         self._update_compact(header_open=self.saved_state.get("header_open") is True)
+        try:
+            stats.recover_unfinished()  # Durchgänge, die ein Absturz ohne Zusammenfassung ließ, nachtragen
+        except Exception:
+            errorlog.record(*sys.exc_info(), version=__version__)
         # Diplome und Lebenslinie füllt _check_awards_at_start, wenn das
         # Fenster schon steht: Die Auswertung braucht nach Jahren Übung Zeit.
         self._refresh_all_time(with_awards=False)
@@ -2464,7 +2469,7 @@ class MorseTrainerApp:
         saving = () if keep_files else (self._record_practice, self._save_state_or_warn)
         for step in (lambda: self.daily.abort(quiet=True), *saving,
                      *(mode.on_close for mode in self.modes),
-                     *(() if keep_files else (self._auto_backup,)), audio.release):
+                     *(() if keep_files else (self._auto_backup,)), db.close, audio.release):
             try:
                 step()
             except Exception:
@@ -2590,6 +2595,7 @@ def main():
         # hart ab (Core-Dump). Gespeichert ist alles schon in on_close.
         sys.stdout.flush()
         sys.stderr.flush()
+        db.close()  # schreibt die WAL zurück: Die .db allein ist dann vollständig
         os._exit(0)
 
 

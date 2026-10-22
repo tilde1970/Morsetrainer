@@ -1275,14 +1275,18 @@ AppImage in `~/.local/share/morsetrainer/`, for the exe in
   run with its characters, results of QSO checks and contests, overall
   statistics, review box, daily practice with stars, lesson and daily
   speed, practice time per day and the awards achieved. Every line is
-  saved immediately; a crash costs at most the current one.
+  saved immediately. After a crash, Morsetrainer adds the interrupted run to
+  the statistics at the next start (at the earliest 2 hours later); only the
+  practice time of that run is missing.
 - Copies next to the database: `morsetrainer.db.defekt-<time>` (with
   `…-wal`) is a damaged file that Morsetrainer has set aside, that is,
   renamed and no longer uses; it then starts a new one.
   `morsetrainer.db.vor-v<number>` is the copy from before a format
   update. `vor-import-<time>.zip` in the data folder is the state from
   before a backup was restored. None of the three is part of a backup, and
-  all may be deleted once everything works.
+  all may be deleted once everything works. If you restore a backup, any
+  `.defekt-…` and `.vor-v…` files are moved to the `stats-gerettet/` folder in
+  the data folder instead of disappearing.
 - `auto-sicherung/`: the automatic weekly backups (see “Automatic backup”
   below) and, if one failed, `auto-sicherung-fehler.txt`.
 - Also in `stats/`: the award opened last (`diplom.html`) and the CSV
@@ -1363,7 +1367,8 @@ their files.
 Morsetrainer backs up by itself; you do not have to do anything. On exit
 it creates a backup `auto-<date>.zip` in the `auto-sicherung/` folder of
 the data folder, at most every 7 days. The last 4 are kept, older ones
-are deleted. You can switch this off under “Settings … → Data” with the
+are deleted; if Morsetrainer has set a damaged file aside, the older backups
+from before that are kept. You can switch this off under “Settings … → Data” with the
 switch **Back up automatically (weekly, on exit)**.
 
 - The automatic backup sits in the data folder. It protects against a
@@ -1398,6 +1403,7 @@ easier way. The files are in the `stats/` folder of the data folder.
 ### Deleting all data
 
 Anyone who wants to delete all their data should delete not only `stats/`
-but also the `auto-sicherung/` folder, the `vor-import-<time>.zip` files
-and the `.defekt-*` files in the data folder: they hold copies of the
-practice data.
+but also the `auto-sicherung/` folder, the `stats-gerettet/` folder, the
+`vor-import-<time>.zip` files and the `.defekt-*` files in the data folder:
+they hold copies of the practice data. Also `window_state.json` (callsign,
+name, locator, network name) and `fehler.log` (paths with your user name).

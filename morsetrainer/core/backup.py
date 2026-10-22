@@ -38,6 +38,7 @@ from morsetrainer.i18n import tr
 AUTO_DIR = "auto-sicherung"
 AUTO_INTERVAL_DAYS = 7
 AUTO_KEEP = 4
+RESCUE_DIR = "stats-gerettet"  # beim Einlesen gerettete .defekt-*/.vor-v*-Dateien
 # Merkzettel im Datenordner: die letzte automatische Sicherung ist gescheitert
 # (beim Beenden lässt sich das nicht mehr melden; der nächste Start tut es).
 AUTO_FAILED = "auto-sicherung-fehler.txt"
@@ -57,6 +58,8 @@ DB_COMPANIONS = ("-wal", "-shm", "-journal")
 
 
 # Hilfsdateien: "….tmp<PID>" (halb geschriebene Sicherung), "….halt<PID>" (festgehaltenes Journal).
+# Arbeitsordner neben den Daten (Schnappschuss, Einlese-Zwischenlager); bleiben nach hartem Ende liegen.
+WORK_PREFIXES = (".snapshot-", ".import-")
 TEMP_NAME = re.compile(r"\.(tmp|halt)\d*$")
 
 
@@ -116,7 +119,7 @@ def export_data(target: Path, version: str, data_dir: Path = DATA_DIR) -> int:
             database = data_dir / STATS / db.DB_FILE_NAME
             if database.is_file():
                 # Der Schnappschuss liegt neben den Daten, nicht im oft kleinen /tmp.
-                with tempfile.TemporaryDirectory(dir=data_dir) as folder:
+                with tempfile.TemporaryDirectory(dir=data_dir, prefix=WORK_PREFIXES[0]) as folder:
                     copy = Path(folder) / db.DB_FILE_NAME
                     _snapshot(database, copy)
                     archive.write(copy, f"{STATS}/{db.DB_FILE_NAME}")
@@ -190,9 +193,43 @@ def auto_backup(version: str, data_dir: Path = DATA_DIR, today: date = None):
             pass
         raise
     (data_dir / AUTO_FAILED).unlink(missing_ok=True)
+    protected = _aside_since(data_dir)
     for old in _auto_files(folder, today)[:-AUTO_KEEP]:
-        old.unlink(missing_ok=True)
+        # Sicherungen aus der Zeit vor dem Beiseitelegen einer defekten Datei sind die
+        # letzten guten; die neue (leere) Datei darf sie nicht verdrängen.
+        if protected is None or date.fromisoformat(old.name[5:15]) > protected:
+            old.unlink(missing_ok=True)
+    _remove_old_work_dirs(data_dir)
     return target
+
+
+def _aside_since(data_dir: Path):
+    """Tag, an dem die Datenbank in `data_dir` als defekt beiseitegelegt und neu
+    begonnen wurde (db.ASIDE_KEY), sonst None. Liest die Datei selbst, nur lesend."""
+    database = data_dir / STATS / db.DB_FILE_NAME
+    try:
+        conn = sqlite3.connect(f"file:{database.as_posix()}?mode=ro", uri=True)
+        try:
+            row = conn.execute("SELECT value FROM meta WHERE key = ?", (db.ASIDE_KEY,)).fetchone()
+        finally:
+            conn.close()
+        return date.fromisoformat(row[0]) if row else None
+    except (sqlite3.Error, ValueError, TypeError, OSError):
+        return None
+
+
+def _remove_old_work_dirs(data_dir: Path) -> None:
+    """Reste von Schnappschuss und Einlesen nach hartem Beenden (je mit einer
+    ganzen Datenkopie), nicht die eines gerade laufenden Fensters. `.stats-alt-*`
+    bleibt: Dort kann der einzige Stand liegen, wenn das Einlesen mittendrin abbrach."""
+    cutoff = datetime.now().timestamp() - 24 * 3600
+    for prefix in WORK_PREFIXES:
+        for path in data_dir.glob(f"{prefix}*"):
+            try:
+                if path.is_dir() and path.stat().st_mtime < cutoff:
+                    shutil.rmtree(path, ignore_errors=True)
+            except OSError:
+                pass
 
 
 def _remove_old_temp_files(folder: Path) -> None:
@@ -274,6 +311,20 @@ def _check_database(database: Path) -> None:
         raise BackupError("database")
 
 
+def _keep_rescue_files(old_stats: Path, data_dir: Path) -> None:
+    """Beiseitegelegte defekte Datenbanken (.defekt-*) und Kopien vor einer Migration
+    (.vor-v*) gehören nicht in die Sicherung vor dem Einlesen; sie wandern in
+    `stats-gerettet/`, statt mit dem alten Ordner zu verschwinden."""
+    rescue = data_dir / RESCUE_DIR
+    try:
+        for path in old_stats.iterdir():
+            if path.is_file() and (".defekt-" in path.name or ".vor-v" in path.name):
+                rescue.mkdir(exist_ok=True)
+                os.replace(path, rescue / path.name)
+    except OSError:
+        pass  # dann geht es wie bisher: der alte Ordner wird entfernt
+
+
 def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
     """Ersetzt die Daten in `data_dir` durch die Sicherung `source` und gibt
     den Pfad der vorher angelegten Sicherung des bisherigen Stands zurück.
@@ -314,6 +365,7 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
         for name in TOP_FILES:
             if (staging / name).is_file():
                 os.replace(staging / name, data_dir / name)
+        _keep_rescue_files(old_stats, data_dir)
         shutil.rmtree(old_stats, ignore_errors=True)
     except ZIP_ERRORS as exc:
         raise BackupError(str(exc)) from exc

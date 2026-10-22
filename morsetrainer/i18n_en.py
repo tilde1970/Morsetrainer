@@ -191,9 +191,11 @@ EN.update({
         "The data could not be updated to this version. New results are not saved; the data stays "
         "unchanged. Please update Morsetrainer: Help, F1.",
     "Die Datei mit deinen Daten war beschädigt und wurde beiseitegelegt. Statistik, Diplome und "
-    "Tagesübung beginnen leer. Wie du sie zurückholst, steht in der Anleitung unter Hilfe, F1.":
+    "Tagesübung beginnen leer. Ältere Sicherungen bleiben im Ordner auto-sicherung erhalten. Wie du "
+    "sie zurückholst, steht in der Anleitung unter Hilfe, F1.":
         "The file with your data was damaged and has been set aside. Statistics, diplomas and the daily "
-        "practice start empty. How to get it back is in the manual under Help, F1.",
+        "practice start empty. Older backups are kept in the auto-sicherung folder. How to get them back "
+        "is in the manual under Help, F1.",
     "Morsetrainer-Sicherung-{date}.zip": "Morsetrainer-backup-{date}.zip",
     "Die Sicherung konnte nicht geschrieben werden:\n{error}": "The backup could not be written:\n{error}",
     "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "

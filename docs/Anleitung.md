@@ -1302,15 +1302,18 @@ AppImage in `~/.local/share/morsetrainer/`, bei der exe in
   jeder Durchgang mit seinen Zeichen, Ergebnisse von QSO-Abfragen und
   Contests, Gesamtstatistik, Lernkartei, Tagesübung mit Sternen, Lektion
   und Tagestempo, Übungszeit pro Tag und die erreichten Diplome. Jede
-  Zeile wird sofort gespeichert; ein Absturz kostet höchstens die
-  laufende.
+  Zeile wird sofort gespeichert. Nach einem Absturz trägt der Morsetrainer
+  den abgebrochenen Durchgang beim nächsten Start (frühestens 2 Stunden
+  danach) in die Statistik nach; nur die Übungszeit dieses Durchgangs fehlt.
 - Kopien neben der Datenbank: `morsetrainer.db.defekt-<Zeit>` (mit
   `…-wal`) ist eine beschädigte Datei, die der Morsetrainer beiseitegelegt
   hat, also umbenannt und nicht mehr benutzt; danach beginnt er eine neue.
   `morsetrainer.db.vor-v<Nummer>` ist die Kopie von vor einer
   Formatumstellung. `vor-import-<Zeit>.zip` im Datenordner ist der Stand
   von vor dem Einlesen einer Sicherung. Alle drei sind nicht Teil der
-  Sicherung und dürfen gelöscht werden, wenn alles läuft.
+  Sicherung und dürfen gelöscht werden, wenn alles läuft. Liest du eine
+  Sicherung ein, landen vorhandene `.defekt-…`- und `.vor-v…`-Dateien im
+  Ordner `stats-gerettet/` im Datenordner, statt zu verschwinden.
 - `auto-sicherung/`: die automatischen Wochensicherungen (siehe
   „Automatische Sicherung“ unten) und, falls eine misslang,
   `auto-sicherung-fehler.txt`.
@@ -1394,7 +1397,8 @@ einlesen, ihre Dateien übernimmt der nächste Start.
 Der Morsetrainer sichert von selbst, du musst nichts tun: Beim Beenden legt
 er höchstens alle 7 Tage eine Sicherung `auto-<Datum>.zip` im Ordner
 `auto-sicherung/` des Datenordners an. Die letzten 4 bleiben, ältere
-werden gelöscht. Abschalten kannst du das unter „Einstellungen … → Daten“
+werden gelöscht; hat der Morsetrainer eine beschädigte Datei beiseitegelegt,
+bleiben die älteren Sicherungen davor erhalten. Abschalten kannst du das unter „Einstellungen … → Daten“
 mit dem Schalter **Automatisch sichern (wöchentlich, beim Beenden)**.
 
 - Die automatische Sicherung liegt im Datenordner. Sie schützt vor einer
@@ -1431,5 +1435,7 @@ des Datenordners.
 ### Alle Daten löschen
 
 Wer alle seine Daten löschen will, löscht nicht nur `stats/`, sondern auch
-den Ordner `auto-sicherung/`, die Dateien `vor-import-<Zeit>.zip` und die
-Dateien `.defekt-*` im Datenordner: Sie enthalten Kopien der Übungsdaten.
+den Ordner `auto-sicherung/`, den Ordner `stats-gerettet/`, die Dateien
+`vor-import-<Zeit>.zip` und die Dateien `.defekt-*` im Datenordner: Sie
+enthalten Kopien der Übungsdaten. Dazu kommen `window_state.json` (Rufzeichen,
+Name, Locator, Netzwerkname) und `fehler.log` (Pfade mit deinem Benutzernamen).

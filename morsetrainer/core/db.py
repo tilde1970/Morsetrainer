@@ -113,6 +113,7 @@ _conn_path = None
 generation = 0
 # Wohin die letzte kaputte Datei gelegt wurde (None: nichts beiseitegelegt).
 aside_file = None
+ASIDE_KEY = "aside"  # meta: Tag, an dem eine defekte Datei beiseitegelegt wurde (die neue Datei ist leer)
 _failures = {}  # Datei -> "too_new"/"migration": nicht bei jedem Lesen neu öffnen
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
 # Gelesene config/summary abgeschlossener Durchgänge, {id: (config, summary)}:
@@ -443,6 +444,12 @@ def _connection() -> sqlite3.Connection:
         generation += 1
         if orphan is not None and aside_file is None:
             aside_file = orphan
+        if aside_file is not None:
+            # Die neue Datei ist leer; die Auto-Sicherung hebt ältere Sicherungen deshalb auf.
+            try:
+                set_meta(ASIDE_KEY, date.today().isoformat())
+            except (Error, OSError):
+                pass
     return _conn
 
 
@@ -589,6 +596,23 @@ def finish_session(session_id: int, summary: dict) -> None:
     """Schließt den Durchgang `session_id` mit seiner Zusammenfassung ab."""
     _heads.pop(session_id, None)
     _write("UPDATE sessions SET summary = ? WHERE id = ?", (_dump(summary), session_id))
+
+
+def unfinished_sessions() -> list:
+    """[(id, config)] der Durchgänge ohne Zusammenfassung: laufende, abgestürzte
+    und hart beendete."""
+    out = []
+    for session_id, text in _read("SELECT id, config FROM sessions WHERE summary IS NULL ORDER BY start_time, id"):
+        config = _load(text)
+        if isinstance(config, dict):
+            out.append((session_id, config))
+    return out
+
+
+def is_finished(session_id: int) -> bool:
+    """Hat der Durchgang schon eine Zusammenfassung (strict: ein Lesefehler wird gemeldet)?"""
+    rows = _read("SELECT summary IS NOT NULL FROM sessions WHERE id = ?", (session_id,), strict=True)
+    return bool(rows and rows[0][0])
 
 
 def delete_session(session_id: int) -> None:
