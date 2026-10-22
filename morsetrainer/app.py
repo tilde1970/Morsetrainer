@@ -41,7 +41,7 @@ from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel, comparison_text
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, dialog, theme
-from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
+from morsetrainer.widgets.ui_widgets import RangedIntVar, ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
@@ -53,6 +53,7 @@ DEFAULT_GEOMETRY = "720x900"
 # Mindestbreite des Hauptfensters (Kopfleiste und Reiter haben Platz, auch
 # englisch); eine kleinere gespeicherte Breite wird angehoben.
 MIN_WIDTH = 720
+MIN_HEIGHT = 400  # eine gemerkte Höhe darunter (minimiertes Fenster, Fehler) wird angehoben
 WINDOW_STATE_FILE = DATA_DIR / "window_state.json"
 # Einstellungsfenster: Abstand zum Bildschirmrand (Rahmen, Rollbalken) und
 # höchster Anteil an der Bildschirmhöhe (wie das Bandfenster).
@@ -375,16 +376,15 @@ class MorseTrainerApp:
 
     def _initial_geometry(self) -> str:
         geometry = self.saved_state.get("geometry")
-        if isinstance(geometry, str) and self._geometry_fits_screen(geometry):
-            geometry = re.sub(r"^\d+", lambda m: str(max(int(m.group()), MIN_WIDTH)), geometry)
-        else:
+        if not (isinstance(geometry, str) and self._geometry_fits_screen(geometry)):
             geometry = DEFAULT_GEOMETRY
         # Nie größer als der Bildschirm (Standard 720×900 auf kleinen Anzeigen,
         # gemerkte Größe von einem größeren Monitor).
         max_width = self.root.winfo_screenwidth() - 40
         max_height = self.root.winfo_screenheight() - SCREEN_MARGIN
-        return re.sub(r"^(\d+)x(\d+)", lambda m: f"{min(int(m.group(1)), max_width)}x{min(int(m.group(2)), max_height)}",
-                      geometry)
+        return re.sub(r"^(\d+)x(\d+)",
+                      lambda m: f"{min(max(int(m.group(1)), MIN_WIDTH), max_width)}"
+                                f"x{min(max(int(m.group(2)), MIN_HEIGHT), max_height)}", geometry)
 
     def _geometry_fits_screen(self, geometry: str) -> bool:
         match = re.match(r"(\d+)x(\d+)(?:\+(-?\d+)\+(-?\d+))?", geometry)
@@ -475,14 +475,14 @@ class MorseTrainerApp:
         wrap_pair(top, lesson_row, tone_row)
         self.charset_var = tk.StringVar(value=DEFAULT_CHARSET)
         self._build_koch_row(lesson_row)
-        self.freq_var = tk.IntVar(value=600)
+        self.freq_var = RangedIntVar(value=600, low=300, high=1000)
         ttk.Label(tone_row, text="Hz").pack(side="right", padx=(4, 0))
         freq_spin = ttk.Spinbox(tone_row, from_=300, to=1000, increment=50, textvariable=self.freq_var, width=5)
         freq_spin.pack(side="right")
         ttk.Label(tone_row, text=tr("Tonhöhe")).pack(side="right", padx=(0, 4))  # „Hz“ allein sagt es nicht
         announcer.name(freq_spin, tr("Tonhöhe"), value=lambda: f"{freq_spin.get()} Hz")
         # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
-        self.wpm_var = tk.IntVar(value=koch.RECOMMENDED_WPM)
+        self.wpm_var = RangedIntVar(value=koch.RECOMMENDED_WPM, low=5, high=40)
         ttk.Label(tone_row, text="WPM").pack(side="right", padx=(4, 16))
         wpm_spin = ttk.Spinbox(tone_row, from_=5, to=40, textvariable=self.wpm_var, width=4)
         wpm_spin.pack(side="right")
@@ -529,7 +529,7 @@ class MorseTrainerApp:
         ttk.Checkbutton(farnsworth, text=tr("Farnsworth, effektiv"), variable=self.farnsworth_enabled_var).pack(
             side="left"
         )
-        self.farnsworth_wpm_var = tk.IntVar(value=koch.RECOMMENDED_EFFECTIVE_WPM)
+        self.farnsworth_wpm_var = RangedIntVar(value=koch.RECOMMENDED_EFFECTIVE_WPM, low=3, high=39)
         ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4).pack(
             side="left", padx=4
         )
@@ -1537,7 +1537,7 @@ class MorseTrainerApp:
         self.version_label.pack(side="right")
         self._set_version_text()
         ttk.Separator(self.root).pack(side="bottom", fill="x", padx=10)
-        self.practice_started = None  # time.time() beim Start eines Durchgangs
+        self.practice_started = None  # time.monotonic() beim Start eines Durchgangs (Ruhezustand zählt nicht mit)
         self.practice_tick_id = None
         self.daily_goal_var.trace_add("write", lambda *_: self._update_practice())
         self._update_practice()
@@ -1563,7 +1563,7 @@ class MorseTrainerApp:
         data = practice.load()
         today = date.today()
         if self.practice_started is not None:
-            data[today.isoformat()] = practice.seconds_on(data, today) + time.time() - self.practice_started
+            data[today.isoformat()] = practice.seconds_on(data, today) + time.monotonic() - self.practice_started
         minutes = int(practice.seconds_on(data, today) // 60)
         goal = self.daily_goal_minutes()
         if goal:
@@ -1577,15 +1577,17 @@ class MorseTrainerApp:
             self.daily.refresh_week(data)
 
     def _practice_tick(self):
-        self._update_practice()
-        self.practice_tick_id = self.root.after(PRACTICE_TICK_MS, self._practice_tick)
+        try:
+            self._update_practice()
+        finally:
+            self.practice_tick_id = self.root.after(PRACTICE_TICK_MS, self._practice_tick)
 
     def _record_practice(self):
         if self.practice_tick_id is not None:
             self.root.after_cancel(self.practice_tick_id)
             self.practice_tick_id = None
         if self.practice_started is not None:
-            practice.add(time.time() - self.practice_started)
+            practice.add(time.monotonic() - self.practice_started)
             self.practice_started = None
 
     def _shared_vars(self) -> dict:
@@ -1653,13 +1655,13 @@ class MorseTrainerApp:
                    for title in ("QSO", "Contest")):
             for title in ("Gruppen", "Wörter", "Rufzeichen", "Kontinuierlich", "Netzwerk"):
                 preset = self._saved_mode_settings(title).get("band")
-                if preset in band.PRESETS:
+                if storage.is_key(preset, band.PRESETS):
                     self.band_settings.set_preset(preset, notify=False)
                     break
         for title in ("Gruppen", "Wörter", "Rufzeichen"):
             data = self._saved_mode_settings(title)
             gain = data.get("band_gain")
-            if data.get("band") in band.PRESETS and isinstance(gain, int) and not isinstance(gain, bool):
+            if storage.is_key(data.get("band"), band.PRESETS) and isinstance(gain, int) and not isinstance(gain, bool):
                 spec = self.band_settings.spec()
                 self.band_settings.restore({**spec, "gain": gain / 100})
                 break
@@ -2093,7 +2095,10 @@ class MorseTrainerApp:
                 on_start=self._lock_tabs, on_stop=self._handle_mode_stop, **extra,
             )
             if hasattr(mode, "restore_settings"):
-                mode.restore_settings(self._saved_mode_settings(title))
+                try:
+                    mode.restore_settings(self._saved_mode_settings(title))
+                except Exception:  # kaputte gespeicherte Werte: der Reiter startet mit Standardwerten
+                    errorlog.record(*sys.exc_info(), version=__version__)
             self.modes.append(mode)
             self.mode_titles.append(title)
             self.tab_ids.append(tab_id)
@@ -2197,7 +2202,7 @@ class MorseTrainerApp:
 
     def _start_practice(self):
         if self.practice_started is None:
-            self.practice_started = time.time()
+            self.practice_started = time.monotonic()
             self.practice_tick_id = self.root.after(PRACTICE_TICK_MS, self._practice_tick)
 
     def _pause_practice(self):
@@ -2501,14 +2506,20 @@ class MorseTrainerApp:
         errorlog.record(args.exc_type, args.exc_value, args.exc_traceback, version=__version__)
 
     def _check_errors(self, poll=True):
-        if errorlog.take_unseen() and not self.error_shown:
-            self.error_shown = True
-            dialog.showerror(tr("Unerwarteter Fehler"), tr(
-                "Im Programm ist ein unerwarteter Fehler aufgetreten. Einzelheiten stehen in\n{path}\n\n"
-                "Bitte schick diese Datei mit, wenn du den Fehler meldest.").format(path=errorlog.LOG_FILE),
-                parent=self.root)
-        if poll:
-            self.root.after(ERROR_POLL_MS, self._check_errors)
+        try:
+            if errorlog.take_unseen() and not self.error_shown:
+                self.error_shown = True
+                if errorlog.unwritten:
+                    text = tr("Im Programm ist ein unerwarteter Fehler aufgetreten. Er ließ sich nicht in die "
+                              "Datei {path} schreiben:\n{error}\n\nBitte nenne diesen Text, wenn du den Fehler meldest.").format(
+                                  path=errorlog.LOG_FILE, error=errorlog.unwritten)
+                else:
+                    text = tr("Im Programm ist ein unerwarteter Fehler aufgetreten. Einzelheiten stehen in\n{path}\n\n"
+                              "Bitte schick diese Datei mit, wenn du den Fehler meldest.").format(path=errorlog.LOG_FILE)
+                dialog.showerror(tr("Unerwarteter Fehler"), text, parent=self.root)
+        finally:
+            if poll:
+                self.root.after(ERROR_POLL_MS, self._check_errors)
 
 
 def _excepthook(*exc) -> None:

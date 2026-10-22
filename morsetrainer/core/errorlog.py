@@ -21,11 +21,13 @@ MAX_BYTES = 1 << 20
 _lock = threading.Lock()
 # Zahl der protokollierten Fehler, die das Hauptfenster noch nicht gemeldet hat.
 unseen = 0
+# Kurzfassung des letzten Fehlers, der nicht ins Protokoll geschrieben werden konnte (sonst None).
+unwritten = None
 
 
 def record(exc_type, exc, tb, version="") -> bool:
     """Schreibt den Fehler ins Protokoll. False, wenn das nicht ging."""
-    global unseen
+    global unseen, unwritten
     text = "".join(traceback.format_exception(exc_type, exc, tb))
     stamp = datetime.now().isoformat(sep=" ", timespec="seconds")
     with _lock:
@@ -34,8 +36,10 @@ def record(exc_type, exc, tb, version="") -> bool:
             mode = "w" if LOG_FILE.exists() and LOG_FILE.stat().st_size > MAX_BYTES else "a"
             with open(LOG_FILE, mode, encoding="utf-8") as fp:
                 fp.write(f"--- {stamp} Morsetrainer {version} ---\n{text}\n")
-        except OSError:
+        except OSError as err:
+            unwritten = "".join(traceback.format_exception_only(type(err), err)).strip()
             return False
+        unwritten = None
     return True
 
 

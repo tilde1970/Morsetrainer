@@ -334,11 +334,17 @@ class Scoreboard:
                     cells.append(cell.strip())
                 else:
                     cells.append("")
-            writer.writerow([name, f"{share:.0f}", f"{data['correct_items']}/{data['items']}",
+            writer.writerow([_cell(name), f"{share:.0f}", f"{data['correct_items']}/{data['items']}",
                              "–" if name in self.paper else f"{data['fluent_items']}/{data['items']}", latency,
                              format_confusions(self.confusions(3, name)), format_weak(self.weak_chars(3, name))]
-                            + cells)
+                            + [_cell(cell) for cell in cells])
         return out.getvalue()
+
+
+def _cell(text: str) -> str:
+    """Zelle für CSV: Beginnt sie mit =, +, - oder @, hielte eine Tabellenkalkulation
+    sie für eine Formel (Namen kommen von den Teilnehmern); ein Apostroph davor verhindert das."""
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
 
 
 def format_confusions(confusions) -> str:

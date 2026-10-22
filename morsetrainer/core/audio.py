@@ -109,6 +109,8 @@ def play(samples) -> None:
     Tonausgabe gibt; ist das Gerät verschwunden, wird einmal mit neu
     eingelesenen Geräten wiederholt."""
     global _tone_until
+    if _keepalive is not None:
+        keep_awake()  # nur wirksam, wenn der stille Strom inzwischen gestorben ist
     try:
         with _lock:
             sd.play(samples, SAMPLE_RATE, latency=AUDIO_LATENCY)
@@ -194,10 +196,18 @@ def _silence(outdata, frames, time_info, status) -> None:
 
 
 def keep_awake() -> None:
-    """Stillen Strom öffnen (einmal); ohne Audiogerät ohne Wirkung."""
+    """Stillen Strom öffnen (einmal); ohne Audiogerät ohne Wirkung. Ein
+    gestorbener Strom (Gerät weg, Ruhezustand) wird neu geöffnet."""
     global _keepalive
     if _keepalive is not None:
-        return
+        if getattr(_keepalive, "active", True):
+            return
+        try:
+            with _lock:
+                _keepalive.close()
+        except ERRORS:
+            pass
+        _keepalive = None
     try:
         with _lock:
             stream = sd.OutputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency="high",

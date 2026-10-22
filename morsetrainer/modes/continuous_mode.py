@@ -377,7 +377,7 @@ class ContinuousModeFrame(DailyModeMixin):
 
         self.play_thread = threading.Thread(target=self._play_loop, daemon=True)
         self.play_thread.start()
-        self.root.after(1000, self._tick)
+        self.root.after(1000, self._tick, self.session_id)
 
     def _own_thread(self) -> bool:
         """Gehört der aufrufende Audio-Thread zur laufenden Sitzung? Ein
@@ -482,11 +482,12 @@ class ContinuousModeFrame(DailyModeMixin):
             stream.write(block if conditions is None else conditions.process(block, 0))
         return True
 
-    def _tick(self):
+    def _tick(self, session_id=None):
         """Jede Sekunde: Fehler aus dem Audio-Thread melden, die vorläufige
         Trefferquote über die letzten PREVIEW_CHARS Zeichen und die eigene
-        Eingabe zeigen."""
-        if not self.running:
+        Eingabe zeigen. `session_id`: Ein Tick einer früheren Sitzung endet hier,
+        sonst liefen nach Stop und gleich Start zwei Ketten."""
+        if not self.running or session_id not in (None, self.session_id):
             return
         if self.audio_error:
             self.stop()
@@ -520,7 +521,7 @@ class ContinuousModeFrame(DailyModeMixin):
             self.status_var.set(tr("Zeit abgelaufen – tippe die letzten Zeichen noch ein…"))
             self.root.after(FINISH_GRACE_SECONDS * 1000, self._auto_stop, self.session_id)
         self.typed_preview_var.set("".join(e["char"] for e in typed_log[-TYPED_TAIL:]))
-        self.root.after(1000, self._tick)
+        self.root.after(1000, self._tick, session_id if session_id is not None else self.session_id)
 
     def stop(self):
         """Beendet die Wiedergabe (bei Stop von Hand mit Schlusszeichen) und wertet

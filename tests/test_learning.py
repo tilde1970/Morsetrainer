@@ -49,6 +49,15 @@ class WordsTest(unittest.TestCase):
         self.assertEqual(found, {"DOK": "Distrikts-Ortsverbandskenner", "OELDE": "", "GRUESSE": "", "A": "B = C"})
         self.assertEqual(skipped, ["GOOD LUCK", "Ä€"])
 
+    def test_user_words_file_in_ansi_or_with_bom_is_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "woerter.txt"
+            path.write_bytes("# Grüße aus Köln\nUFB = super\n".encode("cp1252"))  # älterer Windows-Editor
+            self.assertEqual(words.load_words(path)[1], {"UFB": "super"})
+            path.write_bytes("\ufeffUFB = super\nTNX\n".encode("utf-8"))  # BOM gehört nicht zur ersten Zeile
+            combined, user, skipped = words.load_words(path)
+            self.assertEqual((user, skipped), ({"UFB": "super", "TNX": ""}, []))
+
     def test_user_words_extend_builtin(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "woerter.txt"

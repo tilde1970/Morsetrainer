@@ -136,6 +136,26 @@ class CompactByHeightTest(AppTestCase):
             with mock.patch.object(app, "_geometry_fits_screen", return_value=True):
                 self.assertEqual(app._initial_geometry(), "984x520+10+10")
 
+    def test_saved_height_is_raised_to_a_minimum(self):
+        app = self.app
+        with mock.patch.object(app.root, "winfo_screenheight", return_value=1080), \
+                mock.patch.object(app.root, "winfo_screenwidth", return_value=1920):
+            app.saved_state = {"geometry": "300x1+10+10"}
+            with mock.patch.object(app, "_geometry_fits_screen", return_value=True):
+                self.assertEqual(app._initial_geometry(), "720x400+10+10")
+
+    def test_tempo_and_pitch_stay_in_range_whatever_is_typed(self):
+        app = self.app
+        for typed, wpm in ((0, 5), (-5, 5), (99, 40), (18, 18)):
+            app.wpm_var.set(typed)
+            self.assertEqual(app.wpm_var.get(), wpm)
+        app.freq_var.set(5)
+        self.assertEqual(app.freq_var.get(), 300)
+        app.farnsworth_wpm_var.set(0)
+        self.assertEqual(app.farnsworth_wpm_var.get(), 3)
+        app.wpm_var.set(koch_default := 12)
+        self.assertEqual(koch_default, app.wpm_var.get())
+
     def test_zoom_into_compact_mode_says_the_header_is_collapsed(self):
         app = self.app
         app.font_scale_var.set(100)
@@ -767,6 +787,41 @@ class SingleCharTest(AppTestCase):
         s.current_char, s.voice, s.waiting_for_input, s.replayed = char, (20, 600), True, False
         s.first_hearing, s.correcting, s.answer_open = True, False, True
         s.play_start_time = time.time() - 0.5
+
+    def test_absent_player_stops_the_run_and_the_misses_do_not_count(self):
+        from morsetrainer.modes import single_mode
+        s = self.single
+        with mock.patch.object(s.session_stats, "record_char") as record:
+            for _ in range(single_mode.MISSES_BEFORE_PAUSE):
+                self._open_answer()
+                s._on_timeout(s.timeout_token)
+        self.assertFalse(s.running)
+        record.assert_not_called()
+        self.assertIn("Angehalten", s.status_var.get())
+
+    def test_misses_count_once_someone_answers(self):
+        s = self.single
+        with mock.patch.object(s.session_stats, "record_char") as record:
+            for _ in range(2):
+                self._open_answer()
+                s._on_timeout(s.timeout_token)
+            record.assert_not_called()  # noch unklar, ob jemand da ist
+            self._open_answer()
+            self._key("K")
+        self.assertEqual(record.call_count, 3)  # 2 verpasst, 1 beantwortet
+        self.assertTrue(s.running)
+        self.assertEqual(s.pending_misses, [])
+
+    def test_late_announcement_does_not_disturb_the_next_run(self):
+        s = self.single
+        late, current = mock.Mock(), mock.Mock()
+        after_old = s._in_session(late)
+        s.stop()
+        s.start()
+        after_old()
+        late.assert_not_called()
+        s._in_session(current)()
+        current.assert_called_once()
 
     def test_f11_during_time_limit_drops_the_char(self):
         s = self.single

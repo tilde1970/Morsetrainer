@@ -76,6 +76,8 @@ RETRY_AFTER = (2, 4)
 # Pause nach der Rückmeldung bzw. nach dem Korrekturton, in ms.
 FEEDBACK_MS = 700
 AFTER_CORRECTION_MS = 600
+# So viele Zeichen in Folge ohne Eingabe (Zeitlimit): wer weggegangen ist, dem hält der Durchgang an.
+MISSES_BEFORE_PAUSE = 10
 # Ab so vielen verschiedenen Zeichen werden vorgemerkte Zeichen bis zu ihrer
 # erneuten Abfrage aus der Zufallsauswahl genommen.
 RETRY_EXCLUDE_MIN = 5
@@ -141,6 +143,8 @@ class SingleModeFrame(DailyModeMixin):
         self.voice = (15, 600)      # (WPM, Hz) des aktuellen Zeichens
         self.limit = ICR_START      # aktuelles Zeitlimit
         self.timeout_token = 0      # macht einen geplanten Timeout ungültig
+        self.session_no = 0         # zählt die Durchgänge: eine späte Ansage gehört nicht in den nächsten
+        self.pending_misses = []    # verpasste Zeichen, erst mit der nächsten Antwort gewertet
         self.first_hearing = True   # Zeichen zum ersten Mal gehört (nicht wiederholt)
         self.charset_var = charset_var
         self.wpm_var = wpm_var
@@ -274,6 +278,8 @@ class SingleModeFrame(DailyModeMixin):
             return
         self.charset = charset
         self.running = True
+        self.session_no += 1
+        self.pending_misses = []
         self.retries = RetryQueue()
         self.correcting = False
         self.icr_whole_session = self.icr_var.get()
@@ -311,6 +317,7 @@ class SingleModeFrame(DailyModeMixin):
     def _finalize_session(self):
         if self.session_stats is None:
             return
+        self._count_pending_misses()
         summary = self.session_stats.summary()
         if self.icr_whole_session and self.limit <= GROUPS_HINT_MAX_LIMIT:
             self.groups_result = (self.charset, summary["correct"], summary["total"])
@@ -386,6 +393,22 @@ class SingleModeFrame(DailyModeMixin):
         self.retries.add(self.current_char)
         self.status_var.set(tr("Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht und kommt später wieder."))
         self.root.after_idle(self.next_char)
+
+    def _count_pending_misses(self):
+        """Die wartenden Verpasser in die Statistik aufnehmen."""
+        for args in self.pending_misses:
+            self.session_stats.record_char(*args)
+        self.pending_misses = []
+
+    def _in_session(self, func, *args, **kwargs):
+        """`func` für eine Ansage, die später endet: nur wenn derselbe Durchgang
+        noch läuft (Esc und gleich F5 soll das erste Zeichen des neuen nicht stören)."""
+        number = self.session_no
+
+        def later():
+            if self.running and number == self.session_no:
+                func(*args, **kwargs)
+        return later
 
     def _after_error(self, play_correction=True):
         """Falsches oder verpasstes Zeichen: später erneut abfragen und es
@@ -498,9 +521,17 @@ class SingleModeFrame(DailyModeMixin):
         self.answer_open = False
         wpm = self.voice[0]
         reaction_time = tone_seconds(self.current_char, wpm) + self.limit
-        self.session_stats.record_char(
-            self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)
-        )
+        # Erst mit der nächsten Antwort werten: Wer weggegangen ist, soll Statistik
+        # und Lernkartei nicht mit Fehlern füllen.
+        self.pending_misses.append(
+            (self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)))
+        if len(self.pending_misses) >= MISSES_BEFORE_PAUSE:
+            self.pending_misses = []
+            self.stop()
+            announcer.problem(self.status_var, tr(
+                "Angehalten: {n} Zeichen ohne Eingabe. Diese zählen nicht. Mit F5 geht es weiter.").format(
+                n=MISSES_BEFORE_PAUSE))
+            return
         if self.first_hearing:
             self.limit = next_limit(self.limit, False, self._limit_max())
             self._show_limit()
@@ -516,7 +547,7 @@ class SingleModeFrame(DailyModeMixin):
         self.feedback_label.config(foreground=theme.ERROR)
         self._add_history(False)
         announcer.say(tr("Zu langsam. Es war {char}.").format(char=announcer.spell(self.current_char)),
-                      then=self._after_error)
+                      then=self._in_session(self._after_error))
 
     def _add_history(self, correct: bool):
         self._count_streak(correct)
@@ -576,6 +607,7 @@ class SingleModeFrame(DailyModeMixin):
         helped = correct and self.replayed
         self.last_typed = typed
 
+        self._count_pending_misses()  # jemand ist da: die Verpasser davor zählen
         reaction_time = max(time.time() - self.play_start_time, 0.001)
         measured_wpm = effective_wpm(self.current_char, reaction_time, self.voice[0])
         timed = not self.status_heard  # nach F11 ohne Zeitlimit steckt die Ansage in der Zeit
@@ -623,11 +655,11 @@ class SingleModeFrame(DailyModeMixin):
         self._add_history(correct and not helped)
         if helped:
             announcer.say(tr("Erst nach Wiederholung: {char}.").format(char=announcer.spell(self.current_char)),
-                          then=lambda: self._after_error(play_correction=False))
+                          then=self._in_session(self._after_error, play_correction=False))
         elif correct:
             token = self.timeout_token
             self.root.after(FEEDBACK_MS, self._after_correction, token)
         else:
             announcer.say(tr("Falsch. {char}, nicht {typed}.").format(char=announcer.spell(self.current_char),
                                                                        typed=announcer.spell(typed)),
-                          then=self._after_error)
+                          then=self._in_session(self._after_error))

@@ -429,10 +429,12 @@ class ListenModeFrame:
                 self.export_result = tr("MP3 abgebrochen.")
 
     def _export(self, path, opts):
+        started = False  # erst ab hier gehört die Datei uns
         try:
             self.speaker.load()
             if self.speaker.error:
                 raise mp3.Mp3Error(self.speaker.error)
+            started = True
             with mp3.Mp3Writer(path) as writer:
                 writer.write(build_text("VVV = ", opts["wpm"], opts["freq"], opts["fw"]))
                 writer.write(silence(1.0))
@@ -453,11 +455,22 @@ class ListenModeFrame:
                 # Ansage ohne Pfad (der hilft beim Zuhören nicht).
                 self.export_spoken = tr("MP3 gespeichert, {minutes:.0f} Minuten.").format(minutes=writer.seconds / 60)
         except (mp3.Mp3Error, OSError) as exc:
+            self._remove_partial(path, started)
             self.export_result = str(exc)
         except Exception as exc:
             # Sonst bliebe „MP3 wird erstellt …“ stehen und Start gesperrt.
+            self._remove_partial(path, started)
             self.export_result = tr("MP3 nicht erstellt: {error}").format(error=str(exc) or type(exc).__name__)
             raise  # ins Fehlerprotokoll (threading.excepthook)
+
+    @staticmethod
+    def _remove_partial(path, started):
+        """Nach einem Fehler keine halbe MP3-Datei liegen lassen."""
+        if started:
+            try:
+                Path(path).unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def _watch_export(self, total):
         if self.export_result is None:

@@ -63,6 +63,13 @@ def load_json(path: Path, default):
     return data
 
 
+def is_key(value, table) -> bool:
+    """Ist `value` ein Text, der in `table` (Wörterbuch) vorkommt? Gespeicherte
+    Einstellungen können beliebiges JSON enthalten; `[] in {...}` würde sonst
+    mit einem TypeError abbrechen."""
+    return isinstance(value, str) and value in table
+
+
 def _set_aside(path: Path) -> None:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:

@@ -8,6 +8,19 @@ from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 
+class RangedIntVar(tk.IntVar):
+    """Ganzzahl-Variable (Tempo, Tonhöhe), deren get() nie außerhalb von
+    [low, high] liegt: Das Feld erlaubt beliebige Eingaben, 0 oder -5 würden
+    sonst im Tongenerator abbrechen. Ein leeres oder unlesbares Feld löst wie
+    bei IntVar TclError aus."""
+    def __init__(self, master=None, value=None, low=0, high=0, **kwargs):
+        super().__init__(master, value=value, **kwargs)
+        self.low, self.high = low, high
+
+    def get(self):
+        return min(max(super().get(), self.low), self.high)
+
+
 class ChoiceBox(ttk.Combobox):
     """Klappliste (nur Auswahl) für deutsche Werte, die gespeichert und im
     Code verglichen werden: `variable` hält den deutschen Wert, angezeigt

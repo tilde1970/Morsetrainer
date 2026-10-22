@@ -218,7 +218,8 @@ class WordModeFrame(SequenceModeFrame):
         """Wie SequenceModeFrame; alte Einstellungen ohne diese Kennung werden einmal
         auf „Erst merken“ umgestellt."""
         super().restore_settings(data)
-        chosen = {value: key for key, value in CONTENTS.items()}.get(data.get("content"))
+        content = data.get("content")
+        chosen = {value: key for key, value in CONTENTS.items()}.get(content) if isinstance(content, str) else None
         if chosen:
             self.content_var.set(chosen)
         # Gespeicherte Einstellungen ohne „memorize_default“ stammen aus der

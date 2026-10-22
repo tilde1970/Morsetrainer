@@ -162,6 +162,15 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(board.summary("D")["correct_items"], 1)
         self.assertIn(";KMR ~ (8,0 s)", board.csv_text(("N", "%", "ok", "fl", "s", "e", "w")))
 
+    def test_csv_cells_never_start_like_a_formula(self):
+        board = Scoreboard()
+        board.add_item(1, "KMR", {"=SUM(A1)", "ANNA"})
+        board.record("=SUM(A1)", 1, "KMR", 1.0)
+        board.record("ANNA", 1, "KMR", 1.0)
+        lines = board.csv_text(("N", "%", "ok", "fl", "s", "e", "w")).splitlines()
+        self.assertTrue(any(line.startswith("'=SUM(A1);") for line in lines), lines)
+        self.assertTrue(any(line.startswith("ANNA;") for line in lines), lines)
+
     def test_paper_counts_without_timing(self):
         board = Scoreboard()
         for n in range(1, 11):
@@ -746,6 +755,22 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("getrennt", tree.item(tree.get_children()[0])["values"][1])
         self.assertEqual(str(self.trainer.kick_button["state"]), "disabled")
         self.assertTrue(wait_for(lambda: not self.trainee.connected, pump=self.pump))
+
+    def test_poll_goes_on_after_a_failing_event(self):
+        self.connect()
+        trainee = self.trainee
+        with mock.patch.object(trainee.client, "poll", return_value=[("a",), ("b",)]), \
+                mock.patch.object(trainee, "_on_client_event", side_effect=[RuntimeError("kaputt"), None]) as handled, \
+                mock.patch.object(trainee.root, "report_callback_exception") as reported:
+            trainee._poll()
+        self.assertEqual(handled.call_count, 2)  # das zweite Ereignis geht nicht verloren
+        reported.assert_called_once()
+        self.assertIsNotNone(trainee.poll_id)  # und es wird weiter abgerufen
+
+    def test_rejection_with_a_strange_reason_still_disconnects(self):
+        self.connect()
+        self.trainee._on_client_event(("reject", ["x"], None))
+        self.assertFalse(self.trainee.connected)
 
     def test_flood_of_events_refreshes_the_table_once(self):
         self.connect()

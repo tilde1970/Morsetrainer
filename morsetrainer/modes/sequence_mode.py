@@ -56,6 +56,7 @@ from morsetrainer.core.morse import (
     display_text, effective_wpm, silence, vary_voice, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
+from morsetrainer.core.storage import is_key
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.modes.daily_support import DailyModeMixin
 from morsetrainer.i18n import N_, number, tr
@@ -253,7 +254,7 @@ class SequenceModeFrame(DailyModeMixin):
     def restore_settings(self, data: dict) -> None:
         """Gegenstück zu settings(); unbekannte oder kaputte Werte werden
         ignoriert."""
-        if data.get("input_style") in dict(INPUT_STYLES):
+        if is_key(data.get("input_style"), dict(INPUT_STYLES)):
             self.style_var.set(data["input_style"])
         if isinstance(data.get("adaptive_tempo"), bool):
             self.tempo_var.set(data["adaptive_tempo"])

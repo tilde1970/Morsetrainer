@@ -207,9 +207,16 @@ def load_words(path: Path = None) -> tuple[dict, dict, list[str]]:
     eigenen, übersprungene Zeilen). Fehlt die Datei, gibt es nur die
     eingebauten."""
     try:
-        text = (path or USER_WORDS_FILE).read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+        raw = (path or USER_WORDS_FILE).read_bytes()
+    except OSError:
         return dict(WORDS), {}, []
+    try:
+        text = raw.decode("utf-8-sig")  # UTF-8, ein BOM am Anfang gehört nicht zur ersten Zeile
+    except UnicodeDecodeError:
+        try:
+            text = raw.decode("cp1252")  # ältere Windows-Editoren speichern „ANSI“
+        except UnicodeDecodeError:
+            return dict(WORDS), {}, []
     user, skipped = parse_user_words(text)
     combined = dict(WORDS)
     for word, note in user.items():

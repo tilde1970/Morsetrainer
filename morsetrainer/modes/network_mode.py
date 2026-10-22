@@ -30,6 +30,7 @@ Statistik wie ein normaler Durchgang. Hat der Trainer eine neuere
 Programmversion, bietet der Reiter an, sie zu laden und neu zu starten
 (net/update.py); danach verbindet er sich wieder."""
 import random
+import sys
 import threading
 import time
 import tkinter as tk
@@ -46,7 +47,7 @@ from morsetrainer.core.morse import (
     display_text, duration_seconds, effective_wpm, silence, tone_seconds, word_gap_extra_seconds,
 )
 from morsetrainer.core.stats import LATENCY_CAP_S, SessionStats
-from morsetrainer.core.storage import open_with_system
+from morsetrainer.core.storage import is_key, open_with_system
 from morsetrainer.core.weighting import CharPicker
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.modes.content import PLAIN_TEXT, ItemSource, qso_sections
@@ -779,28 +780,40 @@ class NetworkModeFrame:
         """Regelmäßiger Abruf (POLL_MS): Suchergebnisse anzeigen, Eingänge von
         Server bzw. Verbindung verarbeiten, Fristen prüfen; plant sich neu ein."""
         self.poll_id = None
-        if self.found is not None:
-            found, self.found = self.found, None
-            self._show_found(found)
-        if self.server is not None:
-            events = self.server.poll()
-            for event in events:
-                self._handle_server_event(event)
-            if events:
-                # Einmal je Abruf, nicht je Nachricht: Eine Flut von Antworten
-                # soll die Oberfläche nicht lahmlegen.
-                self._after_server_events()
-            if self.run_active and self.run_continuous and self.item is not None:
-                self._show_progress()
-            if self.item_open and self.deadline is not None and time.time() >= self.deadline:
-                self.close_item()
-                if self.run_paced:
-                    self.next_item()
-        if self.client is not None:
-            for event in self.client.poll():
-                self._on_client_event(event)
-        if self.server is not None or self.client is not None or self.searching:
-            self.poll_id = self.root.after(POLL_MS, self._poll)
+        try:
+            if self.found is not None:
+                found, self.found = self.found, None
+                self._show_found(found)
+            if self.server is not None:
+                events = self.server.poll()
+                for event in events:
+                    self._guarded(self._handle_server_event, event)
+                if events:
+                    # Einmal je Abruf, nicht je Nachricht: Eine Flut von Antworten
+                    # soll die Oberfläche nicht lahmlegen.
+                    self._after_server_events()
+                if self.run_active and self.run_continuous and self.item is not None:
+                    self._show_progress()
+                if self.item_open and self.deadline is not None and time.time() >= self.deadline:
+                    self.close_item()
+                    if self.run_paced:
+                        self.next_item()
+            if self.client is not None:
+                for event in self.client.poll():
+                    self._guarded(self._on_client_event, event)
+        finally:
+            # Auch nach einem Fehler weiter abrufen: Sonst gingen die übrigen Ereignisse
+            # (etwa „Verbindung beendet“) verloren und die Reiter blieben gesperrt.
+            if self.server is not None or self.client is not None or self.searching:
+                self.poll_id = self.root.after(POLL_MS, self._poll)
+
+    def _guarded(self, handler, event):
+        """Ein Ereignis behandeln; ein Fehler darin kommt ins Fehlerprotokoll und
+        lässt die übrigen Ereignisse nicht verfallen."""
+        try:
+            handler(event)
+        except Exception:
+            self.root.report_callback_exception(*sys.exc_info())
 
     @property
     def searching(self):
@@ -1742,7 +1755,7 @@ class NetworkModeFrame:
             announcer.say(self.trainee_status_var.get())
             self._check_version(event[2])
         elif kind == "reject":
-            self.disconnect(tr(REJECTED.get(event[1], REJECTED["name"])))
+            self.disconnect(tr(REJECTED[event[1]] if is_key(event[1], REJECTED) else REJECTED["name"]))
             self._check_version(event[2])
         elif kind == "error":
             self.disconnect(tr("Keine Verbindung zum Trainer: {error}").format(error=event[1]))
@@ -2413,7 +2426,7 @@ class NetworkModeFrame:
         content = data.get("content")
         if content == "Wörter":  # so hieß „Abkürzungen“, bevor es „Klartext“ gab
             content = "Abkürzungen"
-        if content in CONTENTS:
+        if is_key(content, CONTENTS):
             self.content_var.set(content)
         if data.get("flow") in (WAIT, PACED, CONTINUOUS):
             self.flow_var.set(data["flow"])

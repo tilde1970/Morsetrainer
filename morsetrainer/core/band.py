@@ -49,6 +49,7 @@ import time
 import numpy as np
 
 from morsetrainer.core.morse import AMPLITUDE, SAMPLE_RATE, build_text, silence
+from morsetrainer.core.storage import is_key
 
 # Schlüssel der Störungen; BandConditions.enabled/levels sind danach
 # indiziert.
@@ -1176,7 +1177,7 @@ def clean_spec(data):
     spec = {"levels": levels, "gain": min(max(float(gain), GAIN_RANGE[0]), GAIN_RANGE[1])}
     if data.get("filter") in FILTER_WIDTHS and not isinstance(data.get("filter"), bool):
         spec["filter"] = data["filter"]
-    if data.get("qrm_offset") in QRM_OFFSETS:
+    if is_key(data.get("qrm_offset"), QRM_OFFSETS):
         spec["qrm_offset"] = data["qrm_offset"]
     seed = data.get("seed")
     if isinstance(seed, int) and not isinstance(seed, bool) and 0 <= seed < SEED_LIMIT:

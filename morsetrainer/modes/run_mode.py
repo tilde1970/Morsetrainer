@@ -26,6 +26,7 @@ Bandbedingungen ab. Die Spiellogik läuft im GUI-Thread und plant Ereignisse
 in Samples der Mixer-Uhr."""
 import random
 import re
+import sys
 import threading
 import time
 import tkinter as tk
@@ -37,6 +38,7 @@ import numpy as np
 from morsetrainer.core import align, audio
 from morsetrainer.core import qso_text
 from morsetrainer.core import stats
+from morsetrainer.core.storage import is_key
 from morsetrainer.core.band import VOICE, BandConditions, apply_spec
 from morsetrainer.core.morse import MORSE_CODE, SAMPLE_RATE, build_text
 from morsetrainer.i18n import N_, tr
@@ -525,7 +527,10 @@ class RunModeFrame:
         due = [e for e in self.events if e[0] <= now]
         self.events = [e for e in self.events if e[0] > now]
         for _, callback, args in sorted(due, key=lambda e: e[0]):
-            callback(*args)
+            try:
+                callback(*args)
+            except Exception:  # ein fehlerhafter Anrufer lässt den Contest weiterlaufen
+                self.root.report_callback_exception(*sys.exc_info())
         if self.deadline is not None and time.time() >= self.deadline:
             self.stop()
             self.status_var.set(tr("Zeit abgelaufen. ") + self.status_var.get())
@@ -891,7 +896,7 @@ class RunModeFrame:
         call = data.get("my_call")
         if isinstance(call, str) and call and all(ch in MORSE_CODE for ch in call):
             self.my_call_var.set(call)
-        if data.get("kind") in qso_text.CONTEST_NAMES:
+        if is_key(data.get("kind"), qso_text.CONTEST_NAMES):
             self.kind_var.set(qso_text.CONTEST_NAMES[data["kind"]])
         for key, var, limits in (("activity", self.activity_var, (1, 5)), ("duration", self.duration_var, (0, 240)),
                                  ("wpm_spread", self.wpm_spread_var, CALLER_WPM_SPREAD_RANGE),

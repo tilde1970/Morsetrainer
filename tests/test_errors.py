@@ -33,6 +33,23 @@ class ErrorLogTest(unittest.TestCase):
         self.patch.stop()
         self.tmp.cleanup()
 
+    def test_unwritable_log_is_reported_with_the_error(self):
+        broken = Path(self.tmp.name) / "fehlt" / "fehler.log"  # Ordner gibt es nicht
+        with mock.patch.object(errorlog, "LOG_FILE", broken):
+            try:
+                raise RuntimeError("kaputt")
+            except RuntimeError:
+                self.assertFalse(errorlog.record(*sys.exc_info(), version="9.9"))
+            self.assertIn("FileNotFoundError", errorlog.unwritten)
+        self.assertTrue(self._record_ok())
+        self.assertIsNone(errorlog.unwritten)
+
+    def _record_ok(self):
+        try:
+            raise RuntimeError("gut")
+        except RuntimeError:
+            return errorlog.record(*sys.exc_info(), version="9.9")
+
     def test_record_appends_traceback_and_counts(self):
         for _ in range(2):
             try:
@@ -191,6 +208,92 @@ class AppErrorTest(AppTestCase):
         self.assertLessEqual(closed[titles[0]], opened[1][1])  # erst nach dem Schließen
         self.assertTrue(awards_at, "Diplome nie geprüft")
         self.assertGreaterEqual(awards_at[0], closed[titles[0]])
+
+    def test_wrongly_typed_saved_settings_do_not_break_the_start(self):
+        # window_state.json kann beliebiges JSON enthalten (von Hand bearbeitet, andere Version).
+        from morsetrainer.core import band
+        bad_values = ([], {}, [1], {"a": 1}, None, 7, 1.5, True, "unbekannt")
+        for mode in self.app.modes:
+            if not hasattr(mode, "settings"):
+                continue
+            for key in mode.settings():
+                for bad in bad_values:
+                    try:
+                        mode.restore_settings({key: bad})
+                    except Exception as exc:  # noqa: BLE001
+                        self.fail(f"{type(mode).__name__}: {key}={bad!r} -> {exc!r}")
+        for bad in bad_values:
+            band.clean_spec({"levels": bad, "qrm_offset": bad, "filter": bad, "seed": bad, "gain": bad})
+
+    def test_error_loops_keep_running_after_an_exception(self):
+        app = self.app
+        with mock.patch.object(app, "_update_practice", side_effect=RuntimeError("x")), \
+                mock.patch.object(app.root, "after") as later:
+            with self.assertRaises(RuntimeError):
+                app._practice_tick()
+        later.assert_called_once()
+        app.error_shown = False
+        with mock.patch.object(errorlog, "take_unseen", return_value=1), \
+                mock.patch.object(app_module.dialog, "showerror", side_effect=RuntimeError("x")), \
+                mock.patch.object(app.root, "after") as later:
+            with self.assertRaises(RuntimeError):
+                app._check_errors()
+        later.assert_called_once()
+        app.error_shown = False
+
+    def test_error_dialog_names_the_error_when_the_log_cannot_be_written(self):
+        app = self.app
+        self.addCleanup(setattr, errorlog, "unwritten", None)
+        errorlog.unwritten = "PermissionError: [Errno 13] Permission denied"
+        app.error_shown = False
+        with mock.patch.object(errorlog, "take_unseen", return_value=1), \
+                mock.patch.object(app_module.dialog, "showerror") as shown:
+            app._check_errors(poll=False)
+        text = shown.call_args.args[1]
+        self.assertIn("PermissionError", text)
+        self.assertNotIn("Einzelheiten stehen", text)
+
+    def test_failed_mp3_export_leaves_no_partial_file(self):
+        from morsetrainer.core import mp3
+        listen = self.mode("Sprechen")
+        path = Path(self.tmp.name) / "uebung.mp3"
+
+        class Failing:
+            def __init__(self, target):
+                Path(target).write_bytes(b"halb")
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def write(self, samples):
+                raise OSError("Platte voll")
+        opts = {"wpm": 20, "freq": 600, "fw": None, "count": 1, "source": None}
+        with mock.patch.object(mp3, "Mp3Writer", Failing), \
+                mock.patch.object(type(listen), "speaker", mock.PropertyMock(return_value=mock.Mock(error=None))):
+            listen._export(path, opts)
+        self.assertEqual(listen.export_result, "Platte voll")
+        self.assertFalse(path.exists())
+
+    def test_old_tick_of_the_continuous_mode_ends(self):
+        cont = self.mode("Kontinuierlich")
+        cont.running, cont.session_id = True, 2
+        self.addCleanup(setattr, cont, "running", False)
+        with mock.patch.object(cont.root, "after") as later:
+            cont._tick(1)
+        later.assert_not_called()
+
+    def test_idle_stream_is_reopened(self):
+        from morsetrainer.core import audio
+        old, new = mock.Mock(active=False), mock.Mock(active=True)
+        self.addCleanup(setattr, audio, "_keepalive", audio._keepalive)
+        audio._keepalive = old
+        with mock.patch.object(audio.sd, "OutputStream", return_value=new):
+            audio.keep_awake()
+        self.assertIs(audio._keepalive, new)
+        old.close.assert_called_once()
 
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.dialog, "showerror") as shown:

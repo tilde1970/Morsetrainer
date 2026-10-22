@@ -149,6 +149,8 @@ EN.update({
     "Busted. Richtig: {call}.": "Busted. Correct: {call}.",
     "Austausch falsch. Richtig: {exchange}.": "Wrong exchange. Correct: {exchange}.",
     "Zu langsam. Es war {char}.": "Too slow. It was {char}.",
+    "Angehalten: {n} Zeichen ohne Eingabe. Diese zählen nicht. Mit F5 geht es weiter.":
+        "Stopped: {n} characters without input. They do not count. Press F5 to continue.",
     "Erst nach Wiederholung: {char}.": "Only after repeating: {char}.",
     "Falsch. {char}, nicht {typed}.": "Wrong. {char}, not {typed}.",
     "Lösung: {text}. Gewusst? J oder N.": "Solution: {text}. Did you know it? J or N.",
@@ -1645,6 +1647,10 @@ EN.update({
     "Bitte schick diese Datei mit, wenn du den Fehler meldest.":
         "An unexpected error occurred in the program. Details are in\n{path}\n\n"
         "Please include this file when you report the error.",
+    "Im Programm ist ein unerwarteter Fehler aufgetreten. Er ließ sich nicht in die Datei {path} schreiben:\n{error}\n\n"
+    "Bitte nenne diesen Text, wenn du den Fehler meldest.":
+        "An unexpected error occurred in the program. It could not be written to the file {path}:\n{error}\n\n"
+        "Please include this text when you report the error.",
     "MP3 nicht erstellt: {error}": "MP3 not created: {error}",
 })
 

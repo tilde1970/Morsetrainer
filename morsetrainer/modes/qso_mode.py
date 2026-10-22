@@ -49,6 +49,7 @@ from morsetrainer.core.morse import (
     tone_seconds, word_gap_extra_seconds,
 )
 from morsetrainer.core import stats
+from morsetrainer.core.storage import is_key
 from morsetrainer.core.stats import SessionStats
 from morsetrainer.widgets.stats_widget import StatsPanel
 
@@ -853,16 +854,16 @@ class QsoModeFrame(DailyModeMixin):
     def restore_settings(self, data: dict) -> None:
         """Gegenstück zu settings(); unbekannte oder kaputte Werte werden
         ignoriert."""
-        if data.get("kind") in qso_text.QSO_TYPES:
+        if is_key(data.get("kind"), qso_text.QSO_TYPES):
             self.kind_var.set(qso_text.QSO_TYPES[data["kind"]])
-        if data.get("eval") in EVAL_LABELS:
+        if is_key(data.get("eval"), EVAL_LABELS):
             self.eval_var.set(EVAL_LABELS[data["eval"]])
         length = data.get("length")
         if isinstance(length, int) and 0 <= length < len(LENGTH_LABELS):
             self.length_var.set(LENGTH_LABELS[length])
         if isinstance(data.get("adaptive"), bool):
             self.adaptive_var.set(data["adaptive"])
-        if data.get("pileups") in PILEUP_LEVELS:
+        if is_key(data.get("pileups"), PILEUP_LEVELS):
             self.pileup_var.set(data["pileups"])
         if "band" in data and toggle_value(data["band"]) is not None:
             self.band_var.set(toggle_value(data["band"]))
