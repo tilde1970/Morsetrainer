@@ -3,6 +3,7 @@ Update, MP3-Export und Schließen daran nicht hängen bleiben."""
 import http.client
 import sys
 import tempfile
+import time
 import threading
 import unittest
 from pathlib import Path
@@ -146,6 +147,50 @@ class AppErrorTest(AppTestCase):
         with mock.patch.object(app_module.dialog, "showinfo") as shown:
             self.app.show_whats_new()
         shown.assert_called_once()
+
+    def test_start_notices_come_one_after_the_other_in_real_windows(self):
+        # Echte Fenster statt Attrappen: Der Datenbank-Hinweis ist modal und lässt
+        # die Ereignisschleife weiterlaufen; „Neu in Version“ und die Diplome
+        # dürfen erst nach seinem Schließen kommen, nie darüber.
+        self.app.saved_state = {"seen_version": "2.0"}
+        opened, closed = [], {}
+        real_init = app_module.dialog.MessageDialog.__init__
+
+        def spy(window, parent, title, *args, **kwargs):
+            real_init(window, parent, title, *args, **kwargs)
+            opened.append((title, time.monotonic(), window))
+
+        def close_old():
+            for title, since, window in opened:
+                if title not in closed and time.monotonic() - since > 0.15:
+                    closed[title] = time.monotonic()
+                    window.close()
+            if len(closed) < 2:
+                self.app.root.after(20, close_old)
+
+        awards_at = []
+        with mock.patch.object(app_module, "UPDATE_POLL_MS", 20), \
+                mock.patch.object(app_module.db, "problem", return_value="aside"), \
+                mock.patch.object(app_module.dialog.MessageDialog, "__init__", spy), \
+                mock.patch.object(self.app, "_check_awards", side_effect=lambda: awards_at.append(time.monotonic())), \
+                mock.patch.object(self.app, "show_pending_seals"):
+            root = self.app.root
+            root.after(0, self.app._warn_if_database_too_new)
+            root.after(0, self.app.show_whats_new)
+            root.after(0, self.app._check_awards_at_start)
+            root.after(20, close_old)
+            end = time.monotonic() + 5
+            while time.monotonic() < end and not (len(closed) == 2 and awards_at):
+                root.update()
+                time.sleep(0.01)
+        titles = [title for title, _, _ in opened]
+        self.assertEqual(len(titles), 2, titles)
+        self.assertIn("beiseitegelegt", app_module.tr(app_module.DATABASE_PROBLEMS["aside"]))
+        self.assertEqual(titles[0], app_module.tr(app_module.DATABASE_PROBLEM_TITLES["aside"]))
+        self.assertTrue(titles[1].startswith("Neu in Version"), titles)
+        self.assertLessEqual(closed[titles[0]], opened[1][1])  # erst nach dem Schließen
+        self.assertTrue(awards_at, "Diplome nie geprüft")
+        self.assertGreaterEqual(awards_at[0], closed[titles[0]])
 
     def test_callback_error_is_logged_and_shown_once(self):
         with mock.patch.object(app_module.dialog, "showerror") as shown:
