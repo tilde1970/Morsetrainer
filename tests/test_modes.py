@@ -2208,3 +2208,74 @@ class UsabilityTest(AppTestCase):
             self.app.contrast_var.set(self.app.contrast_at_start)
             self.app._contrast_toggled()
             self.assertEqual(self.app.restart_button.winfo_manager(), "")
+
+
+class UsabilityFixesTest(AppTestCase):
+    """Befunde der Gesamtprüfung Usability."""
+
+    def test_typed_values_are_settled_when_the_field_is_left(self):
+        from morsetrainer.widgets.ui_widgets import settle_on_leave
+        self.app.wpm_var.set(100)  # wie getippt: das Feld hält 100, get() liefert 40
+        self.assertEqual(self.app.wpm_var.get(), 40)
+        spin = ttk.Spinbox(self.root, textvariable=self.app.wpm_var)
+        settle_on_leave(spin, self.app.wpm_var)
+        spin.event_generate("<FocusOut>")
+        self.assertEqual(self.root.tk.globalgetvar(str(self.app.wpm_var)), 40)
+
+    def test_typed_lesson_applies_without_enter_but_custom_chars_stay(self):
+        self.app.lesson_var.set(5)
+        self.app._lesson_field_left()
+        self.assertEqual(self.app.charset_var.get(), koch.lesson_charset(5))
+        self.app.charset_var.set("XYZ")  # eigene Zeichen
+        self.app._lesson_field_left()
+        self.assertEqual(self.app.charset_var.get(), "XYZ")
+        self.app.charset_var.set(koch.lesson_charset(2))
+        self.app.lesson_var.set(999)
+        self.app._lesson_field_left()
+        self.assertEqual(self.app.lesson_var.get(), koch.MAX_LESSON)
+
+    def test_one_by_one_hint_follows_the_content(self):
+        hints = {}
+        for title in ("Einzelzeichen", "Gruppen", "Wörter", "Rufzeichen"):
+            self.app.one_by_one_var.set(title)
+            self.app._show_one_by_one()
+            hints[title] = self.app.one_by_one_hint_var.get()
+        self.assertIn("Eins nach dem anderen", hints["Einzelzeichen"])
+        self.assertIn("Mehrere Zeichen", hints["Gruppen"])
+        self.assertEqual(hints["Wörter"], "")
+        self.assertEqual(hints["Rufzeichen"], "")
+
+    def test_input_style_is_explained(self):
+        mode = self.mode("Gruppen")
+        mode.style_var.set("head")
+        self.assertIn("im Kopf", mode.style_hint_var.get())
+        mode.style_var.set("copy")
+        self.assertIn("während des Tons", mode.style_hint_var.get())
+
+    def test_start_row_comes_before_the_options(self):
+        for title in ("Gruppen", "Rufzeichen"):
+            mode = self.mode(title)
+            children = list(mode.options_card.master.winfo_children())
+            self.assertLess(children.index(mode.start_button.master), children.index(mode.options_card), title)
+
+    def test_help_button_names_no_key_in_the_contest_tab(self):
+        self.app.show_mode("Contest")
+        self.root.update()
+        self.assertEqual(self.app.help_button.cget("text"), "Hilfe")
+        self.app.show_mode("Einzelzeichen")
+        self.root.update()
+        self.assertEqual(self.app.help_button.cget("text"), "Hilfe (F1)")
+
+    def test_destructive_question_defaults_to_no(self):
+        from morsetrainer.widgets import dialog
+        box = dialog.MessageDialog(self.root, "Frage", "Löschen?", question=True, confirm="Statistik löschen")
+        self.addCleanup(box.close)
+        box._enter()
+        self.assertFalse(box.answer)
+        box2 = dialog.MessageDialog(self.root, "Frage", "Weiter?", question=True)
+        self.addCleanup(box2.close)
+        box2._enter()
+        self.assertTrue(box2.answer)
+
+    def test_ctrl_q_quits(self):
+        self.assertTrue(self.root.bind_all("<Control-q>"))

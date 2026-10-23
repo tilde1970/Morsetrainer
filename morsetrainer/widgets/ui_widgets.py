@@ -21,6 +21,19 @@ class RangedIntVar(tk.IntVar):
         return min(max(super().get(), self.low), self.high)
 
 
+def settle_on_leave(spinbox, variable) -> None:
+    """Ein getippter Wert außerhalb des Bereichs wird beim Verlassen des Feldes
+    (und bei Enter) auf den Wert gesetzt, der wirklich gilt: Das Feld zeigt sonst
+    100, während mit 40 geübt wird. Leere oder unlesbare Felder bleiben, wie sie sind."""
+    def settle(_event=None):
+        try:
+            variable.set(variable.get())
+        except tk.TclError:
+            pass
+    spinbox.bind("<FocusOut>", settle, add="+")
+    spinbox.bind("<Return>", settle, add="+")
+
+
 class ChoiceBox(ttk.Combobox):
     """Klappliste (nur Auswahl) für deutsche Werte, die gespeichert und im
     Code verglichen werden: `variable` hält den deutschen Wert, angezeigt

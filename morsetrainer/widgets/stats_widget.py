@@ -138,7 +138,10 @@ class StatsPanel:
         char_rows()) an, mit `compare` dazu `comparison`
         (stats.period_comparison)."""
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f} %)")
-        speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
+        if summary["avg_effective_wpm"]:
+            speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
+        else:
+            speed = tr("Ø effektive Geschwindigkeit: –")  # noch nichts gemessen, nicht „0,0 WPM“
         if summary.get("cpm"):
             speed += tr(" · {cpm:.0f} ZpM gemessen").format(cpm=summary["cpm"])
         self.speed_var.set(speed)

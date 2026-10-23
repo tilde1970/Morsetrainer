@@ -29,8 +29,11 @@ class MessageDialog:
     (Frage). `answer` ist nach dem Schließen True (Ja/OK) oder False."""
 
     def __init__(self, parent, title: str, text: str, question: bool, always_speak: bool = False,
-                 symbol: str = "", full_paths: bool = False):
+                 symbol: str = "", full_paths: bool = False, confirm: str = ""):
         self.answer = False
+        # Bei `confirm` (Beschriftung des Ja-Knopfs) gilt Enter als Nein: Was sich nicht
+        # rückgängig machen lässt, braucht einen bewussten Weg (Tab zum Knopf, dann Enter).
+        self.safe_default = bool(confirm)
         self.full_paths = full_paths
         self.parent = parent
         self.restore_focus = focus_keeper(parent.winfo_toplevel())
@@ -62,10 +65,15 @@ class MessageDialog:
         buttons.pack(fill="x", pady=(14, 0))
         if question:
             # „Ja“ zuerst angelegt: Tab erreicht es vor „Nein“, wie es dasteht.
-            yes = ttk.Button(buttons, text=tr("Ja"), style="Accent.TButton", command=self._yes)
-            ttk.Button(buttons, text=tr("Nein"), command=self._no).pack(side="right")
+            if confirm:
+                yes = ttk.Button(buttons, text=confirm, command=self._yes)
+                ttk.Button(buttons, text=tr("Abbrechen"), style="Accent.TButton", command=self._no).pack(side="right")
+                keys = tr("Enter: abbrechen. Escape: abbrechen. Tab geht zu „{action}“.").format(action=confirm)
+            else:
+                yes = ttk.Button(buttons, text=tr("Ja"), style="Accent.TButton", command=self._yes)
+                ttk.Button(buttons, text=tr("Nein"), command=self._no).pack(side="right")
+                keys = tr("Enter: ja. Escape: nein.")
             yes.pack(side="right", padx=(0, 8))
-            keys = tr("Enter: ja. Escape: nein.")
         else:
             ttk.Button(buttons, text=tr("OK"), style="Accent.TButton", command=self._yes).pack(side="right")
             keys = tr("Enter: schließen.")
@@ -101,6 +109,8 @@ class MessageDialog:
         focus = self.top.focus_lastfor()
         if isinstance(focus, ttk.Button):
             focus.invoke()
+        elif self.safe_default:
+            self._no()
         else:
             self._yes()
 
@@ -137,9 +147,10 @@ def _parent(parent):
     return parent if parent is not None else tk._get_default_root()
 
 
-def askyesno(title: str, text: str, parent=None) -> bool:
-    """Ja/Nein-Frage; True bei Ja."""
-    return MessageDialog(_parent(parent), title, text, question=True).wait()
+def askyesno(title: str, text: str, parent=None, confirm: str = "") -> bool:
+    """Ja/Nein-Frage; True bei Ja. Mit `confirm` (z. B. „Statistik löschen“) heißt der
+    Ja-Knopf so und Enter bricht ab, für Folgen, die sich nicht zurücknehmen lassen."""
+    return MessageDialog(_parent(parent), title, text, question=True, confirm=confirm).wait()
 
 
 def showinfo(title: str, text: str, parent=None, always_speak: bool = False, symbol: str = "",

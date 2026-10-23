@@ -41,7 +41,8 @@ from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel, comparison_text
 from morsetrainer.widgets.updater import DECLINED, HINT, STARTED, Updater
 from morsetrainer.widgets import announcer, dialog, theme
-from morsetrainer.widgets.ui_widgets import RangedIntVar, ScrollableFrame, focus_keeper, one_tab_stop, wrap_pair
+from morsetrainer.widgets.ui_widgets import (
+    RangedIntVar, ScrollableFrame, focus_keeper, one_tab_stop, settle_on_leave, wrap_pair)
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
@@ -148,6 +149,12 @@ SPEECH_SHUTDOWN_S = 3.0
 # der gespeicherten Einstellungen.
 ONE_BY_ONE = (N_("Einzelzeichen"), N_("Gruppen"), N_("Wörter"), N_("Rufzeichen"))
 ONE_BY_ONE_LABELS = {"Einzelzeichen": N_("Zeichen")}  # sonst wie der Titel
+ONE_BY_ONE_HINTS = {
+    "Einzelzeichen": N_("Eins nach dem anderen: hören, antworten, das nächste. Ohne Pause fortlaufend "
+                        "mitschreiben: Reiter „Am Stück“."),
+    "Gruppen": N_("Mehrere Zeichen hintereinander hören, dann abtippen. Ohne Pause fortlaufend "
+                  "mitschreiben: Reiter „Am Stück“."),
+}
 # Angezeigter Reitername, wo er vom Schlüssel abweicht.
 TAB_NAMES = {"Kontinuierlich": N_("Am Stück")}
 # Einmaliger Hinweis nach einem Update auf (mindestens) diese Version, für
@@ -352,6 +359,8 @@ class MorseTrainerApp:
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         if sys.platform == "darwin":
             self._bind_mac_keys()
+        else:
+            root.bind_all("<Control-q>", lambda e: self.on_close() or "break")
 
     def _bind_mac_keys(self):
         """Mac: Cmd+Q und „Einstellungen …“ im App-Menü laufen über Tk
@@ -491,12 +500,14 @@ class MorseTrainerApp:
         freq_spin.pack(side="right")
         ttk.Label(tone_row, text=tr("Tonhöhe")).pack(side="right", padx=(0, 4))  # „Hz“ allein sagt es nicht
         announcer.name(freq_spin, tr("Tonhöhe"), value=lambda: f"{freq_spin.get()} Hz")
+        settle_on_leave(freq_spin, self.freq_var)
         # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
         self.wpm_var = RangedIntVar(value=koch.RECOMMENDED_WPM, low=5, high=40)
         ttk.Label(tone_row, text="WPM").pack(side="right", padx=(4, 16))
         wpm_spin = ttk.Spinbox(tone_row, from_=5, to=40, textvariable=self.wpm_var, width=4)
         wpm_spin.pack(side="right")
         announcer.name(wpm_spin, tr("Tempo"), value=lambda: f"{wpm_spin.get()} WPM")
+        settle_on_leave(wpm_spin, self.wpm_var)
         freq_spin.lift()  # Tab wie auf dem Bildschirm: erst Tempo, dann Tonhöhe
 
         ttk.Label(header, text=tr("Zeichen")).grid(row=1, column=0, sticky="w", pady=(6, 0), padx=(0, 8))
@@ -540,9 +551,9 @@ class MorseTrainerApp:
             side="left"
         )
         self.farnsworth_wpm_var = RangedIntVar(value=koch.RECOMMENDED_EFFECTIVE_WPM, low=3, high=39)
-        ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4).pack(
-            side="left", padx=4
-        )
+        farnsworth_spin = ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4)
+        farnsworth_spin.pack(side="left", padx=4)
+        settle_on_leave(farnsworth_spin, self.farnsworth_wpm_var)
         self.farnsworth_cpm_var = tk.StringVar(value="")
         theme.hint(farnsworth, textvariable=self.farnsworth_cpm_var).pack(side="left")
         ttk.Button(
@@ -716,7 +727,8 @@ class MorseTrainerApp:
         ttk.Button(band_row, text=tr("Einstellen … ({key})").format(key=ctrl_key("B")),
                    command=self.band_settings.open_window).pack(side="left", padx=(6, 8))
         self.band_summary_var = tk.StringVar(value="")
-        theme.hint(band_row, textvariable=self.band_summary_var, wrap=440).pack(side="left")
+        # Eigene Zeile unter dem Knopf: Neben ihm reicht die Breite des Standardfensters nicht.
+        theme.hint(self.more_frame, textvariable=self.band_summary_var, wrap=640).pack(anchor="w")
         self.band_settings.subscribe(lambda: self.band_summary_var.set(self.band_settings.summary()))
 
         # Sichern und Einlesen aller Einstellungen und Daten (core/backup.py),
@@ -1157,6 +1169,14 @@ class MorseTrainerApp:
             name += ", " + tr(ONE_BY_ONE_LABELS.get(current, current))
         return name
 
+    def _update_help_button(self) -> None:
+        """Im Contest-Reiter sendet F1 CQ: dort heißt der Hilfeknopf ohne Kürzel."""
+        button = getattr(self, "help_button", None)
+        if button is None:
+            return
+        claimed = getattr(self._active_mode(), "claims_help_key", False)
+        button.config(text=tr("Hilfe") if claimed else tr("Hilfe (F1)"))
+
     def _announce_tab(self, event=None) -> None:
         if self.silent_tab is not None:
             silent, self.silent_tab = self.silent_tab, None
@@ -1389,6 +1409,7 @@ class MorseTrainerApp:
         )
         spinbox.pack(side="left")
         spinbox.bind("<Return>", lambda e: self._apply_lesson())
+        spinbox.bind("<FocusOut>", lambda e: self._lesson_field_left())
         self.lesson_info_var = tk.StringVar(value="")
         theme.hint(parent, textvariable=self.lesson_info_var).pack(side="left", padx=(8, 4))
         # Spielt das neue Zeichen vor; bei eigenem Zeichensatz (z. B. nach
@@ -1398,11 +1419,25 @@ class MorseTrainerApp:
         self.charset_var.trace_add("write", lambda *_: self._sync_lesson())
         self._sync_lesson()
 
+    def _lesson_field_left(self):
+        """Eine getippte andere Lektion gilt auch ohne Enter. Bei eigenen Zeichen im
+        Feld „Zeichen“ bleibt es, wie es ist (zurück führt der Knopf neben dem Feld)."""
+        current = koch.lesson_of(self.charset_var.get().strip().upper())
+        try:
+            typed = self.lesson_var.get()
+        except tk.TclError:
+            return
+        if current is not None and typed != current:
+            self._apply_lesson()
+
     def _apply_lesson(self):
         try:
             lesson = self.lesson_var.get()
         except tk.TclError:
             return
+        if not 1 <= lesson <= koch.MAX_LESSON:  # das Feld zeigt, was gilt
+            lesson = min(max(lesson, 1), koch.MAX_LESSON)
+            self.lesson_var.set(lesson)
         self.charset_var.set(koch.lesson_charset(lesson))
 
     def start_prosign_lessons(self):
@@ -1547,8 +1582,8 @@ class MorseTrainerApp:
         # Erst sichtbar, wenn ein neueres Release da ist: holt das Update-Fenster wieder.
         self.update_button = ttk.Button(update_box, text=tr("Aktualisieren …"), style="Flat.TButton",
                                         command=self.offer_update)
-        ttk.Button(footer, text=tr("Hilfe (F1)"), style="Flat.TButton", command=self.open_help).pack(
-            side="right", padx=(8, 0))
+        self.help_button = ttk.Button(footer, text=tr("Hilfe (F1)"), style="Flat.TButton", command=self.open_help)
+        self.help_button.pack(side="right", padx=(8, 0))
         self.version_label = ttk.Label(footer, style="Footer.TLabel")
         self.version_label.pack(side="right")
         self._set_version_text()
@@ -1790,7 +1825,7 @@ class MorseTrainerApp:
         if qso_text.set_station_locator(locator):
             self.locator_hint_var.set(tr("Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen")
                                       if not locator.strip() else
-                                      tr("Locator gilt: die erzeugten Stationen kommen aus Ihrer Weltgegend"))
+                                      tr("Locator gilt: die erzeugten Stationen kommen aus deiner Weltgegend"))
         else:
             self.locator_hint_var.set(tr("Kein gültiger Locator (4 oder 6 Zeichen, z. B. JO41); es zählt das "
                                          "Land des Rufzeichens"))
@@ -2063,6 +2098,7 @@ class MorseTrainerApp:
                "Lebenslinie, erreichte Diplome und Einstellungen.\n\n"
                "Das kann nicht rückgängig gemacht werden – vorher am besten unter "
                "„Einstellungen → Daten“ sichern."),
+            confirm=tr("Statistik löschen"),
         ):
             stats.reset_all_time()
             self._refresh_all_time()
@@ -2131,6 +2167,7 @@ class MorseTrainerApp:
             self.tab_ids.append(tab_id)
         self._show_one_by_one()
         self.notebook.bind("<<NotebookTabChanged>>", self._announce_tab, add="+")
+        self.notebook.bind("<<NotebookTabChanged>>", lambda e: self._update_help_button(), add="+")
         # Tastatur: Strg+Tab / Strg+Umschalt+Tab blättern durch die Reiter.
         self.notebook.enable_traversal()
 
@@ -2155,15 +2192,21 @@ class MorseTrainerApp:
                 button.bind(f"<{key}>", lambda e, d=step: self._step_content(d, focus=True) or "break")
             self.one_by_one_buttons.append(button)
         one_tab_stop(self.one_by_one_buttons, self.one_by_one_var)
-        theme.hint(tab, wrap=640, text=tr(
-            "Eins nach dem anderen: hören, antworten, das nächste. Ohne Pause fortlaufend mitschreiben: "
-            "Reiter „Am Stück“.")).pack(anchor="w", padx=8)
+        self.one_by_one_hint_var = tk.StringVar(value="")
+        self.one_by_one_hint = theme.hint(tab, wrap=640, textvariable=self.one_by_one_hint_var)
         self.one_by_one_body = ttk.Frame(tab)
         self.one_by_one_body.pack(fill="both", expand=True)
 
     def _show_one_by_one(self):
         """Im Reiter „Einzeln“ nur die gewählte Übung zeigen."""
         current = self.one_by_one_var.get()
+        # Wörter und Rufzeichen erklären sich in ihrem Reiter selbst.
+        hint = ONE_BY_ONE_HINTS.get(current)
+        self.one_by_one_hint_var.set(tr(hint) if hint else "")
+        if hint:
+            self.one_by_one_hint.pack(anchor="w", padx=8, before=self.one_by_one_body)
+        else:
+            self.one_by_one_hint.pack_forget()
         for title, frame in self.one_by_one_frames.items():
             if title == current:
                 frame.pack(fill="both", expand=True)

@@ -75,6 +75,11 @@ GIVE_UP_RANGE = (1, 3)
 
 COPY, MEMORIZE, HEAD = "copy", "memorize", "head"
 INPUT_STYLES = ((COPY, N_("Mitschreiben")), (MEMORIZE, N_("Erst merken")), (HEAD, N_("Kopfhören")))
+STYLE_HINTS = {
+    COPY: N_("Schon während des Tons tippen; mit so vielen Zeichen wie gesendet ist die Antwort fertig."),
+    MEMORIZE: N_("Erst zu Ende hören, danach tippen und mit Enter bestätigen."),
+    HEAD: N_("Nichts tippen, im Kopf mitlesen, dann mit Enter auflösen und selbst bewerten (J / N)."),
+}
 
 # Mitwachsendes Tempo: Schritt in WPM (Regel siehe core/tempo.py).
 TEMPO_STEP = 1
@@ -265,6 +270,11 @@ class SequenceModeFrame(DailyModeMixin):
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)
 
+    def _show_style_hint(self):
+        """Eine Zeile unter der Eingabeart: was die gewählte Art verlangt."""
+        hint = STYLE_HINTS.get(self.style_var.get())
+        self.style_hint_var.set(tr(hint) if hint else "")
+
     # --- Widgets --------------------------------------------------------
     def _build_widgets(self, parent):
         """Baut den Reiter: Erklärung, Einstellungen (dazu die eigenen der
@@ -282,6 +292,10 @@ class SequenceModeFrame(DailyModeMixin):
         self.style_var = tk.StringVar(value=self.default_style)
         for value, label in INPUT_STYLES:
             ttk.Radiobutton(style, text=tr(label), value=value, variable=self.style_var).pack(side="left", padx=(0, 10))
+        self.style_hint_var = tk.StringVar(value="")
+        theme.hint(options, textvariable=self.style_hint_var, wrap=560).pack(anchor="w")
+        self.style_var.trace_add("write", lambda *_: self._show_style_hint())
+        self._show_style_hint()
 
         give_up = ttk.Frame(options)
         give_up.pack(fill="x", pady=1)
@@ -314,8 +328,11 @@ class SequenceModeFrame(DailyModeMixin):
         self.sound_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(duration, text=tr("Quittungston"), variable=self.sound_var).pack(side="right")
 
+        # Der Startknopf steht über den Optionen (sonst rutscht er aus dem Bild), und Tab
+        # kommt auch zuerst dorthin.
         controls = ttk.Frame(parent)
-        controls.pack(fill="x", padx=10, pady=(8, 0))
+        controls.pack(fill="x", padx=10, pady=(8, 0), before=options)
+        controls.lower(options)
         self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(

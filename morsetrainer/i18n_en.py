@@ -31,7 +31,7 @@ EN.update({
     "Locator": "Locator",
     "Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen":
         "Maidenhead, e.g. JO41: decides where the generated stations come from",
-    "Locator gilt: die erzeugten Stationen kommen aus Ihrer Weltgegend":
+    "Locator gilt: die erzeugten Stationen kommen aus deiner Weltgegend":
         "Locator in use: the generated stations come from your part of the world",
     "Kein gültiger Locator (4 oder 6 Zeichen, z. B. JO41); es zählt das Land des Rufzeichens":
         "Not a valid locator (4 or 6 characters, e.g. JO41); the country of the call sign is used",
@@ -341,6 +341,7 @@ EN.update({
         "That is also where the next lesson is offered.\n\n"
         "Switch to groups?",
     "Hilfe (F1)": "Help (F1)",
+    "Hilfe": "Help",
     "Morsetrainer {version} · entwickelt von {author} · 73!": "Morsetrainer {version} · developed by {author} · 73!",
     "Morsetrainer {version} · {author} · 73!": "Morsetrainer {version} · {author} · 73!",
     "Heute {minutes} von {goal} Min": "Today {minutes} of {goal} min",
@@ -404,6 +405,16 @@ EN.update({
     "Reiter „Am Stück“.":
         "One at a time: listen, answer, the next one. To copy continuously without pauses: "
         "“Non-stop” tab.",
+    "Mehrere Zeichen hintereinander hören, dann abtippen. Ohne Pause fortlaufend "
+    "mitschreiben: Reiter „Am Stück“.":
+        "Listen to several characters in a row, then type them. To copy continuously without pauses: "
+        "“Non-stop” tab.",
+    "Schon während des Tons tippen; mit so vielen Zeichen wie gesendet ist die Antwort fertig.":
+        "Type while the tone plays; with as many characters as were sent, the answer is complete.",
+    "Erst zu Ende hören, danach tippen und mit Enter bestätigen.":
+        "Listen to the end first, then type and confirm with Enter.",
+    "Nichts tippen, im Kopf mitlesen, dann mit Enter auflösen und selbst bewerten (J / N).":
+        "Type nothing, read along in your head, then reveal with Enter and rate yourself (J / N).",
     "Sprechen": "Speak",
     "QSO": "QSO",
     "Contest": "Contest",
@@ -565,6 +576,9 @@ EN.update({
     "Nein": "No",
     "OK": "OK",
     "Enter: ja. Escape: nein.": "Enter: yes. Escape: no.",
+    "Enter: abbrechen. Escape: abbrechen. Tab geht zu „{action}“.":
+        "Enter: cancel. Escape: cancel. Tab goes to “{action}”.",
+    "Statistik löschen": "Delete statistics",
     "Enter: schließen.": "Enter: close.",
     "{item}, {n} von {total}.": "{item}, {n} of {total}.",
     "Liste offen.": "List open.",

@@ -1147,6 +1147,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Überall | Strg+Plus, Strg+Minus, Strg+0 | Schrift größer, kleiner, normal |
 | Überall | Strg+B | Bandbedingungen öffnen (darin Strg+P: Probehören) |
 | Überall | Strg+Komma (Strg+,) | Einstellungen |
+| Überall (Mac: Cmd+Q) | Strg+Q | Programm beenden |
 | Überall | Tab, Umschalt+Tab | durch Felder, Knöpfe und Schalter (Fokus farbig markiert) |
 | Überall | Leertaste, Enter | Knopf drücken; Leertaste schaltet Schalter um |
 | Überall | Pfeiltasten | in Listen, Reglern, Reitern, Tabellen und in der Zeile „Inhalt“ (Einzeln, Am Stück, Sprechen) wählen |

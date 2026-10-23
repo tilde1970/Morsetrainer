@@ -1125,6 +1125,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Everywhere | Ctrl+Plus, Ctrl+Minus, Ctrl+0 | font larger, smaller, normal |
 | Everywhere | Ctrl+B | open band conditions (inside: Ctrl+P listens) |
 | Everywhere | Ctrl+Comma (Ctrl+,) | settings |
+| Everywhere (Mac: Cmd+Q) | Ctrl+Q | quit the program |
 | Everywhere | Tab, Shift+Tab | through fields, buttons and check boxes (focus highlighted in colour) |
 | Everywhere | Space, Enter | press a button; space toggles check boxes |
 | Everywhere | arrow keys | choose in lists, sliders, tabs, tables and the “Content” row (One by one, Non-stop, Speak) |

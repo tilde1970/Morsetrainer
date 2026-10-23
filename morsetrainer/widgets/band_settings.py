@@ -316,10 +316,6 @@ class BandSettings:
             "sofort, auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers."))
         self.note_anchor.pack(anchor="w", pady=(0, 2))
         self._show_note()
-        theme.hint(frame, wrap=460, text=tr(
-            "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
-            "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "
-            "ist für den Feinschliff.")).pack(anchor="w", pady=(0, 2))
         presets = ttk.Frame(frame)
         presets.pack(fill="x", pady=(0, 4))
         ttk.Label(presets, text=tr("Stufe:")).pack(side="left", padx=(0, 6))
@@ -333,7 +329,11 @@ class BandSettings:
         # Welcher Stufe die Einstellung entspricht, gleich unter den Knöpfen:
         # Dort sieht man, ob die Wahl gegriffen hat.
         self.rank_var = tk.StringVar(value="")
-        theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(0, 6))
+        theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(0, 2))
+        theme.hint(frame, wrap=460, text=tr(
+            "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
+            "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "
+            "ist für den Feinschliff.")).pack(anchor="w", pady=(0, 6))
 
         box = theme.card(frame, tr("Störungen"), padx=0)
         box.columnconfigure(1, weight=1)
