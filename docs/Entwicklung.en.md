@@ -106,6 +106,7 @@ packaging/           building: AppImage script, voices (get_voice.sh),
                      icon, desktop file
 tools/motive/        award motifs: drawings (quellen/) and stich.py, which
                      generates morsetrainer/assets/motive/ from them
+tools/bench_mix.py   measures the mixing time of the band conditions (no sound)
 .github/workflows/   tests; builds AppImage, exe and Mac app for releases, with SHA256SUMS.txt
 ```
 

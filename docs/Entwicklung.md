@@ -107,6 +107,7 @@ packaging/           Bauen: AppImage-Skript, Stimmen (get_voice.sh),
                      Icon, Desktop-Datei
 tools/motive/        Motive der Diplome: Zeichnungen (quellen/) und stich.py,
                      das daraus morsetrainer/assets/motive/ erzeugt
+tools/bench_mix.py   misst die Mischzeit der Bandbedingungen (ohne Ton)
 .github/workflows/   Tests; baut AppImage, exe und Mac-App für Releases, mit SHA256SUMS.txt
 ```
 

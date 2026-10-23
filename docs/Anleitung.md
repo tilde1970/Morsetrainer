@@ -144,6 +144,8 @@ Optionen** liegen die Übungsoptionen:
   kann, und bietet das Koch-Tempo an.
 - **Schwache Zeichen bevorzugen:** Zeichen, die du oft verwechselst oder
   langsam erkennst, und die heute fälligen der Lernkartei kommen öfter.
+  Vor allem zählt, wie es in den letzten 14 Tagen lief; auch das Zeichen,
+  für das du ein schwaches gehalten hast, kommt etwas öfter.
 - **Tonhöhe und Tempo leicht variieren:** Wer immer nur genau einen Klang
   hört, tut sich auf dem Band schwerer.
 - **Wiedereinsteiger:** Für alle, die CW früher konnten. Die Tagesübung steigt
@@ -271,8 +273,8 @@ vor, mit Gruppen weiterzumachen.
   einmal, während die Lösung dasteht, und wird nach vier bis acht anderen
   Zeichen erneut abgefragt. Diese erneute Abfrage zählt im Durchgang, aber
   nicht für Gesamtstatistik, Lernkartei und Gewichtung: Wer das Zeichen eben
-  erst gehört hat, erkennt es noch nicht wirklich. Dasselbe Zeichen kommt
-  nie zweimal hintereinander.
+  erst gehört hat, erkennt es noch nicht wirklich. Bei fünf oder mehr Zeichen
+  im Zeichensatz kommt dasselbe nie zweimal hintereinander.
 
 **Gruppen:** Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst
 auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2
@@ -396,8 +398,10 @@ Gruppenlänge 0 durchgehend – oder Klartext: **Abkürzungen**, **Klartext**
 (typische QSO-Wendungen wie „TNX FER CALL“, „UR RST 599“), **Rufzeichen**,
 **Zahlen** oder **QSO-Klartext** (ganze QSOs). **Zahlen** mischt, was im
 Funk als Zahl vorkommt: Rapporte (599), CQ-Zonen, Seriennummern,
-Frequenzen in kHz (14035) und MHz (14.035, mit gelerntem Punkt),
-Leistungen, Uhrzeiten und Jahre – nur aus den gelernten Ziffern (mindestens
+Frequenzen in kHz (14035) und MHz (14.035, mit gelerntem Punkt), jeweils
+im CW-Teil eines Kurzwellenbands nach dem IARU-Region-1-Bandplan,
+Leistungen, Uhrzeiten, Jahre und Kurzzahlen wie im Contest (5NN für 599,
+T für 0: TT7 = 007) – nur aus den gelernten Ziffern (mindestens
 vier). Nach dem Stoppen erklärt eine Zeile, was die letzten Zahlen waren.
 Klartext und Zahlen zählen nicht für die Lektion.
 Auf Wunsch mit Bandbedingungen, die durchgehend unter dem ganzen Durchgang
@@ -408,7 +412,7 @@ liegen.
 - Nach dem Stoppen (F5 oder Esc) zeigt eine Gegenüberstellung die letzten
   90 Zeichen (in Zeilen zu 30).
 - **Alles in eigenem Fenster** zeigt die ganze Sitzung, nach den
-  gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot,
+  gesendeten Gruppen gegliedert (ohne Gruppen in 5er-Blöcken), Fehler rot und mit ^ markiert,
   Schrift größer/kleiner, kopierbar – wahlweise nur den gesendeten Text
   zum Vergleichen mit dem Zettel.
 
@@ -535,8 +539,8 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
 - **Lernkartei** (Wiederholung über Tage): Sicher und flüssig erkannte
   Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten
   Tag. Entschieden wird einmal am Tag ab 8 Versuchen; liegt der Anteil
-  flüssiger Treffer zwischen 80 und 90 %, bleibt das Zeichen, wo es ist,
-  und mehr Versuche entscheiden später. Hochgestuft wird nur aus
+  flüssiger Treffer eines Zeichens, das schon in einem Fach liegt, zwischen
+  80 und 90 %, bleibt es, wo es ist, und mehr Versuche entscheiden später. Hochgestuft wird nur aus
   Zufallszeichen. Fällige Zeichen kommen mit „schwache bevorzugt“ öfter und
   lassen sich gezielt üben. Darunter steht je Fach, welche Zeichen darin
   liegen, von „Fach 1 · jeden Tag“ bis „Fach 6 · alle 32 Tage“; F11 liest
@@ -615,7 +619,9 @@ wieder wie vorher.
   beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion –
   ohne Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim
   ersten Mal die aus der Kopfleiste; Lektion und Zeichensatz oben bleiben
-  für das freie Üben, wie du sie eingestellt hast.
+  für das freie Üben, wie du sie eingestellt hast. Am ersten Tag einer
+  neuen Lektion zeigt eine Karte das neue Zeichen und spielt es vor, am
+  allerersten Tag in Lektion 1 sind es K und M.
 - **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
   für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen
   einer neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
@@ -626,8 +632,9 @@ wieder wie vorher.
   auch nicht beim Abbrechen.
 - **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue
   Sterne und was als Nächstes kommt. Waren es mindestens 4 Fehler und
-  mindestens 5 % der Antworten, steht auch, woran es lag („Von 9 Fehlern
-  waren 5 Verwechslungen (B für 6 dreimal), 3 zu langsam, 1 verpasst“), mit
+  mindestens 5 % der Antworten, steht auch, woran es lag („Woran es lag: Von 9
+  Fehlern waren 5 Verwechslungen (B für 6 dreimal), 3 zu langsam, 1
+  verpasst“), mit
   höchstens einem Tipp zur häufigsten Ursache. War der Hauptteil schwach und
   ist ein langsameres Tempo für morgen vorgemerkt, steht dort, dass das
   vorkommt. Sie bleibt stehen, bis du mit Enter
@@ -640,17 +647,18 @@ wieder wie vorher.
   Strg+Q (Mac: Cmd+Q) und das Schließkreuz während der Tagesübung erst
   beim zweiten Druck: „Noch einmal Strg+Q beendet die Tagesübung und das
   Programm.“
-- **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
-  (Reaktionszeit je Zeichen, Gruppenquote; nur mit genug Daten und bei
-  gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion
-  fehlt, das Tempo für morgen mit dem Grund (einen Schritt schneller,
-  langsamer oder unverändert), nach etwa zehn Übungstagen im selben Tempo
-  und in derselben Lektion einmal ein Hinweis, dass Stillstand beim Hören
-  normal ist (steigt die Lektion, geht es voran). Solange der Vergleich mit
-  der Vorwoche noch nicht geht, stehen dort die Zähler des Tages („Heute: 190
-  Zeichen gehört, beste Serie 14“), der Stand zum Wochenziel und, wenn der Hauptteil gut lief, einmal
-  am Tag **Noch 5 Min** mit etwas anderem: deine Verwechslungen aus der
-  Lektion, einen Rufz-Durchgang oder Wörter. Hat die Tagesübung Lektion 41
+- **Abendbilanz:** Sterne und Stand zum Wochenziel, was gegenüber der
+  Vorwoche besser geworden ist (Reaktionszeit je Zeichen, Gruppenquote; nur
+  mit genug Daten und bei gleichem Tempo, nie „schlechter“). Fehlen dafür
+  noch Daten, stehen dort stattdessen die Zähler des Tages („Heute: 190
+  Zeichen gehört, beste Serie 14“). Dazu kommen: wie viel bis zur nächsten
+  Lektion fehlt, das Tempo für morgen mit dem Grund (einen Schritt
+  schneller, langsamer oder unverändert) und – nach etwa zehn Übungstagen
+  im selben Tempo und in derselben Lektion, frühestens nach 28 Tagen
+  wieder – ein Hinweis, dass Stillstand beim Hören normal ist (steigt die
+  Lektion, geht es voran). Lief der Hauptteil gut, gibt es einmal am Tag
+  **Noch 5 Min** mit etwas anderem: deine Verwechslungen aus der Lektion,
+  einen Rufz-Durchgang oder Wörter. Hat die Tagesübung Lektion 41
   bestanden, weist sie einmal auf die Betriebszeichen (Lektion 42–45) hin;
   **Lektion 42 einstellen** stellt sie oben ein.
 - **Nach einer Pause:** Nach mindestens 14 Tagen ohne Tagesübung begrüßt
@@ -695,7 +703,7 @@ vergeben wird.
 
 **Übersicht:** im Reiter **Statistik** unter „Diplome“, mit erreichten
 Siegeln, dem nächsten Ziel (z. B. „Silber: 18 / 25 Lektionen“) und ab
-welcher Lektion es erreichbar ist; offene stehen grau. Clubabend geht nur
+welcher Lektion es erreichbar ist; offene stehen grau und haben in der Spalte „Siegel“ einen Strich. Clubabend geht nur
 gemeinsam im Netzwerk und steht ohne Siegel am Ende. Eine gewählte Zeile
 zeigt die Bedingung und je Stufe den Stand: erreicht mit Tag, wie weit
 du bist (z. B. „Silber ab 25 Lektionen: 18 / 25“) oder „noch offen“. Bei
@@ -714,7 +722,7 @@ Nummer.
 | High-Speed | 25 / 30 / 35 / 40 WPM | 40 | Am Stück mit Wendungen oder QSO-Klartext (keine einzelnen Wörter, keine eigenen Wörter), voller Zeichensatz, ohne Farnsworth, voller 3-Min.-Lauf, ≥ 90 % abzüglich überzähliger Tasten |
 | QRN-fest | Band leicht 90 % / mittel 90 % / stark 85 % | 25 | Gruppen oder Am Stück mit Zufallszeichen, ≥ 200 Zeichen, Bandbedingungen den ganzen Lauf an und nicht leichter gestellt, Störlautstärke ≥ 100 %, Zeichen ≥ 20 WPM, effektiv ≥ 12 WPM; bei Gruppen zählt der rechtzeitige erste Versuch |
 | Rufz | 2.000 / 3.500 / 5.500 / 7.500 Punkte | 27 | Voller Durchgang mit 50 Rufzeichen, ohne Präfix-Filter, Starttempo ≥ 20 WPM |
-| Contest | siehe rechts | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
+| Contest | siehe Bedingung | 41 | Durchgang ≥ 10 Min.; Bronze: ≥ 20 WPM, 10 QSOs in 10 Min., ≤ 10 % Fehler; Silber: ≥ 25 WPM, Aktivität ≥ 2, 20 QSOs, ≤ 5 % Fehler; Gold: ≥ 30 WPM, Aktivität ≥ 3, 25 QSOs, höchstens 1 Fehler |
 | WPX | 100 / 400 / 1.200 / 2.000 Präfixe | 25 | Verschiedene WPX-Präfixe, beim ersten Versuch richtig (Rufzeichen und Contest, dort ohne Rückfrage nach dem Call), Zeichen ≥ 18 WPM |
 | Kopfhörer | 15 / 20 / 25 WPM effektiv | 41 | 3 normale QSOs in Folge mit „Kopfhören + Fragen“, alle Fragen richtig, ohne „Nochmal“, Zeichen ≥ 18 WPM; Silber und Gold mit der Länge Normal oder Lang. Ein QSO ohne „Prüfen“ zu überspringen, unterbricht die Folge |
 | Verwechslung überwunden | 1 / 3 / 6 Paare | 5 | Ein Paar, das zu deinen häufigsten Verwechslungen gehörte, 28 Tage lang mit je ≥ 40 Versuchen höchstens einmal verwechselt |
@@ -1367,9 +1375,12 @@ erscheint „Keine Tonausgabe möglich“, der Reihe nach:
    Bluetooth-Box am Rechner, kann sie das Standardgerät sein. In den
    Toneinstellungen des Systems das gewünschte Gerät als Standardausgabe
    wählen.
-3. **Gerät erst nach dem Start angeschlossen oder gewechselt?** Der
-   Morsetrainer kennt die Geräte vom Programmstart. Das Programm schließen
-   und neu starten.
+3. **Kein Gerät, oder erst nach dem Start angeschlossen oder gewechselt?**
+   Meldet der Morsetrainer „Kein Audiogerät gefunden“ oder „Das Audiogerät
+   ist nicht mehr verfügbar“, oder hast du ein Gerät erst nach dem Start
+   angeschlossen: Der Morsetrainer kennt die Geräte vom Programmstart. Gerät
+   anschließen, im System als Standardausgabe wählen, das Programm
+   schließen und neu starten.
 4. **Meldung „Das Audiogerät ist belegt“:** Ein anderes Programm hat das
    Gerät für sich allein (Exklusivmodus), etwa SDR-, Logbuch- oder
    Audio-Software. Dort das Gerät freigeben oder das Programm schließen.

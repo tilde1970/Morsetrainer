@@ -144,7 +144,9 @@ practice options:
   header points out that the characters can be counted and offers Koch
   speed.
 - **Favour weak characters:** characters you often confuse or recognise
-  slowly, and those due today in the review box, come more often.
+  slowly, and those due today in the review box, come more often. What
+  counts most is how the last 14 days went; the character you mistook a
+  weak one for also comes up a little more often.
 - **Vary pitch and speed slightly:** if you only ever hear exactly one
   sound, you will find it harder on the band.
 - **Returning to CW:** for everyone who used to know CW. The daily practice
@@ -270,8 +272,8 @@ program suggests moving on to groups.
   while the solution is shown, and asked again after four to eight other
   characters. This repeat counts within the run, but not for the overall
   statistics, the review box and the weighting: a character you have only
-  just heard is not really recognised yet. The same character never comes
-  twice in a row.
+  just heard is not really recognised yet. With five or more characters in
+  the set, the same one never comes twice in a row.
 
 **Groups:** copy groups of characters. The group length can grow: start
 short, one longer after 5 correct groups, one shorter after 2 wrong groups
@@ -394,7 +396,9 @@ text: **Abbreviations**, **Plain words**, **Phrases** (typical QSO phrases such 
 “UR RST 599”), **Callsigns**, **Numbers** or **QSO plain text** (complete
 QSOs). **Numbers** mixes what turns up as a number on the air: signal
 reports (599), CQ zones, serial numbers, frequencies in kHz (14035) and
-MHz (14.035, once the dot is learned), power, times and years – only from
+MHz (14.035, once the dot is learned), each in the CW part of a shortwave
+band according to the IARU Region 1 band plan, power, times, years and
+short numbers as in contests (5NN for 599, T for 0: TT7 = 007) – only from
 the digits you have learned (at least four). After stopping, a line
 explains what the last numbers were. Plain text and numbers do not count
 for the lesson.
@@ -405,7 +409,7 @@ Optionally with band conditions running under the whole session.
 - After stopping (F5 or Esc) a comparison shows the last 90 characters (in
   lines of 30).
 - **Everything in a separate window** shows the whole session, split into
-  the groups as sent (without groups in blocks of 5), errors in red,
+  the groups as sent (without groups in blocks of 5), errors in red and marked with ^,
   larger/smaller font, copyable – or only the sent text, to check against
   your paper.
 
@@ -528,9 +532,9 @@ many characters. Runs with band conditions do not count here (section 6).
   WPM (at most as fast as it was sent).
 - **Review box** (spaced repetition over days): characters recognised
   reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones
-  the next day. Decided once a day from 8 attempts; if the share of fluent hits is
-  between 80 and 90 %, the character stays where it is and more attempts
-  decide later. Promoted only from random characters. Due characters come up more often with “weak
+  the next day. Decided once a day from 8 attempts; if the share of fluent hits of a
+  character that is already in a box is between 80 and 90 %, it stays where
+  it is and more attempts decide later. Promoted only from random characters. Due characters come up more often with “weak
   favoured” and can be practised specifically. Below, each box lists the
   characters in it, from “Box 1 · every day” to “Box 6 · every 32 days”;
   F11 reads this out too.
@@ -606,7 +610,9 @@ as they were.
   90 % on the first try), the next lesson applies from the next day – no
   question asked. The daily practice keeps its own lesson for this (the
   first time the one from the header); lesson and character set at the
-  top stay as you set them for free practice.
+  top stay as you set them for free practice. On the first day of a new
+  lesson a card shows the new character and plays it; on the very first day
+  in lesson 1 these are K and M.
 - **Three stars a day:** ★ *Showed up* for the full 10 minutes, ★ *Clean*
   for 90 % on the first try in the main part (80 % in the first three days
   of a new lesson), ★ *Ahead* for real progress: next lesson earned, a
@@ -617,8 +623,8 @@ as they were.
   you stop early.
 - **Between the blocks** a short card shows the result, new stars and
   what comes next. With at least 4 mistakes and at least 5 % of the
-  answers it also says what caused them (“of 9 mistakes, 5 were mix-ups (B
-  for 6 three times), 3 too slow, 1 missed”), with at most one tip for the
+  answers it also says what caused them (“What happened: of 9 mistakes, 5
+  were mix-ups (B for 6 three times), 3 too slow, 1 missed”), with at most one tip for the
   most common cause. If the main part was weak and a slower speed is set for
   tomorrow, it says that this happens. It stays until you continue with Enter or “Continue”.
 - **Ending:** with the **End daily practice (Esc)** button below the time
@@ -629,19 +635,19 @@ as they were.
   the window's close button likewise ask for a second press during the
   daily practice: “Press Ctrl+Q again to end the daily practice and quit
   the program.”
-- **Evening summary:** stars, what improved compared with the week before
-  (reaction time per character, group score; only with enough data and at
-  the same speed, never “worse”), how much is missing for the next lesson,
-  tomorrow's speed with the reason (one step faster, slower or unchanged),
-  once after about ten practice days at the same speed and in the same
-  lesson a note that plateaus are normal in listening (if the lesson moves
-  up, you are progressing). While the comparison with the previous week
-  does not work yet, today's counters appear instead (“Today: 190
-  characters heard, best run 14”), where you stand on the weekly goal and, if the main part went well, once
-  a day **5 more min** with something different: your confusions within
-  the lesson, a RufZ run or words. Once the daily practice has passed
-  lesson 41, it points out the prosigns (lessons 42–45) once; **Set lesson
-  42** sets them at the top.
+- **Evening summary:** stars and where you stand on the weekly goal, what
+  improved compared with the week before (reaction time per character, group
+  score; only with enough data and at the same speed, never “worse”). If
+  there is not enough data for that yet, today's counters appear instead
+  (“Today: 190 characters heard, best run 14”). It also shows how much is
+  missing for the next lesson, tomorrow's speed with the reason (one step
+  faster, slower or unchanged) and – after about ten practice days at the
+  same speed and in the same lesson, at the earliest again after 28 days –
+  a note that plateaus are normal in listening (if the lesson moves up, you
+  are progressing). If the main part went well, you get **5 more min** once
+  a day with something different: your confusions within the lesson, a RufZ
+  run or words. Once the daily practice has passed lesson 41, it points out
+  the prosigns (lessons 42–45) once; **Set lesson 42** sets them at the top.
 - **After a break:** after at least 14 days without daily practice the bar
   welcomes you back until you have practised again. Stars and numbers stay
   as they are; the first days are just harder, and the speed adjusts.
@@ -685,7 +691,7 @@ once per callsign.
 
 **Overview:** in the **Statistics** tab under “Awards”, with the seals
 achieved, the next goal (e.g. “Silver: 18 / 25 lessons”) and from which
-lesson it can be reached; open ones are grey. Club night only works
+lesson it can be reached; open ones are grey and have a dash in the “Seals” column. Club night only works
 together in the network and is listed last while it has no seal. A
 selected row shows the condition and the state of each level: achieved
 with the day, how far you are (e.g. “Silver from 25 lessons: 18 / 25”)
@@ -703,7 +709,7 @@ next open level – stamped “PREVIEW”, without date and number.
 | High-Speed | 25 / 30 / 35 / 40 WPM | 40 | Non-stop with phrases or QSO plain text (no single words, no own words), full character set, no Farnsworth, full 3-min run, ≥ 90 % minus extra keys |
 | QRN-proof | conditions light 90 % / medium 90 % / heavy 85 % | 25 | Groups or non-stop with random characters, ≥ 200 characters, band conditions on for the whole run and not made easier, noise volume ≥ 100 %, characters ≥ 20 WPM, effective ≥ 12 WPM; in groups the first attempt in time counts |
 | Rufz | 2,000 / 3,500 / 5,500 / 7,500 points | 27 | Full run with 50 calls, no prefix filter, starting speed ≥ 20 WPM |
-| Contest | see right | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
+| Contest | see condition | 41 | Run ≥ 10 min; Bronze: ≥ 20 WPM, 10 QSOs in 10 min, ≤ 10 % errors; Silver: ≥ 25 WPM, activity ≥ 2, 20 QSOs, ≤ 5 %; Gold: ≥ 30 WPM, activity ≥ 3, 25 QSOs, at most 1 error |
 | WPX | 100 / 400 / 1,200 / 2,000 prefixes | 25 | Different WPX prefixes, right at the first attempt (callsigns and contest, there without asking for the call again), characters ≥ 18 WPM |
 | Headphones | 15 / 20 / 25 WPM effective | 41 | 3 normal QSOs in a row with “Head copy + questions”, all questions right, without “Again”, characters ≥ 18 WPM; Silver and Gold with the length Normal or Long. Skipping a QSO without “Check” breaks the run |
 | Confusion overcome | 1 / 3 / 6 pairs | 5 | A pair that was among your most frequent confusions, confused at most once in 28 days with ≥ 40 attempts each |
@@ -1327,21 +1333,24 @@ the checksum too; there is no signature.
 
 The Morsetrainer always plays on the system's default output device; the
 program has no device selection of its own. If there is no sound or
-"No sound output possible" appears, go through this in order:
+“No sound output possible” appears, go through this in order:
 
 1. **Volume and mute** at the system and at the speaker or headphones. To
-   hear something without an exercise: in the Single tab, "▶ listen" in the
+   hear something without an exercise: in the One by one tab, “▶ listen” in the
    lesson line plays the new character.
 2. **Wrong device?** A monitor with speakers (HDMI) or a Bluetooth speaker
    connected to the computer can be the default device. In the system's
    sound settings choose the device you want as default output.
-3. **Device connected or switched after the start?** The Morsetrainer knows
-   the devices from the program start. Close the program and start it
-   again.
-4. **Message "The audio device is busy":** another program has the device
+3. **No device, or connected or switched after the start?** If the
+   Morsetrainer says “No audio device found” or “The audio device is no
+   longer available”, or you connected a device only after the start: the
+   Morsetrainer knows the devices from the program start. Connect the
+   device, choose it as the default output in the system, close the program
+   and start it again.
+4. **Message “The audio device is busy”:** another program has the device
    for itself (exclusive mode), for example SDR, logging or audio software.
    Release the device there or close that program.
-5. **Message about the sampling rate:** the device cannot do 48 kHz. Choose
+5. **Message about the sample rate:** the device cannot do 48 kHz. Choose
    another device as default output in the system.
 6. **Started from source:** `python main.py --selftest probe.mp3` checks
    without a window and without sound whether PortAudio, Tk and the voices
