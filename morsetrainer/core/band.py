@@ -617,6 +617,12 @@ class BandConditions:
             self.noise = _filter_noise_loop()
             if self.filter is None or self.filter[0] != (self.filter_width, freq):
                 self.filter = ((self.filter_width, freq), filter_ir(self.filter_width, freq).astype(np.float64))
+        # Die Schwundschleifen aller Stationen jetzt, nicht im ersten Block: Bei vielen Stationen
+        # kostet das sonst einen Block mehr Zeit, als der Puffer fasst.
+        for kind in ("qsb", "flutter"):
+            if self.enabled[kind]:
+                for seed in getattr(self, kind):
+                    self._fading_loop(kind, seed)
 
     def _on(self, effect: str) -> bool:
         return self.enabled[effect] and self.levels[effect] > 0

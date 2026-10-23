@@ -788,6 +788,32 @@ def _sliding_sums(per_day: dict, days: list, width: int):
         yield day, sums
 
 
+def _ranked_windows(per_day: dict, days: list, width: int, top: int):
+    """Je Tag aus `days` (aufsteigend, alle Tage mit Einträgen in `per_day`):
+    (Tag, die `top` häufigsten Schlüssel der letzten `width` Tage als
+    [(Schlüssel, Summe)]). Bei gleicher Summe gilt die Reihenfolge, in der die
+    Schlüssel im Fenster zuerst auftauchen (wie beim Summieren von vorn)."""
+    window, sums, seen, order = deque(), {}, {}, {}
+    for day in days:
+        entries = per_day.get(day, {})
+        order[day] = {key: i for i, key in enumerate(entries)}
+        for key, n in entries.items():
+            sums[key] = sums.get(key, 0) + n
+            seen.setdefault(key, deque()).append(day)
+        window.append(day)
+        start = day - timedelta(days=width - 1)
+        while window[0] < start:
+            old = window.popleft()
+            for key, n in per_day.get(old, {}).items():
+                sums[key] -= n
+                seen[key].popleft()
+                if not seen[key]:
+                    del seen[key], sums[key]
+            del order[old]
+        ranked = sorted(sums.items(), key=lambda item: (-item[1], seen[item[0]][0], order[seen[item[0]][0]][item[0]]))
+        yield day, ranked[:top]
+
+
 def _confusion_state(data: Data):
     """(überwunden [(Tag, 1)], offene Paare {Paar: letzter Problemtag},
     Versuche je Tag, Verwechslungen je Tag)."""
@@ -798,14 +824,9 @@ def _confusion_state(data: Data):
     # Tage, an denen ein Paar verwechselt wurde und (im Fenster bis dahin)
     # zu den häufigsten gehörte.
     problem_days = {}
-    for day, tries in _sliding_sums(attempts, days, CONFUSION_WINDOW):
-        start = day - timedelta(days=CONFUSION_WINDOW - 1)
-        # Neu summiert, weil bei gleich vielen Verwechslungen die Reihenfolge
-        # im Fenster entscheidet, welche Paare zu den häufigsten zählen.
-        conf = _window_sum(confusions, start, day)
-        if not conf:
-            continue
-        ranked = sorted(conf.items(), key=lambda item: -item[1])[:CONFUSION_TOP]
+    windows = zip(_sliding_sums(attempts, days, CONFUSION_WINDOW),
+                  _ranked_windows(confusions, days, CONFUSION_WINDOW, CONFUSION_TOP))
+    for (day, tries), (_, ranked) in windows:
         for pair, n in ranked:
             if not confusions.get(day, {}).get(pair):
                 continue

@@ -18,7 +18,7 @@ zählen für richtig/falsch, Fehler und schwache Zeichen, aber nicht für
 import csv
 import io
 import statistics
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from morsetrainer.core import align, tempo
 from morsetrainer.core.morse import MORSE_CODE, display_text
@@ -59,6 +59,7 @@ class Result:
     total: int
     latency: float = None  # Tonende bis Enter in Sekunden
     replayed: bool = False  # erst nach „Für alle wiederholen“ beantwortet
+    _chars: list = field(default=None, init=False, repr=False, compare=False)
 
     @property
     def slow(self) -> bool:
@@ -74,7 +75,9 @@ class Result:
     @property
     def char_results(self):
         """Ergebnis je Zeichen (align.char_results): gesendet, getippt, richtig."""
-        return align.char_results(self.sent, self.typed)
+        if self._chars is None:  # Die Auswertung der Gruppe fragt es bei jeder Aktualisierung wieder ab
+            self._chars = align.char_results(self.sent, self.typed)
+        return self._chars
 
 
 def evaluate(sent: str, typed: str, latency=None, replayed=False) -> Result:
@@ -102,12 +105,14 @@ class Scoreboard:
         self.replayed = set()  # Nummern, die für alle wiederholt wurden
         self.paper = set()  # Namen, deren Antworten vom Papier abgetippt sind
         self.quieter = {}   # Name -> Nummern, bei denen die Störungen leiser waren
+        self._summaries = {}  # Name -> summary(), bis sich für ihn etwas ändert
 
     def add_participant(self, name: str) -> None:
         """Nimmt `name` auf (nichts, wenn schon dabei)."""
         if name not in self.answers:
             self.names.append(name)
             self.answers[name] = {}
+            self._summaries.pop(name, None)
 
     def add_item(self, n: int, text: str, present, wpm=None, fw=None) -> None:
         """Merkt die gesendete Sequenz Nr. `n` mit Tempo und den Teilnehmern, die
@@ -116,12 +121,14 @@ class Scoreboard:
         self.items[n] = text
         self.tempos[n] = (wpm, fw)
         self.expected[n] = set(present)
+        self._summaries.clear()
         for name in present:
             self.add_participant(name)
 
     def drop_items(self, numbers) -> None:
         """Nummern aus der Wertung nehmen (kontinuierlich: beim Stop noch
         nicht gesendete Gruppen)."""
+        self._summaries.clear()
         for n in numbers:
             self.items.pop(n, None)
             self.tempos.pop(n, None)
@@ -149,6 +156,7 @@ class Scoreboard:
             latency = None
         result = evaluate(self.items[n], _typed(typed), latency, n in self.replayed)
         self.answers[name][n] = result
+        self._summaries.pop(name, None)
         if quieter is True:
             self.quieter.setdefault(name, set()).add(n)
         return result
@@ -168,6 +176,7 @@ class Scoreboard:
         self.expected[n].add(name)
         result = evaluate(self.items[n], _typed(typed), None, n in self.replayed)
         self.answers[name][n] = result
+        self._summaries.pop(name, None)
         return result
 
     def paper_allowed(self, name: str) -> bool:
@@ -185,6 +194,7 @@ class Scoreboard:
         self.add_participant(name)
         self.paper.add(name)
         self.answers[name] = {}
+        self._summaries.pop(name, None)
         for n in self.items:
             self.expected[n].add(name)
             if normalize(sheet.get(n, "")):
@@ -197,11 +207,14 @@ class Scoreboard:
 
     def summary(self, name: str) -> dict:
         """Zahlen eines Teilnehmers über alle Sequenzen, bei denen er dabei war."""
+        cached = self._summaries.get(name)
+        if cached is not None:
+            return dict(cached)
         answers = self.answers.get(name, {})
         items = [n for n in self.items if name in self.expected[n]]
         chars_total = sum(len(normalize(self.items[n])) for n in items)
         latencies = [r.latency for r in answers.values() if r.latency is not None]
-        return {
+        self._summaries[name] = summary = {
             "items": len(items),
             "answered": len(answers),
             "correct_items": sum(1 for r in answers.values() if r.correct),
@@ -210,6 +223,7 @@ class Scoreboard:
             "chars_total": chars_total,
             "latency": statistics.median(latencies) if latencies else None,
         }
+        return dict(summary)
 
     def accuracy(self, name=None):
         """Anteil richtiger Zeichen (0..1) eines Teilnehmers oder der ganzen

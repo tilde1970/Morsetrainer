@@ -734,3 +734,22 @@ class DiplomaWindowTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RankedWindowsTest(unittest.TestCase):
+    def test_matches_summing_each_window_anew(self):
+        import random
+        pairs = [(a, b) for a in "ETIAN" for b in "ETIAN" if a != b]
+        for seed in range(40):
+            rng = random.Random(seed)
+            per_day, day = {}, date(2026, 1, 1)
+            for _ in range(rng.randint(1, 80)):
+                day += timedelta(days=rng.choice([1, 1, 2, 9, 40]))
+                per_day[day] = {p: rng.randint(1, 9) for p in rng.sample(pairs, rng.randint(0, 6))}
+            days = sorted(per_day)
+            expected = []
+            for each in days:
+                window = awards._window_sum(per_day, each - timedelta(days=awards.CONFUSION_WINDOW - 1), each)
+                expected.append((each, sorted(window.items(), key=lambda item: -item[1])[:awards.CONFUSION_TOP]))
+            got = list(awards._ranked_windows(per_day, days, awards.CONFUSION_WINDOW, awards.CONFUSION_TOP))
+            self.assertEqual(got, expected, seed)

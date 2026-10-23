@@ -245,6 +245,29 @@ class ScoreboardTest(unittest.TestCase):
         self.assertEqual(solution_cells(board)[0][1], " 1. KMR")
 
 
+class ScoreboardCacheTest(unittest.TestCase):
+    def test_summary_follows_every_change(self):
+        board = scoreboard.Scoreboard()
+        board.add_item(1, "ABC", ["Anna", "Bert"], wpm=20)
+        self.assertEqual(board.summary("Anna")["answered"], 0)
+        board.record("Anna", 1, "ABC", latency=0.5)
+        self.assertEqual(board.summary("Anna")["correct_items"], 1)
+        self.assertEqual(board.summary("Bert")["answered"], 0)
+        board.add_item(2, "DEF", ["Anna", "Bert"], wpm=20)
+        self.assertEqual(board.summary("Anna")["items"], 2)
+        board.add_paper("Bert", {1: "ABC", 2: "XXX"})
+        self.assertEqual(board.summary("Bert")["answered"], 2)
+        board.drop_items([2])
+        self.assertEqual(board.summary("Anna")["items"], 1)
+        self.assertEqual(board.summary("Bert")["answered"], 1)
+
+    def test_summary_copy_cannot_spoil_the_cache(self):
+        board = scoreboard.Scoreboard()
+        board.add_item(1, "ABC", ["Anna"], wpm=20)
+        board.summary("Anna")["items"] = 99
+        self.assertEqual(board.summary("Anna")["items"], 1)
+
+
 class StreamTest(unittest.TestCase):
     """Kontinuierlicher Durchgang: Zeitachse und Auswertung (net/stream.py)."""
 

@@ -198,6 +198,9 @@ def _open(file: Path) -> sqlite3.Connection:
             conn.execute(f"PRAGMA journal_mode = {mode}")
         except sqlite3.OperationalError:
             pass  # z. B. ein anderes Fenster hält die Datei noch im alten Modus offen
+        # Der Abgleich der WAL (30 bis 80 ms) soll nicht mitten in einer Übung kommen,
+        # sondern nach dem Durchgang (finish_session) und beim Schließen.
+        conn.execute("PRAGMA wal_autocheckpoint = 0")
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA foreign_keys = ON")
         if version == 0:
@@ -616,6 +619,17 @@ def finish_session(session_id: int, summary: dict) -> None:
     """Schließt den Durchgang `session_id` mit seiner Zusammenfassung ab."""
     _heads.pop(session_id, None)
     _write("UPDATE sessions SET summary = ? WHERE id = ?", (_dump(summary), session_id))
+    _checkpoint()
+
+
+def _checkpoint() -> None:
+    """WAL in die Datei übernehmen, ohne auf andere Fenster zu warten; gelingt
+    es nicht, holt es das nächste Mal oder close() nach."""
+    with _lock:
+        try:
+            _connection().execute("PRAGMA wal_checkpoint(PASSIVE)")
+        except (Error, OSError):
+            pass
 
 
 def unfinished_sessions() -> list:
