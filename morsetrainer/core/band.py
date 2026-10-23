@@ -67,7 +67,7 @@ SNR_DB_RANGE = (20.0, -10.0)
 SIGNAL_RMS = AMPLITUDE / math.sqrt(2)
 NOISE_BANDWIDTH_HZ = 1927  # Flanken des Filters eingerechnet (Test prüft gegen _noise_bandwidth)
 EAR_GAIN_DB = 10 * math.log10(NOISE_BANDWIDTH_HZ / 50)
-# Lauter als das wird das Rauschen nicht; stattdessen wird alles Übrige
+# Lauter als das wird das Rauschen (nach dem Filter) nicht; stattdessen wird alles Übrige
 # leiser, wie bei der Regelung (AGC) eines Empfängers. So übersteuert auch
 # ein Signal unter dem Rauschen nichts.
 NOISE_RMS_CAP = 0.2
@@ -118,6 +118,7 @@ CHIRP_TAU_SECONDS = (0.01, 0.04)
 SSB_LOOP_SECONDS = 40
 SSB_SHIFT_HZ = (200, 900)
 MAX_SSB_RMS = 0.2
+SSB_CREST_LIMIT = 2.5  # Spitzen werden um dieses Vielfache des Effektivwerts weich begrenzt
 # Formanten (F1, F2, F3) einiger Vokale in Hz.
 VOWEL_FORMANTS = (
     (730, 1090, 2440), (530, 1840, 2480), (270, 2290, 3010), (570, 840, 2410),
@@ -190,7 +191,7 @@ MAX_PLC_RMS = 0.2
 # Pegel bei Regler 100 %.
 FENCE_PERIOD_SECONDS = (1.0, 1.5)
 FENCE_JITTER_SECONDS = 0.01
-FENCE_TICK_SECONDS = 0.012
+FENCE_TICK_SECONDS = 0.005
 MAX_FENCE_RMS = 0.3
 # Tastklicks: Länge eines Klicks und Spitzenpegel bei Regler 100 % (vor dem
 # Filter; ein schmales Filter lässt davon nur einen Teil durch).
@@ -330,7 +331,10 @@ def _ssb_babble_loop() -> np.ndarray:
         else:
             shifted[:shift] = spectrum[-shift:]
         shifted *= _passband_gain(np.fft.rfftfreq(n, 1 / SAMPLE_RATE))
-        _ssb_loop = _normalized(np.fft.irfft(shifted, n))
+        speech = _normalized(np.fft.irfft(shifted, n)).astype(np.float64)
+        # Wie ein Sprachprozessor am Sender: Spitzen weich gedrückt, sonst wäre der Crest-Faktor
+        # (Spitze zu Effektivwert) mit rund 18 dB weit über dem echter, verdichteter Sprache.
+        _ssb_loop = _normalized(SSB_CREST_LIMIT * np.tanh(speech / SSB_CREST_LIMIT))
     return _ssb_loop
 
 
@@ -752,6 +756,7 @@ class BandConditions:
         if np.any(noise_rms):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
             out += noise * noise_rms
+        out *= receiver  # die AGC hebt Stationen und Rauschen an, nicht die Störer neben ihnen
         # Knacker (QRN, Gewitter, Weidezaun) werden nicht gepumpt: sie kommen schneller als die
         # AGC und gehen ungedämpft durch, erst danach bricht das Signal ein.
         impulses = np.zeros(n, dtype=np.float64)
@@ -792,7 +797,7 @@ class BandConditions:
         if crashes is not None:
             out *= self._pump(crashes * self.background_gain, n)
         out += impulses * background_gain
-        out = self._filtered(out) * receiver
+        out = self._filtered(out)
         self.sample_pos += n
         return soft_limit(out + sidetone).astype(np.float32)
 
@@ -858,9 +863,12 @@ class BandConditions:
         if not self._on("noise") or self.background_gain <= 0:
             return 0.0, 1.0
         rms = SIGNAL_RMS * 10 ** (-noise_snr_db(self.levels["noise"], self.background_gain) / 20)
-        if rms <= NOISE_RMS_CAP:
+        # Der Deckel gilt für das Rauschen hinter dem Filter: Ein schmales Filter lässt
+        # weniger davon durch, das Signal muss dafür nicht leiser werden.
+        cap = NOISE_RMS_CAP * 10 ** (filter_noise_db(self.filter_width) / 20)
+        if rms <= cap:
             return rms, 1.0
-        return NOISE_RMS_CAP, NOISE_RMS_CAP / rms
+        return cap, cap / rms
 
     def station_gain(self, station, n: int):
         """Lautstärke einer Station über die nächsten `n` Samples
@@ -1056,8 +1064,11 @@ def _loop_at(loop: np.ndarray, rate: float, start: int, n: int) -> np.ndarray:
 
 def rice_k(level: float) -> float:
     """Regler (0 … 1) → Rice-Faktor K: leicht 30 % ≈ 4,3 (flache
-    Schwankungen), mittel 50 % ≈ 1,9, ab stark (80 %) 0 = Rayleigh."""
-    return max(10 * (1 - level) ** 2.2 - 0.3, 0.0)
+    Schwankungen), mittel 50 % ≈ 1,9, stark 80 % ≈ 0,25, 100 % = 0 (Rayleigh).
+    Bis 50 % wird 0,3 abgezogen, darüber läuft der Abzug mit K gegen null, damit
+    der Regler bis zum Ende wirkt."""
+    rest = 1 - level
+    return max(10 * rest ** 2.2 - 0.3 * min(1.0, (rest / 0.5) ** 2.2), 0.0)
 
 
 def rice_gain(scatter: np.ndarray, level: float) -> np.ndarray:

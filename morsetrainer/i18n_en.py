@@ -574,10 +574,10 @@ EN.update({
         "Values of a day: hover with the mouse, or Tab into it and use the left/right arrows; "
         "Page Up/Down jumps a week.",
     "100 % ist normal.": "100 % is normal.",
-    "QSB und Flatterfading werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit "
+    "QSB und Flatterfading werden mit dem Regler stetig schwerer, bei 100 % wie Rayleigh-Fading. Durchgänge mit "
     "Bandbedingungen zählen für Übungszeit und Diplome, aber nicht für deine Zeichenstatistik: Ein "
     "Zeichen im Fading-Loch sagt nichts darüber, ob du es kannst.":
-        "QSB and flutter get harder up to 80 %, not beyond. Runs with band conditions count for practice "
+        "QSB and flutter get steadily harder with the slider, at 100 % like Rayleigh fading. Runs with band conditions count for practice "
         "time and awards, but not for your character statistics: a character lost in a fading dip says "
         "nothing about whether you know it.",
     "Hilfetext": "Help text",
@@ -1847,6 +1847,7 @@ EN.update({
         "All interference together, relative to the signals; also shifts the signal-to-noise ratio. 100 % is "
         "the normal mix; the QRN-proof award needs at least 100 %.",
     "S/N {db}": "S/N {db}",
+    "kein Rauschen": "no noise",
     "bis {hz} Hz": "up to {hz} Hz",
     "Keiner Stufe zugeordnet: Stufe leicht braucht mindestens Rauschen {snr} und QSB {qsb} %.":
         "No level reached: level light needs at least noise {snr} and QSB {qsb} %.",

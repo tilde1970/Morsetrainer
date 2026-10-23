@@ -6,7 +6,7 @@ from unittest import mock
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import band
 from morsetrainer.modes import network_mode, sequence_mode
-from morsetrainer.widgets.band_settings import toggle_value
+from morsetrainer.widgets.band_settings import level_text, toggle_value
 from tests.test_modes import AppTestCase
 
 
@@ -167,8 +167,11 @@ class LevelsTest(unittest.TestCase):
 
     def test_rice_factor_per_level(self):
         # Feste Werte statt nur der Reihenfolge: „stark“ ist Rayleigh (K = 0).
-        self.assertEqual(band.rice_k(0.8), 0.0)
+        self.assertAlmostEqual(band.rice_k(0.8), 0.25, delta=0.05)
         self.assertEqual(band.rice_k(1.0), 0.0)
+        # Der Regler wirkt bis zum Ende: kein Bereich mit gleichem K.
+        values = [band.rice_k(level / 100) for level in range(50, 101, 5)]
+        self.assertTrue(all(a > b for a, b in zip(values, values[1:])), values)
         self.assertAlmostEqual(band.rice_k(0.3), 4.3, delta=0.1)
         self.assertAlmostEqual(band.rice_k(0.5), 1.9, delta=0.1)
 
@@ -182,6 +185,13 @@ class LevelsTest(unittest.TestCase):
         a = band.conditions({"levels": {"qsb": 0.5}, "gain": 1.0, "seed": 9}, 600)
         b = band.conditions({"levels": {"qsb": 0.5}, "gain": 1.0, "seed": 9}, 600)
         np.testing.assert_array_equal(a._fading(0, 48000), b._fading(0, 48000))
+
+
+class NoiseTextTest(unittest.TestCase):
+    def test_no_noise_is_not_shown_as_a_signal_to_noise_ratio(self):
+        self.assertEqual(level_text("noise", 0.0), "kein Rauschen")
+        self.assertEqual(level_text("noise", 0.5, 0.0), "kein Rauschen")
+        self.assertTrue(level_text("noise", 0.5).startswith("S/N"))
 
 
 class FadeTest(unittest.TestCase):

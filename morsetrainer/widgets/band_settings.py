@@ -73,6 +73,8 @@ def level_text(key: str, level: float, gain: float = 1.0) -> str:
     Rauschen als Rauschabstand (im Empfängerfilter), Chirp als Frequenzablage, sonst
     Prozent."""
     if key == "noise":
+        if level <= 0 or gain <= 0:
+            return tr("kein Rauschen")
         return tr("S/N {db}").format(db=signed_db(band.noise_snr_db(level, gain)))
     if key == "chirp":
         return tr("bis {hz} Hz").format(hz=round(band.chirp_max_hz(level)))
@@ -351,9 +353,9 @@ class BandSettings:
         buttons = ttk.Frame(box)
         buttons.grid(row=len(BAND_OPTIONS) + 1, column=0, columnspan=3, sticky="e", pady=(6, 0))
         # Unter den Knöpfen, nicht eingerückt: gilt für alle Störungen, nicht
-        # für CW-QRM. Über 80 % ist das Fading reines Rayleigh (band.rice_k = 0).
+        # für CW-QRM. Bei 100 % ist das Fading reines Rayleigh (band.rice_k = 0).
         theme.hint(box, wrap=440, text=tr(
-            "QSB und Flatterfading werden bis 80 % schwerer, darüber nicht mehr. Durchgänge mit "
+            "QSB und Flatterfading werden mit dem Regler stetig schwerer, bei 100 % wie Rayleigh-Fading. Durchgänge mit "
             "Bandbedingungen zählen für Übungszeit und Diplome, aber nicht für deine Zeichenstatistik: Ein "
             "Zeichen im Fading-Loch sagt nichts darüber, ob du es kannst.")).grid(
             row=len(BAND_OPTIONS) + 2, column=0, columnspan=3, sticky="w", pady=(6, 0))
@@ -559,7 +561,7 @@ class BandSettings:
         for button in self.offset_buttons:
             set_enabled(button, neighbour)
         spec = self.spec()
-        if "filter" in spec and "noise" in spec["levels"]:
+        if "filter" in spec and spec["levels"].get("noise", 0) > 0 and spec["gain"] > 0:
             snr = (band.noise_snr_db(spec["levels"]["noise"], spec["gain"])
                    + band.filter_noise_db(spec["filter"]))
             self.filter_shown.config(text=tr("im Filter S/N {db}").format(db=signed_db(snr)))

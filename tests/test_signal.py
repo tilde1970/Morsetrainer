@@ -160,3 +160,34 @@ class SwitchOnTest(unittest.TestCase):
             conditions.enabled[effect] = True
             out = conditions.mix([], 960, receiver_agc=False)
             self.assertLess(float(np.max(np.abs(out[:48]))), 0.05, effect)  # erste Millisekunde
+
+
+class ReceiverModelTest(unittest.TestCase):
+    def test_noise_cap_counts_behind_the_filter(self):
+        # Ein schmales Filter lässt weniger Rauschen durch: Das Signal muss dafür nicht leiser werden.
+        wide = band.conditions({"levels": {"noise": 1.0}, "gain": 1.0, "seed": 3}, 600)
+        narrow = band.conditions({"levels": {"noise": 1.0}, "gain": 1.0, "seed": 3, "filter": 250}, 600)
+        _, wide_agc = wide.noise_and_agc()
+        _, narrow_agc = narrow.noise_and_agc()
+        self.assertAlmostEqual(narrow_agc / wide_agc, 10 ** (band.filter_noise_db(250) / 20), places=6)
+
+    def test_agc_boost_does_not_lift_the_neighbours(self):
+        # In der Pause hebt die AGC das Rauschen an, aber kein SMPS-Brummen daneben.
+        levels = {"noise": 0.01, "smps": 1.0}
+        results = []
+        for agc in (False, True):
+            conditions = band.conditions({"levels": levels, "gain": 1.0, "seed": 3}, 600)
+            out = np.concatenate([conditions.mix([], 960, receiver_agc=agc) for _ in range(RATE // 960)])
+            results.append(float(np.sqrt(np.mean(out.astype(np.float64) ** 2))))
+        self.assertLess(results[1] / results[0], 1.5)
+
+    def test_fence_tick_is_short(self):
+        conditions = band.conditions({"levels": {"fence": 1.0}, "gain": 1.0, "seed": 3}, 600)
+        tick = conditions._make_tick().astype(np.float64)
+        early = int(0.003 * RATE)
+        self.assertLess(float(np.sum(tick[early:] ** 2) / np.sum(tick ** 2)), 0.02)
+
+    def test_ssb_crest_factor_is_like_processed_speech(self):
+        loop = band._ssb_babble_loop().astype(np.float64)
+        crest_db = 20 * np.log10(np.max(np.abs(loop)) / np.sqrt(np.mean(loop ** 2)))
+        self.assertTrue(6 < crest_db < 12.5, crest_db)
