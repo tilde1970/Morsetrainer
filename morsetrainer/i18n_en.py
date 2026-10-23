@@ -1157,6 +1157,14 @@ EN.update({
         "Morsetrainer now backs up your data by itself, at most once a week on exit (Settings, Data). "
         "Notices at start are clearer, and the noise in the answer pause stays equally loud. "
         "Everything else is under Help, Changes.",
+    ("Neu unter „Einstellungen …“: der Haken „Entspannte Tagesübung“ (Aufwärmen ohne Zeitlimit). Das "
+     "Wochenziel sind jetzt 8 Sterne, die Zeichentabelle der Statistik ist nach Fehlerquote sortiert, "
+     "und die Lernkartei entscheidet erst ab 8 Versuchen. Strg+Q beendet das Programm, in der "
+     "Tagesübung erst beim zweiten Druck. Alles Weitere steht unter Hilfe, Änderungen."):
+        "New under “Settings …”: the tick box “Relaxed daily practice” (warm-up without a time limit). The "
+        "weekly goal is now 8 stars, the character table in the statistics is sorted by error rate, and the "
+        "review box decides only from 8 attempts. Ctrl+Q quits the program, in the daily practice only on "
+        "the second press. Everything else is under Help, Changes.",
     ("Die Datenbank ist sicherer: Ein Hinweis meldet Daten von einer neueren Version, vor einem "
      "Format-Wechsel bleibt eine Kopie liegen, und ein beschädigtes Journal geht nicht mehr verloren. "
      "Alles Weitere steht unter Hilfe, Änderungen."):

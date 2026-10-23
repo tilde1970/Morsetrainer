@@ -1,5 +1,77 @@
 # Changes
 
+## 2.62
+
+A full review of the whole software (code, data, tests, signals, performance,
+subject matter, platforms, usability, accessibility, didactics, participant
+view, error analysis, motivation, documentation). The main changes:
+
+- **Daily practice, getting started:** On the very first day in lesson 1 a card
+  plays K and M before the time limit starts. Before the first daily practice
+  the bar says how to begin and where to find “Returning to CW”; after at
+  least 14 days off the bar welcomes you back.
+- **Relaxed daily practice:** New tick box under “Settings …” (card
+  “Practice”): the warm-up runs without a time limit and does not count for
+  the review box and the awards that depend on it. If many characters were too
+  slow, the in-between card points this out.
+- **Review box:** A character is decided only from 8 attempts a day (before:
+  5). If the share of fluent hits is between 80 and 90 %, a character stays
+  where it is. With many due characters the warm-up gets longer (up to 4
+  minutes), and the in-between card says for how many attempts are still
+  missing. The gaps get shorter already in the Koch part once it sits.
+- **Evening summary and in-between card:** The evening summary names tomorrow's
+  speed with the reason and, after about ten practice days at the same speed
+  and in the same lesson, once says that plateaus are normal in listening.
+  While the comparison with the previous week is still missing, it shows
+  today's counters. From 4 mistakes the in-between card says what caused them
+  (“of 9 mistakes, 5 were mix-ups (B for 6 three times), 3 too slow, 1
+  missed”), with at most one tip. Stopping without a star no longer says “your
+  stars stay”.
+- **Weekly goal:** 8 instead of 12 stars; in the developer's data the weeks
+  were at 2 to 6 stars, only one reached 12.
+- **Error analysis:** Every mistake has a cause (heard, too slow, only after
+  repeating, missed, swapped); only another character counts as a confusion,
+  also for the award. The column “Confused with” names the causes. The repeat
+  after a mistake comes after 4 to 8 characters and does not count for the
+  overall statistics and the review box. The confusion list shows pairs only
+  from 3 cases and marks pairs that do not sound alike as “typo?”; the button
+  for targeted practice takes only similar pairs, switches on “weak favoured”
+  and restores the character set afterwards. The character table is sorted by
+  error rate.
+- **Weighting:** “Weak favoured” looks at the last 14 days: a character that
+  slips now stands out; characters often confused with a weak one come up more
+  often; latency follows the last days. In the One by one tab the same
+  character never comes twice in a row (from five characters).
+- **Operation:** Hints per content and input style in the One by one tab, the
+  start button sits above the options, number fields take the value when you
+  leave them and announce a correction. “Delete statistics” asks with Enter =
+  Cancel. Ctrl+Q quits the program (in the daily practice only on the second
+  press), Ctrl+F1 opens the help in the Contest too.
+- **Accessibility:** After switching tabs the focus is on a visible spot,
+  locked tabs explain themselves, input style and corrections are announced,
+  the fields in the Contest have names, and several contrasts (high contrast,
+  light theme) are better.
+- **Signals:** Crashes (QRN, thunderstorm, electric fence) are no longer pumped
+  by the AGC; interference fades in and out softly; the noise ceiling applies
+  behind the filter; the QSB strength can be set up to 100 %; “no noise” at
+  0 %.
+- **Subject matter:** Frequencies lie only in the CW segments of the IARU band
+  plan, numbers include short numbers (5NN, T for 0), the zones of island
+  territories are right, the IARU HQ list follows the 2025 results, QRL and NIL
+  are more exact, /QRP is no longer a suffix.
+- **Data:** Crashed runs are added afterwards, good backups are not pushed out
+  by empty ones, rescue files stay, a second window blocks importing a backup,
+  a locked or too new database is reported at start, read errors overwrite
+  nothing, and a wrong clock is detected.
+- **Installation:** If Tk or PortAudio is missing, the start says what to
+  install; “No sound?” in the manual helps step by step, and the error messages
+  point to it. The packages have upper limits, Python 3.14 is tested too.
+- **Fixed:** Network polling loops that kept running, wrongly typed settings
+  that prevented the start, and in the Characters tab absence counted as a
+  mistake.
+- **Manual and picture:** README and manual (German and English) are brought up
+  to date; the picture of the main window shows the current state.
+
 ## 2.61
 
 - **Statistics:** The reaction time in the comparison line is now the median,

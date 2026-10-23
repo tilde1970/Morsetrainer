@@ -1,5 +1,80 @@
 # Änderungen
 
+## 2.62
+
+Eine Gesamtprüfung der ganzen Software (Code, Daten, Tests, Signale, Leistung,
+Fachinhalt, Plattformen, Bedienung, Barrierefreiheit, Didaktik, Teilnehmersicht,
+Fehleranalyse, Motivation, Dokumentation). Die wichtigsten Änderungen:
+
+- **Tagesübung, Einstieg:** Am allerersten Tag in Lektion 1 spielt eine Karte K
+  und M erst vor, bevor das Zeitlimit beginnt. Vor der ersten Tagesübung steht
+  in der Leiste, wie es losgeht und wo „Wiedereinsteiger“ zu finden ist; nach
+  mindestens 14 Tagen Pause begrüßt dich die Leiste.
+- **Entspannte Tagesübung:** Neuer Haken unter „Einstellungen …“ (Karte „Üben“):
+  Das Aufwärmen läuft ohne Zeitlimit und zählt nicht für die Lernkartei und die
+  Diplome, die an ihr hängen. Waren viele Zeichen zu langsam, weist die
+  Zwischenkarte darauf hin.
+- **Lernkartei:** Ein Zeichen wird erst ab 8 Versuchen am Tag entschieden
+  (vorher 5). Liegt der Anteil flüssiger Treffer zwischen 80 und 90 %, bleibt
+  ein Zeichen, wo es ist. Das Aufwärmen wird bei vielen fälligen Zeichen länger
+  (bis 4 Minuten), und die Zwischenkarte nennt, bei wie vielen noch Versuche
+  fehlen. Die Pausen werden schon im Koch-Teil kürzer, wenn es sicher sitzt.
+- **Abendbilanz und Zwischenkarte:** Die Abendbilanz nennt das Tempo für morgen
+  mit dem Grund und weist nach etwa zehn Übungstagen im selben Tempo und in
+  derselben Lektion einmal darauf hin, dass Stillstand beim Hören normal ist.
+  Solange der Vergleich mit der Vorwoche noch fehlt, stehen dort die Zähler
+  des Tages. Die Zwischenkarte sagt ab 4 Fehlern, woran es lag („Von 9 Fehlern
+  waren 5 Verwechslungen (B für 6 dreimal), 3 zu langsam, 1 verpasst“), mit
+  höchstens einem Tipp. Ein Abbruch ohne Stern heißt nicht mehr „deine Sterne
+  bleiben“.
+- **Wochenziel:** 8 statt 12 Sterne; in den Daten des Entwicklers lagen die
+  Wochen bei 2 bis 6 Sternen, nur eine erreichte die 12.
+- **Fehleranalyse:** Jeder Fehler hat eine Ursache (gehört, zu langsam, erst
+  nach Wiederholung, verpasst, vertauscht); nur ein anderes Zeichen gilt als
+  Verwechslung, auch im Diplom. Die Spalte „Verwechselt mit“ nennt die
+  Ursachen. Die erneute Abfrage nach einem Fehler kommt nach 4 bis 8 Zeichen
+  und zählt nicht für Gesamtstatistik und Lernkartei. Die Verwechslungsliste
+  zeigt Paare erst ab 3 Fällen und markiert Paare, die sich nicht ähnlich
+  anhören, als „Tippfehler?“; der Knopf zum gezielten Üben nimmt nur ähnliche
+  Paare, schaltet „schwache bevorzugt“ ein und stellt den Zeichensatz danach
+  zurück. Die Zeichentabelle ist nach Fehlerquote sortiert.
+- **Gewichtung:** „Schwache bevorzugt“ achtet auf die letzten 14 Tage: Ein
+  Zeichen, das jetzt wackelt, fällt auf; Zeichen, die oft mit einem schwachen
+  verwechselt wurden, kommen öfter; die Latenz folgt den letzten Tagen. Im
+  Reiter Einzeln kommt dasselbe Zeichen nie zweimal hintereinander (ab fünf
+  Zeichen).
+- **Bedienung:** Hinweise je Inhalt und Eingabeart im Reiter Einzeln, der
+  Startknopf steht über den Optionen, Zahlenfelder übernehmen den Wert beim
+  Verlassen und sagen eine Korrektur an. „Statistik löschen“ fragt mit Enter =
+  Abbrechen. Strg+Q beendet das Programm (in der Tagesübung erst beim zweiten
+  Druck), Strg+F1 öffnet die Hilfe auch im Contest.
+- **Barrierefreiheit:** Nach einem Reiterwechsel steht der Fokus an einer
+  sichtbaren Stelle, gesperrte Reiter erklären sich, Eingabeart und Korrekturen
+  werden angesagt, die Felder im Contest haben Namen, und mehrere Kontraste
+  (hoher Kontrast, helles Thema) sind besser.
+- **Signale:** Knacker (QRN, Gewitter, Weidezaun) werden vom AGC nicht mehr
+  gepumpt; Störungen blenden weich ein und aus; der Rauschdeckel gilt hinter
+  dem Filter; die QSB-Stärke lässt sich bis 100 % einstellen; „kein Rauschen“
+  bei 0 %.
+- **Fachinhalt:** Frequenzen liegen nur in den CW-Teilen des IARU-Bandplans,
+  Zahlen enthalten Kurzzahlen (5NN, T für 0), die Zonen der Inselgebiete
+  stimmen, die IARU-HQ-Liste folgt den Ergebnissen 2025, QRL und NIL sind
+  genauer, /QRP ist kein Anhang mehr.
+- **Daten:** Abgestürzte Durchgänge werden nachgetragen, gute Sicherungen
+  werden nicht von leeren verdrängt, Rettungsdateien bleiben, ein zweites
+  Fenster blockiert das Einlesen einer Sicherung, eine gesperrte oder zu neue
+  Datenbank wird beim Start gemeldet, Lesefehler überschreiben nichts, und eine
+  falsche Uhr wird erkannt.
+- **Installation:** Fehlt Tk oder PortAudio, sagt der Start, was zu installieren
+  ist; „Kein Ton?“ in der Anleitung hilft Schritt für Schritt, und die
+  Fehlermeldungen verweisen darauf. Die Pakete haben Obergrenzen, Python 3.14
+  wird mitgetestet.
+- **Fehler behoben:** Weiterlaufende Abruf-Schleifen im Netzwerk, falsch
+  typisierte Einstellungen, die den Start verhinderten, und im Reiter Zeichen
+  zählte Abwesenheit als Fehler.
+- **Anleitung und Bild:** README und Anleitung (Deutsch und Englisch) sind
+  nachgezogen; das Bild des Hauptfensters zeigt den aktuellen Stand.
+
 ## 2.61
 
 - **Statistik:** Die Reaktion in der Vergleichszeile ist jetzt der Median, wie
