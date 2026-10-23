@@ -1210,8 +1210,8 @@ PowerShell `Get-FileHash Morsetrainer.exe` und den Wert mit der Zeile in
 Für Macs mit Apple-Prozessor (M1 und neuer) ab macOS 14 (Sonoma) gibt es
 `Morsetrainer-macOS.zip`. Herunterladen, entpacken (Doppelklick, falls der
 Browser das nicht schon getan hat) und `Morsetrainer.app` in den Ordner
-„Programme“ ziehen. Die App ist bisher nicht auf einem Mac getestet –
-Rückmeldungen sind willkommen.
+„Programme“ ziehen. Die App ist auf einem Mac mit Apple-Prozessor
+getestet; Rückmeldungen zu anderen Macs sind willkommen.
 
 Da die App nicht bei Apple signiert ist (dafür bräuchte es ein bezahltes
 Apple-Entwicklerkonto), blockiert macOS den ersten Start:
@@ -1290,6 +1290,35 @@ Releases passen, sonst wird sie verworfen und das Programm bleibt, wie es
 ist. Das fängt abgebrochene und beschädigte Downloads ab. Vor einem
 übernommenen GitHub-Konto schützt es nicht – wer das Release austauschen
 kann, tauscht auch die Prüfsumme; eine Signatur gibt es nicht.
+
+### Kein Ton?
+
+Der Morsetrainer spielt immer auf dem Standard-Ausgabegerät des Systems;
+ein eigenes Gerät lässt sich im Programm nicht wählen. Kommt kein Ton oder
+erscheint „Keine Tonausgabe möglich“, der Reihe nach:
+
+1. **Lautstärke und Stummschaltung** am System und am Lautsprecher bzw.
+   Kopfhörer prüfen. Zum Hören ohne Übung: im Reiter Einzeln spielt
+   „▶ anhören“ in der Lektionszeile das neue Zeichen vor.
+2. **Falsches Gerät?** Hängt ein Monitor mit Lautsprechern (HDMI) oder eine
+   Bluetooth-Box am Rechner, kann sie das Standardgerät sein. In den
+   Toneinstellungen des Systems das gewünschte Gerät als Standardausgabe
+   wählen.
+3. **Gerät erst nach dem Start angeschlossen oder gewechselt?** Der
+   Morsetrainer kennt die Geräte vom Programmstart. Das Programm schließen
+   und neu starten.
+4. **Meldung „Das Audiogerät ist belegt“:** Ein anderes Programm hat das
+   Gerät für sich allein (Exklusivmodus), etwa SDR-, Logbuch- oder
+   Audio-Software. Dort das Gerät freigeben oder das Programm schließen.
+5. **Meldung zur Abtastrate:** Das Gerät kann 48 kHz nicht. Im System ein
+   anderes Gerät als Standardausgabe wählen.
+6. **Aus dem Quelltext gestartet:** `python main.py --selftest probe.mp3`
+   prüft ohne Fenster und ohne Ton, ob PortAudio, Tk und die Stimmen
+   vorhanden sind, und nennt, was fehlt. Unter Linux gehören `libportaudio2`
+   und `python3-tk` dazu (siehe `docs/Entwicklung.md`).
+
+Hilft nichts davon, bitte die Meldung samt dem Text in Klammern bei den
+[Issues](https://github.com/tilde1970/Morsetrainer/issues) melden.
 
 ## 11. Daten
 

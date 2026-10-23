@@ -65,7 +65,7 @@ wird dafür nicht benötigt:
 - **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
   („Weitere Informationen“ → „Trotzdem ausführen“).
-- **macOS (Apple-Prozessor):** `Morsetrainer-macOS.zip` herunterladen,
+- **macOS (Apple-Prozessor, ab macOS 14):** `Morsetrainer-macOS.zip` herunterladen,
   entpacken und `Morsetrainer.app` in „Programme“ ziehen. Die App ist nicht
   signiert, beim ersten Start musst du sie freigeben. Wie das geht und
   was für Intel-Macs gilt, steht in der

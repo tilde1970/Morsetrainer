@@ -20,8 +20,8 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        # Die älteste unterstützte Version und die der Release-Builds.
-        python: ["3.10", "3.12"]
+        # Die älteste unterstützte Version, die der Release-Builds und die neueste.
+        python: ["3.10", "3.12", "3.14"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

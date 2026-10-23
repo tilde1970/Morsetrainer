@@ -1186,8 +1186,8 @@ compare the value with the line in `SHA256SUMS.txt`.
 For Macs with Apple silicon (M1 and newer) from macOS 14 (Sonoma) there is
 `Morsetrainer-macOS.zip`. Download it, unpack it (double-click, unless the
 browser has already done so) and drag `Morsetrainer.app` into the
-Applications folder. The app has not been tested on a Mac yet – feedback is
-welcome.
+Applications folder. The app has been tested on a Mac with an Apple processor;
+feedback on other Macs is welcome.
 
 As the app is not signed with Apple (that needs a paid Apple developer
 account), macOS blocks the first start:
@@ -1264,6 +1264,34 @@ release, otherwise it is discarded and the program stays as it is. This
 catches interrupted and damaged downloads. It does not protect against a
 compromised GitHub account – whoever can replace the release can replace
 the checksum too; there is no signature.
+
+### No sound?
+
+The Morsetrainer always plays on the system's default output device; the
+program has no device selection of its own. If there is no sound or
+"No sound output possible" appears, go through this in order:
+
+1. **Volume and mute** at the system and at the speaker or headphones. To
+   hear something without an exercise: in the Single tab, "▶ listen" in the
+   lesson line plays the new character.
+2. **Wrong device?** A monitor with speakers (HDMI) or a Bluetooth speaker
+   connected to the computer can be the default device. In the system's
+   sound settings choose the device you want as default output.
+3. **Device connected or switched after the start?** The Morsetrainer knows
+   the devices from the program start. Close the program and start it
+   again.
+4. **Message "The audio device is busy":** another program has the device
+   for itself (exclusive mode), for example SDR, logging or audio software.
+   Release the device there or close that program.
+5. **Message about the sampling rate:** the device cannot do 48 kHz. Choose
+   another device as default output in the system.
+6. **Started from source:** `python main.py --selftest probe.mp3` checks
+   without a window and without sound whether PortAudio, Tk and the voices
+   are present, and says what is missing. On Linux this includes
+   `libportaudio2` and `python3-tk` (see `docs/Entwicklung.md`).
+
+If none of this helps, please report the message including the text in
+brackets in the [issues](https://github.com/tilde1970/Morsetrainer/issues).
 
 ## 11. Data
 

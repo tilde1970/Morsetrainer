@@ -65,7 +65,7 @@ xvfb-run -a python -m unittest discover tests   # Linux without a display (serve
 ```
 
 On every push to `main` and on pull requests the tests run on GitHub
-(`.github/workflows/tests.yml`): on Linux with Python 3.10 and 3.12, plus
+(`.github/workflows/tests.yml`): on Linux with Python 3.10, 3.12 and 3.14, plus
 an installation check on Windows and macOS.
 
 ## Texts, translation and manual

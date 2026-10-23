@@ -69,9 +69,11 @@ def describe(exc: Exception) -> str:
     bei bekannten Fehlern mit dem nächsten Schritt, der rohe Text dahinter
     für Fehlerberichte."""
     hint = _HINTS.get(_error_code(exc))
+    # PortAudio hängt den Code manchmal selbst zweimal an.
+    error = re.sub(r"(\[PaErrorCode -?\d+\])(?:\s*\1)+", r"\1", str(exc))
     if hint:
-        return tr("Keine Tonausgabe möglich. {hint} ({error})").format(hint=tr(hint), error=exc)
-    return tr("Keine Tonausgabe möglich: {error}").format(error=exc)
+        return tr("Keine Tonausgabe möglich. {hint} ({error})").format(hint=tr(hint), error=error)
+    return tr("Keine Tonausgabe möglich: {error}").format(error=error)
 
 
 def unexpected(exc: Exception) -> str:

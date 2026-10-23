@@ -394,6 +394,10 @@ class SpeechShutdownTest(unittest.TestCase):
 
     def setUp(self):
         self.addCleanup(setattr, speech, "_closing", False)
+        # Ein früherer Test kann mit einer echten Stimme (voices/ vorhanden) noch im
+        # Hintergrund rechnen; der Zähler gilt für das ganze Modul.
+        with speech._idle:
+            self.assertTrue(speech._idle.wait_for(lambda: speech._busy_count == 0, 60))
 
     def test_waits_for_running_synthesis_and_refuses_new(self):
         started, release = threading.Event(), threading.Event()
@@ -424,6 +428,40 @@ class SpeechShutdownTest(unittest.TestCase):
             self.assertFalse(speaker.load())
         self.assertIsNone(speaker.voice)
         self.assertIsNone(speaker.error)
+
+
+class StartupHintTest(unittest.TestCase):
+    def test_missing_system_libraries_get_an_install_hint(self):
+        import main as launcher
+        tk = launcher.missing_library(ImportError("No module named '_tkinter'"))
+        self.assertIn("python3-tk", tk)
+        self.assertIn("--selftest", tk)
+        pa = launcher.missing_library(OSError("PortAudio library not found"))
+        self.assertIn("libportaudio2", pa)
+        self.assertIsNone(launcher.missing_library(ImportError("No module named 'numpy'")))
+
+    def test_start_prints_the_hint_and_exits_instead_of_a_traceback(self):
+        import builtins
+        import io
+        import main as launcher
+        real_import = builtins.__import__
+
+        def failing_import(name, *args, **kwargs):
+            if name == "morsetrainer.app":
+                raise OSError("PortAudio library not found")
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch("builtins.__import__", failing_import), \
+                mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            with self.assertRaises(SystemExit) as raised:
+                launcher.import_app()
+        self.assertEqual(raised.exception.code, 1)
+        self.assertIn("libportaudio2", err.getvalue())
+
+    def test_audio_error_code_is_shown_once(self):
+        from morsetrainer.core import audio
+        text = audio.describe(OSError("Error opening OutputStream: x [PaErrorCode -9996] [PaErrorCode -9996]"))
+        self.assertEqual(text.count("[PaErrorCode -9996]"), 1)
 
 
 class AudioLockTest(unittest.TestCase):

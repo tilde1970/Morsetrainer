@@ -66,7 +66,7 @@ Python installation is needed:
   [manual, section “Linux and Windows”](docs/Anleitung.en.md).
 - **Windows:** download and run `Morsetrainer.exe`. The file is not signed,
   so Windows SmartScreen warns on first start (“More info” → “Run anyway”).
-- **macOS (Apple silicon):** download `Morsetrainer-macOS.zip`, unpack it
+- **macOS (Apple silicon, macOS 14 or later):** download `Morsetrainer-macOS.zip`, unpack it
   and drag `Morsetrainer.app` into Applications. The app is not signed, so
   you have to approve it on first start. How to do that, and what applies to
   Intel Macs, is in the [manual, section macOS](docs/Anleitung.en.md#macos).
