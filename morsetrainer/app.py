@@ -360,7 +360,8 @@ class MorseTrainerApp:
         if sys.platform == "darwin":
             self._bind_mac_keys()
         else:
-            root.bind_all("<Control-q>", lambda e: self.on_close() or "break")
+            for letter in ("q", "Q"):  # groß und klein, damit es auch mit Feststelltaste geht
+                root.bind_all(f"<Control-{letter}>", lambda e: self.on_close() or "break")
 
     def _bind_mac_keys(self):
         """Mac: Cmd+Q und „Einstellungen …“ im App-Menü laufen über Tk
@@ -500,14 +501,14 @@ class MorseTrainerApp:
         freq_spin.pack(side="right")
         ttk.Label(tone_row, text=tr("Tonhöhe")).pack(side="right", padx=(0, 4))  # „Hz“ allein sagt es nicht
         announcer.name(freq_spin, tr("Tonhöhe"), value=lambda: f"{freq_spin.get()} Hz")
-        settle_on_leave(freq_spin, self.freq_var)
+        settle_on_leave(freq_spin, self.freq_var, tr("Tonhöhe"), "Hz")
         # Standard für Einsteiger: Koch-Tempo, Zeichen schnell, Pausen lang.
         self.wpm_var = RangedIntVar(value=koch.RECOMMENDED_WPM, low=5, high=40)
         ttk.Label(tone_row, text="WPM").pack(side="right", padx=(4, 16))
         wpm_spin = ttk.Spinbox(tone_row, from_=5, to=40, textvariable=self.wpm_var, width=4)
         wpm_spin.pack(side="right")
         announcer.name(wpm_spin, tr("Tempo"), value=lambda: f"{wpm_spin.get()} WPM")
-        settle_on_leave(wpm_spin, self.wpm_var)
+        settle_on_leave(wpm_spin, self.wpm_var, tr("Tempo"), "WPM")
         freq_spin.lift()  # Tab wie auf dem Bildschirm: erst Tempo, dann Tonhöhe
 
         ttk.Label(header, text=tr("Zeichen")).grid(row=1, column=0, sticky="w", pady=(6, 0), padx=(0, 8))
@@ -553,7 +554,8 @@ class MorseTrainerApp:
         self.farnsworth_wpm_var = RangedIntVar(value=koch.RECOMMENDED_EFFECTIVE_WPM, low=3, high=39)
         farnsworth_spin = ttk.Spinbox(farnsworth, from_=3, to=39, textvariable=self.farnsworth_wpm_var, width=4)
         farnsworth_spin.pack(side="left", padx=4)
-        settle_on_leave(farnsworth_spin, self.farnsworth_wpm_var)
+        announcer.name(farnsworth_spin, tr("Effektives Tempo"), value=lambda: f"{farnsworth_spin.get()} WPM")
+        settle_on_leave(farnsworth_spin, self.farnsworth_wpm_var, tr("Effektives Tempo"), "WPM")
         self.farnsworth_cpm_var = tk.StringVar(value="")
         theme.hint(farnsworth, textvariable=self.farnsworth_cpm_var).pack(side="left")
         ttk.Button(
@@ -1115,6 +1117,8 @@ class MorseTrainerApp:
             return
         if str(self.notebook.tab(tabs[index], "state")) == "normal":
             self.notebook.select(tabs[index])
+        else:
+            announcer.say(tr("Während der Übung gesperrt. Zum Wechseln erst stoppen."))
 
     def statistics_spoken(self) -> str:
         """Der Reiter Statistik zum Vorlesen (F11): Gesamtergebnis, Vergleich mit
@@ -1168,6 +1172,42 @@ class MorseTrainerApp:
             current = self.one_by_one_var.get()
             name += ", " + tr(ONE_BY_ONE_LABELS.get(current, current))
         return name
+
+    def _tab_changed(self) -> None:
+        """Nach dem Wechsel des Reiters: Hilfeknopf beschriften, den Fokus von einem
+        unsichtbar gewordenen Element holen und die Kopfleiste nur dort in die
+        Tab-Folge nehmen, wo sie gilt."""
+        self._update_help_button()
+        try:
+            focus = self.root.focus_get()
+            if focus is not None and not focus.winfo_viewable():
+                self.notebook.focus_set()  # sonst löste die Leertaste den Knopf des alten Reiters aus
+        except (tk.TclError, KeyError):
+            pass
+        self._set_header_tab_stops(self._active_mode() is not None)
+
+    def _set_header_tab_stops(self, wanted: bool) -> None:
+        """Felder und Knöpfe der Kopfleiste in die Tab-Folge nehmen oder daraus lösen
+        (im Reiter Statistik gelten Lektion, Tempo und Tonhöhe nicht)."""
+        if wanted == getattr(self, "_header_stops", True):
+            return
+        self._header_stops = wanted
+        saved = self.__dict__.setdefault("_header_takefocus", {})
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                try:
+                    if wanted:
+                        if str(child) in saved:
+                            child.configure(takefocus=saved.pop(str(child)))
+                    elif child.winfo_class() in ("TEntry", "TSpinbox", "TButton", "TCheckbutton", "TCombobox",
+                                                 "TRadiobutton", "TScale"):
+                        saved.setdefault(str(child), child.cget("takefocus"))
+                        child.configure(takefocus=0)
+                except tk.TclError:
+                    pass
+                walk(child)
+        walk(self.header)
 
     def _update_help_button(self) -> None:
         """Im Contest-Reiter sendet F1 CQ: dort heißt der Hilfeknopf ohne Kürzel."""
@@ -1438,6 +1478,8 @@ class MorseTrainerApp:
         if not 1 <= lesson <= koch.MAX_LESSON:  # das Feld zeigt, was gilt
             lesson = min(max(lesson, 1), koch.MAX_LESSON)
             self.lesson_var.set(lesson)
+            announcer.say(tr("Lektion {lesson} gesetzt, {count} Zeichen.").format(
+                lesson=lesson, count=len(koch.lesson_charset(lesson))))
         self.charset_var.set(koch.lesson_charset(lesson))
 
     def start_prosign_lessons(self):
@@ -2167,7 +2209,7 @@ class MorseTrainerApp:
             self.tab_ids.append(tab_id)
         self._show_one_by_one()
         self.notebook.bind("<<NotebookTabChanged>>", self._announce_tab, add="+")
-        self.notebook.bind("<<NotebookTabChanged>>", lambda e: self._update_help_button(), add="+")
+        self.notebook.bind("<<NotebookTabChanged>>", lambda e: self._tab_changed(), add="+")
         # Tastatur: Strg+Tab / Strg+Umschalt+Tab blättern durch die Reiter.
         self.notebook.enable_traversal()
 
@@ -2258,6 +2300,7 @@ class MorseTrainerApp:
                 self.notebook.tab(tab_id, state="disabled")
         for button in self.one_by_one_buttons:
             set_enabled(button, False)
+            button.configure(takefocus=False)  # Tab hielte sonst auf einem gesperrten Feld ohne Grund
         # Eigene Tonausgabe würde die des laufenden Modus abbrechen.
         self.running_mode = True
         self.band_settings.stop_preview()
@@ -2304,6 +2347,7 @@ class MorseTrainerApp:
             self.notebook.tab(tab_id, state="normal")
         for button in self.one_by_one_buttons:
             set_enabled(button, True)
+        self.one_by_one_var.set(self.one_by_one_var.get())  # Tab wieder nur auf dem gewählten Feld
         self.running_mode = False
         self.band_settings.stop_preview()  # Knopf wieder frei
         self.confusion_button.config(state="normal")
@@ -2370,6 +2414,9 @@ class MorseTrainerApp:
             return
         if event.keysym == "Return" and self.daily.card_open:
             self.daily.continue_now()
+            return
+        if event.keysym == HELP_KEY and isinstance(event.state, int) and event.state & 0x4:  # Strg+F1: Hilfe auch im Contest, wo F1 CQ sendet
+            self.open_help()
             return
         if event.keysym == ANNOUNCE_KEY:
             self.toggle_announce()

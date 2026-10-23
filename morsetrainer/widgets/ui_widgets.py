@@ -11,25 +11,36 @@ from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 class RangedIntVar(tk.IntVar):
     """Ganzzahl-Variable (Tempo, Tonhöhe), deren get() nie außerhalb von
     [low, high] liegt: Das Feld erlaubt beliebige Eingaben, 0 oder -5 würden
-    sonst im Tongenerator abbrechen. Ein leeres oder unlesbares Feld löst wie
-    bei IntVar TclError aus."""
+    sonst im Tongenerator abbrechen. Ein leeres oder unlesbares Feld gibt den
+    letzten gültigen Wert zurück (ein Start mit leerem Tempofeld bräche sonst
+    mitten im Start ab)."""
     def __init__(self, master=None, value=None, low=0, high=0, **kwargs):
         super().__init__(master, value=value, **kwargs)
         self.low, self.high = low, high
+        self.last = min(max(value, low), high) if isinstance(value, int) else low
 
     def get(self):
-        return min(max(super().get(), self.low), self.high)
-
-
-def settle_on_leave(spinbox, variable) -> None:
-    """Ein getippter Wert außerhalb des Bereichs wird beim Verlassen des Feldes
-    (und bei Enter) auf den Wert gesetzt, der wirklich gilt: Das Feld zeigt sonst
-    100, während mit 40 geübt wird. Leere oder unlesbare Felder bleiben, wie sie sind."""
-    def settle(_event=None):
         try:
-            variable.set(variable.get())
+            self.last = min(max(super().get(), self.low), self.high)
         except tk.TclError:
             pass
+        return self.last
+
+
+def settle_on_leave(spinbox, variable, name: str = "", unit: str = "") -> None:
+    """Ein getippter Wert außerhalb des Bereichs (oder ein leeres Feld) wird beim
+    Verlassen des Feldes und bei Enter auf den Wert gesetzt, der wirklich gilt: Das
+    Feld zeigt sonst 100, während mit 40 geübt wird. Wurde etwas geändert, sagt die
+    Ansage den neuen Wert (`name`, `unit`), wer nicht sieht, erfährt es sonst nie."""
+    def settle(_event=None):
+        try:
+            shown = spinbox.get().strip()
+            value = variable.get()
+            variable.set(value)
+        except tk.TclError:
+            return
+        if name and shown != str(value):
+            announcer.say(tr("{name} auf {value} gesetzt.").format(name=name, value=f"{value} {unit}".strip()))
     spinbox.bind("<FocusOut>", settle, add="+")
     spinbox.bind("<Return>", settle, add="+")
 

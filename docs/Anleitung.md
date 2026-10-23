@@ -9,7 +9,7 @@ der Bestandteile; Strg+F sucht darin.
 Mit Sprachansage liest Pfeil runter bzw. hoch den nächsten bzw. vorigen
 Absatz vor; **Online im Browser öffnen** zeigt die Anleitung im Browser (braucht
 Internet), wo auch ein Screenreader sie liest.
-Im Reiter Contest sendet F1 CQ, dort öffnet nur der Knopf die Hilfe.
+Im Reiter Contest sendet F1 CQ, dort öffnen Strg+F1 und der Knopf die Hilfe.
 Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 
 **Inhalt**
@@ -1141,6 +1141,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Überall | Alt+0 | Reiter Statistik |
 | Überall | Strg+Tab | durch die Reiter blättern |
 | Überall außer Contest | F1 | Hilfe beim Abschnitt des aktuellen Reiters |
+| Überall | Strg+F1 | Hilfe, auch im Contest (dort sendet F1 CQ) |
 | Überall | F9 | Ansage an/aus |
 | Überall | F11 | vorlesen, wo du bist |
 | Überall | F12 | Tagesübung starten |

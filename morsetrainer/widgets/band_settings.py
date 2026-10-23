@@ -311,10 +311,8 @@ class BandSettings:
         frame = self.content = ttk.Frame(self.scroller.inner, padding=10)
         frame.pack(fill="both", expand=True)
         self.note_label = theme.hint(frame, textvariable=self.note_var, wrap=460)
-        self.note_anchor = theme.hint(frame, wrap=460, text=tr(
-            "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken "
-            "sofort, auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers."))
-        self.note_anchor.pack(anchor="w", pady=(0, 2))
+        self.note_anchor = ttk.Frame(frame, height=1)  # Platzhalter: die Zeile der Tagesübung steht davor
+        self.note_anchor.pack(anchor="w")
         self._show_note()
         presets = ttk.Frame(frame)
         presets.pack(fill="x", pady=(0, 4))
@@ -330,6 +328,10 @@ class BandSettings:
         # Dort sieht man, ob die Wahl gegriffen hat.
         self.rank_var = tk.StringVar(value="")
         theme.hint(frame, textvariable=self.rank_var, wrap=460).pack(anchor="w", pady=(0, 2))
+        theme.hint(frame, wrap=460, text=tr(
+            "Gilt für alle Reiter; dort schaltest du die Bandbedingungen nur an oder aus. Änderungen wirken "
+            "sofort, auch im laufenden Durchgang. Im Netzwerk hören alle die Einstellung des Trainers.")).pack(
+                anchor="w", pady=(0, 2))
         theme.hint(frame, wrap=460, text=tr(
             "Neue Zeichen ohne Störungen lernen. Zuschalten, wenn der Zeichensatz ohne Störungen sicher sitzt "
             "(90 % und mehr), und mit „leicht“ beginnen. Geübt wird am besten bei leicht bis mittel; „stark“ "

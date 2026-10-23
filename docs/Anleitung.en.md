@@ -9,7 +9,7 @@ the components; Ctrl+F searches in it.
 With announcements on, the down and up arrows read the next and previous
 paragraph; **Open online in browser** shows the manual in your browser
 (needs internet), where a screen reader can read it too.
-In the Contest tab F1 sends CQ, so there only the button opens the help. A short
+In the Contest tab F1 sends CQ, so there Ctrl+F1 and the button open the help. A short
 overview with pictures is in the [README](../README.en.md).
 
 **Language:** the program starts in German. Switch to English with
@@ -1119,6 +1119,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Everywhere | Alt+0 | Statistics tab |
 | Everywhere | Ctrl+Tab | cycle through the tabs |
 | Everywhere except Contest | F1 | help at the section of the current tab |
+| Everywhere | Ctrl+F1 | help, also in Contest (where F1 sends CQ) |
 | Everywhere | F9 | announcements on/off |
 | Everywhere | F11 | read out where you are |
 | Everywhere | F12 | start daily practice |

@@ -28,7 +28,7 @@ from morsetrainer.widgets import tkcompat
 PALETTES = {
     "light": {
         "BG": "#f3f4f6", "SURFACE": "#ffffff", "BORDER": "#d3d7de", "BUTTON": "#e8eaee",
-        "BUTTON_ACTIVE": "#dde1e7", "TEXT": "#1d2127", "MUTED": "#5f6670", "DISABLED": "#a0a6ae",
+        "BUTTON_ACTIVE": "#dde1e7", "TEXT": "#1d2127", "MUTED": "#575e68", "DISABLED": "#a0a6ae",
         "ACCENT": "#2868c8", "ACCENT_ACTIVE": "#215bb0",
         "FOCUS": "#2868c8",  # Rahmen des Eingabefelds mit Tastaturfokus
         # Rand von Eingabefeldern und Reglergriff: mindestens 3:1 gegen
@@ -37,19 +37,19 @@ PALETTES = {
         "EDGE": "#6b7380",
         "THUMB_ARROW": "#1d2127",  # Pfeile der Rollbalken auf dem Griff
         "THUMB": "#a8aeb8",  # Griff der Rollbalken, bewusst dezent (2,0:1); der hohe Kontrast nimmt Weiß
-        "SELECT": "#d7e6fa", "OK": "#1e7e34", "ERROR": "#c0392b", "OK_BG": "#d9f2dd", "ERROR_BG": "#f9dcd9",
+        "SELECT": "#d7e6fa", "OK": "#187030", "ERROR": "#a93226", "OK_BG": "#d9f2dd", "ERROR_BG": "#f9dcd9",
         "GRID": "#e4e6ea",  # Hilfslinien in Diagrammen
         "TROUGH": "#d3d7de",  # Schiene der Schieberegler
         # QSO: Station 1 bzw. Run-Station, dann abwechselnd die Gegenstationen.
-        "STATION_COLORS": ("#1f5fbf", "#b35900", "#287a4c"),
+        "STATION_COLORS": ("#1f5fbf", "#a35000", "#287a4c"),
         "BORDER_WIDTH": 1,
     },
     "contrast": {
         "BG": "#000000", "SURFACE": "#000000", "BORDER": "#ffffff", "BUTTON": "#1a1a1a",
         "BUTTON_ACTIVE": "#333333", "TEXT": "#ffffff", "MUTED": "#e0e0e0", "DISABLED": "#9e9e9e",
         "ACCENT": "#ffd400", "ACCENT_ACTIVE": "#ffe766", "FOCUS": "#ffd400", "SELECT": "#00468c",
-        "OK": "#6cf06c", "ERROR": "#ff8080", "OK_BG": "#003d00", "ERROR_BG": "#5c0000",
-        "GRID": "#5a5a5a", "TROUGH": "#4d4d4d", "STATION_COLORS": ("#80c8ff", "#ffb84d", "#7cfc9a"),
+        "OK": "#6cf06c", "ERROR": "#ff8080", "OK_BG": "#003d00", "ERROR_BG": "#400000",
+        "GRID": "#5a5a5a", "TROUGH": "#767676", "STATION_COLORS": ("#80c8ff", "#ffb84d", "#7cfc9a"),
         "EDGE": "#ffffff", "THUMB": "#ffffff", "THUMB_ARROW": "#000000",
         "BORDER_WIDTH": 2,
     },

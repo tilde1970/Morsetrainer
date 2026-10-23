@@ -336,9 +336,11 @@ class RunModeFrame:
         self.exch_var = tk.StringVar()
         self.call_entry = ttk.Entry(fields, textvariable=self.call_var, width=12, font=theme.MONO_ENTRY)
         self.call_entry.grid(row=1, column=0)
+        announcer.name(self.call_entry, tr("Call"))
         announcer.nato(self.call_entry)  # beim Hineinspringen; getippt wird hier nicht angesagt (Mischer läuft)
         self.exch_entry = ttk.Entry(fields, textvariable=self.exch_var, width=8, font=theme.MONO_ENTRY)
         self.exch_entry.grid(row=1, column=1, padx=(12, 0))
+        announcer.name(self.exch_entry, tr("Austausch"))
         for var in (self.call_var, self.exch_var):
             var.trace_add("write", lambda *_, v=var: self._uppercase(v))
         for entry in (self.call_entry, self.exch_entry):

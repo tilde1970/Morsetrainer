@@ -658,7 +658,7 @@ def _say_value(widget) -> None:
 def describe(widget) -> str:
     """„Beschriftung, Rolle, Wert“, z. B. „Hoher Kontrast, Schalter, aus.“"""
     cls = widget_class(widget)
-    parts = [_label(widget).rstrip("."), tr(ROLES.get(cls, ""))]  # „…langsamer., Tabelle“ wäre eine falsche Pause
+    parts = [_label(widget).rstrip(".:"), tr(ROLES.get(cls, ""))]  # „…langsamer., Tabelle“ wäre eine falsche Pause
     value = _value(widget)
     if value:
         parts.append(value)

@@ -477,6 +477,7 @@ EN.update({
     "Welche Station hat noch einmal gerufen und „DUP“ bekommen?": "Which station called again and was told “DUP”?",
     "Austausch von {call}": "Exchange of {call}",
     "Austausch": "Exchange",
+    "Call": "Call",
 })
 
 # --- daily_runner.py, widgets/daily_panel.py (Tagesübung) ---
@@ -579,6 +580,11 @@ EN.update({
     "Enter: abbrechen. Escape: abbrechen. Tab geht zu „{action}“.":
         "Enter: cancel. Escape: cancel. Tab goes to “{action}”.",
     "Statistik löschen": "Delete statistics",
+    "{name} auf {value} gesetzt.": "{name} set to {value}.",
+    "Effektives Tempo": "Effective speed",
+    "Lektion {lesson} gesetzt, {count} Zeichen.": "Lesson {lesson} set, {count} characters.",
+    "Während der Übung gesperrt. Zum Wechseln erst stoppen.": "Locked during the exercise. Stop first to switch.",
+    "Eingabe {name}": "Input {name}",
     "Enter: schließen.": "Enter: close.",
     "{item}, {n} von {total}.": "{item}, {n} of {total}.",
     "Liste offen.": "List open.",

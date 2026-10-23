@@ -270,6 +270,12 @@ class SequenceModeFrame(DailyModeMixin):
             if isinstance(value, int) and not isinstance(value, bool) and limits[0] <= value <= limits[1]:
                 var.set(value)
 
+    def _style_chosen(self):
+        """Eingabeart per Mausklick, Leertaste oder Pfeil gewählt: die Ansage sagt auch, was sie verlangt."""
+        hint = STYLE_HINTS.get(self.style_var.get())
+        if hint:
+            announcer.say(tr(hint))
+
     def _show_style_hint(self):
         """Eine Zeile unter der Eingabeart: was die gewählte Art verlangt."""
         hint = STYLE_HINTS.get(self.style_var.get())
@@ -291,7 +297,10 @@ class SequenceModeFrame(DailyModeMixin):
         ttk.Label(style, text=tr("Eingabe:")).pack(side="left", padx=(0, 6))
         self.style_var = tk.StringVar(value=self.default_style)
         for value, label in INPUT_STYLES:
-            ttk.Radiobutton(style, text=tr(label), value=value, variable=self.style_var).pack(side="left", padx=(0, 10))
+            button = ttk.Radiobutton(style, text=tr(label), value=value, variable=self.style_var,
+                                     command=self._style_chosen)
+            button.pack(side="left", padx=(0, 10))
+            announcer.name(button, tr("Eingabe {name}").format(name=tr(label)))
         self.style_hint_var = tk.StringVar(value="")
         theme.hint(options, textvariable=self.style_hint_var, wrap=560).pack(anchor="w")
         self.style_var.trace_add("write", lambda *_: self._show_style_hint())

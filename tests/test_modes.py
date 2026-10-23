@@ -2279,3 +2279,109 @@ class UsabilityFixesTest(AppTestCase):
 
     def test_ctrl_q_quits(self):
         self.assertTrue(self.root.bind_all("<Control-q>"))
+
+
+class AccessibilityFixesTest(AppTestCase):
+    """Befunde der Gesamtprüfung Barrierefreiheit."""
+
+    def setUp(self):
+        super().setUp()
+        self.said = []
+        patch = mock.patch.object(announcer, "say", lambda text, *a, **k: self.said.append(text))
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_empty_tempo_field_uses_the_last_valid_value(self):
+        self.app.wpm_var.set(25)
+        self.assertEqual(self.app.wpm_var.get(), 25)
+        self.root.tk.globalsetvar(str(self.app.wpm_var), "")  # Feld leer getippt
+        self.assertEqual(self.app.wpm_var.get(), 25)  # kein TclError beim Start
+
+    def test_corrected_value_is_announced(self):
+        from morsetrainer.widgets.ui_widgets import settle_on_leave
+        self.app.wpm_var.set(100)
+        spin = ttk.Spinbox(self.root, textvariable=self.app.wpm_var)
+        settle_on_leave(spin, self.app.wpm_var, "Tempo", "WPM")
+        spin.event_generate("<FocusOut>")
+        self.assertTrue(any("40 WPM" in text for text in self.said), self.said)
+
+    def test_lesson_clamped_is_announced(self):
+        self.app.charset_var.set(koch.lesson_charset(2))
+        self.app.lesson_var.set(999)
+        self.app._lesson_field_left()
+        self.assertTrue(any("Lektion" in text and "Zeichen" in text for text in self.said), self.said)
+
+    def test_tab_change_takes_focus_from_a_hidden_widget(self):
+        self.root.deiconify()
+        self.root.update()
+        self.mode("Einzelzeichen").start_button.focus_force()
+        self.root.update()
+        self.app.select_tab(1)
+        self.root.update()
+        focus = self.root.focus_get()
+        self.assertTrue(focus is None or focus.winfo_viewable())
+        self.assertIsNot(focus, self.mode("Einzelzeichen").start_button)
+
+    def test_locked_tab_says_why(self):
+        self.app._lock_tabs()
+        self.said.clear()
+        self.app.select_tab(1)
+        self.assertTrue(any("gesperrt" in text for text in self.said), self.said)
+        self.app._unlock_tabs()
+
+    def test_locked_content_buttons_leave_the_tab_order(self):
+        self.app._lock_tabs()
+        self.assertTrue(all(str(b.cget("takefocus")) in ("0", "") or not b.cget("takefocus")
+                            for b in self.app.one_by_one_buttons))
+        self.app._unlock_tabs()
+        self.assertEqual(sum(1 for b in self.app.one_by_one_buttons if str(b.cget("takefocus")) in ("1", "True")), 1)
+
+    def test_contest_fields_and_input_style_have_spoken_names(self):
+        from morsetrainer.widgets import announcer as ann
+        run = self.mode("Contest")
+        self.assertIn("Call", ann.describe(run.call_entry))
+        self.assertIn("Austausch", ann.describe(run.exch_entry))
+        group = self.mode("Gruppen")
+        group.style_var.set("copy")
+        self.said.clear()
+        group._style_chosen()
+        self.assertTrue(any("während des Tons" in text for text in self.said), self.said)
+
+    def test_header_leaves_the_tab_order_in_the_statistics_tab(self):
+        self.app._set_header_tab_stops(False)
+        stops = [w for w in self._descendants(self.app.header) if str(w.cget("takefocus")) == "1"]
+        self.assertEqual(stops, [])
+        self.app._set_header_tab_stops(True)
+
+    @staticmethod
+    def _descendants(widget):
+        for child in widget.winfo_children():
+            yield child
+            yield from AccessibilityFixesTest._descendants(child)
+
+    def test_ctrl_f1_opens_help_in_the_contest(self):
+        self.app.show_mode("Contest")
+        with mock.patch.object(self.app, "open_help") as opened:
+            self.app._dispatch_key(mock.Mock(keysym="F1", char="", state=0x4))
+        opened.assert_called_once()
+
+    def test_ctrl_shift_q_also_quits(self):
+        self.assertTrue(self.root.bind_all("<Control-Q>"))
+
+    def test_contrast_palette_meets_seven_to_one(self):
+        def luminance(color):
+            channels = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+            return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+        def ratio(a, b):
+            high, low = sorted((luminance(a), luminance(b)), reverse=True)
+            return (high + 0.05) / (low + 0.05)
+
+        palette = theme.PALETTES["contrast"]
+        for fg, bg in (("OK", "OK_BG"), ("ERROR", "ERROR_BG")):
+            self.assertGreaterEqual(ratio(palette[fg], palette[bg]), 7.0, fg)
+        self.assertGreaterEqual(ratio(palette["TROUGH"], palette["BG"]), 3.0)
+        light = theme.PALETTES["light"]
+        for fg, bg in (("OK", "OK_BG"), ("ERROR", "ERROR_BG"), ("MUTED", "BUTTON_ACTIVE")):
+            self.assertGreaterEqual(ratio(light[fg], light[bg]), 4.5, fg)

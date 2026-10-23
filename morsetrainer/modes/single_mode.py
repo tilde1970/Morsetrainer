@@ -195,8 +195,10 @@ class SingleModeFrame(DailyModeMixin):
         ttk.Checkbutton(options, text=tr("Quittungston"), variable=self.sound_var).pack(anchor="w")
         self._show_limit()
 
+        # Start über den Optionen, und Tab kommt auch zuerst dorthin (statt nach 12 Stopps).
         controls = ttk.Frame(parent)
-        controls.pack(fill="x", padx=10, pady=(8, 0))
+        controls.pack(fill="x", padx=10, pady=(8, 0), before=options)
+        controls.lower(options)
         self.start_button = ttk.Button(controls, text=tr("Start (F5)"), style="Accent.TButton", command=self.toggle_running)
         self.start_button.pack(side="left")
         self.repeat_button = ttk.Button(
