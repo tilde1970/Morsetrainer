@@ -933,17 +933,19 @@ class SequenceModeFrame(DailyModeMixin):
         # Gewichtung es öfter bringt, ohne die Trefferquote zu drücken.
         if self.attempts == 0:
             unsure = slow and self.style != COPY
+            swapped = align.swapped_results(sent, typed)  # mit dem Nachbarn vertauscht: keine Verwechslung
             for index, (expected, got, typed_index) in enumerate(results):
                 reaction_time, latency = self._char_timing(index, typed_index)
                 measured_wpm = effective_wpm(expected, reaction_time, self.voice[0])
                 if self.replayed and got == expected:
-                    self.session_stats.record_char(expected, "", False, reaction_time, measured_wpm)
+                    self.session_stats.record_char(expected, "", False, reaction_time, measured_wpm, cause="replay")
                     continue
                 assumed = unsure and got == expected
                 if assumed:
                     latency = self.unsure_latency
                 self.session_stats.record_char(
-                    expected, got, got == expected, reaction_time, measured_wpm, latency=latency, assumed=assumed
+                    expected, got, got == expected, reaction_time, measured_wpm, latency=latency, assumed=assumed,
+                    cause="swap" if index in swapped else None
                 )
         hits = sum(1 for expected, got, _ in results if got == expected)
         correct_chars = max(hits - align.extra_count(sent, typed), 0)

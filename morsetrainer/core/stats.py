@@ -20,8 +20,8 @@ from morsetrainer import DATA_DIR
 from morsetrainer.core import db
 from morsetrainer.core import tempo
 from morsetrainer.core.koch import SLOW_CHAR_WPM
-from morsetrainer.core.morse import display_text
-from morsetrainer.i18n import N_
+from morsetrainer.core.morse import display_text, sounds_similar
+from morsetrainer.i18n import N_, tr
 
 STATS_DIR = DATA_DIR / "stats"
 
@@ -33,13 +33,62 @@ LATENCY_CAP_S = 5.0
 CONFUSIONS_SHOWN = 3
 
 
-def format_confusions(confusions: dict) -> str:
-    """{"5": 12, "S": 3, "": 2} -> "5 (12), S (3)". Verpasste Zeichen ("")
-    sind keine Verwechslung (das Zeichen wurde gar nicht erkannt); sie
-    zählen nur als falsch."""
+# Ursachen eines Fehlers (record_char): „heard“ ist die Verwechslung mit einem
+# anderen Zeichen, alle anderen sind keine und fließen nicht in die Liste der
+# Verwechslungen ein.
+HEARD = "heard"
+CAUSE_LABELS = {
+    "late": N_("zu langsam"),
+    "replay": N_("erst nach Wiederholung"),
+    "missed": N_("verpasst"),
+    "swap": N_("vertauscht"),
+}
+
+
+def format_confusions(confusions: dict, causes=None) -> str:
+    """{"5": 12, "S": 3, "": 2} -> "5 (12), S (3)". Fehler ohne anderes
+    Zeichen ("") sind keine Verwechslung; mit `causes` ({"late": 2, …}) steht
+    dahinter, was sie waren („zu langsam 2×“), ohne Angabe (ältere Daten)
+    „ohne Eingabe“."""
     top = sorted(((typed, count) for typed, count in confusions.items() if typed),
                  key=lambda item: (-item[1], item[0]))[:CONFUSIONS_SHOWN]
-    return ", ".join(f"{display_text(typed)} ({count})" for typed, count in top)
+    text = ", ".join(f"{display_text(typed)} ({count})" for typed, count in top)
+    causes = {cause: n for cause, n in (causes or {}).items() if cause in CAUSE_LABELS and n}
+    other = [f"{tr(label)} {causes[cause]}×" for cause, label in CAUSE_LABELS.items() if cause in causes]
+    rest = confusions.get("", 0) - sum(causes.values())
+    if rest > 0:
+        other.append(f"{tr('ohne Eingabe')} {rest}×")
+    return "; ".join(part for part in (text, ", ".join(other)) if part)
+
+
+def _tally(per_char: dict, char, typed, correct, reaction_time, effective_wpm, latency, assumed, timed, cause) -> None:
+    """Zählt eine Antwort in `per_char` ({Zeichen: Summen}) mit."""
+    agg = per_char.setdefault(
+        char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
+               "correct_reaction_times": [], "latencies": [], "assumed_latencies": [], "confusions": {},
+               "untimed": 0, "causes": {}})
+    if not correct:
+        agg["wrong"] += 1
+        # Nur ein anderes Zeichen ist eine Verwechslung; sonst zählt es unter "".
+        key = typed if cause == HEARD else ""
+        agg["confusions"][key] = agg["confusions"].get(key, 0) + 1
+        agg["causes"][cause] = agg["causes"].get(cause, 0) + 1
+    if not timed:
+        if correct:
+            agg["good"] += 1
+            agg["untimed"] += 1
+        return
+    if correct:
+        agg["good"] += 1
+        agg["correct_effective_wpms"].append(effective_wpm)
+        agg["correct_reaction_times"].append(reaction_time)
+        if latency is not None:
+            capped = min(max(latency, 0.0), LATENCY_CAP_S)
+            agg["latencies"].append(capped)
+            if assumed:
+                agg["assumed_latencies"].append(capped)
+    agg["reaction_times"].append(reaction_time)
+    agg["effective_wpms"].append(effective_wpm)
 
 
 class SessionStats:
@@ -75,7 +124,11 @@ class SessionStats:
         self.freq = freq
         self.group_len = group_len
         self.rounds = []  # Ergebnisse je Zeichen, flach über den ganzen Durchgang
+        # per_char zählt alles, was im Durchgang geschah (Anzeige); kept_char ohne die
+        # erneuten Abfragen nach einem Fehler: nur das geht in Gesamtstatistik,
+        # Lernkartei und Gewichtung ein (eine Bestätigung ist kein Erkennen).
         self.per_char = {}
+        self.kept_char = {}
 
         # Lässt sich das Protokoll nicht schreiben (Platte voll, keine
         # Schreibrechte), geht die Übung ohne Protokoll weiter.
@@ -114,7 +167,7 @@ class SessionStats:
             self.log_error = str(exc)
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
-                    latency=None, assumed=False, timed=True) -> None:
+                    latency=None, assumed=False, timed=True, cause=None, retry=False) -> None:
         """Ergebnis für ein einzelnes Zeichen festhalten und sofort speichern.
 
         `latency` ist die Zeit vom Ende des Tons (des letzten Punkts oder
@@ -128,7 +181,15 @@ class SessionStats:
         dieses Zeichens, nicht für die übliche Latenz. `timed` False: In der
         Zeit steckt etwas anderes (F11-Ansage ohne Zeitlimit); die Antwort
         zählt richtig/falsch, aber in keinen Zeit- und Tempowert und in der
-        Lernkartei weder als flüssig noch als langsam."""
+        Lernkartei weder als flüssig noch als langsam.
+        `cause` (bei einem Fehler): HEARD (ein anderes Zeichen getippt, Standard
+        mit getipptem Zeichen), "late" (zu langsam), "replay" (erst nach
+        Wiederholung), "missed" (nichts getippt, Standard ohne), "swap"
+        (mit dem Nachbarn vertauscht); nur HEARD ist eine Verwechslung.
+        `retry`: erneute Abfrage kurz nach einem Fehler; sie zählt im Durchgang,
+        aber nicht in Gesamtstatistik, Lernkartei und Gewichtung."""
+        if not correct and cause is None:
+            cause = HEARD if typed else "missed"
         entry = {
             "char": char,
             "typed": typed,
@@ -136,6 +197,10 @@ class SessionStats:
             "reaction_time_s": round(reaction_time, 3),
             "effective_wpm": round(effective_wpm, 1),
         }
+        if not correct:
+            entry["cause"] = cause
+        if retry:
+            entry["retry"] = True
         if latency is not None and timed:
             entry["latency_s"] = round(latency, 3)
             if assumed:
@@ -144,34 +209,10 @@ class SessionStats:
             entry["untimed"] = True
         self.rounds.append(entry)
         self._write_line({"type": "char", **entry})
-
-        agg = self.per_char.setdefault(
-            char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
-                   "correct_reaction_times": [], "latencies": [], "assumed_latencies": [], "confusions": {},
-                   "untimed": 0}
-        )
-        if not timed:
-            if correct:
-                agg["good"] += 1
-                agg["untimed"] += 1
-            else:
-                agg["wrong"] += 1
-                agg["confusions"][typed] = agg["confusions"].get(typed, 0) + 1
-            return
-        if correct:
-            agg["good"] += 1
-            agg["correct_effective_wpms"].append(effective_wpm)
-            agg["correct_reaction_times"].append(reaction_time)
-            if latency is not None:
-                capped = min(max(latency, 0.0), LATENCY_CAP_S)
-                agg["latencies"].append(capped)
-                if assumed:
-                    agg["assumed_latencies"].append(capped)
-        else:
-            agg["wrong"] += 1
-            agg["confusions"][typed] = agg["confusions"].get(typed, 0) + 1
-        agg["reaction_times"].append(reaction_time)
-        agg["effective_wpms"].append(effective_wpm)
+        args = (char, typed, correct, reaction_time, effective_wpm, latency, assumed, timed, cause)
+        _tally(self.per_char, *args)
+        if not retry:
+            _tally(self.kept_char, *args)
 
     def record_group(self, sent: str, typed: str, wpm=None, first=None) -> None:
         """Eine abgeschickte Gruppe festhalten (zusätzlich zu den record_char-
@@ -197,8 +238,9 @@ class SessionStats:
             reaction = measured_latency(sum(e["latencies"]), len(e["latencies"]),
                                         sum(e["assumed_latencies"]), len(e["assumed_latencies"]))
             avg_wpm = statistics.mean(e["correct_effective_wpms"]) if e["correct_effective_wpms"] else None
-            rows.append((char, e["good"], e["wrong"], total, reaction, avg_wpm, format_confusions(e["confusions"])))
-        rows.sort(key=lambda r: (-r[2], r[0]))
+            rows.append((char, e["good"], e["wrong"], total, reaction, avg_wpm,
+                         format_confusions(e["confusions"], e["causes"])))
+        rows.sort(key=_weakness)
         return rows
 
     def summary(self):
@@ -223,7 +265,7 @@ class SessionStats:
         """Je Zeichen: richtig, falsch, mittlere Reaktionszeit, mittleres
         effektives Tempo und Verwechslungen (für die Zusammenfassung)."""
         out = {}
-        for char, e in self.per_char.items():
+        for char, e in self.kept_char.items():
             out[char] = {
                 "good": e["good"],
                 "wrong": e["wrong"],
@@ -232,6 +274,7 @@ class SessionStats:
                 "avg_effective_wpm": round(statistics.mean(e["effective_wpms"]), 1)
                 if e["effective_wpms"] else 0.0,
                 "confusions": e["confusions"],
+                "causes": e["causes"],
             }
         return out
 
@@ -273,7 +316,7 @@ class SessionStats:
                     if promote is None:
                         promote = self.review_promote and review.can_promote(self.charset)
                     if not self.review_skip:
-                        review.update(self.per_char, promote=promote,
+                        review.update(self.kept_char, promote=promote,
                                       events=self.review_events if events is None else events,
                                       fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
         except (db.Error, OSError) as exc:
@@ -320,7 +363,7 @@ def recover_unfinished(now=None) -> int:
                 session.record_char(e.get("char", ""), e.get("typed", ""), bool(e.get("correct")),
                                     float(e.get("reaction_time_s") or 0), float(e.get("effective_wpm") or 0),
                                     latency=e.get("latency_s"), assumed=bool(e.get("latency_assumed")),
-                                    timed=not e.get("untimed"))
+                                    timed=not e.get("untimed"), cause=e.get("cause"), retry=bool(e.get("retry")))
             session.session_id = session_id
             session.duration_s = round(sum(r["reaction_time_s"] for r in session.rounds), 1)
             summary = {"type": "summary", **session.summary(), "duration_s": session.duration_s,
@@ -338,7 +381,7 @@ def _merge_all_time(session: "SessionStats") -> None:
     """Addiert die Ergebnisse je Zeichen aus `session` zur Gesamtstatistik und
     speichert sie (aufgerufen innerhalb der Transaktion von finalize)."""
     all_time = load_all_time()
-    for char, e in session.per_char.items():
+    for char, e in session.kept_char.items():
         x = all_time.setdefault(
             char,
             {
@@ -369,6 +412,9 @@ def _merge_all_time(session: "SessionStats") -> None:
         confusions = x.setdefault("confusions", {})
         for typed, count in e["confusions"].items():
             confusions[typed] = confusions.get(typed, 0) + count
+        causes = x.setdefault("causes", {})
+        for cause, count in e["causes"].items():
+            causes[cause] = causes.get(cause, 0) + count
     db.save_state(ALL_TIME_KEY, all_time)
 
 
@@ -414,8 +460,9 @@ def _clean_all_time(all_time: dict) -> dict:
         for key in ALL_TIME_OPTIONAL:
             if key in entry and not _is_number(entry[key]):
                 del entry[key]
-        if not isinstance(entry.get("confusions"), dict):
-            entry.pop("confusions", None)
+        for key in ("confusions", "causes"):
+            if not isinstance(entry.get(key), dict):
+                entry.pop(key, None)
         clean[char] = entry
     return clean
 
@@ -490,19 +537,33 @@ def _char_events(since: datetime, completed_only: bool = False):
 
 def recent_char_data(days: int = RECENT_DAYS, now=None) -> dict:
     """Zeichenstatistik wie die Gesamtstatistik ({Zeichen: {"good", "wrong",
-    "confusions"}}), aber nur aus den Durchgängen der letzten `days`
-    Tage und nach dem letzten Zurücksetzen. Längst behobene Verwechslungen
-    fallen so heraus. Selbst bewertete Sitzungen und Klartext zählen nicht."""
+    "confusions", "causes", "latencies", "assumed_latencies"}}), aber nur aus
+    den Durchgängen der letzten `days` Tage und nach dem letzten Zurücksetzen.
+    Längst behobene Verwechslungen fallen so heraus. Selbst bewertete
+    Sitzungen, Klartext und erneute Abfragen nach einem Fehler zählen nicht."""
     now = now or datetime.now()
     data = {}
     for _start, _mode, obj in _char_events(_after_reset(now - timedelta(days=days))):
-        e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}})
+        if obj.get("retry"):
+            continue  # erneute Abfrage nach einem Fehler: zählt nicht (siehe record_char)
+        e = data.setdefault(obj["char"], {"good": 0, "wrong": 0, "confusions": {}, "causes": {},
+                                          "latencies": [], "assumed_latencies": []})
         if obj.get("correct"):
             e["good"] += 1
+            latency = obj.get("latency_s")
+            if not obj.get("untimed") and type(latency) in (int, float) and math.isfinite(latency):
+                capped = min(max(latency, 0.0), LATENCY_CAP_S)
+                e["latencies"].append(capped)
+                if obj.get("latency_assumed"):
+                    e["assumed_latencies"].append(capped)
         else:
             e["wrong"] += 1
             typed = obj.get("typed", "")
-            e["confusions"][typed] = e["confusions"].get(typed, 0) + 1
+            # Ältere Zeilen ohne Ursache: ein getipptes Zeichen war eine Verwechslung.
+            cause = obj.get("cause") or (HEARD if typed else "missed")
+            key = typed if cause == HEARD else ""
+            e["confusions"][key] = e["confusions"].get(key, 0) + 1
+            e["causes"][cause] = e["causes"].get(cause, 0) + 1
     return data
 
 
@@ -616,9 +677,17 @@ def all_time_char_rows(all_time: dict):
         # Nur richtige Antworten mit Zeit (wie die Zeile darüber, all_time_summary).
         timed_good = e["good"] - e.get("untimed", 0)
         avg_wpm = e.get("correct_effective_wpm_total", 0.0) / timed_good if timed_good > 0 else None
-        rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm, format_confusions(e.get("confusions", {}))))
-    rows.sort(key=lambda r: (-r[2], r[0]))
+        rows.append((char, e["good"], e["wrong"], total, avg_rt, avg_wpm,
+                     format_confusions(e.get("confusions", {}), e.get("causes"))))
+    rows.sort(key=_weakness)
     return rows
+
+
+def _weakness(row):
+    """Sortierschlüssel für die Zeichentabelle: die höchste Fehlerquote zuerst
+    (geglättet, damit 1 von 2 nicht vor 40 von 50 steht), dann die meisten Fehler."""
+    _, _, wrong, total, *_ = row
+    return (-(wrong + 1) / (total + 2) if wrong else 0.0, -wrong, row[0])
 
 
 def all_time_summary(all_time: dict):
@@ -646,18 +715,43 @@ def _cpm(count: int, seconds: float) -> float:
     gebrauchte Zeit (Zeichen plus Reaktion); 0.0 ohne Messung."""
     return round(count * 60 / seconds, 1) if count and seconds > 0 else 0.0
 
-def top_confusions(all_time: dict, limit=10):
+# Darunter ist eine Verwechslung noch kein Muster, sondern wohl Zufall.
+MIN_CONFUSION_COUNT = 3
+
+
+def top_confusions(all_time: dict, limit=10, min_count: int = 1, similar_only: bool = False):
     """Häufigste Verwechslungen über alle Zeichen: [(gesendet, getippt,
     Anzahl, Anteil an den Versuchen des Zeichens)], verpasste Zeichen nicht
-    mitgezählt. `limit` None: alle."""
+    mitgezählt. `limit` None: alle. `min_count`: erst ab so vielen Fällen.
+    `similar_only`: nur Paare, die klanglich verwechselbar sind
+    (morse.sounds_similar), nicht Tippfehler."""
     pairs = []
     for char, e in all_time.items():
         attempts = e["good"] + e["wrong"]
         for typed, count in e.get("confusions", {}).items():
-            if typed:
+            if typed and count >= min_count and (not similar_only or sounds_similar(char, typed)):
                 pairs.append((char, typed, count, count / attempts if attempts else 0.0))
     pairs.sort(key=lambda p: (-p[2], p[0], p[1]))
     return pairs[:limit]
+
+
+# Für „zuletzt am schwächsten“: erst ab so vielen Antworten im Fenster.
+MIN_RANK_ATTEMPTS = 5
+
+
+def weakest_chars(recent: dict, all_time: dict, limit: int = 3):
+    """[(Zeichen, Fehlerquote)] der schwächsten Zeichen, höchste zuerst: nach
+    den Antworten der letzten Tage (`recent`), sonst, wo es dort zu wenige
+    gibt, nach der Gesamtstatistik. Nur Zeichen mit Fehlern."""
+    rates = {}
+    for source in (all_time, recent):  # recent überschreibt, wo genug da ist
+        for char, e in source.items():
+            total = e["good"] + e["wrong"]
+            if total >= MIN_RANK_ATTEMPTS:
+                rates[char] = e["wrong"] / total
+    ranked = sorted(((char, rate) for char, rate in rates.items() if rate > 0),
+                    key=lambda item: (-item[1], item[0]))
+    return ranked[:limit]
 
 
 # --- Verlauf -------------------------------------------------------------------

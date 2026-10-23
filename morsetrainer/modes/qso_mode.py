@@ -701,7 +701,7 @@ class QsoModeFrame(DailyModeMixin):
                 typed_time = self.typed_log[op.received_index]["time"]
                 if not plausible(typed_time, play_end):
                     # Vorausgeahnt („DE“, „599“) oder viel zu spät: verpasst.
-                    self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
+                    self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0, cause="late")
                     missed.add(op.expected_index)
                     continue
                 previous_key = self.typed_log[op.received_index - 1]["time"] if op.received_index else None

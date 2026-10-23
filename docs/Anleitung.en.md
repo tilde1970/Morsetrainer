@@ -267,8 +267,11 @@ program suggests moving on to groups.
   section 8 describes under “What is announced” applies.
 - After a confusion you hear the correct character and the one you typed
   back to back. A wrongly recognised character is played again right away
-  while the solution is shown, and asked again after a few other
-  characters.
+  while the solution is shown, and asked again after four to eight other
+  characters. This repeat counts within the run, but not for the overall
+  statistics, the review box and the weighting: a character you have only
+  just heard is not really recognised yet. The same character never comes
+  twice in a row.
 
 **Groups:** copy groups of characters. The group length can grow: start
 short, one longer after 5 correct groups, one shorter after 2 wrong groups
@@ -493,8 +496,15 @@ many characters. Runs with band conditions do not count here (section 6).
   the character count of the earlier period, without the hint about the
   reaction and, for new characters, only the sentence “New characters slow
   the average down at first.” without the characters.
-- **Characters sorted by errors:** this is what the announcement calls the
-  table below.
+- **Characters sorted by error rate:** this is what the announcement calls
+  the table below. The character with the highest error rate is on top
+  (cautiously estimated with few answers), not the one with the most
+  errors. The column “Confused with” lists the characters you typed
+  instead of the one sent (“6 (2)”) and what the other errors were: “too
+  slow”, “only after repeating”, “missed” or “swapped” (two neighbouring
+  characters in reverse order). Only another character counts as a
+  confusion. F11 also names the characters that were weakest lately (last
+  14 days, at least 5 answers).
 - **This week:** the week strip with stars and the weekly goal as in the
   daily practice bar; with a large font it appears only here. F11 reads it
   in one sentence (“practised on 3 of 4 days, today still open”; on the
@@ -524,7 +534,11 @@ many characters. Runs with band conditions do not count here (section 6).
   characters in it, from “Box 1 · every day” to “Box 6 · every 32 days”;
   F11 reads this out too.
 - **Most frequent confusions** of the last 30 days, with a button to
-  practise them against each other.
+  practise them against each other. A pair is listed only from 3 cases (a
+  single error is no pattern yet); pairs that do not sound alike (such as E
+  and 7) are marked “typo?” and stay out of the practice. The button sets
+  the character set to these characters for the run and switches on “weak
+  favoured”; afterwards your own character set is back.
 - **Awards** and **lifeline** (section 5) and the
   **progress history** per exercise (sessions with fewer than 5
   characters, such as short tries, are left out there).

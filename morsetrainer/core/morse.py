@@ -229,3 +229,33 @@ def effective_wpm(char: str, since_start: float, wpm=None) -> float:
     if wpm:
         since_start = max(since_start, units * 1.2 / wpm)
     return units * 1.2 / max(since_start, 0.001)
+
+
+# Ab diesem Abstand der Punkt-Strich-Muster klingen zwei Zeichen nicht mehr
+# ähnlich genug, um verhört zu werden (B/6: 1, S/H: 1, D/U: 2 gespiegelt).
+SIMILAR_MAX_DISTANCE = 2
+
+
+def code_distance(a: str, b: str):
+    """Editierabstand der Punkt-Strich-Muster zweier Zeichen (Einfügen,
+    Löschen, Ersetzen je 1); None, wenn eins kein Morsezeichen ist."""
+    first, second = MORSE_CODE.get(a.upper()), MORSE_CODE.get(b.upper())
+    if first is None or second is None:
+        return None
+    previous = list(range(len(second) + 1))
+    for i, x in enumerate(first, 1):
+        row = [i]
+        for j, y in enumerate(second, 1):
+            row.append(min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (x != y)))
+        previous = row
+    return previous[-1]
+
+
+def sounds_similar(a: str, b: str) -> bool:
+    """Können `a` und `b` verhört werden? Wenn sich die Muster höchstens um
+    SIMILAR_MAX_DISTANCE unterscheiden oder gespiegelt sind (A/N, D/U). Andere
+    Paare (etwa E und 7) sind eher ein Tippfehler."""
+    distance = code_distance(a, b)
+    if distance is None:
+        return False
+    return distance <= SIMILAR_MAX_DISTANCE or MORSE_CODE[a.upper()] == MORSE_CODE[b.upper()][::-1]

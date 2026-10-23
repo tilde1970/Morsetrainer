@@ -117,7 +117,7 @@ class StatsTest(unittest.TestCase):
         session = self._session([("H", "5"), ("H", "5"), ("H", "H"), ("S", ""), ("5", "H")])
         rows = {row[0]: row for row in session.char_rows()}
         self.assertEqual(rows["H"][6], "5 (2)")
-        self.assertEqual(rows["S"][6], "")  # verpasst ist keine Verwechslung
+        self.assertEqual(rows["S"][6], "verpasst 1×")  # keine Verwechslung, aber als Ursache genannt
         self.assertEqual(rows["S"][2], 1)  # zählt aber als falsch
         session.finalize()
         self._session([("H", "5")]).finalize()
@@ -140,15 +140,18 @@ class StatsTest(unittest.TestCase):
     def test_confusion_drill_ignores_untrained_chars(self):
         from morsetrainer.app import MorseTrainerApp
         data = {
-            "6": {"good": 30, "wrong": 3, "confusions": {"B": 2, "N": 1}},
-            "8": {"good": 20, "wrong": 3, "confusions": {"9": 2, "7": 1}},
-            "/": {"good": 20, "wrong": 1, "confusions": {"(": 1}},  # Vertipper mit Umschalttaste
-            "5": {"good": 17, "wrong": 1, "confusions": {"H": 1}},
+            "6": {"good": 30, "wrong": 7, "confusions": {"B": 4, "N": 3}},
+            "8": {"good": 20, "wrong": 7, "confusions": {"9": 4, "7": 3}},
+            "/": {"good": 20, "wrong": 5, "confusions": {"(": 5}},  # Vertipper mit Umschalttaste
+            "5": {"good": 17, "wrong": 3, "confusions": {"H": 3}},
+            "E": {"good": 20, "wrong": 1, "confusions": {"B": 1}},  # nur einmal: noch kein Muster
         }
         for ch in "B9HN7":
             data[ch] = {"good": 10, "wrong": 0, "confusions": {}}
         chars = MorseTrainerApp._confusion_charset(data)
-        self.assertEqual(chars, "6B895HN")  # "/ → (" entfällt ("(" nie gesendet), "6 → N" rückt nach
+        # "/ → (" entfällt ("(" nie gesendet), "6 → N" klingt verschieden (Tippfehler?),
+        # "E → B" kam nur einmal vor.
+        self.assertEqual(chars, "6B895H7")
 
     def test_recent_confusions_forget_old_sessions_and_reset(self):
         from datetime import datetime, timedelta

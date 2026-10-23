@@ -88,14 +88,14 @@ class StatsPanel:
             self.compare_var.trace_add("write", lambda *_: label.pack(after=summary, anchor="w", pady=(0, 6))
                                        if self.compare_var.get() else label.pack_forget())
 
-        theme.hint(box, text=tr("Zeichen, nach Fehlern sortiert")).pack(anchor="w")
+        theme.hint(box, text=tr("Zeichen, nach Fehlerquote sortiert")).pack(anchor="w")
         columns = ("char", "good", "wrong", "avg_rt", "avg_wpm", "confusions")
         if compare:
             columns = columns[:4] + ("trend",) + columns[4:]
         self.compare = compare
         self.char_tree = ttk.Treeview(box, columns=columns, show="headings", height=tree_height)
         # Sonst hieße die Tabelle beim Vorlesen wie die Vergleichszeile darüber (rund 330 Zeichen).
-        announcer.name(self.char_tree, tr("Zeichen nach Fehlern sortiert"))
+        announcer.name(self.char_tree, tr("Zeichen nach Fehlerquote sortiert"))
         headings = {
             "char": tr("Zeichen", context="Spalte"), "good": tr("Richtig"), "wrong": tr("Falsch"),
             "avg_rt": tr("Ø Reaktion (s)"), "avg_wpm": tr("Ø WPM"), "confusions": tr("Verwechselt mit"),

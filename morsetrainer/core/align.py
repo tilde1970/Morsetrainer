@@ -100,6 +100,24 @@ def char_results(expected: str, received: str) -> list[tuple[str, str, Optional[
     ]
 
 
+def swapped_results(expected: str, received: str) -> set:
+    """Indizes (in `expected`) der Zeichen, die mit ihrem Nachbarn vertauscht
+    getippt wurden, siehe swapped_indices."""
+    return swapped_indices(align(expected, received))
+
+
+def swapped_indices(ops: list) -> set:
+    """Positionen in `expected` (Index), an denen zwei benachbarte Zeichen
+    vertauscht getippt wurden (gesendet AB, getippt BA). Sie sind keine
+    Verwechslung des Klangs, sondern ein Fehler der Reihenfolge."""
+    found = set()
+    for first, second in zip(ops, ops[1:]):
+        if (first.kind == OpKind.SUBSTITUTE and second.kind == OpKind.SUBSTITUTE
+                and first.expected_char == second.received_char and first.received_char == second.expected_char):
+            found.update((first.expected_index, second.expected_index))
+    return found
+
+
 def extra_count(expected: str, received: str) -> int:
     """Anzahl getippter Zeichen, die zu keinem gesendeten gehören (zu viel
     getippt). Zählt als Fehler, sonst brächte Drauflostippen Treffer."""

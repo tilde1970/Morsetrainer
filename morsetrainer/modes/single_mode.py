@@ -72,7 +72,7 @@ ICR_RANGE = (0.5, 3.0)
 ICR_FASTER = 0.97
 ICR_SLOWER = 1.25
 # Ein falsch erkanntes Zeichen kommt nach so vielen anderen wieder.
-RETRY_AFTER = (2, 4)
+RETRY_AFTER = (4, 8)
 # Pause nach der Rückmeldung bzw. nach dem Korrekturton, in ms.
 FEEDBACK_MS = 700
 AFTER_CORRECTION_MS = 600
@@ -103,18 +103,26 @@ class RetryQueue:
     def __init__(self, rng=random):
         self.rng = rng
         self.waiting = {}  # Zeichen -> Anzahl anderer Zeichen, die noch davor kommen
+        self.after_error = set()  # davon die, die nach einem Fehler kommen (nicht nach F11)
+        self.last_after_error = False  # war das zuletzt von next_due gelieferte nach einem Fehler?
 
-    def add(self, ch: str) -> None:
+    def add(self, ch: str, error: bool = True) -> None:
         """Merkt `ch` zur erneuten Abfrage nach zufällig RETRY_AFTER anderen Zeichen
-        vor."""
+        vor; `error` False: nicht nach einem Fehler (F11 verwarf das Zeichen)."""
         self.waiting[ch] = self.rng.randint(*RETRY_AFTER)
+        self.after_error.discard(ch)
+        if error:
+            self.after_error.add(ch)
 
     def next_due(self):
         """Das fällige Zeichen (und aus der Liste nehmen) oder None; dann
         rückt die Wartezeit aller anderen um eins vor."""
+        self.last_after_error = False
         for ch, remaining in self.waiting.items():
             if remaining <= 0:
                 del self.waiting[ch]
+                self.last_after_error = ch in self.after_error
+                self.after_error.discard(ch)
                 return ch
         for ch in self.waiting:
             self.waiting[ch] -= 1
@@ -124,6 +132,7 @@ class RetryQueue:
         """Nimmt `ch` aus der Warteliste (etwa weil es zufällig schon wieder dran
         war)."""
         self.waiting.pop(ch, None)
+        self.after_error.discard(ch)
 
 
 class SingleModeFrame(DailyModeMixin):
@@ -146,6 +155,7 @@ class SingleModeFrame(DailyModeMixin):
         self.session_no = 0         # zählt die Durchgänge: eine späte Ansage gehört nicht in den nächsten
         self.pending_misses = []    # verpasste Zeichen, erst mit der nächsten Antwort gewertet
         self.timeouts = 0           # Zeichen ohne rechtzeitige Antwort im Durchgang
+        self.current_is_retry = False  # das Zeichen ist die erneute Abfrage nach einem Fehler
         self.first_hearing = True   # Zeichen zum ersten Mal gehört (nicht wiederholt)
         self.charset_var = charset_var
         self.wpm_var = wpm_var
@@ -361,12 +371,14 @@ class SingleModeFrame(DailyModeMixin):
         self.status_heard = False
         self.deadline = None
         due = self.retries.next_due()
+        self.current_is_retry = due is not None and self.retries.last_after_error
         if due is not None:
             self.current_char = due
         elif len(set(self.charset)) >= RETRY_EXCLUDE_MIN:
             # Vorgemerkte Zeichen nicht vorzeitig ziehen (sie sind nach dem
-            # Fehler gerade die mit dem höchsten Gewicht).
-            self.current_char = self.picker.pick(exclude="".join(self.retries.waiting))
+            # Fehler gerade die mit dem höchsten Gewicht), und nie dasselbe
+            # Zeichen zweimal hintereinander (sonst hört man es nicht, man merkt es sich).
+            self.current_char = self.picker.pick(exclude="".join(self.retries.waiting) + (self.current_char or ""))
         else:
             # Wenige Zeichen: Ausschließen machte die Folge vorhersagbar. Kommt
             # das vorgemerkte Zeichen zufällig dran, ist die Abfrage erledigt.
@@ -394,14 +406,14 @@ class SingleModeFrame(DailyModeMixin):
         self.answer_open = False
         self.waiting_for_input = False
         self.timeout_token += 1  # Frist und Tonende des verworfenen Zeichens verfallen
-        self.retries.add(self.current_char)
+        self.retries.add(self.current_char, error=False)
         self.status_var.set(tr("Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht und kommt später wieder."))
         self.root.after_idle(self.next_char)
 
     def _count_pending_misses(self):
         """Die wartenden Verpasser in die Statistik aufnehmen."""
-        for args in self.pending_misses:
-            self.session_stats.record_char(*args)
+        for args, retry in self.pending_misses:
+            self.session_stats.record_char(*args, cause="late", retry=retry)
         self.pending_misses = []
 
     def _in_session(self, func, *args, **kwargs):
@@ -528,7 +540,8 @@ class SingleModeFrame(DailyModeMixin):
         # Erst mit der nächsten Antwort werten: Wer weggegangen ist, soll Statistik
         # und Lernkartei nicht mit Fehlern füllen.
         self.pending_misses.append(
-            (self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)))
+            ((self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)),
+             self.current_is_retry))
         self.timeouts += 1
         if len(self.pending_misses) >= MISSES_BEFORE_PAUSE:
             self.pending_misses = []
@@ -619,10 +632,12 @@ class SingleModeFrame(DailyModeMixin):
         timed = not self.status_heard  # nach F11 ohne Zeitlimit steckt die Ansage in der Zeit
         latency = max(reaction_time - tone_seconds(self.current_char, self.voice[0]), 0.0) if timed else None
         if helped:
-            self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm, timed=timed)
+            self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm, timed=timed,
+                                           cause="replay", retry=self.current_is_retry)
         else:
             self.session_stats.record_char(
-                self.current_char, typed, correct, reaction_time, measured_wpm, latency=latency, timed=timed
+                self.current_char, typed, correct, reaction_time, measured_wpm, latency=latency, timed=timed,
+                retry=self.current_is_retry
             )
         if self.icr_var.get() and self.first_hearing and correct:
             self.limit = next_limit(self.limit, True, self._limit_max())

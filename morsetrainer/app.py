@@ -18,8 +18,8 @@ from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
 from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog, instances, koch, migration, practice, qso_text, review,
-                                screenreader, sfx, speech, stats, storage, tempo, week)
-from morsetrainer.core.morse import build_text, display_text, key_hint
+                                screenreader, sfx, speech, stats, storage, tempo, week, weighting)
+from morsetrainer.core.morse import build_text, display_text, key_hint, sounds_similar
 from morsetrainer.daily_runner import DailyRunner
 from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
@@ -1141,20 +1141,21 @@ class MorseTrainerApp:
             comparison = comparison_text(stats.period_comparison(), spoken=True)
             if comparison:
                 parts.append(comparison)
-            weak = [row for row in stats.all_time_char_rows(data) if row[2]][:3]
+            weak = stats.weakest_chars(stats.recent_char_data(weighting.RECENT_DAYS), data)
             if weak:
-                parts.append(tr("Die meisten Fehler: ") + ", ".join(
-                    tr("{char} {times}").format(char=spell(char), times=announcer.times(wrong))
-                    for char, _, wrong, *_ in weak))
+                parts.append(tr("Zuletzt am schwächsten: ") + ", ".join(
+                    tr("{char} {percent} Prozent falsch").format(char=spell(char), percent=round(rate * 100))
+                    for char, rate in weak))
         else:
             parts.append(tr("Noch keine Durchgänge"))
         days, stars = self._week()
         parts.append(tr("Diese Woche: {days}; {goal}").format(days=week_spoken(days), goal=week_goal_text(stars)))
-        pairs = stats.top_confusions(stats.recent_char_data(), limit=3)
+        pairs = stats.top_confusions(stats.recent_char_data(), limit=3, min_count=stats.MIN_CONFUSION_COUNT)
         if pairs:
             parts.append(tr("Häufigste Verwechslungen: ") + ", ".join(
                 tr("{sent} als {typed} getippt, {times}").format(sent=spell(sent), typed=spell(typed),
                                                                  times=announcer.times(count))
+                + ("" if sounds_similar(sent, typed) else tr(", vermutlich Tippfehler"))
                 for sent, typed, count, _ in pairs))
         review_data = review.load()
         due = review.due_chars(review_data)
@@ -2103,27 +2104,34 @@ class MorseTrainerApp:
 
     @staticmethod
     def _confusion_text(data: dict) -> str:
-        pairs = stats.top_confusions(data)
+        pairs = stats.top_confusions(data, min_count=stats.MIN_CONFUSION_COUNT)
         if not pairs:
+            if stats.top_confusions(data, limit=1):
+                return tr("Bisher nur einzelne Verwechslungen – noch kein Muster.")
             return tr("Keine Verwechslungen in den letzten {days} Tagen.").format(days=stats.RECENT_DAYS)
         seen = {(sent, typed) for sent, typed, _, _ in pairs}
         lines = []
         for sent, typed, count, share in pairs:
             arrow = "↔" if (typed, sent) in seen else "→"
-            sent, typed = display_text(sent), display_text(typed)
-            lines.append(tr("{sent} {arrow} {typed}   {count:>3}×   ({share:.0%} der {sent})").format(
-                sent=sent, arrow=arrow, typed=typed, count=count, share=share))
+            plausible = sounds_similar(sent, typed)
+            shown_sent, shown_typed = display_text(sent), display_text(typed)
+            line = tr("{sent} {arrow} {typed}   {count:>3}×   ({share:.0%} der {sent})").format(
+                sent=shown_sent, arrow=arrow, typed=shown_typed, count=count, share=share)
+            lines.append(line if plausible else line + tr("   klingt verschieden: Tippfehler?"))
         return "\n".join(lines)
 
     @staticmethod
     def _confusion_charset(data: dict, sent=None) -> str:
         """Zeichen der häufigsten Verwechslungspaare aus `data`, in
-        Reihenfolge. Nur Paare, deren getipptes Zeichen schon einmal
+        Reihenfolge. Nur Paare, die mindestens MIN_CONFUSION_COUNT mal vorkamen
+        (ein einzelner Fehler ist noch kein Muster), klanglich verwechselbar
+        sind (kein Tippfehler) und deren getipptes Zeichen schon einmal
         gesendet wurde (`sent`, Standard `data`): ein Vertipper wie „(“
         statt „/“ (Umschalttaste) soll nicht in den Übungs-Zeichensatz."""
         sent = data if sent is None else sent
         chars = []
-        pairs = [p for p in stats.top_confusions(data, limit=None) if p[1] in sent]
+        pairs = [p for p in stats.top_confusions(data, limit=None, min_count=stats.MIN_CONFUSION_COUNT,
+                                                 similar_only=True) if p[1] in sent]
         for sent, typed, _, _ in pairs[:CONFUSION_PAIRS]:
             for ch in (sent, typed):
                 if ch not in chars:
@@ -2132,12 +2140,19 @@ class MorseTrainerApp:
 
     def _drill_confusions(self):
         """Setzt den Zeichensatz auf die verwechselten Zeichen und wechselt zu
-        den Einzelzeichen: ähnlich klingende Zeichen direkt gegeneinander."""
+        den Einzelzeichen: ähnlich klingende Zeichen direkt gegeneinander. Die
+        Gewichtung wird dafür eingeschaltet; nach dem Durchgang gilt wieder der
+        Zeichensatz davor."""
         chars = self._confusion_charset(stats.recent_char_data(), stats.load_all_time())
         if len(chars) < 2:
             self.confusion_var.set(tr("Noch zu wenige Verwechslungen zum gezielten Üben."))
             return
+        before = self.charset_var.get()
+        if self.drill_restore is not None and before == self.drill_restore[1]:
+            before = self.drill_restore[0]  # zweimal gedrückt: vom Zeichensatz davor ausgehen
+        self.drill_restore = (before, chars) if chars != before else None
         self.charset_var.set(chars)
+        self.weighted_var.set(True)
         self.show_mode("Einzelzeichen")
 
     def _reset_all_time(self):

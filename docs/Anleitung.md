@@ -268,8 +268,11 @@ vor, mit Gruppen weiterzumachen.
   was Abschnitt 8 unter „Was angesagt wird“ beschreibt.
 - Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen
   direkt nacheinander. Ein falsch erkanntes Zeichen kommt gleich noch
-  einmal, während die Lösung dasteht, und wird nach ein paar anderen
-  Zeichen erneut abgefragt.
+  einmal, während die Lösung dasteht, und wird nach vier bis acht anderen
+  Zeichen erneut abgefragt. Diese erneute Abfrage zählt im Durchgang, aber
+  nicht für Gesamtstatistik, Lernkartei und Gewichtung: Wer das Zeichen eben
+  erst gehört hat, erkennt es noch nicht wirklich. Dasselbe Zeichen kommt
+  nie zweimal hintereinander.
 
 **Gruppen:** Zeichengruppen hören und mitschreiben. Die Gruppenlänge wächst
 auf Wunsch mit: kurz anfangen, nach 5 richtigen Gruppen eine länger, nach 2
@@ -498,8 +501,15 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   vor: ohne die Zeichenzahl des Zeitraums davor, ohne den Merksatz zur
   Reaktion und bei neuen Zeichen nur den Satz „Neue Zeichen machen den
   Schnitt anfangs langsamer.“, ohne die Zeichen.
-- **Zeichen nach Fehlern sortiert:** So heißt die Tabelle darunter in der
-  Ansage.
+- **Zeichen nach Fehlerquote sortiert:** So heißt die Tabelle darunter in
+  der Ansage. Oben steht das Zeichen mit der höchsten Fehlerquote (bei
+  wenigen Antworten vorsichtig geschätzt), nicht das mit den meisten
+  Fehlern. Die Spalte „Verwechselt mit“ nennt die Zeichen, die du statt des
+  gesendeten getippt hast („6 (2)“), und was die übrigen Fehler waren: „zu
+  langsam“, „erst nach Wiederholung“, „verpasst“ oder „vertauscht“ (zwei
+  benachbarte Zeichen in umgekehrter Reihenfolge). Nur ein anderes Zeichen
+  gilt als Verwechslung. F11 nennt außerdem, welche Zeichen zuletzt am
+  schwächsten waren (letzte 14 Tage, mindestens 5 Antworten).
 - **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
   in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
   liest ihn in einem Satz vor („3 von 4 Tagen geübt, heute noch offen“; am
@@ -530,7 +540,12 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   liegen, von „Fach 1 · jeden Tag“ bis „Fach 6 · alle 32 Tage“; F11 liest
   das mit vor.
 - **Häufigste Verwechslungen** der letzten 30 Tage, mit Knopf, um sie
-  gezielt gegeneinander zu üben.
+  gezielt gegeneinander zu üben. Erst ab 3 Fällen steht ein Paar in der
+  Liste (ein einzelner Fehler ist noch kein Muster); Paare, die sich
+  nicht ähnlich anhören (etwa E und 7), sind mit „Tippfehler?“ markiert und
+  kommen nicht in die Übung. Der Knopf stellt für den Durchgang den
+  Zeichensatz auf diese Zeichen und schaltet „schwache bevorzugt“ ein;
+  danach gilt wieder dein Zeichensatz.
 - **Diplome** und **Lebenslinie** (Abschnitt 5) und der
   **Fortschrittsverlauf** je Übung (Durchgänge mit weniger als 5 Zeichen,
   etwa kurze Proben, zählen dort nicht mit).

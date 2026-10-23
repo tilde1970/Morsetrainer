@@ -552,6 +552,7 @@ class ContinuousModeFrame(DailyModeMixin):
         sent_str = "".join(e["char"] for e in self.sent_log)
         typed_str = "".join(e["char"] for e in self.typed_log)
         ops = align.align(sent_str, typed_str)
+        swapped = align.swapped_indices(ops)  # mit dem Nachbarn vertauscht: keine Verwechslung
         extra = 0  # Tasten ohne passendes gesendetes Zeichen
         rows = []  # (gesendet, getippt, Markierung, Gruppe) für die Gegenüberstellung
         group = 0  # überzählige Tasten gehören zur Gruppe davor
@@ -574,7 +575,7 @@ class ContinuousModeFrame(DailyModeMixin):
                 typed_time = self.typed_log[op.received_index]["time"]
                 if not plausible(typed_time, play_end):
                     # Vorausgeraten oder viel zu spät: verpasst plus überzählig.
-                    self.session_stats.record_char(expected_char, "", False, 0.0, 0.0)
+                    self.session_stats.record_char(expected_char, "", False, 0.0, 0.0, cause="late")
                     extra += 1
                     continue
                 previous_key = self.typed_log[op.received_index - 1]["time"] if op.received_index else None
@@ -583,7 +584,8 @@ class ContinuousModeFrame(DailyModeMixin):
                 since_start = tone_seconds(expected_char, sent_wpm) + (latency or 0.0)
                 self.session_stats.record_char(
                     expected_char, typed_char, correct, since_start,
-                    effective_wpm(expected_char, since_start, sent_wpm), latency=latency
+                    effective_wpm(expected_char, since_start, sent_wpm), latency=latency,
+                    cause="swap" if op.expected_index in swapped else None
                 )
             elif op.kind == align.OpKind.DELETE:
                 self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)

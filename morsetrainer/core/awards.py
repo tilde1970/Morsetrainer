@@ -158,18 +158,20 @@ class Digest:
 
 # Steigt, wenn sich ändert, was im Auszug steht oder wie er gezählt wird:
 # Gespeicherte Auszüge einer anderen Fassung werden neu berechnet.
-DIGEST_VERSION = 1
+DIGEST_VERSION = 2
 
 
 def digest_of(chars, groups) -> Digest:
     """Auszug aus [(gesendet, getippt, richtig)] und [(gesendet, getippt,
-    erster Versuch richtig oder None)]."""
+    erster Versuch richtig oder None)]. Eine Verwechslung ist nur, was als
+    anderes Zeichen gehört wurde: `chars` kann je Zeichen einen vierten Wert
+    (Ursache des Fehlers) haben, und alles außer „heard“ zählt nicht."""
     attempts, confusions, first_ok, legacy_ok = {}, {}, {}, {}
     correct = 0
-    for sent, typed, ok in chars:
+    for sent, typed, ok, *cause in chars:
         attempts[sent] = attempts.get(sent, 0) + 1
         correct += ok
-        if not ok and len(typed) == 1 and typed != sent and typed.strip():
+        if not ok and len(typed) == 1 and typed != sent and typed.strip() and (not cause or cause[0] in (None, "heard")):
             pair = frozenset((sent, typed))
             confusions[pair] = confusions.get(pair, 0) + 1
     for sent, typed, first in groups:
@@ -216,7 +218,7 @@ class Session:
     day: date
     config: dict
     summary: dict
-    chars: list = ()   # [(gesendet, getippt, richtig)]
+    chars: list = ()   # [(gesendet, getippt, richtig) oder mit der Ursache als viertem Wert]
     groups: list = ()  # [(gesendet, getippt, erster Versuch richtig oder None)]
     digest: Digest = None
 
@@ -248,7 +250,9 @@ def _events_digest(events: list) -> Digest:
     for obj in events:
         kind = obj.get("type")
         if kind == "char":
-            chars.append((_text(obj.get("char")), _text(obj.get("typed")), bool(obj.get("correct"))))
+            cause = obj.get("cause")
+            chars.append((_text(obj.get("char")), _text(obj.get("typed")), bool(obj.get("correct")),
+                          cause if isinstance(cause, str) else None))
         elif kind == "group":
             first = obj.get("first")
             groups.append((_text(obj.get("sent")), _text(obj.get("typed")), first if isinstance(first, bool) else None))
@@ -761,6 +765,24 @@ def _daily_char_counts(data: Data):
     return attempts, confusions
 
 
+def _joint_attempts(data: Data, pairs) -> dict:
+    """Je Tag: Gelegenheiten, ein Paar zu verwechseln, aus Zufallszeichen. Nur
+    Durchgänge, in denen beide Zeichen vorkamen, zählen (je Durchgang die
+    kleinere der beiden Versuchszahlen); wer sie getrennt übt, kann sie nicht
+    verwechseln."""
+    together = {}
+    for s in data.sessions:
+        if not _random_chars(s):
+            continue
+        for pair in pairs:
+            first, second = tuple(pair)
+            both = min(s.digest.attempts.get(first, 0), s.digest.attempts.get(second, 0))
+            if both:
+                day = together.setdefault(s.day, {})
+                day[pair] = day.get(pair, 0) + both
+    return together
+
+
 def _window_sum(per_day: dict, first: date, last: date) -> dict:
     out = {}
     day = first
@@ -836,8 +858,10 @@ def _confusion_state(data: Data):
     overcome = []
     open_pairs = {pair: max(marked) for pair, marked in problem_days.items()}
     waiting = dict(open_pairs)
-    clean = zip(_sliding_sums(attempts, days, CLEAN_DAYS), _sliding_sums(confusions, days, CLEAN_DAYS))
-    for (day, tries), (_, conf) in clean:
+    joint = _joint_attempts(data, open_pairs)
+    clean = zip(_sliding_sums(attempts, days, CLEAN_DAYS), _sliding_sums(confusions, days, CLEAN_DAYS),
+                _sliding_sums(joint, days, CLEAN_DAYS))
+    for (day, tries), (_, conf), (_, together) in clean:
         if not waiting:
             break
         start = day - timedelta(days=CLEAN_DAYS - 1)
@@ -845,7 +869,7 @@ def _confusion_state(data: Data):
             # Frühestens 28 Tage nach dem letzten Tag als Problem, Fenster danach.
             if start <= last_problem:
                 continue
-            if all(tries.get(ch, 0) >= CLEAN_ATTEMPTS for ch in pair) and conf.get(pair, 0) <= 1:
+            if together.get(pair, 0) >= CLEAN_ATTEMPTS and conf.get(pair, 0) <= 1:
                 overcome.append((day, 1))
                 del open_pairs[pair], waiting[pair]
     return overcome, open_pairs, attempts, confusions
