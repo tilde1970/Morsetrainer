@@ -426,6 +426,10 @@ is shown. Evaluation is your choice:
   name, QTH, rig, weather … or the exchange;
 - or listen only.
 
+The zones in the exchange (CQ WW, IARU HF) follow the digit of the call
+sign; for large countries such as the USA, Canada and Russia they are
+therefore rounded.
+
 How often you used “Again” before checking is noted. “Adjust speed
 automatically” follows the same rule as “Speed adapts” in One by one.
 

@@ -430,6 +430,9 @@ Dauer. Ausgewertet wird wahlweise:
   QTH, Rig, Wetter … bzw. zum Austausch;
 - oder nur zum Hören.
 
+Die Zonen im Austausch (CQ WW, IARU HF) folgen der Ziffer des Rufzeichens;
+für große Länder wie USA, Kanada und Russland sind sie deshalb gerundet.
+
 Wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. „Tempo
 automatisch anpassen“ folgt derselben Regel wie „Tempo wächst mit“ im
 Reiter Einzeln.

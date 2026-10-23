@@ -198,6 +198,39 @@ class SlashAndCqVariantsTest(unittest.TestCase):
         self.assertTrue(all(f.startswith("CQ CQ") and " DE " in f and f.endswith(" K") for f in firsts))
 
 
+class ZoneTest(unittest.TestCase):
+    @staticmethod
+    def zones(call, key):
+        country = next(c for c in qso_text.COUNTRIES if c.key == key)
+        return qso_text.cq_zone(call, country), qso_text.itu_zone(call, country)
+
+    def test_islands_have_their_own_zones(self):
+        # Nach cty.dat (country-files.com)
+        self.assertEqual(self.zones("EA8ABC", "EA"), (33, 36))  # Kanaren
+        self.assertEqual(self.zones("EA9XY", "EA"), (33, 37))  # Ceuta, Melilla
+        self.assertEqual(self.zones("CT3AB", "CT"), (33, 36))  # Madeira
+        self.assertEqual(self.zones("CU2AA", "CT"), (14, 36))  # Azoren
+        self.assertEqual(self.zones("IG9A", "I"), (33, 37))  # Italien in Afrika
+        self.assertEqual(self.zones("EA4X", "EA"), (14, 37))  # Festland unverändert
+
+    def test_asiatic_russia_and_labrador(self):
+        self.assertEqual(self.zones("RA8A", "UA"), (17, 30))
+        self.assertEqual(self.zones("RA3A", "UA"), (16, 29))
+        self.assertEqual(self.zones("VO2AB", "VE")[0], 2)
+        self.assertEqual(self.zones("VO1AB", "VE")[0], 5)
+
+    def test_iaru_headquarters_use_current_callsign(self):
+        self.assertIn("9A0HQ", qso_text.IARU_HQ_STATIONS)
+        self.assertNotIn("9A1HQ", qso_text.IARU_HQ_STATIONS)
+
+    def test_ragchew_has_no_ar_before_the_final_call(self):
+        random.seed(5)
+        for _ in range(30):
+            text = qso_text.generate_qso(qso_text.RAGCHEW, qso_text.LENGTH_LONG)
+            for _, sent in text.transmissions:
+                self.assertNotIn(" + ", f" {sent} ")
+
+
 class DupTest(unittest.TestCase):
     """Im Contest ruft ab und zu eine schon geloggte Station noch einmal und
     bekommt „DUP“; das ist kein neues QSO."""

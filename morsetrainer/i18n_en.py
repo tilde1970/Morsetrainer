@@ -873,7 +873,7 @@ EN.update({
 # kann je Wort anders heißen. Angezeigt über words.shown_meaning().
 MEANINGS = {
     # Q-Gruppen
-    "QRG": "frequency", "QRL": "busy / is the frequency in use? (also: work)", "QRM": "interference from other stations",
+    "QRG": "frequency", "QRL": "busy / is the frequency in use?", "QRM": "interference from other stations",
     "QRN": "atmospheric noise", "QRO": "high power", "QRP": "low power",
     "QRQ": "send faster", "QRS": "send slower", "QRT": "closing down",
     "QRU": "nothing more for you", "QRV": "ready", "QRX": "please wait",
@@ -897,7 +897,7 @@ MEANINGS = {
     "UR": "your/you are", "VY": "very", "WX": "weather",
     "XYL": "wife", "YL": "young lady – female operator", "73": "best regards",
     "88": "love and kisses", "5NN": "report 599 (cut numbers)", "599": "best report",
-    "TEST": "contest call", "UP": "listening higher up in frequency", "NIL": "nothing",
+    "TEST": "contest call", "UP": "listening higher up in frequency", "NIL": "nothing / not in log (in a contest)",
     "RR": "roger – received", "RE": "regarding",
     # Wörter aus typischen QSOs
     "VERT": "vertical antenna",

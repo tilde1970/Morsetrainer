@@ -105,7 +105,7 @@ SUFFIXES = {"/P": 60, "/M": 25, "/QRP": 5, "/MM": 4, "/AM": 1}
 GUEST_PREFIXES = [
     "OE", "HB9", "PA", "ON", "F", "LX", "OZ", "SM", "LA", "OH", "G", "GM", "GW",
     "EI", "EA", "EA8", "CT", "CT3", "I", "IS0", "SV", "SV9", "9A", "S5", "OK",
-    "OM", "SP", "HA", "YO", "LZ", "TF", "OY", "9H", "5B", "4X",
+    "OM", "SP", "HA", "YO", "LZ", "TF", "9H", "5B",
 ]
 
 

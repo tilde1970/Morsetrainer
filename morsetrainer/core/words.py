@@ -42,7 +42,7 @@ _UMLAUTS = str.maketrans({"Ä": "AE", "Ö": "OE", "Ü": "UE", "ß": "SS", "ẞ":
 
 WORDS = {
     # Q-Gruppen
-    "QRG": "Frequenz", "QRL": "beschäftigt / Frequenz belegt? (auch: Arbeit)", "QRM": "Störungen durch andere Stationen",
+    "QRG": "Frequenz", "QRL": "beschäftigt / Frequenz belegt?", "QRM": "Störungen durch andere Stationen",
     "QRN": "atmosphärische Störungen", "QRO": "hohe Leistung", "QRP": "kleine Leistung",
     "QRQ": "schneller geben", "QRS": "langsamer geben", "QRT": "Sendeschluss",
     "QRU": "nichts mehr für dich", "QRV": "bereit", "QRX": "bitte warten",
@@ -66,7 +66,7 @@ WORDS = {
     "UR": "your/you are – dein/du bist", "VY": "very – sehr", "WX": "weather – Wetter",
     "XYL": "Ehefrau", "YL": "young lady – Funkerin", "73": "viele Grüße",
     "88": "Liebe und Küsse", "5NN": "Rapport 599 (gekürzt)", "599": "bester Rapport",
-    "TEST": "Contest-Anruf", "UP": "höher auf der Frequenz hören", "NIL": "nichts",
+    "TEST": "Contest-Anruf", "UP": "höher auf der Frequenz hören", "NIL": "nichts / nicht im Log (im Contest)",
     "OK": "", "RR": "roger – verstanden", "RE": "regarding – betreffend",
     # Wörter aus typischen QSOs
     "NAME": "", "HERE": "", "THE": "", "AND": "", "ARE": "", "IS": "", "AT": "", "IN": "",

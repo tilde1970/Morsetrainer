@@ -437,7 +437,7 @@ HOME_BOOST = 3
 # Verbandskürzel (Auswahl).
 IARU_HQ_STATIONS = {
     "DA0HQ": "DARC", "TM0HQ": "REF", "HB9HQ": "USKA", "OL9HQ": "CRC", "S50HQ": "ZRS",
-    "9A1HQ": "HRS", "LY0HQ": "LRMD",
+    "9A0HQ": "HRS", "LY0HQ": "LRMD",
 }
 IARU_HQ_RUN_PROBABILITY = 0.25
 IARU_HQ_CALLER_PROBABILITY = 0.1
@@ -687,10 +687,32 @@ def _us_territory_zones(call: str):
     return {"2": (27, 64), "0": (27, 64), "8": (32, 62), "9": (31, 65)}.get(_district(call), (31, 61))
 
 
+# Inselgebiete mit eigener Zone: Rufzeichenanfang -> (CQ-Zone, ITU-Zone) nach cty.dat.
+_ISLAND_ZONES = (
+    (("EA8", "EB8", "EC8", "ED8", "EE8", "EF8", "EG8", "EH8", "AM8", "AN8", "AO8"), (33, 36)),  # Kanaren
+    (("EA9", "EB9", "EC9", "ED9", "EE9", "EF9", "EG9", "EH9", "AM9", "AN9", "AO9"), (33, 37)),  # Ceuta, Melilla
+    (("CQ2", "CQ3", "CQ9", "CR3", "CR9", "CS3", "CS9", "CT3", "CT9"), (33, 36)),  # Madeira
+    (("CQ1", "CQ8", "CR1", "CR2", "CR8", "CS4", "CS8", "CT8", "CU"), (14, 36)),  # Azoren
+    (("IG9", "IH9"), (33, 37)),  # Italien in Afrika
+)
+
+
+def _island_zones(call: str):
+    """(CQ-Zone, ITU-Zone) für Inselgebiete mit eigener Zone, sonst None."""
+    for prefixes, zones in _ISLAND_ZONES:
+        if call.startswith(prefixes):
+            return zones
+    return None
+
+
 def cq_zone(call: str, country: Country) -> int:
     """CQ-Zone der Station `call`; in USA, Kanada, Russland und Australien nach
-    der Ziffer im Rufzeichen (US-Gebiete eigens)."""
+    der Ziffer im Rufzeichen (US-Gebiete eigens), Inselgebiete nach Präfix.
+    Für große Länder ist es eine Näherung: Die Ziffer sagt nicht, in welchem
+    Bundesstaat die Station sitzt."""
     district = _district(call)
+    if island := _island_zones(call):
+        return island[0]
     if country.key == "W":
         if territory := _us_territory_zones(call):
             return territory[0]
@@ -698,10 +720,12 @@ def cq_zone(call: str, country: Country) -> int:
         return {"6": 3, "7": 3, "5": 4, "8": 4, "9": 4, "0": 4}.get(district, 5)
     if country.key == "UA":
         # Ziffer 2 ist Kaliningrad.
-        return {"2": 15, "9": 17, "0": 18}.get(district, 16)
+        return {"2": 15, "8": 17, "9": 17, "0": 18}.get(district, 16)
     if country.key == "VE":
         if call.startswith("VY"):
             return 1 if district == "1" else 5 if district == "2" else 2
+        if call.startswith("VO"):
+            return 2 if district == "2" else 5  # Labrador, sonst Neufundland
         return {"8": 1, "7": 3, "3": 4, "4": 4, "5": 4, "6": 4}.get(district, 5)
     if country.key == "VK":
         return 29 if district in "68" else 30
@@ -710,15 +734,17 @@ def cq_zone(call: str, country: Country) -> int:
 
 def itu_zone(call: str, country: Country) -> int:
     """ITU-Zone der Station `call`; in USA, Kanada, Russland und Australien nach
-    der Ziffer im Rufzeichen (US-Gebiete eigens)."""
+    der Ziffer im Rufzeichen (US-Gebiete eigens), Inselgebiete nach Präfix."""
     district = _district(call)
+    if island := _island_zones(call):
+        return island[1]
     if country.key == "W":
         if territory := _us_territory_zones(call):
             return territory[1]
         # IL, IN und WI (W9) liegen überwiegend östlich von 90° W, in Zone 8.
         return {"6": 6, "7": 6, "5": 7, "0": 7}.get(district, 8)
     if country.key == "UA":
-        return {"9": 30, "0": 32}.get(district, 29)
+        return {"8": 30, "9": 30, "0": 32}.get(district, 29)
     if country.key == "VK":
         return {"4": 55, "8": 55, "6": 58}.get(district, 59)
     if country.key == "VE":
@@ -831,7 +857,7 @@ def _generate_ragchew(length: int, slash: bool = False) -> Qso:
     opening = "TNX FER CALL" if length == LENGTH_SHORT else f"{greet} DR OM ES TNX FER CALL"
     tx = [f"{b.call} DE {a.call}", opening, "=",
           f"UR RST {rst_a} {rst_a}", "=", f"NAME {_repeat(a.name, 2)}", "=", f"QTH {_repeat(a.qth, 2)}", "=",
-          "HW?", "+", f"{b.call} DE {a.call} {_over()}"]
+          "HW?", f"{b.call} DE {a.call} {_over()}"]
     txs.append((0, " ".join(tx)))
 
     tx = [f"{a.call} DE {b.call} R", f"{greet} {a.name} TNX FER RPRT", "=",
@@ -842,7 +868,7 @@ def _generate_ragchew(length: int, slash: bool = False) -> Qso:
     else:
         if length >= LENGTH_LONG:
             tx += ["QSL VIA BURO", "="]
-        tx += ["HW?", "+", f"{a.call} DE {b.call} {_over()}"]
+        tx += ["HW?", f"{a.call} DE {b.call} {_over()}"]
     txs.append((1, " ".join(tx)))
 
     if length == LENGTH_SHORT:
