@@ -213,6 +213,16 @@ class DbTest(unittest.TestCase):
         self.assertEqual(db.load_state("daily", {}), {"days": {}})
         self.assertEqual(len(list(self.file.parent.glob("morsetrainer.db.defekt-*[0-9]"))), 1)
 
+    def test_setting_a_file_aside_leaves_the_aside_day(self):
+        self.assertIsNone(db.get_meta(db.ASIDE_KEY))
+        db.close()
+        self.file.parent.mkdir(parents=True, exist_ok=True)
+        self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)
+        db.close()
+        db.load_state("daily", {})
+        self.assertEqual(db.get_meta(db.ASIDE_KEY), date.today().isoformat())
+        self.assertEqual(db.problem(), "aside")
+
     def test_journal_of_a_broken_file_goes_with_it(self):
         self.file.parent.mkdir(parents=True)
         self.file.write_bytes(b"das ist keine Datenbank, nur Text " * 200)

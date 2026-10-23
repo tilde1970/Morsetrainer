@@ -427,6 +427,23 @@ class StatsTest(unittest.TestCase):
         db.save_state(stats.RESET_KEY, {"time": past.isoformat()})
         self.assertEqual(stats._after_reset(cutoff), past)
 
+    def test_reset_with_timezone_or_garbage_is_ignored(self):
+        from datetime import datetime, timedelta
+        cutoff = datetime.now() - timedelta(days=7)
+        for bad in ("2026-10-01T10:00:00+02:00", "kaputt", 5, []):
+            db.save_state(stats.RESET_KEY, {"time": bad})
+            self.assertEqual(stats._after_reset(cutoff), cutoff)
+
+    def test_negative_or_infinite_sums_in_all_time_are_zeroed(self):
+        clean = stats._clean_all_time({"A": {
+            "good": 2, "wrong": 1, "attempts": 3,
+            "total_reaction_time_s": -1.0, "total_effective_wpm": float("nan"),
+            "correct_effective_wpm_total": float("inf"), "untimed": -3}})
+        self.assertEqual(clean["A"]["total_reaction_time_s"], 0.0)
+        self.assertEqual(clean["A"]["total_effective_wpm"], 0.0)
+        self.assertEqual(clean["A"]["correct_effective_wpm_total"], 0.0)
+        self.assertNotIn("untimed", clean["A"])
+
     def test_clock_ahead_names_the_latest_start_in_the_future(self):
         from datetime import datetime, timedelta
         self.assertIsNone(stats.clock_ahead())

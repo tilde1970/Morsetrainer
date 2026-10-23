@@ -176,7 +176,39 @@ class AdaptiveLengthTest(unittest.TestCase):
         self.assertEqual(length.length, 2)
 
 
+class FarnsworthTest(unittest.TestCase):
+    def test_gap_matches_paris_norm(self):
+        from morsetrainer.core import morse
+        gap = morse.char_gap_seconds(20, 10)
+        # PARIS bei 20/10 WpM: 31 Einheiten Ton (0,06 s) plus 19 Einheiten Pause = 6,0 s
+        self.assertAlmostEqual(31 * 0.06 + 19 / 3 * gap, 6.0, places=6)
+        self.assertAlmostEqual(morse.char_gap_seconds(20, None), 0.18)
+        self.assertAlmostEqual(morse.char_gap_seconds(20, 20), 0.18)
+        self.assertAlmostEqual(morse.word_gap_extra_seconds(20, 10), gap * 4 / 3)
+
+
 class PracticeTest(unittest.TestCase):
+    def test_add_reads_and_writes_in_one_transaction(self):
+        from datetime import date
+        from unittest import mock
+        from morsetrainer.core import db, practice, stats
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
+            with mock.patch.object(db, "transaction", wraps=db.transaction) as transaction:
+                practice.add(60, date(2026, 9, 26))
+            transaction.assert_called()
+
+    def test_add_with_locked_database_neither_raises_nor_overwrites(self):
+        import sqlite3
+        from datetime import date
+        from unittest import mock
+        from morsetrainer.core import db, practice, stats
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
+            day = date(2026, 9, 26)
+            practice.add(60, day)
+            with mock.patch.object(db, "save_state", side_effect=sqlite3.OperationalError("locked")):
+                practice.add(30, day)
+            self.assertEqual(practice.seconds_on(practice.load(), day), 60.0)
+
     def test_add_accumulates(self):
         from datetime import date
         from unittest import mock

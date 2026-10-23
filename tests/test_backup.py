@@ -364,6 +364,12 @@ class BeforeImportCopiesTest(unittest.TestCase):
         self.assertEqual(list(self.new.glob("vor-import-*.zip")), [])
         self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
 
+    def test_failed_import_after_replacing_keeps_the_copy(self):
+        with mock.patch.object(backup, "_keep_rescue_files", side_effect=OSError("voll")):
+            with self.assertRaises(OSError):
+                backup.import_data(self.zip, "9.9", self.new)
+        self.assertEqual(len(list(self.new.glob("vor-import-*.zip"))), 1)
+
     def test_only_the_last_copies_are_kept(self):
         for day in range(1, 6):
             (self.new / f"vor-import-2026010{day}-120000.zip").write_bytes(b"alt")

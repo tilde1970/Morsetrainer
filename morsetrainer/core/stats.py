@@ -439,12 +439,12 @@ def _after_reset(cutoff: datetime) -> datetime:
     reset = db.load_state(RESET_KEY, {}).get("time")
     try:
         reset = datetime.fromisoformat(reset) if reset else None
-    except (TypeError, ValueError):
+        # Ein Zurücksetzen in der Zukunft (Uhr ging falsch) würde alles bis dahin ausblenden.
+        if reset is None or reset > datetime.now() + CLOCK_TOLERANCE:
+            return cutoff
+        return max(cutoff, reset)
+    except (TypeError, ValueError):  # kein Text, kein Zeitpunkt oder mit Zeitzone
         return cutoff
-    # Ein Zurücksetzen in der Zukunft (Uhr ging falsch) würde alles bis dahin ausblenden.
-    if reset is None or reset > datetime.now() + CLOCK_TOLERANCE:
-        return cutoff
-    return max(cutoff, reset)
 
 
 # So weit darf ein gespeicherter Zeitpunkt vor der Uhr liegen, bevor er als Uhrenfehler gilt.

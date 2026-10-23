@@ -19,6 +19,16 @@ class InstancesTest(unittest.TestCase):
         self.folder = self.dir / instances.DIR_NAME
         self.folder.mkdir()
 
+    def test_foreign_process_counts_and_missing_one_is_cleaned_up(self):
+        entry = self.folder / "4242"
+        entry.touch()
+        with mock.patch.object(instances.os, "kill", side_effect=PermissionError):
+            self.assertEqual(instances.others(self.dir), 1)
+        self.assertTrue(entry.exists())
+        with mock.patch.object(instances.os, "kill", side_effect=ProcessLookupError):
+            self.assertEqual(instances.others(self.dir), 0)
+        self.assertFalse(entry.exists())
+
     def test_no_other_window(self):
         self.assertEqual(instances.others(self.dir), 0)
         self.assertEqual(instances.others(self.dir / "gibt-es-nicht"), 0)
