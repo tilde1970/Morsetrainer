@@ -509,7 +509,9 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   langsam“, „erst nach Wiederholung“, „verpasst“ oder „vertauscht“ (zwei
   benachbarte Zeichen in umgekehrter Reihenfolge). Nur ein anderes Zeichen
   gilt als Verwechslung. F11 nennt außerdem, welche Zeichen zuletzt am
-  schwächsten waren (letzte 14 Tage, mindestens 5 Antworten).
+  schwächsten waren (letzte 14 Tage, mindestens 5 Antworten). Über der
+  Tabelle steht, welche Zeichen sicher sitzen (Fach 3 der Lernkartei oder
+  höher).
 - **Diese Woche:** der Wochenstreifen mit Sternen und dem Wochenziel wie
   in der Leiste der Tagesübung; bei großer Schrift steht er nur hier. F11
   liest ihn in einem Satz vor („3 von 4 Tagen geübt, heute noch offen“; am
@@ -623,7 +625,12 @@ wieder wie vorher.
   Tag kann fehlende Sterne nachholen; verdiente Sterne gehen nie verloren,
   auch nicht beim Abbrechen.
 - **Zwischen den Blöcken** zeigt eine kurze Karte das Ergebnis, neue
-  Sterne und was als Nächstes kommt. Sie bleibt stehen, bis du mit Enter
+  Sterne und was als Nächstes kommt. Waren es mindestens 4 Fehler und
+  mindestens 5 % der Antworten, steht auch, woran es lag („Von 9 Fehlern
+  waren 5 Verwechslungen (B für 6 dreimal), 3 zu langsam, 1 verpasst“), mit
+  höchstens einem Tipp zur häufigsten Ursache. War der Hauptteil schwach und
+  ist ein langsameres Tempo für morgen vorgemerkt, steht dort, dass das
+  vorkommt. Sie bleibt stehen, bis du mit Enter
   oder „Weiter“ fortfährst.
 - **Beenden:** mit dem Knopf **Tagesübung beenden (Esc)** unter dem
   Zeitbalken oder dem Knopf im Reiter. Esc und F5 beenden erst beim
@@ -636,19 +643,25 @@ wieder wie vorher.
 - **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
   (Reaktionszeit je Zeichen, Gruppenquote; nur mit genug Daten und bei
   gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion
-  fehlt, das Tempo für morgen mit dem Grund (etwas schneller, langsamer
-  oder unverändert), nach etwa zehn Übungstagen im selben Tempo einmal ein
-  Hinweis, dass Stillstand beim Hören normal ist, der Stand zum Wochenziel und, wenn der Hauptteil gut lief, einmal
+  fehlt, das Tempo für morgen mit dem Grund (einen Schritt schneller,
+  langsamer oder unverändert), nach etwa zehn Übungstagen im selben Tempo
+  und in derselben Lektion einmal ein Hinweis, dass Stillstand beim Hören
+  normal ist (steigt die Lektion, geht es voran). Solange der Vergleich mit
+  der Vorwoche noch nicht geht, stehen dort die Zähler des Tages („Heute: 190
+  Zeichen gehört, beste Serie 14“), der Stand zum Wochenziel und, wenn der Hauptteil gut lief, einmal
   am Tag **Noch 5 Min** mit etwas anderem: deine Verwechslungen aus der
   Lektion, einen Rufz-Durchgang oder Wörter. Hat die Tagesübung Lektion 41
   bestanden, weist sie einmal auf die Betriebszeichen (Lektion 42–45) hin;
   **Lektion 42 einstellen** stellt sie oben ein.
+- **Nach einer Pause:** Nach mindestens 14 Tagen ohne Tagesübung begrüßt
+  dich die Leiste, bis du wieder geübt hast. Sterne und Zahlen bleiben, wie
+  sie sind; die ersten Tage sind nur schwerer, und das Tempo gleicht sich an.
 - **Woche:** Neben dem Knopf steht der Wochenstreifen ab Montag, z. B.
   „Mo ★★★  Di ★★  Mi ✓  Do –  Fr ·“ (✓ = ohne Tagesübung frei geübt, mit
   erreichtem Tagesziel; – = nicht geübt), daneben der Stand zum
-  **Wochenziel von 12 Sternen**, z. B. „7 ★ diese Woche, Ziel 12“, ab dem
-  zwölften Stern „Wochenziel erreicht: 12 ★“. Das schaffst du mit vier bis fünf
-  Übungstagen; ein ausgelassener Tag kostet nicht die Woche. Das Ziel ist
+  **Wochenziel von 8 Sternen**, z. B. „5 ★ diese Woche, Ziel 8“, ab dem
+  achten Stern „Wochenziel erreicht: 8 ★“. Das schaffst du mit fünf
+  Übungstagen zu ein bis zwei Sternen; ein ausgelassener Tag kostet nicht die Woche. Das Ziel ist
   keine Obergrenze: Bis zu drei Sterne am Tag zählen weiter mit. Alle Sterne
   zusammen zählen für das Diplom **Sternstunden** (Abschnitt 5). Bis zur
   ersten Tagesübung einer neuen Woche steht dort ein Rückblick, z. B.

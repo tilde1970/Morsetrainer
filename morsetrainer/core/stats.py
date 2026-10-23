@@ -21,7 +21,7 @@ from morsetrainer.core import db
 from morsetrainer.core import tempo
 from morsetrainer.core.koch import SLOW_CHAR_WPM
 from morsetrainer.core.morse import display_text, sounds_similar
-from morsetrainer.i18n import N_, tr
+from morsetrainer.i18n import N_, ctrl_key, tr
 
 STATS_DIR = DATA_DIR / "stats"
 
@@ -714,6 +714,90 @@ def _cpm(count: int, seconds: float) -> float:
     """Gemessene Zeichen pro Minute: richtig erkannte Zeichen durch die dafür
     gebrauchte Zeit (Zeichen plus Reaktion); 0.0 ohne Messung."""
     return round(count * 60 / seconds, 1) if count and seconds > 0 else 0.0
+
+# Ursachen-Rückblick (error_review): erst ab so vielen Fehlern und diesem Anteil
+# an den Antworten, sonst bliebe nur das Lob stehen.
+REVIEW_MIN_ERRORS = 4
+REVIEW_MIN_SHARE = 0.05
+REVIEW_MAX_CAUSES = 3
+REVIEW_PAIR_MIN = 2
+REVIEW_ORDER = (HEARD, "late", "missed", "replay", "swap")
+
+
+def error_review(per_char: dict):
+    """Woran die Fehler eines Durchgangs lagen, aus SessionStats.kept_char:
+    {"total", "answers", "causes": {Ursache: Anzahl}, "pair": (gesendet,
+    getippt, Anzahl) oder None}. Das häufigste Paar zählt nur als echte
+    Verwechslung."""
+    total = answers = 0
+    causes, pairs = {}, {}
+    for char, e in per_char.items():
+        total += e["wrong"]
+        answers += e["good"] + e["wrong"]
+        for cause, n in e.get("causes", {}).items():
+            causes[cause] = causes.get(cause, 0) + n
+        for typed, n in e["confusions"].items():
+            if typed:
+                pairs[(char, typed)] = n
+    best = max(pairs.items(), key=lambda item: (item[1], item[0]), default=None)
+    pair = (*best[0], best[1]) if best and best[1] >= REVIEW_PAIR_MIN else None
+    return {"total": total, "answers": answers, "causes": causes, "pair": pair}
+
+
+def _times(n: int) -> str:
+    return {2: tr("zweimal"), 3: tr("dreimal")}.get(n) or tr("{n}-mal").format(n=n)
+
+
+def error_review_line(review: dict) -> str:
+    """„Woran es lag: Von 9 Fehlern waren 5 Verwechslungen (B für 6 dreimal), 3
+    zu langsam, 1 verpasst.“ oder "" bei zu wenigen Fehlern."""
+    total = review["total"]
+    if total < REVIEW_MIN_ERRORS or total < REVIEW_MIN_SHARE * review["answers"]:
+        return ""
+    known = sorted(((cause, n) for cause, n in review["causes"].items() if cause in REVIEW_ORDER and n),
+                   key=lambda item: (-item[1], REVIEW_ORDER.index(item[0])))
+    parts = []
+    for cause, n in known[:REVIEW_MAX_CAUSES]:
+        if cause == HEARD:
+            text = tr("{n} Verwechslung") if n == 1 else tr("{n} Verwechslungen")
+            text = text.format(n=n)
+            if review["pair"]:
+                sent, typed, count = review["pair"]
+                text += " (" + tr("{sent} für {typed} {times}").format(
+                    sent=display_text(sent), typed=display_text(typed), times=_times(count)) + ")"
+        else:
+            text = tr(REVIEW_PARTS[cause]).format(n=n)
+        parts.append(text)
+    rest = total - sum(n for _, n in known[:REVIEW_MAX_CAUSES])
+    if rest > 0:
+        parts.append(tr("{n} andere").format(n=rest))
+    return tr("Woran es lag: Von {total} Fehlern waren {parts}.").format(total=total, parts=", ".join(parts))
+
+
+REVIEW_PARTS = {
+    "late": N_("{n} zu langsam"),
+    "missed": N_("{n} verpasst"),
+    "replay": N_("{n} erst nach Wiederholung"),
+    "swap": N_("{n} vertauscht"),
+}
+
+
+def error_review_tip(review: dict, relaxed_hint: bool = True) -> str:
+    """Ein Tipp zur Ursache, die mindestens die Hälfte der Fehler ausmacht;
+    "" sonst. `relaxed_hint` False: kein Hinweis auf die entspannte Tagesübung
+    (steht schon anderswo)."""
+    if not error_review_line(review):
+        return ""
+    total = review["total"]
+    causes = review["causes"]
+    if causes.get(HEARD, 0) * 2 >= total:
+        return tr("Tipp: Diese Verwechslungen kannst du im Reiter Statistik gezielt üben.")
+    if causes.get("late", 0) * 2 >= total and relaxed_hint:
+        return tr("Tipp: Die entspannte Tagesübung ({key}) übt ohne Zeitlimit.").format(key=ctrl_key(","))
+    if causes.get("missed", 0) * 2 >= total:
+        return tr("Tipp: Bei vielen verpassten Zeichen hilft ein etwas langsameres Tempo.")
+    return ""
+
 
 # Darunter ist eine Verwechslung noch kein Muster, sondern wohl Zufall.
 MIN_CONFUSION_COUNT = 3

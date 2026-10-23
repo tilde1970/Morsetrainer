@@ -88,7 +88,13 @@ class StatsPanel:
             self.compare_var.trace_add("write", lambda *_: label.pack(after=summary, anchor="w", pady=(0, 6))
                                        if self.compare_var.get() else label.pack_forget())
 
-        theme.hint(box, text=tr("Zeichen, nach Fehlerquote sortiert")).pack(anchor="w")
+        theme.hint(box, text=tr("Zeichen, nach Fehlerquote sortiert – oben steht, was noch Übung braucht")).pack(
+            anchor="w")
+        self.safe_var = tk.StringVar(value="")
+        if compare:
+            safe = theme.hint(box, wrap=520, textvariable=self.safe_var)
+            self.safe_var.trace_add("write", lambda *_: safe.pack(anchor="w", before=self.char_tree) if self.safe_var.get()
+                                    else safe.pack_forget())
         columns = ("char", "good", "wrong", "avg_rt", "avg_wpm", "confusions")
         if compare:
             columns = columns[:4] + ("trend",) + columns[4:]
@@ -133,10 +139,10 @@ class StatsPanel:
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
 
-    def refresh(self, summary: dict, rows: list, comparison=None):
+    def refresh(self, summary: dict, rows: list, comparison=None, safe: str = ""):
         """Zeigt `summary` (wie SessionStats.summary()) und die Zeilen `rows` (wie
         char_rows()) an, mit `compare` dazu `comparison`
-        (stats.period_comparison)."""
+        (stats.period_comparison) und `safe` (Zeichen, die sicher sitzen)."""
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f} %)")
         if summary["avg_effective_wpm"]:
             speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
@@ -159,6 +165,8 @@ class StatsPanel:
             self.char_tree.insert("", "end", values=values)
         if self.compare:
             self.compare_var.set(comparison_text(comparison) if comparison else "")
+            self.safe_var.set(tr("Sicher sitzen: {chars}").format(
+                chars=" ".join(display_text(ch) for ch in safe)) if safe else "")
 
     def show_saved(self, session_number, error=None):
         """`session_number`: Nummer des gespeicherten Durchgangs (SessionStats.finalize)."""

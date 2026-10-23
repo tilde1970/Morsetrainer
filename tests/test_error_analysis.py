@@ -295,5 +295,59 @@ class AwardDigestTest(unittest.TestCase):
         self.assertEqual(overcome(apart), [])
 
 
+class ErrorReviewTest(unittest.TestCase):
+    @staticmethod
+    def review(causes, pair=None, answers=100):
+        total = sum(causes.values())
+        return {"total": total, "answers": answers, "causes": causes, "pair": pair}
+
+    def test_data_from_a_session(self):
+        session = stats.SessionStats("single", "B6DU", 20, 600)
+        for _ in range(3):
+            session.record_char("B", "6", False, 0.5, 20.0)
+        session.record_char("B", "", False, 0.5, 20.0, cause="late")
+        session.record_char("D", "U", False, 0.5, 20.0, cause="swap")
+        for _ in range(10):
+            session.record_char("6", "6", True, 0.5, 20.0)
+        review = stats.error_review(session.kept_char)
+        self.assertEqual((review["total"], review["answers"]), (5, 15))
+        self.assertEqual(review["causes"], {"heard": 3, "late": 1, "swap": 1})
+        self.assertEqual(review["pair"], ("B", "6", 3))
+
+    def test_a_single_confusion_is_no_pair(self):
+        session = stats.SessionStats("single", "B6", 20, 600)
+        session.record_char("B", "6", False, 0.5, 20.0)
+        self.assertIsNone(stats.error_review(session.kept_char)["pair"])
+
+    def test_line_names_the_causes_with_the_pair(self):
+        line = stats.error_review_line(self.review({"heard": 5, "late": 3, "missed": 1}, ("B", "6", 3)))
+        self.assertEqual(line, "Woran es lag: Von 9 Fehlern waren 5 Verwechslungen (B für 6 dreimal), "
+                               "3 zu langsam, 1 verpasst.")
+
+    def test_at_most_three_causes_and_the_rest_as_others(self):
+        line = stats.error_review_line(self.review({"heard": 4, "late": 3, "missed": 2, "swap": 1, "replay": 1}))
+        self.assertTrue(line.endswith("4 Verwechslungen, 3 zu langsam, 2 verpasst, 2 andere."))
+
+    def test_nothing_with_few_errors(self):
+        self.assertEqual(stats.error_review_line(self.review({"heard": 3})), "")
+        self.assertEqual(stats.error_review_line(self.review({"heard": 4}, answers=200)), "")  # unter 5 %
+        self.assertNotEqual(stats.error_review_line(self.review({"heard": 4}, answers=80)), "")
+
+    def test_tip_only_for_a_dominant_cause(self):
+        heard = self.review({"heard": 5, "late": 2})
+        self.assertIn("Statistik", stats.error_review_tip(heard))
+        late = self.review({"late": 5, "heard": 1})
+        self.assertIn("entspannte Tagesübung", stats.error_review_tip(late))
+        self.assertEqual(stats.error_review_tip(late, relaxed_hint=False), "")
+        self.assertIn("langsameres Tempo", stats.error_review_tip(self.review({"missed": 4}, answers=60)))
+        self.assertEqual(stats.error_review_tip(self.review({"heard": 2, "late": 2, "missed": 1, "swap": 1})), "")
+        self.assertEqual(stats.error_review_tip(self.review({"heard": 3})), "")  # zu wenige Fehler
+
+    def test_text_is_neutral(self):
+        line = stats.error_review_line(self.review({"heard": 5, "late": 3, "missed": 1}, ("B", "6", 3)))
+        for word in ("nur", "leider", "schlecht"):
+            self.assertNotIn(word, line)
+
+
 if __name__ == "__main__":
     unittest.main()

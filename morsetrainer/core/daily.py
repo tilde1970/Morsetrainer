@@ -485,7 +485,7 @@ def finish_block(state: dict, today: date, block: Block, result: dict, refresh: 
     entry.setdefault("lesson", current_lesson(state, 1))  # für den Wochenrückblick
     entry["blocks"].append({"kind": block.kind, "mode": block.mode,
                             **({"band": block.params[BAND_PRESET]} if BAND_PRESET in block.params else {}),
-                            **{k: v for k, v in result.items() if k not in ("review_events", "chars")}})
+                            **{k: v for k, v in result.items() if k not in ("review_events", "chars", "errors")}})
     entry["minutes"] = round(entry["minutes"] + result.get("minutes", 0.0), 2)
     new_stars = []
     progress = False
@@ -779,22 +779,55 @@ def tempo_outlook(state: dict, today: date):
     following = state["pending_tempo"]
     change = (following["effective"] > current["effective"]) - (following["effective"] < current["effective"])
     return {"tempo": following, "change": change, "share": round(correct / total * 100),
-            "plateau": plateau_due(state, today)}
+            "plateau": plateau_due(state, today), "lesson": current_lesson(state, 1)}
 
 
 def plateau_due(state: dict, today: date) -> bool:
-    """True, wenn die letzten PLATEAU_DAYS Übungstage dasselbe Tagestempo hatten
-    und der Hinweis in den letzten PLATEAU_REPEAT_DAYS Tagen nicht kam."""
+    """True, wenn die letzten PLATEAU_DAYS Übungstage dasselbe Tagestempo und
+    dieselbe Lektion hatten (steigt die Lektion, geht es voran, auch wenn das
+    Tempo im Koch-Teil fest bleibt) und der Hinweis in den letzten
+    PLATEAU_REPEAT_DAYS Tagen nicht kam."""
     last = state.get(PLATEAU_HINT)
     try:
         if last and (today - date.fromisoformat(last)).days < PLATEAU_REPEAT_DAYS:
             return False
     except (TypeError, ValueError):
         pass
-    tempos = [entry.get("tempo") for _, entry in sorted(state.get("days", {}).items())
-              if isinstance(entry, dict) and entry.get("tempo")]
-    recent = tempos[-PLATEAU_DAYS:]
+    recent = [(entry.get("tempo"), entry.get("lesson")) for _, entry in sorted(state.get("days", {}).items())
+              if isinstance(entry, dict) and entry.get("tempo")][-PLATEAU_DAYS:]
     return len(recent) >= PLATEAU_DAYS and len(set(recent)) == 1
+
+
+def slower_tomorrow(state: dict, today: date) -> bool:
+    """Ist für morgen ein langsameres Tempo vorgemerkt (heute nach dem Hauptteil)?"""
+    pending, current = state.get("pending_tempo"), state.get("tempo")
+    return (state.get("pending_tempo_since") == today.isoformat() and isinstance(pending, dict)
+            and isinstance(current, dict) and pending.get("effective", 0) < current.get("effective", 0))
+
+
+# Nach so vielen Tagen ohne Tagesübung begrüßt die Leiste einmal.
+WELCOME_BACK_DAYS = 14
+
+
+def days_since_practice(state: dict, today: date):
+    """Tage seit der letzten Tagesübung (mindestens ein Block) vor `today`;
+    None, wenn es noch keine gab."""
+    last = [day for day, entry in state.get("days", {}).items()
+            if isinstance(entry, dict) and entry.get("blocks") and day < today.isoformat()]
+    try:
+        return (today - date.fromisoformat(max(last))).days if last else None
+    except ValueError:
+        return None
+
+
+def today_numbers(state: dict, today: date) -> dict:
+    """Zähler des heutigen Tages für die Abendbilanz: {"chars": gehörte Zeichen,
+    "streak": beste Serie}."""
+    blocks = state.get("days", {}).get(today.isoformat(), {}).get("blocks", [])
+    blocks = [b for b in blocks if isinstance(b, dict)]
+    return {"chars": sum(b.get("total", 0) for b in blocks if isinstance(b.get("total"), int)),
+            "streak": max((b.get("best_streak", 0) for b in blocks if isinstance(b.get("best_streak"), int)),
+                          default=0)}
 
 
 def extra_offer(state: dict, today: date, lesson: int, confusion_chars: str):

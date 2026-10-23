@@ -105,6 +105,8 @@ HELP_KEY = "F1"
 BOX_CHARS_PER_LINE = 20
 # So viele Verwechslungspaare (die häufigsten) übt "Diese Verwechslungen üben".
 CONFUSION_PAIRS = 4
+# Ab diesem Fach (Index, 2 = Fach 3) gilt ein Zeichen in der Statistik als „sitzt sicher“.
+SAFE_FROM_BOX = 2
 # Übungszeit in der Fußzeile während eines Durchgangs so oft auffrischen.
 PRACTICE_TICK_MS = 15000
 # Programmicon (aus packaging/morsetrainer.svg, wie im AppImage); in
@@ -2019,8 +2021,9 @@ class MorseTrainerApp:
         """Reiter Statistik neu füllen; ohne `with_awards` bleiben Diplome und
         Lebenslinie für ein gleich folgendes _check_awards() liegen."""
         data = stats.load_all_time()
+        boxes = review.by_box()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data),
-                                    stats.period_comparison())
+                                    stats.period_comparison(), safe="".join(boxes[SAFE_FROM_BOX:]))
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
         days, stars = self._week()
         self.week_strip_var.set(week_text(days))

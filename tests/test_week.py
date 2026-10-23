@@ -38,7 +38,9 @@ class StripTest(unittest.TestCase):
         state = {"days": {iso(i): day_with(daily.STAR_ORDER) for i in range(3)}}
         state["days"][iso(-1)] = day_with(daily.STAR_ORDER)  # Sonntag davor zählt nicht
         self.assertEqual(week.stars_in_week(state, MONDAY + timedelta(days=6)), 9)
-        self.assertEqual(daily_panel.week_goal_text(9), "9 ★ diese Woche, Ziel 12")
+        self.assertEqual(daily_panel.week_goal_text(5), "5 ★ diese Woche, Ziel 8")
+        self.assertEqual(daily_panel.week_goal_text(7), "7 ★ diese Woche, Ziel 8")
+        self.assertEqual(daily_panel.week_goal_text(8), "Wochenziel erreicht: 8 ★")
         self.assertEqual(daily_panel.week_goal_text(13), "Wochenziel erreicht: 13 ★")
 
 

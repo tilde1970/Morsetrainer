@@ -19,8 +19,8 @@ from morsetrainer.core import awards, daily, koch, practice, qso_text, review, s
 from morsetrainer.i18n import N_, ctrl_key, short_number, tr
 from morsetrainer.widgets import announcer, band_settings
 from morsetrainer.widgets.daily_panel import (
-    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, mode_name, moment_line, preview_line,
-    review_line, stars_named)
+    BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, end_note, minutes_text, mode_name, moment_line,
+    preview_line, review_line, stars_named, today_line)
 from morsetrainer.modes.qso_mode import EVAL_HEAD, EVAL_QUIZ, estimate_minutes
 from morsetrainer.modes.sequence_mode import COPY, MEMORIZE
 from morsetrainer.widgets.awards_panel import seal_name
@@ -32,6 +32,9 @@ MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter",
 CONTEST_KINDS = tuple(kind for kind in qso_text.QSO_TYPES if kind != qso_text.RAGCHEW)
 
 
+# Nach langer Pause, solange noch keine Tagesübung wieder lief.
+WELCOME_BACK_NOTE = N_("Schön, dass du wieder da bist. Nach einer Pause sind die ersten Tage schwerer – "
+                       "das Tempo gleicht sich an.")
 # Solange noch keine Tagesübung lief, steht das in der Leiste.
 FIRST_START_NOTE = N_("Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“ "
                       "den Haken „Wiedereinsteiger“ setzen.")
@@ -104,6 +107,10 @@ class DailyRunner:
             note = review_line(review_data) if review_data else ""
         if not note and not state.get("days"):
             note = tr(FIRST_START_NOTE)
+        elif not note:
+            gap = daily.days_since_practice(state, date.today())
+            if gap is not None and gap >= daily.WELCOME_BACK_DAYS:
+                note = tr(WELCOME_BACK_NOTE)
         self.bar.show_idle(note)
         self.refresh_week(practice_data, state)
 
@@ -434,10 +441,19 @@ class DailyRunner:
             lines += strong
         if block.mode == "single":
             lines += [moment_line(m) for m in daily.char_moments(self.today)]
-        if (block.kind == daily.WARMUP and not self.app.daily_relaxed_var.get()
-                and daily.too_tight(result)):
+        tight = (block.kind == daily.WARMUP and not self.app.daily_relaxed_var.get()
+                 and daily.too_tight(result))
+        if tight:
             lines.append(tr("Zu knapp? Unter Einstellungen ({key}) gibt es die „Entspannte Tagesübung“: "
                             "das Aufwärmen ohne Zeitlimit.").format(key=ctrl_key(",")))
+        errors = result.get("errors")
+        if errors and stats.error_review_line(errors):
+            # Der Hinweis auf die entspannte Tagesübung gehört nur zum Aufwärmen und nur einmal.
+            relaxed_tip = (block.kind == daily.WARMUP and not tight and not self.app.daily_relaxed_var.get())
+            lines += [line for line in (stats.error_review_line(errors),
+                                        stats.error_review_tip(errors, relaxed_hint=relaxed_tip)) if line]
+        if block.kind == daily.MAIN and daily.slower_tomorrow(self.state, self.today):
+            lines.append(tr("Das kommt vor – morgen läuft es etwas langsamer, bis es wieder sitzt."))
         following = self.blocks[self.index + 1]
         lines.append(preview_line(following, daily.current_lesson(self.state, 1), self.state["tempo"]))
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
@@ -506,7 +522,7 @@ class DailyRunner:
         if self.extra:
             note = tr("Zugabe geschafft.") if completed else tr("Zugabe beendet.")
         else:
-            note = tr("Tagesübung geschafft.") if completed else tr("Tagesübung abgebrochen – deine Sterne bleiben.")
+            note = end_note(completed, stars)
         self.bar.show_idle(note)
         if not (self.aborting and self.quiet):
             announcer.say(note)
@@ -551,4 +567,6 @@ class DailyRunner:
             seals=[seal_name(awards.BY_KEY[key], level) for key, level, _ in self.app.pending_seals],
             on_close=self.app.show_pending_seals,
             on_prosigns=self.app.start_prosign_lessons if prosigns else None,
-            band=daily.band_change(self.state, self.today), tempo=tempo)
+            band=daily.band_change(self.state, self.today), tempo=tempo,
+            today=today_line(daily.today_numbers(self.state, self.today),
+                             sum(len(chars) for chars in review.by_box()[1:])))

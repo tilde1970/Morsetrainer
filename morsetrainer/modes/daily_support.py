@@ -17,7 +17,7 @@ Antworten beim ersten Hören zählt er in _count_streak()."""
 import time
 import tkinter as tk
 
-from morsetrainer.core import review
+from morsetrainer.core import review, stats
 from morsetrainer.i18n import number, tr
 from morsetrainer.widgets import announcer
 
@@ -107,6 +107,9 @@ class DailyModeMixin:
     def _remember_result(self, session, summary: dict, **extra) -> None:
         """Ergebnis eines Durchgangs für daily_result(); `session` ist die
         gerade abgeschlossene SessionStats (nach finalize())."""
+        # Die Fehlerzahl hier zählt ohne die erneuten Abfragen nach einem Fehler (kept_char),
+        # kann also etwas unter „gesamt − richtig“ liegen.
+        errors = stats.error_review(getattr(session, "kept_char", {}))
         self.last_result = {
             "correct": summary.get("correct", 0),
             "total": summary.get("total", 0),
@@ -117,12 +120,15 @@ class DailyModeMixin:
             # Je Zeichen [Versuche, flüssig richtig] für die Zwischenkarte.
             "chars": {ch: [e["good"] + e["wrong"] - e.get("untimed", 0), review.fluent_count(e)]
                       for ch, e in getattr(session, "kept_char", {}).items()},
+            "errors": errors,
             **extra,
         }
         # In der Tagesübung sagt die Zwischenkarte das Ergebnis an.
         if not self.daily_minutes and summary.get("total"):
-            announcer.say(tr("Durchgang beendet. {correct} von {total} Zeichen richtig.").format(
-                correct=summary["correct"], total=summary["total"]))
+            announcer.say(" ".join(part for part in (
+                tr("Durchgang beendet. {correct} von {total} Zeichen richtig.").format(
+                    correct=summary["correct"], total=summary["total"]),
+                stats.error_review_line(errors)) if part))
 
     def _stopped_text(self) -> str:
         """Statuszeile nach dem Stop: das Ergebnis des Durchgangs, wie es auch
@@ -131,8 +137,10 @@ class DailyModeMixin:
         correct, total = result.get("correct", 0), result.get("total", 0)
         if not total:
             return tr("Gestoppt.")
-        return tr("Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).").format(
+        text = tr("Durchgang beendet: {correct} von {total} Zeichen richtig ({share} %).").format(
             correct=correct, total=total, share=number(round(correct / total * 100)))
+        why = stats.error_review_line(result["errors"]) if result.get("errors") else ""
+        return f"{text} {why}" if why else text
 
     def _count_streak(self, clean: bool = None) -> None:
         """Serie fortsetzen (`clean`: beim ersten Hören richtig, ohne

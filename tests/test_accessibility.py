@@ -1440,7 +1440,7 @@ class AnnouncerModesTest(AnnouncerCase):
         self.assertTrue(text.startswith("Statistik. Noch keine Durchgänge."), text)
         self.assertIn("Lernkartei", text)
         self.assertIn("Diese Woche: ", text)
-        self.assertIn("0 ★ diese Woche, Ziel 12", text)  # angesagt als „0 Sterne“ (speakable)
+        self.assertIn("0 ★ diese Woche, Ziel 8", text)  # angesagt als „0 Sterne“ (speakable)
         self.assertTrue(self.app.week_strip_var.get().startswith("Mo "))  # auch bei 200 % sichtbar
 
     def test_week_strip_is_spoken_in_one_sentence(self):
@@ -1609,7 +1609,7 @@ class EveningSummaryAnnounceTest(AnnouncerCase):
                                  seals=["QRN-fest, Stufe 1"])
         text = summary.spoken
         self.assertTrue(text.startswith("Tagesübung geschafft. 2 von 3 Sternen: Dabei, Sauber. "), text)
-        self.assertIn("7 Sterne diese Woche, Ziel 12", text)
+        self.assertIn("7 Sterne diese Woche, Ziel 8", text)
         self.assertIn("Ka kommt schneller, von 0,52 auf 0,41 Sekunden", text)
         self.assertIn("Gruppen bei 20 WPM von 60 auf 75 Prozent beim ersten Versuch", text)
         self.assertIn("Neues Siegel: QRN-fest, Stufe 1", text)
@@ -1623,7 +1623,7 @@ class EveningSummaryAnnounceTest(AnnouncerCase):
         self.assertEqual(announcer.speakable("84 % → 90 %"), "84 Prozent auf 90 Prozent")
         self.assertEqual(announcer.speakable("Abgebrochen – deine Sterne bleiben."), "Abgebrochen, deine Sterne bleiben.")
         self.assertEqual(announcer.speakable("✓ KM"), "richtig KM")
-        self.assertEqual(announcer.speakable("0 ★ diese Woche, Ziel 12"), "0 Sterne diese Woche, Ziel 12")
+        self.assertEqual(announcer.speakable("0 ★ diese Woche, Ziel 8"), "0 Sterne diese Woche, Ziel 8")
         self.assertEqual(announcer.speakable("Letzte Woche: 1 Tag, 1 ★"), "Letzte Woche: 1 Tag, 1 Stern")
         # Einheiten als Wort, sonst buchstabiert die Stimme („HaZet“).
         self.assertEqual(announcer.speakable("Tonhöhe, Zahlenfeld, 650 Hz"), "Tonhöhe, Zahlenfeld, 650 Hertz")

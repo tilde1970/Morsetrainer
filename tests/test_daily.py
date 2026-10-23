@@ -425,6 +425,42 @@ class StarsTest(unittest.TestCase):
         self.assertFalse(daily.plateau_due(self.state, last + timedelta(days=1)))
         self.assertTrue(daily.plateau_due(self.state, last + timedelta(days=daily.PLATEAU_REPEAT_DAYS)))
 
+    def test_no_plateau_while_lessons_come(self):
+        """Im Koch-Teil bleibt das Tempo fest; steigt die Lektion, geht es voran."""
+        for offset in range(daily.PLATEAU_DAYS):
+            self.state["lesson"] = 3 + offset // 2
+            self.day(offset, 80)
+            daily.day_entry(self.state, TODAY + timedelta(days=offset))["lesson"] = self.state["lesson"]
+        self.assertFalse(daily.plateau_due(self.state, TODAY + timedelta(days=daily.PLATEAU_DAYS)))
+
+    def test_plateau_in_the_same_lesson(self):
+        for offset in range(daily.PLATEAU_DAYS):
+            self.state["lesson"] = 12
+            self.day(offset, 80)
+        self.assertTrue(daily.plateau_due(self.state, TODAY + timedelta(days=daily.PLATEAU_DAYS)))
+        self.assertEqual(daily.tempo_outlook(self.state, TODAY + timedelta(days=daily.PLATEAU_DAYS - 1))["lesson"], 12)
+
+    def test_slower_tomorrow_only_with_a_pending_slowdown(self):
+        self.day(0, 60)
+        self.assertTrue(daily.slower_tomorrow(self.state, TODAY))
+        self.assertFalse(daily.slower_tomorrow(self.state, TODAY + timedelta(days=1)))
+        self.day(1, 80)
+        self.assertFalse(daily.slower_tomorrow(self.state, TODAY + timedelta(days=1)))
+
+    def test_days_since_practice_and_today_numbers(self):
+        self.assertIsNone(daily.days_since_practice(self.state, TODAY))
+        self.day(0, 80)
+        self.assertEqual(daily.days_since_practice(self.state, TODAY + timedelta(days=20)), 20)
+        self.assertIsNone(daily.days_since_practice(self.state, TODAY))  # nur vor dem Tag
+        entry = daily.day_entry(self.state, TODAY)
+        entry["blocks"].append({"kind": "warmup", "total": 40, "best_streak": 9})
+        numbers = daily.today_numbers(self.state, TODAY)
+        self.assertEqual(numbers, {"chars": 140, "streak": 9})
+
+    def test_errors_are_not_stored_in_the_day(self):
+        daily.finish_block(self.state, TODAY, main_block(), main_result(90, 100, errors={"total": 10}))
+        self.assertNotIn("errors", self.state["days"][TODAY.isoformat()]["blocks"][-1])
+
     def test_no_plateau_when_tempo_moved(self):
         for offset in range(daily.PLATEAU_DAYS):
             self.day(offset, 80 if offset != 4 else 60)
@@ -585,3 +621,42 @@ class ReviewTest(unittest.TestCase):
         self.assertIsNone(daily.extra_offer(state, TODAY, 5, ""))
         state["days"][TODAY.isoformat()][daily.EXTRA] = True
         self.assertIsNone(daily.extra_offer(state, TODAY, 30, "BD"))
+
+
+class PanelTextTest(unittest.TestCase):
+    def test_tempo_lines_are_neutral_and_give_the_scale_after_koch(self):
+        from morsetrainer.widgets.daily_panel import tempo_lines
+        slower = tempo_lines({"tempo": {"wpm": 20, "effective": 11}, "change": -1, "share": 62, "lesson": 12})
+        self.assertIn("einen Schritt langsamer, damit es wieder sitzt", slower[0])
+        self.assertNotIn("nur", slower[0])
+        same_koch = tempo_lines({"tempo": {"wpm": 20, "effective": 12}, "change": 0, "share": 82, "lesson": 12})
+        self.assertNotIn("Ab 90 %", same_koch[0])  # im Koch-Teil steigt das Tempo nicht mit der Quote
+        same_post = tempo_lines({"tempo": {"wpm": 20, "effective": 12}, "change": 0, "share": 82,
+                                 "lesson": daily.POST_KOCH})
+        self.assertIn("Ab 90 % geht es schneller.", same_post[0])
+
+    def test_plateau_advice_fits_the_lesson(self):
+        from morsetrainer.widgets.daily_panel import tempo_lines
+        base = {"tempo": {"wpm": 20, "effective": 12}, "change": 0, "share": 80, "plateau": True}
+        early = tempo_lines(dict(base, lesson=5))[-1]
+        words = tempo_lines(dict(base, lesson=daily.WORDS_FROM_LESSON))[-1]
+        calls = tempo_lines(dict(base, lesson=daily.CALLS_FROM_LESSON))[-1]
+        self.assertTrue(early.endswith("Oft hilft ein Tag Pause."))
+        self.assertNotIn("Wörter", early)
+        self.assertTrue(words.endswith("Wörter statt Gruppen."))
+        self.assertNotIn("Rufzeichen", words)
+        self.assertTrue(calls.endswith("Wörter und Rufzeichen statt Gruppen."))
+
+    def test_end_note_without_a_star(self):
+        from morsetrainer.widgets.daily_panel import end_note
+        self.assertEqual(end_note(True, []), "Tagesübung geschafft.")
+        self.assertIn("deine Sterne bleiben", end_note(False, [daily.DABEI]))
+        self.assertIn("kein Stern", end_note(False, []))
+        self.assertNotIn("Sterne bleiben", end_note(False, []))
+
+    def test_today_line_only_states_what_there_is(self):
+        from morsetrainer.widgets.daily_panel import today_line
+        self.assertEqual(today_line({"chars": 190, "streak": 14}, 5),
+                         "Heute: 190 Zeichen gehört, beste Serie 14, 5 Zeichen schon in Fach 2 oder höher.")
+        self.assertEqual(today_line({"chars": 190, "streak": 2}, 0), "Heute: 190 Zeichen gehört.")
+        self.assertEqual(today_line({"chars": 0, "streak": 0}, 3), "")

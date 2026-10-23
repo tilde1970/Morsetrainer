@@ -299,7 +299,7 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(qso.settings()["kind"], "cqww")
         qso.toggle_running()  # Knopf „Tagesübung beenden“ statt eines neuen QSOs
         self.assertFalse(self.runner.active)
-        self.assertIn("abgebrochen", self.runner.summary.spoken)
+        self.assertIn("kein Stern", self.runner.summary.spoken)
         self.runner.summary.close()
         # Danach wieder ein gewöhnlicher QSO-Reiter.
         self.assertEqual(qso.start_button["text"], "Neues QSO (F5)")
@@ -460,6 +460,73 @@ class DailyRunnerTest(AppTestCase):
         self.assertFalse(any("Entspannte Tagesübung" in line for line in card.call_args[0][1]))
         self.runner.abort(quiet=True)
 
+    def _card_lines(self, block, result, state=None):
+        if state is not None:
+            self.runner.state = state
+        with mock.patch.object(self.runner, "_show_card") as card:
+            self.runner._show_block_card(block, result, [])
+        return card.call_args[0][1]
+
+    def test_card_gives_the_error_review_with_one_tip(self):
+        self.runner.start()
+        block = self.runner.blocks[1]
+        errors = {"total": 9, "answers": 100, "causes": {"heard": 6, "late": 3}, "pair": ("B", "6", 3)}
+        lines = self._card_lines(block, {"correct": 80, "total": 100, "minutes": block.minutes, "errors": errors})
+        self.assertIn("Woran es lag: Von 9 Fehlern waren 6 Verwechslungen (B für 6 dreimal), 3 zu langsam.", lines)
+        self.assertEqual(sum(line.startswith("Tipp:") for line in lines), 1)
+        few = dict(errors, total=2, causes={"heard": 2})
+        lines = self._card_lines(block, {"correct": 98, "total": 100, "minutes": block.minutes, "errors": few})
+        self.assertFalse([line for line in lines if line.startswith(("Woran", "Tipp"))])
+        self.runner.abort(quiet=True)
+
+    def test_relaxed_tip_only_in_the_warmup_and_not_twice(self):
+        self.runner.start()
+        warmup, main = self.runner.blocks[0], self.runner.blocks[1]
+        errors = {"total": 12, "answers": 24, "causes": {"late": 12}, "pair": None}
+        result = {"correct": 12, "total": 24, "timeouts": 12, "minutes": warmup.minutes, "errors": errors}
+        lines = self._card_lines(warmup, result)
+        self.assertEqual(sum("Entspannte Tagesübung" in line for line in lines), 1)  # nur der Hinweis „Zu knapp?“
+        lines = self._card_lines(main, dict(result, minutes=main.minutes))
+        self.assertFalse([line for line in lines if "Entspannte Tagesübung" in line])
+        self.runner.abort(quiet=True)
+
+    def test_card_after_a_weak_main_part_says_it_happens(self):
+        self.runner.start()
+        main = self.runner.blocks[1]
+        state = daily.load()
+        state["tempo"] = {"wpm": 20, "effective": 12}
+        state.update(pending_tempo={"wpm": 20, "effective": 11}, pending_tempo_since=date.today().isoformat())
+        self.runner.today = date.today()
+        lines = self._card_lines(main, {"correct": 50, "total": 100, "minutes": main.minutes}, state)
+        self.assertIn("Das kommt vor – morgen läuft es etwas langsamer, bis es wieder sitzt.", lines)
+        state["pending_tempo_since"] = "2000-01-01"
+        lines = self._card_lines(main, {"correct": 90, "total": 100, "minutes": main.minutes}, state)
+        self.assertNotIn("Das kommt vor – morgen läuft es etwas langsamer, bis es wieder sitzt.", lines)
+        self.runner.abort(quiet=True)
+
+    def test_welcome_back_after_a_long_break(self):
+        from datetime import timedelta
+        long_ago = (date.today() - timedelta(days=30)).isoformat()
+        daily.save({"lesson": 12, "days": {long_ago: {"stars": [], "blocks": [{"kind": daily.MAIN}],
+                                                          "progress": [], "minutes": 10.0, "lesson": 12}}})
+        self.runner.refresh_idle()
+        self.assertIn("Schön, dass du wieder da bist", self.app.daily_bar.note_var.get())
+        recent = (date.today() - timedelta(days=5)).isoformat()
+        daily.save({"lesson": 12, "days": {recent: {"stars": [], "blocks": [{"kind": daily.MAIN}],
+                                                       "progress": [], "minutes": 10.0, "lesson": 12}}})
+        self.runner.refresh_idle()
+        self.assertNotIn("wieder da bist", self.app.daily_bar.note_var.get())
+
+    def test_evening_summary_fills_the_gap_with_todays_numbers(self):
+        from morsetrainer.widgets.daily_panel import EveningSummary
+        text = "Heute: 190 Zeichen gehört."
+        few = EveningSummary(self.app.root, [daily.DABEI], {"status": daily.FEW, "better": []}, today=text)
+        self.assertIn(text, few.spoken)
+        few.close(follow=False)
+        held = EveningSummary(self.app.root, [daily.DABEI], {"status": daily.HELD, "better": []}, today=text)
+        self.assertNotIn(text, held.spoken)
+        held.close(follow=False)
+
     def test_quit_asks_twice_during_daily_practice(self):
         self.runner.start()
         with mock.patch.object(self.app, "on_close") as close:
@@ -504,7 +571,7 @@ class DailyRunnerTest(AppTestCase):
         with mock.patch.object(daily, "plan", short_plan):
             self.runner.refresh_idle()
             self.assertIn("Letzte Woche: 1 Tag, 1 ★", self.app.daily_bar.note_var.get())
-            self.assertIn("0 ★ diese Woche, Ziel 12", self.app.daily_bar.goal_var.get())
+            self.assertIn("0 ★ diese Woche, Ziel 8", self.app.daily_bar.goal_var.get())
             self.runner.start()
             self.runner.abort(quiet=True)
-        self.assertIn("Tagesübung abgebrochen", self.app.daily_bar.note_var.get())
+        self.assertIn("Tagesübung beendet", self.app.daily_bar.note_var.get())  # ohne Stern

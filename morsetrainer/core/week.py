@@ -2,8 +2,9 @@
 
 Ersetzt die Serie „X Tage in Folge“: Die fiel nach einem ausgelassenen Tag
 auf null, und jeder kurze Tag zählte als Fehlschlag. Die Woche beginnt am
-Montag; das Wochenziel (WEEK_GOAL Sterne) ist mit vier bis fünf
-Übungstagen erreichbar, ein ausgelassener Tag kostet nicht die Woche.
+Montag; das Wochenziel (WEEK_GOAL Sterne) ist mit fünf Übungstagen zu je ein
+bis zwei Sternen erreichbar (bei etwa 1,5 Sternen am Tag, wie in den Daten
+des Entwicklers), ein ausgelassener Tag kostet nicht die Woche.
 
 Sterne gibt es nur aus der Tagesübung (core/daily.py). Freies Üben, das das
 Tagesziel erreicht (core/practice.py), erscheint im Streifen als ✓, bringt
@@ -13,7 +14,7 @@ from datetime import date, timedelta
 
 from morsetrainer.core import daily
 
-WEEK_GOAL = 12
+WEEK_GOAL = 8
 
 # Zustand eines Tages im Streifen.
 FUTURE, NONE, PRACTICED = "future", "none", "practiced"

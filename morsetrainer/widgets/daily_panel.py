@@ -64,7 +64,7 @@ def week_legend() -> str:
 
 
 def week_goal_text(stars: int) -> str:
-    """Stand des Wochenziels („5 ★ diese Woche, Ziel 12“ bzw. „erreicht“); das
+    """Stand des Wochenziels („5 ★ diese Woche, Ziel 8“ bzw. „erreicht“); das
     Ziel steht hinten, damit es nicht wie eine Obergrenze aussieht."""
     if stars >= week.WEEK_GOAL:
         return tr("Wochenziel erreicht: {stars} {star}").format(stars=stars, star=FULL_STAR)
@@ -191,6 +191,29 @@ def band_change_line(change) -> str:
     return tr("Zweimal hintereinander unter 80 % – nächster Band-Ausklang wieder {band}.").format(band=name)
 
 
+def today_line(numbers: dict, known: int) -> str:
+    """Zähler des Tages für die Abendbilanz, solange der Vergleich mit der
+    Vorwoche noch nicht geht: „Heute: 190 Zeichen gehört, beste Serie 14, 5
+    Zeichen schon in Fach 2 oder höher.“ (nur, was es gibt); "" ohne Zeichen."""
+    if not numbers or not numbers.get("chars"):
+        return ""
+    parts = [tr("{n} Zeichen gehört").format(n=numbers["chars"])]
+    if numbers.get("streak", 0) >= STREAK_SHOWN_FROM:
+        parts.append(tr("beste Serie {n}").format(n=numbers["streak"]))
+    if known:
+        parts.append(tr("{n} Zeichen schon in Fach 2 oder höher").format(n=known))
+    return tr("Heute: {parts}.").format(parts=", ".join(parts))
+
+
+def end_note(completed: bool, stars) -> str:
+    """Satz zum Ende der Tagesübung; ohne Stern kein „deine Sterne bleiben“."""
+    if completed:
+        return tr("Tagesübung geschafft.")
+    if stars:
+        return tr("Tagesübung abgebrochen – deine Sterne bleiben.")
+    return tr("Tagesübung beendet – für heute kein Stern. Morgen fängt es neu an.")
+
+
 def tempo_lines(outlook) -> list:
     """Tempo für morgen (daily.tempo_outlook) mit dem Grund; bei Stillstand
     dazu ein Hinweis. Leer ohne Vormerkung."""
@@ -199,14 +222,20 @@ def tempo_lines(outlook) -> list:
     tempo = tempo_text(outlook["tempo"])
     share = number(outlook["share"])
     if outlook["change"] > 0:
-        line = tr("Morgen: {tempo} – etwas schneller, weil {share} % beim ersten Versuch richtig waren.")
+        line = tr("Morgen: {tempo} – einen Schritt schneller, weil {share} % beim ersten Versuch richtig waren.")
     elif outlook["change"] < 0:
-        line = tr("Morgen: {tempo} – etwas langsamer, weil nur {share} % beim ersten Versuch richtig waren.")
+        line = tr("Morgen: {tempo} – einen Schritt langsamer, damit es wieder sitzt ({share} % beim ersten "
+                  "Versuch richtig).")
     else:
         line = tr("Morgen: {tempo} – unverändert ({share} % beim ersten Versuch richtig).")
+        if outlook.get("lesson", 0) >= daily.POST_KOCH:
+            line += " " + tr("Ab {up} % geht es schneller.").format(up=round(daily.TEMPO_UP_SHARE * 100))
     lines = [line.format(tempo=tempo, share=share)]
     if outlook.get("plateau"):
-        lines.append(tr(PLATEAU_TEXT))
+        lesson = outlook.get("lesson", 0)
+        advice = (PLATEAU_CALLS if lesson >= daily.CALLS_FROM_LESSON
+                  else PLATEAU_WORDS if lesson >= daily.WORDS_FROM_LESSON else PLATEAU_BREAK)
+        lines.append(tr(PLATEAU_TEXT) + " " + tr(advice))
     return lines
 
 
@@ -409,7 +438,10 @@ ENTER_GRACE_S = 0.8
 
 # Text des einmaligen Hinweises auf die Betriebszeichen (siehe daily.prosign_hint_due).
 PLATEAU_TEXT = N_("Seit etwa zehn Übungstagen bleibt das Tempo gleich. Das ist normal: Beim Hören kommen "
-                  "Plateaus, dann geht es wieder voran. Oft helfen ein Tag Pause oder Wörter und Rufzeichen statt Gruppen.")
+                  "Plateaus, dann geht es wieder voran.")
+PLATEAU_BREAK = N_("Oft hilft ein Tag Pause.")
+PLATEAU_WORDS = N_("Oft helfen ein Tag Pause oder Wörter statt Gruppen.")
+PLATEAU_CALLS = N_("Oft helfen ein Tag Pause oder Wörter und Rufzeichen statt Gruppen.")
 PROSIGN_HINT_TEXT = N_("Für QSOs fehlen noch die Betriebszeichen AR, KN, SK und BK. Sie kommen in den "
                        "Lektionen 42 bis 45 dazu; du kannst sie jetzt oder später oben bei der Lektion einstellen.")
 
@@ -421,7 +453,7 @@ class EveningSummary:
 
     def __init__(self, root, stars, comparison: dict, outlook=None, offer=None, on_extra=None,
                  completed: bool = True, week_stars: int = None, seals=(), on_close=None, on_prosigns=None,
-                 band=None, tempo=None):
+                 band=None, tempo=None, today=""):
         self.on_extra = on_extra
         self.on_prosigns = on_prosigns
         self.on_close = on_close
@@ -434,7 +466,7 @@ class EveningSummary:
         window.resizable(False, False)
         frame = ttk.Frame(window, padding=16)
         frame.pack(fill="both", expand=True)
-        title = tr("Tagesübung geschafft.") if completed else tr("Tagesübung abgebrochen – deine Sterne bleiben.")
+        title = end_note(completed, stars)
         ttk.Label(frame, text=title, style="Status.TLabel").pack(anchor="w")
         ttk.Label(frame, text=star_text(stars), style="Score.TLabel").pack(anchor="w", pady=(8, 0))
         if stars:
@@ -444,9 +476,14 @@ class EveningSummary:
 
         box = theme.card(frame, tr("Besser geworden (gegenüber der Vorwoche)"), padx=0, pady=(12, 0))
         lines = [better_line(item) for item in comparison.get("better", [])]
+        self.today_text = ""
         if not lines:
-            lines = [tr("Stand gehalten.") if comparison.get("status") == daily.HELD
-                     else tr("Für einen Vergleich mit der Vorwoche fehlen noch Daten.")]
+            held = comparison.get("status") == daily.HELD
+            lines = [tr("Stand gehalten.") if held else tr("Für einen Vergleich mit der Vorwoche fehlen noch Daten.")]
+            if not held and today:
+                # Ehrlich leer bleibt der Vergleich; die Zähler des Tages füllen die Lücke.
+                self.today_text = today
+                lines.append(today)
         for line in lines:
             ttk.Label(box, text=line).pack(anchor="w")
         if outlook:
@@ -489,11 +526,11 @@ class EveningSummary:
         window.protocol("WM_DELETE_WINDOW", self.close)
         self.done_button.focus_set()
         # Ansage (Barrierefreiheit): alles in Sätzen, F11 im Fenster wiederholt.
-        self.spoken = self._spoken(title, stars, comparison, outlook, seals, week_stars)
+        self.spoken = self._spoken(title, stars, comparison, outlook, seals, week_stars, completed)
         window.bind("<F11>", lambda e: announcer.get() and announcer.get().say(self.spoken, force=True))
         announcer.say(self.spoken)
 
-    def _spoken(self, title, stars, comparison, outlook, seals, week_stars) -> str:
+    def _spoken(self, title, stars, comparison, outlook, seals, week_stars, completed=True) -> str:
         """Die Abendbilanz als gesprochener Text: Sterne, Wochenziel, Vergleich,
         Ausblick und neue Siegel in ganzen Sätzen."""
         parts = [title]
@@ -501,7 +538,7 @@ class EveningSummary:
             parts.append(tr("{count} von {total} Sternen: {names}").format(
                 count=len(stars), total=len(daily.STAR_ORDER),
                 names=", ".join(tr(STAR_NAMES[s]) for s in daily.STAR_ORDER if s in stars)))
-        else:
+        elif completed:  # nach einem Abbruch sagt der Titel schon „kein Stern“
             parts.append(tr("Heute noch kein Stern"))
         if week_stars is not None:
             parts.append(tr("Wochenziel erreicht: {stars} Sterne").format(stars=week_stars)
@@ -514,6 +551,8 @@ class EveningSummary:
             parts.append(tr("Besser geworden: ") + "; ".join(_spoken_better(item) for item in better))
         elif comparison.get("status") == daily.HELD:
             parts.append(tr("Stand gehalten."))
+        elif self.today_text:
+            parts.append(self.today_text)
         if outlook:
             parts.append(outlook_line(outlook))
         parts.extend(self.tempo_lines)

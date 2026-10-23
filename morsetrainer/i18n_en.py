@@ -580,16 +580,52 @@ EN.update({
         "{n} still need more attempts for the review box; they stay due.",
     "Zu knapp? Unter Einstellungen ({key}) gibt es die „Entspannte Tagesübung“: das Aufwärmen ohne Zeitlimit.":
         "Too tight? Under Settings ({key}) you will find \"Relaxed daily practice\": the warm-up without a time limit.",
-    "Morgen: {tempo} – etwas schneller, weil {share} % beim ersten Versuch richtig waren.":
-        "Tomorrow: {tempo} – a little faster, because {share} % were right on the first try.",
-    "Morgen: {tempo} – etwas langsamer, weil nur {share} % beim ersten Versuch richtig waren.":
-        "Tomorrow: {tempo} – a little slower, because only {share} % were right on the first try.",
     "Morgen: {tempo} – unverändert ({share} % beim ersten Versuch richtig).":
         "Tomorrow: {tempo} – unchanged ({share} % right on the first try).",
+    "zweimal": "twice",
+    "dreimal": "three times",
+    "{n}-mal": "{n} times",
+    "{n} Verwechslung": "{n} mix-up",
+    "{n} Verwechslungen": "{n} mix-ups",
+    "{sent} für {typed} {times}": "{sent} for {typed} {times}",
+    "{n} zu langsam": "{n} too slow",
+    "{n} verpasst": "{n} missed",
+    "{n} erst nach Wiederholung": "{n} only after a replay",
+    "{n} vertauscht": "{n} swapped",
+    "{n} andere": "{n} others",
+    "Woran es lag: Von {total} Fehlern waren {parts}.": "What happened: of {total} mistakes, {parts}.",
+    "Tipp: Diese Verwechslungen kannst du im Reiter Statistik gezielt üben.":
+        "Tip: you can practise these mix-ups in the Statistics tab.",
+    "Tipp: Die entspannte Tagesübung ({key}) übt ohne Zeitlimit.":
+        "Tip: Relaxed daily practice ({key}) trains without a time limit.",
+    "Tipp: Bei vielen verpassten Zeichen hilft ein etwas langsameres Tempo.":
+        "Tip: a slightly slower speed helps when many characters are missed.",
+    "Das kommt vor – morgen läuft es etwas langsamer, bis es wieder sitzt.":
+        "It happens – tomorrow runs a little slower until it sits again.",
+    "Schön, dass du wieder da bist. Nach einer Pause sind die ersten Tage schwerer – das Tempo gleicht sich an.":
+        "Good to have you back. The first days after a break are harder – the speed adjusts.",
     "Seit etwa zehn Übungstagen bleibt das Tempo gleich. Das ist normal: Beim Hören kommen Plateaus, dann geht es "
-    "wieder voran. Oft helfen ein Tag Pause oder Wörter und Rufzeichen statt Gruppen.":
+    "wieder voran.":
         "The tempo has stayed the same for about ten practice days. That is normal: listening skills come in "
-        "plateaus, then progress resumes. A day off, or words and call signs instead of groups, often helps.",
+        "plateaus, then progress resumes.",
+    "Oft hilft ein Tag Pause.": "A day off often helps.",
+    "Oft helfen ein Tag Pause oder Wörter statt Gruppen.": "A day off, or words instead of groups, often helps.",
+    "Oft helfen ein Tag Pause oder Wörter und Rufzeichen statt Gruppen.":
+        "A day off, or words and call signs instead of groups, often helps.",
+    "Morgen: {tempo} – einen Schritt schneller, weil {share} % beim ersten Versuch richtig waren.":
+        "Tomorrow: {tempo} – one step faster, because {share} % were right on the first try.",
+    "Morgen: {tempo} – einen Schritt langsamer, damit es wieder sitzt ({share} % beim ersten Versuch richtig).":
+        "Tomorrow: {tempo} – one step slower so that it sits again ({share} % right on the first try).",
+    "Ab {up} % geht es schneller.": "From {up} % it gets faster.",
+    "Tagesübung beendet – für heute kein Stern. Morgen fängt es neu an.":
+        "Daily practice ended – no star for today. Tomorrow starts fresh.",
+    "{n} Zeichen gehört": "{n} characters heard",
+    "beste Serie {n}": "best run {n}",
+    "{n} Zeichen schon in Fach 2 oder höher": "{n} characters already in box 2 or higher",
+    "Heute: {parts}.": "Today: {parts}.",
+    "Sicher sitzen: {chars}": "Solid: {chars}",
+    "Zeichen, nach Fehlerquote sortiert – oben steht, was noch Übung braucht":
+        "Characters, sorted by error rate – the top ones still need practice",
     "Neu: {stars}": "New: {stars}",
     "{block} geschafft": "{block} done",
     "Zugabe geschafft.": "Encore done.",
@@ -719,7 +755,6 @@ EN.update({
     "Ø effektive Geschwindigkeit: –": "Ø effective speed: –",
     "Ø effektive Geschwindigkeit: {wpm} WPM": "Ø effective speed: {wpm} WPM",
     " · {cpm:.0f} ZpM gemessen": " · {cpm:.0f} CPM measured",
-    "Zeichen, nach Fehlerquote sortiert": "Characters, sorted by error rate",
     "zu langsam": "too slow",
     "erst nach Wiederholung": "only after repeating",
     "verpasst": "missed",

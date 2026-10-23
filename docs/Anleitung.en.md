@@ -504,7 +504,8 @@ many characters. Runs with band conditions do not count here (section 6).
   slow”, “only after repeating”, “missed” or “swapped” (two neighbouring
   characters in reverse order). Only another character counts as a
   confusion. F11 also names the characters that were weakest lately (last
-  14 days, at least 5 answers).
+  14 days, at least 5 answers). Above the table you see which characters
+  are solid (box 3 of the review box or higher).
 - **This week:** the week strip with stars and the weekly goal as in the
   daily practice bar; with a large font it appears only here. F11 reads it
   in one sentence (“practised on 3 of 4 days, today still open”; on the
@@ -615,7 +616,11 @@ as they were.
   day can add missing stars; earned stars are never lost, not even when
   you stop early.
 - **Between the blocks** a short card shows the result, new stars and
-  what comes next. It stays until you continue with Enter or “Continue”.
+  what comes next. With at least 4 mistakes and at least 5 % of the
+  answers it also says what caused them (“of 9 mistakes, 5 were mix-ups (B
+  for 6 three times), 3 too slow, 1 missed”), with at most one tip for the
+  most common cause. If the main part was weak and a slower speed is set for
+  tomorrow, it says that this happens. It stays until you continue with Enter or “Continue”.
 - **Ending:** with the **End daily practice (Esc)** button below the time
   bar or the button in the tab. Esc and F5 only end it on the second
   press within three seconds; the first shows (and announces) “Press Esc
@@ -627,20 +632,26 @@ as they were.
 - **Evening summary:** stars, what improved compared with the week before
   (reaction time per character, group score; only with enough data and at
   the same speed, never “worse”), how much is missing for the next lesson,
-  tomorrow's speed with the reason (a little faster, slower or unchanged),
-  once after about ten practice days at the same speed a note that
-  plateaus are normal in listening, where you stand on the weekly goal and, if the main part went well, once
+  tomorrow's speed with the reason (one step faster, slower or unchanged),
+  once after about ten practice days at the same speed and in the same
+  lesson a note that plateaus are normal in listening (if the lesson moves
+  up, you are progressing). While the comparison with the previous week
+  does not work yet, today's counters appear instead (“Today: 190
+  characters heard, best run 14”), where you stand on the weekly goal and, if the main part went well, once
   a day **5 more min** with something different: your confusions within
   the lesson, a RufZ run or words. Once the daily practice has passed
   lesson 41, it points out the prosigns (lessons 42–45) once; **Set lesson
   42** sets them at the top.
+- **After a break:** after at least 14 days without daily practice the bar
+  welcomes you back until you have practised again. Stars and numbers stay
+  as they are; the first days are just harder, and the speed adjusts.
 - **Week:** next to the button is the week strip from Monday, e.g.
   “Mon ★★★  Tue ★★  Wed ✓  Thu –  Fri ·” (✓ = practised freely without the
   daily practice, daily goal reached; – = no practice), and next to it
-  where you stand on the **weekly goal of 12 stars**, e.g. “7 ★ this
-  week, goal 12”, from the twelfth star on “Weekly goal reached: 12 ★”.
-  Four to five days of
-  practice get you there; a missed day doesn't cost you the week. The goal
+  where you stand on the **weekly goal of 8 stars**, e.g. “5 ★ this
+  week, goal 8”, from the eighth star on “Weekly goal reached: 8 ★”.
+  Five days of practice with one to two stars each get you there; a missed
+  day doesn't cost you the week. The goal
   is not a limit: up to three stars a day keep counting. All
   stars together count for the **Finest hours** award (section 5). Until
   the first daily practice of a new week it shows a look back, e.g.
