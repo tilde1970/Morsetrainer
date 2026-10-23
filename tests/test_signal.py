@@ -133,3 +133,30 @@ class KeyClickTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AgcPumpTest(unittest.TestCase):
+    @staticmethod
+    def rms(levels, seconds=20):
+        conditions = band.conditions({"levels": levels, "gain": 1.0, "seed": 3}, 600)
+        out = np.concatenate([conditions.mix([], 960, receiver_agc=False) for _ in range(seconds * RATE // 960)])
+        return float(np.sqrt(np.mean(out.astype(np.float64) ** 2)))
+
+    def test_pumping_leaves_the_crashes_themselves_alone(self):
+        # Ein Knacker ist schneller als die AGC: Er kommt laut durch, erst
+        # danach bricht das Signal ein. Ohne Signal darf Pumpen ihn nicht leiser machen.
+        plain = self.rms({"qrn": 0.5, "agc": 0.0})
+        pumped = self.rms({"qrn": 0.5, "agc": 1.0})
+        self.assertGreater(pumped, plain * 0.7)  # höchstens 3 dB leiser
+
+
+class SwitchOnTest(unittest.TestCase):
+    def test_effect_switched_on_during_playback_glides_in(self):
+        for effect in ("ssb", "smps", "plc", "cw_qrm"):
+            conditions = band.conditions({"levels": {effect: 0.8}, "gain": 1.0, "seed": 3}, 600)
+            conditions.enabled[effect] = False
+            for _ in range(5):
+                conditions.mix([], 960, receiver_agc=False)
+            conditions.enabled[effect] = True
+            out = conditions.mix([], 960, receiver_agc=False)
+            self.assertLess(float(np.max(np.abs(out[:48]))), 0.05, effect)  # erste Millisekunde

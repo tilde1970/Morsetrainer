@@ -746,39 +746,46 @@ class BandConditions:
         if np.any(noise_rms):
             self.noise_pos, noise = _loop_slice(self.noise, self.noise_pos, n)
             out += noise * noise_rms
-        background = np.zeros(n, dtype=np.float64)
+        # Knacker (QRN, Gewitter, Weidezaun) werden nicht gepumpt: sie kommen schneller als die
+        # AGC und gehen ungedämpft durch, erst danach bricht das Signal ein.
+        impulses = np.zeros(n, dtype=np.float64)
         if self._on("qrn"):
-            background += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
+            impulses += self._crashes(n) * (MAX_QRN_RMS * levels["qrn"])
         if self._on("storm"):
-            background += self._storm(n) * (MAX_QRN_RMS * levels["storm"])
+            impulses += self._storm(n) * (MAX_QRN_RMS * levels["storm"])
         if self._on("fence"):
-            background += self._fence(n) * (MAX_FENCE_RMS * levels["fence"])
-        crashes = np.abs(background) if self._on("agc") else None  # Knacker, auf die die AGC reagiert
+            impulses += self._fence(n) * (MAX_FENCE_RMS * levels["fence"])
+        crashes = np.abs(impulses) if self._on("agc") else None  # Knacker, auf die die AGC reagiert
+        background = np.zeros(n, dtype=np.float64)
         # Können parallel in prepare() entstehen.
         ssb, smps, plc, cw_qrm, clicks = self.ssb, self.smps, self.plc, self.cw_qrm, self.key_clicks
-        if self._on("ssb") and ssb is not None:
-            self.ssb_pos, part = _loop_slice(ssb, self.ssb_pos, n)
-            background += part * (MAX_SSB_RMS * levels["ssb"])
-        if self._on("smps") and smps is not None:
-            self.smps_pos, part = _loop_slice(smps, self.smps_pos, n)
-            background += part * (MAX_SMPS_RMS * levels["smps"])
-        if self._on("plc") and plc is not None:
-            self.plc_pos, part = _loop_slice(plc, self.plc_pos, n)
-            background += part * (MAX_PLC_RMS * levels["plc"])
-        if (self._on("cw_qrm") or self._on("clicks")) and cw_qrm is not None:
-            pos = self.cw_qrm_pos % len(cw_qrm)
-            self.cw_qrm_pos, part = _loop_slice(cw_qrm, pos, n)
-            fading = self._fading(len(self.qsb) - 1, n) if self._on("qsb") else 1.0
-            neighbour = fading * self._flutter(len(self.flutter) - 1, n)
-            if self._on("cw_qrm"):
-                background += part * neighbour * levels["cw_qrm"]
-            if self._on("clicks") and clicks is not None and len(clicks) == len(cw_qrm):
-                background += _loop_slice(clicks, pos, n)[1] * neighbour * (MAX_CLICK_AMPLITUDE * levels["clicks"])
+        for key, source, peak in (("ssb", ssb, MAX_SSB_RMS), ("smps", smps, MAX_SMPS_RMS),
+                                  ("plc", plc, MAX_PLC_RMS)):
+            if source is None:
+                continue
+            gain = self._smooth(key, peak * levels[key] if self._on(key) else 0.0, n)
+            if np.any(gain):
+                pos, part = _loop_slice(source, getattr(self, key + "_pos"), n)
+                setattr(self, key + "_pos", pos)
+                background += part * gain
+        if cw_qrm is not None:
+            neighbour_gain = self._smooth("cw_qrm", levels["cw_qrm"] if self._on("cw_qrm") else 0.0, n)
+            click_gain = self._smooth("clicks", MAX_CLICK_AMPLITUDE * levels["clicks"] if self._on("clicks") else 0.0, n)
+            if np.any(neighbour_gain) or np.any(click_gain):
+                pos = self.cw_qrm_pos % len(cw_qrm)
+                self.cw_qrm_pos, part = _loop_slice(cw_qrm, pos, n)
+                fading = self._fading(len(self.qsb) - 1, n) if self._on("qsb") else 1.0
+                neighbour = fading * self._flutter(len(self.flutter) - 1, n)
+                background += part * neighbour * neighbour_gain
+                if clicks is not None and len(clicks) == len(cw_qrm):
+                    background += _loop_slice(clicks, pos, n)[1] * neighbour * click_gain
         if self._on("carrier"):
             background += self._carrier(n) * (MAX_CARRIER_AMPLITUDE * levels["carrier"])
-        out += background * (self._smooth("background", self.background_gain, n) * agc)
+        background_gain = self._smooth("background", self.background_gain, n) * agc
+        out += background * background_gain
         if crashes is not None:
             out *= self._pump(crashes * self.background_gain, n)
+        out += impulses * background_gain
         out = self._filtered(out) * receiver
         self.sample_pos += n
         return soft_limit(out + sidetone).astype(np.float32)
