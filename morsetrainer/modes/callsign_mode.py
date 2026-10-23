@@ -8,7 +8,7 @@ von Hand dort abgelegt geht es genauso.
 Optional lässt sich die Liste per Präfix-Filter einschränken (z. B. nur
 DL/DK/DJ). Fehlt die Datei, werden zufällige Rufzeichen nach
 dem Muster Präfix + Ziffer + Suffix erzeugt. Auf Wunsch bekommt ein kleiner
-Teil der Rufzeichen einen Anhang (/P, /M, selten /QRP, /MM, /AM) oder ein
+Teil der Rufzeichen einen Anhang (/P, /M, selten /MM, /AM) oder ein
 Gast-Präfix (OE/DL4YM), etwa so häufig wie im Contest.
 
 Rufz-Durchgang (angelehnt an RufzXP): genau RUFZ_CALLS Rufzeichen, je ein
@@ -97,9 +97,9 @@ def load_callsigns(path: Path = CALLSIGN_FILE):
 # (grob wie im Contest; in der SCP-Liste selbst gibt es praktisch keine).
 AFFIX_PROBABILITY = 0.08
 
-# Anhänge mit grober Häufigkeit: /P und /M dominieren; /QRP wird selten
-# mitgesendet, /MM (maritime mobile) und /AM (aeronautical mobile) sind rar.
-SUFFIXES = {"/P": 60, "/M": 25, "/QRP": 5, "/MM": 4, "/AM": 1}
+# Anhänge mit grober Häufigkeit: /P und /M dominieren; /MM (maritime mobile)
+# und /AM (aeronautical mobile) sind rar.
+SUFFIXES = {"/P": 60, "/M": 25, "/MM": 4, "/AM": 1}
 
 # Gast-Präfixe beim Funken im Ausland (CEPT), z. B. OE/DL4YM.
 GUEST_PREFIXES = [

@@ -22,9 +22,9 @@ PLAIN_TEXT = {"words", "plain", "phrases", "qso", "custom", "numbers"}
 
 # Zahlen: so viele Ziffern müssen gelernt sein, damit es genug Auswahl gibt.
 MIN_NUMBER_DIGITS = 4
-# Frequenzbereiche der Kurzwellenbänder in kHz (Telegrafieteil und darüber).
-BAND_RANGES_KHZ = ((3500, 3800), (7000, 7200), (10100, 10150), (14000, 14350), (18068, 18168),
-                   (21000, 21450), (24890, 24990), (28000, 29000))
+# Telegrafieteile der Kurzwellenbänder in kHz (IARU-Region-1-Bandplan, Stand Juni 2016).
+BAND_RANGES_KHZ = ((3500, 3570), (7000, 7040), (10100, 10130), (14000, 14070), (18068, 18095),
+                   (21000, 21070), (24890, 24915), (28000, 28070))
 WATTS = (5, 10, 20, 50, 100, 200, 400, 750, 1000)
 
 

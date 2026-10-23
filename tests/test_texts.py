@@ -231,6 +231,20 @@ class ZoneTest(unittest.TestCase):
                 self.assertNotIn(" + ", f" {sent} ")
 
 
+class FrequencyRangeTest(unittest.TestCase):
+    def test_frequencies_lie_in_the_cw_segments(self):
+        # IARU Region 1, Stand Juni 2016: Telegrafieteile
+        from morsetrainer.modes import content
+        cw = ((3500, 3580), (7000, 7040), (10100, 10130), (14000, 14070), (18068, 18095),
+              (21000, 21070), (24890, 24915), (28000, 28070))
+        for low, high in content.BAND_RANGES_KHZ:
+            self.assertTrue(any(a <= low and high <= b for a, b in cw), (low, high))
+
+    def test_no_unofficial_suffix(self):
+        from morsetrainer.modes import callsign_mode
+        self.assertNotIn("/QRP", callsign_mode.SUFFIXES)
+
+
 class DupTest(unittest.TestCase):
     """Im Contest ruft ab und zu eine schon geloggte Station noch einmal und
     bekommt „DUP“; das ist kein neues QSO."""
