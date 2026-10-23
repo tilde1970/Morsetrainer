@@ -222,6 +222,13 @@ class ZoneTest(unittest.TestCase):
     def test_iaru_headquarters_use_current_callsign(self):
         self.assertIn("9A0HQ", qso_text.IARU_HQ_STATIONS)
         self.assertNotIn("9A1HQ", qso_text.IARU_HQ_STATIONS)
+        # Nicht unter den HQ-Stationen 2025: Tschechien und Litauen
+        self.assertNotIn("OL9HQ", qso_text.IARU_HQ_STATIONS)
+        self.assertNotIn("LY0HQ", qso_text.IARU_HQ_STATIONS)
+
+    def test_every_headquarters_call_belongs_to_a_known_country(self):
+        for call in qso_text.IARU_HQ_STATIONS:
+            self.assertIsNotNone(qso_text._country_of(call), call)
 
     def test_ragchew_has_no_ar_before_the_final_call(self):
         random.seed(5)

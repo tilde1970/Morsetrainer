@@ -436,8 +436,9 @@ HOME_BOOST = 3
 # HQ-Stationen der IARU-Mitgliedsverbände senden statt der Zone das
 # Verbandskürzel (Auswahl).
 IARU_HQ_STATIONS = {
-    "DA0HQ": "DARC", "TM0HQ": "REF", "HB9HQ": "USKA", "OL9HQ": "CRC", "S50HQ": "ZRS",
-    "9A0HQ": "HRS", "LY0HQ": "LRMD",
+    "DA0HQ": "DARC", "TM0HQ": "REF", "HB9HQ": "USKA", "S50HQ": "ZRS", "9A0HQ": "HRS",
+    "OE0HQ": "OEVSV", "OH1HQ": "SRAL", "OZ1HQ": "EDR", "SK9HQ": "SSA", "SN0HQ": "PZK",
+    "HG0HQ": "MRASZ", "LZ0HQ": "BFRA", "YT0HQ": "SRS", "ED0HQ": "URE", "OP0HQ": "UBA", "EI0HQ": "IRTS",
 }
 IARU_HQ_RUN_PROBABILITY = 0.25
 IARU_HQ_CALLER_PROBABILITY = 0.1
