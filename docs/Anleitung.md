@@ -1380,10 +1380,12 @@ in eine ZIP-Datei an einem Ort deiner Wahl, etwa auf einem USB-Stick.
 
 So holst du eine Sicherung auf demselben oder einem neuen Rechner zurück:
 
-1. Öffne „Einstellungen … → Daten“ und wähle **Einlesen …**.
+1. Schließe alle anderen Morsetrainer-Fenster. Öffne „Einstellungen … → Daten“
+   und wähle **Einlesen …**.
 2. Wähle die ZIP-Datei. Beim Einlesen wird die Datenbank vorher geprüft.
 3. Bestätige die Rückfrage. Der bisherige Stand landet vorher als
-   `vor-import-<Zeit>.zip` im Datenordner.
+   `vor-import-<Zeit>.zip` im Datenordner; die drei neuesten solcher Dateien
+   bleiben liegen.
 4. Das Programm beendet sich. Starte es neu; jetzt gelten die
    eingelesenen Einstellungen.
 

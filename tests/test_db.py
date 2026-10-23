@@ -262,6 +262,29 @@ class DbTest(unittest.TestCase):
         raw.close()
         self.assertEqual(db.problem(), "too_new")
 
+    def test_problem_unavailable_when_the_file_cannot_be_opened(self):
+        # Gesperrt oder nicht lesbar: kein Befund "beschädigt", die Datei bleibt, aber der Start sagt es.
+        with mock.patch.object(db, "_open", side_effect=sqlite3.OperationalError("database is locked")):
+            self.assertEqual(db.problem(), "unavailable")
+        db.close()
+        self.assertIsNone(db.problem())
+
+    def test_state_is_not_overwritten_after_a_failed_read(self):
+        db.save_state("practice", {"2026-10-23": 600.0})
+        with mock.patch.object(db, "_read", side_effect=sqlite3.OperationalError("database is locked")):
+            self.assertEqual(db.load_state("practice", {}), {})  # „unbekannt“, nicht „leer“
+        with self.assertRaises(db.Error):
+            db.save_state("practice", {"2026-10-23": 5.0})
+        self.assertEqual(db.load_state("practice", {}), {"2026-10-23": 600.0})  # ein Lesen gelingt: wieder frei
+        db.save_state("practice", {"2026-10-23": 700.0})
+        self.assertEqual(db.load_state("practice", {}), {"2026-10-23": 700.0})
+
+    def test_latest_start(self):
+        self.assertIsNone(db.latest_start())
+        db.start_session(_config("2026-10-03T10:00:00"))
+        db.start_session(_config("2026-10-05T09:00:00"))
+        self.assertEqual(db.latest_start(), "2026-10-05T09:00:00")
+
     def test_old_holds_of_dead_processes_are_removed(self):
         import time
         self.file.parent.mkdir(parents=True)

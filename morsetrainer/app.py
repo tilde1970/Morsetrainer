@@ -17,7 +17,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer import DATA_DIR, i18n
-from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog, koch, migration, practice, qso_text, review,
+from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog, instances, koch, migration, practice, qso_text, review,
                                 screenreader, sfx, speech, stats, storage, tempo, week)
 from morsetrainer.core.morse import build_text, display_text, key_hint
 from morsetrainer.daily_runner import DailyRunner
@@ -119,6 +119,7 @@ DATABASE_PROBLEM_TITLES = {
     "too_new": N_("Daten von neuerer Version"),
     "migration": N_("Daten nicht aktualisiert"),
     "aside": N_("Daten beiseitegelegt"),
+    "unavailable": N_("Daten nicht verfügbar"),
 }
 DATABASE_PROBLEMS = {
     "too_new": N_("Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "
@@ -129,6 +130,10 @@ DATABASE_PROBLEMS = {
     "aside": N_("Die Datei mit deinen Daten war beschädigt und wurde beiseitegelegt. Statistik, Diplome und "
                 "Tagesübung beginnen leer. Ältere Sicherungen bleiben im Ordner auto-sicherung erhalten. Wie du "
                 "sie zurückholst, steht in der Anleitung unter Hilfe, F1."),
+    "unavailable": N_("Die Datei mit deinen Daten lässt sich nicht öffnen (gesperrt, schreibgeschützt oder "
+                      "vom Virenscanner blockiert). Neue Ergebnisse werden nicht gespeichert, Statistik, Diplome "
+                      "und Tagesübung bleiben leer; die Daten selbst bleiben unverändert. Bitte schließe andere "
+                      "Morsetrainer-Fenster oder prüfe den Datenordner und starte neu."),
 }
 WHATS_NEW_DELAY_MS = 800  # Hinweis nach einem Update, wenn das Fenster steht
 # So oft wird nachgesehen, ob ein Hintergrund-Thread einen Fehler protokolliert hat.
@@ -307,7 +312,7 @@ class MorseTrainerApp:
         self.pending_seals = []  # neue Siegel, die noch kein Diplom-Fenster gezeigt hat
         self.diploma_window = None
         self.root.after(500, self._check_awards_at_start)
-        if db.problem() or self._auto_backup_failure():
+        if db.problem() or self._auto_backup_failure() or stats.clock_ahead():
             # Der Hinweis zuerst und allein: Begrüßung und Update-Angebot kämen sonst mitten hinein.
             self.root.after(300, self._warn_if_database_too_new)
         elif self.first_start:
@@ -819,12 +824,18 @@ class MorseTrainerApp:
         )
 
     def _exercise_blocks_import(self) -> bool:
-        """Läuft eine Übung? Dann Hinweis und True: Das Einlesen ersetzt die
+        """Läuft eine Übung oder ein anderes Fenster? Dann Hinweis und True: Das Einlesen ersetzt die
         Daten, und das Beenden danach schriebe den laufenden Durchgang
-        bzw. den Tagesstand in die eingelesene Sicherung."""
+        bzw. den Tagesstand in die eingelesene Sicherung. Dasselbe gilt für
+        ein zweites Programmfenster."""
         if self.running_mode or self.daily.active:
             dialog.showinfo(tr("Daten einlesen"), tr("Bitte zuerst die laufende Übung beenden."),
                             parent=self.root)
+            return True
+        if instances.others(DATA_DIR):
+            dialog.showinfo(tr("Daten einlesen"), tr(
+                "Es ist noch ein anderes Morsetrainer-Fenster geöffnet. Bitte zuerst alle anderen Fenster "
+                "schließen: Sie würden sonst in die eingelesenen Daten schreiben."), parent=self.root)
             return True
         return False
 
@@ -1867,6 +1878,17 @@ class MorseTrainerApp:
                     .format(error=reason), parent=self.root, always_speak=True)
             finally:
                 self.start_notice_open = False
+        ahead = stats.clock_ahead()
+        if ahead:
+            self.start_notice_open = True
+            try:
+                dialog.showwarning(tr("Uhr geht vor"), tr(
+                    "Die letzte gespeicherte Übung beginnt am {date}, also in der Zukunft. Entweder geht die "
+                    "Uhr dieses Rechners falsch oder ging es bei einer früheren Übung. Bitte stelle die Uhr "
+                    "richtig. Tagesziel, Wochenstreifen und Diplome rechnen mit dem Datum der Übung.")
+                    .format(date=ahead.strftime("%d.%m.%Y")), parent=self.root, always_speak=True)
+            finally:
+                self.start_notice_open = False
         if self.first_start:
             self._greet_first_start()
 
@@ -2566,6 +2588,7 @@ def main():
         migration.run()
     except Exception:
         errorlog.record(*sys.exc_info(), version=__version__)
+    instances.register(DATA_DIR)  # damit ein anderes Fenster vor dem Einlesen einer Sicherung warnt
     # Feste Fensterklasse, passend zu StartupWMClass in der .desktop-Datei:
     # So ordnen Dock und Taskleiste das Fenster dem AppImage-Icon zu.
     try:

@@ -181,6 +181,26 @@ EN.update({
         "The backup comes from a newer version of the program; please update the program first.",
     "Daten nicht aktualisiert": "Data not updated",
     "Daten beiseitegelegt": "Data set aside",
+    "Daten nicht verfügbar": "Data not available",
+    "Es ist noch ein anderes Morsetrainer-Fenster geöffnet. Bitte zuerst alle anderen Fenster "
+    "schließen: Sie würden sonst in die eingelesenen Daten schreiben.":
+        "Another Morsetrainer window is still open. Please close all other windows first: they would "
+        "otherwise write into the imported data.",
+    "Uhr geht vor": "Clock is ahead",
+    "Die letzte gespeicherte Übung beginnt am {date}, also in der Zukunft. Entweder geht die "
+    "Uhr dieses Rechners falsch oder ging es bei einer früheren Übung. Bitte stelle die Uhr "
+    "richtig. Tagesziel, Wochenstreifen und Diplome rechnen mit dem Datum der Übung.":
+        "The last saved practice starts on {date}, which is in the future. Either this computer's "
+        "clock is wrong or it was wrong during an earlier practice. Please set the clock correctly. "
+        "Daily goal, week strip and diplomas use the date of the practice.",
+    "Die Datei mit deinen Daten lässt sich nicht öffnen (gesperrt, schreibgeschützt oder "
+    "vom Virenscanner blockiert). Neue Ergebnisse werden nicht gespeichert, Statistik, Diplome "
+    "und Tagesübung bleiben leer; die Daten selbst bleiben unverändert. Bitte schließe andere "
+    "Morsetrainer-Fenster oder prüfe den Datenordner und starte neu.":
+        "The file with your data cannot be opened (locked, read-only or blocked by a virus scanner). "
+        "New results are not saved; statistics, diplomas and the daily practice stay empty; the data "
+        "itself stays unchanged. Please close other Morsetrainer windows or check the data folder and "
+        "restart.",
     "Die Daten stammen von einer neueren Version. Neue Ergebnisse werden nicht gespeichert, "
     "Statistik, Diplome und Tagesübung bleiben leer. Bitte den Morsetrainer aktualisieren: "
     "Hilfe, F1.":

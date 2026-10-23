@@ -23,11 +23,12 @@ def add(seconds: float, day: date = None) -> None:
     Scheitert das Speichern, geht die Übung ohne Fehlermeldung weiter."""
     if seconds <= 0:
         return
-    data = load()
     key = (day or date.today()).isoformat()
-    data[key] = round(data.get(key, 0.0) + seconds, 1)
     try:
-        db.save_state(STATE_KEY, data)
+        with db.transaction():  # Lesen und Schreiben zusammen: ein zweites Fenster schiebt sich nicht dazwischen
+            data = load()
+            data[key] = round(data.get(key, 0.0) + seconds, 1)
+            db.save_state(STATE_KEY, data)
     except (db.Error, OSError):
         pass
 

@@ -374,8 +374,46 @@ RESET_KEY = "reset"
 
 def load_all_time() -> dict:
     """Summen je Zeichen über alle bisherigen Durchgänge. Ein beschädigter
-    Eintrag wird beiseitegelegt (siehe db.load_state), statt abzustürzen."""
-    return db.load_state(ALL_TIME_KEY, {})
+    Eintrag wird beiseitegelegt (siehe db.load_state), statt abzustürzen; ein
+    einzelnes beschädigtes Zeichen wird bereinigt (_clean_all_time)."""
+    return _clean_all_time(db.load_state(ALL_TIME_KEY, {}))
+
+
+# Zahlenfelder eines Zeichens der Gesamtstatistik, die Auswertung und Übernahme voraussetzen.
+ALL_TIME_COUNTS = ("good", "wrong", "attempts")
+ALL_TIME_SUMS = ("total_reaction_time_s", "total_effective_wpm", "correct_effective_wpm_total")
+# Felder, die ältere Einträge nicht haben: fehlen sie oder sind unbrauchbar, beginnen sie bei null.
+ALL_TIME_OPTIONAL = ("untimed", "correct_reaction_time_s", "correct_timed_count", "total_latency_s",
+                     "latency_count", "assumed_latency_s", "assumed_latency_count")
+
+
+def _is_number(value) -> bool:
+    return type(value) in (int, float) and math.isfinite(value) and value >= 0
+
+
+def _clean_all_time(all_time: dict) -> dict:
+    """Die Gesamtstatistik ohne Einträge, an denen Übernahme und Auswertung
+    scheitern würden (von Hand geändert, kaputter Import, künftiges Format):
+    Was kein Wörterbuch ist, entfällt; fehlende oder unbrauchbare Zahlenfelder
+    beginnen bei null."""
+    clean = {}
+    for char, entry in all_time.items():
+        if not isinstance(entry, dict):
+            continue
+        entry = dict(entry)
+        for key in ALL_TIME_COUNTS:
+            if type(entry.get(key)) is not int or entry[key] < 0:
+                entry[key] = 0
+        for key in ALL_TIME_SUMS:
+            if not _is_number(entry.get(key)):
+                entry[key] = 0.0
+        for key in ALL_TIME_OPTIONAL:
+            if key in entry and not _is_number(entry[key]):
+                del entry[key]
+        if not isinstance(entry.get("confusions"), dict):
+            entry.pop("confusions", None)
+        clean[char] = entry
+    return clean
 
 
 def reset_all_time() -> None:
@@ -400,9 +438,29 @@ def _after_reset(cutoff: datetime) -> datetime:
     """`cutoff`, aber nicht vor dem letzten Zurücksetzen der Gesamtstatistik."""
     reset = db.load_state(RESET_KEY, {}).get("time")
     try:
-        return max(cutoff, datetime.fromisoformat(reset)) if reset else cutoff
+        reset = datetime.fromisoformat(reset) if reset else None
     except (TypeError, ValueError):
         return cutoff
+    # Ein Zurücksetzen in der Zukunft (Uhr ging falsch) würde alles bis dahin ausblenden.
+    if reset is None or reset > datetime.now() + CLOCK_TOLERANCE:
+        return cutoff
+    return max(cutoff, reset)
+
+
+# So weit darf ein gespeicherter Zeitpunkt vor der Uhr liegen, bevor er als Uhrenfehler gilt.
+CLOCK_TOLERANCE = timedelta(days=1)
+
+
+def clock_ahead(now=None):
+    """Startzeit des letzten Durchgangs, wenn sie in der Zukunft liegt (die Uhr
+    des Rechners ging bei einer früheren Übung falsch oder geht jetzt nach),
+    sonst None. Datum und Siegel, die damit entstanden, bleiben, wie sie sind."""
+    now = now or datetime.now()
+    try:
+        latest = datetime.fromisoformat(db.latest_start())
+    except (TypeError, ValueError):
+        return None
+    return latest if latest.tzinfo is None and latest > now + CLOCK_TOLERANCE else None
 
 
 def _char_events(since: datetime, completed_only: bool = False):

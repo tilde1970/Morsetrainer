@@ -38,6 +38,8 @@ from morsetrainer.i18n import tr
 AUTO_DIR = "auto-sicherung"
 AUTO_INTERVAL_DAYS = 7
 AUTO_KEEP = 4
+# So viele Sicherungen "vor-import-*.zip" bleiben nach dem Einlesen einer Sicherung liegen.
+BEFORE_IMPORT_KEEP = 3
 RESCUE_DIR = "stats-gerettet"  # beim Einlesen gerettete .defekt-*/.vor-v*-Dateien
 # Merkzettel im Datenordner: die letzte automatische Sicherung ist gescheitert
 # (beim Beenden lässt sich das nicht mehr melden; der nächste Start tut es).
@@ -338,6 +340,7 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
 
     staging = data_dir / f".import-{stamp}"
     old_stats = data_dir / f".stats-alt-{stamp}"
+    replacing = False  # ab hier kann der bisherige Stand angetastet sein
     try:
         with zipfile.ZipFile(source) as archive:
             for name in archive.namelist():
@@ -353,6 +356,7 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
         # Unter Windows ist eine offene Datei gesperrt; der nächste Zugriff
         # öffnet die eingelesene Datenbank.
         db.close()
+        replacing = True
         stats_dir = data_dir / STATS
         if stats_dir.exists():
             os.replace(stats_dir, old_stats)
@@ -367,8 +371,21 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
                 os.replace(staging / name, data_dir / name)
         _keep_rescue_files(old_stats, data_dir)
         shutil.rmtree(old_stats, ignore_errors=True)
-    except ZIP_ERRORS as exc:
-        raise BackupError(str(exc)) from exc
+    except (OSError, *ZIP_ERRORS, BackupError) as exc:
+        if not replacing:
+            previous.unlink(missing_ok=True)  # nichts angetastet: die Sicherung des Stands wird nicht gebraucht
+        if isinstance(exc, ZIP_ERRORS):
+            raise BackupError(str(exc)) from exc
+        raise
     finally:
         shutil.rmtree(staging, ignore_errors=True)
+    _prune_before_import(data_dir, previous)
     return previous
+
+
+def _prune_before_import(data_dir: Path, current: Path) -> None:
+    """Behält von den Sicherungen "vor-import-*.zip" die letzten BEFORE_IMPORT_KEEP
+    (die gerade angelegte immer); sie wuchsen sonst mit jedem Einlesen weiter."""
+    older = sorted(p for p in data_dir.glob("vor-import-*.zip") if p != current)
+    for path in older[:max(0, len(older) - (BEFORE_IMPORT_KEEP - 1))]:
+        path.unlink(missing_ok=True)

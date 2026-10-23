@@ -159,6 +159,7 @@ def close() -> None:
     global _conn, _depth
     with _lock:
         _failures.clear()
+        _unreadable.clear()
         if _conn is not None:
             try:
                 # Ohne Wartezeit: hält ein anderes Fenster die Datei offen,
@@ -458,7 +459,9 @@ def problem():
     Person: "too_new" (Datei von neuerer Programmfassung, bleibt unberührt,
     Lesen zeigt „leer“, Schreiben scheitert), "migration" (Aufwertung einer
     älteren Datei gescheitert, bleibt unberührt), "aside" (Datei war kaputt
-    und liegt jetzt beiseite, die Statistik beginnt leer) oder None."""
+    und liegt jetzt beiseite, die Statistik beginnt leer), "unavailable" (Datei
+    gesperrt, schreibgeschützt oder nicht zu öffnen, bleibt unberührt, nichts wird
+    gespeichert) oder None."""
     with _lock:
         file = path()
         if file in _failures:
@@ -472,7 +475,7 @@ def problem():
             _failures[file] = "migration"
             return "migration"
         except (Error, OSError):
-            return None
+            return "unavailable"
     return "aside" if aside_file is not None else None
 
 
@@ -546,12 +549,24 @@ def _load(text):
 
 # --- Zustände -----------------------------------------------------------------
 
+# Zustände, die beim letzten Lesen nicht gelesen werden konnten (gesperrt, I/O-Fehler):
+# Wer sie nun als „leer“ weiterbearbeitet, würde den echten Stand überschreiben.
+_unreadable = set()
+
+
 def load_state(key: str, default):
     """Inhalt von `key`, oder `default`, wenn er fehlt, nicht lesbar ist
     oder nicht vom Typ von `default` ist. Ein unlesbarer Eintrag wird unter
     "<key>.defekt-<Zeitstempel>" beiseitegelegt statt beim nächsten
-    Speichern stillschweigend überschrieben zu werden."""
-    rows = _read("SELECT data FROM state WHERE key = ?", (key,))
+    Speichern stillschweigend überschrieben zu werden. Scheitert schon das
+    Lesen der Datenbank, steht `default` für „unbekannt“: save_state
+    verweigert dann das Speichern, bis ein Lesen gelingt."""
+    try:
+        rows = _read("SELECT data FROM state WHERE key = ?", (key,), strict=True)
+    except (Error, OSError):
+        _unreadable.add(key)
+        return default
+    _unreadable.discard(key)
     if not rows:
         return default
     data = _load(rows[0][0])
@@ -567,7 +582,12 @@ def load_state(key: str, default):
 
 def save_state(key: str, data) -> None:
     """Speichert `data` als JSON unter `key` in der Tabelle state (ersetzt
-    einen vorhandenen Eintrag)."""
+    einen vorhandenen Eintrag). Wirft Error, wenn `key` beim letzten Lesen
+    nicht gelesen werden konnte: `data` ginge dann von einem leeren Stand aus."""
+    if key in _unreadable:
+        with _lock:
+            _connection()  # liegt es an der Datei, kommt ihr eigener Fehler (SchemaTooNew, OSError …)
+        raise sqlite3.OperationalError(f"{key}: beim Lesen nicht verfügbar, nicht überschrieben")
     _write("INSERT INTO state (key, data) VALUES (?, ?) "
            "ON CONFLICT (key) DO UPDATE SET data = excluded.data", (key, _dump(data)))
 
@@ -607,6 +627,12 @@ def unfinished_sessions() -> list:
         if isinstance(config, dict):
             out.append((session_id, config))
     return out
+
+
+def latest_start():
+    """Startzeit (ISO) des zuletzt begonnenen Durchgangs, oder None."""
+    rows = _read("SELECT MAX(start_time) FROM sessions")
+    return rows[0][0] if rows else None
 
 
 def is_finished(session_id: int) -> bool:

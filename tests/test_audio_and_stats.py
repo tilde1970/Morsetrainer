@@ -404,6 +404,39 @@ class StatsTest(unittest.TestCase):
         self._session([("K", "R")]).finalize()
         self.assertEqual(stats.load_all_time()["K"]["confusions"], {"R": 1})
 
+    def test_damaged_all_time_entries_do_not_stop_finalize(self):
+        db.save_state("all_time", {
+            "K": {"good": "viel", "wrong": None, "total_reaction_time_s": [], "untimed": "x", "confusions": []},
+            "M": 17,
+            "R": {"good": 2, "wrong": 1},
+        })
+        rows = {r[0]: r for r in stats.all_time_char_rows(stats.load_all_time())}
+        self.assertEqual(set(rows), {"K", "R"})  # was kein Wörterbuch ist, entfällt
+        self.assertEqual(rows["R"][1:4], (2, 1, 3))
+        self._session([("K", "K"), ("R", "R")]).finalize()
+        summary = stats.load_all_time()
+        self.assertEqual(summary["K"]["good"], 1)
+        self.assertEqual(summary["R"]["good"], 3)
+
+    def test_reset_in_the_future_is_ignored(self):
+        from datetime import datetime, timedelta
+        db.save_state(stats.RESET_KEY, {"time": (datetime.now() + timedelta(days=400)).isoformat()})
+        cutoff = datetime.now() - timedelta(days=7)
+        self.assertEqual(stats._after_reset(cutoff), cutoff)
+        past = datetime.now() - timedelta(days=2)
+        db.save_state(stats.RESET_KEY, {"time": past.isoformat()})
+        self.assertEqual(stats._after_reset(cutoff), past)
+
+    def test_clock_ahead_names_the_latest_start_in_the_future(self):
+        from datetime import datetime, timedelta
+        self.assertIsNone(stats.clock_ahead())
+        db.start_session({"type": "config", "mode": "single",
+                          "start_time": datetime.now().isoformat(timespec="seconds")})
+        self.assertIsNone(stats.clock_ahead())
+        later = (datetime.now() + timedelta(days=30)).replace(microsecond=0)
+        db.start_session({"type": "config", "mode": "single", "start_time": later.isoformat()})
+        self.assertEqual(stats.clock_ahead(), later)
+
     def test_history_combines_sessions_and_results(self):
         self._session([("H", "H"), ("S", "5")], wpm=18).finalize()
         stats.log_result("qso_quiz", 6, 8, 22, kind="cqww")

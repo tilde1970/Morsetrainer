@@ -1351,10 +1351,12 @@ file in a place of your choice, e.g. a USB stick.
 
 To restore a backup on the same or on a new computer:
 
-1. Open “Settings … → Data” and choose **Restore …**.
+1. Close all other Morsetrainer windows. Open “Settings … → Data” and choose
+   **Restore …**.
 2. Choose the ZIP file. The database is checked first.
 3. Confirm the question. The current state is saved first as
-   `vor-import-<time>.zip` in the data folder.
+   `vor-import-<time>.zip` in the data folder; the three newest such files
+   are kept.
 4. The program quits. Start it again; the restored settings now apply.
 
 `stats/` is replaced completely, the other files if they are in the

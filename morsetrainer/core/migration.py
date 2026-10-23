@@ -132,13 +132,14 @@ def run(stats_dir: Path = None) -> int:
     files = legacy_files(stats_dir)
     if not files:
         return 0
-    new = [p for p in files if db.get_meta(META_PREFIX + p.name) is None]
-    if new:
+    # Unter der Schreibsperre prüfen: Hat ein anderes Programmfenster die Dateien
+    # inzwischen übernommen (und fortgeräumt), sind sie hier nicht mehr neu.
+    with db.transaction():
+        new = [p for p in files if p.exists() and db.get_meta(META_PREFIX + p.name) is None]
         stamp = datetime.now().isoformat(timespec="seconds")
-        with db.transaction():
-            for path in new:
-                _import(path)
-                db.set_meta(META_PREFIX + path.name, stamp)
+        for path in new:
+            _import(path)
+            db.set_meta(META_PREFIX + path.name, stamp)
     _archive(stats_dir, files)
     return len(new)
 

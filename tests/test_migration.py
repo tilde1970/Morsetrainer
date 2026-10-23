@@ -51,6 +51,20 @@ class MigrationTest(unittest.TestCase):
         self.assertEqual(list(self.stats.glob("*.jsonl")), [])
         self.assertTrue((self.stats / "alt-json" / "2026-10-03_104855-single.jsonl").is_file())
 
+    def test_files_taken_over_meanwhile_by_another_window_are_not_imported_twice(self):
+        # Das andere Fenster war zwischen „Dateien suchen“ und Schreibsperre fertig:
+        # Die Dateien sind übernommen und fortgeräumt, hier ist nichts mehr neu.
+        path = self._session_file()
+        files = migration.legacy_files(self.stats)
+        self.assertEqual(migration.run(self.stats), 1)
+        path.write_text("{}\n", encoding="utf-8")  # wieder da, aber schon als übernommen vermerkt
+        with mock.patch.object(migration, "legacy_files", return_value=files):
+            self.assertEqual(migration.run(self.stats), 0)
+        self.assertEqual(len(db.sessions()), 1)
+        gone = self.stats / "2026-10-04_104855-single.jsonl"
+        with mock.patch.object(migration, "legacy_files", return_value=[gone]):
+            self.assertEqual(migration.run(self.stats), 0)  # fortgeräumt: kein FileNotFoundError
+
     def test_group_lines_and_order_are_kept(self):
         group = {"type": "group", "sent": "KM", "typed": "KN", "first": False}
         self._session_file(lines=[CONFIG, CHAR, {**CHAR, "char": "M"}, group, SUMMARY])

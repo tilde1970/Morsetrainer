@@ -346,6 +346,34 @@ class DatabaseBackupTest(unittest.TestCase):
         self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
 
 
+class BeforeImportCopiesTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.old, self.new = self.root / "alt", self.root / "neu"
+        make_data(self.old, "alt")
+        make_data(self.new, "neu")
+        self.zip = self.root / "sicherung.zip"
+        backup.export_data(self.zip, "9.9", self.old)
+
+    def test_failed_import_before_replacing_leaves_no_copy(self):
+        with mock.patch.object(backup, "_check_database", side_effect=backup.BackupError("database")):
+            with self.assertRaises(backup.BackupError):
+                backup.import_data(self.zip, "9.9", self.new)
+        self.assertEqual(list(self.new.glob("vor-import-*.zip")), [])
+        self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
+
+    def test_only_the_last_copies_are_kept(self):
+        for day in range(1, 6):
+            (self.new / f"vor-import-2026010{day}-120000.zip").write_bytes(b"alt")
+        previous = backup.import_data(self.zip, "9.9", self.new)
+        kept = sorted(p.name for p in self.new.glob("vor-import-*.zip"))
+        self.assertEqual(len(kept), backup.BEFORE_IMPORT_KEEP)
+        self.assertIn(previous.name, kept)
+        self.assertEqual(kept[0], "vor-import-20260104-120000.zip")
+
+
 class ImportWhileRunningTest(AppTestCase):
     """„Daten einlesen“ während einer Übung."""
 
@@ -367,6 +395,13 @@ class ImportWhileRunningTest(AppTestCase):
         info.assert_called_once()
         read_info.assert_not_called()
         import_data.assert_not_called()
+
+    def test_another_window_blocks_import(self):
+        from morsetrainer import app as app_module
+        with mock.patch.object(app_module.instances, "others", return_value=1), \
+                mock.patch.object(app_module.dialog, "showinfo") as info:
+            self.assertTrue(self.app._exercise_blocks_import())
+        info.assert_called_once()
 
 
 if __name__ == "__main__":

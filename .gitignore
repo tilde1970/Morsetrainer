@@ -25,6 +25,7 @@ morsetrainer_downloads.py
 /auto-sicherung-fehler.txt
 /vor-import-*.zip
 /stats-gerettet/
+/.fenster/
 /.snapshot-*/
 /.import-*/
 /.stats-alt-*/
