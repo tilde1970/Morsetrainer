@@ -504,7 +504,7 @@ class ReviewTest(unittest.TestCase):
 
     def test_block_summary(self):
         warmup = daily.Block(daily.WARMUP, "single", 3)
-        result = {"correct": 40, "total": 44, "best_streak": 12, "chars": {"R": [6, 6], "S": [6, 4], "K": [2, 2]}}
+        result = {"correct": 40, "total": 44, "best_streak": 12, "chars": {"R": [8, 8], "S": [8, 6], "K": [2, 2]}}
         summary = daily.block_summary(warmup, result, due="RSKX")
         self.assertEqual((summary["due_practiced"], summary["due_sure"], summary["streak"]), (3, 1, 12))
         summary = daily.block_summary(main_block(), main_result(90, 100))

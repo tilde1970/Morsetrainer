@@ -293,8 +293,13 @@ class DailyRunner:
                 text += " " + tr("CW-Filter für den Ausklang in der Grundeinstellung, danach wieder deins.")
             if gain < 100:
                 text += " " + tr("Störlautstärke {gain} %, zählt nicht für das Diplom QRN-fest.").format(gain=gain)
+        relaxed = block.mode == "single" and bool(self.app.daily_relaxed_var.get())
         if block.mode == "single":
-            settings["icr_limit"] = daily.warmup_limit(self.state)
+            if relaxed:
+                settings["icr"] = False  # ohne Zeitlimit; der Block zählt nicht für die Lernkartei
+            else:
+                settings["icr_limit"] = daily.warmup_limit(self.state)
+        mode.daily_relaxed = relaxed
         mode.daily_configure(block.minutes, **settings)
         self.mode = mode
         announcer.say(text, then=lambda: self._run_block(block, mode))

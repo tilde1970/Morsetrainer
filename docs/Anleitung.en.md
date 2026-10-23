@@ -166,7 +166,10 @@ practice options:
   whole world by their activity. An invalid locator is named below the
   field and not used.
 - **Practice:** the daily goal in minutes (default 10, 0 = no goal); the
-  footer shows how much you have practised today.
+  footer shows how much you have practised today. **Relaxed daily
+  practice** takes the time limit out of the warm-up, for everyone who needs
+  more than 1.5 seconds per answer; these warm-up blocks do not count for
+  the review box and the "known" points.
 - **Sprache / Language:** switch the interface to English (takes effect
   after a restart; **Restart now** appears at the bottom of the window for
   that). The voice in the Speak tab stays German.
@@ -559,8 +562,10 @@ as they were.
 - **Speed:** the main part keeps a fixed speed (characters at least
   18 WPM). It changes once a day, effective from the next: below 75 % on
   the first try (at least 100 characters) 1 WPM slower. After Koch, 90 % or
-  more also makes it 1 WPM faster; not before, because a good day then
-  already brings the next character.
+  more also makes it 1 WPM faster. Before that only the pauses get shorter
+  (effective speed 1 WPM faster): on a day without a lesson step, not in
+  the first days of a new lesson and from 95 % on the first try; the
+  characters stay as fast as they are.
 - **Lesson:** if the main part meets the Koch criterion (50 characters,
   90 % on the first try), the next lesson applies from the next day – no
   question asked. The daily practice keeps its own lesson for this (the

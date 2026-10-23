@@ -662,6 +662,14 @@ class MorseTrainerApp:
         announcer.name(goal_spin, tr("Tagesziel"), value=lambda: tr("{n} Minuten").format(n=goal_spin.get()))
         ttk.Label(goal, text=tr("Min. pro Tag")).pack(side="left")
         theme.hint(goal.master, text=tr("0 = ohne Ziel. Lieber täglich kurz als selten lang."))
+        # Für alle, die je Antwort länger als das Zeitlimit des Aufwärmens (höchstens 1,5 s) brauchen.
+        self.daily_relaxed_var = tk.BooleanVar(value=False)
+        relaxed = ttk.Checkbutton(hinted(practice_card), text=tr("Entspannte Tagesübung (kein Zeitlimit im Aufwärmen)"),
+                                  variable=self.daily_relaxed_var)
+        relaxed.pack(anchor="w")
+        theme.hint(relaxed.master.master, wrap=420, text=tr(
+            "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Kann-Punkte, "
+            "damit deren Zahlen ehrlich bleiben."))
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
@@ -1696,6 +1704,7 @@ class MorseTrainerApp:
             "vary": (self.vary_var, None),
             "refresh": (self.refresh_var, None),
             "daily_goal": (self.daily_goal_var, (0, 240)),
+            "daily_relaxed": (self.daily_relaxed_var, None),
             "more_options": (self.more_var, None),
             "station_call": (self.station_call_var, None),
             "station_name": (self.station_name_var, None),

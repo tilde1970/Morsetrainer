@@ -208,11 +208,11 @@ class ReviewTest(unittest.TestCase):
     def test_leitner_boxes(self):
         today = date(2026, 9, 27)
         tomorrow = today + timedelta(days=1)
-        data = review.update(self._chars(K=(10, 0), M=(6, 4), U=(2, 0)), promote=True, today=today)
+        data = review.update(self._chars(K=(10, 0), M=(6, 4), U=(4, 0)), promote=True, today=today)
         self.assertEqual((data["K"]["box"], data["K"]["due"]), (0, "2026-09-28"))
         self.assertEqual(data["M"]["due"], "2026-09-28")
-        self.assertNotIn("due", data["U"])  # erst 2 Versuche heute
-        data = review.update(self._chars(U=(3, 0)), promote=True, today=today)
+        self.assertNotIn("due", data["U"])  # erst 4 Versuche heute
+        data = review.update(self._chars(U=(4, 0)), promote=True, today=today)
         self.assertEqual(data["U"]["due"], "2026-09-28")  # Versuche des Tages zusammen
         # Fällig und sicher, aber nur aus Klartext/Wörtern: kein Hochstufen
         data = review.update(self._chars(K=(10, 0)), promote=False, today=tomorrow)
@@ -229,8 +229,12 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(data["K"]["fluent"], 5)
         self.assertEqual(data["M"]["fluent"], 7)
         review._save({"R": {"box": 3, "due": day.isoformat()}})
-        data = review.update(self._chars(R=(10, 0, 0, 2)), promote=True, today=day)  # 80 %: ein Fach zurück
+        data = review.update(self._chars(R=(20, 0, 0, 5)), promote=True, today=day)  # 75 %: ein Fach zurück
         self.assertEqual(data["R"]["box"], 2)
+        review._save({"R": {"box": 3, "due": day.isoformat()}})
+        data = review.update(self._chars(R=(20, 0, 0, 4)), promote=True, today=day)  # 80 %: bleibt, wo es ist
+        self.assertEqual(data["R"]["box"], 3)
+        self.assertFalse(data["R"]["decided"])
 
     def test_small_charset_cannot_promote(self):
         self.assertFalse(review.can_promote("KMUR"))
@@ -262,7 +266,7 @@ class ReviewTest(unittest.TestCase):
         day = date(2026, 9, 27)
         review._save({"K": {"box": 2, "due": day.isoformat()}, "M": {"box": 3, "due": day.isoformat()}})
         events = []
-        data = review.update(self._chars(K=(10, 0), M=(10, 0, 0, 2)), promote=True, today=day, events=events)
+        data = review.update(self._chars(K=(10, 0), M=(20, 0, 0, 5)), promote=True, today=day, events=events)
         # K steigt erstmals in Fach 3 (box 3); M fällt zurück, behält aber sein bestes Fach.
         self.assertEqual(events, [{"char": "K", "box": 3, "first": True}])
         self.assertEqual((data["K"]["best_box"], data["K"]["best_day"]), (3, day.isoformat()))

@@ -64,6 +64,8 @@ class SessionStats:
         Bandbedingungen …), damit sich später nachvollziehen lässt, unter
         welchen Bedingungen geübt wurde."""
         self.review_promote = review_promote
+        # Entspannte Tagesübung (ohne Zeitlimit): zählt nicht für die Lernkartei.
+        self.review_skip = bool((config_extra or {}).get("relaxed"))
         self.char_stats = char_stats
         self.start_time = datetime.now()
         self.self_assessed = self_assessed
@@ -270,9 +272,10 @@ class SessionStats:
                     from morsetrainer.core import review  # review importiert stats
                     if promote is None:
                         promote = self.review_promote and review.can_promote(self.charset)
-                    review.update(self.per_char, promote=promote,
-                                  events=self.review_events if events is None else events,
-                                  fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
+                    if not self.review_skip:
+                        review.update(self.per_char, promote=promote,
+                                      events=self.review_events if events is None else events,
+                                      fast=(self.wpm or 0) >= SLOW_CHAR_WPM)
         except (db.Error, OSError) as exc:
             self.log_error = self.log_error or str(exc)
         return self.session_id if self.log_error is None else None
@@ -310,7 +313,8 @@ def recover_unfinished(now=None) -> int:
                 config.get("mode", ""), config.get("charset", ""), config.get("wpm"), config.get("freq"),
                 group_len=config.get("group_len"), farnsworth_wpm=config.get("farnsworth_wpm"),
                 self_assessed=bool(config.get("self_assessed")), in_history=config.get("in_history") is not False,
-                char_stats=config.get("char_stats") is not False, persist=False)
+                char_stats=config.get("char_stats") is not False, persist=False,
+                config_extra={"relaxed": True} if config.get("relaxed") else None)
             session.start_time = start
             for e in rows:
                 session.record_char(e.get("char", ""), e.get("typed", ""), bool(e.get("correct")),

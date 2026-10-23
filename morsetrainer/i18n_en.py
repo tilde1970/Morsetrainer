@@ -411,8 +411,10 @@ EN.update({
         "“Non-stop” tab.",
     "Schon während des Tons tippen; mit so vielen Zeichen wie gesendet ist die Antwort fertig.":
         "Type while the tone plays; with as many characters as were sent, the answer is complete.",
-    "Erst zu Ende hören, danach tippen und mit Enter bestätigen.":
-        "Listen to the end first, then type and confirm with Enter.",
+    "Erst zu Ende hören, danach tippen; mit so vielen Zeichen wie gesendet oder mit Enter ist die "
+    "Antwort fertig.":
+        "Listen to the end first, then type; with as many characters as were sent, or with Enter, the answer "
+        "is complete.",
     "Nichts tippen, im Kopf mitlesen, dann mit Enter auflösen und selbst bewerten (J / N).":
         "Type nothing, read along in your head, then reveal with Enter and rate yourself (J / N).",
     "Sprechen": "Speak",
@@ -580,6 +582,11 @@ EN.update({
     "Enter: abbrechen. Escape: abbrechen. Tab geht zu „{action}“.":
         "Enter: cancel. Escape: cancel. Tab goes to “{action}”.",
     "Statistik löschen": "Delete statistics",
+    "Entspannte Tagesübung (kein Zeitlimit im Aufwärmen)": "Relaxed daily practice (no time limit in the warm-up)",
+    "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Kann-Punkte, "
+    "damit deren Zahlen ehrlich bleiben.":
+        "The warm-up runs without a time limit. These blocks do not count for the review box and the "
+        "\"known\" points, so their numbers stay honest.",
     "{name} auf {value} gesetzt.": "{name} set to {value}.",
     "Effektives Tempo": "Effective speed",
     "Lektion {lesson} gesetzt, {count} Zeichen.": "Lesson {lesson} set, {count} characters.",
@@ -1293,6 +1300,7 @@ EN.update({
     "Rapport": "Signal report",
     "CQ-Zone": "CQ zone",
     "Seriennummer": "Serial number",
+    "Kurzzahl (5NN = 599, T = 0)": "Short number (5NN = 599, T = 0)",
     "Frequenz in kHz": "Frequency in kHz",
     "Frequenz in MHz": "Frequency in MHz",
     "Leistung in Watt": "Power in watts",

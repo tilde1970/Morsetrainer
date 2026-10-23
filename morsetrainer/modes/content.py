@@ -2,6 +2,7 @@
 Gruppen, Wörter, Wendungen, Rufzeichen und QSO-Klartext – jeweils nur aus
 dem eingestellten Zeichensatz."""
 import random
+from datetime import date
 
 from morsetrainer.core import qso_text, words
 from morsetrainer.core.weighting import CharPicker
@@ -36,6 +37,11 @@ def _frequency_mhz() -> str:
     return f"{random.randint(*random.choice(BAND_RANGES_KHZ)) / 1000:.3f}"
 
 
+def _short_number() -> str:
+    """Kurzzahl wie im Contest: 5NN für 599, T für 0 (TT7 = 007)."""
+    return "5NN" if random.random() < 0.4 else qso_text.cut_number(random.randint(1, 99))
+
+
 # Zahlen, wie sie im Funk vorkommen: (Gewicht, Erzeuger, Bedeutung). Die
 # Bedeutung steht nach dem Üben in der Legende; die MHz-Schreibweise braucht
 # den Punkt unter den gelernten Zeichen.
@@ -48,7 +54,8 @@ NUMBER_KINDS = (
     (2, _frequency_mhz, N_("Frequenz in MHz")),
     (2, lambda: str(random.choice(WATTS)), N_("Leistung in Watt")),
     (2, lambda: f"{random.randint(0, 23):02d}{random.randint(0, 59):02d}", N_("Uhrzeit in UTC")),
-    (1, lambda: str(random.randint(1950, 2026)), N_("Jahr")),
+    (3, _short_number, N_("Kurzzahl (5NN = 599, T = 0)")),
+    (1, lambda: str(random.randint(1950, date.today().year)), N_("Jahr")),
 )
 
 

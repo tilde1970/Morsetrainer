@@ -77,7 +77,8 @@ COPY, MEMORIZE, HEAD = "copy", "memorize", "head"
 INPUT_STYLES = ((COPY, N_("Mitschreiben")), (MEMORIZE, N_("Erst merken")), (HEAD, N_("Kopfhören")))
 STYLE_HINTS = {
     COPY: N_("Schon während des Tons tippen; mit so vielen Zeichen wie gesendet ist die Antwort fertig."),
-    MEMORIZE: N_("Erst zu Ende hören, danach tippen und mit Enter bestätigen."),
+    MEMORIZE: N_("Erst zu Ende hören, danach tippen; mit so vielen Zeichen wie gesendet oder mit Enter ist die "
+                 "Antwort fertig."),
     HEAD: N_("Nichts tippen, im Kopf mitlesen, dann mit Enter auflösen und selbst bewerten (J / N)."),
 }
 

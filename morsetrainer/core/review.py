@@ -3,7 +3,8 @@
 Jedes Zeichen liegt in einem Fach; das Fach bestimmt, nach wie vielen
 Tagen es wieder dran ist (INTERVALS). Wer ein fälliges Zeichen sicher
 erkennt, schiebt es ein Fach weiter; wer es unsicher erkennt, schiebt es
-zurück (deutlich unsicher: ins erste Fach, morgen wieder). So kommt ein
+zurück (deutlich unsicher: ins erste Fach, morgen wieder). Knapp unter
+der Schwelle (NEUTRAL_SHARE bis SURE_SHARE) bleibt es, wo es ist. So kommt ein
 Zeichen kurz vor dem Vergessen wieder – öfter, solange es wackelt,
 seltener, sobald es sitzt.
 
@@ -35,8 +36,9 @@ from morsetrainer.core import db
 from morsetrainer.core.morse import MORSE_CODE
 
 INTERVALS = (1, 2, 4, 8, 16, 32)  # Tage bis zur nächsten Wiederholung je Fach
-MIN_ATTEMPTS = 5
+MIN_ATTEMPTS = 8    # unter so vielen Versuchen am Tag entscheidet die Lernkartei nicht
 SURE_SHARE = 0.9    # ab diesem Anteil flüssiger Treffer: sicher
+NEUTRAL_SHARE = 0.8  # zwischen hier und SURE_SHARE bleibt ein Zeichen, wo es ist
 SHAKY_SHARE = 0.75  # darunter: zurück ins erste Fach, sonst ein Fach zurück
 FLUENT_LATENCY_S = 1.5
 PROMOTE_MIN_CHARSET = 8
@@ -167,6 +169,10 @@ def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True)
         if "best_day" in entry:
             entry["award_day"] = entry["best_day"]
     if share < SURE_SHARE:
+        # Das Zeitlimit der Übung pendelt sich bei rund 88 % rechtzeitiger Antworten ein: Knapp
+        # unter der Schwelle ist kein Grund zurückzustufen, mehr Versuche entscheiden später.
+        if share >= NEUTRAL_SHARE and "due" in entry:
+            return
         box = 0 if share < SHAKY_SHARE else max(box - 1, 0)
     elif "due" not in entry:
         box = 0  # neu und gleich sicher: morgen die erste Wiederholung

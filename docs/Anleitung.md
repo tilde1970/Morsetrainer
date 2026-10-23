@@ -166,7 +166,10 @@ einmal einstellt:
   Trainer die Länder nach ihrer Aktivität auf der ganzen Welt. Ein
   ungültiger Locator wird unter dem Feld genannt und nicht verwendet.
 - **Üben:** das Tagesziel in Minuten (Standard 10, 0 = ohne Ziel); die
-  Fußzeile zeigt, wie viel du heute schon geübt hast.
+  Fußzeile zeigt, wie viel du heute schon geübt hast. **Entspannte
+  Tagesübung** nimmt das Zeitlimit aus dem Aufwärmen, für alle, die je
+  Antwort länger als 1,5 Sekunden brauchen; diese Aufwärmblöcke zählen
+  nicht für die Lernkartei und die Kann-Punkte.
 - **Sprache / Language:** Oberfläche auf Englisch umstellen (wirkt nach
   einem Neustart; unten im Fenster erscheint dafür **Jetzt neu starten**).
   Die Stimme im Reiter Sprechen bleibt deutsch.
@@ -564,8 +567,10 @@ wieder wie vorher.
 - **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
   18 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: unter
   75 % beim ersten Versuch (mindestens 100 Zeichen) 1 WPM langsamer. Nach
-  Koch wird es ab 90 % auch 1 WPM schneller; vorher nicht, denn ein guter
-  Tag bringt dann schon das nächste Zeichen.
+  Koch wird es ab 90 % auch 1 WPM schneller. Vorher werden nur die Pausen
+  kürzer (effektiv 1 WPM schneller): an einem Tag ohne Lektionsaufstieg,
+  nicht in den ersten Tagen einer neuen Lektion und ab 95 % beim ersten
+  Versuch; die Zeichen bleiben so schnell wie sie sind.
 - **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
   beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion –
   ohne Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim

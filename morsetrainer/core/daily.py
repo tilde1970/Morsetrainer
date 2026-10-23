@@ -13,7 +13,11 @@ Regeln, die das Hören-Lernen schützen:
   wäre dann nie erreichbar. Solange neue Lektionen kommen, wird es nur
   langsamer, nie schneller: Ein guter Tag bringt schon das neue Zeichen,
   beides zugleich wäre zu steil (wie bei Koch: Tempo fest, Zeichen
-  dazu). Schneller wird es erst nach Koch.
+  dazu). Das Zeichentempo steigt erst nach Koch. Nur die Pausen werden
+  schon vorher kürzer (effektives Tempo +1), und zwar an einem Tag ohne
+  Lektionsaufstieg, nicht in den ersten Tagen einer neuen Lektion, bei
+  mindestens PAUSES_MIN_CHARS Zeichen und PAUSES_UP_SHARE im ersten Versuch:
+  Lange Pausen über Monate machten den Weg zum Funktempo sonst weit.
 - Die Lektion steigt automatisch auf, wirksam ab dem nächsten Tag
   (apply_pending_lesson()); so lohnt es sich nicht, für sichere Sterne in
   der alten Lektion zu bleiben. In den ersten Tagen einer neuen Lektion
@@ -91,6 +95,9 @@ BAND_MIN_CHARS = 100  # darunter ist der Anteil zu zufällig
 TEMPO_MIN_CHARS = 100
 TEMPO_UP_SHARE = 0.9
 TEMPO_DOWN_SHARE = 0.75
+# Im Koch-Teil dürfen nur die Pausen kürzer werden, und nur bei diesem Anteil.
+PAUSES_MIN_CHARS = TEMPO_MIN_CHARS
+PAUSES_UP_SHARE = 0.95
 
 # ★ Sauber: Erstversuch-Anteil im Hauptteil.
 CLEAN_MIN_CHARS = koch.ADVANCE_MIN_CHARS
@@ -397,15 +404,19 @@ def current_tempo(state: dict, wpm: int, fw, refresh: bool = False) -> dict:
     return initial_tempo(wpm, fw)
 
 
-def next_tempo(current: dict, result: dict, allow_up: bool = True) -> dict:
+def next_tempo(current: dict, result: dict, allow_up=True) -> dict:
     """Tempo für die nächste Tagesübung nach dem Hauptteil: ab
-    TEMPO_UP_SHARE beim ersten Versuch eins schneller (nur mit `allow_up`),
-    unter TEMPO_DOWN_SHARE eins langsamer, sonst gleich; unter
-    TEMPO_MIN_CHARS Zeichen ist die Quote zu zufällig."""
+    TEMPO_UP_SHARE beim ersten Versuch eins schneller (nur mit `allow_up`;
+    "pauses": nur die Pausen, solange das effektive Tempo unter dem
+    Zeichentempo liegt), unter TEMPO_DOWN_SHARE eins langsamer, sonst gleich;
+    unter TEMPO_MIN_CHARS Zeichen ist die Quote zu zufällig."""
     correct, total = _first_try(result)
     if total < TEMPO_MIN_CHARS:
         return dict(current)
     share = correct / total
+    if allow_up == "pauses":
+        allow_up = (current["effective"] < current["wpm"] and total >= PAUSES_MIN_CHARS
+                    and share >= PAUSES_UP_SHARE)
     delta = 1 if share >= TEMPO_UP_SHARE and allow_up else -1 if share < TEMPO_DOWN_SHARE else 0
     if not delta:
         return dict(current)
@@ -482,7 +493,10 @@ def finish_block(state: dict, today: date, block: Block, result: dict, refresh: 
         # Einmal am Tag, wirksam ab morgen: eine zweite Tagesübung läuft im
         # selben Tempo und ändert es nicht noch einmal.
         if current and _first_try(result)[1] >= TEMPO_MIN_CHARS and state.get("pending_tempo_since") != today.isoformat():
-            following = next_tempo(current, result, allow_up=lesson >= POST_KOCH)
+            # Im Koch-Teil nur die Pausen, und nicht an einem Tag mit neuem Zeichen.
+            allow_up = True if lesson >= POST_KOCH else (
+                "pauses" if not steps and not is_new_lesson(state, today) else False)
+            following = next_tempo(current, result, allow_up=allow_up)
             state.update(pending_tempo=following, pending_tempo_since=today.isoformat())
             best = state.get("tempo_best")
             best = best if isinstance(best, int) and not isinstance(best, bool) else current["effective"]

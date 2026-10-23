@@ -33,6 +33,7 @@ class DailyModeMixin:
     _options_pack = None
     streak = best_streak = 0
     next_waiting = False  # nächstes Zeichen bzw. nächste Sequenz wartet auf eine Ansage
+    daily_relaxed = False  # Block der entspannten Tagesübung: ohne Zeitlimit, nicht für die Lernkartei
 
     def daily_configure(self, minutes: float, **values) -> None:
         """Merkt die Werte der `daily_keys`, setzt die festen Werte `values`, die
@@ -49,6 +50,7 @@ class DailyModeMixin:
             self.restore_settings(self._daily_saved)
             self._daily_saved = None
         self.daily_minutes = None
+        self.daily_relaxed = False
         self.set_options_visible(True)
 
     def daily_result(self):
@@ -62,7 +64,9 @@ class DailyModeMixin:
 
     def _daily_config(self) -> dict:
         """Kennzeichen für die config-Zeile des gespeicherten Durchgangs."""
-        return {"daily": True} if self.daily_minutes else {}
+        if not self.daily_minutes:
+            return {}
+        return {"daily": True, "relaxed": True} if self.daily_relaxed else {"daily": True}
 
     def show_options_for_run(self, running: bool) -> None:
         """Während eines Durchgangs ist die Einstellungskarte weg, damit

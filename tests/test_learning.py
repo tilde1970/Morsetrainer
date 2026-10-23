@@ -412,3 +412,98 @@ class WordLessonTest(unittest.TestCase):
         self.assertGreaterEqual(len(words.words_for_charset(koch.lesson_charset(lesson))), words.MIN_WORDS)
         self.assertLess(len(words.words_for_charset(koch.lesson_charset(lesson - 1))), words.MIN_WORDS)
 
+
+
+class ReviewThresholdsTest(unittest.TestCase):
+    """Befunde der Gesamtprüfung Didaktik (Lernkartei, Tagestempo, Gewichtung)."""
+
+    def _entry(self, n, fluent, due=True):
+        from datetime import date, timedelta
+        from morsetrainer.core import review
+        entry = {"box": 2, "n": n, "fluent": fluent, "pn": n, "pfluent": fluent, "decided": False,
+                 "day": date.today().isoformat()}
+        if due:
+            entry["due"] = (date.today() - timedelta(days=1)).isoformat()
+        return entry, review
+
+    def test_too_few_attempts_do_not_decide(self):
+        from datetime import date
+        entry, review = self._entry(7, 0)
+        review._decide("K", entry, date.today())
+        self.assertFalse(entry["decided"])
+
+    def test_close_to_the_threshold_keeps_the_box(self):
+        from datetime import date
+        entry, review = self._entry(10, 8)  # 80 %: Zeitlimit pendelt bei etwa 88 %
+        review._decide("K", entry, date.today())
+        self.assertFalse(entry["decided"])
+        self.assertEqual(entry["box"], 2)
+
+    def test_clearly_weak_goes_back(self):
+        from datetime import date
+        entry, review = self._entry(10, 7)  # 70 %
+        review._decide("K", entry, date.today())
+        self.assertTrue(entry["decided"])
+        self.assertEqual(entry["box"], 0)
+
+    def test_sure_moves_up(self):
+        from datetime import date
+        entry, review = self._entry(10, 10)
+        review._decide("K", entry, date.today())
+        self.assertEqual(entry["box"], 3)
+
+
+class DailyPausesTest(unittest.TestCase):
+    def test_in_the_koch_phase_only_the_pauses_get_shorter(self):
+        from morsetrainer.core import daily
+        current = {"wpm": 20, "effective": 10}
+        good = {"first_try_correct": 98, "first_try_total": 100}
+        self.assertEqual(daily.next_tempo(current, good, allow_up="pauses"), {"wpm": 20, "effective": 11})
+        ok = {"first_try_correct": 92, "first_try_total": 100}  # 92 % reicht für die Pausen nicht
+        self.assertEqual(daily.next_tempo(current, ok, allow_up="pauses"), current)
+        at_limit = {"wpm": 20, "effective": 20}  # die Zeichen werden vor Koch nicht schneller
+        self.assertEqual(daily.next_tempo(at_limit, good, allow_up="pauses"), at_limit)
+        self.assertEqual(daily.next_tempo(current, good, allow_up=False), current)
+
+
+class WeightingRecentTest(unittest.TestCase):
+    def test_recent_errors_count_more_than_old_ones(self):
+        from unittest import mock
+        from morsetrainer.core import stats
+        from morsetrainer.core.weighting import CharPicker
+        old_bad = {"K": {"good": 100, "wrong": 100}}  # früher oft falsch, jetzt sicher
+        with mock.patch.object(stats, "load_all_time", return_value=old_bad), \
+                mock.patch.object(stats, "recent_char_data", return_value={"K": {"good": 20, "wrong": 0}}):
+            fixed = CharPicker("K", weighted=True)._error_rate("K")
+        with mock.patch.object(stats, "load_all_time", return_value=old_bad), \
+                mock.patch.object(stats, "recent_char_data", return_value={"K": {"good": 0, "wrong": 20}}):
+            weak = CharPicker("K", weighted=True)._error_rate("K")
+        self.assertLess(fixed, 0.5)
+        self.assertGreater(weak, 0.5)
+        self.assertGreater(weak, fixed + 0.15)
+
+
+class RelaxedDailyTest(unittest.TestCase):
+    def test_relaxed_block_skips_the_review(self):
+        from morsetrainer.core import review, stats
+        with tempfile.TemporaryDirectory() as tmp, __import__("unittest.mock", fromlist=["patch"]).patch.object(
+                stats, "STATS_DIR", Path(tmp)):
+            for relaxed in (False, True):
+                session = stats.SessionStats("single", "KMURESNAP", 20, 600, review_promote=True,
+                                             config_extra={"relaxed": True} if relaxed else None)
+                for _ in range(10):
+                    session.record_char("K" if not relaxed else "M", "K" if not relaxed else "M", True, 0.5, 20.0,
+                                        latency=0.5)
+                session.finalize()
+            data = review.load()
+            self.assertIn("K", data)
+            self.assertNotIn("M", data)
+
+
+class ShortNumbersTest(unittest.TestCase):
+    def test_short_numbers_use_cut_numbers(self):
+        from morsetrainer.modes import content
+        random.seed(3)
+        values = {content._short_number() for _ in range(200)}
+        self.assertIn("5NN", values)
+        self.assertTrue(any(v.startswith("T") for v in values))

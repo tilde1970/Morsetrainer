@@ -2,7 +2,10 @@
 erkennst, kommen häufiger dran. Grundlage sind die Werte pro Zeichen aus
 der Gesamtstatistik (core/stats.py) plus der laufenden Sitzung.
 
-Fehler: Die Fehlerquote wird mit (falsch + 1) / (gesamt + 2) geglättet,
+Fehler: Die Fehlerquote stammt vor allem aus den letzten RECENT_DAYS Tagen;
+was davor war, zählt nur mit OLD_WEIGHT (ein Zeichen, das inzwischen sitzt,
+soll nicht ewig bevorzugt werden, ein neu schwaches soll bald auffallen).
+Sie wird mit (falsch + 1) / (gesamt + 2) geglättet,
 damit neue oder selten geübte Zeichen nicht bei 0 % oder 100 % landen –
 ein noch nie geübtes Zeichen startet bei 50 %.
 
@@ -25,6 +28,8 @@ import statistics
 
 from morsetrainer.core import review, stats
 
+RECENT_DAYS = 14
+OLD_WEIGHT = 0.25
 MIN_WEIGHT = 0.1
 SPEED_WEIGHT = 0.5
 MIN_LATENCY_SAMPLES = 3
@@ -41,6 +46,7 @@ class CharPicker:
         self.weighted = weighted
         self.session = session
         self.all_time = stats.load_all_time() if weighted else {}
+        self.recent = stats.recent_char_data(RECENT_DAYS) if weighted else {}
         # Heute fällig in der Lernkartei (core/review.py): öfter dran.
         self.due = set(review.due_chars()) if weighted else set()
 
@@ -48,12 +54,15 @@ class CharPicker:
         return self.session.per_char if self.session is not None else {}
 
     def _error_rate(self, ch: str) -> float:
-        good = wrong = 0
-        for source in (self.all_time, self._session_chars()):
-            e = source.get(ch)
-            if e:
-                good += e["good"]
-                wrong += e["wrong"]
+        good = wrong = 0.0
+        recent = self.recent.get(ch) or {}
+        total = self.all_time.get(ch) or {}
+        good += recent.get("good", 0) + OLD_WEIGHT * max(total.get("good", 0) - recent.get("good", 0), 0)
+        wrong += recent.get("wrong", 0) + OLD_WEIGHT * max(total.get("wrong", 0) - recent.get("wrong", 0), 0)
+        e = self._session_chars().get(ch)
+        if e:
+            good += e["good"]
+            wrong += e["wrong"]
         return (wrong + 1) / (good + wrong + 2)
 
     def _mean_latency(self, ch: str, measured_only=False):
