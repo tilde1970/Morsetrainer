@@ -356,12 +356,12 @@ class MorseTrainerApp:
         # Bandbedingungen, Hilfe, Netzwerk …); im Hauptfenster gilt _dispatch_key.
         for key in (ANNOUNCE_KEY, STATUS_KEY):
             root.bind_all(f"<{key}>", self._window_key, add="+")
-        root.protocol("WM_DELETE_WINDOW", self.on_close)
+        root.protocol("WM_DELETE_WINDOW", lambda: self._request_close("Schließen"))
         if sys.platform == "darwin":
             self._bind_mac_keys()
         else:
             for letter in ("q", "Q"):  # groß und klein, damit es auch mit Feststelltaste geht
-                root.bind_all(f"<Control-{letter}>", lambda e: self.on_close() or "break")
+                root.bind_all(f"<Control-{letter}>", lambda e: self._request_close("Strg+Q") or "break")
 
     def _bind_mac_keys(self):
         """Mac: Cmd+Q und „Einstellungen …“ im App-Menü laufen über Tk
@@ -369,7 +369,7 @@ class MorseTrainerApp:
         speichern). F9, F11 und F12 sind dort Medientasten bzw. vom System
         belegt (Fn+F11 zeigt den Schreibtisch): zusätzlich Cmd+Umschalt+A
         (Ansage), W (wo bin ich), T (Tagesübung) und H (Hilfe)."""
-        self.root.createcommand("::tk::mac::Quit", self.on_close)
+        self.root.createcommand("::tk::mac::Quit", lambda: self._request_close("Cmd+Q"))
         self.root.createcommand("::tk::mac::ShowPreferences", self.open_settings)
         for letter, action in (("A", self.toggle_announce), ("W", self.read_status),
                                ("T", self._start_daily), ("H", self.open_help)):
@@ -668,8 +668,8 @@ class MorseTrainerApp:
                                   variable=self.daily_relaxed_var)
         relaxed.pack(anchor="w")
         theme.hint(relaxed.master.master, wrap=420, text=tr(
-            "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Kann-Punkte, "
-            "damit deren Zahlen ehrlich bleiben."))
+            "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Diplome, die an ihr hängen "
+            "(Worked All Letters, Alle Ziffern), damit deren Zahlen ehrlich bleiben."))
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
@@ -1531,20 +1531,23 @@ class MorseTrainerApp:
         else:
             self._play_new_char()
 
-    def _play_new_char(self):
-        """Das neueste Zeichen der Lektion dreimal vorspielen."""
-        lesson = koch.lesson_of(self.charset_var.get().strip().upper())
-        if lesson is None:
+    def _play_new_char(self, chars: str = ""):
+        """Das neueste Zeichen der Lektion dreimal vorspielen; mit `chars` diese
+        Zeichen nacheinander, jedes dreimal (Lektion 1 bringt zwei)."""
+        if not chars:
+            lesson = koch.lesson_of(self.charset_var.get().strip().upper())
+            if lesson is None:
+                return
+            chars = koch.newest_char(lesson)
+        if not chars:
             return
-        ch = koch.newest_char(lesson)
-        if not ch:
-            return
+        text = " ".join(" ".join([ch] * 3) for ch in chars)
         try:
             wpm, freq = self.wpm_var.get(), self.freq_var.get()
         except tk.TclError:
             wpm, freq = koch.RECOMMENDED_WPM, 600
         try:
-            audio.play(build_text(f"{ch} {ch} {ch}", wpm, freq, self.farnsworth_wpm()))
+            audio.play(build_text(text, wpm, freq, self.farnsworth_wpm()))
         except audio.AudioError as exc:
             dialog.showwarning(tr("Tonausgabe"), str(exc))
 
@@ -1832,7 +1835,7 @@ class MorseTrainerApp:
             text=tr("Sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, "
                     "unsichere schon am nächsten Tag. Mit „schwache bevorzugt“ kommen fällige Zeichen öfter "
                     "dran. Hochgestuft wird nur aus Zufallszeichen (Zeichen und Gruppen im Reiter Einzeln, Am Stück), "
-                    "entschieden einmal am Tag ab 5 Versuchen."),
+                    "entschieden einmal am Tag ab 8 Versuchen; zwischen 80 und 90 % bleibt ein Zeichen, wo es ist."),
         ).pack(anchor="w", pady=(0, 6))
         self.review_button = ttk.Button(review_box, text=tr("Fällige gezielt üben"), command=self._drill_due)
         self.review_button.pack(anchor="w")
@@ -2467,19 +2470,35 @@ class MorseTrainerApp:
         if mode is not None:
             mode.on_key(event)
 
-    def _confirm_daily_end(self, keysym: str) -> None:
+    def _request_close(self, key: str) -> None:
+        """Strg+Q, Cmd+Q oder Schließkreuz: Während der Tagesübung erst beim
+        zweiten Druck (wie Esc), sonst sofort."""
+        if self.daily.active:
+            self._confirm_daily_end(key, then_close=True)
+        else:
+            self.on_close()
+
+    def _confirm_daily_end(self, keysym: str, then_close: bool = False) -> None:
         """Esc oder F5 in der Tagesübung: beendet sie erst beim zweiten Druck
         innerhalb von DAILY_END_CONFIRM_S. Ein einzelner Fehlgriff (etwa Esc,
         um ein Nebenfenster zu schließen) soll nicht den Tag kosten; ohne
-        Dialog, der Ablauf und Ansage unterbräche."""
+        Dialog, der Ablauf und Ansage unterbräche. `then_close`: danach auch
+        das Programm beenden (Strg+Q, Schließkreuz)."""
         now = time.time()
         if now - self.daily_end_pressed <= DAILY_END_CONFIRM_S:
             self.daily_end_pressed = 0.0
             self.daily_bar.show_notice("")
-            self.daily.abort()
+            if then_close:
+                self.on_close()
+            else:
+                self.daily.abort()
             return
         self.daily_end_pressed = now
-        text = tr("Noch einmal {key} beendet die Tagesübung.").format(key="Esc" if keysym == "Escape" else keysym)
+        key = "Esc" if keysym == "Escape" else keysym
+        if then_close:
+            text = tr("Noch einmal {key} beendet die Tagesübung und das Programm.").format(key=key)
+        else:
+            text = tr("Noch einmal {key} beendet die Tagesübung.").format(key=key)
         self.daily_bar.show_notice(text)
         announcer.say(text)
         self.root.after(int(DAILY_END_CONFIRM_S * 1000), self._clear_daily_notice)

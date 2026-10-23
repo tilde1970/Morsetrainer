@@ -16,7 +16,7 @@ import tkinter as tk
 from datetime import date
 
 from morsetrainer.core import awards, daily, koch, practice, qso_text, review, stats, week
-from morsetrainer.i18n import short_number, tr
+from morsetrainer.i18n import N_, ctrl_key, short_number, tr
 from morsetrainer.widgets import announcer, band_settings
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, minutes_text, mode_name, moment_line, preview_line,
@@ -30,6 +30,11 @@ MODE_TITLES = {"single": "Einzelzeichen", "group": "Gruppen", "word": "Wörter",
                "continuous": "Kontinuierlich", daily.QSO_HEAD: "QSO", daily.QSO_LOG: "QSO"}
 # Contest-Arten für den Ausklang mit Log, im Wechsel über die Zyklen.
 CONTEST_KINDS = tuple(kind for kind in qso_text.QSO_TYPES if kind != qso_text.RAGCHEW)
+
+
+# Solange noch keine Tagesübung lief, steht das in der Leiste.
+FIRST_START_NOTE = N_("Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“ "
+                      "den Haken „Wiedereinsteiger“ setzen.")
 
 
 def block_text(block) -> str:
@@ -97,6 +102,8 @@ class DailyRunner:
         if not note:
             review_data = week.last_week_review(state, practice_data, self.app.daily_goal_minutes() * 60, date.today())
             note = review_line(review_data) if review_data else ""
+        if not note and not state.get("days"):
+            note = tr(FIRST_START_NOTE)
         self.bar.show_idle(note)
         self.refresh_week(practice_data, state)
 
@@ -169,16 +176,24 @@ class DailyRunner:
             if effective >= daily.BAND_MIN_EFFECTIVE:
                 band = daily.band_level(self.state, self.today)
         self._begin(charset, daily.plan(lesson, len(self.due), turn, qso, contest, band))
-        if daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH and koch.newest_char(lesson):
-            # Neue Lektion: das neue Zeichen erst einmal anhören (Lektion 41 bringt keins).
-            char = koch.newest_char(lesson)
+        # Neue Lektion oder allererster Tag in Lektion 1: die neuen Zeichen erst einmal
+        # anhören (Lektion 41 bringt keins).
+        if lesson == 1 and turn == 0 and not self.state.get("days", {}).get(self.today.isoformat(), {}).get("blocks"):
+            chars = koch.lesson_charset(1)
+        elif daily.is_new_lesson(self.state, self.today) and 1 < lesson < daily.POST_KOCH:
+            chars = koch.newest_char(lesson)
+        else:
+            chars = ""
+        if chars:
             # Vorspielen erst nach der Ansage, sie schnitte sonst das Zeichen ab;
             # ist die Karte bis dahin schon weitergeschaltet, nicht mehr (der
             # Block liefe sonst gleichzeitig an).
-            self._show_card(tr("Neues Zeichen: {char}").format(char=char),
+            title = (tr("Neue Zeichen: {char}") if len(chars) > 1 else tr("Neues Zeichen: {char}"))
+            shown = tr(" und ").join(chars)
+            self._show_card(title.format(char=shown),
                             [preview_line(self.blocks[0], lesson, self.state["tempo"])],
-                            then=lambda: self.card_open and self.active and app._play_new_char(),
-                            spoken_title=tr("Neues Zeichen: {char}").format(char=announcer.spell(char)))
+                            then=lambda: self.card_open and self.active and app._play_new_char(chars),
+                            spoken_title=title.format(char=tr(" und ").join(announcer.spell(ch) for ch in chars)))
         else:
             self._next_block()
 
@@ -419,6 +434,10 @@ class DailyRunner:
             lines += strong
         if block.mode == "single":
             lines += [moment_line(m) for m in daily.char_moments(self.today)]
+        if (block.kind == daily.WARMUP and not self.app.daily_relaxed_var.get()
+                and daily.too_tight(result)):
+            lines.append(tr("Zu knapp? Unter Einstellungen ({key}) gibt es die „Entspannte Tagesübung“: "
+                            "das Aufwärmen ohne Zeitlimit.").format(key=ctrl_key(",")))
         following = self.blocks[self.index + 1]
         lines.append(preview_line(following, daily.current_lesson(self.state, 1), self.state["tempo"]))
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
@@ -521,6 +540,10 @@ class DailyRunner:
             if prosigns:
                 self.state[daily.PROSIGN_HINT] = self.today.isoformat()
                 daily.save(self.state)
+        tempo = daily.tempo_outlook(self.state, self.today) if completed else None
+        if tempo and tempo["plateau"]:
+            self.state[daily.PLATEAU_HINT] = self.today.isoformat()
+            daily.save(self.state)
         self.summary = EveningSummary(
             self.app.root, stars, daily.week_comparison(self.today), daily.lesson_outlook(self.state, self.today, self._refresh()),
             offer, self.start_extra, completed, week.stars_in_week(self.state, self.today),
@@ -528,4 +551,4 @@ class DailyRunner:
             seals=[seal_name(awards.BY_KEY[key], level) for key, level, _ in self.app.pending_seals],
             on_close=self.app.show_pending_seals,
             on_prosigns=self.app.start_prosign_lessons if prosigns else None,
-            band=daily.band_change(self.state, self.today))
+            band=daily.band_change(self.state, self.today), tempo=tempo)

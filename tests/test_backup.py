@@ -390,6 +390,7 @@ class ImportWhileRunningTest(AppTestCase):
         from morsetrainer import app as app_module
         chosen = []
         with mock.patch.object(app_module.dialog, "askopenfilename", lambda then, **options: chosen.append(then)), \
+                mock.patch.object(app_module.instances, "others", return_value=0), \
                 mock.patch.object(app_module.dialog, "showinfo") as info, \
                 mock.patch.object(app_module.dialog, "askyesno", return_value=False), \
                 mock.patch.object(backup, "read_info") as read_info, \

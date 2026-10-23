@@ -24,7 +24,7 @@ Einen kurzen Überblick mit Bildern gibt die [README](../README.md).
 7. Netzwerk: Üben in der Gruppe
 8. Barrierefreiheit
 9. Tastenkürzel
-10. Installieren und aktualisieren
+10. Installieren und aktualisieren (darin: „Kein Ton?“)
 11. Daten
 
 ## 1. Erste Schritte
@@ -57,6 +57,14 @@ anderen dazu. So geht es los:
 
 Oder einfach **▶ Tagesübung (10 Min, F12)** drücken: Sie stellt jeden Tag
 zusammen, was dran ist, und schaltet die Reiter selbst um (Abschnitt 4).
+Am allerersten Tag in Lektion 1 hörst du K und M zuerst vorgespielt, bevor
+das Zeitlimit beginnt. **Kannst du CW schon?** Dann unter „▸ Weitere
+Optionen“ **Wiedereinsteiger** einschalten; Contester mit Erfahrung stellen
+dazu oben Lektion 42 und das gewohnte Tempo ein (Abschnitt 4).
+
+**Lautstärke:** Der Morseton hat feste Lautstärke und ist nicht leise.
+Stell die Lautstärke am System zuerst niedrig und dreh dann mit „▶ anhören“
+auf. Kommt gar kein Ton, hilft der Abschnitt „Kein Ton?“ in Abschnitt 10.
 
 **Täglich kurz** üben schlägt selten lang: Die Fußzeile zeigt die heutige
 Übungszeit und das Tagesziel (einstellbar unter „Einstellungen …“), der
@@ -169,7 +177,8 @@ einmal einstellt:
   Fußzeile zeigt, wie viel du heute schon geübt hast. **Entspannte
   Tagesübung** nimmt das Zeitlimit aus dem Aufwärmen, für alle, die je
   Antwort länger als 1,5 Sekunden brauchen; diese Aufwärmblöcke zählen
-  nicht für die Lernkartei und die Kann-Punkte.
+  nicht für die Lernkartei und die Diplome, die an ihr hängen (Worked All
+  Letters, Alle Ziffern).
 - **Sprache / Language:** Oberfläche auf Englisch umstellen (wirkt nach
   einem Neustart; unten im Fenster erscheint dafür **Jetzt neu starten**).
   Die Stimme im Reiter Sprechen bleibt deutsch.
@@ -513,7 +522,9 @@ Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
   umgerechnet in WPM (höchstens so schnell, wie gesendet wurde).
 - **Lernkartei** (Wiederholung über Tage): Sicher und flüssig erkannte
   Zeichen kommen nach 1, 2, 4 … 32 Tagen wieder, unsichere am nächsten
-  Tag. Entschieden wird einmal am Tag ab 5 Versuchen, hochgestuft nur aus
+  Tag. Entschieden wird einmal am Tag ab 8 Versuchen; liegt der Anteil
+  flüssiger Treffer zwischen 80 und 90 %, bleibt das Zeichen, wo es ist,
+  und mehr Versuche entscheiden später. Hochgestuft wird nur aus
   Zufallszeichen. Fällige Zeichen kommen mit „schwache bevorzugt“ öfter und
   lassen sich gezielt üben. Darunter steht je Fach, welche Zeichen darin
   liegen, von „Fach 1 · jeden Tag“ bis „Fach 6 · alle 32 Tage“; F11 liest
@@ -561,9 +572,15 @@ wieder wie vorher.
   (Kopfhörer Bronze).
 - **Aufwärmen** mit allen Zeichen der Lektion; die heute fälligen Zeichen
   der Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
-  Verwechslungen. Bei vielen fälligen Zeichen wird es etwas länger, der
-  Hauptteil entsprechend kürzer. Das Zeitlimit macht weiter, wo es beim
-  letzten Mal aufgehört hat, und wird hier nie länger als 1,5 s.
+  Verwechslungen. Bei vielen fälligen Zeichen wird es etwas länger (bis
+  4 Minuten), der Hauptteil entsprechend kürzer: Jedes fällige Zeichen
+  braucht acht Versuche, damit die Lernkartei es heute entscheidet; die
+  Zwischenkarte nennt, bei wie vielen noch Versuche fehlen (sie bleiben
+  fällig). Das Zeitlimit macht weiter, wo es beim letzten Mal aufgehört
+  hat, und wird hier nie länger als 1,5 s. Brauchst du länger, schalte
+  unter „Einstellungen“ die **Entspannte Tagesübung** ein: Das Aufwärmen
+  läuft dann ohne Zeitlimit und zählt nicht für die Lernkartei. Waren
+  viele Zeichen zu langsam, weist die Zwischenkarte darauf hin.
 - **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
   18 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: unter
   75 % beim ersten Versuch (mindestens 100 Zeichen) 1 WPM langsamer. Nach
@@ -571,6 +588,12 @@ wieder wie vorher.
   kürzer (effektiv 1 WPM schneller): an einem Tag ohne Lektionsaufstieg,
   nicht in den ersten Tagen einer neuen Lektion und ab 95 % beim ersten
   Versuch; die Zeichen bleiben so schnell wie sie sind.
+- **Du kannst CW schon?** Schalte unter „▸ Weitere Optionen“
+  **Wiedereinsteiger** ein: Die Tagesübung steigt dann schneller auf. Als
+  Contester stellst du oben vor dem ersten Mal Lektion 42 und dein Tempo
+  ein; die Tagesübung übernimmt beides beim ersten Mal. Die Betriebszeichen
+  AR, KN, SK und BK übst du einmal in den Lektionen 42–45, erst dann kommen
+  QSOs zum Kopfhören.
 - **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
   beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion –
   ohne Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim
@@ -591,11 +614,16 @@ wieder wie vorher.
   Zeitbalken oder dem Knopf im Reiter. Esc und F5 beenden erst beim
   zweiten Druck innerhalb von drei Sekunden; beim ersten steht dort (und
   wird angesagt) „Noch einmal Esc beendet die Tagesübung.“ So kostet ein
-  Fehlgriff, etwa Esc für ein Nebenfenster, nicht den Tag.
+  Fehlgriff, etwa Esc für ein Nebenfenster, nicht den Tag. Ebenso fragen
+  Strg+Q (Mac: Cmd+Q) und das Schließkreuz während der Tagesübung erst
+  beim zweiten Druck: „Noch einmal Strg+Q beendet die Tagesübung und das
+  Programm.“
 - **Abendbilanz:** Sterne, was gegenüber der Vorwoche besser geworden ist
   (Reaktionszeit je Zeichen, Gruppenquote; nur mit genug Daten und bei
   gleichem Tempo, nie „schlechter“), wie viel bis zur nächsten Lektion
-  fehlt, der Stand zum Wochenziel und, wenn der Hauptteil gut lief, einmal
+  fehlt, das Tempo für morgen mit dem Grund (etwas schneller, langsamer
+  oder unverändert), nach etwa zehn Übungstagen im selben Tempo einmal ein
+  Hinweis, dass Stillstand beim Hören normal ist, der Stand zum Wochenziel und, wenn der Hauptteil gut lief, einmal
   am Tag **Noch 5 Min** mit etwas anderem: deine Verwechslungen aus der
   Lektion, einen Rufz-Durchgang oder Wörter. Hat die Tagesübung Lektion 41
   bestanden, weist sie einmal auf die Betriebszeichen (Lektion 42–45) hin;
@@ -1153,7 +1181,7 @@ statt Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 | Überall | Strg+Plus, Strg+Minus, Strg+0 | Schrift größer, kleiner, normal |
 | Überall | Strg+B | Bandbedingungen öffnen (darin Strg+P: Probehören) |
 | Überall | Strg+Komma (Strg+,) | Einstellungen |
-| Überall (Mac: Cmd+Q) | Strg+Q | Programm beenden |
+| Überall (Mac: Cmd+Q) | Strg+Q | Programm beenden (in der Tagesübung zweimal) |
 | Überall | Tab, Umschalt+Tab | durch Felder, Knöpfe und Schalter (Fokus farbig markiert) |
 | Überall | Leertaste, Enter | Knopf drücken; Leertaste schaltet Schalter um |
 | Überall | Pfeiltasten | in Listen, Reglern, Reitern, Tabellen und in der Zeile „Inhalt“ (Einzeln, Am Stück, Sprechen) wählen |

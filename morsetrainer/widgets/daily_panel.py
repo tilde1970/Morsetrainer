@@ -113,6 +113,9 @@ def block_lines(summary: dict) -> list:
     if summary.get("due_practiced"):
         lines.append(tr("{n} fällige Zeichen geübt, {sure} davon heute sicher").format(
             n=summary["due_practiced"], sure=summary["due_sure"]))
+        if summary.get("due_undecided"):
+            lines.append(tr("Bei {n} fehlen noch Versuche für die Lernkartei; sie bleiben fällig.").format(
+                n=summary["due_undecided"]))
     elif summary["kind"] == daily.MAIN:
         lines.append(tr("{mode}: {correct} von {total} Zeichen beim ersten Versuch ({share} %)").format(
             mode=tr(stats.HISTORY_MODES[summary["mode"]]), correct=correct, total=total,
@@ -186,6 +189,25 @@ def band_change_line(change) -> str:
     if daily.BAND_LEVELS.index(after) > daily.BAND_LEVELS.index(before):
         return tr("Zweimal 90 % geschafft – nächster Band-Ausklang: {band}.").format(band=name)
     return tr("Zweimal hintereinander unter 80 % – nächster Band-Ausklang wieder {band}.").format(band=name)
+
+
+def tempo_lines(outlook) -> list:
+    """Tempo für morgen (daily.tempo_outlook) mit dem Grund; bei Stillstand
+    dazu ein Hinweis. Leer ohne Vormerkung."""
+    if not outlook:
+        return []
+    tempo = tempo_text(outlook["tempo"])
+    share = number(outlook["share"])
+    if outlook["change"] > 0:
+        line = tr("Morgen: {tempo} – etwas schneller, weil {share} % beim ersten Versuch richtig waren.")
+    elif outlook["change"] < 0:
+        line = tr("Morgen: {tempo} – etwas langsamer, weil nur {share} % beim ersten Versuch richtig waren.")
+    else:
+        line = tr("Morgen: {tempo} – unverändert ({share} % beim ersten Versuch richtig).")
+    lines = [line.format(tempo=tempo, share=share)]
+    if outlook.get("plateau"):
+        lines.append(tr(PLATEAU_TEXT))
+    return lines
 
 
 def outlook_line(outlook) -> str:
@@ -386,6 +408,8 @@ ENTER_GRACE_S = 0.8
 
 
 # Text des einmaligen Hinweises auf die Betriebszeichen (siehe daily.prosign_hint_due).
+PLATEAU_TEXT = N_("Seit etwa zehn Übungstagen bleibt das Tempo gleich. Das ist normal: Beim Hören kommen "
+                  "Plateaus, dann geht es wieder voran. Oft helfen ein Tag Pause oder Wörter und Rufzeichen statt Gruppen.")
 PROSIGN_HINT_TEXT = N_("Für QSOs fehlen noch die Betriebszeichen AR, KN, SK und BK. Sie kommen in den "
                        "Lektionen 42 bis 45 dazu; du kannst sie jetzt oder später oben bei der Lektion einstellen.")
 
@@ -397,7 +421,7 @@ class EveningSummary:
 
     def __init__(self, root, stars, comparison: dict, outlook=None, offer=None, on_extra=None,
                  completed: bool = True, week_stars: int = None, seals=(), on_close=None, on_prosigns=None,
-                 band=None):
+                 band=None, tempo=None):
         self.on_extra = on_extra
         self.on_prosigns = on_prosigns
         self.on_close = on_close
@@ -428,6 +452,11 @@ class EveningSummary:
         if outlook:
             box = theme.card(frame, tr("Fast geschafft"), padx=0, pady=(8, 0))
             ttk.Label(box, text=outlook_line(outlook)).pack(anchor="w")
+        self.tempo_lines = tempo_lines(tempo)
+        if self.tempo_lines:
+            box = theme.card(frame, tr("Tempo"), padx=0, pady=(8, 0))
+            for line in self.tempo_lines:
+                ttk.Label(box, text=line, wraplength=theme.scaled(460), justify="left").pack(anchor="w")
         self.band_text = band_change_line(band)
         if self.band_text:
             box = theme.card(frame, tr("Bandbedingungen"), padx=0, pady=(8, 0))
@@ -487,6 +516,7 @@ class EveningSummary:
             parts.append(tr("Stand gehalten."))
         if outlook:
             parts.append(outlook_line(outlook))
+        parts.extend(self.tempo_lines)
         if self.band_text:
             parts.append(self.band_text)
         if self.on_prosigns:

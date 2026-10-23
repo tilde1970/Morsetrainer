@@ -29,7 +29,7 @@ right away).
 7. Network: practising as a group
 8. Accessibility
 9. Keyboard shortcuts
-10. Installing and updating
+10. Installing and updating (including “No sound?”)
 11. Data
 
 ## 1. Getting started
@@ -62,6 +62,14 @@ a time. This is how to begin:
 
 Or just press **▶ Daily practice (10 min, F12)**: it puts together what
 is due every day and switches the tabs by itself (section 4).
+On the very first day in lesson 1 you first hear K and M played before the
+time limit starts. **Do you already know CW?** Then switch on **Returning
+to CW** under “▸ More options”; experienced contesters also set lesson 42
+and their usual speed at the top (section 4).
+
+**Volume:** the Morse tone has a fixed level and is not quiet. Turn the
+system volume down first, then raise it while using “▶ listen”. If there is
+no sound at all, see “No sound?” in section 10.
 
 **Short and daily** beats long and rare: the footer shows today's practice
 time and the daily goal (adjustable under “Settings …”), the week strip
@@ -169,7 +177,8 @@ practice options:
   footer shows how much you have practised today. **Relaxed daily
   practice** takes the time limit out of the warm-up, for everyone who needs
   more than 1.5 seconds per answer; these warm-up blocks do not count for
-  the review box and the "known" points.
+  the review box and the awards that depend on it (Worked All Letters,
+  All digits).
 - **Sprache / Language:** switch the interface to English (takes effect
   after a restart; **Restart now** appears at the bottom of the window for
   that). The voice in the Speak tab stays German.
@@ -508,8 +517,9 @@ many characters. Runs with band conditions do not count here (section 6).
   WPM (at most as fast as it was sent).
 - **Review box** (spaced repetition over days): characters recognised
   reliably and quickly come back after 1, 2, 4 … 32 days, uncertain ones
-  the next day. Decided once a day from 5 attempts, promoted only from
-  random characters. Due characters come up more often with “weak
+  the next day. Decided once a day from 8 attempts; if the share of fluent hits is
+  between 80 and 90 %, the character stays where it is and more attempts
+  decide later. Promoted only from random characters. Due characters come up more often with “weak
   favoured” and can be practised specifically. Below, each box lists the
   characters in it, from “Box 1 · every day” to “Box 6 · every 32 days”;
   F11 reads this out too.
@@ -556,9 +566,15 @@ as they were.
   awards as usual (Headphones Bronze).
 - **Warm-up** with all characters of the lesson; those due today in the
   review box come more often, or, if nothing is due, your most frequent
-  confusions. With many due characters it gets a little longer and the
-  main part correspondingly shorter. The time limit continues where it
-  ended last time and is never longer than 1.5 s here.
+  confusions. With many due characters it gets a little longer (up to
+  4 minutes) and the main part correspondingly shorter: each due character
+  needs eight attempts for the review box to decide it today; the
+  in-between card says for how many attempts are still missing (they stay
+  due). The time limit continues where it ended last time and is never
+  longer than 1.5 s here. If you need longer, switch on **Relaxed daily
+  practice** under “Settings”: the warm-up then runs without a time limit
+  and does not count for the review box. If many characters were too slow,
+  the in-between card points this out.
 - **Speed:** the main part keeps a fixed speed (characters at least
   18 WPM). It changes once a day, effective from the next: below 75 % on
   the first try (at least 100 characters) 1 WPM slower. After Koch, 90 % or
@@ -566,6 +582,11 @@ as they were.
   (effective speed 1 WPM faster): on a day without a lesson step, not in
   the first days of a new lesson and from 95 % on the first try; the
   characters stay as fast as they are.
+- **Do you already know CW?** Switch on **Returning to CW** under “▸ More
+  options”: the daily practice then moves up faster. As a contester, set
+  lesson 42 and your speed at the top before the first time; the daily
+  practice takes both over on that first day. Practise the prosigns AR, KN,
+  SK and BK once in lessons 42–45; only then do QSOs for head copy come up.
 - **Lesson:** if the main part meets the Koch criterion (50 characters,
   90 % on the first try), the next lesson applies from the next day – no
   question asked. The daily practice keeps its own lesson for this (the
@@ -585,11 +606,16 @@ as they were.
   bar or the button in the tab. Esc and F5 only end it on the second
   press within three seconds; the first shows (and announces) “Press Esc
   again to end the daily practice.” So a slip, such as Esc meant for a
-  secondary window, doesn't cost you the day.
+  secondary window, doesn't cost you the day. Ctrl+Q (Mac: Cmd+Q) and
+  the window's close button likewise ask for a second press during the
+  daily practice: “Press Ctrl+Q again to end the daily practice and quit
+  the program.”
 - **Evening summary:** stars, what improved compared with the week before
   (reaction time per character, group score; only with enough data and at
   the same speed, never “worse”), how much is missing for the next lesson,
-  where you stand on the weekly goal and, if the main part went well, once
+  tomorrow's speed with the reason (a little faster, slower or unchanged),
+  once after about ten practice days at the same speed a note that
+  plateaus are normal in listening, where you stand on the weekly goal and, if the main part went well, once
   a day **5 more min** with something different: your confusions within
   the lesson, a RufZ run or words. Once the daily practice has passed
   lesson 41, it points out the prosigns (lessons 42–45) once; **Set lesson
@@ -1131,7 +1157,7 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 | Everywhere | Ctrl+Plus, Ctrl+Minus, Ctrl+0 | font larger, smaller, normal |
 | Everywhere | Ctrl+B | open band conditions (inside: Ctrl+P listens) |
 | Everywhere | Ctrl+Comma (Ctrl+,) | settings |
-| Everywhere (Mac: Cmd+Q) | Ctrl+Q | quit the program |
+| Everywhere (Mac: Cmd+Q) | Ctrl+Q | quit the program (twice during daily practice) |
 | Everywhere | Tab, Shift+Tab | through fields, buttons and check boxes (focus highlighted in colour) |
 | Everywhere | Space, Enter | press a button; space toggles check boxes |
 | Everywhere | arrow keys | choose in lists, sliders, tabs, tables and the “Content” row (One by one, Non-stop, Speak) |

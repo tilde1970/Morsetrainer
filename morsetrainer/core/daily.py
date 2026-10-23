@@ -28,7 +28,8 @@ Gespeichert in der Datenbank unter "daily" (bleibt beim Zurücksetzen der
 Gesamtstatistik stehen):
 {"lesson", "lesson_since", "pending_lesson", "pending_since",
  "tempo": {"wpm", "effective"}, "pending_tempo", "pending_tempo_since",
- "tempo_best" (höchstes effektives Tagestempo), "icr_limit" (Zeitlimit
+ "tempo_best" (höchstes effektives Tagestempo), "plateau_hint" (Tag des
+ letzten Stillstand-Hinweises), "icr_limit" (Zeitlimit
  am Ende des letzten Aufwärmens),
  "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress", "lesson",
  "tempo" (effektives Tagestempo im Hauptteil, für die Lebenslinie)}}}"""
@@ -56,12 +57,12 @@ CALLS_FROM_LESSON = 30   # Rufzeichen ab dieser Lektion; davor zu wenige aus gel
 PHRASES_FROM_LESSON = 35
 
 # Aufwärmen: fällige Zeichen brauchen je MIN_ATTEMPTS Versuche für die
-# Tagesentscheidung der Lernkartei; ab MANY_DUE wird der Block länger.
+# Tagesentscheidung der Lernkartei; bei vielen fälligen wird der Block länger.
 WARMUP_MINUTES = 3
 WARMUP_MAX_MINUTES = 4
 WARMUP_POST_MINUTES = 2
-MANY_DUE = 8
-WARMUP_PER_EXTRA_DUE = 0.25
+ATTEMPT_SECONDS = 2.5   # ein Versuch im Einzelmodus: Ton, Antwort, Rückmeldung
+WARMUP_SLACK = 1.2      # die Auswahl ist zufällig: etwas mehr als der Durchschnitt
 MAIN_MIN_MINUTES = 4
 OUTRO_MINUTES = 2
 OUTRO_POST_MINUTES = 4
@@ -178,12 +179,13 @@ def lesson_charset(lesson: int, learned: str = "") -> str:
 
 
 def warmup_minutes(lesson: int, due_count: int) -> float:
-    """Länge des Aufwärmens: länger bei vielen fälligen Zeichen (bis
-    WARMUP_MAX_MINUTES), nach Koch fest WARMUP_POST_MINUTES."""
+    """Länge des Aufwärmens: länger, wenn die fälligen Zeichen sonst nicht auf
+    MIN_ATTEMPTS Versuche kämen (bis WARMUP_MAX_MINUTES), nach Koch fest
+    WARMUP_POST_MINUTES."""
     if stage(lesson) == POST:
         return WARMUP_POST_MINUTES
-    extra = max(due_count - MANY_DUE + 1, 0) * WARMUP_PER_EXTRA_DUE
-    return min(WARMUP_MINUTES + extra, WARMUP_MAX_MINUTES)
+    needed = due_count * review.MIN_ATTEMPTS * ATTEMPT_SECONDS * WARMUP_SLACK / 60
+    return min(max(WARMUP_MINUTES, needed), WARMUP_MAX_MINUTES)
 
 
 def practice_days(state: dict, today: date) -> int:
@@ -370,6 +372,19 @@ def passes_lesson(result: dict, char_wpm: int) -> bool:
     Versuch, Zeichen nicht so langsam, dass man mitzählen kann."""
     correct, total = _first_try(result)
     return char_wpm >= koch.SLOW_CHAR_WPM and koch.passed(correct, total)
+
+
+# Ab so vielen verpassten Zeichen und diesem Anteil am Aufwärmen weist die
+# Zwischenkarte auf die entspannte Tagesübung hin.
+TIGHT_MIN_MISSES = 5
+TIGHT_SHARE = 0.4
+
+
+def too_tight(result: dict) -> bool:
+    """War das Zeitlimit des Aufwärmens für diese Person zu knapp (viele Zeichen
+    ohne rechtzeitige Antwort)?"""
+    misses = result.get("timeouts", 0)
+    return misses >= TIGHT_MIN_MISSES and misses / max(result.get("total", 0), misses) > TIGHT_SHARE
 
 
 def warmup_limit(state: dict) -> float:
@@ -689,7 +704,8 @@ def block_summary(block: Block, result: dict, due: str = "") -> dict:
         practiced = [ch for ch in due if ch in chars]
         sure = [ch for ch in practiced
                 if chars[ch][0] >= review.MIN_ATTEMPTS and chars[ch][1] / chars[ch][0] >= review.SURE_SHARE]
-        summary.update(due_practiced=len(practiced), due_sure=len(sure))
+        undecided = [ch for ch in due if chars.get(ch, (0, 0))[0] < review.MIN_ATTEMPTS]
+        summary.update(due_practiced=len(practiced), due_sure=len(sure), due_undecided=len(undecided))
     return summary
 
 
@@ -738,6 +754,47 @@ def prosign_hint_due(state: dict, header_lesson: int, learned: str) -> bool:
     passed = current_lesson(state, 1) >= POST_KOCH or (isinstance(pending, int) and pending >= POST_KOCH)
     started = header_lesson > koch.FINAL_LESSON or any(ch in learned for ch in koch.PROSIGN_ORDER)
     return passed and not started
+
+
+# Stillstand: so viele Übungstage mit demselben Tagestempo, dann einmal ein
+# Hinweis (frühestens nach PLATEAU_REPEAT_DAYS wieder). Gespeichert wird der Tag.
+PLATEAU_DAYS = 10
+PLATEAU_REPEAT_DAYS = 28
+PLATEAU_HINT = "plateau_hint"
+
+
+def tempo_outlook(state: dict, today: date):
+    """Tempo für morgen nach dem heutigen Hauptteil: {"tempo", "change" (-1, 0, 1
+    für langsamer, gleich, schneller), "share" (Prozent beim ersten Versuch),
+    "plateau"} oder None, wenn heute keins vorgemerkt wurde."""
+    if state.get("pending_tempo_since") != today.isoformat() or not isinstance(state.get("pending_tempo"), dict):
+        return None
+    main = _main_result(state.get("days", {}).get(today.isoformat(), {}))
+    current = state.get("tempo")
+    if main is None or not isinstance(current, dict):
+        return None
+    correct, total = _first_try(main)
+    if not total:
+        return None
+    following = state["pending_tempo"]
+    change = (following["effective"] > current["effective"]) - (following["effective"] < current["effective"])
+    return {"tempo": following, "change": change, "share": round(correct / total * 100),
+            "plateau": plateau_due(state, today)}
+
+
+def plateau_due(state: dict, today: date) -> bool:
+    """True, wenn die letzten PLATEAU_DAYS Übungstage dasselbe Tagestempo hatten
+    und der Hinweis in den letzten PLATEAU_REPEAT_DAYS Tagen nicht kam."""
+    last = state.get(PLATEAU_HINT)
+    try:
+        if last and (today - date.fromisoformat(last)).days < PLATEAU_REPEAT_DAYS:
+            return False
+    except (TypeError, ValueError):
+        pass
+    tempos = [entry.get("tempo") for _, entry in sorted(state.get("days", {}).items())
+              if isinstance(entry, dict) and entry.get("tempo")]
+    recent = tempos[-PLATEAU_DAYS:]
+    return len(recent) >= PLATEAU_DAYS and len(set(recent)) == 1
 
 
 def extra_offer(state: dict, today: date, lesson: int, confusion_chars: str):

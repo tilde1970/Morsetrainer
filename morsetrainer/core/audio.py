@@ -64,6 +64,9 @@ def _error_code(exc: Exception):
     return int(found.group(1)) if found else None
 
 
+NO_SOUND_HELP = N_("Mehr dazu in der Hilfe (F1) unter „Kein Ton?“.")
+
+
 def describe(exc: Exception) -> str:
     """Lesbare Meldung für einen Fehler der Tonausgabe (`exc` aus ERRORS):
     bei bekannten Fehlern mit dem nächsten Schritt, der rohe Text dahinter
@@ -72,8 +75,10 @@ def describe(exc: Exception) -> str:
     # PortAudio hängt den Code manchmal selbst zweimal an.
     error = re.sub(r"(\[PaErrorCode -?\d+\])(?:\s*\1)+", r"\1", str(exc))
     if hint:
-        return tr("Keine Tonausgabe möglich. {hint} ({error})").format(hint=tr(hint), error=error)
-    return tr("Keine Tonausgabe möglich: {error}").format(error=error)
+        message = tr("Keine Tonausgabe möglich. {hint} ({error})").format(hint=tr(hint), error=error)
+    else:
+        message = tr("Keine Tonausgabe möglich: {error}").format(error=error)
+    return f"{message} {tr(NO_SOUND_HELP)}"
 
 
 def unexpected(exc: Exception) -> str:

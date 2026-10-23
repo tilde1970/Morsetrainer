@@ -27,6 +27,9 @@ EN.update({
     "Wiedereinsteiger: Tagesübung steigt schneller auf (drei Lektionen bei 95 %)":
         "Returning to CW: the daily practice moves up faster (three lessons at 95 %)",
     "Wiedereinsteiger": "returning",
+    "Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“ den Haken "
+    "„Wiedereinsteiger“ setzen.":
+        "New here? Start with ▶ Daily practice. Knew CW before? Tick “Returning to CW” under “▸ More options”.",
     "Wiedereinsteiger: {known} von {total} Zeichen wiedererlangt": "Returning: {known} of {total} characters regained",
     "Locator": "Locator",
     "Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen":
@@ -149,8 +152,10 @@ EN.update({
     "Busted. Richtig: {call}.": "Busted. Correct: {call}.",
     "Austausch falsch. Richtig: {exchange}.": "Wrong exchange. Correct: {exchange}.",
     "Zu langsam. Es war {char}.": "Too slow. It was {char}.",
-    "Angehalten: {n} Zeichen ohne Eingabe. Diese zählen nicht. Mit F5 geht es weiter.":
-        "Stopped: {n} characters without input. They do not count. Press F5 to continue.",
+    "Angehalten: {n} Zeichen ohne Eingabe. Diese zählen nicht. Hörst du den Ton? Sonst Lautstärke und "
+    "Ausgabegerät prüfen (Hilfe F1, „Kein Ton?“). Mit F5 geht es weiter.":
+        "Stopped: {n} characters without input. They do not count. Can you hear the tone? If not, check the "
+        "volume and output device (Help F1, “No sound?”). Press F5 to continue.",
     "Erst nach Wiederholung: {char}.": "Only after repeating: {char}.",
     "Falsch. {char}, nicht {typed}.": "Wrong. {char}, not {typed}.",
     "Lösung: {text}. Gewusst? J oder N.": "Solution: {text}. Did you know it? J or N.",
@@ -355,11 +360,11 @@ EN.update({
     "Sicher und flüssig erkannte Zeichen kommen nach 1, 2, 4, 8, 16 und 32 Tagen wieder, "
     "unsichere schon am nächsten Tag. Mit „schwache bevorzugt“ kommen fällige Zeichen öfter "
     "dran. Hochgestuft wird nur aus Zufallszeichen (Zeichen und Gruppen im Reiter Einzeln, Am Stück), "
-    "entschieden einmal am Tag ab 5 Versuchen.":
+    "entschieden einmal am Tag ab 8 Versuchen; zwischen 80 und 90 % bleibt ein Zeichen, wo es ist.":
         "Characters recognised reliably and quickly come back after 1, 2, 4, 8, 16 and 32 days, "
         "uncertain ones the next day. With “weak favoured” due characters come up more often. "
         "Only random characters promote a character (characters and groups in the One by one tab, Non-stop); "
-        "decided once a day from 5 attempts.",
+        "decided once a day from 8 attempts; between 80 and 90 % a character stays where it is.",
     "Fällige gezielt üben": "Practise due characters",
     "Häufigste Verwechslungen (letzte {days} Tage)": "Most frequent confusions (last {days} days)",
     "Gesendet → getippt. Paare, die in beide Richtungen auftauchen (↔), sind "
@@ -409,12 +414,14 @@ EN.update({
     "mitschreiben: Reiter „Am Stück“.":
         "Listen to several characters in a row, then type them. To copy continuously without pauses: "
         "“Non-stop” tab.",
-    "Schon während des Tons tippen; mit so vielen Zeichen wie gesendet ist die Antwort fertig.":
-        "Type while the tone plays; with as many characters as were sent, the answer is complete.",
+    "Schon während des Tons tippen; mit so vielen Zeichen wie gesendet ist die Antwort fertig. "
+    "Die Rücktaste korrigiert, solange noch ein Zeichen fehlt.":
+        "Type while the tone plays; with as many characters as were sent, the answer is complete. "
+        "Backspace corrects as long as a character is still missing.",
     "Erst zu Ende hören, danach tippen; mit so vielen Zeichen wie gesendet oder mit Enter ist die "
-    "Antwort fertig.":
+    "Antwort fertig. Die Rücktaste korrigiert, solange noch ein Zeichen fehlt.":
         "Listen to the end first, then type; with as many characters as were sent, or with Enter, the answer "
-        "is complete.",
+        "is complete. Backspace corrects as long as a character is still missing.",
     "Nichts tippen, im Kopf mitlesen, dann mit Enter auflösen und selbst bewerten (J / N).":
         "Type nothing, read along in your head, then reveal with Enter and rate yourself (J / N).",
     "Sprechen": "Speak",
@@ -425,6 +432,7 @@ EN.update({
 # --- core/ ---
 EN.update({
     "Keine Tonausgabe möglich: {error}": "No audio output possible: {error}",
+    "Mehr dazu in der Hilfe (F1) unter „Kein Ton?“.": "More in Help (F1) under “No sound?”.",
     "Durchgang abgebrochen, unerwarteter Fehler: {error}": "Run stopped, unexpected error: {error}",
     "<{prosign}> · Taste {key}": "<{prosign}> · key {key}",
     "MP3-Export nicht verfügbar: lameenc ist nicht installiert (pip install lameenc).":
@@ -503,6 +511,8 @@ EN.update({
         "{daily} starts the daily practice.",
     "Tagesübung, {block}: {mode}, {minutes} Minuten.": "Daily practice, {block}: {mode}, {minutes} minutes.",
     "Noch einmal {key} beendet die Tagesübung.": "Press {key} again to end the daily practice.",
+    "Noch einmal {key} beendet die Tagesübung und das Programm.":
+        "Press {key} again to end the daily practice and quit the program.",
     "{star} Stern aus der Tagesübung, ✓ frei geübt, – nicht geübt, · noch nicht dran":
         "{star} star from the daily practice, ✓ practised freely, – not practised, · still to come",
     "Mo": "Mon", "Di": "Tue", "Mi": "Wed", "Do": "Thu", "Fr": "Fri", "Sa": "Sat", "So": "Sun",
@@ -567,6 +577,21 @@ EN.update({
     "Fast geschafft": "Almost there",
     "Fertig": "Done",
     "Neues Zeichen: {char}": "New character: {char}",
+    "Neue Zeichen: {char}": "New characters: {char}",
+    "Bei {n} fehlen noch Versuche für die Lernkartei; sie bleiben fällig.":
+        "{n} still need more attempts for the review box; they stay due.",
+    "Zu knapp? Unter Einstellungen ({key}) gibt es die „Entspannte Tagesübung“: das Aufwärmen ohne Zeitlimit.":
+        "Too tight? Under Settings ({key}) you will find \"Relaxed daily practice\": the warm-up without a time limit.",
+    "Morgen: {tempo} – etwas schneller, weil {share} % beim ersten Versuch richtig waren.":
+        "Tomorrow: {tempo} – a little faster, because {share} % were right on the first try.",
+    "Morgen: {tempo} – etwas langsamer, weil nur {share} % beim ersten Versuch richtig waren.":
+        "Tomorrow: {tempo} – a little slower, because only {share} % were right on the first try.",
+    "Morgen: {tempo} – unverändert ({share} % beim ersten Versuch richtig).":
+        "Tomorrow: {tempo} – unchanged ({share} % right on the first try).",
+    "Seit etwa zehn Übungstagen bleibt das Tempo gleich. Das ist normal: Beim Hören kommen Plateaus, dann geht es "
+    "wieder voran. Oft helfen ein Tag Pause oder Wörter und Rufzeichen statt Gruppen.":
+        "The tempo has stayed the same for about ten practice days. That is normal: listening skills come in "
+        "plateaus, then progress resumes. A day off, or words and call signs instead of groups, often helps.",
     "Neu: {stars}": "New: {stars}",
     "{block} geschafft": "{block} done",
     "Zugabe geschafft.": "Encore done.",
@@ -583,10 +608,10 @@ EN.update({
         "Enter: cancel. Escape: cancel. Tab goes to “{action}”.",
     "Statistik löschen": "Delete statistics",
     "Entspannte Tagesübung (kein Zeitlimit im Aufwärmen)": "Relaxed daily practice (no time limit in the warm-up)",
-    "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Kann-Punkte, "
-    "damit deren Zahlen ehrlich bleiben.":
+    "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Diplome, die an ihr hängen "
+    "(Worked All Letters, Alle Ziffern), damit deren Zahlen ehrlich bleiben.":
         "The warm-up runs without a time limit. These blocks do not count for the review box and the "
-        "\"known\" points, so their numbers stay honest.",
+        "awards that depend on it (Worked All Letters, All digits), so their numbers stay honest.",
     "{name} auf {value} gesetzt.": "{name} set to {value}.",
     "Effektives Tempo": "Effective speed",
     "Lektion {lesson} gesetzt, {count} Zeichen.": "Lesson {lesson} set, {count} characters.",

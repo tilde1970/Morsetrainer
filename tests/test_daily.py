@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
-from morsetrainer.core import daily, db, koch, stats
+from morsetrainer.core import daily, db, koch, review, stats
 
 TODAY = date(2026, 10, 5)
 
@@ -47,6 +47,27 @@ class StageAndPlanTest(unittest.TestCase):
         self.assertGreater(daily.warmup_minutes(15, 8), daily.WARMUP_MINUTES)
         self.assertEqual(daily.warmup_minutes(15, 30), daily.WARMUP_MAX_MINUTES)
         self.assertEqual(daily.warmup_minutes(daily.POST_KOCH, 30), daily.WARMUP_POST_MINUTES)
+
+    def test_warmup_gives_each_due_char_its_attempts(self):
+        """Wie viele Versuche in der Zeit Platz haben, hängt von MIN_ATTEMPTS ab."""
+        for due in (4, 9, 11):
+            minutes = daily.warmup_minutes(15, due)
+            attempts = minutes * 60 / daily.ATTEMPT_SECONDS
+            self.assertGreaterEqual(attempts, due * review.MIN_ATTEMPTS)
+        self.assertLessEqual(daily.warmup_minutes(15, 40), daily.WARMUP_MAX_MINUTES)
+        self.assertAlmostEqual(sum(b.minutes for b in daily.plan(15, 40, 0)), daily.TOTAL_MINUTES)
+
+    def test_block_summary_counts_undecided_due_chars(self):
+        block = daily.Block(daily.WARMUP, "single", 3)
+        result = {"correct": 20, "total": 24, "chars": {"R": [8, 8], "S": [8, 6], "K": [3, 3]}}
+        summary = daily.block_summary(block, result, "RSKM")
+        self.assertEqual(summary["due_undecided"], 2)  # K (3 Versuche) und M (nicht geübt)
+
+    def test_too_tight_needs_many_misses_and_share(self):
+        self.assertFalse(daily.too_tight({"timeouts": 4, "total": 8}))
+        self.assertFalse(daily.too_tight({"timeouts": 5, "total": 40}))
+        self.assertTrue(daily.too_tight({"timeouts": 12, "total": 24}))
+        self.assertFalse(daily.too_tight({}))
 
     def test_nothing_due_uses_confusions(self):
         self.assertEqual(daily.plan(15, 0, 0)[0].params["focus"], "confusions")
@@ -384,6 +405,30 @@ class StarsTest(unittest.TestCase):
         daily.finish_block(self.state, TODAY, main_block(), main_result(50, 100))  # zweite Tagesübung
         self.assertEqual(self.state["pending_tempo"]["effective"], 13)
         self.assertEqual(self.state["tempo"]["effective"], 12)
+
+    def test_tempo_outlook_names_the_reason(self):
+        self.day(0, 95)
+        outlook = daily.tempo_outlook(self.state, TODAY)
+        self.assertEqual((outlook["change"], outlook["share"], outlook["tempo"]["effective"]), (1, 95, 13))
+        self.day(1, 80)
+        self.assertEqual(daily.tempo_outlook(self.state, TODAY + timedelta(days=1))["change"], 0)
+        self.day(2, 60)
+        self.assertEqual(daily.tempo_outlook(self.state, TODAY + timedelta(days=2))["change"], -1)
+        self.assertIsNone(daily.tempo_outlook(self.state, TODAY + timedelta(days=5)))  # nichts vorgemerkt
+
+    def test_plateau_after_ten_days_at_same_tempo_once_in_a_while(self):
+        for offset in range(daily.PLATEAU_DAYS):
+            self.day(offset, 80)  # Tempo bleibt
+        last = TODAY + timedelta(days=daily.PLATEAU_DAYS - 1)
+        self.assertTrue(daily.tempo_outlook(self.state, last)["plateau"])
+        self.state[daily.PLATEAU_HINT] = last.isoformat()
+        self.assertFalse(daily.plateau_due(self.state, last + timedelta(days=1)))
+        self.assertTrue(daily.plateau_due(self.state, last + timedelta(days=daily.PLATEAU_REPEAT_DAYS)))
+
+    def test_no_plateau_when_tempo_moved(self):
+        for offset in range(daily.PLATEAU_DAYS):
+            self.day(offset, 80 if offset != 4 else 60)
+        self.assertFalse(daily.plateau_due(self.state, TODAY + timedelta(days=daily.PLATEAU_DAYS)))
 
     def test_no_faster_tempo_while_lessons_come(self):
         self.state["lesson"] = 12

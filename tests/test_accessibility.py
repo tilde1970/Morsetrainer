@@ -1191,8 +1191,8 @@ class KeyboardTest(AppTestCase):
                 mock.patch.object(self.app, "read_status", lambda: calls.append("status")), \
                 mock.patch.object(self.app, "_start_daily", lambda: calls.append("daily")):
             self.app._bind_mac_keys()
-        self.root.tk.call("::tk::mac::Quit")
-        self.root.tk.call("::tk::mac::ShowPreferences")
+            self.root.tk.call("::tk::mac::Quit")
+            self.root.tk.call("::tk::mac::ShowPreferences")
         self.assertEqual(calls, ["close", "settings"])
         for letter in "AWT":
             self.assertTrue(self.root.bind_all(f"<Command-Shift-{letter}>"), letter)
@@ -2362,7 +2362,7 @@ class SmallAnnounceTest(AnnouncerCase):
         self.app.charset_var.set(koch.lesson_charset(12))
         self.app.announcer.var.set(True)
         with mock.patch.object(daily, "is_new_lesson", lambda state, today: True), \
-                mock.patch.object(self.app, "_play_new_char", lambda: None):
+                mock.patch.object(self.app, "_play_new_char", lambda *_: None):
             self.app.daily.start()
         char = koch.newest_char(daily.load()["lesson"])
         self.assertIn(f"Neues Zeichen: {self.announcer.spell(char)}.", self.app.daily.card_text)
@@ -2694,7 +2694,7 @@ class DailyAnnounceTest(AnnouncerCase):
         from morsetrainer.core import daily
         played = []
         with mock.patch.object(daily, "is_new_lesson", lambda state, today: True), \
-                mock.patch.object(self.app, "_play_new_char", lambda: played.append(len(self.said))):
+                mock.patch.object(self.app, "_play_new_char", lambda *_: played.append(len(self.said))):
             self.runner.start()
             self.assertTrue(self.pump_until(lambda: played))
         self.assertIn("Neues Zeichen", " ".join(self.said[:played[0]]))
@@ -2707,7 +2707,7 @@ class DailyAnnounceTest(AnnouncerCase):
         from morsetrainer.core import daily
         played = []
         with mock.patch.object(daily, "is_new_lesson", lambda state, today: True), \
-                mock.patch.object(self.app, "_play_new_char", lambda: played.append(True)):
+                mock.patch.object(self.app, "_play_new_char", lambda *_: played.append(True)):
             self.runner.start()
             self.assertTrue(self.runner.card_open)
             self.runner.card_shown -= daily_runner.ENTER_GRACE_S

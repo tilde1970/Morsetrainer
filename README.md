@@ -83,9 +83,14 @@ der Zeile in `SHA256SUMS.txt` vergleichen.
 2. Im Reiter **Einzeln** unter **Zeichen** die Zeichen kennenlernen, dann
    unter **Gruppen** mitschreiben, während der Ton läuft.
 3. Oder einfach **▶ Tagesübung (10 Min)** drücken (F12) – sie schaltet die
-   Reiter selbst um.
+   Reiter selbst um. Wer CW früher konnte, schaltet unter „▸ Weitere
+   Optionen“ **Wiedereinsteiger** ein.
 4. Mit Strg+Komma (oder dem Knopf „Einstellungen …“ oben rechts)
    Rufzeichen und Name eintragen; sie stehen auf den Diplomen.
+
+Die Lautstärke am System zuerst niedrig stellen, der Morseton ist nicht
+leise. Kommt kein Ton, hilft der Abschnitt
+[Kein Ton?](docs/Anleitung.md#kein-ton) (Hilfe F1, Abschnitt 10).
 
 Alles Weitere steht in der [Anleitung](docs/Anleitung.md). Im Programm
 öffnet sie F1 oder der Knopf **Hilfe (F1)** unten rechts, gleich beim

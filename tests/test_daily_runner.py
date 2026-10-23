@@ -419,6 +419,62 @@ class DailyRunnerTest(AppTestCase):
         self.assertIs(self.runner.mode, self.mode("Einzelzeichen"))
         self.runner.abort(quiet=True)
 
+    def test_first_day_in_lesson_1_plays_k_and_m_first(self):
+        daily.save({"days": {}})
+        self.app.lesson_var.set(1)
+        self.app.charset_var.set(koch.lesson_charset(1))
+        with mock.patch.object(self.app, "_play_new_char") as play:
+            self.runner.start()
+        self.assertTrue(self.runner.card_open)
+        play.assert_called_once_with("KM")
+        self.assertIn("Neue Zeichen: K und M", str(self.app.daily_bar.card.cget("text")))
+        self.runner.abort(quiet=True)
+
+    def test_later_days_in_lesson_1_start_directly(self):
+        daily.save({"lesson": 1, "days": {"2020-01-01": {"stars": [], "minutes": 5.0, "blocks": [{"kind": "main"}]}}})
+        self.app.lesson_var.set(1)
+        self.app.charset_var.set(koch.lesson_charset(1))
+        self.runner.start()
+        self.assertFalse(self.runner.card_open)
+        self.runner.abort(quiet=True)
+
+    def test_idle_bar_points_new_users_to_daily_practice_and_refresher(self):
+        daily.save({"days": {}})
+        self.runner.refresh_idle()
+        self.assertIn("Wiedereinsteiger", self.app.daily_bar.note_var.get())
+        daily.save({"days": {"2020-01-01": {"stars": [], "minutes": 5.0}}})
+        self.runner.refresh_idle()
+        self.assertNotIn("Neu hier", self.app.daily_bar.note_var.get())
+
+    def test_card_points_to_relaxed_practice_when_limit_was_too_tight(self):
+        self.runner.start()
+        self.runner.card_open = False
+        block = self.runner.blocks[0]
+        result = {"correct": 10, "total": 24, "timeouts": 12, "minutes": block.minutes}
+        with mock.patch.object(self.runner, "_show_card") as card:
+            self.runner._show_block_card(block, result, [])
+        self.assertTrue(any("Entspannte Tagesübung" in line for line in card.call_args[0][1]))
+        self.app.daily_relaxed_var.set(True)
+        with mock.patch.object(self.runner, "_show_card") as card:
+            self.runner._show_block_card(block, result, [])
+        self.assertFalse(any("Entspannte Tagesübung" in line for line in card.call_args[0][1]))
+        self.runner.abort(quiet=True)
+
+    def test_quit_asks_twice_during_daily_practice(self):
+        self.runner.start()
+        with mock.patch.object(self.app, "on_close") as close:
+            self.app._request_close("Strg+Q")
+            close.assert_not_called()
+            self.assertIn("das Programm", self.app.daily_bar.notice_var.get())
+            self.app._request_close("Strg+Q")
+            close.assert_called_once()
+        self.runner.abort(quiet=True)
+
+    def test_quit_is_immediate_without_daily_practice(self):
+        with mock.patch.object(self.app, "on_close") as close:
+            self.app._request_close("Strg+Q")
+        close.assert_called_once()
+
     def test_warmup_limit_continues_from_last_time(self):
         daily.save({"lesson": 12, "days": {}, "icr_limit": 0.8})
         self.runner.start()

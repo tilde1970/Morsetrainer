@@ -145,6 +145,7 @@ class SingleModeFrame(DailyModeMixin):
         self.timeout_token = 0      # macht einen geplanten Timeout ungültig
         self.session_no = 0         # zählt die Durchgänge: eine späte Ansage gehört nicht in den nächsten
         self.pending_misses = []    # verpasste Zeichen, erst mit der nächsten Antwort gewertet
+        self.timeouts = 0           # Zeichen ohne rechtzeitige Antwort im Durchgang
         self.first_hearing = True   # Zeichen zum ersten Mal gehört (nicht wiederholt)
         self.charset_var = charset_var
         self.wpm_var = wpm_var
@@ -282,6 +283,7 @@ class SingleModeFrame(DailyModeMixin):
         self.running = True
         self.session_no += 1
         self.pending_misses = []
+        self.timeouts = 0
         self.retries = RetryQueue()
         self.correcting = False
         self.icr_whole_session = self.icr_var.get()
@@ -324,7 +326,7 @@ class SingleModeFrame(DailyModeMixin):
         if self.icr_whole_session and self.limit <= GROUPS_HINT_MAX_LIMIT:
             self.groups_result = (self.charset, summary["correct"], summary["total"])
         path = self.session_stats.finalize()
-        self._remember_result(self.session_stats, summary)
+        self._remember_result(self.session_stats, summary, timeouts=self.timeouts)
         self.stats_panel.show_saved(path, self.session_stats.log_error)
         self.session_stats = None
 
@@ -527,11 +529,13 @@ class SingleModeFrame(DailyModeMixin):
         # und Lernkartei nicht mit Fehlern füllen.
         self.pending_misses.append(
             (self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)))
+        self.timeouts += 1
         if len(self.pending_misses) >= MISSES_BEFORE_PAUSE:
             self.pending_misses = []
             self.stop()
             announcer.problem(self.status_var, tr(
-                "Angehalten: {n} Zeichen ohne Eingabe. Diese zählen nicht. Mit F5 geht es weiter.").format(
+                "Angehalten: {n} Zeichen ohne Eingabe. Diese zählen nicht. Hörst du den Ton? Sonst Lautstärke und "
+                "Ausgabegerät prüfen (Hilfe F1, „Kein Ton?“). Mit F5 geht es weiter.").format(
                 n=MISSES_BEFORE_PAUSE))
             return
         if self.first_hearing:

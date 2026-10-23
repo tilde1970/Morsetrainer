@@ -82,9 +82,14 @@ PowerShell and compare with the line in `SHA256SUMS.txt`.
 2. Get to know the characters in the **One by one** tab under
    **Characters**, then copy under **Groups** while the audio plays.
 3. Or simply press **▶ Daily practice (10 min)** (F12) – it switches the
-   tabs by itself.
+   tabs by itself. If you knew CW before, switch on **Returning to CW** under
+   “▸ More options”.
 4. Press Ctrl+Comma (or the “Settings …” button at the top right) and
    enter your callsign and name; they appear on the awards.
+
+Turn the system volume down first; the Morse tone is not quiet. If there
+is no sound, see [No sound?](docs/Anleitung.en.md#no-sound) (Help F1,
+section 10).
 
 Everything else is in the [manual](docs/Anleitung.en.md). In the program,
 F1 or the **Help (F1)** button at the bottom right opens it, right at the
