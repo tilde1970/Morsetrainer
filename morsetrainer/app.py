@@ -1875,9 +1875,13 @@ class MorseTrainerApp:
         sections = ((tr("Woche"), cards[1]), (tr("Diplome"), cards[2]), (tr("Lebenslinie"), cards[3]),
                     (tr("Lernkartei"), cards[4]), (tr("Verwechslungen"), cards[5]), (tr("Fortschritt"), cards[6]))
         ttk.Label(jump_bar, text=tr("Springe zu:")).grid(row=0, column=0, sticky="w", padx=(0, 6))
+        for column in (1, 2, 3):
+            jump_bar.columnconfigure(column, uniform="jump", weight=1)  # alle Knöpfe gleich breit
         for index, (name, card) in enumerate(sections):
             ttk.Button(jump_bar, text=name, command=lambda card=card: scroller.show_top(card)).grid(
-                row=index // 3, column=index % 3 + 1, sticky="w", padx=(0, 4), pady=1)
+                row=index // 3, column=index % 3 + 1, sticky="ew", padx=(0, 4), pady=1)
+            ttk.Button(card, text=tr("▲ Nach oben"), command=lambda: scroller.show_top(jump_bar)).pack(
+                anchor="e", pady=(4, 0))
 
     # --- Rufzeichen und Name ---------------------------------------------------------
     def _station_name(self) -> str:

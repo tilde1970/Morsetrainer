@@ -711,6 +711,7 @@ EN.update({
     "{name} wurde nicht gefunden.": "{name} was not found.",
     "Fortschritt": "Progress",
     "Springe zu:": "Jump to:",
+    "▲ Nach oben": "▲ Back to top",
     "Woche": "Week",
     "Lernkartei": "Review box",
     "Verwechslungen": "Confusions",

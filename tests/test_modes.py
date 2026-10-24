@@ -1734,7 +1734,14 @@ class DecimalTest(AppTestCase):
         buttons = {w.cget("text"): w for w in walk(self.app.root)
                    if w.winfo_class() == "TButton" and w.cget("text") in names}
         self.assertEqual(sorted(buttons), sorted(names))
-        for button in buttons.values():
+        self.app.notebook.select(self.app.notebook.tabs()[-1])  # Reiter Statistik
+        self.app.root.update()
+        widths = [button.winfo_width() for button in buttons.values()]
+        self.assertLessEqual(max(widths) - min(widths), 1)  # gleich breit (ein Pixel Rundung)
+        self.assertGreater(min(widths), 50)
+        up = [w for w in walk(self.app.root) if w.winfo_class() == "TButton" and w.cget("text") == "▲ Nach oben"]
+        self.assertEqual(len(up), len(names))  # je Abschnitt ein Rücksprung
+        for button in list(buttons.values()) + up:
             button.invoke()  # darf nicht scheitern, auch wenn der Reiter nicht sichtbar ist
         self.app._refresh_all_time(with_awards=False)
         self.assertEqual(int(self.app.all_time_panel.char_tree.cget("height")), theme.MIN_TREE_ROWS)
