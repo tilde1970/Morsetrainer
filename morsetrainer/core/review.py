@@ -60,6 +60,7 @@ focus = set()
 STATE_KEY = "review"
 LOG_KEY = "review_log"
 LOG_MAX = 20000  # älteste Einträge fallen heraus
+MAX_ELAPSED_DAYS = 3650  # längere Pausen (oder kaputte Daten) zählt das Schattenmodell als zehn Jahre
 
 
 # Zahlenfelder eines Eintrags: Fächer und die Zähler des Tages ("day").
@@ -105,11 +106,13 @@ def _is_int(value) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-def _save(data: dict) -> None:
+def _save(data: dict) -> bool:
+    """Speichert die Lernkartei; False, wenn das nicht ging."""
     try:
         db.save_state(STATE_KEY, data)
     except (db.Error, OSError):
-        pass
+        return False
+    return True
 
 
 def _due_date(entry) -> date:
@@ -196,8 +199,8 @@ def update(per_char: dict, promote: bool = False, today=None, events=None, fast:
             entry["pn"] += attempts
             entry["pfluent"] += fluent
         _decide(char, entry, today, events, fast, log)
-    _save(data)
-    _save_log(log)
+    if _save(data):  # sonst stünde die Entscheidung im Protokoll, aber nicht in der Lernkartei
+        _save_log(log)
     return data
 
 
@@ -257,8 +260,12 @@ def _shadow(entry: dict, share: float, old_box: int, today: date):
                 elapsed = (today - date.fromisoformat(entry["last"])).days
             else:  # Eintrag aus der Zeit vor dem Schattenmodell: aus dem Fach schätzen
                 stability, difficulty = float(INTERVALS[old_box]), 5.0
-                elapsed = INTERVALS[old_box] + (today - _due_date(entry)).days
-            elapsed = max(elapsed, 1)
+                try:
+                    late = (today - date.fromisoformat(entry["due"])).days
+                except (KeyError, TypeError, ValueError):
+                    late = 0  # kaputter Termin: nicht als uralt zählen
+                elapsed = INTERVALS[old_box] + late
+            elapsed = min(max(elapsed, 1), MAX_ELAPSED_DAYS)
             predicted = round(fsrs_shadow.retrievability(elapsed, stability), 4)
             stability, difficulty = fsrs_shadow.review(stability, difficulty, elapsed, rating)
     except (ArithmeticError, ValueError, TypeError, KeyError, IndexError):

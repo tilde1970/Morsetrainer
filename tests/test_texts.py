@@ -144,6 +144,16 @@ class RigPowerTest(unittest.TestCase):
             self.assertTrue(cap is None or int(pwr[:-1]) <= cap, (rig, pwr))
         self.assertEqual(seen, set(qso_text.RIGS))
 
+    def test_rig_ratings_are_pinned(self):
+        self.assertEqual(qso_text.RIG_MAX_WATTS, {"FT817": 5, "IC705": 10, "KX2": 10, "KX3": 15})
+
+    def test_qrp_rig_gets_only_small_powers(self):
+        from unittest import mock
+        random.seed(2)
+        with mock.patch.object(qso_text, "RIGS", ["FT817"]):
+            powers = {qso_text.rig_and_power()[1] for _ in range(500)}
+        self.assertEqual(powers, {"5W"})  # nie mehr als die 5 W des FT817
+
     def test_every_rig_has_a_power_and_big_ones_are_possible(self):
         for rig, cap in qso_text.RIG_MAX_WATTS.items():
             self.assertIn(rig, qso_text.RIGS)

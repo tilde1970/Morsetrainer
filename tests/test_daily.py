@@ -455,6 +455,13 @@ class StarsTest(unittest.TestCase):
         self.assertIsNone(daily.pause_check(result, "K"))  # unter zwei geprüften
         self.assertIsNone(daily.pause_check({"chars": {"K": (2, 2), "R": (2, 2)}}, "KR"))  # zu wenige Versuche
 
+    def test_pause_check_limits(self):
+        self.assertEqual(daily.pause_check({"chars": {"K": (3, 3), "R": (3, 3)}}, "KR"), (2, 2))  # 3 Versuche zählen
+        self.assertIsNone(daily.pause_check({"chars": {"K": (2, 2), "R": (3, 3)}}, "KR"))  # 2 nicht
+        exact = daily.pause_check({"chars": {"K": (10, 9), "R": (10, 9)}}, "KR")
+        self.assertEqual(exact, (2, 2))  # genau 90 %: wieder sicher
+        self.assertEqual(daily.pause_check({"chars": {"K": (10, 8), "R": (10, 8)}}, "KR"), (2, 0))
+
     def test_days_since_practice_and_today_numbers(self):
         self.assertIsNone(daily.days_since_practice(self.state, TODAY))
         self.day(0, 80)

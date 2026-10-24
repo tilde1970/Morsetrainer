@@ -1746,6 +1746,61 @@ class DecimalTest(AppTestCase):
         self.app._refresh_all_time(with_awards=False)
         self.assertEqual(int(self.app.all_time_panel.char_tree.cget("height")), theme.MIN_TREE_ROWS)
 
+    def test_jump_moves_focus_into_the_section_and_back(self):
+        from morsetrainer.widgets import announcer
+
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        buttons = {w.cget("text"): w for w in walk(self.app.root)
+                   if w.winfo_class() == "TButton" and w.cget("text") in ("Woche", "Lernkartei")}
+        said = []
+        with mock.patch.object(announcer, "say", side_effect=lambda text, *a, **k: said.append(text)):
+            self.root.deiconify()
+            self.root.geometry("1024x600")
+            self.app.notebook.select(self.app.notebook.tabs()[-1])  # Reiter Statistik
+            self.root.update()
+            buttons["Lernkartei"].invoke()
+            self.root.update()
+            self.assertEqual(said[-1], "Abschnitt Lernkartei.")
+            focus = self.root.focus_get()
+            self.assertIsNotNone(focus)
+            self.assertIs(focus, self.app.review_button)  # im Abschnitt, nicht auf dem Sprungknopf
+            canvas = next(w for w in self.root.nametowidget(self.app.stats_tab).winfo_children()
+                          if w.winfo_class() == "Canvas")
+            self.assertGreater(canvas.yview()[0], 0.2)  # tatsächlich hinuntergerollt
+            up = [w for w in walk(self.app.root) if w.winfo_class() == "TButton" and w.cget("text") == "▲ Nach oben"]
+            up[3].invoke()  # der des Abschnitts Lernkartei
+            self.root.update()
+            self.assertEqual(said[-1], "Sprungzeile.")
+            self.assertLess(canvas.yview()[0], 0.02)
+            self.assertIs(self.root.focus_get(), buttons["Woche"])  # wieder oben, in der Sprungzeile
+        self.assertNotIn("▲", announcer.describe(up[0]))
+
+    def test_hidden_fsrs_tab_is_read_by_f11_and_never_counts_as_last_tab(self):
+        stats_tab = self.app.stats_tab
+        self.app.toggle_fsrs_tab()
+        panel = self.app.fsrs_panel
+        self.assertEqual(self.app.notebook.select(), str(panel.frame))
+        said = []
+        with mock.patch.object(self.app.announcer, "say", side_effect=lambda text, *a, **k: said.append(text)):
+            self.app.read_status()
+        self.assertEqual(said[-1], panel.text_var.get())
+        self.app.select_tab(-1)  # Alt+0: die Statistik, nicht der versteckte Reiter
+        self.assertEqual(self.app.notebook.select(), stats_tab)
+        self.app.toggle_fsrs_tab()
+        self.assertNotIn(str(panel.frame), self.app.notebook.tabs())
+
+    def test_hidden_fsrs_tab_stays_closed_during_the_daily_practice(self):
+        self.app.daily.active = True
+        try:
+            before = self.app.notebook.tabs()
+            self.app.toggle_fsrs_tab()
+            self.assertEqual(self.app.notebook.tabs(), before)
+        finally:
+            self.app.daily.active = False
+
     def test_table_columns_grow_with_the_font_and_scroll_sideways(self):
         from tkinter import font as tkfont
         panel = self.app.all_time_panel

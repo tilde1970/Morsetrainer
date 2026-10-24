@@ -9,6 +9,7 @@ from tkinter import ttk
 
 from morsetrainer.core import fsrs_shadow, review
 from morsetrainer.widgets import theme
+from morsetrainer.widgets.ui_widgets import ScrollableFrame
 
 TAB_NAME = "FSRS-Auswertung"
 
@@ -47,13 +48,14 @@ class FsrsPanel:
 
     def __init__(self, parent):
         self.frame = ttk.Frame(parent)
-        box = theme.card(self.frame, "FSRS-Schattenmodell gegen Lernkartei")
+        box = theme.card(ScrollableFrame(self.frame).inner, "FSRS-Schattenmodell gegen Lernkartei")
         self.text_var = tk.StringVar(value="")
         ttk.Label(box, textvariable=self.text_var, font=theme.MONO, justify="left").pack(anchor="w", pady=4)
         theme.hint(box, wrap=560, text="Das Schattenmodell schreibt nur mit, es ändert nichts an den Fächern. "
                                        "Dieser Reiter ist versteckt: Strg+Umschalt+F blendet ihn ein und aus."
                    ).pack(anchor="w", pady=(0, 6))
-        ttk.Button(box, text="Aktualisieren", command=self.refresh).pack(anchor="w")
+        self.refresh_button = ttk.Button(box, text="Aktualisieren", command=self.refresh)
+        self.refresh_button.pack(anchor="w")
         self.refresh()
 
     def refresh(self) -> None:

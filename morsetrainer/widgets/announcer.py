@@ -831,7 +831,7 @@ def _label(widget) -> str:
     if widget_class(widget) in ("TButton", "TCheckbutton", "TRadiobutton"):
         own = str(widget.cget("text")).strip()
         if own:
-            return own.rstrip(" …").strip("▸▾▶ ")
+            return own.rstrip(" …").strip("▸▾▶▲ ")
     text = _nearby(widget)
     if text:
         return text

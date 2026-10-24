@@ -20,6 +20,9 @@ class KochTest(unittest.TestCase):
         self.assertIsNone(koch.lesson_of("KMX"))
         self.assertIsNone(koch.lesson_of("K"))
         self.assertEqual(koch.newest_char(2), "U")
+        self.assertEqual(koch.new_chars(1), "KM")
+        self.assertEqual(koch.new_chars(2), "U")
+        self.assertEqual(koch.new_chars(koch.FINAL_LESSON), "")
         self.assertTrue(all(ch in MORSE_CODE for ch in koch.KOCH_ORDER))
 
     def test_advance_needs_accuracy_and_enough_chars(self):
@@ -473,6 +476,57 @@ class ReviewShadowTest(unittest.TestCase):
         self.assertAlmostEqual(fs.retrievability(0, 5.0), 1.0)
         self.assertAlmostEqual(fs.retrievability(5.0, 5.0), 0.9, places=6)  # nach S Tagen 90 %
 
+    def test_formulas_hard_again_and_negative_time_are_pinned(self):
+        # Festwerte der geprüften Formeln (Stand des Vergleichs mit py-fsrs 6.3.2), damit sich keine Konstante unbemerkt ändert.
+        from morsetrainer.core import fsrs_shadow as fs
+        stability, difficulty = fs.review(5.0, 5.0, 5, fs.HARD)
+        self.assertAlmostEqual(stability, 12.4342, places=3)
+        self.assertAlmostEqual(difficulty, 6.6660, places=3)
+        stability, difficulty = fs.review(5.0, 5.0, 5, fs.AGAIN)
+        self.assertAlmostEqual(stability, 0.9535, places=3)
+        self.assertAlmostEqual(difficulty, 8.3418, places=3)
+        self.assertLessEqual(fs.review(20.0, 3.0, 10, fs.AGAIN)[0], 20.0)  # Again verlängert nie
+        self.assertAlmostEqual(fs.review(20.0, 3.0, 10, fs.AGAIN)[0], 1.8765, places=3)
+        self.assertAlmostEqual(fs.first(fs.HARD)[0], 1.2931, places=4)
+        self.assertAlmostEqual(fs.first(fs.AGAIN)[1], 6.4133, places=4)
+        self.assertEqual(fs.retrievability(-3, 5.0), 1.0)  # rückwärts laufende Uhr
+        self.assertGreaterEqual(fs.review(0.001, 5.0, 1, fs.AGAIN)[0], fs.MIN_STABILITY)
+
+    def test_old_entry_without_shadow_fields_is_estimated_from_the_box(self):
+        from datetime import date, timedelta
+        from morsetrainer.core import fsrs_shadow as fs, review
+        today = date.today()
+        entry = {"box": 2, "due": (today - timedelta(days=3)).isoformat(), "n": 10, "fluent": 10, "pn": 10,
+                 "pfluent": 10, "decided": False, "day": today.isoformat()}
+        log = []
+        review._decide("K", entry, today, log=log)
+        expected = fs.review(float(review.INTERVALS[2]), 5.0, review.INTERVALS[2] + 3, fs.GOOD)
+        self.assertEqual(log[0]["t"], review.INTERVALS[2] + 3)
+        self.assertEqual(log[0]["p"], round(fs.retrievability(review.INTERVALS[2] + 3, float(review.INTERVALS[2])), 4))
+        self.assertAlmostEqual(entry["s"], expected[0])
+        self.assertAlmostEqual(entry["d"], expected[1])
+
+    def test_broken_or_ancient_dates_do_not_give_absurd_predictions(self):
+        from datetime import date, timedelta
+        from morsetrainer.core import review
+        today = date.today()
+        base = {"box": 2, "n": 10, "fluent": 10, "pn": 10, "pfluent": 10, "decided": False, "day": today.isoformat()}
+        log = []
+        review._decide("K", dict(base, due="xx"), today, log=log)  # kaputter Termin: nicht uralt
+        self.assertEqual(log[0]["t"], review.INTERVALS[2])
+        entry = dict(base, due=today.isoformat(), s=8.0, d=5.0, last="0001-01-02")  # uralte Entscheidung
+        review._decide("K", entry, today, log=log)
+        self.assertEqual(log[1]["t"], review.MAX_ELAPSED_DAYS)
+
+    def test_log_is_only_written_when_the_review_file_was_saved(self):
+        from unittest import mock
+        from morsetrainer.core import review
+        per_char = {"K": {"good": 10, "wrong": 0, "latencies": [0.5] * 10}}
+        with mock.patch.object(review, "_save", return_value=False), \
+                mock.patch.object(review, "_save_log") as save_log:
+            review.update(per_char)
+        save_log.assert_not_called()
+
     def _decide(self, entry, n, fluent, today):
         from morsetrainer.core import review
         entry.update(n=n, fluent=fluent, pn=n, pfluent=fluent, decided=False, day=today.isoformat())
@@ -642,3 +696,24 @@ class FsrsReportTest(unittest.TestCase):
         report = fsrs_shadow.report([self._entry(0.95, 1.0, 2), self._entry(0.6, 0.5, 0), self._entry(1.0, 1.0, 2)])
         self.assertEqual([b["n"] for b in report["bins"]], [1, 2])  # 0,5–0,7 und 0,9–1,0 (1,0 gehört dazu)
         self.assertEqual([(b["box"], b["n"]) for b in report["boxes"]], [(0, 1), (2, 2)])
+
+
+class FsrsReportEdgesTest(unittest.TestCase):
+    def _entry(self, p, share, box=0):
+        return {"c": "K", "day": "2026-10-24", "r": 3, "share": share, "n": 10, "t": 3, "p": p, "from": box, "to": box}
+
+    def test_verdict_starts_exactly_at_min_report(self):
+        from morsetrainer.core import fsrs_shadow
+        n = fsrs_shadow.MIN_REPORT
+        good = [self._entry(0.95, 0.95)] * (n // 2) + [self._entry(0.55, 0.55)] * (n - n // 2)
+        self.assertEqual(fsrs_shadow.report(good)["verdict"], "fsrs")
+        self.assertEqual(fsrs_shadow.report(good[:-1])["verdict"], "few")
+
+    def test_small_difference_is_no_verdict(self):
+        from morsetrainer.core import fsrs_shadow
+        n = fsrs_shadow.MIN_REPORT
+        # Brier des Fachs (gleich dem der Streuung der Treffer) gegen FSRS: Abstand genau um die Schwelle verschoben.
+        for gap, verdict in ((fsrs_shadow.BETTER_MARGIN / 2, "equal"), (fsrs_shadow.BETTER_MARGIN * 3, "fsrs")):
+            shares = [0.9 - gap ** 0.5, 0.9 + gap ** 0.5]  # Fach (je Fach Mittel 0,9): Brier = gap
+            entries = [self._entry(share, share) for share in shares * (n // 2)]  # FSRS trifft genau: Brier 0
+            self.assertEqual(fsrs_shadow.report(entries)["verdict"], verdict, gap)

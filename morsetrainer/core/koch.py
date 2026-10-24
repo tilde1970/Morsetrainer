@@ -58,6 +58,11 @@ def newest_char(lesson: int) -> str:
     return lesson_charset(lesson)[-1]
 
 
+def new_chars(lesson: int) -> str:
+    """Die Zeichen, die die Lektion neu bringt: Lektion 1 gleich zwei (K und M)."""
+    return lesson_charset(1) if lesson == 1 else newest_char(lesson)
+
+
 def passed(correct: int, total: int) -> bool:
     """Durchgang mit genug Zeichen und mindestens ADVANCE_ACCURACY_PCT."""
     return total >= ADVANCE_MIN_CHARS and correct / total * 100 >= ADVANCE_ACCURACY_PCT

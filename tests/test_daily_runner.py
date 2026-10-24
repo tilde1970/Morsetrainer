@@ -105,9 +105,11 @@ class DailyRunnerTest(AppTestCase):
         self.runner.start()
         self.assertEqual(self.runner.mode.start_button.cget("text"), "Tagesübung beenden (Esc)")
         self.assertNotEqual(str(self.runner.mode.start_button.cget("style")), "Accent.TButton")
+        button = self.runner.mode.start_button
         self.app.daily_bar.end_button.invoke()
         self.assertFalse(self.runner.active)
         self.assertEqual(self.mode("Einzelzeichen").start_button.cget("text"), "Start (F5)")
+        self.assertEqual(str(button.cget("style")), "Accent.TButton")  # der Start ist wieder blau
 
     def test_full_run_goes_through_all_blocks(self):
         with mock.patch.object(daily, "plan", short_plan):
@@ -533,6 +535,22 @@ class DailyRunnerTest(AppTestCase):
                                                        "progress": [], "minutes": 10.0, "lesson": 12}}})
         self.runner.refresh_idle()
         self.assertNotIn("wieder da bist", self.app.daily_bar.note_var.get())
+
+    def test_pause_note_starts_at_fourteen_days(self):
+        from datetime import timedelta
+        from morsetrainer.core import db, review
+        db.save_state(review.STATE_KEY, {"K": {"box": 4, "due": "2000-01-01"}, "M": {"box": 3, "due": "2000-01-01"}})
+        for gap, expected in ((13, ""), (14, "KM"), (15, "KM")):
+            day = (date.today() - timedelta(days=gap)).isoformat()
+            daily.save({"lesson": 12, "days": {day: {"stars": [], "blocks": [{"kind": daily.MAIN}],
+                                                      "progress": [], "minutes": 10.0, "lesson": 12}}})
+            self.runner.start()
+            self.assertEqual(self.runner.pause_sure, expected, gap)
+            self.runner.abort(quiet=True)
+        daily.save({"lesson": 12, "days": {}})  # noch nie geübt: kein Hinweis
+        self.runner.start()
+        self.assertEqual(self.runner.pause_sure, "")
+        self.runner.abort(quiet=True)
 
     def test_evening_summary_fills_the_gap_with_todays_numbers(self):
         from morsetrainer.widgets.daily_panel import EveningSummary

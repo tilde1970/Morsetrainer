@@ -250,6 +250,14 @@ def _is_shortcut(event) -> bool:
     return bool(state & (STATE_CONTROL | STATE_MOD1))
 
 
+def _focusable(widget):
+    """Die Bedienelemente in `widget` (Knöpfe, Tabellen, Felder), von oben nach unten."""
+    for child in widget.winfo_children():
+        if child.winfo_class() in ("TButton", "TCheckbutton", "TRadiobutton", "Treeview", "TEntry", "TCombobox"):
+            yield child
+        yield from _focusable(child)
+
+
 class MorseTrainerApp:
     """Das Hauptfenster: Kopfleiste mit den gemeinsamen Einstellungen
     (Zeichensatz, Tempo, Tonhöhe, Lektion), Tagesübung, die Übungs-Reiter und
@@ -1087,6 +1095,10 @@ class MorseTrainerApp:
         if self.daily.active and self.daily.card_open:
             self.announcer.say(self.daily.card_text, force=True)
             return
+        fsrs = getattr(self, "fsrs_panel", None)
+        if fsrs is not None and self.notebook.select() == str(fsrs.frame):
+            self.announcer.say(fsrs.text_var.get(), force=True)
+            return
         if self._active_mode() is None:  # Reiter Statistik
             self.announcer.say(self.statistics_spoken() + self._list_text(listed), force=True)
             return
@@ -1128,7 +1140,8 @@ class MorseTrainerApp:
         gesperrt ist (während eines Durchgangs sind die anderen Reiter
         gesperrt). Eine Ziffer ohne Reiter sagt, wie viele es gibt; die des
         Reiters „Einzeln“ schaltet dort den Inhalt weiter."""
-        tabs = self.notebook.tabs()
+        fsrs = getattr(self, "fsrs_panel", None)
+        tabs = [t for t in self.notebook.tabs() if fsrs is None or t != str(fsrs.frame)]  # der versteckte zählt nicht
         if index >= len(tabs):
             announcer.say(tr("Es gibt nur {n} Reiter.").format(n=len(tabs)))
             return
@@ -1145,12 +1158,12 @@ class MorseTrainerApp:
     def toggle_fsrs_tab(self) -> None:
         """Strg+Umschalt+F: den versteckten Reiter „FSRS-Auswertung“ ans Ende setzen
         und zeigen, beim zweiten Mal wieder entfernen. Nicht während einer Übung."""
-        if self.running_mode:
+        if self.running_mode or self.daily.active:  # zwischen zwei Blöcken der Tagesübung ebenso
             return
         panel = getattr(self, "fsrs_panel", None)
         if panel is not None and str(panel.frame) in self.notebook.tabs():
             if self.notebook.select() == str(panel.frame):
-                self.notebook.select(self.notebook.tabs()[-2])  # zurück zur Statistik
+                self.notebook.select(self.stats_tab)  # zurück zur Statistik
             self.notebook.forget(panel.frame)
             return
         if panel is None:
@@ -1159,6 +1172,7 @@ class MorseTrainerApp:
             panel.refresh()
         self.notebook.add(panel.frame, text=FSRS_TAB_NAME)
         self.notebook.select(panel.frame)
+        panel.refresh_button.focus_set()
 
     def statistics_spoken(self) -> str:
         """Der Reiter Statistik zum Vorlesen (F11): Gesamtergebnis, Vergleich mit
@@ -1547,9 +1561,9 @@ class MorseTrainerApp:
             self.new_char_button.config(text=tr("↩ Lektion {lesson}").format(lesson=back))
         else:
             self.lesson_var.set(lesson)
-            new_char = koch.newest_char(lesson)
+            new_char = koch.new_chars(lesson)
             if new_char:
-                self.lesson_info_var.set(tr("neu: {char}").format(char=key_hint(new_char)))
+                self.lesson_info_var.set(tr("neu: {char}").format(char=", ".join(key_hint(ch) for ch in new_char)))
             else:
                 self.lesson_info_var.set(tr("alle Zeichen, keins bevorzugt"))
             self.new_char_button.config(text=tr("▶ anhören"))
@@ -1571,7 +1585,7 @@ class MorseTrainerApp:
             lesson = koch.lesson_of(self.charset_var.get().strip().upper())
             if lesson is None:
                 return
-            chars = koch.newest_char(lesson)
+            chars = koch.new_chars(lesson)
         if not chars:
             return
         text = " ".join(" ".join([ch] * 3) for ch in chars)
@@ -1838,6 +1852,7 @@ class MorseTrainerApp:
         werden dort nicht ausgewertet (siehe _active_mode)."""
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text=tr("Statistik"))
+        self.stats_tab = str(tab)
         scroller = ScrollableFrame(tab)
         frame = scroller.inner
         jump_bar = ttk.Frame(frame)
@@ -1857,7 +1872,9 @@ class MorseTrainerApp:
 
         self.awards_panel = AwardsPanel(frame, on_show=lambda seal: self._show_diplomas([seal], tr("Diplom")),
                                         station=lambda: (self.station_call(), self.station_name_var.get().strip()))
+        awards_card = frame.winfo_children()[-1]  # jedes Panel baut seine Karte zuletzt in den Rahmen
         self.lifeline_panel = LifelinePanel(frame)
+        lifeline_card = frame.winfo_children()[-1]
 
         review_box = theme.card(frame, tr("Wiederholung über Tage (Lernkartei)"))
         self.review_var = tk.StringVar(value="")
@@ -1891,23 +1908,40 @@ class MorseTrainerApp:
         )
         self.confusion_button.pack(anchor="w")
         self.progress_panel = ProgressPanel(frame)
+        progress_card = frame.winfo_children()[-1]
 
         ttk.Button(frame, text=tr("Gesamtstatistik zurücksetzen"), command=self._reset_all_time).pack(
             anchor="e", padx=10, pady=(4, 10)
         )
-        # Sprungzeile: Der Reiter ist mehrere Bildschirmseiten lang. Die Karten sind die
-        # Kinder des Rahmens in der Reihenfolge ihres Aufbaus (nach der Sprungzeile).
-        cards = [child for child in frame.winfo_children() if child is not jump_bar]
-        sections = ((tr("Woche"), cards[1]), (tr("Diplome"), cards[2]), (tr("Lebenslinie"), cards[3]),
-                    (tr("Lernkartei"), cards[4]), (tr("Verwechslungen"), cards[5]), (tr("Fortschritt"), cards[6]))
+        # Sprungzeile: Der Reiter ist mehrere Bildschirmseiten lang.
+        sections = ((tr("Woche"), week_box), (tr("Diplome"), awards_card), (tr("Lebenslinie"), lifeline_card),
+                    (tr("Lernkartei"), review_box), (tr("Verwechslungen"), confusion_box),
+                    (tr("Fortschritt"), progress_card))
         ttk.Label(jump_bar, text=tr("Springe zu:")).grid(row=0, column=0, sticky="w", padx=(0, 6))
         for column in (1, 2, 3):
             jump_bar.columnconfigure(column, uniform="jump", weight=1)  # alle Knöpfe gleich breit
+        jump_buttons = []
         for index, (name, card) in enumerate(sections):
-            ttk.Button(jump_bar, text=name, command=lambda card=card: scroller.show_top(card)).grid(
-                row=index // 3, column=index % 3 + 1, sticky="ew", padx=(0, 4), pady=1)
-            ttk.Button(card, text=tr("▲ Nach oben"), command=lambda: scroller.show_top(jump_bar)).pack(
-                anchor="e", pady=(4, 0))
+            button = ttk.Button(jump_bar, text=name, command=lambda card=card, name=name: self._jump_to(
+                scroller, card, tr("Abschnitt {name}.").format(name=name)))
+            button.grid(row=index // 3, column=index % 3 + 1, sticky="ew", padx=(0, 4), pady=1)
+            jump_buttons.append(button)
+            back = ttk.Button(card, text=tr("▲ Nach oben"), command=lambda: self._jump_to(
+                scroller, jump_bar, tr("Sprungzeile."), jump_buttons[0]))
+            back.pack(anchor="e", pady=(4, 0))
+            announcer.name(back, tr("Nach oben zur Sprungzeile"))
+
+    def _jump_to(self, scroller, target, spoken: str, focus=None) -> None:
+        """Statistik: `target` an den oberen Rand rollen, den Fokus in den Abschnitt
+        setzen (sonst bliebe er auf dem Knopf, außer Sicht, und die nächste Tab-Taste
+        rollte zurück) und den Abschnitt ansagen."""
+        if focus is None:
+            focus = next((w for w in _focusable(target)), None)
+        if focus is not None:
+            focus.focus_set()
+        scroller.canvas.update_idletasks()
+        scroller.show_top(target)
+        announcer.say(spoken)
 
     # --- Rufzeichen und Name ---------------------------------------------------------
     def _station_name(self) -> str:
