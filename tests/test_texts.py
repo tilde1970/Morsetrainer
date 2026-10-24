@@ -134,6 +134,25 @@ class QsoTextTest(unittest.TestCase):
             self.assertTrue(qso_text._arrl_dx(call, qso_text._country_of(call)), call)
 
 
+class RigPowerTest(unittest.TestCase):
+    def test_qrp_rigs_never_send_more_than_their_rating(self):
+        seen = set()
+        for _ in range(3000):
+            rig, pwr = qso_text.rig_and_power()
+            seen.add(rig)
+            cap = qso_text.RIG_MAX_WATTS.get(rig)
+            self.assertTrue(cap is None or int(pwr[:-1]) <= cap, (rig, pwr))
+        self.assertEqual(seen, set(qso_text.RIGS))
+
+    def test_every_rig_has_a_power_and_big_ones_are_possible(self):
+        for rig, cap in qso_text.RIG_MAX_WATTS.items():
+            self.assertIn(rig, qso_text.RIGS)
+            self.assertTrue([p for p in qso_text.POWERS if int(p[:-1]) <= cap])
+        random.seed(1)
+        powers = {qso_text.rig_and_power()[1] for _ in range(3000)}
+        self.assertIn("750W", powers)
+
+
 class SlashAndCqVariantsTest(unittest.TestCase):
     """Rufzeichen mit /P und /M kommen nur, wenn das „/“ gelernt ist; die CQ-Rufe
     sind abwechslungsreicher."""

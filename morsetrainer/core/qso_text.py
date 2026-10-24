@@ -342,6 +342,19 @@ COUNTRIES = [
 RIGS = ("IC7300", "IC7610", "IC705", "IC7851", "FT991", "FTDX10", "FTDX101", "FT817", "FT710",
         "K3", "K4", "KX2", "KX3", "TS590", "TS890", "FLEX6600", "HOMEBREW")
 POWERS = ("5W", "10W", "50W", "100W", "100W", "100W", "400W", "750W")
+# Nennleistung der Geräte, soweit sie unter 100 W liegt; mehr als sie senden
+# QRP-Geräte nicht (400 W und 750 W gibt es nur mit Endstufe an den übrigen).
+RIG_MAX_WATTS = {"FT817": 5, "IC705": 10, "KX2": 10, "KX3": 15}
+
+
+def rig_and_power() -> tuple:
+    """Zufälliges Gerät und eine dazu mögliche Leistung."""
+    rig = random.choice(RIGS)
+    cap = RIG_MAX_WATTS.get(rig)
+    powers = [pwr for pwr in POWERS if cap is None or int(pwr[:-1]) <= cap]
+    return rig, random.choice(powers)
+
+
 ANTENNAS = ("DIPOLE", "VERTICAL", "YAGI", "GP", "LOOP", "WINDOM", "EFHW", "HEXBEAM", "LW")
 WEATHER = ("SUNNY", "CLOUDY", "RAIN", "FOG", "WINDY", "CLEAR", "SNOW")
 # Rapporte mit grober Häufigkeit (599 ist in der Praxis mit Abstand am häufigsten).
@@ -773,9 +786,10 @@ def _make_station(exclude=(), slash=False) -> Station:
     temp = random.randint(0, 3) if wx == "SNOW" else random.randint(5, 30)
     age = random.randint(18, 85)
     licensed = random.randint(max(datetime.now().year - (age - 14), 1950), datetime.now().year - 1)
+    rig, pwr = rig_and_power()
     return Station(
         call=call, name=random.choice(country.names), qth=_qth_for(call, country),
-        rig=random.choice(RIGS), pwr=random.choice(POWERS), ant=random.choice(ANTENNAS),
+        rig=rig, pwr=pwr, ant=random.choice(ANTENNAS),
         wx=f"{wx} TEMP {temp}C", age=age, licensed=licensed,
     )
 
