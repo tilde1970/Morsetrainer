@@ -1,5 +1,10 @@
 # Changes
 
+## 2.65
+
+- **Documentation:** The development guide and the change lists have been
+  tidied up. The program itself does not change.
+
 ## 2.64
 
 - **Statistics, jump row:** Jumping with the keyboard or a screen reader now

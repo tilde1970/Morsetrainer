@@ -1,5 +1,10 @@
 # Änderungen
 
+## 2.65
+
+- **Dokumentation:** Die Entwicklungsanleitung und die Änderungslisten sind
+  aufgeräumt. Am Programm ändert sich nichts.
+
 ## 2.64
 
 - **Statistik, Sprungzeile:** Wer mit der Tastatur oder einem Screenreader
