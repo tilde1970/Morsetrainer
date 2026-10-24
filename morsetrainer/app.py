@@ -210,6 +210,9 @@ WHATS_NEW = {
     "2.58": N_("Der Morsetrainer sichert deine Daten jetzt von selbst, höchstens einmal pro Woche beim Beenden "
                "(Einstellungen, Daten). Meldungen beim Start sind klarer, und das Rauschen in der Antwortpause "
                "bleibt gleich laut. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.64": N_("Die Sprungzeile im Reiter Statistik setzt jetzt den Fokus in den Abschnitt und sagt ihn an, auch mit "
+               "Tastatur und Screenreader. Im Reiter Üben zeigt und spielt Lektion 1 beide neuen Zeichen, K und M. "
+               "Alles Weitere steht unter Hilfe, Änderungen."),
     "2.63": N_("Der Reiter Statistik hat oben eine Zeile „Springe zu“, jeder Abschnitt unten einen Knopf „Nach oben“. "
                "Der Beenden-Knopf der Tagesübung heißt im Reiter wie in der Leiste, und nach einer längeren Pause "
                "sagt die Zwischenkarte, wie viele früher sichere Zeichen gleich wieder saßen. Alles Weitere steht "

@@ -1,5 +1,26 @@
 # Changes
 
+## 2.64
+
+- **Statistics, jump row:** Jumping with the keyboard or a screen reader now
+  really lands in the section: the focus moves along, the section is announced
+  (“Section Review box.”), and the next Tab key no longer scrolls back.
+  “▲ Back to top” leads back to the jump row; for speech output the buttons
+  are named “Back to the jump row”.
+- **Practice tab, lesson 1:** The line next to the “Lesson” field shows
+  “new: K, M” for lesson 1, and “▶ listen” plays both characters (before: only
+  M).
+- **Hidden tab FSRS evaluation:** F11 reads the evaluation aloud, the focus is
+  on “Refresh”, the content can be scrolled, and the tab does not open between
+  two blocks of the daily practice. Alt+0 still goes to Statistics while it is
+  open.
+- **Review box, shadow model:** A broken due date or a very old entry no
+  longer gives an absurd prediction (breaks count as ten years at most). The
+  log is only written if the review box could be saved too. Boxes, due dates,
+  display and awards do not change.
+- **Internal:** More tests cover the 14-day break threshold, the estimate for
+  older data, the formula values of the shadow model, the limits of the
+  evaluation and the rated power of the rigs.
 ## 2.63
 
 - **Statistics:** The tab has become long. At the top there is now a “Jump to”

@@ -1,5 +1,26 @@
 # Änderungen
 
+## 2.64
+
+- **Statistik, Sprungzeile:** Wer mit der Tastatur oder einem Screenreader
+  springt, landet jetzt wirklich im Abschnitt: Der Fokus wandert mit, der
+  Abschnitt wird angesagt („Abschnitt Lernkartei.“), und die nächste Tab-Taste
+  rollt nicht mehr zurück. „▲ Nach oben“ führt in die Sprungzeile zurück; die
+  Knöpfe heißen für die Sprachausgabe „Nach oben zur Sprungzeile“.
+- **Übungsreiter, Lektion 1:** Die Zeile neben dem Feld „Lektion“ zeigt bei
+  Lektion 1 „neu: K, M“, und „▶ anhören“ spielt beide Zeichen vor (vorher nur M).
+- **Versteckter Reiter FSRS-Auswertung:** F11 liest die Auswertung vor, der
+  Fokus liegt auf „Aktualisieren“, der Inhalt lässt sich rollen, und der Reiter
+  öffnet sich nicht zwischen zwei Blöcken der Tagesübung. Alt+0 geht auch dann
+  zur Statistik, wenn er offen ist.
+- **Lernkartei, Schattenmodell:** Ein kaputter Termin oder eine uralte
+  Eintragung ergibt keine unsinnige Vorhersage mehr (Pausen zählen höchstens
+  zehn Jahre). Das Protokoll wird nur geschrieben, wenn auch die Lernkartei
+  gespeichert werden konnte. Fächer, Fälligkeit, Anzeige und Diplome ändern sich
+  nicht.
+- **Intern:** Zusätzliche Tests sichern die Pausen-Schwelle von 14 Tagen, die
+  Schätzung für ältere Datensätze, die Formelwerte des Schattenmodells, die
+  Grenzen der Auswertung und die Nennleistungen der Geräte ab.
 ## 2.63
 
 - **Statistik:** Der Reiter ist lang geworden. Oben steht jetzt eine Zeile

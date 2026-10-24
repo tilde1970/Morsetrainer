@@ -253,6 +253,9 @@ EN.update({
     "(eigene Zeichen)": "(own characters)",
     "↩ Lektion {lesson}": "↩ Lesson {lesson}",
     "neu: {char}": "new: {char}",
+    "Abschnitt {name}.": "Section {name}.",
+    "Sprungzeile.": "Jump row.",
+    "Nach oben zur Sprungzeile": "Back to the jump row",
     "Betriebszeichen": "Prosigns",
     "Lektion 42 einstellen": "Set lesson 42",
     "Lektion {lesson} eingestellt, neu: {char}.": "Lesson {lesson} set, new: {char}.",
@@ -1164,6 +1167,12 @@ EN.update({
      "bleibt gleich laut. Alles Weitere steht unter Hilfe, Änderungen."):
         "Morsetrainer now backs up your data by itself, at most once a week on exit (Settings, Data). "
         "Notices at start are clearer, and the noise in the answer pause stays equally loud. "
+        "Everything else is under Help, Changes.",
+    ("Die Sprungzeile im Reiter Statistik setzt jetzt den Fokus in den Abschnitt und sagt ihn an, auch mit "
+     "Tastatur und Screenreader. Im Reiter Üben zeigt und spielt Lektion 1 beide neuen Zeichen, K und M. "
+     "Alles Weitere steht unter Hilfe, Änderungen."):
+        "The jump row in the Statistics tab now moves the focus into the section and announces it, also with "
+        "keyboard and screen reader. In the Practice tab, lesson 1 shows and plays both new characters, K and M. "
         "Everything else is under Help, Changes.",
     ("Der Reiter Statistik hat oben eine Zeile „Springe zu“, jeder Abschnitt unten einen Knopf „Nach oben“. "
      "Der Beenden-Knopf der Tagesübung heißt im Reiter wie in der Leiste, und nach einer längeren Pause "
