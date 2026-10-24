@@ -64,9 +64,13 @@ wird dafür nicht benötigt:
   (`chmod +x Morsetrainer-x86_64.AppImage`) und starten. Startet es mit
   einer Meldung zu FUSE nicht: siehe
   [Anleitung, Abschnitt „Linux und Windows“](docs/Anleitung.md).
+  Das Programm ist für 64-Bit-PCs (x86_64); auf ARM-Geräten wie dem Raspberry Pi
+  startest du den Morsetrainer aus dem Quelltext ([Entwicklung](docs/Entwicklung.md)).
 - **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
-  („Weitere Informationen“ → „Trotzdem ausführen“).
+  („Weitere Informationen“ → „Trotzdem ausführen“). Auch ein Virenscanner
+  kann eine unsignierte Datei fälschlich beanstanden; die Prüfsumme in
+  `SHA256SUMS.txt` (siehe unten) zeigt, dass sie unverändert ist.
 - **macOS (Apple-Prozessor, ab macOS 14):** `Morsetrainer-macOS.zip` herunterladen,
   entpacken und `Morsetrainer.app` in „Programme“ ziehen. Die App ist nicht
   signiert, beim ersten Start musst du sie freigeben. Wie das geht und

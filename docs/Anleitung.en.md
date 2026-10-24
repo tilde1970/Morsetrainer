@@ -447,7 +447,8 @@ is shown. Evaluation is your choice:
 
 The zones in the exchange (CQ WW, IARU HF) follow the digit of the call
 sign; for large countries such as the USA, Canada and Russia they are
-therefore rounded.
+therefore rounded (a W4 call sign always gets zone 5, although Alabama,
+Kentucky and Tennessee are in zone 4).
 
 How often you used “Again” before checking is noted. “Adjust speed
 automatically” follows the same rule as “Speed adapts” in One by one.
@@ -480,7 +481,9 @@ callers, send the exchange, log. F10 starts and ends.
 
 Overall statistics per character – only from random characters and
 callsigns, because in words, phrases and QSOs the context gives away too
-many characters. Runs with band conditions do not count here (section 6).
+many characters. Runs with band conditions do not count here (section 6). The tab is long;
+the “Jump to” buttons at the top lead to week, awards, lifeline, review box,
+confusions and progress.
 
 - **Comparison:** below the total you see how the last 7 days went
   against the 30 days before: “Before (30 days): reaction 0.61 s, 88 %
@@ -628,7 +631,7 @@ as they were.
   most common cause. If the main part was weak and a slower speed is set for
   tomorrow, it says that this happens. It stays until you continue with Enter or “Continue”.
 - **Ending:** with the **End daily practice (Esc)** button below the time
-  bar or the button in the tab. Esc and F5 only end it on the second
+  bar or the identically labelled button in the tab. Esc and F5 only end it on the second
   press within three seconds; the first shows (and announces) “Press Esc
   again to end the daily practice.” So a slip, such as Esc meant for a
   secondary window, doesn't cost you the day. Ctrl+Q (Mac: Cmd+Q) and
@@ -1236,9 +1239,13 @@ Python installation is needed.
   the `fusermount` program is missing: install the `fuse3` package
   (Debian, Ubuntu, Mint: `sudo apt install fuse3`) or start the AppImage
   without FUSE:
-  `./Morsetrainer-x86_64.AppImage --appimage-extract-and-run`.
+  `./Morsetrainer-x86_64.AppImage --appimage-extract-and-run`. The AppImage
+  exists only for 64-bit PCs (x86_64); on ARM devices such as the Raspberry
+  Pi, run the Morsetrainer from the source code (see `docs/Entwicklung.en.md`).
 - **Windows:** download and run `Morsetrainer.exe`. The file is not signed,
   so Windows SmartScreen warns on first start (“More info” → “Run anyway”).
+  An antivirus program may also flag an unsigned file by mistake; the
+  checksum in `SHA256SUMS.txt` (see below) shows that it is unchanged.
 
 `SHA256SUMS.txt` with the checksums sits next to the programs. To verify,
 on Linux run `sha256sum -c --ignore-missing SHA256SUMS.txt` in the download

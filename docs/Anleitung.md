@@ -450,7 +450,9 @@ Dauer. Ausgewertet wird wahlweise:
 - oder nur zum Hören.
 
 Die Zonen im Austausch (CQ WW, IARU HF) folgen der Ziffer des Rufzeichens;
-für große Länder wie USA, Kanada und Russland sind sie deshalb gerundet.
+für große Länder wie USA, Kanada und Russland sind sie deshalb gerundet
+(ein W4-Rufzeichen bekommt immer Zone 5, obwohl Alabama, Kentucky und
+Tennessee in Zone 4 liegen).
 
 Wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. „Tempo
 automatisch anpassen“ folgt derselben Regel wie „Tempo wächst mit“ im
@@ -484,7 +486,9 @@ aufnehmen, Austausch geben, loggen. F10 startet und beendet.
 
 Gesamtstatistik je Zeichen – nur aus Zufallszeichen und Rufzeichen, denn
 bei Wörtern, Wendungen und QSOs verrät der Zusammenhang zu viele Zeichen.
-Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6).
+Durchgänge mit Bandbedingungen zählen hier nicht (Abschnitt 6). Der Reiter
+ist lang; die Knöpfe „Springe zu“ ganz oben führen zu Woche, Diplomen,
+Lebenslinie, Lernkartei, Verwechslungen und Fortschritt.
 
 - **Vergleich:** Unter der Gesamtzahl steht, wie es in den letzten 7 Tagen
   lief, gegen die 30 Tage davor: „Davor (30 Tage): Reaktion 0,61 s, 88 %
@@ -640,7 +644,7 @@ wieder wie vorher.
   vorkommt. Sie bleibt stehen, bis du mit Enter
   oder „Weiter“ fortfährst.
 - **Beenden:** mit dem Knopf **Tagesübung beenden (Esc)** unter dem
-  Zeitbalken oder dem Knopf im Reiter. Esc und F5 beenden erst beim
+  Zeitbalken oder dem gleich beschrifteten Knopf im Reiter. Esc und F5 beenden erst beim
   zweiten Druck innerhalb von drei Sekunden; beim ersten steht dort (und
   wird angesagt) „Noch einmal Esc beendet die Tagesübung.“ So kostet ein
   Fehlgriff, etwa Esc für ein Nebenfenster, nicht den Tag. Ebenso fragen
@@ -1265,10 +1269,14 @@ wird dafür nicht benötigt.
   Fehler zu FUSE, fehlt das Programm `fusermount`: Paket `fuse3`
   installieren (Debian, Ubuntu, Mint: `sudo apt install fuse3`) oder das
   AppImage ohne FUSE starten:
-  `./Morsetrainer-x86_64.AppImage --appimage-extract-and-run`.
+  `./Morsetrainer-x86_64.AppImage --appimage-extract-and-run`. Das AppImage
+  gibt es nur für 64-Bit-PCs (x86_64); auf ARM-Geräten wie dem Raspberry Pi
+  startest du den Morsetrainer aus dem Quelltext (siehe `docs/Entwicklung.md`).
 - **Windows:** `Morsetrainer.exe` herunterladen und starten. Da die Datei
   nicht signiert ist, warnt Windows SmartScreen beim ersten Start
-  („Weitere Informationen“ → „Trotzdem ausführen“).
+  („Weitere Informationen“ → „Trotzdem ausführen“). Auch ein Virenscanner
+  kann eine unsignierte Datei fälschlich beanstanden; die Prüfsumme in
+  `SHA256SUMS.txt` (siehe unten) zeigt, dass sie unverändert ist.
 
 Neben den Programmen liegt `SHA256SUMS.txt` mit ihren Prüfsummen. Zum
 Nachprüfen unter Linux im Download-Ordner

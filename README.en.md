@@ -66,8 +66,13 @@ Python installation is needed:
   (`chmod +x Morsetrainer-x86_64.AppImage`) and run it. If it does not
   start and reports a FUSE error, see the
   [manual, section “Linux and Windows”](docs/Anleitung.en.md).
+  The program is built for 64-bit PCs (x86_64); on ARM devices such as the
+  Raspberry Pi, run the Morsetrainer from the source code
+  ([Development](docs/Entwicklung.en.md)).
 - **Windows:** download and run `Morsetrainer.exe`. The file is not signed,
   so Windows SmartScreen warns on first start (“More info” → “Run anyway”).
+  An antivirus program may also flag an unsigned file by mistake; the
+  checksum in `SHA256SUMS.txt` (see below) shows that it is unchanged.
 - **macOS (Apple silicon, macOS 14 or later):** download `Morsetrainer-macOS.zip`, unpack it
   and drag `Morsetrainer.app` into Applications. The app is not signed, so
   you have to approve it on first start. How to do that, and what applies to
