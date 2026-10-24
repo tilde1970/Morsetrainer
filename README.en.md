@@ -8,7 +8,7 @@ contest pile-up under realistic HF conditions – alone at your own computer
 or together at a club evening on the local network.
 
 > **Do you like the Morsetrainer?** It is free and stays free. If you would like
-> to say thanks: **[Support me on Ko-fi](https://ko-fi.com/dl4ym)**.
+> to say thanks:
 >
 > [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/F1S2297ZFY)
 

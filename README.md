@@ -9,7 +9,7 @@ Contest-Pile-up unter realistischen Kurzwellenbedingungen – allein am
 eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 > **Gefällt dir der Morsetrainer?** Er ist kostenlos und bleibt es. Wenn du dich
-> bedanken möchtest: **[Mich auf Ko-fi unterstützen](https://ko-fi.com/dl4ym)**.
+> bedanken möchtest:
 >
 > [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/F1S2297ZFY)
 
