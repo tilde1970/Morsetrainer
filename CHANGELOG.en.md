@@ -1,5 +1,25 @@
 # Changes
 
+## 2.63
+
+- **Statistics:** The tab has become long. At the top there is now a “Jump to”
+  row with equally wide buttons (week, awards, lifeline, review box,
+  confusions, progress); each section has a “▲ Back to top” button at the
+  bottom. With an empty account the character table is only four rows high.
+- **Daily practice:** The button that ends the practice in the tab now has the
+  same label as the one in the bar (“End daily practice (Esc)”) and is no
+  longer blue; blue stays for start. After at least 14 days off, the card after
+  the warm-up says how many characters that used to be solid were right back.
+- **QSO:** Rig and power fit together: an FT817, IC705, KX2 or KX3 never sends
+  more than its rated power; 400 and 750 W only come with the other rigs.
+- **Review box:** It also records data for a later evaluation. Boxes, due
+  dates, display and awards do not change because of it.
+- **Manual:** README and manual (German and English) mention the possible
+  false alarm of an antivirus program for the unsigned Windows file and that
+  the Linux package exists only for 64-bit PCs (x86_64); on ARM devices such as
+  the Raspberry Pi, run from the source code. The US zones in the exchange are
+  still rounded (W4 gives zone 5), now with an example. The Ko-fi button is an
+  image in the README.
 ## 2.62
 
 A full review of the whole software (code, data, tests, signals, performance,

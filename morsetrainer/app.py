@@ -210,6 +210,10 @@ WHATS_NEW = {
     "2.58": N_("Der Morsetrainer sichert deine Daten jetzt von selbst, höchstens einmal pro Woche beim Beenden "
                "(Einstellungen, Daten). Meldungen beim Start sind klarer, und das Rauschen in der Antwortpause "
                "bleibt gleich laut. Alles Weitere steht unter Hilfe, Änderungen."),
+    "2.63": N_("Der Reiter Statistik hat oben eine Zeile „Springe zu“, jeder Abschnitt unten einen Knopf „Nach oben“. "
+               "Der Beenden-Knopf der Tagesübung heißt im Reiter wie in der Leiste, und nach einer längeren Pause "
+               "sagt die Zwischenkarte, wie viele früher sichere Zeichen gleich wieder saßen. Alles Weitere steht "
+               "unter Hilfe, Änderungen."),
     "2.62": N_("Neu unter „Einstellungen …“: der Haken „Entspannte Tagesübung“ (Aufwärmen ohne Zeitlimit). Das "
                "Wochenziel sind jetzt 8 Sterne, die Zeichentabelle der Statistik ist nach Fehlerquote sortiert, "
                "und die Lernkartei entscheidet erst ab 8 Versuchen. Strg+Q beendet das Programm, in der "

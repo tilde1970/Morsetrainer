@@ -1,5 +1,27 @@
 # Änderungen
 
+## 2.63
+
+- **Statistik:** Der Reiter ist lang geworden. Oben steht jetzt eine Zeile
+  „Springe zu“ mit gleich breiten Knöpfen (Woche, Diplome, Lebenslinie,
+  Lernkartei, Verwechslungen, Fortschritt); jeder Abschnitt hat unten einen
+  Knopf „▲ Nach oben“. Die Zeichentabelle ist bei leerem Konto nur vier Zeilen
+  hoch.
+- **Tagesübung:** Der Knopf zum Beenden im Reiter heißt jetzt wie der in der
+  Leiste („Tagesübung beenden (Esc)“) und ist nicht mehr blau; blau bleibt der
+  Start. Nach mindestens 14 Tagen Pause sagt die Zwischenkarte nach dem
+  Aufwärmen, wie viele früher sichere Zeichen gleich wieder saßen.
+- **QSO:** Gerät und Leistung passen zusammen: Ein FT817, IC705, KX2 oder KX3
+  sendet nie mehr als seine Nennleistung; 400 und 750 W gibt es nur bei den
+  übrigen Geräten.
+- **Lernkartei:** Sie schreibt zusätzlich Daten für eine spätere Auswertung
+  mit. Fächer, Fälligkeit, Anzeige und Diplome ändern sich dadurch nicht.
+- **Anleitung:** README und Anleitung (Deutsch und Englisch) nennen den
+  möglichen Fehlalarm eines Virenscanners bei der unsignierten Windows-Datei
+  und dass das Linux-Paket nur für 64-Bit-PCs (x86_64) gibt; auf ARM-Geräten
+  wie dem Raspberry Pi startest du aus dem Quelltext. Die Zonen der USA im
+  Austausch sind weiter gerundet (W4 liefert Zone 5), jetzt mit Beispiel. Der
+  Ko-fi-Button steht als Bild in der README.
 ## 2.62
 
 Eine Gesamtprüfung der ganzen Software (Code, Daten, Tests, Signale, Leistung,
