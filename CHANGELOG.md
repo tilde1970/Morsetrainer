@@ -9,18 +9,8 @@
   Knöpfe heißen für die Sprachausgabe „Nach oben zur Sprungzeile“.
 - **Übungsreiter, Lektion 1:** Die Zeile neben dem Feld „Lektion“ zeigt bei
   Lektion 1 „neu: K, M“, und „▶ anhören“ spielt beide Zeichen vor (vorher nur M).
-- **Versteckter Reiter FSRS-Auswertung:** F11 liest die Auswertung vor, der
-  Fokus liegt auf „Aktualisieren“, der Inhalt lässt sich rollen, und der Reiter
-  öffnet sich nicht zwischen zwei Blöcken der Tagesübung. Alt+0 geht auch dann
-  zur Statistik, wenn er offen ist.
-- **Lernkartei, Schattenmodell:** Ein kaputter Termin oder eine uralte
-  Eintragung ergibt keine unsinnige Vorhersage mehr (Pausen zählen höchstens
-  zehn Jahre). Das Protokoll wird nur geschrieben, wenn auch die Lernkartei
-  gespeichert werden konnte. Fächer, Fälligkeit, Anzeige und Diplome ändern sich
-  nicht.
-- **Intern:** Zusätzliche Tests sichern die Pausen-Schwelle von 14 Tagen, die
-  Schätzung für ältere Datensätze, die Formelwerte des Schattenmodells, die
-  Grenzen der Auswertung und die Nennleistungen der Geräte ab.
+- **Intern:** Zusätzliche Tests sichern die Pausen-Schwelle von 14 Tagen und die
+  Nennleistungen der Geräte ab.
 ## 2.63
 
 - **Statistik:** Der Reiter ist lang geworden. Oben steht jetzt eine Zeile
@@ -35,8 +25,6 @@
 - **QSO:** Gerät und Leistung passen zusammen: Ein FT817, IC705, KX2 oder KX3
   sendet nie mehr als seine Nennleistung; 400 und 750 W gibt es nur bei den
   übrigen Geräten.
-- **Lernkartei:** Sie schreibt zusätzlich Daten für eine spätere Auswertung
-  mit. Fächer, Fälligkeit, Anzeige und Diplome ändern sich dadurch nicht.
 - **Anleitung:** README und Anleitung (Deutsch und Englisch) nennen den
   möglichen Fehlalarm eines Virenscanners bei der unsignierten Windows-Datei
   und dass das Linux-Paket nur für 64-Bit-PCs (x86_64) gibt; auf ARM-Geräten

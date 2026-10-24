@@ -10,17 +10,8 @@
 - **Practice tab, lesson 1:** The line next to the “Lesson” field shows
   “new: K, M” for lesson 1, and “▶ listen” plays both characters (before: only
   M).
-- **Hidden tab FSRS evaluation:** F11 reads the evaluation aloud, the focus is
-  on “Refresh”, the content can be scrolled, and the tab does not open between
-  two blocks of the daily practice. Alt+0 still goes to Statistics while it is
-  open.
-- **Review box, shadow model:** A broken due date or a very old entry no
-  longer gives an absurd prediction (breaks count as ten years at most). The
-  log is only written if the review box could be saved too. Boxes, due dates,
-  display and awards do not change.
-- **Internal:** More tests cover the 14-day break threshold, the estimate for
-  older data, the formula values of the shadow model, the limits of the
-  evaluation and the rated power of the rigs.
+- **Internal:** More tests cover the 14-day break threshold and the rated power
+  of the rigs.
 ## 2.63
 
 - **Statistics:** The tab has become long. At the top there is now a “Jump to”
@@ -33,8 +24,6 @@
   the warm-up says how many characters that used to be solid were right back.
 - **QSO:** Rig and power fit together: an FT817, IC705, KX2 or KX3 never sends
   more than its rated power; 400 and 750 W only come with the other rigs.
-- **Review box:** It also records data for a later evaluation. Boxes, due
-  dates, display and awards do not change because of it.
 - **Manual:** README and manual (German and English) mention the possible
   false alarm of an antivirus program for the unsigned Windows file and that
   the Linux package exists only for 64-bit PCs (x86_64); on ARM devices such as
