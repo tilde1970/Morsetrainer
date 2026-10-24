@@ -99,6 +99,7 @@ class StatsPanel:
         if compare:
             columns = columns[:4] + ("trend",) + columns[4:]
         self.compare = compare
+        self.max_rows = tree_height
         self.char_tree = ttk.Treeview(box, columns=columns, show="headings", height=tree_height)
         # Sonst hieße die Tabelle beim Vorlesen wie die Vergleichszeile darüber (rund 330 Zeichen).
         announcer.name(self.char_tree, tr("Zeichen nach Fehlerquote sortiert"))
@@ -164,6 +165,8 @@ class StatsPanel:
                 values.insert(4, trend_text(stats.char_trend(comparison["chars"], char) if comparison else None))
             self.char_tree.insert("", "end", values=values)
         if self.compare:
+            # Die Tabelle der Gesamtstatistik füllt sonst bei Neulingen die erste Seite des Reiters.
+            theme.set_tree_rows(self.char_tree, min(max(len(rows), theme.MIN_TREE_ROWS), self.max_rows))
             self.compare_var.set(comparison_text(comparison) if comparison else "")
             self.safe_var.set(tr("Sicher sitzen: {chars}").format(
                 chars=" ".join(display_text(ch) for ch in safe)) if safe else "")

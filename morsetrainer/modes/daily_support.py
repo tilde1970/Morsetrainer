@@ -44,8 +44,15 @@ class DailyModeMixin:
         self.daily_minutes = minutes
         self.set_options_visible(False)
 
+    def daily_end_button(self) -> None:
+        """Der Startknopf beendet die Tagesübung: wie der Knopf in der Leiste
+        beschriftet und nicht blau (blau ist der Start)."""
+        self.start_button.config(text=tr("Tagesübung beenden (Esc)"), style="TButton")
+
     def daily_release(self) -> None:
         """Stellt die gemerkten Werte zurück und zeigt die Einstellungskarte wieder."""
+        if hasattr(self, "start_button"):
+            self.start_button.config(style="Accent.TButton")
         if self._daily_saved is not None:
             self.restore_settings(self._daily_saved)
             self._daily_saved = None

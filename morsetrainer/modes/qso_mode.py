@@ -636,7 +636,10 @@ class QsoModeFrame(DailyModeMixin):
         if self.play_thread is not None:
             self.play_thread.join(timeout=2)
             self.play_thread = None
-        self.start_button.config(text=tr("Tagesübung beenden") if self.daily_minutes else tr("Neues QSO (F5)"))
+        if self.daily_minutes:
+            self.daily_end_button()
+        else:
+            self.start_button.config(text=tr("Neues QSO (F5)"))
         head_unchecked = self.qso_eval == EVAL_HEAD and not self.quiz_checked
         self.replay_button.config(state="disabled" if head_unchecked or self.daily_minutes else "normal")
         for combo in (self.kind_combo, self.eval_combo, self.length_combo):

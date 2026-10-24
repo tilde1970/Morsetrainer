@@ -2679,7 +2679,7 @@ class DailyAnnounceTest(AnnouncerCase):
             self.assertTrue(self.pump_until(lambda: self.runner.block_started))
         self.assertEqual(len(starts), 1)
         self.assertTrue(mode.running)
-        self.assertEqual(str(mode.start_button.cget("text")), "Tagesübung beenden")
+        self.assertEqual(str(mode.start_button.cget("text")), "Tagesübung beenden (Esc)")
 
     def test_abort_during_the_announcement_starts_nothing(self):
         self.runner.start()

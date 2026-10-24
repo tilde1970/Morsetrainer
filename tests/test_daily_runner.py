@@ -103,7 +103,8 @@ class DailyRunnerTest(AppTestCase):
 
     def test_end_buttons_say_they_end_the_daily_practice(self):
         self.runner.start()
-        self.assertEqual(self.runner.mode.start_button.cget("text"), "Tagesübung beenden")
+        self.assertEqual(self.runner.mode.start_button.cget("text"), "Tagesübung beenden (Esc)")
+        self.assertNotEqual(str(self.runner.mode.start_button.cget("style")), "Accent.TButton")
         self.app.daily_bar.end_button.invoke()
         self.assertFalse(self.runner.active)
         self.assertEqual(self.mode("Einzelzeichen").start_button.cget("text"), "Start (F5)")

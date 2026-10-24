@@ -1812,7 +1812,10 @@ class MorseTrainerApp:
         werden dort nicht ausgewertet (siehe _active_mode)."""
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text=tr("Statistik"))
-        frame = ScrollableFrame(tab).inner
+        scroller = ScrollableFrame(tab)
+        frame = scroller.inner
+        jump_bar = ttk.Frame(frame)
+        jump_bar.pack(fill="x", padx=10, pady=(5, 0))
         self.all_time_panel = StatsPanel(
             frame, title=tr("Gesamtstatistik (alle Durchgänge)"), tree_height=12, show_save_label=False,
             compare=True)
@@ -1866,6 +1869,15 @@ class MorseTrainerApp:
         ttk.Button(frame, text=tr("Gesamtstatistik zurücksetzen"), command=self._reset_all_time).pack(
             anchor="e", padx=10, pady=(4, 10)
         )
+        # Sprungzeile: Der Reiter ist mehrere Bildschirmseiten lang. Die Karten sind die
+        # Kinder des Rahmens in der Reihenfolge ihres Aufbaus (nach der Sprungzeile).
+        cards = [child for child in frame.winfo_children() if child is not jump_bar]
+        sections = ((tr("Woche"), cards[1]), (tr("Diplome"), cards[2]), (tr("Lebenslinie"), cards[3]),
+                    (tr("Lernkartei"), cards[4]), (tr("Verwechslungen"), cards[5]), (tr("Fortschritt"), cards[6]))
+        ttk.Label(jump_bar, text=tr("Springe zu:")).grid(row=0, column=0, sticky="w", padx=(0, 6))
+        for index, (name, card) in enumerate(sections):
+            ttk.Button(jump_bar, text=name, command=lambda card=card: scroller.show_top(card)).grid(
+                row=index // 3, column=index % 3 + 1, sticky="w", padx=(0, 4), pady=1)
 
     # --- Rufzeichen und Name ---------------------------------------------------------
     def _station_name(self) -> str:

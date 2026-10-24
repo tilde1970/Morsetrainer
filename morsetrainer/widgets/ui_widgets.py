@@ -302,6 +302,14 @@ class ScrollableFrame:
         top = widget.winfo_rooty() - self.inner.winfo_rooty()
         self._reveal(top, top + widget.winfo_height())
 
+    def show_top(self, widget):
+        """`widget` an den oberen Rand rollen (so weit der Inhalt es erlaubt)."""
+        total = self.inner.winfo_height()
+        if total <= self.canvas.winfo_height():
+            return
+        top = widget.winfo_rooty() - self.inner.winfo_rooty()
+        self.canvas.yview_moveto(max(top - FOCUS_MARGIN, 0) / total)
+
     def _reveal(self, top, bottom):
         """Den Bereich von `top` bis `bottom` (im Inhalt) ins Bild rollen."""
         total = self.inner.winfo_height()

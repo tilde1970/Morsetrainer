@@ -492,7 +492,6 @@ EN.update({
 EN.update({
     "▶ Tagesübung ({minutes} Min, {key})": "▶ Daily practice ({minutes} min, {key})",
     "Tagesübung beenden (Esc)": "End daily practice (Esc)",
-    "Tagesübung beenden": "End daily practice",
     "Weiter mit Enter": "Continue with Enter",
     "Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.":
         "Daily practice, {block}: {mode}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",
@@ -711,6 +710,10 @@ EN.update({
     "Überschrift: {line}": "Heading: {line}",
     "{name} wurde nicht gefunden.": "{name} was not found.",
     "Fortschritt": "Progress",
+    "Springe zu:": "Jump to:",
+    "Woche": "Week",
+    "Lernkartei": "Review box",
+    "Verwechslungen": "Confusions",
     "Lebenslinie": "Lifeline",
     "Sterne gesamt": "Total stars",
     "Tagestempo effektiv (WPM)": "Daily speed, effective (WPM)",

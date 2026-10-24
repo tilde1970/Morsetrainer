@@ -1725,6 +1725,20 @@ class DecimalTest(AppTestCase):
         self.assertIn("Letzte 7 Tage: Reaktion 0,45 s", self.app.statistics_spoken())
         self.assertNotIn("trend", self.mode("Einzelzeichen").stats_panel.char_tree["columns"])  # nur gesamt
 
+    def test_statistics_tab_has_jump_buttons_and_a_short_empty_table(self):
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        names = ("Woche", "Diplome", "Lebenslinie", "Lernkartei", "Verwechslungen", "Fortschritt")
+        buttons = {w.cget("text"): w for w in walk(self.app.root)
+                   if w.winfo_class() == "TButton" and w.cget("text") in names}
+        self.assertEqual(sorted(buttons), sorted(names))
+        for button in buttons.values():
+            button.invoke()  # darf nicht scheitern, auch wenn der Reiter nicht sichtbar ist
+        self.app._refresh_all_time(with_awards=False)
+        self.assertEqual(int(self.app.all_time_panel.char_tree.cget("height")), theme.MIN_TREE_ROWS)
+
     def test_table_columns_grow_with_the_font_and_scroll_sideways(self):
         from tkinter import font as tkfont
         panel = self.app.all_time_panel

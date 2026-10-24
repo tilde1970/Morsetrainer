@@ -382,7 +382,7 @@ class DailyRunner:
                 self._finish(completed=False)
             return
         # Stop beendet hier nicht nur den Block, sondern die ganze Übung.
-        mode.start_button.config(text=tr("Tagesübung beenden"))
+        mode.daily_end_button()
 
     def _focus(self, block) -> set:
         charset = self.app.charset_var.get().upper()
