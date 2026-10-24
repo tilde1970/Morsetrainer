@@ -29,10 +29,13 @@ Einträge ohne das Feld (ältere Daten) gelten mit ihrem aktuellen Fach.
 "award_box" und "award_day" ebenso, aber nur aus Sitzungen mit
 Zeichentempo ab koch.SLOW_CHAR_WPM: Diese Fächer zählen für die Diplome,
 weil sich langsamere Zeichen mitzählen lassen. Einträge ohne diese Felder
-übernehmen beim ersten Entscheiden ihr "best_box"."""
+übernehmen beim ersten Entscheiden ihr "best_box".
+"s", "d" und "last" sind das Schattenmodell (core/fsrs_shadow.py): Stabilität,
+Schwierigkeit und Tag der letzten Entscheidung. Sie werden nur mitgeschrieben
+und haben keine Wirkung."""
 from datetime import date, timedelta
 
-from morsetrainer.core import db
+from morsetrainer.core import db, fsrs_shadow
 from morsetrainer.core.morse import MORSE_CODE
 
 INTERVALS = (1, 2, 4, 8, 16, 32)  # Tage bis zur nächsten Wiederholung je Fach
@@ -56,6 +59,7 @@ STATE_KEY = "review"
 # Zahlenfelder eines Eintrags: Fächer und die Zähler des Tages ("day").
 BOX_FIELDS = ("box", "best_box", "award_box")
 DAY_FIELDS = ("n", "fluent", "pn", "pfluent")
+SHADOW_FIELDS = ("s", "d", "last")
 
 
 def load() -> dict:
@@ -72,10 +76,23 @@ def _clean(entry: dict) -> dict:
     for key in BOX_FIELDS:
         if key in entry and not _is_int(entry[key]):
             entry[key] = 0
+    shadow = [entry.get(key) for key in SHADOW_FIELDS]
+    if any(key in entry for key in SHADOW_FIELDS) and not _shadow_ok(*shadow):
+        for key in SHADOW_FIELDS:
+            entry.pop(key, None)
     if "day" in entry and not (all(_is_int(entry.get(key)) for key in DAY_FIELDS)
                                and isinstance(entry.get("decided"), bool)):
         del entry["day"]
     return entry
+
+
+def _shadow_ok(stability, difficulty, last) -> bool:
+    """Sind die Felder des Schattenmodells alle da und brauchbar?"""
+    try:
+        date.fromisoformat(last)
+    except (TypeError, ValueError):
+        return False
+    return all(isinstance(v, float) and 0 < v < 1e6 for v in (stability, difficulty))
 
 
 def _is_int(value) -> bool:
@@ -180,6 +197,7 @@ def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True)
         box = min(box + 1, len(INTERVALS) - 1)
     else:
         return  # sicher, aber nicht fällig oder nur aus Klartext: Termin bleibt, später am Tag noch möglich
+    _shadow(entry, share, old_box, today)
     entry.update(box=box, due=(today + timedelta(days=INTERVALS[box])).isoformat(), decided=True)
     if box > old_best:
         entry.update(best_box=box, best_day=today.isoformat())
@@ -189,6 +207,29 @@ def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True)
         entry.update(award_box=box, award_day=today.isoformat())
     if box > old_box and events is not None:
         events.append({"char": char, "box": box, "first": box > old_best})
+
+
+def _shadow(entry: dict, share: float, old_box: int, today: date) -> None:
+    """Schattenmodell fortschreiben (siehe Modultext); vor dem Setzen des neuen
+    Fachs und Termins aufrufen, `old_box` ist das Fach davor."""
+    rating = (fsrs_shadow.AGAIN if share < SHAKY_SHARE
+              else fsrs_shadow.HARD if share < SURE_SHARE else fsrs_shadow.GOOD)
+    try:
+        if "due" not in entry:  # neues Zeichen
+            stability, difficulty = fsrs_shadow.first(rating)
+        else:
+            if _shadow_ok(*(entry.get(key) for key in SHADOW_FIELDS)):
+                stability, difficulty = entry["s"], entry["d"]
+                elapsed = (today - date.fromisoformat(entry["last"])).days
+            else:  # Eintrag aus der Zeit vor dem Schattenmodell: aus dem Fach schätzen
+                stability, difficulty = float(INTERVALS[old_box]), 5.0
+                elapsed = INTERVALS[old_box] + (today - _due_date(entry)).days
+            stability, difficulty = fsrs_shadow.review(stability, difficulty, max(elapsed, 1), rating)
+    except (ArithmeticError, ValueError, TypeError, KeyError, IndexError):
+        for key in SHADOW_FIELDS:
+            entry.pop(key, None)
+        return
+    entry.update(s=float(stability), d=float(difficulty), last=today.isoformat())
 
 
 def boxed_chars(data=None) -> str:

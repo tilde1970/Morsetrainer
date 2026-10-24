@@ -453,6 +453,74 @@ class ReviewThresholdsTest(unittest.TestCase):
         self.assertEqual(entry["box"], 3)
 
 
+class ReviewShadowTest(unittest.TestCase):
+    """Das Schattenmodell (FSRS-6) schreibt mit und ändert Fach und Termin nicht."""
+
+    def test_formulas_match_py_fsrs(self):
+        from morsetrainer.core import fsrs_shadow as fs
+        stability, difficulty = fs.first(fs.GOOD)  # Werte aus py-fsrs 6.3.2 mit denselben Gewichten
+        self.assertAlmostEqual(stability, 2.3065, places=4)
+        self.assertAlmostEqual(difficulty, 2.1181, places=4)
+        stability, difficulty = fs.review(stability, difficulty, 4, fs.GOOD)
+        self.assertAlmostEqual(stability, 16.1773, places=3)
+        self.assertAlmostEqual(difficulty, 2.1112, places=4)
+        stability, difficulty = fs.first(fs.AGAIN)
+        stability, difficulty = fs.review(stability, difficulty, 3, fs.GOOD)
+        self.assertAlmostEqual(stability, 2.761, places=3)
+        stability, difficulty = fs.review(stability, difficulty, 10, fs.HARD)
+        self.assertGreater(stability, 0)
+        self.assertAlmostEqual(fs.retrievability(0, 5.0), 1.0)
+        self.assertAlmostEqual(fs.retrievability(5.0, 5.0), 0.9, places=6)  # nach S Tagen 90 %
+
+    def _decide(self, entry, n, fluent, today):
+        from morsetrainer.core import review
+        entry.update(n=n, fluent=fluent, pn=n, pfluent=fluent, decided=False, day=today.isoformat())
+        review._decide("K", entry, today)
+
+    def test_new_and_old_entries_get_shadow_fields_without_changing_the_boxes(self):
+        from datetime import date, timedelta
+        today = date.today()
+        new = {}
+        self._decide(new, 10, 10, today)
+        self.assertEqual(new["box"], 0)
+        self.assertEqual((round(new["s"], 4), new["last"]), (2.3065, today.isoformat()))
+        old = {"box": 2, "due": (today - timedelta(days=1)).isoformat()}
+        self._decide(old, 10, 10, today)
+        self.assertEqual(old["box"], 3)  # Fach wie ohne Schattenmodell
+        self.assertGreater(old["s"], 0)
+        self.assertEqual(old["last"], today.isoformat())
+        weak = {"box": 3, "due": today.isoformat(), "s": 8.0, "d": 5.0, "last": (today - timedelta(days=8)).isoformat()}
+        self._decide(weak, 10, 6, today)
+        self.assertEqual(weak["box"], 0)
+        self.assertLess(weak["s"], 8.0)  # Again verkürzt die Stabilität
+
+    def test_no_decision_leaves_the_shadow_alone(self):
+        from datetime import date, timedelta
+        today = date.today()
+        entry = {"box": 2, "due": (today - timedelta(days=1)).isoformat()}
+        self._decide(entry, 7, 7, today)  # zu wenige Versuche
+        self.assertNotIn("s", entry)
+        self._decide(entry, 10, 8, today)  # Neutralzone
+        self.assertNotIn("s", entry)
+
+    def test_broken_shadow_fields_are_dropped_on_load(self):
+        from morsetrainer.core import review
+        for bad in ({"s": "x", "d": 5.0, "last": "2026-01-01"}, {"s": float("nan"), "d": 5.0, "last": "2026-01-01"},
+                    {"s": 3.0, "d": -1.0, "last": "2026-01-01"}, {"s": 3.0, "d": 5.0, "last": "morgen"},
+                    {"s": 3.0}):
+            entry = review._clean({"box": 1, **bad})
+            self.assertFalse(any(key in entry for key in review.SHADOW_FIELDS), bad)
+        ok = review._clean({"box": 1, "s": 3.0, "d": 5.0, "last": "2026-01-01"})
+        self.assertEqual(ok["s"], 3.0)
+
+    def test_corrupt_box_does_not_break_the_decision(self):
+        from datetime import date
+        today = date.today()
+        entry = {"box": 99, "due": today.isoformat()}
+        self._decide(entry, 10, 10, today)  # IndexError im Schattenmodell darf nichts stören
+        self.assertTrue(entry["decided"])
+
+
 class DailyPausesTest(unittest.TestCase):
     def test_in_the_koch_phase_only_the_pauses_get_shorter(self):
         from morsetrainer.core import daily
