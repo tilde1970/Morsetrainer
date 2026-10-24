@@ -9,6 +9,8 @@ or together at a club evening on the local network.
 
 > **Do you like the Morsetrainer?** It is free and stays free. If you would like
 > to say thanks: **[Support me on Ko-fi](https://ko-fi.com/dl4ym)**.
+>
+> [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/F1S2297ZFY)
 
 **Language:** the program starts in German. Switch to English with
 Ctrl+Comma (or the “Einstellungen …” button at the top right) → “Sprache /

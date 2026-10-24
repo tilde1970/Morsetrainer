@@ -10,6 +10,8 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 > **Gefällt dir der Morsetrainer?** Er ist kostenlos und bleibt es. Wenn du dich
 > bedanken möchtest: **[Mich auf Ko-fi unterstützen](https://ko-fi.com/dl4ym)**.
+>
+> [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/F1S2297ZFY)
 
 **English:** The program can be switched to English under
 „Einstellungen …“ (or Ctrl+Comma) → „Sprache / Language“. English overview: [README.en.md](README.en.md).
