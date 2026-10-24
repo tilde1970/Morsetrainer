@@ -2406,3 +2406,24 @@ class AccessibilityFixesTest(AppTestCase):
         light = theme.PALETTES["light"]
         for fg, bg in (("OK", "OK_BG"), ("ERROR", "ERROR_BG"), ("MUTED", "BUTTON_ACTIVE")):
             self.assertGreaterEqual(ratio(light[fg], light[bg]), 4.5, fg)
+
+
+class FsrsTabTest(AppTestCase):
+    def test_tab_is_hidden_until_the_shortcut_and_toggles(self):
+        from morsetrainer.widgets.fsrs_panel import TAB_NAME, report_text
+        before = self.app.notebook.tabs()
+        self.assertNotIn(TAB_NAME, [self.app.notebook.tab(t, "text") for t in before])
+        for sequence in ("<Control-Shift-F>", "<Control-Shift-f>"):
+            self.assertTrue(self.app.root.bind_all(sequence))  # das Kürzel ist belegt
+        self.app.toggle_fsrs_tab()
+        self.app.root.update()
+        tabs = self.app.notebook.tabs()
+        self.assertEqual(len(tabs), len(before) + 1)
+        self.assertEqual(self.app.notebook.tab("current", "text"), TAB_NAME)
+        self.assertIn("Zu früh für ein Urteil", self.app.fsrs_panel.text_var.get())
+        self.app.toggle_fsrs_tab()
+        self.assertEqual(self.app.notebook.tabs(), before)
+        self.assertNotEqual(self.app.notebook.tab("current", "text"), TAB_NAME)
+        self.assertIn("Entscheidungen im Protokoll: 0", report_text({"entries": 0, "predicted": 0, "first": None,
+                                                                      "last": None, "brier": None, "bins": [],
+                                                                      "boxes": [], "verdict": "few"}))

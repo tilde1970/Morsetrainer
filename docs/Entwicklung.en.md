@@ -110,6 +110,16 @@ tools/bench_mix.py   measures the mixing time of the band conditions (no sound)
 .github/workflows/   tests; builds AppImage, exe and Mac app for releases, with SHA256SUMS.txt
 ```
 
+### Hidden tab “FSRS-Auswertung”
+
+The review box also keeps an FSRS shadow model and a log of its decisions
+(`core/fsrs_shadow.py`, `core/review.py`); neither changes boxes, due dates or
+awards. Ctrl+Shift+F (Mac: Cmd+Shift+F) shows and hides the tab “FSRS-Auswertung”
+(not during an exercise; always closed at start). It shows whether the predicted
+probability of recall hits the share of fluent answers better than the box does;
+a verdict needs 200 decisions with a prediction. The tab is meant for development,
+is not in the manual and is not translated.
+
 ## Building and release
 
 On Linux the AppImage can also be built locally:

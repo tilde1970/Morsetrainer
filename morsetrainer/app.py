@@ -35,6 +35,7 @@ from morsetrainer.net import certs, update
 from morsetrainer.widgets.awards_panel import AwardsPanel, DiplomaWindow
 from morsetrainer.widgets.band_settings import BandSettings
 from morsetrainer.widgets.daily_panel import DailyBar, week_goal_text, week_legend, week_spoken, week_text
+from morsetrainer.widgets.fsrs_panel import TAB_NAME as FSRS_TAB_NAME, FsrsPanel
 from morsetrainer.widgets.help_window import HelpWindow
 from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
@@ -358,6 +359,9 @@ class MorseTrainerApp:
                 root.bind_all(f"<{modifier}-{key}>", lambda e: self.band_settings.open_window() or "break")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
             root.bind_all(f"<{modifier}-comma>", lambda e: self.open_settings() or "break")
+            # Versteckter Entwicklerreiter (nicht in der Anleitung): FSRS-Auswertung.
+            for key in ("F", "f"):
+                root.bind_all(f"<{modifier}-Shift-{key}>", lambda e: self.toggle_fsrs_tab() or "break")
         # F9 und F11 auch in den anderen Fenstern (Einstellungen,
         # Bandbedingungen, Hilfe, Netzwerk …); im Hauptfenster gilt _dispatch_key.
         for key in (ANNOUNCE_KEY, STATUS_KEY):
@@ -1133,6 +1137,24 @@ class MorseTrainerApp:
             self.notebook.select(tabs[index])
         else:
             announcer.say(tr("Während der Übung gesperrt. Zum Wechseln erst stoppen."))
+
+    def toggle_fsrs_tab(self) -> None:
+        """Strg+Umschalt+F: den versteckten Reiter „FSRS-Auswertung“ ans Ende setzen
+        und zeigen, beim zweiten Mal wieder entfernen. Nicht während einer Übung."""
+        if self.running_mode:
+            return
+        panel = getattr(self, "fsrs_panel", None)
+        if panel is not None and str(panel.frame) in self.notebook.tabs():
+            if self.notebook.select() == str(panel.frame):
+                self.notebook.select(self.notebook.tabs()[-2])  # zurück zur Statistik
+            self.notebook.forget(panel.frame)
+            return
+        if panel is None:
+            panel = self.fsrs_panel = FsrsPanel(self.notebook)
+        else:
+            panel.refresh()
+        self.notebook.add(panel.frame, text=FSRS_TAB_NAME)
+        self.notebook.select(panel.frame)
 
     def statistics_spoken(self) -> str:
         """Der Reiter Statistik zum Vorlesen (F11): Gesamtergebnis, Vergleich mit

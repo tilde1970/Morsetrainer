@@ -606,3 +606,39 @@ class ShortNumbersTest(unittest.TestCase):
         values = {content._short_number() for _ in range(200)}
         self.assertIn("5NN", values)
         self.assertTrue(any(v.startswith("T") for v in values))
+
+
+class FsrsReportTest(unittest.TestCase):
+    def _entry(self, p, share, box=0):
+        return {"c": "K", "day": "2026-10-24", "r": 3, "share": share, "n": 10, "t": 3, "p": p, "from": box, "to": box}
+
+    def test_empty_and_garbage_logs(self):
+        from morsetrainer.core import fsrs_shadow
+        report = fsrs_shadow.report([])
+        self.assertEqual((report["entries"], report["predicted"], report["verdict"], report["brier"]), (0, 0, "few", None))
+        report = fsrs_shadow.report(["x", {"p": "a", "share": 1}, {"p": None, "share": 0.9, "day": "2026-10-01"}])
+        self.assertEqual((report["entries"], report["predicted"], report["first"]), (2, 0, "2026-10-01"))
+
+    def test_too_little_data_gives_no_verdict(self):
+        from morsetrainer.core import fsrs_shadow
+        report = fsrs_shadow.report([self._entry(0.9, 0.9)] * (fsrs_shadow.MIN_REPORT - 1))
+        self.assertEqual(report["verdict"], "few")
+        self.assertAlmostEqual(report["brier"]["fsrs"], 0.0)
+
+    def test_verdict_follows_the_brier_values(self):
+        from morsetrainer.core import fsrs_shadow
+        n = fsrs_shadow.MIN_REPORT
+        # Wirklichkeit hängt von p ab, nicht vom Fach (alle Fach 0): FSRS gewinnt.
+        good = [self._entry(0.95, 0.95)] * n + [self._entry(0.55, 0.55)] * n
+        self.assertEqual(fsrs_shadow.report(good)["verdict"], "fsrs")
+        # Wirklichkeit hängt vom Fach ab, p ist Rauschen: das Fach gewinnt.
+        bad = [self._entry(0.55, 0.95, box=3)] * n + [self._entry(0.95, 0.55, box=0)] * n
+        self.assertEqual(fsrs_shadow.report(bad)["verdict"], "box")
+        same = [self._entry(0.9, 0.9)] * (2 * n)
+        self.assertEqual(fsrs_shadow.report(same)["verdict"], "equal")
+
+    def test_bins_and_boxes(self):
+        from morsetrainer.core import fsrs_shadow
+        report = fsrs_shadow.report([self._entry(0.95, 1.0, 2), self._entry(0.6, 0.5, 0), self._entry(1.0, 1.0, 2)])
+        self.assertEqual([b["n"] for b in report["bins"]], [1, 2])  # 0,5–0,7 und 0,9–1,0 (1,0 gehört dazu)
+        self.assertEqual([(b["box"], b["n"]) for b in report["boxes"]], [(0, 1), (2, 2)])

@@ -111,6 +111,18 @@ tools/bench_mix.py   misst die Mischzeit der Bandbedingungen (ohne Ton)
 .github/workflows/   Tests; baut AppImage, exe und Mac-App für Releases, mit SHA256SUMS.txt
 ```
 
+### Versteckter Reiter „FSRS-Auswertung“
+
+Die Lernkartei schreibt nebenbei ein FSRS-Schattenmodell und ein Protokoll
+ihrer Entscheidungen mit (`core/fsrs_shadow.py`, `core/review.py`); beides
+ändert nichts an Fächern, Fälligkeit oder Diplomen. Strg+Umschalt+F
+(Mac: Cmd+Umschalt+F) blendet den Reiter „FSRS-Auswertung“ ein und wieder aus
+(nicht während einer Übung, beim Start immer zu). Er zeigt, ob die vorhergesagte
+Behaltenswahrscheinlichkeit den Anteil flüssiger Treffer besser trifft als das
+Fach; ein Urteil gibt es erst ab 200 Entscheidungen mit Vorhersage. Der Reiter
+ist für die Entwicklung gedacht, steht nicht in der Anleitung und ist nicht
+übersetzt.
+
 ## Bauen und Release
 
 Das AppImage lässt sich unter Linux auch lokal bauen:
