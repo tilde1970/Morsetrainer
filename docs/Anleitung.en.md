@@ -448,7 +448,9 @@ is shown. Evaluation is your choice:
 The zones in the exchange (CQ WW, IARU HF) follow the digit of the call
 sign; for large countries such as the USA, Canada and Russia they are
 therefore rounded (a W4 call sign always gets zone 5, although Alabama,
-Kentucky and Tennessee are in zone 4).
+Kentucky and Tennessee are in zone 4; likewise W8 always gets zone 4,
+although West Virginia is in zone 5, and W7 always gets zone 3, although
+Montana and Wyoming are in zone 4).
 
 How often you used “Again” before checking is noted. “Adjust speed
 automatically” follows the same rule as “Speed adapts” in One by one.

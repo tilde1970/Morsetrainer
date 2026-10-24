@@ -452,7 +452,9 @@ Dauer. Ausgewertet wird wahlweise:
 Die Zonen im Austausch (CQ WW, IARU HF) folgen der Ziffer des Rufzeichens;
 für große Länder wie USA, Kanada und Russland sind sie deshalb gerundet
 (ein W4-Rufzeichen bekommt immer Zone 5, obwohl Alabama, Kentucky und
-Tennessee in Zone 4 liegen).
+Tennessee in Zone 4 liegen; ebenso bekommt W8 immer Zone 4, obwohl West
+Virginia in Zone 5 liegt, und W7 immer Zone 3, obwohl Montana und Wyoming in
+Zone 4 liegen).
 
 Wie oft vor dem Prüfen „Nochmal“ gehört wurde, wird vermerkt. „Tempo
 automatisch anpassen“ folgt derselben Regel wie „Tempo wächst mit“ im
