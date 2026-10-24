@@ -600,6 +600,10 @@ EN.update({
         "Tip: Relaxed daily practice ({key}) trains without a time limit.",
     "Tipp: Bei vielen verpassten Zeichen hilft ein etwas langsameres Tempo.":
         "Tip: a slightly slower speed helps when many characters are missed.",
+    "Nach der Pause: alle {tried} früher sicheren Zeichen saßen gleich wieder.":
+        "After the break: all {tried} characters that used to be solid were right back.",
+    "Nach der Pause: von {tried} früher sicheren Zeichen saßen {back} gleich wieder. Der Rest kommt in den nächsten Tagen zurück.":
+        "After the break: of {tried} characters that used to be solid, {back} were right back. The rest will return over the next days.",
     "Das kommt vor – morgen läuft es etwas langsamer, bis es wieder sitzt.":
         "It happens – tomorrow runs a little slower until it sits again.",
     "Schön, dass du wieder da bist. Nach einer Pause sind die ersten Tage schwerer – das Tempo gleicht sich an.":

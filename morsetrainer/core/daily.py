@@ -820,6 +820,30 @@ def days_since_practice(state: dict, today: date):
         return None
 
 
+# Nach einer Pause zählen Zeichen ab diesem Fach als früher sicher; das
+# Aufwärmen prüft sie ab PAUSE_MIN_ATTEMPTS Versuchen.
+PAUSE_SURE_BOX = 3
+PAUSE_MIN_ATTEMPTS = 3
+
+
+def sure_before_pause(boxes: dict, charset: str) -> str:
+    """Zeichen von `charset`, die in der Lernkartei (`boxes`: review.load())
+    mindestens im Fach PAUSE_SURE_BOX liegen."""
+    return "".join(ch for ch in charset if isinstance(boxes.get(ch), dict)
+                   and isinstance(boxes[ch].get("box"), int) and boxes[ch]["box"] >= PAUSE_SURE_BOX)
+
+
+def pause_check(result: dict, sure: str):
+    """(geprüft, davon wieder sicher) für die früher sicheren Zeichen `sure`
+    nach dem Aufwärmen; None, wenn weniger als zwei geprüft wurden."""
+    chars = result.get("chars", {})
+    tried = [ch for ch in sure if chars.get(ch, (0, 0))[0] >= PAUSE_MIN_ATTEMPTS]
+    if len(tried) < 2:
+        return None
+    back = [ch for ch in tried if chars[ch][1] / chars[ch][0] >= review.SURE_SHARE]
+    return len(tried), len(back)
+
+
 def today_numbers(state: dict, today: date) -> dict:
     """Zähler des heutigen Tages für die Abendbilanz: {"chars": gehörte Zeichen,
     "streak": beste Serie}."""

@@ -447,6 +447,14 @@ class StarsTest(unittest.TestCase):
         self.day(1, 80)
         self.assertFalse(daily.slower_tomorrow(self.state, TODAY + timedelta(days=1)))
 
+    def test_sure_before_pause_and_pause_check(self):
+        boxes = {"K": {"box": 4}, "M": {"box": 2}, "R": {"box": 3}, "S": "kaputt", "T": {"box": None}}
+        self.assertEqual(daily.sure_before_pause(boxes, "KMRST"), "KR")
+        result = {"chars": {"K": (8, 8), "R": (4, 2), "M": (9, 9)}}
+        self.assertEqual(daily.pause_check(result, "KR"), (2, 1))
+        self.assertIsNone(daily.pause_check(result, "K"))  # unter zwei geprüften
+        self.assertIsNone(daily.pause_check({"chars": {"K": (2, 2), "R": (2, 2)}}, "KR"))  # zu wenige Versuche
+
     def test_days_since_practice_and_today_numbers(self):
         self.assertIsNone(daily.days_since_practice(self.state, TODAY))
         self.day(0, 80)

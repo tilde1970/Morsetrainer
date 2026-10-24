@@ -93,6 +93,7 @@ class DailyRunner:
         self.card_shown = 0.0
         self.card_text = ""  # zuletzt gezeigte Karte als Ansage
         self.extra = False
+        self.pause_sure = ""
         self.summary = None
         self.refresh_idle()
 
@@ -173,6 +174,9 @@ class DailyRunner:
 
         charset = daily.lesson_charset(lesson, review.boxed_chars())
         self.due = review.due_chars(known=charset)
+        gap = daily.days_since_practice(self.state, self.today)
+        self.pause_sure = (daily.sure_before_pause(review.load(), charset)
+                           if gap is not None and gap >= daily.WELCOME_BACK_DAYS else "")
         turn = daily.practice_days(self.state, self.today)
         # Jeder zweite Zyklus hat statt des Contest-Runs Bandbedingungen.
         contest = CONTEST_KINDS[turn // (2 * len(daily.POST_CYCLE)) % len(CONTEST_KINDS)]
@@ -218,6 +222,7 @@ class DailyRunner:
         tempo = daily.current_tempo(self.state, self.app.wpm_var.get(), self.app.farnsworth_wpm())
         self.state["tempo"] = tempo
         self.due = ""
+        self.pause_sure = ""
         if kind == daily.CONFUSIONS:
             block = daily.Block(daily.EXTRA, "single", daily.EXTRA_MINUTES)
             charset = chars
@@ -439,6 +444,14 @@ class DailyRunner:
         if new_stars:
             strong.append(tr("Neu: {stars}").format(stars=stars_named(new_stars)))
             lines += strong
+        check = daily.pause_check(result, self.pause_sure) if block.kind == daily.WARMUP else None
+        if check:
+            if check[1] < check[0]:
+                lines.append(tr("Nach der Pause: von {tried} früher sicheren Zeichen saßen {back} gleich wieder. "
+                                "Der Rest kommt in den nächsten Tagen zurück.").format(tried=check[0], back=check[1]))
+            else:
+                lines.append(tr("Nach der Pause: alle {tried} früher sicheren Zeichen saßen gleich wieder.")
+                             .format(tried=check[0]))
         if block.mode == "single":
             lines += [moment_line(m) for m in daily.char_moments(self.today)]
         tight = (block.kind == daily.WARMUP and not self.app.daily_relaxed_var.get()

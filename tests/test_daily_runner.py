@@ -490,6 +490,22 @@ class DailyRunnerTest(AppTestCase):
         self.assertFalse([line for line in lines if "Entspannte Tagesübung" in line])
         self.runner.abort(quiet=True)
 
+    def test_warmup_card_counts_the_solid_characters_after_a_break(self):
+        self.runner.start()
+        warmup = self.runner.blocks[0]
+        result = {"correct": 20, "total": 24, "minutes": warmup.minutes,
+                  "chars": {"K": (8, 8), "M": (8, 4), "R": (1, 1)}}
+        self.runner.pause_sure = "KMR"
+        text = "Nach der Pause: von 2 früher sicheren Zeichen saßen 1 gleich wieder. Der Rest kommt in den nächsten Tagen zurück."
+        self.assertIn(text, self._card_lines(warmup, result))
+        all_back = dict(result, chars={"K": (8, 8), "M": (8, 8)})
+        self.assertIn("Nach der Pause: alle 2 früher sicheren Zeichen saßen gleich wieder.", self._card_lines(warmup, all_back))
+        self.runner.pause_sure = ""
+        self.assertNotIn(text, self._card_lines(warmup, result))
+        self.runner.pause_sure = "KMR"
+        self.assertFalse([line for line in self._card_lines(self.runner.blocks[1], result) if line.startswith("Nach der Pause")])
+        self.runner.abort(quiet=True)
+
     def test_card_after_a_weak_main_part_says_it_happens(self):
         self.runner.start()
         main = self.runner.blocks[1]
