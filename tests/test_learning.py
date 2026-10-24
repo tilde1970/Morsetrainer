@@ -4,6 +4,7 @@ import random
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import tests  # noqa: F401  (Pfad und sounddevice-Attrappe)
 from morsetrainer.core import align, koch, words
@@ -493,6 +494,36 @@ class ReviewShadowTest(unittest.TestCase):
         self._decide(weak, 10, 6, today)
         self.assertEqual(weak["box"], 0)
         self.assertLess(weak["s"], 8.0)  # Again verkürzt die Stabilität
+
+    def test_decisions_land_in_the_log_and_reset_clears_it(self):
+        from datetime import date, timedelta
+        from morsetrainer.core import review
+        review.reset()
+        today = date.today()
+        stat = {"good": 10, "wrong": 0, "latencies": [0.5] * 10}
+        review.update({"K": stat}, promote=True, today=today)
+        later = today + timedelta(days=3)
+        review.update({"K": dict(stat, good=6, wrong=4, latencies=[0.5] * 6)}, promote=True, today=later)
+        log = review.load_log()
+        self.assertEqual([e["c"] for e in log], ["K", "K"])
+        self.assertEqual((log[0]["r"], log[0]["t"], log[0]["p"], log[0]["from"], log[0]["to"]), (3, None, None, 0, 0))
+        self.assertEqual((log[1]["r"], log[1]["t"], log[1]["from"], log[1]["to"]), (1, 3, 0, 0))
+        self.assertTrue(0 < log[1]["p"] < 1)
+        self.assertEqual(log[1]["day"], later.isoformat())
+        review.reset()
+        self.assertEqual(review.load_log(), [])
+
+    def test_log_is_capped_and_survives_garbage(self):
+        from morsetrainer.core import db, review
+        review.reset()
+        db.save_state(review.LOG_KEY, "kaputt")
+        self.assertEqual(review.load_log(), [])
+        db.save_state(review.LOG_KEY, [{"c": "A"}, "x", {"c": "B"}])
+        self.assertEqual([e["c"] for e in review.load_log()], ["A", "B"])
+        with mock.patch.object(review, "LOG_MAX", 3):
+            review._save_log([{"c": "C"}, {"c": "D"}])
+        self.assertEqual([e["c"] for e in review.load_log()], ["B", "C", "D"])
+        review.reset()
 
     def test_no_decision_leaves_the_shadow_alone(self):
         from datetime import date, timedelta

@@ -32,7 +32,11 @@ weil sich langsamere Zeichen mitzählen lassen. Einträge ohne diese Felder
 übernehmen beim ersten Entscheiden ihr "best_box".
 "s", "d" und "last" sind das Schattenmodell (core/fsrs_shadow.py): Stabilität,
 Schwierigkeit und Tag der letzten Entscheidung. Sie werden nur mitgeschrieben
-und haben keine Wirkung."""
+und haben keine Wirkung. Jede Entscheidung steht außerdem im Protokoll
+LOG_KEY (Zeichen, Tag, Bewertung, Anteil, Versuche, Tage seit der letzten
+Entscheidung, vorhergesagte Behaltenswahrscheinlichkeit "p", Fach davor
+und danach), höchstens LOG_MAX Einträge; zum späteren Vergleich von
+Vorhersage und Fach."""
 from datetime import date, timedelta
 
 from morsetrainer.core import db, fsrs_shadow
@@ -54,6 +58,8 @@ focus = set()
 
 
 STATE_KEY = "review"
+LOG_KEY = "review_log"
+LOG_MAX = 20000  # älteste Einträge fallen heraus
 
 
 # Zahlenfelder eines Eintrags: Fächer und die Zähler des Tages ("day").
@@ -146,6 +152,25 @@ def award_box(entry: dict) -> int:
     return int(entry["award_box"]) if "award_box" in entry else best_box(entry)
 
 
+def load_log() -> list:
+    """Protokoll der Entscheidungen (siehe Modultext), leer bei Fehlern."""
+    try:
+        data = db.load_state(LOG_KEY, [])
+    except (db.Error, OSError):
+        return []
+    return [e for e in data if isinstance(e, dict)] if isinstance(data, list) else []
+
+
+def _save_log(new: list) -> None:
+    """Hängt `new` an das Protokoll an."""
+    if not new:
+        return
+    try:
+        db.save_state(LOG_KEY, (load_log() + new)[-LOG_MAX:])
+    except (db.Error, OSError):
+        pass
+
+
 def update(per_char: dict, promote: bool = False, today=None, events=None, fast: bool = True) -> dict:
     """Übernimmt die Ergebnisse einer Sitzung (SessionStats.per_char).
     `promote`: Die Sitzung darf Zeichen hochstufen (siehe Modultext).
@@ -156,6 +181,7 @@ def update(per_char: dict, promote: bool = False, today=None, events=None, fast:
     today = today or date.today()
     day = today.isoformat()
     data = load()
+    log = []
     for char, e in per_char.items():
         attempts = e["good"] + e["wrong"] - e.get("untimed", 0)  # ohne Zeit: zählt hier nicht
         if attempts <= 0:
@@ -169,13 +195,14 @@ def update(per_char: dict, promote: bool = False, today=None, events=None, fast:
         if promote:
             entry["pn"] += attempts
             entry["pfluent"] += fluent
-        _decide(char, entry, today, events, fast)
+        _decide(char, entry, today, events, fast, log)
     _save(data)
+    _save_log(log)
     return data
 
 
-def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True) -> None:
-    """Höchstens eine Entscheidung je Zeichen und Tag."""
+def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True, log=None) -> None:
+    """Höchstens eine Entscheidung je Zeichen und Tag; `log`: Liste für das Protokoll."""
     if entry["decided"] or entry["n"] < MIN_ATTEMPTS:
         return
     share = entry["fluent"] / entry["n"]
@@ -197,7 +224,10 @@ def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True)
         box = min(box + 1, len(INTERVALS) - 1)
     else:
         return  # sicher, aber nicht fällig oder nur aus Klartext: Termin bleibt, später am Tag noch möglich
-    _shadow(entry, share, old_box, today)
+    shadow = _shadow(entry, share, old_box, today)
+    if log is not None and shadow is not None:
+        log.append({"c": char, "day": today.isoformat(), "r": shadow["rating"], "share": round(share, 3),
+                    "n": entry["n"], "t": shadow["elapsed"], "p": shadow["p"], "from": old_box, "to": box})
     entry.update(box=box, due=(today + timedelta(days=INTERVALS[box])).isoformat(), decided=True)
     if box > old_best:
         entry.update(best_box=box, best_day=today.isoformat())
@@ -209,12 +239,16 @@ def _decide(char: str, entry: dict, today: date, events=None, fast: bool = True)
         events.append({"char": char, "box": box, "first": box > old_best})
 
 
-def _shadow(entry: dict, share: float, old_box: int, today: date) -> None:
+def _shadow(entry: dict, share: float, old_box: int, today: date):
     """Schattenmodell fortschreiben (siehe Modultext); vor dem Setzen des neuen
-    Fachs und Termins aufrufen, `old_box` ist das Fach davor."""
+    Fachs und Termins aufrufen, `old_box` ist das Fach davor. Gibt Bewertung,
+    Tage seit der letzten Entscheidung und vorhergesagte Behaltenswahrscheinlichkeit
+    zurück ({"rating", "elapsed", "p"}; die beiden letzten None bei einem neuen
+    Zeichen), bei Fehlern None."""
     rating = (fsrs_shadow.AGAIN if share < SHAKY_SHARE
               else fsrs_shadow.HARD if share < SURE_SHARE else fsrs_shadow.GOOD)
     try:
+        elapsed = predicted = None
         if "due" not in entry:  # neues Zeichen
             stability, difficulty = fsrs_shadow.first(rating)
         else:
@@ -224,12 +258,15 @@ def _shadow(entry: dict, share: float, old_box: int, today: date) -> None:
             else:  # Eintrag aus der Zeit vor dem Schattenmodell: aus dem Fach schätzen
                 stability, difficulty = float(INTERVALS[old_box]), 5.0
                 elapsed = INTERVALS[old_box] + (today - _due_date(entry)).days
-            stability, difficulty = fsrs_shadow.review(stability, difficulty, max(elapsed, 1), rating)
+            elapsed = max(elapsed, 1)
+            predicted = round(fsrs_shadow.retrievability(elapsed, stability), 4)
+            stability, difficulty = fsrs_shadow.review(stability, difficulty, elapsed, rating)
     except (ArithmeticError, ValueError, TypeError, KeyError, IndexError):
         for key in SHADOW_FIELDS:
             entry.pop(key, None)
-        return
+        return None
     entry.update(s=float(stability), d=float(difficulty), last=today.isoformat())
+    return {"rating": rating, "elapsed": elapsed, "p": predicted}
 
 
 def boxed_chars(data=None) -> str:
@@ -274,5 +311,6 @@ def reset() -> None:
     übergangen."""
     try:
         db.delete_state(STATE_KEY)
+        db.delete_state(LOG_KEY)
     except (db.Error, OSError):
         pass
