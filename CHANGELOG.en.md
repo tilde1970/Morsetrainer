@@ -4,6 +4,13 @@
 
 - **Practice, history:** In the “One by one” tab (characters, groups, words,
   callsigns) and in “Network” the history now sits above the statistics.
+- **Practice, view:** When the answer field opens in Groups, Words or
+  Callsigns, the view scrolls so that the answer field, the feedback and the
+  history are visible together if they all fit in the visible part (in One by
+  one: the feedback with the history); otherwise the answer field stays in
+  view. The scroll helper now follows only the element that really has the
+  focus, no longer the frame around it, which used to pull the field out of
+  view again.
 - **Statistics, jump row:** The “▲ Back to top” button is now at the top of
   every section, on the right below the title, instead of at the very bottom.
   The tall sections (Awards, Lifeline, Insights, Progress) have it at the

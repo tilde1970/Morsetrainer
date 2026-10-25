@@ -4,6 +4,12 @@
 
 - **Üben, Verlauf:** In den Reitern „Einzeln“ (Zeichen, Gruppen, Wörter,
   Rufzeichen) und „Netzwerk“ steht der Verlauf jetzt über der Statistik.
+- **Üben, Ansicht:** Öffnet das Antwortfeld in Gruppen, Wörtern oder
+  Rufzeichen, rollt die Ansicht so, dass Antwortfeld, Rückmeldung und Verlauf
+  zusammen zu sehen sind, wenn alles in den sichtbaren Teil passt (bei Einzeln
+  die Rückmeldung mit dem Verlauf); sonst bleibt das Antwortfeld im Blick. Die
+  Rollhilfe folgt nur noch dem Element, das wirklich den Fokus hat, nicht mehr
+  dem Rahmen darum, der das Feld zuvor oft wieder aus dem Bild holte.
 - **Statistik, Sprungzeile:** Der Knopf „▲ Nach oben“ steht jetzt oben in
   jedem Abschnitt, rechts unter dem Titel, statt ganz unten. In den hohen
   Abschnitten (Diplome, Lebenslinie, Auswertungen, Fortschritt) gibt es ihn
