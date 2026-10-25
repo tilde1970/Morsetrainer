@@ -682,10 +682,10 @@ class NetworkModeFrame:
         ttk.Button(self.paper_card, text=tr("Auswerten"), style="Accent.TButton", command=self.submit_paper).pack(
             anchor="w", pady=(6, 0))
 
-        self.stats_panel = StatsPanel(parent)
         history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
+        self.stats_panel = StatsPanel(parent)
 
     def _show_role(self):
         if self.role_var.get() == TRAINER:

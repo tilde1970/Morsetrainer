@@ -232,11 +232,11 @@ class SingleModeFrame(DailyModeMixin):
         # 200 % höher als der sichtbare Teil, dann bliebe sie halb verdeckt.
         self.scroller.follow(self.feedback_var, self.feedback_label)
 
-        self.stats_panel = StatsPanel(parent)
-
         history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=520).pack(anchor="w")
+
+        self.stats_panel = StatsPanel(parent)
 
     def _on_icr_toggle(self):
         if self.running:

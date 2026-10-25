@@ -400,11 +400,11 @@ class SequenceModeFrame(DailyModeMixin):
 
         self.scroller.follow(self.feedback_var, result)
 
-        self.stats_panel = StatsPanel(parent)
-
         history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
+
+        self.stats_panel = StatsPanel(parent)
 
     def _show_answer_row(self):
         if self.style == HEAD:

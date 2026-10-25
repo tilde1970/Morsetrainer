@@ -1746,6 +1746,23 @@ class DecimalTest(AppTestCase):
         self.app._refresh_all_time(with_awards=False)
         self.assertEqual(int(self.app.all_time_panel.char_tree.cget("height")), theme.MIN_TREE_ROWS)
 
+    def test_history_stands_above_the_statistics_in_every_exercise_that_has_both(self):
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        self.root.deiconify()
+        self.root.geometry("1024x900")
+        for title in ("Einzelzeichen", "Gruppen", "Wörter", "Rufzeichen", "Netzwerk"):
+            self.app.show_mode(title, announce=False)
+            self.root.update()
+            mode = self.mode(title)
+            label = next(w for w in walk(self.app.root) if str(w.cget("textvariable") if w.winfo_class() == "TLabel"
+                                                              else "") == str(mode.history_var))
+            history = label.master.winfo_rooty()
+            statistics = mode.stats_panel.char_tree.master.winfo_rooty()
+            self.assertLess(history, statistics, title)
+
     def test_back_buttons_sit_at_the_top_of_their_sections(self):
         def walk(widget):
             for child in widget.winfo_children():
