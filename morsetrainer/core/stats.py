@@ -606,16 +606,28 @@ def _measured(obj: dict):
 def period_comparison(now=None) -> dict:
     """Trefferquote und Reaktion der letzten COMPARE_DAYS Tage (RECENT) und
     der BEFORE_DAYS Tage davor (BEFORE), gesamt und je Zeichen:
-    {RECENT: Zahlen, BEFORE: Zahlen, "chars": {Zeichen: {RECENT, BEFORE}}}.
-    Trefferquote aus allen Modi, Reaktion nur aus REACTION_MODE: richtige
+    {RECENT: Zahlen, BEFORE: Zahlen, "chars": {Zeichen: {RECENT, BEFORE}},
+    "modes": {Modus: {RECENT: [richtig, falsch], BEFORE: [...]}}, "before_days":
+    Tage, die BEFORE wirklich abdeckt (weniger als BEFORE_DAYS bei jungen
+    Daten)}. Trefferquote aus allen Modi (je Modus unter "modes", weil der
+    Modus-Mix den Schnitt verschiebt), Reaktion nur aus REACTION_MODE: richtige
     Antworten, gemessen (nicht angenommen), gekappt bei LATENCY_CAP_S. Nur
-    abgeschlossene Durchgänge zählen. Nach
-    period_numbers() bzw. char_trend() lesen."""
+    abgeschlossene Durchgänge zählen, ohne Wiederholungsabfragen und Zeichen
+    ohne Zeitmessung (wie in der Gewichtung). Nach period_numbers() bzw.
+    char_trend() lesen."""
     now = now or datetime.now()
     split = now - timedelta(days=COMPARE_DAYS)
-    result = {RECENT: _new_period(), BEFORE: _new_period(), "chars": {}}
+    result = {RECENT: _new_period(), BEFORE: _new_period(), "chars": {}, "modes": {}, "before_days": BEFORE_DAYS}
+    earliest = split
     for start, mode, obj in _char_events(_after_reset(split - timedelta(days=BEFORE_DAYS)), completed_only=True):
+        if obj.get("retry") or obj.get("untimed"):
+            continue
         side = RECENT if start >= split else BEFORE
+        if side == BEFORE:
+            earliest = min(earliest, start)
+        if isinstance(mode, str):
+            counts = result["modes"].setdefault(mode, {RECENT: [0, 0], BEFORE: [0, 0]})[side]
+            counts[0 if obj.get("correct") is True else 1] += 1
         char = result["chars"].setdefault(obj["char"], {RECENT: _new_period(), BEFORE: _new_period()})
         latency = _measured(obj) if mode == REACTION_MODE else None
         for period in (result[side], char[side]):
@@ -624,6 +636,8 @@ def period_comparison(now=None) -> dict:
                 period["latency_s"] += latency
                 period["latency_count"] += 1
                 period["latencies"].append(latency)
+    if earliest < split:
+        result["before_days"] = min(BEFORE_DAYS, max((split - earliest).days, 1))
     return result
 
 

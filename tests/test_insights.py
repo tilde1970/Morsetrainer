@@ -29,24 +29,29 @@ class InsightsTest(unittest.TestCase):
             lines.append(entry)
         tests.write_session(lines + [{"type": "summary"}])
 
-    def test_lag_is_the_recorded_number_of_characters(self):
-        self.write(1, [("K", "K", {"lag_chars": 2.0})] * 40, mode="continuous")
-        self.write(30, [("K", "K", {"lag_chars": 1.0})] * 40, mode="continuous")
+    def test_lag_counts_each_run_once_with_its_median(self):
+        for day in range(5):
+            # Jeder Lauf: 10 Zeichen mit Rückstand, eines davon ohne Taste (nicht getippt)
+            self.write(1 + day, [("K", "K", {"lag_chars": 2.0})] * 9 + [("K", "", {"lag_chars": 4.0})],
+                       mode="continuous")
+            self.write(30 + day, [("K", "K", {"lag_chars": 1.0})] * 10, mode="continuous")
         self.write(1, [("K", "K", {"lag_chars": 9.0})] * 40, mode="single")  # anderer Modus zählt nicht
         lag = insights.lag_chars()
-        self.assertEqual((insights.median(lag["recent"]), insights.median(lag["before"])), (2.0, 1.0))
+        self.assertEqual((lag["recent"], lag["before"]), ([2.0] * 5, [1.0] * 5))
         self.assertEqual(panel.lag_text(lag),
-                         "Rückstand am Stück (Median): letzte 14 Tage: 2,0 Zeichen, 100 % richtig, "
-                         "davor: 1,0 Zeichen, 100 % richtig.")
+                         "Rückstand am Stück (Median der Durchgänge): letzte 14 Tage: 2,0 Zeichen, 90 % richtig, "
+                         "10 % nicht getippt (aus 5 Durchgängen), davor: 1,0 Zeichen, 100 % richtig, "
+                         "0 % nicht getippt (aus 5 Durchgängen).")
 
-    def test_lag_is_silent_without_enough_measurements(self):
-        self.write(1, [("K", "K", {"lag_chars": 1.2})] * 5, mode="continuous")
-        self.write(1, [("K", "K", {})] * 40, mode="continuous")  # Durchgänge ohne Rückstand
+    def test_a_single_long_run_is_not_enough_for_the_lag(self):
+        self.write(1, [("K", "K", {"lag_chars": 1.2})] * 150, mode="continuous")  # ein Lauf, viele Werte
+        self.write(1, [("K", "K", {})] * 40, mode="continuous")  # Durchgang ohne Rückstand
         self.assertEqual(panel.lag_text(insights.lag_chars()), "")
 
     def test_lag_ignores_unusable_values(self):
         rows = [("K", "K", {"lag_chars": value}) for value in (True, -1, float("inf"), "2", None, [1])] * 6
-        self.write(1, rows, mode="continuous")
+        for day in range(6):
+            self.write(1 + day, rows, mode="continuous")
         self.assertEqual(insights.lag_chars()["recent"], [])
 
     def test_causes_are_split_per_week_and_small_weeks_are_not(self):
@@ -78,16 +83,32 @@ class InsightsTest(unittest.TestCase):
         self.write(1, [("K", "M", {"retry": True})] * 10)
         self.assertEqual(insights.causes_by_week(), [])
 
-    def test_fatigue_compares_first_and_last_third(self):
-        for day in range(1, 11):
+    def _fatigue_sessions(self, count, drop_every=1):
+        for day in range(1, count + 1):
             first = [("K", "K", {})] * 10
             middle = [("K", "K", {})] * 8 + [("K", "M", {})] * 2
             last = [("K", "K", {})] * 6 + [("K", "M", {})] * 4
-            self.write(day, first + middle + last)
+            if drop_every == 1 or day % drop_every:
+                self.write(day, first + middle + last)
+            else:  # Durchgang ohne Abfall, mit wechselnder Richtung
+                self.write(day, last + middle + first)
+
+    def test_fatigue_gives_the_drop_with_a_range_and_a_verdict_only_from_enough_runs(self):
+        self._fatigue_sessions(10)
         text = panel.fatigue_text(insights.fatigue())
         self.assertIn("Erstes Drittel: 100 % richtig", text)
         self.assertIn("Letztes Drittel: 60 % richtig", text)
+        self.assertIn("Erstes minus letztes Drittel: 40,0 Punkte (zwischen +40 und +40)", text)
+        self.assertTrue(text.endswith("Für ein Urteil zum Nachlassen sind es noch zu wenige Durchgänge (ab 30)."))
+        self._fatigue_sessions(30)
+        text = panel.fatigue_text(insights.fatigue())
         self.assertTrue(text.endswith("könnten sich lohnen."))
+
+    def test_fatigue_with_mixed_runs_has_no_reliable_verdict(self):
+        self._fatigue_sessions(30, drop_every=2)  # jeder zweite Lauf umgekehrt: Mittel 0, große Streuung
+        text = panel.fatigue_text(insights.fatigue())
+        self.assertIn("Erstes minus letztes Drittel: 0,0 Punkte", text)
+        self.assertTrue(text.endswith("Kein sicheres Nachlassen erkennbar."))
 
     def test_fatigue_needs_enough_long_runs(self):
         self.write(1, [("K", "K", {})] * 40)
@@ -116,10 +137,15 @@ class InsightsTest(unittest.TestCase):
                       panel.pairs_text(rows))
 
     def test_small_differences_are_unchanged_and_big_ones_clear(self):
-        row = {"before": 10.0, "recent": 11.0, "n_before": 500, "n_recent": 500}
+        row = {"before": 10.0, "recent": 11.0, "n_before": 5000, "n_recent": 5000}
         self.assertEqual(insights.pair_verdict(row), insights.SAME)
+        self.assertEqual(insights.pair_verdict({**row, "n_before": 300, "n_recent": 300}), insights.UNSURE)  # zu ungenau
         self.assertEqual(insights.pair_verdict({**row, "recent": 20.0}), insights.MORE)
         self.assertEqual(insights.pair_verdict({**row, "before": 20.0, "recent": 10.0}), insights.LESS)
+
+    def test_a_difference_resting_on_a_single_case_is_not_reported(self):
+        row = {"before": 7 / 103 * 100, "recent": 1 / 99 * 100, "n_before": 103, "n_recent": 99}  # 7 gegen 1 Fall
+        self.assertEqual(insights.pair_verdict(row), insights.UNSURE)
 
     def test_both_directions_of_a_pair_stay_together(self):
         self.write(40, [("B", "6", {})] * 4 + [("B", "B", {})] * 36 + [("6", "B", {})] * 8 + [("6", "6", {})] * 32)
@@ -148,15 +174,44 @@ class InsightsTest(unittest.TestCase):
         text = panel.fatigue_text(insights.fatigue())
         self.assertIn("Letztes Drittel: 100 % richtig", text)
 
-    def test_wobbly_characters_dropped_two_boxes_from_a_high_one(self):
+    def test_wobbly_characters_dropped_two_boxes_from_box_three_or_higher(self):
         data = {"6": {"due": "2026-10-01", "box": 0, "best_box": 4},       # Fach 5 -> 1
                 "X": {"due": "2026-10-01", "box": 2, "best_box": 4},       # Fach 5 -> 3
-                "K": {"due": "2026-10-01", "box": 1, "best_box": 2},       # nie hoch genug
+                "I": {"due": "2026-10-01", "box": 0, "best_box": 2},       # Fach 3 -> 1
+                "K": {"due": "2026-10-01", "box": 0, "best_box": 1},       # Fach 2 -> 1: normales Hin und Her
+                "A": {"due": "2026-10-01", "box": 1, "best_box": 2},       # Fach 3 -> 2: nur ein Fach
                 "R": {"due": "2026-10-01", "box": 3, "best_box": 4},       # nur ein Fach
                 "M": {"box": 0, "best_box": 5}}                            # nicht in der Kartei
         rows = insights.wobbly(data)
-        self.assertEqual(rows, [("6", 5, 1), ("X", 5, 3)])
-        self.assertEqual(panel.wobbly_text(rows), "6 (Fach 5 → 1), X (Fach 5 → 3)")
+        self.assertEqual(rows, [("6", 5, 1), ("I", 3, 1), ("X", 5, 3)])
+        self.assertEqual(panel.wobbly_text(rows), "6 (Fach 5 → 1), I (Fach 3 → 1), X (Fach 5 → 3)")
+
+    def test_the_first_week_is_marked_when_the_data_start_mid_week(self):
+        self.write(0, [("K", "", {})] * 6)
+        self.write(9, [("K", "", {})] * 6)
+        weeks = insights.causes_by_week()
+        self.assertTrue(weeks[0]["partial"])
+        self.assertFalse(weeks[-1]["partial"])
+        self.assertIn("(unvollständig, Daten erst ab Wochenmitte)", panel.causes_text(weeks).split("\n")[0])
+
+    def test_wobbly_stays_empty_with_a_hint_until_a_high_box_is_reached(self):
+        self.assertFalse(insights.reached_high_box({"K": {"due": "2026-10-01", "box": 1, "best_box": 1}}))
+        self.assertTrue(insights.reached_high_box({"K": {"due": "2026-10-01", "box": 0, "best_box": 2}}))
+        self.assertFalse(insights.reached_high_box({"K": {"box": 0, "best_box": 5}}))  # nicht in der Kartei
+
+    def test_characters_over_time_need_enough_answers_on_both_sides(self):
+        self.write(40, [("6", "B", {})] * 30 + [("6", "6", {})] * 50 + [("K", "K", {})] * 10)
+        self.write(2, [("6", "B", {})] * 20 + [("6", "6", {})] * 60 + [("K", "K", {})] * 50)
+        rows = insights.char_trend()
+        self.assertEqual([row["char"] for row in rows], ["6"])  # K hatte davor zu wenige Antworten
+        self.assertEqual((rows[0]["n_before"], rows[0]["n_recent"]), (80, 80))
+        self.assertEqual(panel.chars_text(rows),
+                         "6: Fehler davor 38 % (von 80), zuletzt 25 % (von 80): kein sicherer Unterschied")
+
+    def test_a_clear_change_of_a_character_is_named(self):
+        self.write(40, [("6", "B", {})] * 70 + [("6", "6", {})] * 30)
+        self.write(2, [("6", "B", {})] * 30 + [("6", "6", {})] * 70)
+        self.assertTrue(panel.chars_text(insights.char_trend()).endswith(": weniger Fehler"))
 
     def test_unexpected_values_in_old_lines_do_not_break_the_insights(self):
         start = datetime.now().isoformat(timespec="seconds")

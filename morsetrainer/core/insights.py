@@ -19,20 +19,25 @@ from morsetrainer.core import stats
 INSIGHT_DAYS = 90
 RECENT_DAYS = 14        # „zuletzt“ gegen „davor“ (Rückstand, Verwechslungspaare)
 WEEKS_SHOWN = 6         # Fehlerarten je Woche
-MIN_LAG_CHARS = 30      # so viele Messungen je Seite, damit der Rückstand verglichen wird
+MIN_LAG_SESSIONS = 5    # so viele Durchgänge je Seite, damit der Rückstand verglichen wird
+MIN_LAG_VALUES = 10     # und so viele Messungen, damit ein Durchgang zählt
 MIN_WEEK_ERRORS = 5     # Fehler einer Woche, ab denen ihre Aufteilung gezeigt wird
 WEEK_CHARS_SHOWN = 3    # so viele nicht erkannte Zeichen nennt eine Wochenzeile
 MIN_WEEK_CHAR_ERRORS = 2
 FATIGUE_MIN_CHARS = 30  # kürzere Durchgänge gehen nicht in die Drittel ein
 FATIGUE_MIN_SESSIONS = 10
-FATIGUE_GAP_PCT = 3     # so viel schlechter am Ende gilt als Nachlassen
+FATIGUE_VERDICT_SESSIONS = 30  # erst ab so vielen Durchgängen ein Urteil zum Nachlassen
 PAIR_MIN_SENT = 20      # so oft muss das gesendete Zeichen je Seite vorkommen
 PAIRS_SHOWN = 3         # verschiedene Paare (beide Richtungen zusammen)
 PAIR_CHANGE_PCT = 3     # kleinster Unterschied in Prozentpunkten, der überhaupt zählt
-PAIR_NOISE_FACTOR = 1.5  # und mindestens so viele Standardfehler des Unterschieds
+PAIR_NOISE_FACTOR = 2.0  # und mindestens so viele Standardfehler des Unterschieds
+PAIR_MIN_EXPECTED = 5   # und so viele erwartete Fälle auf jeder Seite (sonst trägt die Näherung nicht)
+SAME_MARGIN_PCT = 2.0   # „unverändert“ nur, wenn das 95-%-Intervall des Unterschieds höchstens so breit ist
+CHAR_MIN_CASES = 40     # so viele Antworten je Seite, damit ein Zeichen verglichen wird
+CHARS_SHOWN = 6
 WEAK_CHARS_SHOWN = 5
 MIN_WEAK_ERRORS = 5     # so oft nicht erkannt, damit ein Zeichen als schwach gilt
-WOBBLY_MIN_BOX = 3      # früher mindestens Fach 4 (8 Tage) erreicht
+WOBBLY_MIN_BOX = 2      # früher mindestens Fach 3 (Wiederholung nach 4 Tagen) erreicht
 WOBBLY_DROP = 2         # und um so viele Fächer zurückgestuft
 UNRECOGNISED = "unrecognised"  # nichts getippt, zu spät oder erst nach Wiederholung
 SWAPPED = "swap"        # mit dem Nachbarn vertauscht (Mitschreib-Fehler, keine Klangverwechslung)
@@ -77,24 +82,31 @@ def load(now=None, days: int = INSIGHT_DAYS) -> list:
 
 def lag_chars(data=None, now=None) -> dict:
     """Rückstand beim Mitschreiben am Stück in Zeichen (stats.record_char,
-    `lag_chars`): {"recent": [Werte], "before": [Werte]}, letzte RECENT_DAYS Tage
-    gegen davor, dazu "accuracy": {"recent", "before"} die Trefferquote derselben
-    Durchgänge in Prozent (None ohne Durchgang). Nur Durchgänge, die den
-    Rückstand aufgezeichnet haben."""
+    `lag_chars`): {"recent": [Mediane der Durchgänge], "before": [...]}, letzte
+    RECENT_DAYS Tage gegen davor. Jeder Durchgang mit mindestens MIN_LAG_VALUES
+    Messwerten zählt einmal, mit dem Median seiner Werte (aufeinanderfolgende
+    Zeichen eines Laufs sind nicht unabhängig). Dazu "accuracy" und "untyped":
+    Trefferquote und Anteil nicht getippter Zeichen derselben Durchgänge in
+    Prozent je Seite (None ohne Durchgang). Nur Durchgänge, die den Rückstand
+    aufgezeichnet haben."""
     now = now or datetime.now()
     split = now - timedelta(days=RECENT_DAYS)
     result = {"recent": [], "before": []}
     right = {"recent": [0, 0], "before": [0, 0]}
+    untyped = {"recent": 0, "before": 0}
     for start, config, chars in load(now) if data is None else data:
         if config.get("mode") != "continuous":
             continue
         name = "recent" if start >= split else "before"
         values = [obj["lag_chars"] for obj in chars if _number(obj.get("lag_chars"))]
-        if values:
-            result[name].extend(values)
-            right[name][0] += sum(1 for obj in chars if obj.get("correct") is True)
-            right[name][1] += len(chars)
+        if len(values) < MIN_LAG_VALUES:
+            continue
+        result[name].append(statistics.median(values))
+        right[name][0] += sum(1 for obj in chars if obj.get("correct") is True)
+        right[name][1] += len(chars)
+        untyped[name] += sum(1 for obj in chars if obj.get("correct") is False and not _text(obj.get("typed")))
     result["accuracy"] = {name: good / total * 100 if total else None for name, (good, total) in right.items()}
+    result["untyped"] = {name: untyped[name] / total * 100 if total else None for name, (_g, total) in right.items()}
     return result
 
 
@@ -113,7 +125,8 @@ def causes_by_week(data=None, now=None) -> list:
     """Fehler der letzten WEEKS_SHOWN Wochen nach Art (stats.HEARD, SWAPPED,
     UNRECOGNISED): [{"first": Montag, "counts": {Art: Anzahl}, "chars": Zeichen
     der Woche, "unrecognised": Counter der nicht erkannten Zeichen, "current":
-    die Woche läuft noch}], älteste Woche zuerst, Wochen ohne Fehler ausgelassen.
+    die Woche läuft noch, "partial": die Daten beginnen mitten in der Woche}],
+    älteste Woche zuerst, Wochen ohne Fehler ausgelassen.
     Nur grobe Arten, weil die feineren Ursachen (zu langsam, erst nach
     Wiederholung) erst seit Oktober 2026 aufgezeichnet werden; früher stand dort
     nur „verpasst“."""
@@ -122,7 +135,9 @@ def causes_by_week(data=None, now=None) -> list:
     first = monday - timedelta(weeks=WEEKS_SHOWN - 1)
     weeks = {first + timedelta(weeks=i): {"counts": {}, "chars": 0, "unrecognised": Counter()}
              for i in range(WEEKS_SHOWN)}
-    for start, _config, chars in load(now, days=(now.date() - first).days + 1) if data is None else data:
+    sessions = load(now, days=(now.date() - first).days + 1) if data is None else data
+    earliest = min((start.date() for start, _config, _chars in sessions), default=None)
+    for start, _config, chars in sessions:
         week = weeks.get(start.date() - timedelta(days=start.weekday()))
         if week is None:
             continue
@@ -135,7 +150,9 @@ def causes_by_week(data=None, now=None) -> list:
                 week["counts"][kind] = week["counts"].get(kind, 0) + 1
                 if kind == UNRECOGNISED:
                     week["unrecognised"][obj["char"]] += 1
-    return [{"first": day, "current": day == monday, **week} for day, week in weeks.items() if week["counts"]]
+    return [{"first": day, "current": day == monday,
+             "partial": earliest is not None and day < earliest < day + timedelta(days=7), **week}
+            for day, week in weeks.items() if week["counts"]]
 
 
 def weak_chars(data=None, now=None) -> list:
@@ -151,40 +168,65 @@ def weak_chars(data=None, now=None) -> list:
 
 def fatigue(data=None, now=None) -> dict:
     """Erstes, mittleres und letztes Drittel der Durchgänge ab FATIGUE_MIN_CHARS
-    Zeichen zusammen: {"sessions", "thirds": [{"good", "wrong", "latencies"}]}.
+    Zeichen zusammen: {"sessions", "thirds": [{"good", "wrong", "latencies"}],
+    "drops": [Prozentpunkte erstes minus letztes Drittel je Durchgang]}.
     Zeichen ohne Zeitmessung zählen nicht, die Reaktion kommt wie in der
     Vergleichszeile nur aus Einzelzeichen (stats.REACTION_MODE)."""
     thirds = [{"good": 0, "wrong": 0, "latencies": []} for _ in range(3)]
+    drops = []
     sessions = 0
     for _start, config, chars in load(now) if data is None else data:
         chars = [obj for obj in chars if not obj.get("untimed")]
         if len(chars) < FATIGUE_MIN_CHARS:
             continue
         sessions += 1
+        right = [0, 0, 0]
+        size = [0, 0, 0]
         for index, obj in enumerate(chars):
-            part = thirds[index * 3 // len(chars)]
+            third = index * 3 // len(chars)
+            part = thirds[third]
+            size[third] += 1
+            right[third] += obj.get("correct") is True
             part["good" if obj.get("correct") is True else "wrong"] += 1
             latency = stats._measured(obj) if config.get("mode") == stats.REACTION_MODE else None
             if latency is not None:
                 part["latencies"].append(latency)
-    return {"sessions": sessions, "thirds": thirds}
+        drops.append((right[0] / size[0] - right[2] / size[2]) * 100)
+    return {"sessions": sessions, "thirds": thirds, "drops": drops}
+
+
+def fatigue_drop(data: dict):
+    """(Mittel, untere, obere Grenze) des Abfalls vom ersten zum letzten Drittel in
+    Prozentpunkten über die Durchgänge (95-%-Intervall des Mittelwerts); None bei
+    weniger als zwei Durchgängen."""
+    drops = data.get("drops", [])
+    if len(drops) < 2:
+        return None
+    mean = statistics.fmean(drops)
+    error = 1.96 * statistics.stdev(drops) / math.sqrt(len(drops))
+    return mean, mean - error, mean + error
+
+
+def rate_verdict(before: float, recent: float, n_before: int, n_recent: int) -> str:
+    """LESS, MORE, SAME oder UNSURE für eine Rate (Prozent) zuletzt gegen davor: Ein
+    Unterschied zählt erst ab PAIR_CHANGE_PCT Prozentpunkten, mindestens
+    PAIR_NOISE_FACTOR Standardfehlern des Unterschieds (aus den Fallzahlen) und
+    PAIR_MIN_EXPECTED erwarteten Fällen je Seite. „Unverändert“ (SAME) gibt es nur,
+    wenn die Daten so genau sind, dass das 95-%-Intervall des Unterschieds höchstens
+    SAME_MARGIN_PCT breit ist; sonst ist nichts sicher (UNSURE)."""
+    change = recent - before
+    pooled = (before * n_before + recent * n_recent) / (n_before + n_recent) / 100
+    noise = math.sqrt(pooled * (1 - pooled) * (1 / n_before + 1 / n_recent)) * 100
+    expected = min(pooled * n_before, pooled * n_recent)
+    if (expected >= PAIR_MIN_EXPECTED - 1e-9 and abs(change) >= PAIR_CHANGE_PCT
+            and abs(change) >= PAIR_NOISE_FACTOR * noise):
+        return LESS if change < 0 else MORE
+    return SAME if 1.96 * noise <= SAME_MARGIN_PCT else UNSURE
 
 
 def pair_verdict(row: dict) -> str:
-    """LESS, MORE, SAME oder UNSURE für einen Paar-Eintrag von confusion_trend():
-    ein Unterschied zählt erst ab PAIR_CHANGE_PCT Prozentpunkten und mindestens
-    PAIR_NOISE_FACTOR Standardfehlern des Unterschieds (aus den Fallzahlen);
-    dazwischen ist er nicht sicher von Zufall zu trennen (UNSURE)."""
-    before, recent = row["before"], row["recent"]
-    n_before, n_recent = row["n_before"], row["n_recent"]
-    change = recent - before
-    if abs(change) < PAIR_CHANGE_PCT:
-        return SAME
-    pooled = (before * n_before + recent * n_recent) / (n_before + n_recent) / 100
-    noise = math.sqrt(pooled * (1 - pooled) * (1 / n_before + 1 / n_recent)) * 100
-    if abs(change) < PAIR_NOISE_FACTOR * noise:
-        return UNSURE
-    return LESS if change < 0 else MORE
+    """rate_verdict() für einen Paar-Eintrag von confusion_trend()."""
+    return rate_verdict(row["before"], row["recent"], row["n_before"], row["n_recent"])
 
 
 def confusion_trend(data=None, now=None) -> list:
@@ -243,6 +285,39 @@ def wobbly(review_data=None) -> list:
         if best >= WOBBLY_MIN_BOX and best - box >= WOBBLY_DROP:
             rows.append((char, best + 1, box + 1))
     return sorted(rows, key=lambda row: (row[2] - row[1], row[0]))
+
+
+def reached_high_box(review_data=None) -> bool:
+    """Hat schon ein Zeichen der Lernkartei Fach WOBBLY_MIN_BOX + 1 oder höher erreicht?
+    Sonst kann noch keines „wieder wackelig“ sein."""
+    review_data = review.load() if review_data is None else review_data
+    return any(isinstance(entry, dict) and "due" in entry and review.best_box(entry) >= WOBBLY_MIN_BOX
+               for entry in review_data.values())
+
+
+def char_trend(data=None, now=None) -> list:
+    """Fehlerquote je Zeichen, letzte RECENT_DAYS Tage gegen die Zeit davor (alle Fehlerarten, ohne
+    Zeichen ohne Zeitmessung): [{"char", "before", "recent", "n_before", "n_recent"}] in Prozent, für
+    Zeichen mit mindestens CHAR_MIN_CASES Antworten auf jeder Seite, die schwächsten (zuletzt) zuerst,
+    höchstens CHARS_SHOWN."""
+    now = now or datetime.now()
+    split = now - timedelta(days=RECENT_DAYS)
+    seen = {"recent": Counter(), "before": Counter()}
+    wrong = {"recent": Counter(), "before": Counter()}
+    for start, _config, chars in load(now) if data is None else data:
+        side = "recent" if start >= split else "before"
+        for obj in chars:
+            if obj.get("untimed"):
+                continue
+            seen[side][obj["char"]] += 1
+            if obj.get("correct") is False:
+                wrong[side][obj["char"]] += 1
+    rows = [{"char": char, "n_before": seen["before"][char], "n_recent": seen["recent"][char],
+             "before": wrong["before"][char] / seen["before"][char] * 100,
+             "recent": wrong["recent"][char] / seen["recent"][char] * 100}
+            for char in seen["recent"]
+            if seen["recent"][char] >= CHAR_MIN_CASES and seen["before"][char] >= CHAR_MIN_CASES]
+    return sorted(rows, key=lambda row: (-row["recent"], row["char"]))[:CHARS_SHOWN]
 
 
 def median(values):

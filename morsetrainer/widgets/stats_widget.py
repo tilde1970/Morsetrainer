@@ -7,11 +7,44 @@ from tkinter import ttk
 
 from morsetrainer.core import stats
 from morsetrainer.core.morse import display_text
-from morsetrainer.i18n import number, tr
+from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import announcer, theme
 
 
 NEW_CHARS_SHOWN = 6  # so viele neue Zeichen nennt die Vergleichszeile
+# Modus-Namen der Vergleichszeile (Schlüssel der Durchgänge); unbekannte Modi fehlen dort.
+MODE_NAMES = {"single": N_("Einzeln"), "group": N_("Gruppen"), "continuous": N_("Am Stück"),
+              "callsign": N_("Rufzeichen"), "word": N_("Wörter"), "network": N_("Netzwerk")}
+
+
+def _percent(accuracy: float) -> int:
+    """Nie auf 100 % runden, solange es Fehler gab."""
+    return 100 if accuracy >= 100 else min(int(accuracy + 0.5), 99)
+
+
+def modes_text(comparison: dict, spoken: bool = False) -> str:
+    """„Nach Modus: Am Stück 78 % → 87 %, Einzeln 81 % → 81 %.“ für die Modi, die auf beiden Seiten
+    genug Zeichen haben; leer, wenn nur ein Modus geübt wurde (dann steht dasselbe schon oben).
+    Der Schnitt über alle Modi hängt davon ab, welche Modi geübt wurden."""
+    modes = comparison.get("modes", {})
+    if len(modes) < 2:
+        return ""
+    parts = []
+    for mode, name in MODE_NAMES.items():
+        sides = modes.get(mode)
+        if sides is None:
+            continue
+        (rg, rw), (bg, bw) = sides[stats.RECENT], sides[stats.BEFORE]
+        if min(rg + rw, bg + bw) < stats.MIN_COMPARE_COUNT:
+            continue
+        before, recent = _percent(bg / (bg + bw) * 100), _percent(rg / (rg + rw) * 100)
+        parts.append(tr("{mode} von {before} auf {recent} Prozent").format(mode=tr(name), before=before, recent=recent)
+                     if spoken else tr("{mode} {before} % → {recent} %").format(
+                         mode=tr(name), before=before, recent=recent))
+    if not parts:
+        return ""
+    return (tr("Nach Modus: ") + ", ".join(parts) + ".") if spoken else (
+        tr("Nach Modus (die Gesamtzahl hängt davon ab, welche Modi du geübt hast): ") + ", ".join(parts) + ".")
 
 
 def comparison_text(comparison: dict, spoken: bool = False) -> str:
@@ -36,7 +69,7 @@ def comparison_text(comparison: dict, spoken: bool = False) -> str:
         return ""
     parts = []
     if enough(before):
-        parts.append(tr("Davor ({days} Tage)").format(days=stats.BEFORE_DAYS) + ": "
+        parts.append(tr("Davor ({days} Tage)").format(days=comparison.get("before_days", stats.BEFORE_DAYS)) + ": "
                      + numbers(before, with_count=not spoken))
     head = tr("Letzte {days} Tage").format(days=stats.COMPARE_DAYS)
     if enough(recent):
@@ -47,10 +80,13 @@ def comparison_text(comparison: dict, spoken: bool = False) -> str:
             if recent["good"] + recent["wrong"] else tr("nicht geübt")))
     # Neue Zeichen drücken den Schnitt; sonst wirkt der Vergleich wie ein Rückschritt.
     fresh = stats.new_chars(comparison) if enough(before) and enough(recent) else []
+    by_mode = modes_text(comparison, spoken) if enough(before) and enough(recent) else ""
     if spoken:
-        text = ". ".join(parts) + "."
+        text = ". ".join(parts) + "." + (" " + by_mode if by_mode else "")
         return text + " " + tr("Neue Zeichen machen den Schnitt anfangs langsamer.") if fresh else text
     text = " · ".join(parts) + ". " + tr("Reaktion: kleiner ist schneller.")
+    if by_mode:
+        text += " " + by_mode
     if fresh:
         letters_first = sorted(fresh, key=lambda char: (not char.isalpha(), char))
         shown = " ".join(letters_first[:NEW_CHARS_SHOWN])

@@ -19,6 +19,8 @@ CAUSE_NAMES = {stats.HEARD: N_("verwechselt"), insights.SWAPPED: N_("vertauscht"
                insights.UNRECOGNISED: N_("nicht erkannt")}
 VERDICT_WORDS = {insights.LESS: N_("seltener"), insights.MORE: N_("häufiger"), insights.SAME: N_("unverändert"),
                  insights.UNSURE: N_("kein sicherer Unterschied")}
+CHAR_WORDS = {insights.LESS: N_("weniger Fehler"), insights.MORE: N_("mehr Fehler"), insights.SAME: N_("unverändert"),
+              insights.UNSURE: N_("kein sicherer Unterschied")}
 
 
 def _pct(share: float) -> int:
@@ -31,20 +33,24 @@ def _chars(chars) -> str:
 
 
 def lag_text(lag: dict) -> str:
-    """„Rückstand am Stück (Median): letzte 14 Tage: 1,4 Zeichen, davor: 1,8 Zeichen.“ oder ""."""
+    """„Rückstand am Stück (Median der Durchgänge): letzte 14 Tage: 1,4 Zeichen, 92 % richtig,
+    3 % nicht getippt (aus 6 Durchgängen), davor: …“ oder ""."""
     parts = []
     for key, label in (("recent", tr("letzte {days} Tage").format(days=insights.RECENT_DAYS)),
                        ("before", tr("davor"))):
         values = lag[key]
-        if len(values) >= insights.MIN_LAG_CHARS:
+        if len(values) >= insights.MIN_LAG_SESSIONS:
             text = tr("{label}: {n} Zeichen").format(label=label, n=number(insights.median(values), 1))
             accuracy = lag.get("accuracy", {}).get(key)
             if accuracy is not None:
                 text += ", " + tr("{pct} % richtig").format(pct=_pct(accuracy))
-            parts.append(text)
+            untyped = lag.get("untyped", {}).get(key)
+            if untyped is not None:
+                text += ", " + tr("{pct} % nicht getippt").format(pct=number(untyped, 0))
+            parts.append(text + " " + tr("(aus {n} Durchgängen)").format(n=len(values)))
     if not parts:
         return ""
-    return tr("Rückstand am Stück (Median): {parts}.").format(parts=", ".join(parts))
+    return tr("Rückstand am Stück (Median der Durchgänge): {parts}.").format(parts=", ".join(parts))
 
 
 def _week_label(day) -> str:
@@ -57,6 +63,8 @@ def _week_line(week: dict) -> str:
     head = tr("Woche ab {day}").format(day=_week_label(week["first"]))
     if week["current"]:
         head += " " + tr("(läuft noch)")
+    if week.get("partial"):
+        head += " " + tr("(unvollständig, Daten erst ab Wochenmitte)")
     if total < insights.MIN_WEEK_ERRORS:
         return f"{head}: " + tr("{n} Fehler (zu wenige für eine Aufteilung)").format(n=total)
     shares = ", ".join(f"{tr(CAUSE_NAMES.get(cause, cause))} {_pct(count / total * 100)} %"
@@ -92,11 +100,28 @@ def fatigue_text(data: dict) -> str:
         latency = insights.median(part["latencies"])
         reaction = "" if latency is None else ", " + tr("Reaktion {s} s").format(s=number(latency, 2))
         lines.append(f"{name}: " + tr("{pct} % richtig").format(pct=_pct(share)) + reaction)
-    if shares[0] - shares[2] >= insights.FATIGUE_GAP_PCT:
+    drop = insights.fatigue_drop(data)
+    if drop is None:
+        return "\n".join(lines)
+    mean, low, high = drop
+    lines.append(tr("Erstes minus letztes Drittel: {mean} Punkte (zwischen {low} und {high})").format(
+        mean=("−" if mean < -0.05 else "") + number(abs(mean), 1), low=_signed(low), high=_signed(high)))
+    if data["sessions"] < insights.FATIGUE_VERDICT_SESSIONS:
+        verdict = tr("Für ein Urteil zum Nachlassen sind es noch zu wenige Durchgänge (ab {n}).").format(
+            n=insights.FATIGUE_VERDICT_SESSIONS)
+    elif low > 0:
         verdict = tr("Zum Ende lässt es nach: kürzere Durchgänge oder eine Pause in der Mitte könnten sich lohnen.")
+    elif high < 0:
+        verdict = tr("Gegen Ende klappt es besser, kein Nachlassen.")
     else:
-        verdict = tr("Kaum Nachlassen zum Ende des Durchgangs.")
+        verdict = tr("Kein sicheres Nachlassen erkennbar.")
     return "\n".join(lines + [verdict])
+
+
+def _signed(value: float) -> str:
+    """„+6“ oder „−2“ (ganze Punkte)."""
+    rounded = round(value)
+    return ("+" if rounded >= 0 else "−") + str(abs(rounded))
 
 
 def _pair_line(row: dict, spoken: bool = False) -> str:
@@ -131,6 +156,19 @@ def pair_chars(rows: list) -> str:
     return "".join(chars)
 
 
+def chars_text(rows: list, spoken: bool = False) -> str:
+    """Eine Zeile je Zeichen: „6: Fehler davor 51 % (von 108), zuletzt 43 % (von 90): kein sicherer
+    Unterschied“; die schwächsten Zeichen zuerst."""
+    lines = []
+    for row in rows:
+        name = announcer.spell(row["char"]) if spoken else display_text(row["char"])
+        word = tr(CHAR_WORDS[insights.rate_verdict(row["before"], row["recent"], row["n_before"], row["n_recent"])])
+        lines.append(f"{name}: " + tr("Fehler davor {before} % (von {n_before}), zuletzt {recent} % (von {n_recent}): {word}").format(
+            before=number(row["before"], 0), recent=number(row["recent"], 0), word=word,
+            n_before=row["n_before"], n_recent=row["n_recent"]))
+    return "\n".join(lines)
+
+
 def wobbly_text(rows: list) -> str:
     """„6 (Fach 5 → 1), X (Fach 4 → 2)“ oder ""."""
     return ", ".join(tr("{char} (Fach {best} → {box})").format(char=display_text(ch), best=best, box=box)
@@ -158,20 +196,25 @@ class InsightsPanel:
             ("lag", tr("Rückstand beim Mitschreiben"), tr(
                 "So viele Zeichen hängst du im Reiter Am Stück hinter dem Ton her. Mehr Rückstand heißt, dass du "
                 "mit Abstand mitschreibst wie beim Kopf-Hören; entscheidend ist, dass die Trefferquote dabei hält. "
-                "Gezählt werden nur Durchgänge, die den Rückstand aufgezeichnet haben, auch zu späte Tasten."),
+                "Gezählt werden nur Durchgänge, die den Rückstand aufgezeichnet haben, auch zu späte Tasten; jeder "
+                "Durchgang zählt einmal (Median seiner Zeichen), ein Vergleich braucht {n} Durchgänge je Seite. "
+                "Zeichen ohne Taste fehlen im Median; ihr Anteil steht dabei.").format(n=insights.MIN_LAG_SESSIONS),
              tr("Noch keine Messung: übe im Reiter Am Stück.")),
             ("causes", tr("Fehlerarten je Woche"), tr(
                 "Verwechselt: ein anderes Zeichen getippt. Vertauscht: zwei Zeichen in falscher Reihenfolge. Nicht "
                 "erkannt: nichts getippt, zu spät oder erst nach Wiederholung. Viel „nicht erkannt“ ist am Anfang "
-                "normal; sinkt die Rate je 100 Zeichen, erkennst du mehr. Ein Tempo- oder Lektionswechsel verändert "
-                "die Rate. Wenn aus Aussetzern Verwechslungen werden, hörst du die Zeichen schon, trennst sie aber "
-                "noch nicht sicher."),
+                "normal; sinkt die Rate je 100 Zeichen, erkennst du mehr. Ein Wechsel der Übungsart (freie Übung, "
+                "Tagesübung mit schwachen Zeichen), der Modi, des Tempos oder der Lektion verändert die Rate. Die erste "
+                "Woche ist oft unvollständig. Wenn aus Aussetzern Verwechslungen werden, hörst du die Zeichen schon, "
+                "trennst sie aber noch nicht sicher."),
              tr("Noch keine Fehler in den letzten Wochen.")),
             ("fatigue", tr("Ermüdung im Durchgang"), tr(
                 "Alle Durchgänge ab {n} Zeichen, jeder in drei Teile geteilt, zusammengezählt. Das erste Drittel fällt "
-                "oft besser aus (Aufwärmen, bekannte Zeichen). Die Reaktion stammt nur aus Einzelzeichen. Tempo und "
-                "Zeichensatz passen sich beim Üben an, der Vergleich ist ein Anhaltspunkt.").format(
-                n=insights.FATIGUE_MIN_CHARS),
+                "oft besser aus (Aufwärmen, bekannte Zeichen). Die Reaktion stammt nur aus Einzelzeichen. Die Spanne "
+                "in Klammern ist das 95-%-Intervall über die Durchgänge; ein Urteil gibt es erst ab {verdict} "
+                "Durchgängen und nur, wenn die Spanne die Null nicht einschließt. Tempo und Zeichensatz passen sich "
+                "beim Üben an, der Vergleich ist ein Anhaltspunkt.").format(
+                n=insights.FATIGUE_MIN_CHARS, verdict=insights.FATIGUE_VERDICT_SESSIONS),
              tr("Noch zu wenige lange Durchgänge (ab {n} Durchgängen mit je mindestens {chars} Zeichen).").format(
                  n=insights.FATIGUE_MIN_SESSIONS, chars=insights.FATIGUE_MIN_CHARS)),
             ("pairs", tr("Verwechslungspaare im Verlauf"), tr(
@@ -181,10 +224,17 @@ class InsightsPanel:
                 "dazwischen verfälscht den Vergleich, und ein Zeichen, das gerade neu geübt wird, sieht kurz schlechter "
                 "aus. Zeichen, die davor nicht vorkamen, sind „neu dabei“.").format(days=insights.RECENT_DAYS),
              tr("Noch keine Verwechslungen zum Vergleichen.")),
+            ("chars", tr("Zeichen im Verlauf"), tr(
+                "Wie oft ein Zeichen falsch war (jede Fehlerart), die letzten {days} Tage gegen die Zeit davor, mit der "
+                "Zahl der Antworten in Klammern. Gezeigt werden Zeichen mit mindestens {n} Antworten auf beiden Seiten, "
+                "die schwächsten zuerst. Ein Unterschied zählt erst, wenn er sich von Zufall abhebt.").format(
+                days=insights.RECENT_DAYS, n=insights.CHAR_MIN_CASES),
+             tr("Noch kein Zeichen hat auf beiden Seiten genug Antworten zum Vergleichen.")),
             ("wobbly", tr("Wieder wackelig"), tr(
-                "Zeichen, die in der Lernkartei schon in einem hohen Fach lagen und zurückgestuft wurden. Sie sind keine "
-                "Anfänger-Fehler, sondern Zeichen, die einmal saßen; ein paar Wiederholungen bringen sie meist zurück."),
-             tr("Kein Zeichen ist aus einem hohen Fach zurückgefallen.")),
+                "Zeichen, die in der Lernkartei schon in Fach 3 oder höher lagen und um mindestens zwei Fächer "
+                "zurückgestuft wurden. Sie sind keine Anfänger-Fehler, sondern Zeichen, die einmal saßen; ein paar "
+                "Wiederholungen bringen sie meist zurück. Ein Rückfall um nur ein Fach zählt nicht, er ist normal."),
+             tr("Kein Zeichen ist aus Fach 3 oder höher um zwei Fächer zurückgefallen.")),
         )
         for key, heading, explanation, empty in sections:
             ttk.Label(box, text=heading, font=theme.HEADING).pack(anchor="w", pady=(6, 0))
@@ -241,6 +291,7 @@ class InsightsPanel:
             return {key: None for key in self.vars}
         pairs = []
         weeks = []
+        char_rows = []
         guarded("lag", lambda: lag_text(insights.lag_chars(data)))
         guarded("fatigue", lambda: fatigue_text(insights.fatigue(data)))
 
@@ -251,10 +302,20 @@ class InsightsPanel:
         def make_pairs():
             pairs.extend(insights.confusion_trend(data))
             return pairs_text(pairs)
+        def make_chars():
+            char_rows.extend(insights.char_trend(data))
+            return chars_text(char_rows)
         guarded("causes", make_causes)
         guarded("pairs", make_pairs)
+        guarded("chars", make_chars)
         guarded("wobbly", lambda: wobbly_text(insights.wobbly()))
-        texts["_pairs"], texts["_weeks"] = pairs, weeks
+        try:
+            if not insights.reached_high_box():
+                texts["_wobbly_empty"] = tr("Noch kein Zeichen hat Fach 3 erreicht (Wiederholung nach 4 Tagen), "
+                                            "deshalb kann noch keines zurückfallen.")
+        except Exception:
+            errorlog.record(*sys.exc_info(), version=version)
+        texts["_pairs"], texts["_weeks"], texts["_chars"] = pairs, weeks, char_rows
         try:
             texts["_weak"] = "".join(ch for ch, _n in insights.weak_chars(data))
         except Exception:
@@ -267,7 +328,7 @@ class InsightsPanel:
         failed = tr("Nicht auswertbar, Einzelheiten im Fehlerprotokoll.")
         for key, (var, empty) in self.vars.items():
             text = texts.get(key)
-            var.set(failed if text is None else text or empty)
+            var.set(failed if text is None else text or texts.get("_" + key + "_empty", empty))
         self.drill["pairs"] = pair_chars(texts.get("_pairs", []))
         self.drill["weak"] = texts.get("_weak", "")
         self._label_buttons()
@@ -286,6 +347,8 @@ class InsightsPanel:
             parts.append(texts["fatigue"].split("\n")[-1])
         if texts.get("_pairs"):
             parts.extend(_pair_line(row, spoken=True) for row in texts["_pairs"])
+        if texts.get("_chars"):
+            parts.extend(chars_text(texts["_chars"][:3], spoken=True).split("\n"))
         if texts.get("wobbly"):
             parts.append(tr("Wieder wackelig: ") + ", ".join(
                 tr("{char} von Fach {best} auf {box}").format(char=announcer.spell(ch), best=best, box=box)

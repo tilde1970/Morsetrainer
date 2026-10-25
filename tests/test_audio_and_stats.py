@@ -235,14 +235,51 @@ class StatsTest(unittest.TestCase):
         self.assertIsNone(stats.char_trend(comparison["chars"], "K"))  # zu wenige Messungen für den Trend
         self.assertEqual(trend_text((0.8, 0.4)), "0,80 → 0,40")
         self.assertEqual(comparison_text(comparison),
-                         "Davor (30 Tage): Reaktion 0,80 s, 80 % richtig (aus 10 Zeichen) · "
+                         "Davor (13 Tage): Reaktion 0,80 s, 80 % richtig (aus 10 Zeichen) · "
                          "Letzte 7 Tage: Reaktion 0,40 s, 100 % richtig (aus 13 Zeichen). Reaktion: kleiner ist schneller.")
         # Vorlesen (F11): ohne Stichprobe des Vergleichszeitraums, ohne Merksatz
         self.assertEqual(comparison_text(comparison, spoken=True),
-                         "Davor (30 Tage): Reaktion 0,80 s, 80 % richtig. "
+                         "Davor (13 Tage): Reaktion 0,80 s, 80 % richtig. "
                          "Letzte 7 Tage: Reaktion 0,40 s, 100 % richtig (aus 13 Zeichen).")
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
+
+    def test_comparison_splits_the_accuracy_by_mode_and_ignores_retries(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import comparison_text, modes_text
+
+        def write(days_ago, mode, good, wrong, **extra):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            lines = [{"type": "config", "mode": mode, "start_time": start}]
+            lines += [{"type": "char", "char": "K", "typed": "K", "correct": True, **extra}] * good
+            lines += [{"type": "char", "char": "K", "typed": "M", "correct": False, **extra}] * wrong
+            tests.write_session(lines + [{"type": "summary"}])
+        write(20, "single", 8, 2)       # davor Einzeln 80 %
+        write(20, "continuous", 5, 5)   # davor Am Stück 50 %
+        write(2, "single", 8, 2)        # zuletzt Einzeln 80 %
+        write(2, "continuous", 9, 1)    # zuletzt Am Stück 90 %
+        write(2, "single", 0, 30, retry=True)   # Wiederholungsabfragen zählen nicht
+        write(2, "single", 0, 30, untimed=True)  # Zeichen ohne Zeitmessung auch nicht
+        comparison = stats.period_comparison()
+        self.assertEqual(comparison["modes"]["single"][stats.RECENT], [8, 2])
+        self.assertEqual(comparison["before_days"], 13)
+        self.assertEqual(modes_text(comparison),
+                         "Nach Modus (die Gesamtzahl hängt davon ab, welche Modi du geübt hast): "
+                         "Einzeln 80 % → 80 %, Am Stück 50 % → 90 %.")
+        self.assertEqual(modes_text(comparison, spoken=True),
+                         "Nach Modus: Einzeln von 80 auf 80 Prozent, Am Stück von 50 auf 90 Prozent.")
+        self.assertIn("Nach Modus (", comparison_text(comparison))
+        self.assertIn("Nach Modus: Einzeln", comparison_text(comparison, spoken=True))
+
+    def test_comparison_names_no_modes_when_only_one_was_practised(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import modes_text
+        for days_ago in (20, 2):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            tests.write_session([{"type": "config", "mode": "single", "start_time": start}]
+                                + [{"type": "char", "char": "K", "typed": "K", "correct": True}] * 12
+                                + [{"type": "summary"}])
+        self.assertEqual(modes_text(stats.period_comparison()), "")
 
     def test_comparison_names_characters_that_are_new(self):
         from datetime import datetime, timedelta

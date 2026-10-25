@@ -1717,7 +1717,7 @@ class DecimalTest(AppTestCase):
         self.app._refresh_all_time(with_awards=False)
         panel = self.app.all_time_panel
         self.assertEqual(panel.compare_var.get(),
-                         "Davor (30 Tage): Reaktion 0,80 s, 100 % richtig (aus 20 Zeichen) · "
+                         "Davor (13 Tage): Reaktion 0,80 s, 100 % richtig (aus 20 Zeichen) · "
                          "Letzte 7 Tage: Reaktion 0,45 s, 100 % richtig (aus 20 Zeichen). Reaktion: kleiner ist schneller.")
         tree = panel.char_tree
         row = dict(zip(tree["columns"], tree.item(tree.get_children()[0])["values"]))
