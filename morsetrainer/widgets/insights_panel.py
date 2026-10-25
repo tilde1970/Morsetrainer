@@ -12,7 +12,7 @@ from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import theme
 
 # Unterschied, ab dem eine Verwechslungsrate als seltener oder häufiger gilt (Prozentpunkte).
-PAIR_CHANGE_PCT = 2
+PAIR_CHANGE_PCT = 3
 
 CAUSE_NAMES = {stats.HEARD: N_("verwechselt"), insights.UNRECOGNISED: N_("nicht erkannt")}
 
