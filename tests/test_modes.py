@@ -1740,7 +1740,7 @@ class DecimalTest(AppTestCase):
         self.assertLessEqual(max(widths) - min(widths), 1)  # gleich breit (ein Pixel Rundung)
         self.assertGreater(min(widths), 50)
         up = [w for w in walk(self.app.root) if w.winfo_class() == "TButton" and w.cget("text") == "▲ Nach oben"]
-        self.assertEqual(len(up), len(names))  # je Abschnitt ein Rücksprung
+        self.assertEqual(len({w.master for w in up}), len(names))  # in jedem Abschnitt ein Rücksprung
         for button in list(buttons.values()) + up:
             button.invoke()  # darf nicht scheitern, auch wenn der Reiter nicht sichtbar ist
         self.app._refresh_all_time(with_awards=False)
@@ -1752,9 +1752,15 @@ class DecimalTest(AppTestCase):
                 yield child
                 yield from walk(child)
         ups = [w for w in walk(self.app.root) if w.winfo_class() == "TButton" and w.cget("text") == "▲ Nach oben"]
-        self.assertEqual(len(ups), 7)
-        for button in ups:
-            self.assertIs(button.master.pack_slaves()[0], button)  # erstes Element der Karte, nicht das letzte
+        self.assertEqual(len(ups), 11)  # oben in jedem der sieben Abschnitte, unten zusätzlich in den hohen vier
+        cards = {button.master for button in ups}
+        self.assertEqual(len(cards), 7)
+        for card in cards:
+            self.assertEqual(card.pack_slaves()[0].cget("text"), "▲ Nach oben")  # erstes Element der Karte
+        bottoms = [card for card in cards if card.pack_slaves()[-1].cget("text") == "▲ Nach oben"]
+        self.assertEqual(len(bottoms), 4)
+        self.assertIn(self.app.insights_panel.card, bottoms)
+        self.assertNotIn(self.app.review_button.master, bottoms)  # die kurzen Abschnitte nur oben
         self.root.deiconify()
         self.root.geometry("1024x600")
         self.app.notebook.select(self.app.notebook.tabs()[-1])
@@ -1787,7 +1793,7 @@ class DecimalTest(AppTestCase):
                           if w.winfo_class() == "Canvas")
             self.assertGreater(canvas.yview()[0], 0.2)  # tatsächlich hinuntergerollt
             up = [w for w in walk(self.app.root) if w.winfo_class() == "TButton" and w.cget("text") == "▲ Nach oben"]
-            up[3].invoke()  # der des Abschnitts Lernkartei
+            next(w for w in up if w.master is self.app.review_button.master).invoke()  # der der Lernkartei
             self.root.update()
             self.assertEqual(said[-1], "Sprungzeile.")
             self.assertLess(canvas.yview()[0], 0.02)

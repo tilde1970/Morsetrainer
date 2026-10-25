@@ -1936,18 +1936,24 @@ class MorseTrainerApp:
         for column in (1, 2, 3):
             jump_bar.columnconfigure(column, uniform="jump", weight=1)  # alle Knöpfe gleich breit
         jump_buttons = []
+        # Auch unten einen Rücksprung, wo der Abschnitt höher ist als der sichtbare Rollbereich (bei 100 %
+        # Schrift: Diplome, Lebenslinie, Auswertungen, Fortschritt); kurze Abschnitte haben ihn nur oben.
+        tall = (awards_card, lifeline_card, self.insights_panel.card, progress_card)
         for index, (name, card) in enumerate(sections):
             button = ttk.Button(jump_bar, text=name, command=lambda card=card, name=name: self._jump_to(
                 scroller, card, tr("Abschnitt {name}.").format(name=name)))
             button.grid(row=index // 3, column=index % 3 + 1, sticky="ew", padx=(0, 4), pady=1)
             jump_buttons.append(button)
-            back = ttk.Button(card, text=tr("▲ Nach oben"), command=lambda: self._jump_to(
-                scroller, jump_bar, tr("Sprungzeile."), jump_buttons[0]))
-            # Oben im Abschnitt, rechts: Ganz unten müsste man erst durch den langen Abschnitt rollen.
             first = card.pack_slaves()
-            back.pack(anchor="e", pady=(0, 4), **({"before": first[0]} if first else {}))
-            back._is_back_button = True
-            announcer.name(back, tr("Nach oben zur Sprungzeile"))
+            for at_top in (True, False) if card in tall else (True,):
+                back = ttk.Button(card, text=tr("▲ Nach oben"), command=lambda: self._jump_to(
+                    scroller, jump_bar, tr("Sprungzeile."), jump_buttons[0]))
+                if at_top:  # oben, rechts: sonst müsste man erst durch den langen Abschnitt rollen
+                    back.pack(anchor="e", pady=(0, 4), **({"before": first[0]} if first else {}))
+                else:
+                    back.pack(anchor="e", pady=(4, 0))
+                back._is_back_button = True
+                announcer.name(back, tr("Nach oben zur Sprungzeile"))
 
     def _jump_to(self, scroller, target, spoken: str, focus=None) -> None:
         """Statistik: `target` an den oberen Rand rollen, den Fokus in den Abschnitt
