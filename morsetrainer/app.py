@@ -37,6 +37,7 @@ from morsetrainer.widgets.band_settings import BandSettings
 from morsetrainer.widgets.daily_panel import DailyBar, week_goal_text, week_legend, week_spoken, week_text
 from morsetrainer.widgets.fsrs_panel import TAB_NAME as FSRS_TAB_NAME, FsrsPanel
 from morsetrainer.widgets.help_window import HelpWindow
+from morsetrainer.widgets.insights_panel import InsightsPanel
 from morsetrainer.widgets.lifeline_widget import LifelinePanel
 from morsetrainer.widgets.progress_widget import ProgressPanel
 from morsetrainer.widgets.stats_widget import StatsPanel, comparison_text
@@ -1912,6 +1913,7 @@ class MorseTrainerApp:
             confusion_box, text=tr("Die {n} häufigsten gezielt üben").format(n=CONFUSION_PAIRS), command=self._drill_confusions
         )
         self.confusion_button.pack(anchor="w")
+        self.insights_panel = InsightsPanel(frame)
         self.progress_panel = ProgressPanel(frame)
         progress_card = frame.winfo_children()[-1]
 
@@ -1921,7 +1923,7 @@ class MorseTrainerApp:
         # Sprungzeile: Der Reiter ist mehrere Bildschirmseiten lang.
         sections = ((tr("Woche"), week_box), (tr("Diplome"), awards_card), (tr("Lebenslinie"), lifeline_card),
                     (tr("Lernkartei"), review_box), (tr("Verwechslungen"), confusion_box),
-                    (tr("Fortschritt"), progress_card))
+                    (tr("Auswertungen"), self.insights_panel.card), (tr("Fortschritt"), progress_card))
         ttk.Label(jump_bar, text=tr("Springe zu:")).grid(row=0, column=0, sticky="w", padx=(0, 6))
         for column in (1, 2, 3):
             jump_bar.columnconfigure(column, uniform="jump", weight=1)  # alle Knöpfe gleich breit
@@ -2108,9 +2110,9 @@ class MorseTrainerApp:
         data = stats.load_all_time()
         boxes = review.by_box()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data),
-                                    stats.period_comparison(), safe="".join(boxes[SAFE_FROM_BOX:]),
-                                    time_of_day=stats.time_of_day())
+                                    stats.period_comparison(), safe="".join(boxes[SAFE_FROM_BOX:]))
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
+        self.insights_panel.refresh()
         days, stars = self._week()
         self.week_strip_var.set(week_text(days))
         self.week_goal_var.set(week_goal_text(stars))

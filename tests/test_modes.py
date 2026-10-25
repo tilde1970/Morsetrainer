@@ -1730,7 +1730,7 @@ class DecimalTest(AppTestCase):
             for child in widget.winfo_children():
                 yield child
                 yield from walk(child)
-        names = ("Woche", "Diplome", "Lebenslinie", "Lernkartei", "Verwechslungen", "Fortschritt")
+        names = ("Woche", "Diplome", "Lebenslinie", "Lernkartei", "Verwechslungen", "Auswertungen", "Fortschritt")
         buttons = {w.cget("text"): w for w in walk(self.app.root)
                    if w.winfo_class() == "TButton" and w.cget("text") in names}
         self.assertEqual(sorted(buttons), sorted(names))

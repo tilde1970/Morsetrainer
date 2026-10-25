@@ -585,7 +585,8 @@ class ContinuousModeFrame(DailyModeMixin):
                 self.session_stats.record_char(
                     expected_char, typed_char, correct, since_start,
                     effective_wpm(expected_char, since_start, sent_wpm), latency=latency,
-                    cause="swap" if op.expected_index in swapped else None
+                    cause="swap" if op.expected_index in swapped else None,
+                    lag=None if latency is None else typed_time - play_end
                 )
             elif op.kind == align.OpKind.DELETE:
                 self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)

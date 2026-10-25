@@ -60,29 +60,6 @@ def comparison_text(comparison: dict, spoken: bool = False) -> str:
     return text
 
 
-def time_of_day_text(parts: list) -> str:
-    """„Nach Tageszeit (richtig beim ersten Zeichen …): Morgens 91 % (12 Durchgänge) · Abends 87 % …
-    Am besten klappt es morgens, 4 Punkte vor abends.“ (stats.time_of_day); leer,
-    solange weniger als zwei Fenster genug Durchgänge haben."""
-    enough = [p for p in parts if p["sessions"] >= stats.MIN_DAY_PART_SESSIONS and p["good"] + p["wrong"]]
-    if len(enough) < 2:
-        return ""
-    def pct(part):
-        share = part["good"] / (part["good"] + part["wrong"]) * 100
-        return 100 if share >= 100 else min(int(share + 0.5), 99)  # nie 100 % bei Fehlern
-    listed = " · ".join(tr("{name} {pct} % ({n} Durchgänge)").format(name=tr(p["name"]), pct=pct(p), n=p["sessions"])
-                        for p in enough)
-    best = max(enough, key=pct)
-    worst = min(enough, key=pct)
-    gap = pct(best) - pct(worst)
-    if gap < stats.DAY_PART_GAP_PCT:
-        verdict = tr("Kaum ein Unterschied zwischen den Tageszeiten.")
-    else:
-        verdict = tr("Am besten klappt es {best}, {gap} Punkte vor {worst}.").format(
-            best=tr(best["name"]).lower(), gap=gap, worst=tr(worst["name"]).lower())
-    return tr("Nach Tageszeit (Trefferquote): {listed}. {verdict}").format(listed=listed, verdict=verdict)
-
-
 def trend_text(trend) -> str:
     """„0,61 → 0,48“ (Median der Reaktion davor → jetzt) oder „–“."""
     return "–" if trend is None else f"{number(trend[0], 2)} → {number(trend[1], 2)}"
@@ -105,15 +82,11 @@ class StatsPanel:
         self.speed_label = theme.fit_wrap(ttk.Label(summary, textvariable=self.speed_var), 560)
         self.speed_label.pack(anchor="w")
         self.compare_var = tk.StringVar(value="")
-        self.time_var = tk.StringVar(value="")
         if compare:
             # Ohne Durchgänge leer und ausgeblendet (sonst bliebe eine Lücke).
             label = theme.fit_wrap(ttk.Label(box, textvariable=self.compare_var, justify="left"), 560)
             self.compare_var.trace_add("write", lambda *_: label.pack(after=summary, anchor="w", pady=(0, 6))
                                        if self.compare_var.get() else label.pack_forget())
-            time_label = theme.fit_wrap(ttk.Label(box, textvariable=self.time_var, justify="left"), 560)
-            self.time_var.trace_add("write", lambda *_: time_label.pack(after=summary, anchor="w", pady=(0, 6))
-                                    if self.time_var.get() else time_label.pack_forget())
 
         theme.hint(box, text=tr("Zeichen, nach Fehlerquote sortiert – oben steht, was noch Übung braucht")).pack(
             anchor="w")
@@ -163,16 +136,14 @@ class StatsPanel:
         self.stats_var.set("0 / 0 (0 %)")
         self.speed_var.set(tr("Ø effektive Geschwindigkeit: –"))
         self.compare_var.set("")
-        self.time_var.set("")
         self.save_var.set("")
         for item in self.char_tree.get_children():
             self.char_tree.delete(item)
 
-    def refresh(self, summary: dict, rows: list, comparison=None, safe: str = "", time_of_day=None):
+    def refresh(self, summary: dict, rows: list, comparison=None, safe: str = ""):
         """Zeigt `summary` (wie SessionStats.summary()) und die Zeilen `rows` (wie
         char_rows()) an, mit `compare` dazu `comparison`
-        (stats.period_comparison), `safe` (Zeichen, die sicher sitzen) und
-        `time_of_day` (stats.time_of_day)."""
+        (stats.period_comparison) und `safe` (Zeichen, die sicher sitzen)."""
         self.stats_var.set(f"{summary['correct']} / {summary['total']} ({summary['accuracy_pct']:.0f} %)")
         if summary["avg_effective_wpm"]:
             speed = tr("Ø effektive Geschwindigkeit: {wpm} WPM").format(wpm=number(summary["avg_effective_wpm"], 1))
@@ -197,7 +168,6 @@ class StatsPanel:
             # Die Tabelle der Gesamtstatistik füllt sonst bei Neulingen die erste Seite des Reiters.
             theme.set_tree_rows(self.char_tree, min(max(len(rows), theme.MIN_TREE_ROWS), self.max_rows))
             self.compare_var.set(comparison_text(comparison) if comparison else "")
-            self.time_var.set(time_of_day_text(time_of_day) if time_of_day else "")
             self.safe_var.set(tr("Sicher sitzen: {chars}").format(
                 chars=" ".join(display_text(ch) for ch in safe)) if safe else "")
 
