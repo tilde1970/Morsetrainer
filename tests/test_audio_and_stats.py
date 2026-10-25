@@ -244,6 +244,32 @@ class StatsTest(unittest.TestCase):
         stats.reset_all_time()
         self.assertEqual(comparison_text(stats.period_comparison()), "")
 
+    def test_time_of_day_compares_day_parts_with_enough_sessions(self):
+        from datetime import datetime, timedelta
+        from morsetrainer.widgets.stats_widget import time_of_day_text
+
+        def write(hour, wrong, days_ago=1):
+            start = (datetime.now() - timedelta(days=days_ago)).replace(
+                hour=hour, minute=days_ago, second=0, microsecond=0).isoformat()
+            lines = [{"type": "config", "mode": "single", "start_time": start}]
+            lines += [{"type": "char", "char": "K", "typed": "K", "correct": i >= wrong} for i in range(10)]
+            tests.write_session(lines + [{"type": "summary"}])
+        self.assertEqual(stats.day_part(5), 4)    # Nacht läuft über Mitternacht
+        self.assertEqual(stats.day_part(23), 4)
+        self.assertEqual(stats.day_part(6), 0)
+        self.assertEqual(stats.day_part(21), 3)
+        for day in range(1, 6):
+            write(8, 1, day)    # morgens 90 %
+            write(20, 3, day)   # abends 70 %
+        write(15, 0)            # nachmittags: nur ein Durchgang, zählt nicht
+        text = time_of_day_text(stats.time_of_day())
+        self.assertIn("Morgens 90 % (5 Durchgänge)", text)
+        self.assertIn("Abends 70 % (5 Durchgänge)", text)
+        self.assertNotIn("Nachmittags", text)
+        self.assertTrue(text.endswith("Am besten klappt es morgens, 20 Punkte vor abends."))
+        stats.reset_all_time()
+        self.assertEqual(time_of_day_text(stats.time_of_day()), "")
+
     def test_comparison_names_characters_that_are_new(self):
         from datetime import datetime, timedelta
         from morsetrainer.widgets.stats_widget import comparison_text

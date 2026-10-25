@@ -621,6 +621,44 @@ def period_comparison(now=None) -> dict:
     return result
 
 
+# Tageszeitfenster (Name, ab Stunde, bis Stunde) für time_of_day(); die Nacht
+# läuft über Mitternacht.
+DAY_PARTS = (
+    (N_("Morgens"), 6, 11),
+    (N_("Mittags"), 11, 14),
+    (N_("Nachmittags"), 14, 18),
+    (N_("Abends"), 18, 22),
+    (N_("Nachts"), 22, 6),
+)
+# So viele Durchgänge braucht ein Fenster, bevor es in den Vergleich eingeht.
+MIN_DAY_PART_SESSIONS = 5
+# So viele Prozentpunkte muss das beste Fenster vor dem schwächsten liegen,
+# damit es als Unterschied gilt.
+DAY_PART_GAP_PCT = 3
+
+
+def day_part(hour: int) -> int:
+    """Index des Fensters in DAY_PARTS, in das die Stunde fällt."""
+    for index, (_name, start, end) in enumerate(DAY_PARTS):
+        if (start <= hour < end) if start < end else (hour >= start or hour < end):
+            return index
+    return len(DAY_PARTS) - 1
+
+
+def time_of_day() -> list:
+    """Trefferquote je Tageszeitfenster aus allen abgeschlossenen Durchgängen
+    seit dem Zurücksetzen (Tagesübung und freie Übung zusammen):
+    [{"name", "good", "wrong", "sessions"}] in der Reihenfolge von DAY_PARTS.
+    Zeit ist die Startzeit des Durchgangs."""
+    parts = [{"name": name, "good": 0, "wrong": 0, "starts": set()} for name, _s, _e in DAY_PARTS]
+    for start, _mode, obj in _char_events(_after_reset(datetime(2000, 1, 1)), completed_only=True):
+        part = parts[day_part(start.hour)]
+        part["good" if obj.get("correct") is True else "wrong"] += 1
+        part["starts"].add(start)
+    return [{"name": p["name"], "good": p["good"], "wrong": p["wrong"], "sessions": len(p["starts"])}
+            for p in parts]
+
+
 # So viele Antworten in den letzten Tagen, damit ein Zeichen als „neu“ gilt (kein Ausreißer).
 NEW_CHAR_MIN_COUNT = 3
 

@@ -1567,6 +1567,8 @@ class MorseTrainerApp:
             new_char = koch.new_chars(lesson)
             if new_char:
                 self.lesson_info_var.set(tr("neu: {char}").format(char=", ".join(key_hint(ch) for ch in new_char)))
+            elif lesson == koch.FINAL_LESSON:
+                self.lesson_info_var.set(tr("alle Zeichen · Betriebszeichen ab Lektion {next}").format(next=lesson + 1))
             else:
                 self.lesson_info_var.set(tr("alle Zeichen, keins bevorzugt"))
             self.new_char_button.config(text=tr("▶ anhören"))
@@ -2106,7 +2108,8 @@ class MorseTrainerApp:
         data = stats.load_all_time()
         boxes = review.by_box()
         self.all_time_panel.refresh(stats.all_time_summary(data), stats.all_time_char_rows(data),
-                                    stats.period_comparison(), safe="".join(boxes[SAFE_FROM_BOX:]))
+                                    stats.period_comparison(), safe="".join(boxes[SAFE_FROM_BOX:]),
+                                    time_of_day=stats.time_of_day())
         self.confusion_var.set(self._confusion_text(stats.recent_char_data()))
         days, stars = self._week()
         self.week_strip_var.set(week_text(days))

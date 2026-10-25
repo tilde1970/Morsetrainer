@@ -275,7 +275,17 @@ EN.update({
         "You now know all characters. Continue with the final lesson {next}? No character is new there, all "
         "come evenly (weak ones still more often). You can add the prosigns AR, KN, SK and BK afterwards in "
         "lessons {first}–{last}.",
+    "Morgens": "Morning",
+    "Mittags": "Midday",
+    "Nachmittags": "Afternoon",
+    "Abends": "Evening",
+    "Nachts": "Night",
+    "{name} {pct} % ({n} Durchgänge)": "{name} {pct} % ({n} sessions)",
+    "Kaum ein Unterschied zwischen den Tageszeiten.": "Hardly any difference between the times of day.",
+    "Am besten klappt es {best}, {gap} Punkte vor {worst}.": "You do best in the {best}, {gap} points ahead of {worst}.",
+    "Nach Tageszeit (Trefferquote): {listed}. {verdict}": "By time of day (accuracy): {listed}. {verdict}",
     "alle Zeichen, keins bevorzugt": "all characters, none favoured",
+    "alle Zeichen · Betriebszeichen ab Lektion {next}": "all characters · prosigns from lesson {next}",
     "Es gibt nur {n} Reiter.": "There are only {n} tabs.",
     "Update verfügbar": "Update available",
     "Neu in Version {version}:": "New in version {version}:",
