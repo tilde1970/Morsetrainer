@@ -23,16 +23,16 @@ interface. German overview: [README.md](README.md).
   characters as a sound pattern instead of counting dits and dahs. The
   next lesson is offered once you get 90 %.
 - **Daily practice (10 min):** puts together what is due today – warm-up,
-  main part, cool-down – with three stars a day and a weekly goal.
+  main part, wind-down – with three stars a day and a weekly goal.
 - **Exercises:** single characters with time limit, groups, words and Q
-  codes, real callsigns (also as a RufZ run), continuous copying, listen &
+  codes, real callsigns (also as a RufZ run), non-stop copying, listen &
   say without a keyboard (also as MP3), complete QSOs and contest operation
   as the running station, as in Morse Runner.
 - **Band conditions:** noise, QRN, QSB, chirp, SSB babble and CW QRM, each
   adjustable.
 - **Statistics:** per character, spaced repetition over days, most frequent
-  confusions to practise specifically, printable awards in bronze, silver
-  and gold, lifeline.
+  confusions to practise specifically, insights into the last 90 days,
+  printable awards in bronze, silver and gold, lifeline.
 - **Network:** class or club evening on the local network. The trainer
   sets the pace, everyone hears the same sequence and types along, the
   trainer sees live who typed what. Also with a fixed pace for pencil and
@@ -78,8 +78,8 @@ Python installation is needed:
   you have to approve it on first start. How to do that, and what applies to
   Intel Macs, is in the [manual, section macOS](docs/Anleitung.en.md#macos).
 
-`SHA256SUMS.txt` with the checksums sits next to the programs. To verify, on Linux run `sha256sum -c --ignore-missing
-SHA256SUMS.txt`; on Windows run `Get-FileHash Morsetrainer.exe` in
+`SHA256SUMS.txt` with the checksums sits next to the programs. To verify,
+on Linux run `sha256sum -c --ignore-missing SHA256SUMS.txt`; on Windows run `Get-FileHash Morsetrainer.exe` in
 PowerShell and compare with the line in `SHA256SUMS.txt`.
 
 ## First steps

@@ -30,7 +30,8 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 - **Bandbedingungen:** Rauschen, QRN, QSB, Chirp, SSB-Gebrabbel und
   CW-QRM, einzeln regelbar.
 - **Statistik:** je Zeichen, Lernkartei über Tage, häufigste
-  Verwechslungen zum gezielten Üben, Diplome in Bronze, Silber und Gold
+  Verwechslungen zum gezielten Üben, Auswertungen im Verlauf der letzten
+  90 Tage, Diplome in Bronze, Silber und Gold
   zum Ausdrucken, Lebenslinie.
 - **Netzwerk:** Kurs oder Clubabend im lokalen Netz. Der Trainer gibt vor,
   alle hören dieselbe Sequenz und tippen mit, der Trainer sieht live, wer
