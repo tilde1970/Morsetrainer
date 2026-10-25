@@ -1746,6 +1746,22 @@ class DecimalTest(AppTestCase):
         self.app._refresh_all_time(with_awards=False)
         self.assertEqual(int(self.app.all_time_panel.char_tree.cget("height")), theme.MIN_TREE_ROWS)
 
+    def test_back_buttons_sit_at_the_top_of_their_sections(self):
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        ups = [w for w in walk(self.app.root) if w.winfo_class() == "TButton" and w.cget("text") == "▲ Nach oben"]
+        self.assertEqual(len(ups), 7)
+        for button in ups:
+            self.assertIs(button.master.pack_slaves()[0], button)  # erstes Element der Karte, nicht das letzte
+        self.root.deiconify()
+        self.root.geometry("1024x600")
+        self.app.notebook.select(self.app.notebook.tabs()[-1])
+        self.root.update()
+        card = self.app.insights_panel.card
+        self.assertLess(ups[5].winfo_rooty() - card.winfo_rooty(), 40)  # gleich unter dem Kartentitel
+
     def test_jump_moves_focus_into_the_section_and_back(self):
         from morsetrainer.widgets import announcer
 

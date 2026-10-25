@@ -1943,15 +1943,18 @@ class MorseTrainerApp:
             jump_buttons.append(button)
             back = ttk.Button(card, text=tr("▲ Nach oben"), command=lambda: self._jump_to(
                 scroller, jump_bar, tr("Sprungzeile."), jump_buttons[0]))
-            back.pack(anchor="e", pady=(4, 0))
+            # Oben im Abschnitt, rechts: Ganz unten müsste man erst durch den langen Abschnitt rollen.
+            first = card.pack_slaves()
+            back.pack(anchor="e", pady=(0, 4), **({"before": first[0]} if first else {}))
+            back._is_back_button = True
             announcer.name(back, tr("Nach oben zur Sprungzeile"))
 
     def _jump_to(self, scroller, target, spoken: str, focus=None) -> None:
         """Statistik: `target` an den oberen Rand rollen, den Fokus in den Abschnitt
         setzen (sonst bliebe er auf dem Knopf, außer Sicht, und die nächste Tab-Taste
         rollte zurück) und den Abschnitt ansagen."""
-        if focus is None:
-            focus = next((w for w in _focusable(target)), None)
+        if focus is None:  # der Rücksprungknopf oben im Abschnitt ist nicht das Ziel des Sprungs
+            focus = next((w for w in _focusable(target) if not getattr(w, "_is_back_button", False)), None)
         if focus is not None:
             focus.focus_set()
         scroller.canvas.update_idletasks()
