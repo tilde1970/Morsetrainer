@@ -345,6 +345,8 @@ EN.update({
     "Nach Modus (die Gesamtzahl hängt davon ab, welche Modi du geübt hast): ": "By mode (the overall figure depends on which modes you practised): ",
     "{mode} von {before} auf {recent} Prozent": "{mode} from {before} to {recent} percent",
     "{mode} {before} % → {recent} %": "{mode} {before} % → {recent} %",
+    "Im Reiter Statistik gibt es den neuen Abschnitt „Auswertungen“ (Knopf in der Sprungzeile, vorlesbar mit F11): Rückstand beim Mitschreiben, Fehlerarten, Ermüdung, Verwechslungspaare und Fehlerquote je Zeichen. Die Vergleichszeile nennt die Trefferquote jetzt auch je Modus, die Tageszeit-Zeile aus 2.66 ist wieder weg. Alles Weitere steht unter Hilfe, Änderungen.":
+        "The Statistics tab has a new section “Insights” (button in the jump row, can be read aloud with F11): lag when copying, error types, fading, confusion pairs and error rate per character. The comparison line now also gives accuracy per mode, and the time-of-day line from 2.66 is gone. Everything else is under Help, Changes.",
     "alle Zeichen, keins bevorzugt": "all characters, none favoured",
     "alle Zeichen · Betriebszeichen ab Lektion {next}": "all characters · prosigns from lesson {next}",
     "Es gibt nur {n} Reiter.": "There are only {n} tabs.",

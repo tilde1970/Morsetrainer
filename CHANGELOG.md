@@ -1,5 +1,34 @@
 # Änderungen
 
+## 2.67
+
+- **Statistik, Auswertungen:** Neuer Abschnitt „Auswertungen (letzte 90
+  Tage)“ mit eigenem Knopf in der Sprungzeile. Er zeigt den Rückstand beim
+  Mitschreiben in „Am Stück“ (füllt sich erst durch Übung), die Fehlerarten je
+  Woche (verwechselt, vertauscht, nicht erkannt), die Ermüdung im Durchgang,
+  die Verwechslungspaare im Verlauf, die Fehlerquote je Zeichen und Zeichen,
+  die in der Lernkartei wieder zurückgefallen sind. Ein Urteil wie „häufiger“
+  oder „Nachlassen“ gibt es nur, wenn es sich von Zufall abhebt; sonst steht
+  „kein sicherer Unterschied“, die Fallzahlen stehen in Klammern. Zwei Knöpfe
+  üben die angezeigten Paare und die nicht erkannten Zeichen gezielt.
+  „Auswertungen vorlesen“ und F11 lesen alles vor.
+- **Statistik, Vergleichszeile:** Die Trefferquote steht zusätzlich je Modus
+  („Nach Modus: Einzeln 81 % → 81 %, Am Stück 78 % → 87 %“), weil der Schnitt
+  über alle davon abhängt, welche Modi du geübt hast. „Davor (N Tage)“ nennt
+  die wirklich abgedeckten Tage. Wiederholungsabfragen und Zeichen ohne
+  Zeitmessung zählen dort nicht mehr.
+- **Statistik, Tageszeit:** Die Zeile aus 2.66 entfällt wieder; sie zeigte bei
+  den vorhandenen Daten keinen Unterschied.
+- **Verwechslungen:** Der Knopf zum gezielten Üben sagt an, warum nichts
+  passiert, wenn es zu wenige Verwechslungen gibt, und nennt nach dem Wechsel
+  die Zeichen.
+- **Anleitung und Oberfläche:** Die Anleitung ist neu gefasst und rund 30 %
+  kürzer; die englische Fassung ist neu formuliert. In der englischen
+  Oberfläche heißt das Probehören der Bandbedingungen jetzt „Preview“, dazu
+  einheitliche Schreibweisen.
+- **Intern:** Zeilen aus „Am Stück“ speichern den Rückstand in Zeichen;
+  Tests für die Auswertungen.
+
 ## 2.66
 
 - **Statistik, Tageszeit:** Neue Zeile unter dem Vergleich: die Trefferquote

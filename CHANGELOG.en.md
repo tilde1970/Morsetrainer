@@ -1,5 +1,32 @@
 # Changes
 
+## 2.67
+
+- **Statistics, insights:** New section “Insights (last 90 days)” with its own
+  button in the jump row. It shows the lag when copying in “Non-stop” (it
+  fills up only with practice), the error types per week (mixed up, swapped,
+  not recognised), fading within a run, the confusion pairs over time, the
+  error rate per character and characters that have fallen back in the review
+  box. A verdict such as “more often” or “fading” appears only if it stands
+  out from chance; otherwise it says “no reliable difference”, with the number
+  of cases in brackets. Two buttons practise the displayed pairs and the
+  unrecognised characters. “Read the insights aloud” and F11 read everything
+  out.
+- **Statistics, comparison line:** Accuracy is now also shown per mode (“By
+  mode: One by one 81 % → 81 %, Non-stop 78 % → 87 %”), because the average
+  depends on which modes you practised. “Before (N days)” names the days
+  actually covered. Repeat questions and characters without timing no longer
+  count there.
+- **Statistics, time of day:** The line from 2.66 is gone again; it showed no
+  difference with the data at hand.
+- **Confusions:** The button for targeted practice says why nothing happens
+  when there are too few confusions, and names the characters after the switch.
+- **Guide and interface:** The guide has been rewritten and is about 30 %
+  shorter; the English version has been reworded. In the English interface the
+  band-conditions preview is now called “Preview”, plus consistent spellings.
+- **Internal:** Lines from “Non-stop” store the lag in characters; tests for
+  the insights.
+
 ## 2.66
 
 - **Statistics, time of day:** A new line below the comparison shows accuracy

@@ -165,6 +165,10 @@ TAB_NAMES = {"Kontinuierlich": N_("Am Stück")}
 # Änderungen, bei denen man sonst etwas Gewohntes nicht wiederfindet oder
 # Gewohntes sich ohne Erklärung anders anfühlt.
 WHATS_NEW = {
+    "2.67": N_("Im Reiter Statistik gibt es den neuen Abschnitt „Auswertungen“ (Knopf in der Sprungzeile, "
+               "vorlesbar mit F11): Rückstand beim Mitschreiben, Fehlerarten, Ermüdung, Verwechslungspaare und "
+               "Fehlerquote je Zeichen. Die Vergleichszeile nennt die Trefferquote jetzt auch je Modus, die "
+               "Tageszeit-Zeile aus 2.66 ist wieder weg. Alles Weitere steht unter Hilfe, Änderungen."),
     "2.40": N_("Zeichen, Gruppen, Wörter und Rufzeichen stehen jetzt gemeinsam im Reiter „Einzeln“; den "
                "Inhalt wählst du dort oben unter „Inhalt“ (oder Alt+1 noch einmal drücken). „Kontinuierlich“ "
                "heißt jetzt „Am Stück“. Alles Weitere steht unter Hilfe, Änderungen."),
