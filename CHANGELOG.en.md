@@ -1,5 +1,15 @@
 # Changes
 
+## 2.66
+
+- **Statistics, time of day:** A new line below the comparison shows accuracy
+  by time of day (morning, midday, afternoon, evening, night) and when you do
+  best. Daily practice and free practice count together; a time slot counts
+  from 5 sessions, and with less than 3 points between them it says “Hardly
+  any difference”. Tempo and mode are not factored out.
+- **Practice tab, lesson 41:** The line next to the “Lesson” field now points
+  out that the prosigns follow from lesson 42.
+
 ## 2.65
 
 - **Documentation:** The development guide and the change lists have been

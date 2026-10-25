@@ -1,5 +1,15 @@
 # Änderungen
 
+## 2.66
+
+- **Statistik, Tageszeit:** Neue Zeile unter dem Vergleich: die Trefferquote
+  nach Tageszeit (morgens, mittags, nachmittags, abends, nachts) und wann es
+  am besten klappt. Tagesübung und freie Übung zählen zusammen; ein Fenster
+  geht erst ab 5 Durchgängen ein, bei weniger als 3 Punkten Abstand steht
+  „Kaum ein Unterschied“. Tempo und Modus werden nicht herausgerechnet.
+- **Übungsreiter, Lektion 41:** Die Zeile neben dem Feld „Lektion“ weist
+  jetzt darauf hin, dass die Betriebszeichen ab Lektion 42 folgen.
+
 ## 2.65
 
 - **Dokumentation:** Die Entwicklungsanleitung und die Änderungslisten sind
