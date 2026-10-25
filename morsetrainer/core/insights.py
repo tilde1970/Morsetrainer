@@ -130,7 +130,8 @@ def confusion_trend(now=None) -> list:
                 continue
             char = obj["char"]
             sent[side][char] = sent[side].get(char, 0) + 1
-            if obj.get("correct") is False and obj.get("cause") == stats.HEARD and obj.get("typed"):
+            # Die Ursache wird erst seit Oktober 2026 gespeichert; davor galt ein getipptes Zeichen als Verwechslung.
+            if obj.get("correct") is False and obj.get("typed") and obj.get("cause", stats.HEARD) == stats.HEARD:
                 pair = (char, obj["typed"])
                 wrong[side][pair] = wrong[side].get(pair, 0) + 1
     totals = {}

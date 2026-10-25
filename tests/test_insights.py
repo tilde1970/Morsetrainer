@@ -89,6 +89,16 @@ class InsightsTest(unittest.TestCase):
         self.assertIn("D → U: davor 20 %, zuletzt 5 % (seltener)", text)
         self.assertNotIn("(häufiger)", text)
 
+    def test_pairs_count_old_errors_without_a_stored_cause(self):
+        def old(days_ago, rows):  # Durchgang aus der Zeit vor der Ursachenangabe
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            lines = [{"type": "config", "mode": "single", "start_time": start, "wpm": 20}]
+            lines += [{"type": "char", "char": c, "typed": t, "correct": c == t} for c, t in rows]
+            tests.write_session(lines + [{"type": "summary"}])
+        old(40, [("B", "6")] * 2 + [("B", "B")] * 8 + [("6", "6")] * 10)
+        self.write(2, [("B", "6", {})] * 1 + [("B", "B", {})] * 9 + [("6", "6", {})] * 10)
+        self.assertIn("B → 6: davor 20 %, zuletzt 10 % (seltener)", panel.pairs_text(insights.confusion_trend()))
+
     def test_pair_with_a_character_not_seen_before_is_new(self):
         self.write(40, [("K", "K", {})] * 20)
         self.write(2, [("B", "6", {})] * 3 + [("B", "B", {})] * 17)
