@@ -40,7 +40,8 @@ def _week_label(day) -> str:
 
 
 def causes_text(weeks: list) -> str:
-    """Eine Zeile je Woche: „ab 12.10.: 18 Fehler: verwechselt 50 %, verpasst 33 %, …“."""
+    """Eine Zeile je Woche: „Woche ab 12.10.: 7,5 Fehler je 100 Zeichen, davon nicht erkannt
+    86 %, verwechselt 14 % (273 Fehler)“."""
     lines = []
     for week in weeks:
         counts = week["counts"]
@@ -51,7 +52,9 @@ def causes_text(weeks: list) -> str:
             continue
         shares = ", ".join(f"{tr(CAUSE_NAMES.get(cause, cause))} {_pct(count / total * 100)} %"
                            for cause, count in sorted(counts.items(), key=lambda item: -item[1]))
-        lines.append(f"{head}: " + tr("{n} Fehler: {shares}").format(n=total, shares=shares))
+        rate = total / week["chars"] * 100 if week["chars"] else 0
+        lines.append(f"{head}: " + tr("{rate} Fehler je 100 Zeichen, davon {shares} ({n} Fehler)").format(
+            rate=number(rate, 1), shares=shares, n=total))
     return "\n".join(lines)
 
 
@@ -93,15 +96,19 @@ def pairs_text(rows: list) -> str:
         change = recent - before
         word = (tr("seltener") if change <= -PAIR_CHANGE_PCT
                 else tr("häufiger") if change >= PAIR_CHANGE_PCT else tr("unverändert"))
-        lines.append(f"{name}: " + tr("davor {before} %, zuletzt {recent} % ({word})").format(
-            before=number(before, 0), recent=number(recent, 0), word=word))
+        lines.append(f"{name}: " + tr("davor {before} % (von {n_before}), zuletzt {recent} % (von {n_recent}): {word}").format(
+            before=number(before, 0), recent=number(recent, 0), word=word,
+            n_before=row["n_before"], n_recent=row["n_recent"]))
     return "\n".join(lines)
 
 
 class InsightsPanel:
     """Karte mit den vier Auswertungen; `refresh()` liest die Daten neu."""
-    def __init__(self, parent):
+    def __init__(self, parent, on_drill=None):
+        """`on_drill`: Aufruf des Knopfs „Verwechslungen gezielt üben“ unter den Paaren."""
         box = theme.card(parent, tr("Auswertungen (letzte {days} Tage)").format(days=insights.INSIGHT_DAYS))
+        theme.hint(box, wrap=560, text=tr(
+            "Die Auswertungen füllen sich mit dem Üben; was noch fehlt, steht jeweils dabei.")).pack(anchor="w")
         self.vars = {}
         sections = (
             ("lag", tr("Rückstand beim Mitschreiben"), tr(
@@ -110,16 +117,20 @@ class InsightsPanel:
                 "Gezählt werden nur Durchgänge, die den Rückstand schon aufgezeichnet haben."), tr("Noch keine Messung: übe im Reiter Am Stück.")),
             ("causes", tr("Fehlerarten je Woche"), tr(
                 "Verwechselt: ein anderes Zeichen getippt oder zwei vertauscht. Nicht erkannt: nichts getippt, zu spät "
-                "oder erst nach Wiederholung. Wenn aus Aussetzern Verwechslungen werden, hörst du die Zeichen schon, "
+                "oder erst nach Wiederholung. Viel „nicht erkannt“ ist am Anfang normal; sinkt die Rate je 100 Zeichen, "
+                "erkennst du mehr. Wenn aus Aussetzern Verwechslungen werden, hörst du die Zeichen schon, "
                 "trennst sie aber noch nicht sicher."),
              tr("Noch keine Fehler in den letzten Wochen.")),
             ("fatigue", tr("Ermüdung im Durchgang"), tr(
                 "Alle Durchgänge ab {n} Zeichen, jeder in drei Teile geteilt, zusammengezählt. Tempo und Zeichensatz "
                 "passen sich beim Üben an, der Vergleich ist ein Anhaltspunkt.").format(n=insights.FATIGUE_MIN_CHARS),
-             tr("Noch zu wenige lange Durchgänge (ab {n}).").format(n=insights.FATIGUE_MIN_SESSIONS)),
+             tr("Noch zu wenige lange Durchgänge (ab {n} Durchgängen mit je mindestens {chars} Zeichen).").format(
+                 n=insights.FATIGUE_MIN_SESSIONS, chars=insights.FATIGUE_MIN_CHARS)),
             ("pairs", tr("Verwechslungspaare im Verlauf"), tr(
                 "Gesendet → getippt, in Prozent der Fälle, in denen das gesendete Zeichen kam: die letzten {days} Tage "
-                "gegen die Zeit davor. Seltener ist besser. Zeichen, die davor nicht vorkamen, sind „neu dabei“.").format(days=insights.RECENT_DAYS),
+                "gegen die Zeit davor, dazu in Klammern, aus wie vielen Fällen. Seltener ist besser. Schwankungen von "
+                "wenigen Prozentpunkten sind normal, und ein Zeichen, das gerade neu geübt wird, sieht kurz schlechter "
+                "aus. Zeichen, die davor nicht vorkamen, sind „neu dabei“.").format(days=insights.RECENT_DAYS),
              tr("Noch keine Verwechslungen zum Vergleichen.")),
         )
         for key, heading, explanation, empty in sections:
@@ -128,6 +139,8 @@ class InsightsPanel:
             self.vars[key] = (var, empty)
             theme.fit_wrap(ttk.Label(box, textvariable=var, justify="left"), 560).pack(anchor="w", pady=(2, 0))
             theme.hint(box, wrap=560, text=explanation).pack(anchor="w", pady=(2, 0))
+            if key == "pairs" and on_drill is not None:
+                ttk.Button(box, text=tr("Verwechslungen gezielt üben"), command=on_drill).pack(anchor="w", pady=(4, 0))
         self.card = box
 
     def refresh(self):

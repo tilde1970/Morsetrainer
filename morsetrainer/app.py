@@ -1913,7 +1913,7 @@ class MorseTrainerApp:
             confusion_box, text=tr("Die {n} häufigsten gezielt üben").format(n=CONFUSION_PAIRS), command=self._drill_confusions
         )
         self.confusion_button.pack(anchor="w")
-        self.insights_panel = InsightsPanel(frame)
+        self.insights_panel = InsightsPanel(frame, on_drill=self._drill_confusions)
         self.progress_panel = ProgressPanel(frame)
         progress_card = frame.winfo_children()[-1]
 

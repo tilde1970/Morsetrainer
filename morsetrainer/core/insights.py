@@ -17,7 +17,7 @@ MIN_WEEK_ERRORS = 5     # Fehler einer Woche, ab denen ihre Aufteilung gezeigt w
 FATIGUE_MIN_CHARS = 30  # kürzere Durchgänge gehen nicht in die Drittel ein
 FATIGUE_MIN_SESSIONS = 10
 FATIGUE_GAP_PCT = 3     # so viel schlechter am Ende gilt als Nachlassen
-PAIR_MIN_SENT = 10      # so oft muss das gesendete Zeichen je Seite vorkommen
+PAIR_MIN_SENT = 20      # so oft muss das gesendete Zeichen je Seite vorkommen
 PAIRS_SHOWN = 3
 UNRECOGNISED = "unrecognised"  # nichts getippt, zu spät oder erst nach Wiederholung
 CHARS_PER_WPM_SECOND = 5 / 60  # ein WPM sind fünf Zeichen je Minute
@@ -75,24 +75,27 @@ def lag_chars(now=None) -> dict:
 
 def causes_by_week(now=None) -> list:
     """Fehler der letzten WEEKS_SHOWN Wochen nach Art (stats.HEARD oder
-    UNRECOGNISED): [{"first": Montag, "counts": {Art: Anzahl}}], älteste
-    Woche zuerst, Wochen ohne Fehler ausgelassen. Nur zwei Arten, weil die
+    UNRECOGNISED): [{"first": Montag, "counts": {Art: Anzahl}, "chars": Zeichen
+    der Woche}], älteste Woche zuerst, Wochen ohne Fehler ausgelassen. Nur zwei Arten, weil die
     feineren Ursachen (zu langsam, erst nach Wiederholung) erst seit Oktober 2026
     aufgezeichnet werden; früher stand dort nur „verpasst“."""
     now = now or datetime.now()
     monday = now.date() - timedelta(days=now.weekday())
     first = monday - timedelta(weeks=WEEKS_SHOWN - 1)
     weeks = {first + timedelta(weeks=i): {} for i in range(WEEKS_SHOWN)}
+    chars_per_week = dict.fromkeys(weeks, 0)
     for start, _config, chars in _sessions(now, days=(now.date() - first).days + 1):
         week = start.date() - timedelta(days=start.weekday())
         if week not in weeks:
             continue
         for obj in chars:
+            if not obj.get("untimed"):
+                chars_per_week[week] += 1
             if obj.get("correct") is False and not obj.get("untimed"):
                 cause = obj.get("cause") or (stats.HEARD if obj.get("typed") else "missed")
                 kind = stats.HEARD if cause in (stats.HEARD, "swap") else UNRECOGNISED
                 weeks[week][kind] = weeks[week].get(kind, 0) + 1
-    return [{"first": day, "counts": counts} for day, counts in weeks.items() if counts]
+    return [{"first": day, "counts": counts, "chars": chars_per_week[day]} for day, counts in weeks.items() if counts]
 
 
 def fatigue(now=None) -> dict:
@@ -117,7 +120,8 @@ def confusion_trend(now=None) -> list:
     """Die häufigsten Verwechslungspaare (gesendet → getippt, klangähnlich) der
     letzten INSIGHT_DAYS Tage mit ihrer Rate zuletzt gegen davor, in Prozent
     der Vorkommen des gesendeten Zeichens: [{"sent", "typed", "count", "before",
-    "recent", "new"}], Rate None bei weniger als PAIR_MIN_SENT Vorkommen; "new":
+    "recent", "n_before", "n_recent", "new"}] (n_*: Vorkommen des gesendeten
+    Zeichens je Seite), Rate None bei weniger als PAIR_MIN_SENT Vorkommen; "new":
     eines der beiden Zeichen kam davor nie vor (gerade erst gelernt)."""
     now = now or datetime.now()
     split = now - timedelta(days=RECENT_DAYS)
@@ -142,6 +146,7 @@ def confusion_trend(now=None) -> list:
     rows = []
     for (char, typed), count in sorted(totals.items(), key=lambda item: -item[1])[:PAIRS_SHOWN]:
         row = {"sent": char, "typed": typed, "count": count,
+               "n_before": sent["before"].get(char, 0), "n_recent": sent["recent"].get(char, 0),
                "new": not sent["before"].get(char) or not sent["before"].get(typed)}
         for side in ("before", "recent"):
             seen = sent[side].get(char, 0)
