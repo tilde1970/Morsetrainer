@@ -2,6 +2,8 @@
 
 ## 2.68
 
+- **Practice, history:** In the “One by one” tab (characters, groups, words,
+  callsigns) and in “Network” the history now sits above the statistics.
 - **Statistics, jump row:** The “▲ Back to top” button is now at the top of
   every section, on the right below the title, instead of at the very bottom.
   The tall sections (Awards, Lifeline, Insights, Progress) have it at the

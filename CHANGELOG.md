@@ -2,6 +2,8 @@
 
 ## 2.68
 
+- **Üben, Verlauf:** In den Reitern „Einzeln“ (Zeichen, Gruppen, Wörter,
+  Rufzeichen) und „Netzwerk“ steht der Verlauf jetzt über der Statistik.
 - **Statistik, Sprungzeile:** Der Knopf „▲ Nach oben“ steht jetzt oben in
   jedem Abschnitt, rechts unter dem Titel, statt ganz unten. In den hohen
   Abschnitten (Diplome, Lebenslinie, Auswertungen, Fortschritt) gibt es ihn
