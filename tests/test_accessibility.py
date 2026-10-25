@@ -2050,7 +2050,9 @@ class BandWindowAnnounceTest(AnnouncerCase):
         self.assertTrue(self.settings.window.bind("<F11>"))
         del self.said[:]
         self.settings._read_where()
-        self.assertTrue(self.pump_until(lambda: self.said))
+        # Die Ansage kommt in Teilen; auf den letzten warten, nicht nur auf den ersten.
+        self.assertTrue(self.pump_until(lambda: any("nicht für die Zeichenstatistik" in t for t in self.said)),
+                        self.said)
         spoken = " ".join(self.said)
         self.assertIn("Fenster Bandbedingungen", spoken)
         self.assertIn("Entspricht mindestens Stufe stark", spoken)
