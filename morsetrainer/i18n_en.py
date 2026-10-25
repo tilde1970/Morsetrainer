@@ -347,6 +347,8 @@ EN.update({
     "{mode} {before} % → {recent} %": "{mode} {before} % → {recent} %",
     "Im Reiter Statistik gibt es den neuen Abschnitt „Auswertungen“ (Knopf in der Sprungzeile, vorlesbar mit F11): Rückstand beim Mitschreiben, Fehlerarten, Ermüdung, Verwechslungspaare und Fehlerquote je Zeichen. Die Vergleichszeile nennt die Trefferquote jetzt auch je Modus, die Tageszeit-Zeile aus 2.66 ist wieder weg. Alles Weitere steht unter Hilfe, Änderungen.":
         "The Statistics tab has a new section “Insights” (button in the jump row, can be read aloud with F11): lag when copying, error types, fading, confusion pairs and error rate per character. The comparison line now also gives accuracy per mode, and the time-of-day line from 2.66 is gone. Everything else is under Help, Changes.",
+    "In den Übungsreitern steht der Verlauf jetzt über der Statistik, und beim Öffnen des Antwortfelds rollt die Ansicht so, dass Antwortfeld, Rückmeldung und Verlauf zusammen zu sehen sind. Im Reiter Statistik steht „Nach oben“ jetzt oben in jedem Abschnitt. Alles Weitere steht unter Hilfe, Änderungen.":
+        "In the practice tabs the history now sits above the statistics, and when the answer field opens the view scrolls so that the answer field, the feedback and the history are visible together. In the Statistics tab, “Back to top” is now at the top of every section. Everything else is under Help, Changes.",
     "alle Zeichen, keins bevorzugt": "all characters, none favoured",
     "alle Zeichen · Betriebszeichen ab Lektion {next}": "all characters · prosigns from lesson {next}",
     "Es gibt nur {n} Reiter.": "There are only {n} tabs.",

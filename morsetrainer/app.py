@@ -165,6 +165,10 @@ TAB_NAMES = {"Kontinuierlich": N_("Am Stück")}
 # Änderungen, bei denen man sonst etwas Gewohntes nicht wiederfindet oder
 # Gewohntes sich ohne Erklärung anders anfühlt.
 WHATS_NEW = {
+    "2.68": N_("In den Übungsreitern steht der Verlauf jetzt über der Statistik, und beim Öffnen des Antwortfelds "
+               "rollt die Ansicht so, dass Antwortfeld, Rückmeldung und Verlauf zusammen zu sehen sind. Im Reiter "
+               "Statistik steht „Nach oben“ jetzt oben in jedem Abschnitt. Alles Weitere steht unter Hilfe, "
+               "Änderungen."),
     "2.67": N_("Im Reiter Statistik gibt es den neuen Abschnitt „Auswertungen“ (Knopf in der Sprungzeile, "
                "vorlesbar mit F11): Rückstand beim Mitschreiben, Fehlerarten, Ermüdung, Verwechslungspaare und "
                "Fehlerquote je Zeichen. Die Vergleichszeile nennt die Trefferquote jetzt auch je Modus, die "
