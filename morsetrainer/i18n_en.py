@@ -26,7 +26,7 @@ EN.update({
     "Station": "Station",
     "Wiedereinsteiger: Tagesübung steigt schneller auf (drei Lektionen bei 95 %)":
         "Returning to CW: the daily practice moves up faster (three lessons at 95 %)",
-    "Wiedereinsteiger": "returning",
+    "Wiedereinsteiger": "returning to CW",
     "Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“ den Haken "
     "„Wiedereinsteiger“ setzen.":
         "New here? Start with ▶ Daily practice. Knew CW before? Tick “Returning to CW” under “▸ More options”.",
@@ -246,7 +246,7 @@ EN.update({
     "▾ Weitere Optionen": "▾ More options",
     "▸ Weitere Optionen": "▸ More options",
     "Farnsworth {wpm}": "Farnsworth {wpm}",
-    "schwache bevorzugt": "weak favoured",
+    "schwache bevorzugt": "favour weak characters",
     "variiert": "varied",
     "Koch-Lektion": "Koch lesson",
     "▶ anhören": "▶ listen",
@@ -434,7 +434,7 @@ EN.update({
     "dran. Hochgestuft wird nur aus Zufallszeichen (Zeichen und Gruppen im Reiter Einzeln, Am Stück), "
     "entschieden einmal am Tag ab 8 Versuchen; zwischen 80 und 90 % bleibt ein Zeichen, wo es ist.":
         "Characters recognised reliably and quickly come back after 1, 2, 4, 8, 16 and 32 days, "
-        "uncertain ones the next day. With “weak favoured” due characters come up more often. "
+        "uncertain ones the next day. With “favour weak characters” due characters come up more often. "
         "Only random characters promote a character (characters and groups in the One by one tab, Non-stop); "
         "decided once a day from 8 attempts; between 80 and 90 % a character stays where it is.",
     "Fällige gezielt üben": "Practise due characters",
@@ -895,15 +895,15 @@ EN.update({
     "Weidezaun": "Fence",
     "Tastklicks": "Key clicks",
     "Weitere Störungen": "More interference",
-    "Probehören ({key})": "Listen ({key})",
-    "Probehören beenden ({key})": "Stop listening ({key})",
+    "Probehören ({key})": "Preview ({key})",
+    "Probehören beenden ({key})": "Stop preview ({key})",
     "CQ mit diesen Bedingungen, bis du stoppst; Änderungen sind gleich zu hören.":
         "CQ under these conditions until you stop; changes can be heard at once.",
     "Probehören zählt nicht für Statistik, Übungszeit und Diplome.":
-        "Listening to a sample does not count for statistics, practice time or awards.",
-    "Probehören erst nach dem Durchgang.": "Listening only after the run.",
+        "A preview does not count for statistics, practice time or awards.",
+    "Probehören erst nach dem Durchgang.": "Preview only after the run.",
     "Probehören nicht während einer Netzwerk-Sitzung; dort bestimmt der Trainer die Bedingungen.":
-        "No listening during a network session; there the trainer sets the conditions.",
+        "No preview during a network session; there the trainer sets the conditions.",
     "Gehören zu keiner Stufe und zählen nicht für das Diplom QRN-fest; „Alle an“ schaltet sie nicht mit "
     "ein. Tastklicks: Klicks eines hart tastenden Nachbarn, auch wenn sein Ton aus ist; der "
     "CW-QRM-Abstand gilt für sie.":
@@ -1410,7 +1410,7 @@ EN.update({
     "Zu wenige echte Rufzeichen aus deinen Zeichen – es werden passende erfunden.":
         "Too few real callsigns from your characters – matching ones are made up.",
     "Rufzeichenliste aktualisieren": "Update callsign list",
-    "Liste aktualisieren": "update list",
+    "Liste aktualisieren": "Update list",
     "Rufzeichenliste laden (supercheckpartial.com)": "Load callsign list (supercheckpartial.com)",
     "Die Rufzeichenliste lässt sich nach der Übung laden.":
         "The callsign list can be loaded after the exercise.",

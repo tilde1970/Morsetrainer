@@ -233,7 +233,7 @@ callsigns (F6).
 **Loading the callsign list:** the **Load callsign list
 (supercheckpartial.com)** button downloads the list from
 [supercheckpartial.com](https://www.supercheckpartial.com) (about 360 kB,
-needs internet); afterwards it is called **update list**. During an
+needs internet); afterwards it is called **Update list**. During an
 exercise it does not load. If loading fails, the previous list stays, and
 the status line and the announcement give the reason, such as “No
 connection to supercheckpartial.com (internet or proxy).” Behind a company
@@ -646,7 +646,7 @@ window if needed. The levels and the award count the S/N value inside the
 filter, which the window shows in addition: “medium” with a 500 Hz filter
 is about “light”.
 
-**Listen (Ctrl+P)** (button at the bottom of the window): plays CQ calls
+**Preview (Ctrl+P)** (button at the bottom of the window): plays CQ calls
 at your pitch and speed under the conditions currently set, with your
 callsign, without a time limit. Whatever you change meanwhile can be heard
 at once; a second press stops. It counts for nothing. During a run and in
