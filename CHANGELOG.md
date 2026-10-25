@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.68
+
+- **Statistik, Sprungzeile:** Der Knopf „▲ Nach oben“ steht jetzt oben in
+  jedem Abschnitt, rechts unter dem Titel, statt ganz unten. In den hohen
+  Abschnitten (Diplome, Lebenslinie, Auswertungen, Fortschritt) gibt es ihn
+  zusätzlich unten. Ein Sprung aus der Sprungzeile landet weiter im Abschnitt,
+  nicht auf dem Rücksprungknopf.
+
 ## 2.67
 
 - **Statistik, Auswertungen:** Neuer Abschnitt „Auswertungen (letzte 90

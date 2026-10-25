@@ -1,5 +1,13 @@
 # Changes
 
+## 2.68
+
+- **Statistics, jump row:** The “▲ Back to top” button is now at the top of
+  every section, on the right below the title, instead of at the very bottom.
+  The tall sections (Awards, Lifeline, Insights, Progress) have it at the
+  bottom as well. A jump from the jump row still lands in the section, not
+  on the back button.
+
 ## 2.67
 
 - **Statistics, insights:** New section “Insights (last 90 days)” with its own
