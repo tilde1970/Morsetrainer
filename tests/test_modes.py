@@ -1778,6 +1778,96 @@ class DecimalTest(AppTestCase):
             self.assertIs(self.root.focus_get(), buttons["Woche"])  # wieder oben, in der Sprungzeile
         self.assertNotIn("▲", announcer.describe(up[0]))
 
+    def _write_pair_sessions(self):
+        from datetime import datetime, timedelta
+        for days_ago, wrong in ((40, 8), (2, 2)):
+            start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+            tests.write_session(
+                [{"type": "config", "mode": "single", "start_time": start, "wpm": 20}]
+                + [{"type": "char", "char": "D", "typed": "U", "correct": False, "cause": "heard"}] * wrong
+                + [{"type": "char", "char": "D", "typed": "D", "correct": True}] * (40 - wrong)
+                + [{"type": "char", "char": "U", "typed": "U", "correct": True}] * 10
+                + [{"type": "summary"}])
+
+    def test_insights_are_in_the_spoken_statistics_and_have_a_read_button(self):
+        from morsetrainer.widgets import announcer
+        self._write_pair_sessions()
+        self.app._refresh_all_time(with_awards=False)
+        spoken = self.app.statistics_spoken()
+        self.assertIn("Auswertungen", spoken)
+        self.assertIn("als", spoken)  # „De als U getippt“ statt „D auf U“
+        self.assertNotIn(" auf ", self.app.insights_panel.spoken())
+        said = []
+        with mock.patch.object(announcer, "say", side_effect=lambda text, *a, **k: said.append(text)):
+            button = next(w for w in self.app.insights_panel.card.winfo_children()
+                          if w.winfo_class() == "TButton")
+            self.assertEqual(button.cget("text"), "Auswertungen vorlesen")
+            button.invoke()
+        self.assertIn("getippt", said[-1])
+
+    def test_jump_to_the_insights_lands_on_a_visible_button(self):
+        from morsetrainer.widgets import announcer
+        buttons = {}
+        def walk(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from walk(child)
+        buttons = {w.cget("text"): w for w in walk(self.app.root)
+                   if w.winfo_class() == "TButton" and w.cget("text") == "Auswertungen"}
+        with mock.patch.object(announcer, "say"):
+            self.root.deiconify()
+            self.root.geometry("1024x600")
+            self.app.notebook.select(self.app.notebook.tabs()[-1])
+            self.root.update()
+            buttons["Auswertungen"].invoke()
+            self.root.update()
+        focus = self.root.focus_get()
+        self.assertEqual(focus.cget("text"), "Auswertungen vorlesen")  # oben in der Karte, nicht am Ende
+        canvas = next(w for w in self.root.nametowidget(self.app.stats_tab).winfo_children()
+                      if w.winfo_class() == "Canvas")
+        top = focus.winfo_rooty() - canvas.winfo_rooty()
+        self.assertTrue(0 <= top < canvas.winfo_height())
+
+    def test_drill_buttons_name_the_characters_and_say_why_when_there_are_too_few(self):
+        from morsetrainer.widgets import announcer
+        panel = self.app.insights_panel
+        self.app._refresh_all_time(with_awards=False)
+        self.assertEqual(str(panel.buttons["pairs"].cget("state")), "disabled")
+        said = []
+        with mock.patch.object(announcer, "say", side_effect=lambda text, *a, **k: said.append(text)):
+            self.app._start_drill("", "Noch zu wenige Verwechslungen zum gezielten Üben.")
+        self.assertEqual(said, ["Noch zu wenige Verwechslungen zum gezielten Üben."])
+        self.assertEqual(self.app.confusion_var.get(), said[0])
+        self._write_pair_sessions()
+        self.app._refresh_all_time(with_awards=False)
+        self.assertEqual(panel.buttons["pairs"].cget("text"), "Diese Zeichen gezielt üben: D U")
+        self.assertEqual(str(panel.buttons["pairs"].cget("state")), "normal")
+        with mock.patch.object(announcer, "say", side_effect=lambda text, *a, **k: said.append(text)):
+            panel.buttons["pairs"].invoke()
+        self.assertEqual(self.app.charset_var.get(), "DU")
+        self.assertTrue(self.app.weighted_var.get())
+        self.assertIn("Übung mit", said[-1])
+
+    def test_drill_buttons_are_locked_while_a_run_is_going(self):
+        self._write_pair_sessions()
+        self.app._refresh_all_time(with_awards=False)
+        panel = self.app.insights_panel
+        panel.set_locked(True)
+        self.assertEqual(str(panel.buttons["pairs"].cget("state")), "disabled")
+        panel.set_locked(False)
+        self.assertEqual(str(panel.buttons["pairs"].cget("state")), "normal")
+
+    def test_a_failing_insight_leaves_the_others_and_the_tab_working(self):
+        from morsetrainer.core import errorlog, insights
+        self._write_pair_sessions()
+        with mock.patch.object(insights, "fatigue", side_effect=ValueError("kaputt")), \
+                mock.patch.object(errorlog, "record") as record:
+            self.app._refresh_all_time(with_awards=False)
+        record.assert_called_once()
+        panel = self.app.insights_panel
+        self.assertIn("Nicht auswertbar", panel.vars["fatigue"][0].get())
+        self.assertIn("D → U", panel.vars["pairs"][0].get())
+
     def test_hidden_fsrs_tab_is_read_by_f11_and_never_counts_as_last_tab(self):
         stats_tab = self.app.stats_tab
         self.app.toggle_fsrs_tab()

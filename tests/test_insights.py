@@ -29,36 +29,50 @@ class InsightsTest(unittest.TestCase):
             lines.append(entry)
         tests.write_session(lines + [{"type": "summary"}])
 
-    def test_lag_counts_characters_at_the_effective_tempo(self):
-        # 20 WPM = 100 Zeichen je Minute: 1,2 s Rückstand sind 2 Zeichen.
-        self.write(1, [("K", "K", {"lag_s": 1.2})] * 40, mode="continuous")
-        self.write(30, [("K", "K", {"lag_s": 0.6})] * 40, mode="continuous")
-        self.write(1, [("K", "K", {"lag_s": 9.0})] * 40, mode="single")  # anderer Modus zählt nicht
+    def test_lag_is_the_recorded_number_of_characters(self):
+        self.write(1, [("K", "K", {"lag_chars": 2.0})] * 40, mode="continuous")
+        self.write(30, [("K", "K", {"lag_chars": 1.0})] * 40, mode="continuous")
+        self.write(1, [("K", "K", {"lag_chars": 9.0})] * 40, mode="single")  # anderer Modus zählt nicht
         lag = insights.lag_chars()
-        self.assertAlmostEqual(insights.median(lag["recent"]), 2.0)
-        self.assertAlmostEqual(insights.median(lag["before"]), 1.0)
+        self.assertEqual((insights.median(lag["recent"]), insights.median(lag["before"])), (2.0, 1.0))
         self.assertEqual(panel.lag_text(lag),
-                         "Rückstand am Stück (Median): letzte 14 Tage: 2,0 Zeichen, davor: 1,0 Zeichen.")
+                         "Rückstand am Stück (Median): letzte 14 Tage: 2,0 Zeichen, 100 % richtig, "
+                         "davor: 1,0 Zeichen, 100 % richtig.")
 
     def test_lag_is_silent_without_enough_measurements(self):
-        self.write(1, [("K", "K", {"lag_s": 1.2})] * 5, mode="continuous")
-        self.write(1, [("K", "K", {})] * 40, mode="continuous")  # ältere Durchgänge ohne Rückstand
+        self.write(1, [("K", "K", {"lag_chars": 1.2})] * 5, mode="continuous")
+        self.write(1, [("K", "K", {})] * 40, mode="continuous")  # Durchgänge ohne Rückstand
         self.assertEqual(panel.lag_text(insights.lag_chars()), "")
 
+    def test_lag_ignores_unusable_values(self):
+        rows = [("K", "K", {"lag_chars": value}) for value in (True, -1, float("inf"), "2", None, [1])] * 6
+        self.write(1, rows, mode="continuous")
+        self.assertEqual(insights.lag_chars()["recent"], [])
+
     def test_causes_are_split_per_week_and_small_weeks_are_not(self):
-        self.write(1, [("K", "M", {})] * 6 + [("K", "", {})] * 2 + [("K", "K", {})] * 5)  # ohne Ursache aufgezeichnet
+        self.write(1, [("K", "M", {})] * 6 + [("R", "", {})] * 2 + [("K", "K", {})] * 5)  # ohne Ursache aufgezeichnet
         self.write(8, [("K", "", {})] * 2)
         lines = panel.causes_text(insights.causes_by_week()).split("\n")
         self.assertEqual(len(lines), 2)  # älteste Woche zuerst
         self.assertTrue(lines[0].endswith("2 Fehler (zu wenige für eine Aufteilung)"))
-        self.assertTrue(lines[1].endswith("61,5 Fehler je 100 Zeichen, davon verwechselt 75 %, nicht erkannt 25 % (8 Fehler)"))
+        self.assertTrue(lines[1].endswith("61,5 Fehler je 100 Zeichen, davon verwechselt 75 %, nicht erkannt 25 % "
+                                          "(8 Fehler); nicht erkannt vor allem: R"))
 
-    def test_slow_and_replayed_errors_count_as_not_recognised(self):
-        rows = [("K", "M", {"cause": "swap"}), ("K", "M", {"cause": "late"}), ("K", "M", {"cause": "replay"}), ("K", "", {"cause": "missed"}),
-                 ("K", "", {"cause": "late"}), ("K", "M", {"cause": "heard"})]
+    def test_the_running_week_is_marked(self):
+        self.write(0, [("K", "", {})] * 6)
+        self.assertIn("(läuft noch)", panel.causes_text(insights.causes_by_week()))
+
+    def test_error_kinds_are_mixed_up_swapped_or_not_recognised(self):
+        rows = [("K", "M", {"cause": "swap"}), ("K", "M", {"cause": "late"}), ("K", "M", {"cause": "replay"}),
+                ("K", "", {"cause": "missed"}), ("K", "", {"cause": "late"}), ("K", "M", {"cause": "heard"})]
         self.write(1, rows)
         self.assertTrue(panel.causes_text(insights.causes_by_week()).endswith(
-            "100,0 Fehler je 100 Zeichen, davon nicht erkannt 67 %, verwechselt 33 % (6 Fehler)"))
+            "100,0 Fehler je 100 Zeichen, davon nicht erkannt 67 %, vertauscht 17 %, verwechselt 17 % "
+            "(6 Fehler); nicht erkannt vor allem: K"))
+
+    def test_weak_characters_need_enough_unrecognised_errors(self):
+        self.write(1, [("X", "", {})] * 5 + [("Ä", "", {})] * 4 + [("6", "B", {})] * 9 + [("K", "K", {})] * 5)
+        self.assertEqual(insights.weak_chars(), [("X", 5)])  # Ä zu selten, 6 wurde verwechselt
 
     def test_retries_do_not_count(self):
         self.write(1, [("K", "M", {"retry": True})] * 10)
@@ -81,23 +95,39 @@ class InsightsTest(unittest.TestCase):
         self.assertEqual(panel.fatigue_text(insights.fatigue()), "")
 
     def test_pairs_compare_recent_with_before(self):
-        self.write(40, [("D", "U", {})] * 4 + [("D", "D", {})] * 16
-                   + [("U", "U", {})] * 10)   # davor 20 % von 20, U kam auch vor
-        self.write(2, [("D", "U", {})] * 1 + [("D", "D", {})] * 19)    # zuletzt 5 %
-        self.write(2, [("K", "M", {})] * 1 + [("K", "K", {})] * 2)     # zu wenig Vorkommen
+        self.write(40, [("D", "U", {})] * 8 + [("D", "D", {})] * 32 + [("U", "U", {})] * 10)  # davor 20 % von 40
+        self.write(2, [("D", "U", {})] * 2 + [("D", "D", {})] * 38)                        # zuletzt 5 % von 40
+        self.write(2, [("K", "M", {})] * 1 + [("K", "K", {})] * 2)                         # zu wenig Vorkommen
         text = panel.pairs_text(insights.confusion_trend())
-        self.assertIn("D → U: davor 20 % (von 20), zuletzt 5 % (von 20): seltener", text)
-        self.assertNotIn("(häufiger)", text)
+        self.assertIn("D → U: davor 20 % (von 40), zuletzt 5 % (von 40): seltener", text)
+        self.assertNotIn("häufiger", text)
 
-    def test_pairs_count_old_errors_without_a_stored_cause(self):
+    def test_a_difference_within_chance_is_not_reported(self):
         def old(days_ago, rows):  # Durchgang aus der Zeit vor der Ursachenangabe
             start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
             lines = [{"type": "config", "mode": "single", "start_time": start, "wpm": 20}]
             lines += [{"type": "char", "char": c, "typed": t, "correct": c == t} for c, t in rows]
             tests.write_session(lines + [{"type": "summary"}])
-        old(40, [("B", "6")] * 4 + [("B", "B")] * 16 + [("6", "6")] * 10)
-        self.write(2, [("B", "6", {})] * 2 + [("B", "B", {})] * 18 + [("6", "6", {})] * 10)
-        self.assertIn("B → 6: davor 20 % (von 20), zuletzt 10 % (von 20): seltener", panel.pairs_text(insights.confusion_trend()))
+        old(40, [("B", "6")] * 8 + [("B", "B")] * 32 + [("6", "6")] * 10)  # auch ohne Ursache gezählt
+        self.write(2, [("B", "6", {})] * 4 + [("B", "B", {})] * 36 + [("6", "6", {})] * 10)
+        rows = insights.confusion_trend()
+        self.assertEqual(insights.pair_verdict(rows[0]), insights.UNSURE)  # 10 Punkte, aber bei 40 Fällen Zufall
+        self.assertIn("B → 6: davor 20 % (von 40), zuletzt 10 % (von 40): kein sicherer Unterschied",
+                      panel.pairs_text(rows))
+
+    def test_small_differences_are_unchanged_and_big_ones_clear(self):
+        row = {"before": 10.0, "recent": 11.0, "n_before": 500, "n_recent": 500}
+        self.assertEqual(insights.pair_verdict(row), insights.SAME)
+        self.assertEqual(insights.pair_verdict({**row, "recent": 20.0}), insights.MORE)
+        self.assertEqual(insights.pair_verdict({**row, "before": 20.0, "recent": 10.0}), insights.LESS)
+
+    def test_both_directions_of_a_pair_stay_together(self):
+        self.write(40, [("B", "6", {})] * 4 + [("B", "B", {})] * 36 + [("6", "B", {})] * 8 + [("6", "6", {})] * 32)
+        self.write(2, [("B", "6", {})] * 4 + [("B", "B", {})] * 36 + [("6", "B", {})] * 8 + [("6", "6", {})] * 32)
+        self.write(2, [("D", "U", {})] * 3 + [("D", "D", {})] * 37 + [("U", "U", {})] * 40)
+        lines = panel.pairs_text(insights.confusion_trend()).split("\n")
+        self.assertEqual([line.split(":")[0] for line in lines], ["6 → B", "B → 6", "D → U"])
+        self.assertEqual(panel.pair_chars(insights.confusion_trend()), "6BDU")
 
     def test_pairs_with_too_few_cases_are_not_compared(self):
         self.write(40, [("D", "U", {})] * 4 + [("D", "D", {})] * 11 + [("U", "U", {})] * 10)  # 15 Fälle: zu wenig
@@ -111,6 +141,36 @@ class InsightsTest(unittest.TestCase):
         text = panel.pairs_text(insights.confusion_trend())
         self.assertIn("B → 6: neu dabei, zuletzt 15 %", text)
         self.assertNotIn("häufiger", text)
+
+    def test_fatigue_ignores_characters_without_timing(self):
+        for day in range(1, 11):
+            self.write(day, [("K", "K", {})] * 30 + [("K", "M", {"untimed": True})] * 60)
+        text = panel.fatigue_text(insights.fatigue())
+        self.assertIn("Letztes Drittel: 100 % richtig", text)
+
+    def test_wobbly_characters_dropped_two_boxes_from_a_high_one(self):
+        data = {"6": {"due": "2026-10-01", "box": 0, "best_box": 4},       # Fach 5 -> 1
+                "X": {"due": "2026-10-01", "box": 2, "best_box": 4},       # Fach 5 -> 3
+                "K": {"due": "2026-10-01", "box": 1, "best_box": 2},       # nie hoch genug
+                "R": {"due": "2026-10-01", "box": 3, "best_box": 4},       # nur ein Fach
+                "M": {"box": 0, "best_box": 5}}                            # nicht in der Kartei
+        rows = insights.wobbly(data)
+        self.assertEqual(rows, [("6", 5, 1), ("X", 5, 3)])
+        self.assertEqual(panel.wobbly_text(rows), "6 (Fach 5 → 1), X (Fach 5 → 3)")
+
+    def test_unexpected_values_in_old_lines_do_not_break_the_insights(self):
+        start = datetime.now().isoformat(timespec="seconds")
+        lines = [{"type": "config", "mode": "continuous", "start_time": start, "wpm": float("inf")}]
+        lines += [{"type": "char", "char": 5, "typed": "N", "correct": False},
+                  {"type": "char", "char": ["K"], "typed": "N", "correct": False},
+                  {"type": "char", "char": "K", "typed": 5, "correct": False, "cause": ["x"]},
+                  {"type": "char", "char": "K", "typed": ["N"], "correct": False, "cause": 7},
+                  {"type": "char", "char": "K", "typed": None, "correct": None, "lag_chars": [1]},
+                  {"type": "char", "char": None}]
+        tests.write_session(lines + [{"type": "summary"}])
+        data = insights.load()
+        insights.lag_chars(data), insights.causes_by_week(data), insights.weak_chars(data)
+        insights.fatigue(data), insights.confusion_trend(data)
 
 
 if __name__ == "__main__":

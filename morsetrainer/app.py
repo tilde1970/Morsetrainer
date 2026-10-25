@@ -1215,6 +1215,10 @@ class MorseTrainerApp:
                  for index, chars in enumerate(review.by_box(review_data)) if chars]
         if boxes:
             parts.append(tr("In der Lernkartei liegen ") + "; ".join(boxes))
+        insights = self.insights_panel.spoken_parts()
+        if insights:
+            parts.append(tr("Auswertungen"))
+            parts.extend(insights)
         parts.append(self.awards_panel.summary_var.get())
         if self.progress_panel.mode_var.get():
             parts.append(tr("Fortschritt {mode}: {info}").format(mode=self.progress_panel.mode_var.get(),
@@ -1913,7 +1917,7 @@ class MorseTrainerApp:
             confusion_box, text=tr("Die {n} häufigsten gezielt üben").format(n=CONFUSION_PAIRS), command=self._drill_confusions
         )
         self.confusion_button.pack(anchor="w")
-        self.insights_panel = InsightsPanel(frame, on_drill=self._drill_confusions)
+        self.insights_panel = InsightsPanel(frame, on_drill=self._start_drill)
         self.progress_panel = ProgressPanel(frame)
         progress_card = frame.winfo_children()[-1]
 
@@ -2234,9 +2238,16 @@ class MorseTrainerApp:
         den Einzelzeichen: ähnlich klingende Zeichen direkt gegeneinander. Die
         Gewichtung wird dafür eingeschaltet; nach dem Durchgang gilt wieder der
         Zeichensatz davor."""
-        chars = self._confusion_charset(stats.recent_char_data(), stats.load_all_time())
+        self._start_drill(self._confusion_charset(stats.recent_char_data(), stats.load_all_time()),
+                          tr("Noch zu wenige Verwechslungen zum gezielten Üben."))
+
+    def _start_drill(self, chars: str, too_few: str):
+        """Übung mit genau diesen Zeichen: Zeichensatz setzen, Gewichtung an, zu den
+        Einzelzeichen wechseln und ansagen, was gilt. Bei weniger als zwei Zeichen
+        steht `too_few` in der Zeile unter den Verwechslungen und wird angesagt."""
         if len(chars) < 2:
-            self.confusion_var.set(tr("Noch zu wenige Verwechslungen zum gezielten Üben."))
+            self.confusion_var.set(too_few)
+            announcer.say(too_few)
             return
         before = self.charset_var.get()
         if self.drill_restore is not None and before == self.drill_restore[1]:
@@ -2245,6 +2256,8 @@ class MorseTrainerApp:
         self.charset_var.set(chars)
         self.weighted_var.set(True)
         self.show_mode("Einzelzeichen")
+        announcer.say(tr("Übung mit {chars}, Gewichtung an.").format(
+            chars=", ".join(announcer.spell(ch) for ch in chars)))
 
     def _reset_all_time(self):
         """Gesamtstatistik und Lernkartei nach Rückfrage löschen; Durchgänge,
@@ -2424,6 +2437,7 @@ class MorseTrainerApp:
         self.band_settings.stop_preview()
         self.new_char_button.config(state="disabled")
         self.confusion_button.config(state="disabled")
+        self.insights_panel.set_locked(True)
         self.review_button.config(state="disabled")
         self.daily_bar.set_enabled(False)
         # Der Netzwerk-Reiter zählt selbst nur die Durchgänge, nicht das
@@ -2469,6 +2483,7 @@ class MorseTrainerApp:
         self.running_mode = False
         self.band_settings.stop_preview()  # Knopf wieder frei
         self.confusion_button.config(state="normal")
+        self.insights_panel.set_locked(False)
         self.review_button.config(state="normal")
         self.daily_bar.set_enabled(True)
         self._sync_lesson()

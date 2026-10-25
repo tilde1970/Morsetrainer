@@ -167,7 +167,7 @@ class SessionStats:
             self.log_error = str(exc)
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
-                    latency=None, assumed=False, timed=True, cause=None, retry=False, lag=None) -> None:
+                    latency=None, assumed=False, timed=True, cause=None, retry=False, lag_chars=None) -> None:
         """Ergebnis für ein einzelnes Zeichen festhalten und sofort speichern.
 
         `latency` ist die Zeit vom Ende des Tons (des letzten Punkts oder
@@ -188,9 +188,10 @@ class SessionStats:
         (mit dem Nachbarn vertauscht); nur HEARD ist eine Verwechslung.
         `retry`: erneute Abfrage kurz nach einem Fehler; sie zählt im Durchgang,
         aber nicht in Gesamtstatistik, Lernkartei und Gewichtung.
-        `lag`: Beim Mitschreiben am Stück die Zeit vom Tonende des Zeichens bis
-        zur Taste, auch wenn sie hinterherschreibt (anders als `latency`, die ab
-        der vorigen Taste zählt); nur für core/insights."""
+        `lag_chars`: Beim Mitschreiben am Stück, wie viele Zeichen die Taste hinter
+        dem Tonende des Zeichens kam (Sekunden mal Zeichen je Sekunde beim damals
+        gesendeten Tempo), auch wenn sie hinterherschreibt (anders als `latency`,
+        die ab der vorigen Taste zählt); nur für core/insights."""
         if not correct and cause is None:
             cause = HEARD if typed else "missed"
         entry = {
@@ -208,8 +209,8 @@ class SessionStats:
             entry["latency_s"] = round(latency, 3)
             if assumed:
                 entry["latency_assumed"] = True
-        if lag is not None and timed:
-            entry["lag_s"] = round(lag, 3)
+        if lag_chars is not None and timed:
+            entry["lag_chars"] = round(lag_chars, 2)
         if not timed:
             entry["untimed"] = True
         self.rounds.append(entry)

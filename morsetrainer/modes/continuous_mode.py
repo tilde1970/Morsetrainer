@@ -33,7 +33,7 @@ from tkinter import ttk
 
 import numpy as np
 
-from morsetrainer.core import align, audio, band, koch
+from morsetrainer.core import align, audio, band, koch, tempo
 from morsetrainer.core.latency import char_latency
 from morsetrainer.core.morse import (
     END_TEXT, MORSE_CODE, SAMPLE_RATE, START_TEXT, build_samples, build_text,
@@ -573,20 +573,25 @@ class ContinuousModeFrame(DailyModeMixin):
                 correct = op.kind == align.OpKind.MATCH
                 play_end = self.sent_log[op.expected_index]["end_time"]
                 typed_time = self.typed_log[op.received_index]["time"]
+                sent_wpm = self.sent_log[op.expected_index].get("wpm", self.wpm)
+                # Zeichen, die die Taste hinter dem Tonende kam; auch für zu späte Tasten,
+                # sonst fehlten gerade die größten Rückstände.
+                lag_chars = (typed_time - play_end) * tempo.effective(sent_wpm, getattr(self, "fw", None)) * 5 / 60 \
+                    if typed_time >= play_end else None
                 if not plausible(typed_time, play_end):
                     # Vorausgeraten oder viel zu spät: verpasst plus überzählig.
-                    self.session_stats.record_char(expected_char, "", False, 0.0, 0.0, cause="late")
+                    self.session_stats.record_char(expected_char, "", False, 0.0, 0.0, cause="late",
+                                                   lag_chars=lag_chars)
                     extra += 1
                     continue
                 previous_key = self.typed_log[op.received_index - 1]["time"] if op.received_index else None
                 latency = char_latency(typed_time, play_end, previous_key)
-                sent_wpm = self.sent_log[op.expected_index].get("wpm", self.wpm)
                 since_start = tone_seconds(expected_char, sent_wpm) + (latency or 0.0)
                 self.session_stats.record_char(
                     expected_char, typed_char, correct, since_start,
                     effective_wpm(expected_char, since_start, sent_wpm), latency=latency,
                     cause="swap" if op.expected_index in swapped else None,
-                    lag=None if latency is None else typed_time - play_end
+                    lag_chars=None if latency is None else lag_chars
                 )
             elif op.kind == align.OpKind.DELETE:
                 self.session_stats.record_char(op.expected_char, "", False, 0.0, 0.0)
