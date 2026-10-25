@@ -50,6 +50,7 @@ Zuordnung nach Art der Änderung (eine Datei kann mehrere Zeilen treffen):
 | Lernlogik: `core/koch.py`, `practice.py`, `daily.py`, `week.py`, `awards.py`, `lifeline.py`, `modes/*` | didaktik, test, teilnehmer |
 | CW-Inhalte: `core/morse.py`, `words.py`, `qso_text.py`, `woerter.txt`, Rufzeichen-, Contest-, Q-Gruppen-Material, `modes/content.py`, `qso_*`, `callsign_mode.py` | fachinhalt, bei Lernwirkung didaktik; bei neuem oder geändertem QSO-, Rufzeichen- oder Contest-Material zusätzlich qso-szenarien (der bestehenden Material prüft und ergänzt) |
 | Fehlerdiagnose-Auswertungen: `core/review.py`, Fehlerklassen, Wiederholungslogik, individuelle Schwächenanalyse | fehleranalyse (zusätzlich zu didaktik/test), damit Diagnosen richtig einordnen statt nur konstatieren |
+| Statistische Auswertungen und Kennzahlen: `core/stats.py`, `core/insights.py`, `widgets/stats_widget.py`, `widgets/insights_panel.py`, Schwellen, Vergleichszeiträume, Urteilswörter („häufiger“, „Nachlassen“) | datenanalyst (rechnet an einer Kopie der Echt-Daten nach, prüft Unsicherheit und Störgrößen), zusätzlich fehleranalyse bei Fehlerdiagnosen; bei „Was geben die Daten her?“-Fragen allein |
 | Motivation, Fortschrittsanzeige, Streaks, Belohnungen, Tagesziele: `widgets/progress*`, Auswertungsdialoge, Feedbacktexte | motivationstrainer (zusätzlich), didaktik (Ehrlichkeit der Messwerte) |
 | Oberfläche: `widgets/*`, `app.py`, `i18n*.py`, Dialoge, Reiter, Menüs, Tastenkürzel | usability, barrierefreiheit, teilnehmer |
 | Sprachausgabe: `core/speech.py`, `widgets/announcer.py`, `voices/` | barrierefreiheit, plattform |
@@ -66,7 +67,7 @@ Die Prüfer heißen als `subagent_type`: `cw-code-pruefer`,
 `cw-didaktik-pruefer`, `cw-teilnehmer-pruefer`, `cw-usability-pruefer`,
 `cw-barrierefreiheits-pruefer`, `cw-signal-pruefer`,
 `cw-fachinhalts-pruefer`, `cw-technical-writer`, `cw-fehleranalyse-trainer`,
-`cw-qso-szenarien-ersteller`, `cw-motivationstrainer`.
+`cw-qso-szenarien-ersteller`, `cw-motivationstrainer`, `cw-datenanalyst`.
 
 Hinweis: `cw-didaktik-ersteller` (didaktische Materialentwicklung) und
 `cw-qso-szenarien-ersteller` sind keine reinen Prüfer, sondern Ersteller.
@@ -87,8 +88,9 @@ Lehrinhalte Nutzer stärker treffen als suboptimale Motivation.
 Regeln für die Reihenfolge:
 
 - **Welle 1:** rein lesende Prüfer (code, test, didaktik, teilnehmer,
-  fachinhalt, fehleranalyse, motivationstrainer, qso-szenarien) parallel in
-  einer Nachricht starten.
+  fachinhalt, fehleranalyse, motivationstrainer, qso-szenarien, datenanalyst)
+  parallel in einer Nachricht starten. Der Datenanalyst rechnet nur an einer
+  Kopie der Echt-Daten und belastet weder Messungen noch Anzeige.
 - **Welle 2:** Prüfer mit Messungen oder virtueller Anzeige (performance,
   plattform, usability, barrierefreiheit, signal) höchstens zu zweit
   gleichzeitig, damit sie sich Messwerte und Rechenzeit nicht gegenseitig
