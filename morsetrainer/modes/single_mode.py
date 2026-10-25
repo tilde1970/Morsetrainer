@@ -228,13 +228,13 @@ class SingleModeFrame(DailyModeMixin):
         self.feedback_var = tk.StringVar(value="")
         self.feedback_label = ttk.Label(answer, textvariable=self.feedback_var, style="Feedback.TLabel")
         self.feedback_label.pack(pady=(4, 10))
-        # Nur zur Rückmeldung rollen: Status und Rückmeldung zusammen sind bei
-        # 200 % höher als der sichtbare Teil, dann bliebe sie halb verdeckt.
-        self.scroller.follow(self.feedback_var, self.feedback_label)
 
         history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=520).pack(anchor="w")
+        # Zur Rückmeldung rollen (Status und Rückmeldung zusammen sind bei 200 % höher als der sichtbare
+        # Teil, dann bliebe sie halb verdeckt), mit dem Verlauf darunter, wenn beides hineinpasst.
+        self.scroller.follow(self.feedback_var, self.feedback_label, until=history)
 
         self.stats_panel = StatsPanel(parent)
 

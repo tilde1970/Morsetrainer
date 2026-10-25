@@ -264,6 +264,10 @@ class ScrollableFrame:
         if not isinstance(widget, tk.Misc) or not str(widget).startswith(str(self.inner) + "."):
             return
         try:
+            # Tk meldet den Fokus auch den Rahmen um das Element (NotifyInferior); zu denen
+            # hinzurollen holte das Antwortfeld oft wieder aus dem Bild.
+            if widget.focus_get() is not widget:
+                return
             self.show(widget)
         except tk.TclError:
             pass
@@ -283,24 +287,45 @@ class ScrollableFrame:
         except tk.TclError:
             pass
 
-    def follow(self, variable, widget) -> None:
+    def follow(self, variable, widget, until=None) -> None:
         """Ändert sich `variable` (etwa die Rückmeldung zu einer Antwort), zu
         `widget` hinrollen: Bei großer Schrift läge es sonst unterhalb des
-        sichtbaren Teils."""
+        sichtbaren Teils. `until`: siehe show()."""
         def show():
             try:
                 widget.update_idletasks()
-                self.show(widget)
+                self.show(widget, until)
             except tk.TclError:
                 pass
         root = widget.nametowidget(".")  # nach dem Hauptfenster geplant, das ihn auch wieder abbricht
         variable.trace_add("write", lambda *_: root.after_idle(show))
 
-    def show(self, widget):
+    def show(self, widget, until=None):
         """So weit rollen, dass `widget` ganz zu sehen ist (wenn es passt,
-        sonst sein Anfang)."""
+        sonst sein Anfang). `until`: ein Element darunter, das mit zu sehen sein
+        soll (etwa der Verlauf unter dem Antwortfeld), aber nur, wenn beide
+        zusammen in den sichtbaren Teil passen; sonst zählt allein `widget`."""
+        widget.update_idletasks()  # Lage nach gerade geänderten Elementen (etwa eingeklappten Karten)
         top = widget.winfo_rooty() - self.inner.winfo_rooty()
-        self._reveal(top, top + widget.winfo_height())
+        bottom = top + widget.winfo_height()
+        if until is not None:
+            both = until.winfo_rooty() + until.winfo_height() - self.inner.winfo_rooty()
+            if bottom < both <= top + self.canvas.winfo_height() - 2 * FOCUS_MARGIN:
+                bottom = both
+        self._reveal(top, bottom)
+
+    def show_fit(self, *ranges):
+        """Von mehreren Bereichen (je `(oberstes, unterstes)` Element, der größte zuerst) den ersten
+        ins Bild rollen, der ganz in den sichtbaren Teil passt; passt keiner, den Anfang des letzten.
+        So bleiben Antwortfeld, Rückmeldung und Verlauf zusammen im Blick, solange es geht."""
+        visible = self.canvas.winfo_height() - 2 * FOCUS_MARGIN
+        for first, last in ranges:
+            first.update_idletasks()
+            top = first.winfo_rooty() - self.inner.winfo_rooty()
+            bottom = last.winfo_rooty() + last.winfo_height() - self.inner.winfo_rooty()
+            if bottom - top <= visible or (first, last) == ranges[-1]:
+                self._reveal(top, bottom)
+                return
 
     def show_top(self, widget):
         """`widget` an den oberen Rand rollen (so weit der Inhalt es erlaubt)."""

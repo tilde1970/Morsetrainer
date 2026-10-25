@@ -1763,6 +1763,62 @@ class DecimalTest(AppTestCase):
             statistics = mode.stats_panel.char_tree.master.winfo_rooty()
             self.assertLess(history, statistics, title)
 
+    def test_opening_the_answer_field_shows_the_history_when_both_fit(self):
+        self.root.deiconify()
+        # Bei 600 Pixel Fensterhöhe sind nur rund 240 Pixel des Reiters sichtbar: Antwortfeld und Verlauf
+        # passen bei Wörtern und Rufzeichen gerade hinein, bei Gruppen (höhere Karte) nicht.
+        self.root.geometry("1024x600")
+        for title, fits in (("Wörter", True), ("Rufzeichen", True), ("Gruppen", False)):
+            self.app.show_mode(title, announce=False)
+            self.root.update()
+            mode = self.mode(title)
+            canvas = mode.scroller.canvas
+            canvas.yview_moveto(0)
+            mode.running = True
+            mode.show_options_for_run(True)  # die Einstellungskarte ist während des Durchgangs weg
+            self.root.update()
+            mode._set_input_open(True)
+            self.root.update()
+            top = canvas.winfo_rooty()
+            bottom = top + canvas.winfo_height()
+            self.assertGreaterEqual(mode.entry.winfo_rooty(), top, title)
+            self.assertLessEqual(mode.entry.winfo_rooty() + mode.entry.winfo_height(), bottom, title)
+            history = mode.history_card
+            self.assertEqual(history.winfo_rooty() + history.winfo_height() <= bottom, fits, title)
+            mode.running = False
+            mode.show_options_for_run(False)
+
+    def test_scroll_shows_the_entry_alone_when_it_does_not_fit_with_the_history(self):
+        from morsetrainer.widgets.ui_widgets import ScrollableFrame
+        self.root.deiconify()
+        self.root.geometry("600x500")
+        frame = ttk.Frame(self.root)
+        frame.place(x=0, y=0, width=400, height=200)
+        scroller = ScrollableFrame(frame)
+        first = ttk.Frame(scroller.inner, height=300)
+        first.pack(fill="x")
+        entry = ttk.Frame(scroller.inner, height=30)
+        entry.pack(fill="x")
+        gap = ttk.Frame(scroller.inner, height=900)
+        gap.pack(fill="x")
+        last = ttk.Frame(scroller.inner, height=60)
+        last.pack(fill="x")
+        self.root.update()
+        self.assertGreaterEqual(scroller.canvas.winfo_height(), 150)
+        scroller.show(entry, until=last)  # zusammen nicht zu sehen: nur das Feld
+        self.root.update()
+        entry_y = entry.winfo_rooty() - scroller.canvas.winfo_rooty()
+        self.assertTrue(0 <= entry_y < scroller.canvas.winfo_height())
+        scroller.canvas.yview_moveto(0)
+        near = ttk.Frame(scroller.inner, height=40)
+        near.pack(fill="x", after=entry)  # direkt unter dem Feld: zusammen sichtbar
+        self.root.update()
+        scroller.show(entry, until=near)
+        self.root.update()
+        near_bottom = near.winfo_rooty() + near.winfo_height() - scroller.canvas.winfo_rooty()
+        self.assertLessEqual(near_bottom, scroller.canvas.winfo_height())
+        frame.destroy()
+
     def test_back_buttons_sit_at_the_top_of_their_sections(self):
         def walk(widget):
             for child in widget.winfo_children():

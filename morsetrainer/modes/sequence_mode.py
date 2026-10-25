@@ -398,11 +398,13 @@ class SequenceModeFrame(DailyModeMixin):
         self.diff_var = tk.StringVar(value="")
         ttk.Label(result, textvariable=self.diff_var, font=theme.MONO_LARGE, justify="left").pack(pady=(0, 8))
 
-        self.scroller.follow(self.feedback_var, result)
-
-        history = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
+        history = self.history_card = theme.card(parent, tr("Verlauf (letzte {n})").format(n=HISTORY_LEN))
         self.history_var = tk.StringVar(value="")
         ttk.Label(history, textvariable=self.history_var, font=theme.MONO, wraplength=540).pack(anchor="w")
+        # Bei jeder neuen Rückmeldung: Antwortfeld, Rückmeldung und Verlauf zusammen im Blick, wenn sie
+        # in den sichtbaren Teil passen, sonst Rückmeldung und Verlauf, sonst die Rückmeldung allein.
+        self.result_card = result
+        self.feedback_var.trace_add("write", lambda *_: self.root.after_idle(self._show_answer_area))
 
         self.stats_panel = StatsPanel(parent)
 
@@ -631,11 +633,25 @@ class SequenceModeFrame(DailyModeMixin):
         """Programmende: laufenden Durchgang abschließen und speichern."""
         self._finalize_session()
 
+    def _show_answer_area(self, entry_only: bool = False):
+        """Ins Bild rollen: Antwortfeld mit Verlauf (passt beides hinein), sonst, nach einer
+        Rückmeldung, Rückmeldung mit Verlauf, sonst die Rückmeldung bzw. das Antwortfeld."""
+        try:
+            if entry_only:
+                self.scroller.show_fit((self.entry, self.history_card), (self.entry, self.entry))
+            else:
+                self.scroller.show_fit((self.entry, self.history_card), (self.result_card, self.history_card),
+                                       (self.result_card, self.result_card))
+        except tk.TclError:  # Fenster schon zerstört
+            pass
+
     def _set_input_open(self, is_open: bool):
         self.input_open = is_open
         self.entry.config(state="normal" if is_open else "disabled")
         if is_open:
             self.entry.focus_set()
+            # Erst nach den Fokusereignissen (sie rollen allein zum Feld), damit unser Bereich zuletzt gilt.
+            self.root.after_idle(self._show_answer_area, True)
 
     def _on_input_change(self, *_):
         """Merkt sich, wann jedes Zeichen im Eingabefeld dazukam. Bei
