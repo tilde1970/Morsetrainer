@@ -1,5 +1,16 @@
 # Changes
 
+## 2.70
+
+- **Statistics, insights:** “Confusion pairs over time” and “Characters over
+  time” are easier to read. Each entry now gives the verdict first (“no
+  reliable difference”, “less often”, “fewer errors”) and the numbers below
+  it, with the real counts, for example “earlier 11 % (19 of 175), lately
+  14 % (33 of 235)”. Pairs read “6 typed as B” instead of “6 → B”, “before”
+  is now “earlier” everywhere, and the explanations give an example and the
+  periods (lately = the last 14 days, earlier = the time before). “Error
+  types per week” names the 6 weeks it shows in its heading.
+
 ## 2.69
 
 - **Security, network:** Signing in to the trainer has a total time limit of

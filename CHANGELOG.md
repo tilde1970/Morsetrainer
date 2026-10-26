@@ -1,5 +1,16 @@
 # Änderungen
 
+## 2.70
+
+- **Statistik, Auswertungen:** „Verwechslungspaare im Verlauf“ und „Zeichen
+  im Verlauf“ sind verständlicher. Jeder Eintrag nennt zuerst das Urteil
+  („kein sicherer Unterschied“, „seltener“, „weniger Fehler“) und darunter
+  die Zahlen mit den echten Anzahlen, etwa „früher 11 % (19 von 175),
+  zuletzt 14 % (33 von 235)“. Die Paare heißen „6 als B getippt“ statt „6 → B“,
+  „davor“ heißt überall „früher“, und die Erklärtexte nennen ein Beispiel und
+  die Zeiträume (zuletzt = letzte 14 Tage, früher = die Zeit davor).
+  „Fehlerarten je Woche“ nennt in der Überschrift die 6 Wochen, die es zeigt.
+
 ## 2.69
 
 - **Sicherheit, Netzwerk:** Die Anmeldung beim Trainer hat eine Gesamtfrist
