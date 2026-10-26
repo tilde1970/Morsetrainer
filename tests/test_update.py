@@ -3,6 +3,7 @@ Updateprüfung beim Start (auch ohne Internet)."""
 import hashlib
 import io
 import json
+import sys
 import tempfile
 import time
 import tkinter as tk
@@ -154,6 +155,27 @@ class InstallTest(unittest.TestCase):
             update.download("../evil", self.target, update.WINDOWS_ASSET)
         self.assertEqual([p.name for p in self.dir.iterdir()], ["Morsetrainer.exe"])
         self.assertEqual(self.target.read_bytes(), b"MZ old")
+
+    def test_oversized_download_is_stopped(self):
+        data = b"MZ" + b"x" * 100
+        for length in (None, 10**12):  # zu lang laut Kopfzeile, zu lang beim Lesen
+            files = {update.WINDOWS_ASSET: (data, length), update.SUMS_ASSET: sums(data)}
+            with self.subTest(length), mock.patch.object(update, "MAX_SIZE", 50), \
+                    mock.patch.object(update.urllib.request, "urlopen", side_effect=serve(files)):
+                with self.assertRaises(update.UpdateError):
+                    update.download("2.16", self.target, update.WINDOWS_ASSET)
+        self.assertEqual([p.name for p in self.dir.iterdir()], ["Morsetrainer.exe"])
+
+    @unittest.skipIf(sys.platform == "win32", "Symlinks brauchen unter Windows Rechte")
+    def test_download_does_not_follow_a_planted_symlink(self):
+        victim = self.dir / "fremd.txt"
+        victim.write_text("bleibt", encoding="utf-8")
+        (self.dir / "Morsetrainer.exe.new").symlink_to(victim)
+        data = b"MZ" + b"x" * 100
+        part = self.fetch(data)
+        self.assertEqual(victim.read_text(encoding="utf-8"), "bleibt")
+        self.assertFalse(part.is_symlink())
+        self.assertEqual(part.read_bytes(), data)
 
     def test_checksum_must_match(self):
         good = b"MZ" + b"x" * 100

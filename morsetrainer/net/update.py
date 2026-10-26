@@ -35,6 +35,8 @@ MAX_API_BYTES = 1 << 20
 CHUNK = 1 << 16
 # Kleiner ist kein Morsetrainer, sondern z. B. eine Fehlerseite.
 MIN_SIZE = 5_000_000
+# Größer ist es auch keiner (heute etwa 60 MB); schützt vor einem endlosen Download.
+MAX_SIZE = 300_000_000
 MAGIC = {WINDOWS_ASSET: b"MZ", APPIMAGE_ASSET: b"\x7fELF"}
 SUMS_ASSET = "SHA256SUMS.txt"
 MAX_SUMS_BYTES = 1 << 16
@@ -162,12 +164,19 @@ def download(version: str, target: Path, asset: str, progress=None, cancelled=la
     request = urllib.request.Request(download_url(version, asset), headers={"User-Agent": "Morsetrainer"})
     try:
         digest = hashlib.sha256()
-        with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response, open(part, "wb") as out:
+        # Neu anlegen, ohne einem vorhandenen Symlink oder einer fremden Datei zu folgen.
+        _remove(part)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response, os.fdopen(os.open(part, flags, 0o644), "wb") as out:
             total = int(response.headers.get("Content-Length") or 0)
+            if total > MAX_SIZE:
+                raise UpdateError("Die geladene Datei ist kein Morsetrainer")
             done = 0
             while chunk := response.read(CHUNK):
                 if cancelled():
                     raise UpdateError("abgebrochen")
+                if done + len(chunk) > MAX_SIZE:
+                    raise UpdateError("Die geladene Datei ist kein Morsetrainer")
                 out.write(chunk)
                 digest.update(chunk)
                 done += len(chunk)
