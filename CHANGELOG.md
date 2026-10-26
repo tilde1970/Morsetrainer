@@ -1,5 +1,21 @@
 # Änderungen
 
+## 2.69
+
+- **Sicherheit, Netzwerk:** Die Anmeldung beim Trainer hat eine Gesamtfrist
+  von 5 Sekunden; wer nur tröpfchenweise Daten schickt, hält keinen Platz mehr
+  besetzt. Eine Nachricht mit extrem tief verschachtelten Klammern bringt
+  keine Verbindung mehr zum Absturz. Ein Teilnehmer nimmt in „Am Stück“ höchstens
+  20 000 Zeichen eines Durchgangs an. Die PIN wird zufällig mit
+  einem dafür vorgesehenen Verfahren erzeugt.
+- **Sicherheit, Update:** Der Download bricht bei mehr als 300 MB ab, und die
+  Zwischendatei folgt keinem untergeschobenen Verweis (Symlink).
+- **Sicherheit, Daten sichern:** Beim Einlesen einer Sicherung werden
+  Journal-Dateien der Datenbank übersprungen, und Archive mit mehr als 100 000
+  Einträgen oder mehr als 500 MB entpackt werden abgelehnt.
+- **Release-Build:** Die Bauschritte nutzen nur noch festgelegte Versionen
+  (Actions per Commit, Build-Werkzeug mit Prüfsumme) und haben nur Leserechte.
+
 ## 2.68
 
 - **Üben, Verlauf:** In den Reitern „Einzeln“ (Zeichen, Gruppen, Wörter,

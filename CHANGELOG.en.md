@@ -1,5 +1,20 @@
 # Changes
 
+## 2.69
+
+- **Security, network:** Signing in to the trainer has a total time limit of
+  5 seconds; a connection that sends data a few bytes at a time no longer
+  holds a slot. A message with extremely deeply nested brackets no longer
+  crashes a connection. A participant accepts at most 20,000 characters of a
+  run in “Non-stop”. The PIN is now generated with a secure random source.
+- **Security, update:** The download stops after 300 MB, and the temporary
+  file does not follow a planted link (symlink).
+- **Security, backup:** When restoring a backup, database journal files are
+  skipped, and archives with more than 100,000 entries or more than 500 MB
+  unpacked are rejected.
+- **Release build:** The build steps use pinned versions only (actions by
+  commit, build tool with checksum) and have read-only permissions.
+
 ## 2.68
 
 - **Practice, history:** In the “One by one” tab (characters, groups, words,
