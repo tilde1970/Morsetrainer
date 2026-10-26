@@ -109,6 +109,34 @@ class BackupTest(unittest.TestCase):
             backup.import_data(self.zip, "9.9", self.new)
         self.assertFalse((self.root / "boese.txt").exists())
 
+    def test_rejects_oversized_archives(self):
+        # Zip-Bombe: zu viele Einträge, zu viel entpackt, zu große Kopfdaten.
+        cases = {
+            "Einträge": (lambda a: [a.writestr(f"stats/{n}.json", "") for n in range(11)], "MAX_ENTRIES", 10),
+            "Gesamtgröße": (lambda a: a.writestr("stats/gross.json", "x" * 5000), "MAX_UNPACKED", 1000),
+            "Kopfdaten": (lambda a: None, "MAX_MARKER", 5),
+        }
+        for label, (fill, limit, value) in cases.items():
+            with self.subTest(label), mock.patch.object(backup, limit, value):
+                with zipfile.ZipFile(self.zip, "w") as archive:
+                    archive.writestr(backup.MARKER, json.dumps({"format": 1}))
+                    fill(archive)
+                with self.assertRaises(backup.BackupError):
+                    backup.import_data(self.zip, "9.9", self.new)
+                self.assertEqual((self.new / "woerter.txt").read_text(), "neu")
+
+    def test_import_skips_database_companion_files(self):
+        # Ein fremdes Journal würde beim nächsten Öffnen in die Datenbank eingespielt.
+        with zipfile.ZipFile(self.zip, "w") as archive:
+            archive.writestr(backup.MARKER, json.dumps({"format": 1}))
+            archive.writestr("stats/all_time.json", json.dumps({"tag": "fremd"}))
+            for suffix in backup.DB_COMPANIONS:
+                archive.writestr(f"stats/{db.DB_FILE_NAME}{suffix}", "boese")
+        backup.import_data(self.zip, "9.9", self.new)
+        self.assertEqual(json.loads((self.new / "stats" / "all_time.json").read_text())["tag"], "fremd")
+        for suffix in backup.DB_COMPANIONS:
+            self.assertFalse((self.new / "stats" / f"{db.DB_FILE_NAME}{suffix}").exists())
+
     def test_rejects_newer_format(self):
         with zipfile.ZipFile(self.zip, "w") as archive:
             archive.writestr(backup.MARKER, json.dumps({"format": backup.FORMAT + 1}))

@@ -262,6 +262,13 @@ def auto_backup_failure(data_dir: Path = DATA_DIR):
 ZIP_ERRORS = (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError, EOFError, zlib.error)
 
 
+# Grenzen für ein eingelesenes Archiv (eine echte Sicherung ist wenige MB groß):
+# Gesamtgröße entpackt, Anzahl der Einträge, Größe der Kopfdaten.
+MAX_UNPACKED = 500 << 20
+MAX_ENTRIES = 100_000
+MAX_MARKER = 64 << 10
+
+
 def _safe_name(name: str) -> bool:
     """Nur bekannte Dateien und stats/…, nichts außerhalb (absolute Pfade, ..)."""
     if name in TOP_FILES or name == MARKER:
@@ -276,9 +283,13 @@ def read_info(source: Path) -> dict:
     BackupError, wenn `source` keine Sicherung ist."""
     try:
         with zipfile.ZipFile(source) as archive:
-            names = archive.namelist()
+            entries = archive.infolist()
+            names = [entry.filename for entry in entries]
             if MARKER not in names:
                 raise BackupError("marker")
+            if (len(entries) > MAX_ENTRIES or sum(entry.file_size for entry in entries) > MAX_UNPACKED
+                    or archive.getinfo(MARKER).file_size > MAX_MARKER):
+                raise BackupError("size")
             info = json.loads(archive.read(MARKER).decode("utf-8"))
             # Alle Dateien einmal lesen (Prüfsumme): Was sich nicht entpacken
             # lässt, fällt hier auf und nicht erst mitten im Ersetzen.
@@ -344,7 +355,9 @@ def import_data(source: Path, version: str, data_dir: Path = DATA_DIR) -> Path:
     try:
         with zipfile.ZipFile(source) as archive:
             for name in archive.namelist():
-                if name == MARKER or name.endswith("/"):
+                # Begleitdateien der Datenbank (Journal) schreibt der Export nie;
+                # eine fremde würde beim nächsten Öffnen in die Datenbank eingespielt.
+                if name == MARKER or name.endswith("/") or name.endswith(DB_COMPANIONS):
                     continue
                 dest = staging.joinpath(*PurePosixPath(name).parts)
                 dest.parent.mkdir(parents=True, exist_ok=True)
