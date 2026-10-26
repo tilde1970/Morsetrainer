@@ -23,6 +23,11 @@ CHAR_WORDS = {insights.LESS: N_("weniger Fehler"), insights.MORE: N_("mehr Fehle
               insights.UNSURE: N_("kein sicherer Unterschied")}
 
 
+# Zahlen einer Paar- oder Zeichenzeile stehen eingerückt unter dem Urteil, damit die Zeile
+# nicht mitten im Urteil umbricht.
+DETAIL_INDENT = "    "
+
+
 def _pct(share: float) -> int:
     """Prozent ohne auf 100 zu runden, solange es Fehler gab (wie die Vergleichszeile)."""
     return 100 if share >= 100 else min(int(share + 0.5), 99)
@@ -34,10 +39,10 @@ def _chars(chars) -> str:
 
 def lag_text(lag: dict) -> str:
     """„Rückstand am Stück (Median der Durchgänge): letzte 14 Tage: 1,4 Zeichen, 92 % richtig,
-    3 % nicht getippt (aus 6 Durchgängen), davor: …“ oder ""."""
+    3 % nicht getippt (aus 6 Durchgängen), früher: …“ oder ""."""
     parts = []
     for key, label in (("recent", tr("letzte {days} Tage").format(days=insights.RECENT_DAYS)),
-                       ("before", tr("davor"))):
+                       ("before", tr("früher"))):
         values = lag[key]
         if len(values) >= insights.MIN_LAG_SESSIONS:
             text = tr("{label}: {n} Zeichen").format(label=label, n=number(insights.median(values), 1))
@@ -127,7 +132,7 @@ def _signed(value: float) -> str:
 def _pair_line(row: dict, spoken: bool = False) -> str:
     spell = announcer.spell if spoken else display_text
     sent, typed = spell(row["sent"]), spell(row["typed"])
-    name = tr("{sent} als {typed} getippt").format(sent=sent, typed=typed) if spoken else f"{sent} → {typed}"
+    name = tr("{sent} als {typed} getippt").format(sent=sent, typed=typed)
     before, recent = row["before"], row["recent"]
     if row["new"]:
         return f"{name}: " + (tr("neu dabei, zuletzt {recent} %").format(recent=number(recent, 0))
@@ -135,14 +140,16 @@ def _pair_line(row: dict, spoken: bool = False) -> str:
     if before is None or recent is None:
         return f"{name}: " + tr("{n}-mal verwechselt, für den Vergleich zu wenig Daten").format(n=row["count"])
     word = tr(VERDICT_WORDS[insights.pair_verdict(row)])
-    return f"{name}: " + tr("davor {before} % (von {n_before}), zuletzt {recent} % (von {n_recent}): {word}").format(
-        before=number(before, 0), recent=number(recent, 0), word=word,
-        n_before=row["n_before"], n_recent=row["n_recent"])
+    detail = tr("früher {before} % ({k_before} von {n_before}), zuletzt {recent} % ({k_recent} von {n_recent})").format(
+        before=number(before, 0), recent=number(recent, 0), n_before=row["n_before"],
+        n_recent=row["n_recent"], k_before=row["k_before"], k_recent=row["k_recent"])
+    return f"{name}: {detail}: {word}" if spoken else f"{name}: {word}\n{DETAIL_INDENT}{detail}"
 
 
 def pairs_text(rows: list, spoken: bool = False) -> str:
     """Eine Zeile je Richtung, die beiden Richtungen eines Paares untereinander:
-    „D → U: davor 18 % (von 40), zuletzt 9 % (von 52): seltener“."""
+    „D als U getippt: seltener“ und darunter eingerückt „früher 18 % (7 von 40), zuletzt 9 % (5 von 52)“
+    (für die Stimme in einer Zeile: „D als U getippt: früher …: seltener“)."""
     return "\n".join(_pair_line(row, spoken) for row in rows)
 
 
@@ -157,15 +164,17 @@ def pair_chars(rows: list) -> str:
 
 
 def chars_text(rows: list, spoken: bool = False) -> str:
-    """Eine Zeile je Zeichen: „6: Fehler davor 51 % (von 108), zuletzt 43 % (von 90): kein sicherer
-    Unterschied“; die schwächsten Zeichen zuerst."""
+    """Je Zeichen „6: kein sicherer Unterschied“ und darunter eingerückt „früher 51 % falsch (55 von 108),
+    zuletzt 43 % (39 von 90)“ (für die Stimme in einer Zeile: „6: früher …: kein sicherer Unterschied“); die schwächsten Zeichen zuerst."""
     lines = []
     for row in rows:
         name = announcer.spell(row["char"]) if spoken else display_text(row["char"])
         word = tr(CHAR_WORDS[insights.rate_verdict(row["before"], row["recent"], row["n_before"], row["n_recent"])])
-        lines.append(f"{name}: " + tr("Fehler davor {before} % (von {n_before}), zuletzt {recent} % (von {n_recent}): {word}").format(
-            before=number(row["before"], 0), recent=number(row["recent"], 0), word=word,
-            n_before=row["n_before"], n_recent=row["n_recent"]))
+        detail = tr(
+            "früher {before} % falsch ({k_before} von {n_before}), zuletzt {recent} % ({k_recent} von {n_recent})"
+        ).format(before=number(row["before"], 0), recent=number(row["recent"], 0), n_before=row["n_before"],
+                 n_recent=row["n_recent"], k_before=row["k_before"], k_recent=row["k_recent"])
+        lines.append(f"{name}: {detail}: {word}" if spoken else f"{name}: {word}\n{DETAIL_INDENT}{detail}")
     return "\n".join(lines)
 
 
@@ -218,17 +227,22 @@ class InsightsPanel:
              tr("Noch zu wenige lange Durchgänge (ab {n} Durchgängen mit je mindestens {chars} Zeichen).").format(
                  n=insights.FATIGUE_MIN_SESSIONS, chars=insights.FATIGUE_MIN_CHARS)),
             ("pairs", tr("Verwechslungspaare im Verlauf"), tr(
-                "Gesendet → getippt, in Prozent der Fälle, in denen das gesendete Zeichen kam: die letzten {days} Tage "
-                "gegen die Zeit davor, dazu in Klammern, aus wie vielen Fällen. Seltener ist besser. Ein Unterschied "
-                "zählt erst, wenn er sich von Zufall abhebt; sonst steht „kein sicherer Unterschied“. Ein Tempowechsel "
+                "Wie oft du ein Zeichen für ein anderes getippt hast. „6 als B getippt“ mit „zuletzt 14 %“ heißt: Von 100 "
+                "gesendeten 6 hast du 14-mal B getippt. In Klammern steht, wie oft das war und von wie vielen. „Zuletzt“ sind die "
+                "letzten {days} Tage, „früher“ die Zeit davor (bis {total} Tage zurück). Seltener ist besser. Ein "
+                "Unterschied zählt erst, wenn er sich vom Zufall abhebt; sonst steht „kein sicherer Unterschied“. Andere "
+                "Fehler (nichts getippt, vertauscht) zählen hier nicht, sie zeigt „Zeichen im Verlauf“. Ein Tempowechsel "
                 "dazwischen verfälscht den Vergleich, und ein Zeichen, das gerade neu geübt wird, sieht kurz schlechter "
-                "aus. Zeichen, die davor nicht vorkamen, sind „neu dabei“.").format(days=insights.RECENT_DAYS),
+                "aus. Zeichen, die früher nicht vorkamen, sind „neu dabei“.").format(
+                days=insights.RECENT_DAYS, total=insights.INSIGHT_DAYS),
              tr("Noch keine Verwechslungen zum Vergleichen.")),
             ("chars", tr("Zeichen im Verlauf"), tr(
-                "Wie oft ein Zeichen falsch war (jede Fehlerart), die letzten {days} Tage gegen die Zeit davor, mit der "
-                "Zahl der Antworten in Klammern. Gezeigt werden Zeichen mit mindestens {n} Antworten auf beiden Seiten, "
-                "die schwächsten zuerst. Ein Unterschied zählt erst, wenn er sich von Zufall abhebt.").format(
-                days=insights.RECENT_DAYS, n=insights.CHAR_MIN_CASES),
+                "Wie oft ein Zeichen falsch war, gleich welche Fehlerart (verwechselt, vertauscht, nichts getippt). "
+                "Bei der 6 heißt „zuletzt 39 % (91 von 235)“: Von 235 gesendeten 6 war die Antwort 91-mal falsch. "
+                "Verglichen werden die letzten {days} Tage mit der Zeit davor. Gezeigt werden Zeichen mit mindestens {n} "
+                "Antworten in beiden Zeiträumen, die schwächsten zuerst, höchstens {shown}. Ein Unterschied zählt erst, "
+                "wenn er sich vom Zufall abhebt.").format(
+                days=insights.RECENT_DAYS, n=insights.CHAR_MIN_CASES, shown=insights.CHARS_SHOWN),
              tr("Noch kein Zeichen hat auf beiden Seiten genug Antworten zum Vergleichen.")),
             ("wobbly", tr("Wieder wackelig"), tr(
                 "Zeichen, die in der Lernkartei schon in Fach 3 oder höher lagen und um mindestens zwei Fächer "

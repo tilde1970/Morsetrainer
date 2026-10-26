@@ -1967,7 +1967,7 @@ class DecimalTest(AppTestCase):
         record.assert_called_once()
         panel = self.app.insights_panel
         self.assertIn("Nicht auswertbar", panel.vars["fatigue"][0].get())
-        self.assertIn("D → U", panel.vars["pairs"][0].get())
+        self.assertIn("D als U getippt", panel.vars["pairs"][0].get())
 
     def test_hidden_fsrs_tab_is_read_by_f11_and_never_counts_as_last_tab(self):
         stats_tab = self.app.stats_tab

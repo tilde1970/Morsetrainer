@@ -234,7 +234,7 @@ def confusion_trend(data=None, now=None) -> list:
     zusammen gerechnet) der letzten INSIGHT_DAYS Tage, je Richtung mit ihrer Rate
     zuletzt gegen davor, in Prozent der Vorkommen des gesendeten Zeichens:
     [{"sent", "typed", "count", "before", "recent", "n_before", "n_recent",
-    "new"}], die Richtungen eines Paares hintereinander, die häufigere zuerst.
+    "k_before", "k_recent", "new"}] (k: so oft wurde `typed` getippt, n: so oft kam `sent`), die Richtungen eines Paares hintereinander, die häufigere zuerst.
     Rate None bei weniger als PAIR_MIN_SENT Vorkommen; "new": eines der beiden
     Zeichen kam davor nie vor (gerade erst gelernt). Richtungen ohne Fehler fehlen."""
     now = now or datetime.now()
@@ -264,6 +264,7 @@ def confusion_trend(data=None, now=None) -> list:
         for char, typed in sorted(((c, t) for c, t in totals if frozenset((c, t)) == key), key=lambda p: -totals[p]):
             row = {"sent": char, "typed": typed, "count": totals[(char, typed)],
                    "n_before": sent["before"][char], "n_recent": sent["recent"][char],
+                   "k_before": wrong["before"][(char, typed)], "k_recent": wrong["recent"][(char, typed)],
                    "new": not sent["before"][char] or not sent["before"][typed]}
             for side in ("before", "recent"):
                 seen = sent[side][char]
@@ -297,7 +298,8 @@ def reached_high_box(review_data=None) -> bool:
 
 def char_trend(data=None, now=None) -> list:
     """Fehlerquote je Zeichen, letzte RECENT_DAYS Tage gegen die Zeit davor (alle Fehlerarten, ohne
-    Zeichen ohne Zeitmessung): [{"char", "before", "recent", "n_before", "n_recent"}] in Prozent, für
+    Zeichen ohne Zeitmessung): [{"char", "before", "recent", "n_before", "n_recent", "k_before",
+    "k_recent"}] (Raten in Prozent, k falsche von n Antworten), für
     Zeichen mit mindestens CHAR_MIN_CASES Antworten auf jeder Seite, die schwächsten (zuletzt) zuerst,
     höchstens CHARS_SHOWN."""
     now = now or datetime.now()
@@ -313,6 +315,7 @@ def char_trend(data=None, now=None) -> list:
             if obj.get("correct") is False:
                 wrong[side][obj["char"]] += 1
     rows = [{"char": char, "n_before": seen["before"][char], "n_recent": seen["recent"][char],
+             "k_before": wrong["before"][char], "k_recent": wrong["recent"][char],
              "before": wrong["before"][char] / seen["before"][char] * 100,
              "recent": wrong["recent"][char] / seen["recent"][char] * 100}
             for char in seen["recent"]

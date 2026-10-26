@@ -396,7 +396,7 @@ liest eine Übersicht vor.
   **Ermüdung im Durchgang** (Trefferquote im ersten, mittleren und letzten
   Drittel langer Durchgänge), **Verwechslungspaare im Verlauf** (der Knopf
   **Diese Zeichen gezielt üben** übt diese Paare), **Zeichen im Verlauf**
-  (Fehlerquote je Zeichen, letzte 14 Tage gegen davor) und **Wieder
+  (Fehlerquote je Zeichen, letzte 14 Tage gegen früher) und **Wieder
   wackelig** (Zeichen, die in der Lernkartei um mindestens zwei Fächer
   zurückgefallen sind).
 - **Diplome** und **Lebenslinie** (Abschnitt 5) und der

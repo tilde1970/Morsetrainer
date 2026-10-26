@@ -40,7 +40,7 @@ class InsightsTest(unittest.TestCase):
         self.assertEqual((lag["recent"], lag["before"]), ([2.0] * 5, [1.0] * 5))
         self.assertEqual(panel.lag_text(lag),
                          "Rückstand am Stück (Median der Durchgänge): letzte 14 Tage: 2,0 Zeichen, 90 % richtig, "
-                         "10 % nicht getippt (aus 5 Durchgängen), davor: 1,0 Zeichen, 100 % richtig, "
+                         "10 % nicht getippt (aus 5 Durchgängen), früher: 1,0 Zeichen, 100 % richtig, "
                          "0 % nicht getippt (aus 5 Durchgängen).")
 
     def test_a_single_long_run_is_not_enough_for_the_lag(self):
@@ -120,8 +120,11 @@ class InsightsTest(unittest.TestCase):
         self.write(2, [("D", "U", {})] * 2 + [("D", "D", {})] * 38)                        # zuletzt 5 % von 40
         self.write(2, [("K", "M", {})] * 1 + [("K", "K", {})] * 2)                         # zu wenig Vorkommen
         text = panel.pairs_text(insights.confusion_trend())
-        self.assertIn("D → U: davor 20 % (von 40), zuletzt 5 % (von 40): seltener", text)
+        self.assertIn("D als U getippt: seltener\n    früher 20 % (8 von 40), zuletzt 5 % (2 von 40)", text)
         self.assertNotIn("häufiger", text)
+        spoken = panel.pairs_text(insights.confusion_trend(), spoken=True)  # eine Zeile je Paar für die Stimme
+        self.assertNotIn("\n    ", spoken)
+        self.assertIn("früher 20 % (8 von 40), zuletzt 5 % (2 von 40): seltener", spoken)
 
     def test_a_difference_within_chance_is_not_reported(self):
         def old(days_ago, rows):  # Durchgang aus der Zeit vor der Ursachenangabe
@@ -133,7 +136,7 @@ class InsightsTest(unittest.TestCase):
         self.write(2, [("B", "6", {})] * 4 + [("B", "B", {})] * 36 + [("6", "6", {})] * 10)
         rows = insights.confusion_trend()
         self.assertEqual(insights.pair_verdict(rows[0]), insights.UNSURE)  # 10 Punkte, aber bei 40 Fällen Zufall
-        self.assertIn("B → 6: davor 20 % (von 40), zuletzt 10 % (von 40): kein sicherer Unterschied",
+        self.assertIn("B als 6 getippt: kein sicherer Unterschied\n    früher 20 % (8 von 40), zuletzt 10 % (4 von 40)",
                       panel.pairs_text(rows))
 
     def test_small_differences_are_unchanged_and_big_ones_clear(self):
@@ -152,20 +155,22 @@ class InsightsTest(unittest.TestCase):
         self.write(2, [("B", "6", {})] * 4 + [("B", "B", {})] * 36 + [("6", "B", {})] * 8 + [("6", "6", {})] * 32)
         self.write(2, [("D", "U", {})] * 3 + [("D", "D", {})] * 37 + [("U", "U", {})] * 40)
         lines = panel.pairs_text(insights.confusion_trend()).split("\n")
-        self.assertEqual([line.split(":")[0] for line in lines], ["6 → B", "B → 6", "D → U"])
+        heads = [line for line in lines if not line.startswith(" ")]  # die Zahlen stehen eingerückt darunter
+        self.assertEqual([line.split(":")[0] for line in heads], ["6 als B getippt", "B als 6 getippt", "D als U getippt"])
+        self.assertTrue(lines[1].startswith("    früher"))  # „neu dabei“ (D → U) hat nur eine Zeile
         self.assertEqual(panel.pair_chars(insights.confusion_trend()), "6BDU")
 
     def test_pairs_with_too_few_cases_are_not_compared(self):
         self.write(40, [("D", "U", {})] * 4 + [("D", "D", {})] * 11 + [("U", "U", {})] * 10)  # 15 Fälle: zu wenig
         self.write(2, [("D", "U", {})] * 1 + [("D", "D", {})] * 19)
-        self.assertIn("D → U: 5-mal verwechselt, für den Vergleich zu wenig Daten",
+        self.assertIn("D als U getippt: 5-mal verwechselt, für den Vergleich zu wenig Daten",
                       panel.pairs_text(insights.confusion_trend()))
 
     def test_pair_with_a_character_not_seen_before_is_new(self):
         self.write(40, [("K", "K", {})] * 20)
         self.write(2, [("B", "6", {})] * 3 + [("B", "B", {})] * 17)
         text = panel.pairs_text(insights.confusion_trend())
-        self.assertIn("B → 6: neu dabei, zuletzt 15 %", text)
+        self.assertIn("B als 6 getippt: neu dabei, zuletzt 15 %", text)
         self.assertNotIn("häufiger", text)
 
     def test_fatigue_ignores_characters_without_timing(self):
@@ -206,12 +211,14 @@ class InsightsTest(unittest.TestCase):
         self.assertEqual([row["char"] for row in rows], ["6"])  # K hatte davor zu wenige Antworten
         self.assertEqual((rows[0]["n_before"], rows[0]["n_recent"]), (80, 80))
         self.assertEqual(panel.chars_text(rows),
-                         "6: Fehler davor 38 % (von 80), zuletzt 25 % (von 80): kein sicherer Unterschied")
+                         "6: kein sicherer Unterschied\n    früher 38 % falsch (30 von 80), zuletzt 25 % (20 von 80)")
+        self.assertEqual(panel.chars_text(rows, spoken=True).replace("Sechs", "6"),
+                         "6: früher 38 % falsch (30 von 80), zuletzt 25 % (20 von 80): kein sicherer Unterschied")
 
     def test_a_clear_change_of_a_character_is_named(self):
         self.write(40, [("6", "B", {})] * 70 + [("6", "6", {})] * 30)
         self.write(2, [("6", "B", {})] * 30 + [("6", "6", {})] * 70)
-        self.assertTrue(panel.chars_text(insights.char_trend()).endswith(": weniger Fehler"))
+        self.assertIn("6: weniger Fehler\n", panel.chars_text(insights.char_trend()))
 
     def test_unexpected_values_in_old_lines_do_not_break_the_insights(self):
         start = datetime.now().isoformat(timespec="seconds")

@@ -406,7 +406,7 @@ overview.
   ones), **Fatigue within a run** (accuracy in the first, middle and last
   third of long runs), **Confusion pairs over time** (the **Practise these
   characters** button practises these pairs), **Characters over time**
-  (error rate per character, last 14 days against before) and **Shaky
+  (error rate per character, last 14 days against earlier) and **Shaky
   again** (characters that have fallen back at least two boxes in the
   review box).
 - **Awards** and **lifeline** (section 5) and the **progress history** per
