@@ -3,6 +3,10 @@
 # Manuell gestartet (workflow_dispatch) -> nur Build-Artefakte zum Testen.
 name: Release
 
+# Standard: nur lesen; der Job "release" bekommt unten sein Schreibrecht.
+permissions:
+  contents: read
+
 on:
   push:
     tags: ["v*"]
@@ -16,15 +20,18 @@ jobs:
     # Älteres Ubuntu = ältere glibc, damit läuft das AppImage auf mehr Systemen.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
       - run: sudo apt-get update && sudo apt-get install -y libportaudio2 libtk8.6
       - run: pip install -r requirements.txt -c packaging/constraints.txt pyinstaller
       - name: appimagetool
         run: |
-          curl -sSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          # Fester Release und fester SHA256 statt "continuous": Ein verändertes
+          # Werkzeug würde sonst unbemerkt ins ausgelieferte AppImage einfließen.
+          curl -sSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          echo "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  appimagetool" | sha256sum -c
           chmod +x appimagetool
       - run: packaging/build_appimage.sh
         env:
@@ -43,7 +50,7 @@ jobs:
           mkdir -p /tmp/empty-ssl
           sudo unshare -m sh -c 'mount --bind /tmp/empty-ssl /usr/lib/ssl && dist/morsetrainer/morsetrainer --selftest /tmp/selftest-tls.mp3' | tee /tmp/selftest-tls.log
           grep -q "^Zertifikate: .* aus /etc/ssl/" /tmp/selftest-tls.log
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: appimage
           path: |
@@ -53,8 +60,8 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt -c packaging/constraints.txt pyinstaller
@@ -67,7 +74,7 @@ jobs:
         run: |
           $p = Start-Process -FilePath dist\Morsetrainer.exe -ArgumentList '--selftest','selftest.mp3' -Wait -PassThru
           if ($p.ExitCode -ne 0 -or -not (Test-Path selftest.mp3)) { Write-Error "Selbsttest fehlgeschlagen ($($p.ExitCode))"; exit 1 }
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: windows
           path: dist/Morsetrainer.exe
@@ -78,8 +85,8 @@ jobs:
     # nur ad hoc; beim ersten Start muss man sie freigeben (Anleitung.md).
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
       # Pillow wandelt das .ico in das .icns der App um.
@@ -100,7 +107,7 @@ jobs:
       - run: dist/Morsetrainer.app/Contents/MacOS/Morsetrainer --selftest selftest.mp3 && test -s selftest.mp3
       # ditto erhält Symlinks und Signatur der App im ZIP.
       - run: ditto -c -k --sequesterRsrc --keepParent dist/Morsetrainer.app dist/Morsetrainer-macOS.zip
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: macos
           path: dist/Morsetrainer-macOS.zip
@@ -112,8 +119,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           merge-multiple: true
       # Quelltext der GPL-/LGPL-Teile in den Builds (piper, espeak-ng,

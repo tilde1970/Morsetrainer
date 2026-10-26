@@ -1,0 +1,7 @@
+# Hält die an Commit-Hashes gepinnten Actions aktuell (Pull-Requests mit der neuen Version).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
