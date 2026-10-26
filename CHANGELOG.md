@@ -10,6 +10,12 @@
   „davor“ heißt überall „früher“, und die Erklärtexte nennen ein Beispiel und
   die Zeiträume (zuletzt = letzte 14 Tage, früher = die Zeit davor).
   „Fehlerarten je Woche“ nennt in der Überschrift die 6 Wochen, die es zeigt.
+- **Übungen, Fokus:** Nimmt während eines Durchgangs ein anderes Programm
+  den Fokus, kämen deine Tasten dort an und nicht im Morsetrainer. Jetzt
+  holt er das Fenster zuerst nach vorn. Klappt das nicht, hält der Durchgang
+  an, die Antworten bis dahin bleiben in der Statistik, und eine Meldung
+  (auch als Ansage) sagt, was passiert ist. In der Tagesübung und im Netzwerk
+  hält nichts an, dort gibt es nur den Hinweis.
 
 ## 2.69
 

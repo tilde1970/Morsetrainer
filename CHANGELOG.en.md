@@ -10,6 +10,12 @@
   is now “earlier” everywhere, and the explanations give an example and the
   periods (lately = the last 14 days, earlier = the time before). “Error
   types per week” names the 6 weeks it shows in its heading.
+- **Practice, focus:** If another program takes the focus during a run, your
+  keys would go there instead of to Morsetrainer. It now brings its window
+  to the front first. If that does not work, the run stops, the answers so
+  far stay in the statistics, and a message (also spoken) says what happened.
+  In the daily practice and in the network tab nothing is stopped, there is
+  only a notice.
 
 ## 2.69
 
