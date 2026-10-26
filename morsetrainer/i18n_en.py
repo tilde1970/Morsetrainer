@@ -288,6 +288,8 @@ EN.update({
     "unverändert": "unchanged",
     "Rückstand beim Mitschreiben": "Lag when copying",
     "Noch keine Messung: übe im Reiter Am Stück.": "No measurement yet: practise in the Non-stop tab.",
+    "Achtung: Ein anderes Programm hat den Fokus, deine Eingaben kommen im Morsetrainer nicht an.": "Attention: Another program has the focus; your input does not reach Morsetrainer.",
+    "Angehalten: Ein anderes Programm hatte den Fokus, deine Eingaben kamen dort an, nicht im Morsetrainer. Zum Weitermachen den Durchgang neu starten.": "Stopped: Another program had the focus, so your input went there, not to Morsetrainer. To carry on, start the run again.",
     "Fehlerarten je Woche (letzte {weeks} Wochen)": "Error types per week (last {weeks} weeks)",
     "Noch keine Fehler in den letzten Wochen.": "No errors in the last weeks yet.",
     "Ermüdung im Durchgang": "Fatigue within a run",

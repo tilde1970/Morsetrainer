@@ -82,6 +82,14 @@ DAILY_KEY = "F12"
 # Esc bzw. F5 beenden die Tagesübung erst, wenn sie innerhalb dieser Zeit
 # zweimal gedrückt werden.
 DAILY_END_CONFIRM_S = 3.0
+# Hat während eines Durchgangs so lange kein Fenster des Programms den Fokus, hält
+# die Übung an: Die Tasten kämen sonst in einem fremden Programm an. Zwischen zwei
+# Feldern oder Fenstern des Programms wechselt der Fokus in Millisekunden.
+FOCUS_LOST_MS = 800
+# Vor dem Anhalten holt das Programm den Fokus zurück: so oft, mit so viel Wartezeit
+# dazwischen. Klappt es nicht (etwa weil der Fenstermanager es verbietet), hält die Übung an.
+FOCUS_REGAIN_TRIES = 2
+FOCUS_REGAIN_MS = 400
 # Bedienelemente, die Leertaste, Enter und Pfeile selbst auswerten, wenn sie
 # den Tastaturfokus haben.
 FOCUS_OWNS_KEYS = (ttk.Button, ttk.Checkbutton, ttk.Radiobutton, ttk.Notebook, ttk.Treeview, ttk.Scale,
@@ -284,6 +292,8 @@ class MorseTrainerApp:
         if root.tk.call("tk", "windowingsystem") == "x11":
             root.tk.call("tk", "useinputmethods", "0")
         self.running_mode = False
+        self.focus_seen = False      # das Hauptfenster hatte schon einmal den Fokus
+        self.focus_check_id = None   # geplante Prüfung, ob ein fremdes Programm ihn hat
         # „Fällige gezielt üben“: (Zeichensatz davor, erweiterter Zeichensatz);
         # nach dem Durchgang kommt der alte zurück, siehe _handle_mode_stop.
         self.drill_restore = None
@@ -359,6 +369,8 @@ class MorseTrainerApp:
         audio.keep_awake()
 
         root.bind("<Key>", self._dispatch_key)
+        root.bind("<FocusIn>", self._focus_gained, add="+")
+        root.bind("<FocusOut>", self._focus_maybe_lost, add="+")
         # Schriftgröße in jedem Fenster, auch in Eingabefeldern.
         for keys, direction in ((("plus", "equal", "KP_Add"), 1), (("minus", "KP_Subtract"), -1),
                                 (("0", "KP_0", "KP_Insert"), 0)):
@@ -2461,6 +2473,53 @@ class MorseTrainerApp:
         # Warten auf den Trainer.
         if not getattr(self._active_mode(), "uses_network_hooks", False):
             self._start_practice()
+
+    def _focus_gained(self, event=None) -> None:
+        self.focus_seen = True
+
+    def _focus_maybe_lost(self, event=None) -> None:
+        """Ein Feld hat den Fokus verloren: Läuft ein Durchgang, kurz danach prüfen, ob er an
+        ein fremdes Programm gegangen ist."""
+        if self.running_mode and self.focus_seen and self.focus_check_id is None:
+            self.focus_check_id = self.root.after(FOCUS_LOST_MS, self._focus_check)
+
+    def _regain_focus(self) -> None:
+        """Das Hauptfenster nach vorn holen, mit dem Feld, das zuletzt den Fokus hatte."""
+        try:
+            self.root.deiconify()
+            self.root.lift()
+            (self.root.focus_lastfor() or self.root).focus_force()
+        except tk.TclError:
+            pass  # Fenster gerade im Umbau oder weg: die nächste Prüfung entscheidet
+
+    def _focus_check(self, attempt: int = 0) -> None:
+        """Hat kein Fenster des Programms den Fokus mehr, landen die Tasten woanders: den Fokus
+        bis zu FOCUS_REGAIN_TRIES-mal zurückholen, erst dann den Durchgang anhalten (die
+        Statistik bis dahin bleibt) und es sagen. In der Tagesübung und im Netzwerk (der
+        Trainer gibt den Takt vor) kein Anhalten, nur der Hinweis."""
+        self.focus_check_id = None
+        mode = self._active_mode()
+        if not self.running_mode or mode is None or self.root.focus_displayof() is not None:
+            return
+        if attempt < FOCUS_REGAIN_TRIES:
+            self._regain_focus()
+            self.focus_check_id = self.root.after(FOCUS_REGAIN_MS, self._focus_check, attempt + 1)
+            return
+        if self.daily.active:
+            text = tr("Achtung: Ein anderes Programm hat den Fokus, deine Eingaben kommen im Morsetrainer nicht an.")
+            self.daily_bar.show_notice(text)
+            self.announcer.say(text)
+        elif getattr(mode, "uses_network_hooks", False):
+            self.announcer.say(tr("Achtung: Ein anderes Programm hat den Fokus, deine Eingaben kommen im "
+                                  "Morsetrainer nicht an."))
+        elif getattr(mode, "running", False):
+            mode.stop()
+            text = tr("Angehalten: Ein anderes Programm hatte den Fokus, deine Eingaben kamen dort an, nicht im "
+                      "Morsetrainer. Zum Weitermachen den Durchgang neu starten.")
+            if hasattr(mode, "status_var"):
+                announcer.problem(mode.status_var, text)
+            else:
+                self.announcer.say(text)
 
     def _start_practice(self):
         if self.practice_started is None:

@@ -375,6 +375,84 @@ class GroupEvaluationTest(AppTestCase):
         self.assertNotIn("Lektion", words.feedback_var.get())
 
 
+class FocusLostTest(AppTestCase):
+    """Ein fremdes Programm nimmt den Fokus: erst zurückholen, klappt das nicht, hält der Durchgang an."""
+
+    def start_single(self):
+        self.app.show_mode("Einzelzeichen")
+        mode = self.mode("Einzelzeichen")
+        mode.start()
+        self.assertTrue(self.app.running_mode and mode.running)
+        self.app.focus_seen = True
+        return mode
+
+    def lost(self):
+        return mock.patch.object(self.root, "focus_displayof", return_value=None)
+
+    def test_the_focus_is_fetched_back_before_anything_stops(self):
+        mode = self.start_single()
+        with self.lost(), mock.patch.object(self.app, "_regain_focus") as regain:
+            self.app._focus_check()
+            self.assertEqual(regain.call_count, 1)
+            self.assertTrue(mode.running)
+            self.assertIsNotNone(self.app.focus_check_id)  # die nächste Prüfung ist geplant
+            self.root.after_cancel(self.app.focus_check_id)
+        with mock.patch.object(self.root, "focus_displayof", return_value=self.root):
+            self.app._focus_check(1)  # zurückgeholt: nichts weiter
+        self.assertTrue(mode.running)
+        self.assertIsNone(self.app.focus_check_id)
+
+    def test_run_stops_when_getting_the_focus_back_fails(self):
+        mode = self.start_single()
+        with self.lost(), mock.patch.object(self.app, "_regain_focus") as regain:
+            for attempt in range(app_module.FOCUS_REGAIN_TRIES):
+                self.app._focus_check(attempt)
+                self.assertTrue(mode.running)
+                self.root.after_cancel(self.app.focus_check_id)
+            self.app._focus_check(app_module.FOCUS_REGAIN_TRIES)
+        self.assertEqual(regain.call_count, app_module.FOCUS_REGAIN_TRIES)
+        self.assertFalse(mode.running)
+        self.assertFalse(self.app.running_mode)  # Reiter wieder frei
+        self.assertIn("Angehalten: Ein anderes Programm", mode.status_var.get())
+
+    def test_run_goes_on_while_one_of_our_windows_has_the_focus(self):
+        mode = self.start_single()
+        with mock.patch.object(self.root, "focus_displayof", return_value=self.root), \
+                mock.patch.object(self.app, "_regain_focus") as regain:
+            self.app._focus_check()
+        self.assertTrue(mode.running)
+        regain.assert_not_called()
+
+    def test_nothing_happens_without_a_run(self):
+        with self.lost(), mock.patch.object(self.app, "_regain_focus") as regain:
+            self.app.focus_seen = True
+            self.app._focus_maybe_lost()
+            self.app._focus_check()
+        regain.assert_not_called()
+        self.assertIsNone(self.app.focus_check_id)
+
+    def test_the_check_is_only_planned_for_a_run_of_a_focused_window(self):
+        mode = self.start_single()
+        self.app.focus_seen = False
+        self.app._focus_maybe_lost()
+        self.assertIsNone(self.app.focus_check_id)  # das Fenster hatte nie den Fokus (etwa ohne Fensterverwaltung)
+        self.app.focus_seen = True
+        self.app._focus_maybe_lost()
+        self.assertIsNotNone(self.app.focus_check_id)
+        self.root.after_cancel(self.app.focus_check_id)
+        mode.running = False
+
+    def test_the_daily_run_only_gets_a_notice(self):
+        mode = self.start_single()
+        self.app.daily.active = True
+        self.addCleanup(setattr, self.app.daily, "active", False)
+        with self.lost(), mock.patch.object(self.app, "_regain_focus"), \
+                mock.patch.object(self.app.daily_bar, "show_notice") as notice:
+            self.app._focus_check(app_module.FOCUS_REGAIN_TRIES)
+        self.assertTrue(mode.running)  # die Tagesübung bleibt, sonst ginge der Tag verloren
+        self.assertIn("Fokus", notice.call_args[0][0])
+
+
 class WordModeTest(AppTestCase):
     def test_memorize_is_default_for_words(self):
         self.assertEqual(self.mode("Wörter").style_var.get(), sq.MEMORIZE)
