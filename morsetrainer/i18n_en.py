@@ -288,7 +288,7 @@ EN.update({
     "unverändert": "unchanged",
     "Rückstand beim Mitschreiben": "Lag when copying",
     "Noch keine Messung: übe im Reiter Am Stück.": "No measurement yet: practise in the Non-stop tab.",
-    "Fehlerarten je Woche": "Error types per week",
+    "Fehlerarten je Woche (letzte {weeks} Wochen)": "Error types per week (last {weeks} weeks)",
     "Noch keine Fehler in den letzten Wochen.": "No errors in the last weeks yet.",
     "Ermüdung im Durchgang": "Fatigue within a run",
     "Verwechslungspaare im Verlauf": "Confusion pairs over time",

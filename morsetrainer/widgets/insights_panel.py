@@ -200,7 +200,7 @@ class InsightsPanel:
                 "Durchgang zählt einmal (Median seiner Zeichen), ein Vergleich braucht {n} Durchgänge je Seite. "
                 "Zeichen ohne Taste fehlen im Median; ihr Anteil steht dabei.").format(n=insights.MIN_LAG_SESSIONS),
              tr("Noch keine Messung: übe im Reiter Am Stück.")),
-            ("causes", tr("Fehlerarten je Woche"), tr(
+            ("causes", tr("Fehlerarten je Woche (letzte {weeks} Wochen)").format(weeks=insights.WEEKS_SHOWN), tr(
                 "Verwechselt: ein anderes Zeichen getippt. Vertauscht: zwei Zeichen in falscher Reihenfolge. Nicht "
                 "erkannt: nichts getippt, zu spät oder erst nach Wiederholung. Viel „nicht erkannt“ ist am Anfang "
                 "normal; sinkt die Rate je 100 Zeichen, erkennst du mehr. Ein Wechsel der Übungsart (freie Übung, "

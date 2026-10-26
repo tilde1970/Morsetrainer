@@ -401,7 +401,7 @@ overview.
 - **Insights (last 90 days):** the **Read the insights aloud** button and
   F11 read out all lines. Each line says what is still missing; at the
   start several are empty. They are: **Lag when copying** (how far you
-  trail behind the tone in Non-stop), **Error types per week** (the
+  trail behind the tone in Non-stop), **Error types per week** (last 6 weeks; the
   **Practise unrecognised characters** button practises the unrecognised
   ones), **Fatigue within a run** (accuracy in the first, middle and last
   third of long runs), **Confusion pairs over time** (the **Practise these

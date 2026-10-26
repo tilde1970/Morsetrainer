@@ -391,7 +391,7 @@ liest eine Übersicht vor.
 - **Auswertungen (letzte 90 Tage):** Der Knopf **Auswertungen vorlesen** und
   F11 lesen alle Zeilen vor. Jede Zeile nennt, was noch fehlt; am Anfang
   sind mehrere leer. Es gibt: **Rückstand beim Mitschreiben** (wie weit du in
-  Am Stück hinter dem Ton herschreibst), **Fehlerarten je Woche** (der Knopf
+  Am Stück hinter dem Ton herschreibst), **Fehlerarten je Woche** (letzte 6 Wochen; der Knopf
   **Nicht erkannte Zeichen gezielt üben** übt die nicht erkannten),
   **Ermüdung im Durchgang** (Trefferquote im ersten, mittleren und letzten
   Drittel langer Durchgänge), **Verwechslungspaare im Verlauf** (der Knopf
