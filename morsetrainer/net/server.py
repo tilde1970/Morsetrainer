@@ -218,7 +218,7 @@ class TrainerServer:
         try:
             sock.settimeout(HELLO_TIMEOUT_S)
             reader = protocol.LineReader(sock)
-            hello = reader.read()
+            hello = reader.read(deadline=time.monotonic() + HELLO_TIMEOUT_S)
             if hello is None or hello.get("type") != "hello":
                 return
             # Mit Lebenszeichen: kommt so lange gar nichts, ist der Teilnehmer weg.

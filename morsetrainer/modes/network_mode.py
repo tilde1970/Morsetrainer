@@ -30,6 +30,7 @@ Statistik wie ein normaler Durchgang. Hat der Trainer eine neuere
 Programmversion, bietet der Reiter an, sie zu laden und neu zu starten
 (net/update.py); danach verbindet er sich wieder."""
 import random
+import secrets
 import sys
 import threading
 import time
@@ -114,7 +115,7 @@ BAND_CACHE_SIZE = 4
 
 def make_pin() -> str:
     """Zufällige vierstellige PIN für eine neue Sitzung."""
-    return f"{random.randint(0, 9999):04d}"
+    return f"{secrets.randbelow(10000):04d}"
 
 
 def band_fields(spec) -> dict:
@@ -1936,6 +1937,12 @@ class NetworkModeFrame:
         groups = [" ".join(normalize(word) for word in group.split())[:protocol.TEXT_MAX]
                   for group in groups if isinstance(group, str)]
         groups = [group for group in groups if group]
+        total = 0
+        for count, group in enumerate(groups):
+            total += len(group)
+            if total > net_stream.MAX_CHARS:
+                groups = groups[:count]
+                break
         if not groups:
             return
         if not (fw is None or isinstance(fw, int) and 1 <= fw < wpm):

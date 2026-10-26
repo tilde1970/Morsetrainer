@@ -56,6 +56,15 @@ class ProtocolTest(unittest.TestCase):
                 protocol.decode(line)
         self.assertEqual(protocol.decode(protocol.encode({"type": "end"}).strip()), {"type": "end"})
 
+    def test_decode_rejects_deeply_nested_json(self):
+        with self.assertRaises(protocol.ProtocolError):
+            protocol.decode(b"[" * 50000)
+
+    def test_pin_has_four_digits(self):
+        from morsetrainer.modes import network_mode
+        for _ in range(50):
+            self.assertRegex(network_mode.make_pin(), r"\d{4}")
+
 
 class ScoreboardTest(unittest.TestCase):
     def test_evaluate_ignores_case_and_spaces(self):
@@ -494,6 +503,20 @@ class ProtectionTest(unittest.TestCase):
         self.assertEqual(self.join("DL4YM")[1], ("reject", "pin", None))
         self.server.locked_until["127.0.0.1"] = time.monotonic() - 1  # Sperre abgelaufen
         self.assertEqual(self.join("DL4YM")[1], ("welcome", "Kurs", None))
+
+    def test_trickling_hello_is_cut_off_after_the_total_time(self):
+        # Ein Byte je Sekunde hielte sonst den Platz beliebig lange besetzt.
+        with mock.patch.object(server_module, "HELLO_TIMEOUT_S", 0.5):
+            sock = socket.create_connection(("127.0.0.1", self.server.port))
+            self.addCleanup(sock.close)
+            started = time.monotonic()
+            try:
+                while time.monotonic() - started < 5:
+                    sock.sendall(b" ")
+                    time.sleep(0.1)
+            except OSError:
+                pass  # der Trainer hat die Verbindung geschlossen
+            self.assertLess(time.monotonic() - started, 3)
 
     def test_a_typo_now_and_then_does_not_lock(self):
         for _ in range(3):
@@ -1151,6 +1174,15 @@ class NetworkTabTest(unittest.TestCase):
         self.assertIn("1 von 2 Gruppen richtig", self.trainee.feedback_var.get())
         self.assertEqual(len(self.trainee.results_tree.get_children()), 2)
         self.assertEqual(self.trainer.board.confusions(), [("U", "X", 1)])
+
+    def test_stream_from_a_foreign_trainer_is_capped(self):
+        from morsetrainer.modes import network_mode
+        self.connect()
+        message = {"type": "stream", "groups": ["A" * 200] * 500, "wpm": 20, "fw": None, "silent": True}
+        self.trainee._on_stream(message)
+        self.assertIsNotNone(self.trainee.stream)
+        kept = self.trainee.stream["groups"]
+        self.assertTrue(0 < sum(map(len, kept)) <= network_mode.net_stream.MAX_CHARS)
 
     def test_tempo_advice_can_be_applied(self):
         self.trainer.port_var.set(free_port())

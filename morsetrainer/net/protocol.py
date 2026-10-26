@@ -55,6 +55,7 @@ Gefunden wird ein Trainer per UDP-Broadcast: DISCOVER_QUERY an
 DISCOVERY_PORT, die Antwort ist ein JSON-Objekt {"session", "port"}."""
 import json
 import socket
+import time
 
 PROTOCOL_VERSION = 4
 DEFAULT_PORT = 7373
@@ -95,7 +96,7 @@ def decode(line: bytes) -> dict:
     ProtocolError bei allem anderen."""
     try:
         message = json.loads(line.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError) as exc:
+    except (UnicodeDecodeError, ValueError, RecursionError) as exc:  # RecursionError: tief verschachteltes JSON
         raise ProtocolError(str(exc)) from exc
     if not isinstance(message, dict) or not isinstance(message.get("type"), str):
         raise ProtocolError("keine Nachricht")
@@ -110,12 +111,19 @@ class LineReader:
         self.sock = sock
         self.buffer = b""
 
-    def read(self):
+    def read(self, deadline=None):
         """Nächste Nachricht, oder None, wenn die Gegenseite die Verbindung
-        geschlossen hat; wirft ProtocolError bei zu langen oder ungültigen Zeilen."""
+        geschlossen hat; wirft ProtocolError bei zu langen oder ungültigen Zeilen
+        und bei überschrittener `deadline` (time.monotonic()), auch wenn die
+        Gegenseite tröpfchenweise weiterschickt."""
         while b"\n" not in self.buffer:
             if len(self.buffer) > MAX_LINE:
                 raise ProtocolError("Zeile zu lang")
+            if deadline is not None:
+                left = deadline - time.monotonic()
+                if left <= 0:
+                    raise ProtocolError("zu langsam")
+                self.sock.settimeout(left)
             chunk = self.sock.recv(4096)
             if not chunk:
                 return None

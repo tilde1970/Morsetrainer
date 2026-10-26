@@ -24,6 +24,9 @@ from morsetrainer.modes.continuous_mode import STOP_GRACE_SECONDS, WRITE_CHUNK_S
 
 DURATION_RANGE = (1, 30)  # Minuten
 DEFAULT_DURATION = 5
+# Mehr Zeichen als eine Stunde bei 60 WPM nimmt der Teilnehmer nicht an: Ein
+# falscher Trainer kann ihn so nicht beliebig lange beschäftigen.
+MAX_CHARS = 20000
 # Nach dem letzten Zeichen bleibt so lange Zeit, es noch einzutippen.
 FINISH_GRACE_SECONDS = 3
 
