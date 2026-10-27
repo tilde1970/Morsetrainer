@@ -98,6 +98,12 @@ def where_key() -> str:
     return ctrl_key("W", shift=True) if sys.platform == "darwin" else "F11"
 
 
+def skip_key() -> str:
+    """Taste, die in der Tagesübung das laufende QSO überspringt (Strg+Umschalt+N,
+    auf dem Mac Cmd+Umschalt+N)."""
+    return ctrl_key("N", shift=True)
+
+
 def daily_key() -> str:
     """Taste der Tagesübung zum Anzeigen: F12, auf dem Mac Cmd+Umschalt+T
     (dort ist F12 vom System belegt, siehe app.py)."""

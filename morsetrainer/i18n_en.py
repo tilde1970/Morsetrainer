@@ -572,6 +572,15 @@ EN.update({
 EN.update({
     "▶ Tagesübung ({minutes} Min, {key})": "▶ Daily practice ({minutes} min, {key})",
     "Tagesübung beenden (Esc)": "End daily practice (Esc)",
+    "QSO überspringen ({key})": "Skip QSO ({key})",
+    "QSO übersprungen. Stattdessen Rufzeichen.": "QSO skipped. Callsigns instead.",
+    "QSO im Ausklang der Tagesübung": "QSO in the daily practice outro",
+    ("Mit Haken kommt im Ausklang nach Lektion 41 an manchen Tagen ein QSO oder ein Contest-Run mit Log. "
+     "Ohne Haken üben die Ausklänge Rufzeichen und Bandbedingungen. Ein QSO lässt sich in der Tagesübung "
+     "auch überspringen ({key})."):
+        "With the tick, the outro after lesson 41 brings a QSO or a contest run with a log on some days. "
+        "Without it, the outros practise callsigns and band conditions. A QSO can also be skipped during the "
+        "daily practice ({key}).",
     "Weiter mit Enter": "Continue with Enter",
     "Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.":
         "Daily practice, {block}: {mode}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",

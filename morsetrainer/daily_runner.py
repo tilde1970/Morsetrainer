@@ -78,6 +78,8 @@ class DailyRunner:
         self.bar = bar
         self.active = False
         self.aborting = False
+        self.skipping = False  # QSO-Block wird gerade zum Überspringen gestoppt
+        self.skip_note = ""    # Ansage vor dem Ersatzblock
         self.quiet = False
         self.state = {}
         self.blocks = []
@@ -183,7 +185,8 @@ class DailyRunner:
         qso, band = set(), None
         if daily.stage(lesson) == daily.POST:
             effective = self.state["tempo"]["effective"]
-            qso = daily.qso_outros(effective, review.boxed_chars(), lambda mode: self._qso_fits(mode, contest))
+            if self.app.daily_qso_var.get():
+                qso = daily.qso_outros(effective, review.boxed_chars(), lambda mode: self._qso_fits(mode, contest))
             if effective >= daily.BAND_MIN_EFFECTIVE:
                 band = daily.band_level(self.state, self.today)
         self._begin(charset, daily.plan(lesson, len(self.due), turn, qso, contest, band))
@@ -247,6 +250,7 @@ class DailyRunner:
         self.index = -1
         self.done_minutes = 0.0
         self.active, self.aborting = True, False
+        self.skipping, self.skip_note = False, ""
         self.bar.set_enabled(False)
         self.bar.show_active()
         self._tick()
@@ -313,7 +317,9 @@ class DailyRunner:
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
         settings = {**MODE_SETTINGS[block.mode], **block.params}
         preset = settings.pop(daily.BAND_PRESET, None)
-        text = block_text(block)
+        text = self.skip_note + block_text(block)
+        self.skip_note = ""
+        self.bar.set_skippable(block.mode in (daily.QSO_HEAD, daily.QSO_LOG))
         if preset:
             gain, own_filter = self._set_band(preset)
             if own_filter:
@@ -410,6 +416,10 @@ class DailyRunner:
         review.focus = set()
         self.mode = None
         self.block_started = None
+        if self.skipping and not self.aborting:
+            self.skipping = False
+            self._swap_for_callsigns(block)
+            return
         minutes = result.get("minutes", 0.0)
         self.done_minutes += minutes
         # Ein Rufz-Durchgang endet nach seinen Rufzeichen, ein QSO mit dem
@@ -433,6 +443,30 @@ class DailyRunner:
             self._next_block()  # letzter Block: gleich zur Abendbilanz
         else:
             self._show_block_card(block, result, new_stars)
+
+    def skip_qso(self) -> None:
+        """„QSO überspringen“ (Knopf oder Tastenkürzel): Der QSO-Block wird durch
+        Rufzeichen derselben Dauer ersetzt, so bleibt ★ Dabei erreichbar. Ein
+        angefangenes QSO zählt nicht für den Block, seine Antworten stehen
+        in der Statistik."""
+        if not self.active or self.card_open or self.mode is None:
+            return
+        block = self.blocks[self.index]
+        if block.mode not in (daily.QSO_HEAD, daily.QSO_LOG) or self.skipping:
+            return
+        if self.mode.running:
+            self.skipping = True
+            self.mode.stop()  # führt über on_block_end zu _swap_for_callsigns
+        else:  # noch in der Blockansage
+            self.mode.daily_release()
+            self.mode = None
+            self._swap_for_callsigns(block)
+
+    def _swap_for_callsigns(self, block) -> None:
+        self.bar.set_skippable(False)
+        self.skip_note = tr("QSO übersprungen. Stattdessen Rufzeichen.") + " "
+        self.blocks[self.index] = replacement = daily.Block(block.kind, "callsign", block.minutes)
+        self._start_block(replacement)
 
     # --- Zwischenkarte -----------------------------------------------------------
     def _show_block_card(self, block, result: dict, new_stars) -> None:
@@ -511,6 +545,7 @@ class DailyRunner:
             return
         self.active = False
         self.card_open = False
+        self.bar.set_skippable(False)
         if self.tick_id is not None:
             self.app.root.after_cancel(self.tick_id)
         self.tick_id = None

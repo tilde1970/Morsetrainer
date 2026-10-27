@@ -21,7 +21,7 @@ from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog,
                                 screenreader, sfx, speech, stats, storage, tempo, week, weighting)
 from morsetrainer.core.morse import build_text, display_text, key_hint, sounds_similar
 from morsetrainer.daily_runner import DailyRunner
-from morsetrainer.i18n import N_, ctrl_key, tr
+from morsetrainer.i18n import N_, ctrl_key, skip_key, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
 from morsetrainer.modes.group_mode import GroupModeFrame
@@ -333,7 +333,8 @@ class MorseTrainerApp:
         # Vor dem Notizbuch gepackt: steht über den Reitern.
         self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start(),
                                   on_continue=lambda: self.daily.continue_now(),
-                                  on_end=lambda: self.daily.abort())
+                                  on_end=lambda: self.daily.abort(),
+                                  on_skip=lambda: self.daily.skip_qso())
         self.daily_end_pressed = 0.0  # Zeitpunkt des ersten Esc/F5 (siehe _confirm_daily_end)
         self.daily_bar.pack()
         self.compact_note = ""  # Ansage nach dem Wechsel in den Kompaktmodus (zoom)
@@ -394,6 +395,8 @@ class MorseTrainerApp:
             for key in ("b", "B"):
                 root.bind_all(f"<{modifier}-{key}>", lambda e: self.band_settings.open_window() or "break")
         for modifier in ("Control", "Command") if sys.platform == "darwin" else ("Control",):
+            for key in ("n", "N"):
+                root.bind_all(f"<{modifier}-Shift-{key}>", lambda e: self.daily.skip_qso() or "break")
             root.bind_all(f"<{modifier}-comma>", lambda e: self.open_settings() or "break")
             # Versteckter Entwicklerreiter (nicht in der Anleitung): FSRS-Auswertung.
             for key in ("F", "f"):
@@ -716,6 +719,17 @@ class MorseTrainerApp:
         theme.hint(relaxed.master.master, wrap=420, text=tr(
             "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Diplome, die an ihr hängen "
             "(Worked All Letters, Alle Ziffern), damit deren Zahlen ehrlich bleiben."))
+
+        # Wer QSO-Hören und Contest-Logs noch nicht üben will, bekommt im Ausklang Rufzeichen
+        # oder Bandbedingungen.
+        self.daily_qso_var = tk.BooleanVar(value=True)
+        qso = ttk.Checkbutton(hinted(practice_card), text=tr("QSO im Ausklang der Tagesübung"),
+                              variable=self.daily_qso_var)
+        qso.pack(anchor="w")
+        theme.hint(qso.master.master, wrap=420, text=tr(
+            "Mit Haken kommt im Ausklang nach Lektion 41 an manchen Tagen ein QSO oder ein Contest-Run mit Log. "
+            "Ohne Haken üben die Ausklänge Rufzeichen und Bandbedingungen. Ein QSO lässt sich in der Tagesübung "
+            "auch überspringen ({key}).").format(key=skip_key()))
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).
@@ -1785,6 +1799,7 @@ class MorseTrainerApp:
             "refresh": (self.refresh_var, None),
             "daily_goal": (self.daily_goal_var, (0, 240)),
             "daily_relaxed": (self.daily_relaxed_var, None),
+            "daily_qso": (self.daily_qso_var, None),
             "more_options": (self.more_var, None),
             "station_call": (self.station_call_var, None),
             "station_name": (self.station_name_var, None),

@@ -309,6 +309,56 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(str(qso.replay_button["state"]), "normal")
         self.assertEqual(qso.status_var.get(), "QSO beendet.")
 
+    def test_skip_qso_swaps_the_block_for_callsigns_of_the_same_length(self):
+        import contextlib
+        from morsetrainer.modes import qso_mode
+
+        class FakeStream:
+            latency = 0.0
+
+            def write(self, block):
+                pass
+
+        self.app.lesson_var.set(koch.FINAL_LESSON)  # genug Zeichen für Rufzeichen
+        block = daily.Block(daily.OUTRO, daily.QSO_LOG, daily.OUTRO_POST_MINUTES, {"kind": "cqww"})
+        with mock.patch.object(daily, "plan", lambda *args, **kwargs: [block]), \
+                mock.patch.object(qso_mode.audio, "output_stream", lambda: contextlib.nullcontext(FakeStream())):
+            self.runner.start()
+            qso = self.mode("QSO")
+            self.assertEqual(self.runner.bar.skip_button.winfo_manager(), "pack")
+            with mock.patch.object(self.runner, "_start_block") as start_block:
+                self.runner.skip_qso()
+                self.root.update()
+            self.assertFalse(qso.running)
+            self.assertTrue(self.runner.active)
+            swapped = start_block.call_args.args[0]
+            self.assertEqual((swapped.mode, swapped.minutes), ("callsign", daily.OUTRO_POST_MINUTES))
+            self.assertIs(self.runner.blocks[0], swapped)
+            self.assertIsNone(self.runner.mode)
+            self.assertEqual(self.runner.bar.skip_button.winfo_manager(), "")
+            self.runner.abort(quiet=True)
+        self.assertFalse(self.runner.active)
+
+    def test_qso_outros_can_be_turned_off(self):
+        self.app.lesson_var.set(koch.FINAL_LESSON)
+        self.runner.state = {}
+        seen = []
+
+        def fake_plan(lesson, due, turn, qso=frozenset(), *args, **kwargs):
+            seen.append(set(qso))
+            return [daily.Block(daily.OUTRO, "callsign", 1)]
+
+        with mock.patch.object(daily, "plan", fake_plan), mock.patch.object(daily, "stage", lambda lesson: daily.POST), \
+                mock.patch.object(daily, "qso_outros", lambda *args: {daily.QSO_LOG}), \
+                mock.patch.object(daily_runner.announcer, "say"):
+            self.app.daily_qso_var.set(False)
+            self.runner.start()
+            self.runner.abort(quiet=True)
+            self.app.daily_qso_var.set(True)
+            self.runner.start()
+            self.runner.abort(quiet=True)
+        self.assertEqual(seen, [set(), {daily.QSO_LOG}])
+
     def _band_outro(self, gain, cw_filter=500):
         """Tagesübung nur mit dem Band-Ausklang starten, ohne den Block laufen zu lassen."""
         settings = self.app.band_settings

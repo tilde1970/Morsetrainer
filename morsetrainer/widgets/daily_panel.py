@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import awards, daily, qso_text, stats, week
-from morsetrainer.i18n import N_, daily_key, number, tr
+from morsetrainer.i18n import N_, daily_key, number, skip_key, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import focus_keeper, wrap_pair
 
@@ -280,7 +280,7 @@ def extra_label(offer) -> str:
 class DailyBar:
     """Leiste der Tagesübung über den Reitern: Startknopf, Wochenstreifen und
     Ziel; während der Übung Block, Restzeit und die Zwischenkarte."""
-    def __init__(self, parent, on_start, on_continue, on_end=None):
+    def __init__(self, parent, on_start, on_continue, on_end=None, on_skip=None):
         self.frame = ttk.Frame(parent, padding=(10, 6, 10, 2))
         self.frame.columnconfigure(1, weight=1)
         self.idle = ttk.Frame(self.frame)
@@ -331,6 +331,9 @@ class DailyBar:
         end_row.grid(row=2, column=0, columnspan=3, sticky="we", pady=(4, 0))
         self.end_button = ttk.Button(end_row, text=tr("Tagesübung beenden (Esc)"), command=on_end)
         self.end_button.pack(side="right")
+        # Nur während eines QSO-Blocks (set_skippable).
+        self.skip_button = ttk.Button(end_row, text=tr("QSO überspringen ({key})").format(key=skip_key()),
+                                      command=on_skip)
         self.notice_var = tk.StringVar(value="")
         theme.hint(end_row, textvariable=self.notice_var).pack(side="left")
 
@@ -412,6 +415,13 @@ class DailyBar:
     def hide_card(self) -> None:
         """Blendet die Zwischenkarte aus."""
         self.card.pack_forget()
+
+    def set_skippable(self, skippable: bool) -> None:
+        """Knopf „QSO überspringen“ zeigen oder verbergen."""
+        if skippable:
+            self.skip_button.pack(side="right", padx=(0, 8))
+        else:
+            self.skip_button.pack_forget()
 
     def set_enabled(self, enabled: bool) -> None:
         """Startknopf freigeben bzw. sperren (etwa während eines Durchgangs)."""
