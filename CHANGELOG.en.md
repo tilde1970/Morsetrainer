@@ -4,12 +4,15 @@
 
 - **Daily practice, QSO:** After lesson 41 the outro brings a QSO block on
   some days (a contest run with a log, later also a QSO to copy by ear). If
-  you are not ready for that yet, there are now two ways out. During the block
-  there is a “Skip QSO” button (Ctrl+Shift+N, on the Mac Cmd+Shift+N): it
+  you are not ready for that yet, there are now two ways out. There is a
+  “Skip block” button (Ctrl+Shift+N, on the Mac Cmd+Shift+N) while the
+  QSO plays or is announced; the block announcement and F11 name it. It
   replaces the QSO with callsigns of the same length, so ★ Dabei stays
-  reachable. Under “Settings …” the tick box “QSO in the daily practice outro”
-  turns the QSO blocks off completely; the outros then practise callsigns and
-  band conditions.
+  reachable. It does nothing during the questions after the QSO, so no
+  answers are lost. Under “Settings …” the tick box “QSO or contest run in
+  the daily practice outro” turns the QSO blocks off completely (from the
+  next daily practice); the outros then practise callsigns and band
+  conditions.
 
 ## 2.70
 
