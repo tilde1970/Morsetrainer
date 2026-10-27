@@ -33,6 +33,7 @@ class DailyModeMixin:
     _options_pack = None
     streak = best_streak = 0
     next_waiting = False  # nächstes Zeichen bzw. nächste Sequenz wartet auf eine Ansage
+    daily_skipping = False  # Block wird übersprungen: keine Ansage vom Stoppen
     daily_relaxed = False  # Block der entspannten Tagesübung: ohne Zeitlimit, nicht für die Lernkartei
 
     def daily_configure(self, minutes: float, **values) -> None:
@@ -58,6 +59,7 @@ class DailyModeMixin:
             self._daily_saved = None
         self.daily_minutes = None
         self.daily_relaxed = False
+        self.daily_skipping = False
         self.set_options_visible(True)
 
     def daily_result(self):

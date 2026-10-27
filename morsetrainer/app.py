@@ -21,7 +21,7 @@ from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog,
                                 screenreader, sfx, speech, stats, storage, tempo, week, weighting)
 from morsetrainer.core.morse import build_text, display_text, key_hint, sounds_similar
 from morsetrainer.daily_runner import DailyRunner
-from morsetrainer.i18n import N_, ctrl_key, skip_key, tr
+from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
 from morsetrainer.modes.group_mode import GroupModeFrame
@@ -723,13 +723,12 @@ class MorseTrainerApp:
         # Wer QSO-Hören und Contest-Logs noch nicht üben will, bekommt im Ausklang Rufzeichen
         # oder Bandbedingungen.
         self.daily_qso_var = tk.BooleanVar(value=True)
-        qso = ttk.Checkbutton(hinted(practice_card), text=tr("QSO im Ausklang der Tagesübung"),
+        qso = ttk.Checkbutton(hinted(practice_card), text=tr("QSO oder Contest-Run im Ausklang der Tagesübung"),
                               variable=self.daily_qso_var)
         qso.pack(anchor="w")
         theme.hint(qso.master.master, wrap=420, text=tr(
-            "Mit Haken kommt im Ausklang nach Lektion 41 an manchen Tagen ein QSO oder ein Contest-Run mit Log. "
-            "Ohne Haken üben die Ausklänge Rufzeichen und Bandbedingungen. Ein QSO lässt sich in der Tagesübung "
-            "auch überspringen ({key}).").format(key=skip_key()))
+            "Mit Haken kommt im Ausklang nach Koch an manchen Tagen ein QSO oder Contest-Run mit Log. "
+            "Ohne Haken üben die Ausklänge Rufzeichen und Bandbedingungen. Gilt ab der nächsten Tagesübung."))
 
         # Zweisprachig beschriftet, damit man auch nach versehentlichem
         # Umschalten zurückfindet; wirkt ab dem nächsten Start (i18n.py).

@@ -16,7 +16,7 @@ import tkinter as tk
 from datetime import date
 
 from morsetrainer.core import awards, daily, koch, practice, qso_text, review, stats, week
-from morsetrainer.i18n import N_, ctrl_key, short_number, tr
+from morsetrainer.i18n import N_, ctrl_key, short_number, skip_key, tr
 from morsetrainer.widgets import announcer, band_settings
 from morsetrainer.widgets.daily_panel import (
     BLOCK_LABELS, ENTER_GRACE_S, EveningSummary, block_lines, end_note, minutes_text, mode_name, moment_line,
@@ -67,6 +67,7 @@ MODE_SETTINGS = {
 # sonst erst nach Ablauf der Zeit und der letzten Eingabe).
 STOPPED_EARLY_MIN = 0.1
 TICK_MS = 1000
+QSO_MODES = (daily.QSO_HEAD, daily.QSO_LOG)
 
 
 class DailyRunner:
@@ -80,6 +81,7 @@ class DailyRunner:
         self.aborting = False
         self.skipping = False  # QSO-Block wird gerade zum Überspringen gestoppt
         self.skip_note = ""    # Ansage vor dem Ersatzblock
+        self.last_note = ""    # skip_note der letzten Blockansage
         self.quiet = False
         self.state = {}
         self.blocks = []
@@ -132,6 +134,7 @@ class DailyRunner:
         if self.block_started is not None:
             elapsed += (time.time() - self.block_started) / 60
         self.bar.update(self.blocks, self.index, elapsed, daily.stars_on(self.state, self.today))
+        self.bar.set_skippable(self._skippable())
         self.tick_id = self.app.root.after(TICK_MS, self._tick)
 
     def spoken_status(self) -> str:
@@ -142,10 +145,13 @@ class DailyRunner:
             elapsed += (time.time() - self.block_started) / 60
         stars = daily.stars_on(self.state, self.today)
         block = self.blocks[self.index]
-        return tr("Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.").format(
+        text = tr("Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.").format(
             block=tr(BLOCK_LABELS[block.kind]), mode=mode_name(block), n=self.index + 1, total=len(self.blocks),
             elapsed=minutes_text(min(elapsed, daily.TOTAL_MINUTES)), minutes=daily.TOTAL_MINUTES,
             stars=stars_named(stars) if stars else tr("noch kein Stern"))
+        if self._skippable():
+            text += " " + tr("Überspringen mit {key}.").format(key=skip_key())
+        return text
 
     def _refresh(self) -> bool:
         """Ist „Wiedereinsteiger“ in den weiteren Optionen angehakt?"""
@@ -318,8 +324,10 @@ class DailyRunner:
         settings = {**MODE_SETTINGS[block.mode], **block.params}
         preset = settings.pop(daily.BAND_PRESET, None)
         text = self.skip_note + block_text(block)
-        self.skip_note = ""
-        self.bar.set_skippable(block.mode in (daily.QSO_HEAD, daily.QSO_LOG))
+        self.last_note, self.skip_note = self.skip_note, ""
+        if block.mode in QSO_MODES:
+            text += " " + tr("Überspringen mit {key}.").format(key=skip_key())
+        self.bar.set_skippable(block.mode in QSO_MODES)
         if preset:
             gain, own_filter = self._set_band(preset)
             if own_filter:
@@ -383,6 +391,7 @@ class DailyRunner:
             review.focus = set()
             if block.mode != "group":
                 self.blocks[self.index] = block = daily.Block(block.kind, "group", block.minutes, {})
+                self.skip_note = self.last_note  # „QSO übersprungen“ soll nicht verloren gehen
                 self._start_block(block)
             else:
                 self._finish(completed=False)
@@ -424,7 +433,7 @@ class DailyRunner:
         self.done_minutes += minutes
         # Ein Rufz-Durchgang endet nach seinen Rufzeichen, ein QSO mit dem
         # Prüfen der Abfrage, nicht nach der Zeit.
-        if block.mode in (daily.QSO_HEAD, daily.QSO_LOG):
+        if block.mode in QSO_MODES:
             stopped_early = not result.get("checked")
             if not stopped_early:
                 # Ein geprüftes QSO ist der ganze Ausklang, auch wenn der Run
@@ -449,18 +458,26 @@ class DailyRunner:
         Rufzeichen derselben Dauer ersetzt, so bleibt ★ Dabei erreichbar. Ein
         angefangenes QSO zählt nicht für den Block, seine Antworten stehen
         in der Statistik."""
-        if not self.active or self.card_open or self.mode is None:
+        if not self._skippable():
             return
         block = self.blocks[self.index]
-        if block.mode not in (daily.QSO_HEAD, daily.QSO_LOG) or self.skipping:
+        if not self._skippable():
             return
         if self.mode.running:
-            self.skipping = True
+            self.skipping = self.mode.daily_skipping = True
             self.mode.stop()  # führt über on_block_end zu _swap_for_callsigns
         else:  # noch in der Blockansage
             self.mode.daily_release()
             self.mode = None
             self._swap_for_callsigns(block)
+
+    def _skippable(self) -> bool:
+        """Läuft ein QSO-Block, der Ton spielt oder noch angesagt wird? Danach, bei
+        der Abfrage, würde Überspringen die Antworten verwerfen."""
+        if not self.active or self.card_open or self.mode is None or self.skipping:
+            return False
+        block = self.blocks[self.index]
+        return block.mode in QSO_MODES and (self.mode.running or self.block_started is None)
 
     def _swap_for_callsigns(self, block) -> None:
         self.bar.set_skippable(False)

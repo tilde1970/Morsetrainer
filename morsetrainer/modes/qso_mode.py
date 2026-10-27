@@ -672,7 +672,8 @@ class QsoModeFrame(DailyModeMixin):
         if stopped:
             self.status_var.set(tr("Gestoppt. ") + self.status_var.get())
             spoken = tr("Gestoppt. ") + spoken
-        announcer.say(spoken)
+        if not self.daily_skipping:  # die Tagesübung sagt selbst, was jetzt kommt
+            announcer.say(spoken)
         self.quiz_ready = True
         self.quiz.set_check_enabled(True)
 

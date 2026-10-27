@@ -332,7 +332,7 @@ class DailyBar:
         self.end_button = ttk.Button(end_row, text=tr("Tagesübung beenden (Esc)"), command=on_end)
         self.end_button.pack(side="right")
         # Nur während eines QSO-Blocks (set_skippable).
-        self.skip_button = ttk.Button(end_row, text=tr("QSO überspringen ({key})").format(key=skip_key()),
+        self.skip_button = ttk.Button(end_row, text=tr("Block überspringen ({key})").format(key=skip_key()),
                                       command=on_skip)
         self.notice_var = tk.StringVar(value="")
         theme.hint(end_row, textvariable=self.notice_var).pack(side="left")

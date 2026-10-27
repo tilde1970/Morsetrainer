@@ -339,6 +339,39 @@ class DailyRunnerTest(AppTestCase):
             self.runner.abort(quiet=True)
         self.assertFalse(self.runner.active)
 
+    def test_skip_is_not_offered_during_the_questions_and_is_announced(self):
+        import contextlib
+        from morsetrainer.i18n import skip_key
+        from morsetrainer.modes import qso_mode
+
+        class FakeStream:
+            latency = 0.0
+
+            def write(self, block):
+                pass
+
+        block = daily.Block(daily.OUTRO, daily.QSO_LOG, daily.OUTRO_POST_MINUTES, {"kind": "cqww"})
+        with mock.patch.object(daily, "plan", lambda *args, **kwargs: [block]), \
+                mock.patch.object(qso_mode.audio, "output_stream", lambda: contextlib.nullcontext(FakeStream())), \
+                mock.patch.object(daily_runner.announcer, "say",
+                                  side_effect=lambda text, then=None, **kw: then and then()) as say:
+            self.runner.start()
+            self.assertIn(f"Überspringen mit {skip_key()}.", say.call_args_list[0].args[0])
+            qso = self.mode("QSO")
+            self.assertTrue(self.runner._skippable())
+            self.assertIn(skip_key(), self.runner.spoken_status())
+            end = time.monotonic() + 20
+            while qso.running and time.monotonic() < end:
+                self.root.update()
+                time.sleep(0.01)
+            self.assertFalse(qso.running)  # jetzt die Abfrage
+            self.assertFalse(self.runner._skippable())
+            self.assertNotIn(skip_key(), self.runner.spoken_status())
+            self.runner.skip_qso()
+            self.assertIs(self.runner.blocks[0], block)
+            self.assertIs(self.runner.mode, qso)
+            self.runner.abort(quiet=True)
+
     def test_qso_outros_can_be_turned_off(self):
         self.app.lesson_var.set(koch.FINAL_LESSON)
         self.runner.state = {}
