@@ -147,7 +147,10 @@ with Farnsworth the effective speed (“≈ 50 CPM effective” at 20/10).
   **Relaxed daily practice** takes the time limit out of the warm-up, for
   everyone who needs more than 1.5 seconds per answer. These warm-up
   blocks do not count for the review box and the awards that depend on it
-  (Worked All Letters, All digits).
+  (Worked All Letters, All digits). The tick box **QSO or contest run in
+  the daily practice outro** is on by default. Without it, the wind-downs
+  after Koch only practise callsigns and band conditions (the latter from
+  a daily speed of 15 WPM). This applies from the next daily practice.
 - **Sprache / Language:** switch the interface to English. It takes effect
   after a restart (**Restart now** at the bottom of the window). The voice
   in the Speak tab stays German.
@@ -470,7 +473,16 @@ The parts in detail:
   wide filter is used without strength differences and with the noise
   volume at 100 %; afterwards your own band settings are back. The results
   of these blocks do not count for stars, speed or lesson, but for the
-  awards as usual (such as Headphones Bronze).
+  awards as usual (such as Headphones Bronze). Want more callsigns
+  instead of QSO and contest run? Switch off the tick box **QSO or contest
+  run in the daily practice outro** in the settings (Practice).
+- **Skipping a QSO block:** While a QSO block (QSO for head copy or
+  contest run) is announced or playing, the bar shows the button **Skip
+  block (Ctrl+Shift+N)**, on the Mac Cmd+Shift+N. It replaces the block
+  with callsigns of the same length, so ★ *Showed up* stays within reach.
+  A QSO already begun does not count for the block; its answers appear in
+  the statistics. At the questions after the QSO the button has no effect.
+  The block announcement and F11 name the shortcut.
 - **Three stars a day:** ★ *Showed up* for the full 10 minutes, ★ *Clean*
   for 90 % on the first try in the main part (80 % in the first three days
   of a new lesson), ★ *Ahead* for real progress: next lesson earned, a
@@ -949,8 +961,9 @@ Alt or Ctrl (Cmd+1, Cmd+B, Cmd+Comma).
 
 **In single tabs:**
 
-- **Daily practice:** Enter skips the card between blocks; Esc or F5,
-  twice, ends daily practice.
+- **Daily practice:** Enter skips the card between blocks; Ctrl+Shift+N
+  (Mac: Cmd+Shift+N) skips a QSO block; Esc or F5, twice, ends daily
+  practice.
 - **One by one, Non-stop:** F5 starts and stops, Esc stops.
 - **One by one:** Alt+1 (again) switches the content: Characters → Groups →
   Words → Callsigns. Space repeats. In head copy: Enter reveals, J = knew

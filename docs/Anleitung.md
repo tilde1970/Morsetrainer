@@ -142,7 +142,10 @@ einmal einstellt:
   **Entspannte Tagesübung** nimmt das Zeitlimit aus dem Aufwärmen, für alle,
   die je Antwort länger als 1,5 Sekunden brauchen. Diese Aufwärmblöcke
   zählen nicht für die Lernkartei und die Diplome, die an ihr hängen (Worked
-  All Letters, Alle Ziffern).
+  All Letters, Alle Ziffern). Der Haken **QSO oder Contest-Run im
+  Ausklang der Tagesübung** ist standardmäßig an. Ohne ihn üben die
+  Ausklänge nach Koch nur Rufzeichen und Bandbedingungen (Letzteres ab
+  Tagestempo 15 WPM). Das gilt ab der nächsten Tagesübung.
 - **Sprache / Language:** Englisch einstellen. Das wirkt nach einem
   Neustart (unten im Fenster: **Jetzt neu starten**). Die Stimme im Reiter
   Sprechen bleibt deutsch.
@@ -459,7 +462,16 @@ Die Bausteine im Einzelnen:
   sagt es. Es gilt das breite Filter ohne Stärkeunterschiede mit
   Störlautstärke 100 %; danach ist deine eigene Bandeinstellung wieder da.
   Die Ergebnisse dieser Blöcke zählen nicht für Sterne, Tempo oder Lektion,
-  aber wie sonst für die Diplome (etwa Kopfhörer Bronze).
+  aber wie sonst für die Diplome (etwa Kopfhörer Bronze). Mehr Rufzeichen
+  statt QSO und Contest-Run? Schalte in den Einstellungen (Üben) den Haken
+  **QSO oder Contest-Run im Ausklang der Tagesübung** aus.
+- **QSO-Block überspringen:** Solange ein QSO-Block (QSO zum Kopfhören
+  oder Contest-Run) angesagt wird oder spielt, steht in der Leiste der
+  Knopf **Block überspringen (Strg+Umschalt+N)**, auf dem Mac
+  Cmd+Umschalt+N. Er ersetzt den Block durch Rufzeichen gleicher Dauer;
+  so bleibt ★ *Dabei* erreichbar. Ein angefangenes QSO zählt nicht für den
+  Block, seine Antworten stehen in der Statistik. Bei der Abfrage nach dem
+  QSO wirkt der Knopf nicht. Die Blockansage und F11 nennen das Kürzel.
 - **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
   für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen einer
   neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
@@ -937,7 +949,8 @@ Alt bzw. Strg (Cmd+1, Cmd+B, Cmd+Komma).
 
 **In einzelnen Reitern:**
 
-- **Tagesübung:** Enter überspringt die Zwischenkarte; Esc oder F5, zweimal,
+- **Tagesübung:** Enter überspringt die Zwischenkarte; Strg+Umschalt+N
+  (Mac: Cmd+Umschalt+N) überspringt einen QSO-Block; Esc oder F5, zweimal,
   beendet die Tagesübung.
 - **Einzeln, Am Stück:** F5 startet und stoppt, Esc stoppt.
 - **Einzeln:** Alt+1 (noch einmal) schaltet den Inhalt weiter: Zeichen →
