@@ -1,5 +1,16 @@
 # Änderungen
 
+## 2.71
+
+- **Tagesübung, QSO:** Nach Lektion 41 kommt im Ausklang an manchen Tagen ein
+  QSO-Block (Contest-Run mit Log, später auch ein QSO zum Kopfhören). Wer dafür
+  noch nicht so weit ist, hat jetzt zwei Auswege. Während des Blocks gibt es
+  den Knopf „QSO überspringen“ (Strg+Umschalt+N, auf dem Mac Cmd+Umschalt+N):
+  Er ersetzt das QSO durch Rufzeichen derselben Dauer, ★ Dabei bleibt
+  erreichbar. Unter „Einstellungen …“ schaltet der Haken „QSO im Ausklang der
+  Tagesübung“ die QSO-Blöcke ganz ab; dann üben die Ausklänge Rufzeichen und
+  Bandbedingungen.
+
 ## 2.70
 
 - **Statistik, Auswertungen:** „Verwechslungspaare im Verlauf“ und „Zeichen
