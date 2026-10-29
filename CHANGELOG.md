@@ -1,5 +1,12 @@
 # Änderungen
 
+## 2.72
+
+- **Einzelzeichen:** Wer ein Zeichen schon vor dem Ende des Tons erkannte und
+  tippte, bekam manchmal „Zu langsam“, obwohl die Antwort richtig und schnell
+  war: Die Taste wurde verworfen, bis der Ton zu Ende war. Jetzt zählt die
+  Taste sofort, sobald das Zeichen läuft.
+
 ## 2.71
 
 - **Tagesübung, QSO:** Nach Lektion 41 kommt im Ausklang an manchen Tagen ein

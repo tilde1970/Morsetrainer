@@ -1,5 +1,12 @@
 # Changes
 
+## 2.72
+
+- **Single characters:** If you recognised a character before the tone had
+  ended and typed it, you sometimes got “Too slow” although your answer was
+  right and quick: the key was dropped until the tone was over. The key now
+  counts as soon as the character is playing.
+
 ## 2.71
 
 - **Daily practice, QSO:** After lesson 41 the outro brings a QSO block on
