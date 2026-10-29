@@ -1,5 +1,16 @@
 # Änderungen
 
+## 2.73
+
+- **Einzelzeichen, Zeitlimit:** Das Zeitlimit ist jetzt fest und richtet sich
+  nach deinem effektiven Tempo: eine Tastenzeit von 0,6 s plus die Zeit,
+  die ein Zeichen in diesem Tempo hat (bei 10 WPM effektiv 1,8 s). Wer
+  langsamer übt, bekommt mehr Zeit. Bis Lektion 9 ist die Tastenzeit 1,2 s,
+  danach sinkt sie bis Lektion 25 auf 0,6 s. Das Limit schrumpft nicht mehr
+  und wächst auch nicht mehr nach Verpassern; der Knopf „zurücksetzen“
+  entfällt. In der Tagesübung gilt dasselbe Limit statt der Grenze von
+  1,5 s.
+
 ## 2.72
 
 - **Einzelzeichen:** Wer ein Zeichen schon vor dem Ende des Tons erkannte und

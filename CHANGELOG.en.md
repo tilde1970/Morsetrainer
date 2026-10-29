@@ -1,5 +1,15 @@
 # Changes
 
+## 2.73
+
+- **Single characters, time limit:** The time limit is now fixed and follows
+  your effective speed: a key time of 0.6 s plus the time a character has at
+  that speed (1.8 s at 10 WPM effective). The slower you practise, the more
+  time you get. Up to lesson 9 the key time is 1.2 s, then it falls to 0.6 s
+  by lesson 25. The limit no longer shrinks, nor grows after misses; the
+  “reset” button is gone. Daily practice uses the same limit instead of the
+  1.5 s cap.
+
 ## 2.72
 
 - **Single characters:** If you recognised a character before the tone had
