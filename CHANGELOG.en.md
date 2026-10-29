@@ -1,5 +1,12 @@
 # Changes
 
+## 2.74
+
+- **Single characters, recording:** For every character with a time limit the
+  limit that applied is now saved, and for the session the effective speed it
+  was calculated from. You will not see any of this. It makes later analyses
+  of reaction times more accurate. Earlier sessions are unchanged.
+
 ## 2.73
 
 - **Single characters, time limit:** The time limit is now fixed and follows

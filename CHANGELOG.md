@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.74
+
+- **Einzelzeichen, Aufzeichnung:** Zu jedem Zeichen mit Zeitlimit wird jetzt
+  das Limit gespeichert, das galt, und im Durchgang das effektive Tempo, nach
+  dem es gerechnet wurde. Du siehst davon nichts. Es macht spätere
+  Auswertungen der Reaktionszeiten genauer. Ältere Durchgänge bleiben
+  unverändert.
+
 ## 2.73
 
 - **Einzelzeichen, Zeitlimit:** Das Zeitlimit ist jetzt fest und richtet sich
