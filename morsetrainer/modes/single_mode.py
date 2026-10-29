@@ -613,7 +613,9 @@ class SingleModeFrame(DailyModeMixin):
         if event.keysym == "space":
             self.repeat_char()
             return
-        if not self.waiting_for_input:
+        # Wer das Zeichen schon vor dem Tonende erkennt, dessen Taste zählt auch
+        # (answer_open): sonst käme danach „Zu langsam“.
+        if not (self.waiting_for_input or (self.running and self.answer_open)):
             return
         typed = event.char.upper()
         if not typed or typed not in MORSE_CODE:

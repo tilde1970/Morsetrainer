@@ -866,6 +866,17 @@ class SingleCharTest(AppTestCase):
         s.first_hearing, s.correcting, s.answer_open = True, False, True
         s.play_start_time = time.time() - 0.5
 
+    def test_key_during_the_tone_counts_and_the_timeout_no_longer_fires(self):
+        s = self.single
+        self._open_answer("K")
+        s.waiting_for_input = False  # Ton läuft noch, die Eingabe ist noch nicht freigegeben
+        s.play_start_time = time.time() + 0.05
+        with mock.patch.object(s.session_stats, "record_char") as record:
+            self._key("K")
+        record.assert_called_once()
+        self.assertIn("Richtig", s.feedback_var.get())
+        self.assertFalse(s.answer_open)
+
     def test_absent_player_stops_the_run_and_the_misses_do_not_count(self):
         from morsetrainer.modes import single_mode
         s = self.single
