@@ -48,7 +48,7 @@ from morsetrainer.widgets.ui_widgets import (
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.73"
+__version__ = "2.74"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
