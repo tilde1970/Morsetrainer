@@ -186,11 +186,13 @@ Rufzeichen während eines Durchgangs ausgeblendet.
 stehen Reaktionszeit und Limit da, z. B. „0,38 s, Limit 1,20 s“.
 
 - **Zeitlimit** (Instant Character Recognition, sofortiges Erkennen): Es
-  zählt ab dem Ende des letzten Punkts oder Strichs, beginnt bei 2 s und
-  bewegt sich zwischen 0,5 und 3 s: kürzer, solange du sicher bist, länger,
-  wenn du Zeichen verpasst. „zurücksetzen“ stellt es auf 2 s. F11 („Wo bin
-  ich?“) hält das Zeitlimit an, solange ein Zeichen auf deine Antwort
-  wartet; das Zeichen zählt dann nicht und kommt später wieder.
+  zählt ab dem Ende des letzten Punkts oder Strichs und ist fest. Es richtet
+  sich nach dem effektiven Tempo: eine Tastenzeit von 0,6 s plus die Zeit,
+  die ein Zeichen in diesem Tempo hat (bei 10 WPM effektiv 1,8 s). Wer
+  langsamer übt, bekommt mehr Zeit. Mit wenigen Zeichen, bis zur Lektion 9,
+  ist die Tastenzeit 1,2 s, danach sinkt sie bis zur Lektion 25 auf 0,6 s.
+  F11 („Wo bin ich?“) hält das Zeitlimit an, solange ein Zeichen auf deine
+  Antwort wartet; das Zeichen zählt dann nicht und kommt später wieder.
 - **Quittungston:** ein heller Ton bei richtiger, ein tiefer Doppelton bei
   falscher Antwort (Standard aus).
 - Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen
@@ -430,9 +432,9 @@ Die Bausteine im Einzelnen:
   Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
   Verwechslungen. Bei vielen fälligen Zeichen dauert es bis zu 4 Minuten,
   denn jedes braucht acht Versuche, damit die Lernkartei es heute
-  entscheidet. Das Zeitlimit macht weiter, wo es zuletzt aufgehört hat, und
-  wird hier nie länger als 1,5 s. Brauchst du länger, schalte in den
-  Einstellungen die **Entspannte Tagesübung** ein.
+  entscheidet. Das Zeitlimit richtet sich nach deinem effektiven Tempo.
+  Brauchst du länger, schalte in den Einstellungen die **Entspannte
+  Tagesübung** ein.
 - **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
   18 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: Unter 75 %
   beim ersten Versuch (mindestens 100 Zeichen) wird es 1 WPM langsamer. Nach

@@ -192,11 +192,13 @@ each answer you see your reaction time and the limit, e.g. “0.38 s, limit
 1.20 s”.
 
 - **Time limit** (Instant Character Recognition): it counts from the end
-  of the last dot or dash, starts at 2 s and moves between 0.5 and 3 s:
-  shorter while you answer reliably, longer when you miss characters.
-  “reset” sets it back to 2 s. F11 (“Where am I?”) pauses the time limit
-  while a character is waiting for your answer; the character then does
-  not count and comes again later.
+  of the last dot or dash and is fixed. It follows the effective speed: a
+  key time of 0.6 s plus the time a character has at that speed (1.8 s at
+  10 WPM effective). The slower you practise, the more time you get. With
+  few characters, up to lesson 9, the key time is 1.2 s, then it falls to
+  0.6 s by lesson 25. F11 (“Where am I?”) pauses the time limit while a
+  character is waiting for your answer; the character then does not count
+  and comes again later.
 - **Feedback beep:** a high beep for a correct answer, a low double tone
   for a wrong one (default off).
 - After a confusion you hear the correct character and the one you typed
@@ -440,9 +442,8 @@ The parts in detail:
   box come more often, or, if nothing is due, your most frequent
   confusions. With many due characters it takes up to 4 minutes, because
   each needs eight attempts for the review box to decide it today. The
-  time limit continues where it ended last time and is never longer than
-  1.5 s here. If you need longer, switch on **Relaxed daily practice** in
-  the settings.
+  time limit follows your effective speed. If you need longer, switch on
+  **Relaxed daily practice** in the settings.
 - **Speed:** the main part keeps a fixed speed (characters at least
   18 WPM). It changes once a day, effective from the next: below 75 % on
   the first try (at least 100 characters) 1 WPM slower. After Koch, 90 % or
