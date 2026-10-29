@@ -241,12 +241,6 @@ class TempoTest(unittest.TestCase):
         self.assertEqual(daily.next_tempo(start, main_result(70, 100), allow_up=False),
                          {"wpm": 20, "effective": 11})
 
-    def test_warmup_limit(self):
-        self.assertEqual(daily.warmup_limit({}), 1.5)
-        self.assertEqual(daily.warmup_limit({"icr_limit": 0.7}), 0.7)
-        self.assertEqual(daily.warmup_limit({"icr_limit": 2.6}), 1.5)
-        self.assertEqual(daily.warmup_limit({"icr_limit": "x"}), 1.5)
-
     def test_initial_tempo_keeps_chars_fast(self):
         self.assertEqual(daily.initial_tempo(20, 10), {"wpm": 20, "effective": 10})
         self.assertEqual(daily.initial_tempo(15, None), {"wpm": 18, "effective": 15})

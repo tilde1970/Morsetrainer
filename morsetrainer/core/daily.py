@@ -29,8 +29,7 @@ Gesamtstatistik stehen):
 {"lesson", "lesson_since", "pending_lesson", "pending_since",
  "tempo": {"wpm", "effective"}, "pending_tempo", "pending_tempo_since",
  "tempo_best" (höchstes effektives Tagestempo), "plateau_hint" (Tag des
- letzten Stillstand-Hinweises), "icr_limit" (Zeitlimit
- am Ende des letzten Aufwärmens),
+ letzten Stillstand-Hinweises),
  "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress", "lesson",
  "tempo" (effektives Tagestempo im Hauptteil, für die Lebenslinie)}}}"""
 import math
@@ -385,16 +384,6 @@ def too_tight(result: dict) -> bool:
     ohne rechtzeitige Antwort)?"""
     misses = result.get("timeouts", 0)
     return misses >= TIGHT_MIN_MISSES and misses / max(result.get("total", 0), misses) > TIGHT_SHARE
-
-
-def warmup_limit(state: dict) -> float:
-    """Zeitlimit für das Aufwärmen: weiter, wo das letzte aufgehört hat
-    (sonst bräuchte ein Geübter jeden Tag die halbe Aufwärmzeit, bis es
-    wieder knapp ist), aber nicht länger als „flüssig“ in der Lernkartei."""
-    saved = state.get("icr_limit")
-    if isinstance(saved, (int, float)) and not isinstance(saved, bool) and saved > 0:
-        return min(float(saved), review.FLUENT_LATENCY_S)
-    return review.FLUENT_LATENCY_S
 
 
 # --- Tempo --------------------------------------------------------------------

@@ -660,15 +660,15 @@ class DailyRunnerTest(AppTestCase):
             self.app._request_close("Strg+Q")
         close.assert_called_once()
 
-    def test_warmup_limit_continues_from_last_time(self):
-        daily.save({"lesson": 12, "days": {}, "icr_limit": 0.8})
+    def test_warmup_limit_follows_the_tempo(self):
+        from morsetrainer.core import tempo
+        daily.save({"lesson": 12, "days": {}, "icr_limit": 0.8, "tempo": {"wpm": 20, "effective": 10}})
         self.runner.start()
         single = self.mode("Einzelzeichen")
-        self.assertEqual(single.limit, 0.8)
-        single.limit = 0.7
+        single.next_char()
+        # Ein alter gespeicherter Wert (icr_limit 0,8) wirkt nicht mehr.
+        self.assertEqual(single.limit, tempo.char_limit(20, 10, len(set(single.charset))))
         self.runner.abort(quiet=True)
-        self.assertEqual(daily.load()["icr_limit"], 0.7)
-        self.assertNotEqual(single.limit, 0.7)  # der Reiter hat wieder sein eigenes Limit
 
     def test_tempo_from_yesterday_applies_at_start(self):
         daily.save({"lesson": 12, "days": {}, "tempo": {"wpm": 20, "effective": 12},

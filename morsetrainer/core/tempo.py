@@ -23,6 +23,34 @@ def effective(wpm: int, fw) -> int:
     return fw if fw is not None and fw < wpm else wpm
 
 
+# Zeitlimit für Einzelzeichen (Sekunden ab Tonende): Tastenzeit plus die Zeit,
+# die ein Zeichen im effektiven Tempo hat (CHARS_PER_WORD Zeichen je Wort).
+# Die Tastenzeit (Erkennen, Taste suchen) hängt kaum vom Tempo ab; Anfänger
+# brauchen mehr, bis der Zeichensatz größer wird. Schätzwerte aus den
+# Reaktionszeiten eines geübten Nutzers, für Anfänger nicht gemessen.
+KEY_TIME_S = 0.6
+BEGINNER_KEY_TIME_S = 1.2
+BEGINNER_CHARS = 10   # bis zu so vielen Zeichen gilt die Anfänger-Tastenzeit
+PRACTISED_CHARS = 26  # ab so vielen die geübte, dazwischen gleitend
+
+
+def key_time(charset_size: int) -> float:
+    """Tastenzeit des Zeitlimits für einen Zeichensatz dieser Größe."""
+    if charset_size <= BEGINNER_CHARS:
+        return BEGINNER_KEY_TIME_S
+    if charset_size >= PRACTISED_CHARS:
+        return KEY_TIME_S
+    share = (charset_size - BEGINNER_CHARS) / (PRACTISED_CHARS - BEGINNER_CHARS)
+    return BEGINNER_KEY_TIME_S - share * (BEGINNER_KEY_TIME_S - KEY_TIME_S)
+
+
+def char_limit(wpm: int, fw, charset_size: int) -> float:
+    """Zeitlimit in Sekunden ab dem Ende des Tons für ein Zeichen: Tastenzeit
+    plus Zeichenzeit im effektiven Tempo. Langsamer geübt heißt mehr Zeit."""
+    per_char = 60 / (CHARS_PER_WORD * max(effective(wpm, fw), 1))
+    return round(key_time(charset_size) + per_char, 2)
+
+
 def step(wpm: int, fw, delta: int, limits=LIMITS):
     """(Zeichentempo, effektiv oder None) nach einer Änderung des effektiven
     Tempos um `delta` WPM."""

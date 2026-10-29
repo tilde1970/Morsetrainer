@@ -1551,15 +1551,14 @@ EN.update({
 
 # --- modes/single_mode.py ---
 EN.update({
-    "Zeitlimit (wird kürzer, solange du sicher bist)": "Time limit (gets shorter while you answer reliably)",
-    "zurücksetzen": "reset",
+    "Zeitlimit (richtet sich nach deinem Tempo)": "Time limit (follows your speed)",
     "Verlauf (letzte {n})": "History (last {n})",
     "So klingt {char} – und so {typed} (dein Tipp):": "This is {char} – and this is {typed} (your answer):",
     "So klingt {char}:": "This is {char}:",
     "Zeitlimit angehalten: Dieses Zeichen zählt jetzt nicht und kommt später wieder.":
         "Time limit paused: this character does not count now and will come again later.",
     "Zu langsam: war {char}": "Too slow: it was {char}",
-    "(Limit jetzt {limit} s)": "(limit now {limit} s)",
+    "(Limit {limit} s)": "(limit {limit} s)",
     "{char} – erst nach Wiederholung, kommt gleich noch mal": "{char} – only after a repeat, it will come again soon",
     ", Limit {limit} s": ", limit {limit} s",
     "Falsch: war {char}, du: {typed}": "Wrong: it was {char}, you: {typed}",

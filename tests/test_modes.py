@@ -1054,25 +1054,24 @@ class SingleCharTest(AppTestCase):
         s.play_start_time = time.time() - 0.5
         self._key(typed)
 
-    def test_wrong_answer_in_time_keeps_limit(self):
+    def test_limit_stays_fixed_whatever_the_answers(self):
         s = self.single
         s.limit = 1.0
         self._answer("K", "R")
         self.assertEqual(s.limit, 1.0)
         self._answer("K", "K")
-        self.assertLess(s.limit, 1.0)
+        self.assertEqual(s.limit, 1.0)  # schnell und richtig: nicht kürzer
         s.current_char, s.waiting_for_input, s.first_hearing = "M", True, True
-        limit = s.limit
         s._on_timeout(s.timeout_token)
-        self.assertGreater(s.limit, limit)  # verpasst: länger
+        self.assertEqual(s.limit, 1.0)  # verpasst: nicht länger
 
-    def test_daily_block_caps_limit_and_shows_no_numbers(self):
+    def test_daily_block_shows_no_numbers(self):
         s = self.single
         s.daily_minutes = 3
         s.limit = 1.45
         s.current_char, s.voice, s.waiting_for_input, s.first_hearing = "M", (20, 600), True, True
         s._on_timeout(s.timeout_token)
-        self.assertEqual(s.limit, 1.5)
+        self.assertEqual(s.limit, 1.45)
         self.assertNotIn("Limit", s.feedback_var.get())
         self._answer("K", "K")
         self.assertEqual(s.feedback_var.get(), "Richtig: K")

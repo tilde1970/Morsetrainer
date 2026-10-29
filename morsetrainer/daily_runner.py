@@ -50,8 +50,7 @@ def block_text(block) -> str:
 # Feste Einstellungen je Modus (Schlüssel wie settings() des Reiters).
 _SEQUENCE = {"adaptive_tempo": False, "band": False, "give_up": 1}
 MODE_SETTINGS = {
-    # Das Zeitlimit kommt aus daily.warmup_limit(): ein Limit aus dem Reiter
-    # soll nicht ins Aufwärmen nachwirken.
+    # Das Zeitlimit des Aufwärmens ist an und richtet sich nach dem Tempo.
     "single": {"icr": True},
     "group": {**_SEQUENCE, "input_style": COPY, "adaptive": True, "min_len": 2, "max_len": 6},
     "word": {**_SEQUENCE, "input_style": MEMORIZE, "content": "words"},
@@ -338,8 +337,6 @@ class DailyRunner:
         if block.mode == "single":
             if relaxed:
                 settings["icr"] = False  # ohne Zeitlimit; der Block zählt nicht für die Lernkartei
-            else:
-                settings["icr_limit"] = daily.warmup_limit(self.state)
         mode.daily_relaxed = relaxed
         mode.daily_configure(block.minutes, **settings)
         self.mode = mode
@@ -416,8 +413,6 @@ class DailyRunner:
             # Schwächste Stufe im Lauf: wer leichter stellt, steigt damit nicht auf.
             result = {**result, "band_min": getattr(mode, "band_rank_min", None)}
             self._release_band()
-        if block.mode == "single":
-            self.state["icr_limit"] = mode.limit  # vor daily_release(): das ist das Limit des Reiters
         mode.daily_release()
         for attr in ("koch_result", "groups_result"):  # keine Ja/Nein-Fragen danach
             if hasattr(mode, attr):

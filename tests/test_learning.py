@@ -268,38 +268,24 @@ class VariationTest(unittest.TestCase):
 
 
 class IcrLimitTest(unittest.TestCase):
-    def test_limit_adapts_within_range(self):
-        from morsetrainer.modes.single_mode import ICR_RANGE, ICR_START, next_limit
-        self.assertLess(next_limit(ICR_START, True), ICR_START)
-        self.assertGreater(next_limit(ICR_START, False), ICR_START)
-        limit = ICR_START
-        for _ in range(200):
-            limit = next_limit(limit, True)
-        self.assertEqual(limit, ICR_RANGE[0])
-        for _ in range(200):
-            limit = next_limit(limit, False)
-        self.assertEqual(limit, ICR_RANGE[1])
+    def test_limit_follows_effective_tempo(self):
+        from morsetrainer.core import tempo
+        slow = tempo.char_limit(20, 9, 41)
+        fast = tempo.char_limit(20, 15, 41)
+        self.assertGreater(slow, fast)  # langsamer geübt, mehr Zeit
+        self.assertEqual(tempo.char_limit(20, 10, 41), 1.8)  # 0,6 s + 12 / 10
+        self.assertEqual(tempo.char_limit(20, None, 41), 1.2)  # ohne Farnsworth zählt das Zeichentempo
+        self.assertEqual(tempo.char_limit(20, 25, 41), 1.2)  # Farnsworth nicht langsamer: wirkungslos
 
-    def test_upper_bound(self):
-        from morsetrainer.modes.single_mode import next_limit
-        self.assertEqual(next_limit(1.4, False, upper=1.5), 1.5)
-
-    def test_limit_settles_near_nine_in_ten(self):
-        """Das Limit sinkt erst, wenn deutlich mehr als acht von zehn Zeichen
-        rechtzeitig kommen (verpasst statt richtig); bei vier von fünf wird es
-        wieder länger."""
-        from morsetrainer.modes.single_mode import next_limit
-
-        def run(right, missed):
-            limit = 1.5
-            for _ in range(10):
-                for _ in range(right):
-                    limit = next_limit(limit, True)
-                for _ in range(missed):
-                    limit = next_limit(limit, False)
-            return limit
-        self.assertLess(run(19, 1), 1.5)
-        self.assertGreater(run(4, 1), 1.5)
+    def test_beginners_get_more_key_time(self):
+        from morsetrainer.core import tempo
+        self.assertEqual(tempo.key_time(2), tempo.BEGINNER_KEY_TIME_S)
+        self.assertEqual(tempo.key_time(tempo.BEGINNER_CHARS), tempo.BEGINNER_KEY_TIME_S)
+        self.assertEqual(tempo.key_time(tempo.PRACTISED_CHARS), tempo.KEY_TIME_S)
+        self.assertEqual(tempo.key_time(40), tempo.KEY_TIME_S)
+        sizes = range(tempo.BEGINNER_CHARS, tempo.PRACTISED_CHARS + 1)
+        times = [tempo.key_time(n) for n in sizes]
+        self.assertEqual(times, sorted(times, reverse=True))  # gleitend, nie wieder länger
 
 
 class TempoHistoryTest(unittest.TestCase):
