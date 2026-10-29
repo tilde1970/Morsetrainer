@@ -231,6 +231,10 @@ class SingleModeFrame(DailyModeMixin):
         size = len(set(self.charset)) or len(set(self.charset_var.get()))
         return tempo.char_limit(wpm, self.farnsworth_wpm(), size)
 
+    def _row_limit(self):
+        """Das Limit, das für die Antwort galt, für die Aufzeichnung; None ohne Zeitlimit."""
+        return self.limit if self.icr_var.get() else None
+
     def settings(self) -> dict:
         """Einstellungen zum Speichern: Zeitlimit an/aus."""
         return {"icr": self.icr_var.get()}
@@ -277,7 +281,10 @@ class SingleModeFrame(DailyModeMixin):
         self.feedback_var.set("")
         self.session_stats = SessionStats("single", charset, self.wpm_var.get(), self.freq_var.get(),
                                           review_promote=True,
-                                          config_extra={"lesson": koch.lesson_of(charset), **self._daily_config()})
+                                          config_extra={"lesson": koch.lesson_of(charset), "icr": self.icr_var.get(),
+                                                        "limit_wpm": tempo.effective(self.wpm_var.get(),
+                                                                                     self.farnsworth_wpm()),
+                                                        **self._daily_config()})
         self.picker = CharPicker(charset, self.weighted_var.get(), self.session_stats)
         self.history = []
         self.history_var.set("")
@@ -388,8 +395,8 @@ class SingleModeFrame(DailyModeMixin):
 
     def _count_pending_misses(self):
         """Die wartenden Verpasser in die Statistik aufnehmen."""
-        for args, retry in self.pending_misses:
-            self.session_stats.record_char(*args, cause="late", retry=retry)
+        for args, retry, limit in self.pending_misses:
+            self.session_stats.record_char(*args, cause="late", retry=retry, limit=limit)
         self.pending_misses = []
 
     def _in_session(self, func, *args, **kwargs):
@@ -517,7 +524,7 @@ class SingleModeFrame(DailyModeMixin):
         # und Lernkartei nicht mit Fehlern füllen.
         self.pending_misses.append(
             ((self.current_char, "", False, reaction_time, effective_wpm(self.current_char, reaction_time, wpm)),
-             self.current_is_retry))
+             self.current_is_retry, self.limit))
         self.timeouts += 1
         if len(self.pending_misses) >= MISSES_BEFORE_PAUSE:
             self.pending_misses = []
@@ -608,11 +615,11 @@ class SingleModeFrame(DailyModeMixin):
         latency = max(reaction_time - tone_seconds(self.current_char, self.voice[0]), 0.0) if timed else None
         if helped:
             self.session_stats.record_char(self.current_char, "", False, reaction_time, measured_wpm, timed=timed,
-                                           cause="replay", retry=self.current_is_retry)
+                                           cause="replay", retry=self.current_is_retry, limit=self._row_limit())
         else:
             self.session_stats.record_char(
                 self.current_char, typed, correct, reaction_time, measured_wpm, latency=latency, timed=timed,
-                retry=self.current_is_retry
+                retry=self.current_is_retry, limit=self._row_limit()
             )
         if helped:
             message = tr("{char} – erst nach Wiederholung, kommt gleich noch mal")

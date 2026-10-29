@@ -167,7 +167,7 @@ class SessionStats:
             self.log_error = str(exc)
 
     def record_char(self, char: str, typed: str, correct: bool, reaction_time: float, effective_wpm: float,
-                    latency=None, assumed=False, timed=True, cause=None, retry=False, lag_chars=None) -> None:
+                    latency=None, assumed=False, timed=True, cause=None, retry=False, lag_chars=None, limit=None) -> None:
         """Ergebnis für ein einzelnes Zeichen festhalten und sofort speichern.
 
         `latency` ist die Zeit vom Ende des Tons (des letzten Punkts oder
@@ -191,7 +191,10 @@ class SessionStats:
         `lag_chars`: Beim Mitschreiben am Stück, wie viele Zeichen die Taste hinter
         dem Tonende des Zeichens kam (Sekunden mal Zeichen je Sekunde beim damals
         gesendeten Tempo), auch wenn sie hinterherschreibt (anders als `latency`,
-        die ab der vorigen Taste zählt); nur für core/insights."""
+        die ab der vorigen Taste zählt); nur für core/insights.
+        `limit`: das Zeitlimit in Sekunden, das für dieses Zeichen galt (nur mit
+        Zeitlimit); nur damit lassen sich Latenzen, die die Frist abschneidet,
+        richtig auswerten."""
         if not correct and cause is None:
             cause = HEARD if typed else "missed"
         entry = {
@@ -211,6 +214,8 @@ class SessionStats:
                 entry["latency_assumed"] = True
         if lag_chars is not None and timed:
             entry["lag_chars"] = round(lag_chars, 2)
+        if limit is not None:
+            entry["limit_s"] = round(limit, 2)
         if not timed:
             entry["untimed"] = True
         self.rounds.append(entry)
@@ -369,7 +374,8 @@ def recover_unfinished(now=None) -> int:
                 session.record_char(e.get("char", ""), e.get("typed", ""), bool(e.get("correct")),
                                     float(e.get("reaction_time_s") or 0), float(e.get("effective_wpm") or 0),
                                     latency=e.get("latency_s"), assumed=bool(e.get("latency_assumed")),
-                                    timed=not e.get("untimed"), cause=e.get("cause"), retry=bool(e.get("retry")))
+                                    timed=not e.get("untimed"), cause=e.get("cause"), retry=bool(e.get("retry")),
+                                    limit=e.get("limit_s"))
             session.session_id = session_id
             session.duration_s = round(sum(r["reaction_time_s"] for r in session.rounds), 1)
             summary = {"type": "summary", **session.summary(), "duration_s": session.duration_s,

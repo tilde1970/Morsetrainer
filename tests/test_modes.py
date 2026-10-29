@@ -1065,6 +1065,34 @@ class SingleCharTest(AppTestCase):
         s._on_timeout(s.timeout_token)
         self.assertEqual(s.limit, 1.0)  # verpasst: nicht länger
 
+    def test_rows_record_the_limit_that_applied(self):
+        s = self.single
+        self._open_answer("K")
+        s.limit = 1.8
+        self._key("K")
+        self.assertEqual(s.session_stats.rounds[-1]["limit_s"], 1.8)
+        self._open_answer("K")
+        s._on_timeout(s.timeout_token)  # Verpasser: erst mit der nächsten Antwort gewertet
+        self._open_answer("K")
+        self._key("K")
+        self.assertEqual([r["limit_s"] for r in s.session_stats.rounds[-2:]], [1.8, 1.8])
+        self._open_answer("K")
+        s.icr_var.set(False)
+        self._key("K")
+        self.assertNotIn("limit_s", s.session_stats.rounds[-1])  # ohne Zeitlimit gab es keins
+
+    def test_session_config_names_the_tempo_of_the_limit(self):
+        s = self.single
+        s.stop()
+        with mock.patch.object(single_mode, "SessionStats", wraps=single_mode.SessionStats) as stats, \
+                mock.patch.object(s, "next_char"), mock.patch.object(s, "farnsworth_wpm", return_value=10):
+            s.wpm_var.set(20)
+            s.start()
+        extra = stats.call_args.kwargs["config_extra"]
+        self.assertEqual(extra["limit_wpm"], 10)
+        self.assertTrue(extra["icr"])
+        s.stop()
+
     def test_daily_block_shows_no_numbers(self):
         s = self.single
         s.daily_minutes = 3
