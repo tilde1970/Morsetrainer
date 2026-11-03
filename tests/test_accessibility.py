@@ -2601,7 +2601,7 @@ class DailyAnnounceTest(AnnouncerCase):
         self.assertFalse(mode.running)  # erst ansagen, dann spielen
         self.assertTrue(self.pump_until(lambda: mode.running), self.said)
         spoken = " ".join(self.said)
-        self.assertIn("Tagesübung, Aufwärmen: Zeichen, 3 Minuten.", spoken)
+        self.assertIn("Tagesübung, Aufwärmen: Einzeln, Zeichen, 3 Minuten.", spoken)
         self.assertNotIn("Reiter", spoken)
         others = [t for t in self.app.notebook.tabs() if t != self.app.notebook.select()]
         self.assertTrue(all(self.app.notebook.tab(t, "state") == "disabled" for t in others))

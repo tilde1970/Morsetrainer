@@ -18,6 +18,8 @@ class ModeNameTest(unittest.TestCase):
     def test_outro_names_band_level_and_contest(self):
         from morsetrainer.widgets.daily_panel import mode_name
         self.assertEqual(mode_name(daily.band_outro("light")), "Am Stück mit Band leicht")
+        self.assertEqual(mode_name(daily.Block(daily.WARMUP, "single", 3)), "Einzeln, Zeichen")
+        self.assertEqual(mode_name(daily.Block(daily.MAIN, "group", 5)), "Einzeln, Gruppen")
         contest = daily.Block(daily.OUTRO, daily.QSO_LOG, 3.5, {"kind": "wag"})
         self.assertEqual(mode_name(contest), "QSO-Abfrage, Contest WAG (DOK)")
         self.assertEqual(daily_runner.block_text(contest), "Tagesübung, Ausklang: QSO-Abfrage, Contest WAG (DOK), 3,5 Minuten.")

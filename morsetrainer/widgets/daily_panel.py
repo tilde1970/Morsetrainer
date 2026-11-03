@@ -137,9 +137,14 @@ def moment_line(moment: dict) -> str:
         char=moment["char"], now=number(moment["now"], 2), before=number(moment["before"], 2))
 
 
+# Modi, die im Reiter „Einzeln“ laufen (der Reiter nennt sich nicht nach dem Inhalt).
+ONE_BY_ONE_MODES = ("single", "group", "word", "callsign")
+
+
 def mode_name(block) -> str:
-    """Modus eines Blocks für Karte und Ansage, beim Band-Ausklang mit Stufe
-    („Am Stück mit Band leicht“), beim Contest-Run mit der Contest-Art."""
+    """Modus eines Blocks für Karte und Ansage mit dem Reiter, in dem er
+    läuft („Einzeln, Zeichen“); beim Band-Ausklang mit Stufe („Am Stück mit
+    Band leicht“), beim Contest-Run mit der Contest-Art."""
     name = tr(stats.HISTORY_MODES[block.mode])
     preset = block.params.get(daily.BAND_PRESET)
     if preset:
@@ -147,6 +152,8 @@ def mode_name(block) -> str:
     contest = qso_text.CONTEST_NAMES.get(block.params.get("kind"))
     if block.mode == daily.QSO_LOG and contest:
         return tr("{mode}, Contest {contest}").format(mode=name, contest=tr(contest))
+    if block.mode in ONE_BY_ONE_MODES:
+        return tr("Einzeln, {mode}").format(mode=name)
     return name
 
 
