@@ -1,5 +1,14 @@
 # Änderungen
 
+## 2.76
+
+- **Tagesübung, Namen:** Karten, Ansagen und F11 nennen jetzt den Reiter, in
+  dem der Block läuft: „Einzeln, Zeichen“, „Einzeln, Gruppen“,
+  „Einzeln, Wörter“ und „Einzeln, Rufzeichen“. Bisher stand nur „Zeichen“
+  oder „Gruppen“, und man wusste nicht, welcher Reiter gemeint war. „Am Stück“
+  und „QSO“ hießen schon wie ihr Reiter. Statistik und Verlauf bleiben
+  unverändert.
+
 ## 2.75
 
 - **Tagesübung, Start:** Vor dem ersten Block wartet jetzt eine Karte

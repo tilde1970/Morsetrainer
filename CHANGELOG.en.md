@@ -1,5 +1,14 @@
 # Changes
 
+## 2.76
+
+- **Daily practice, names:** Cards, announcements and F11 now name the tab
+  the block runs in: "One by one, Characters", "One by one, Groups",
+  "One by one, Words" and "One by one, Callsigns". Before, it said just
+  "Characters" or "Groups", and it was unclear which tab was meant.
+  "Non-stop" and "QSO" were already named like their tab. Statistics and
+  history are unchanged.
+
 ## 2.75
 
 - **Daily practice, start:** A card "Starting in a moment" now waits before
