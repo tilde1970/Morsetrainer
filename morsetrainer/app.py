@@ -48,7 +48,7 @@ from morsetrainer.widgets.ui_widgets import (
 from morsetrainer.widgets.tkcompat import is_enabled, set_enabled
 
 __author__ = "DL4YM"
-__version__ = "2.74"
+__version__ = "2.75"
 
 # Wer neu anfängt, beginnt mit Koch-Lektion 1.
 DEFAULT_CHARSET = koch.lesson_charset(1)
@@ -331,7 +331,7 @@ class MorseTrainerApp:
         self._update_more()
         self._build_footer()
         # Vor dem Notizbuch gepackt: steht über den Reitern.
-        self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start(),
+        self.daily_bar = DailyBar(self.root, on_start=lambda: self.daily.start(ready_card=True),
                                   on_continue=lambda: self.daily.continue_now(),
                                   on_end=lambda: self.daily.abort(),
                                   on_skip=lambda: self.daily.skip_qso())
@@ -2722,7 +2722,7 @@ class MorseTrainerApp:
         """Tagesübung starten, wenn gerade nichts läuft; True, wenn gestartet."""
         if self.running_mode or self.daily.active:
             return False
-        self.daily.start()
+        self.daily.start(ready_card=True)
         return True
 
     def check_for_update(self):
