@@ -1,5 +1,14 @@
 # Changes
 
+## 2.75
+
+- **Daily practice, start:** A card "Starting in a moment" now waits before
+  the first block. It shows what is coming (mode, lesson, speed) and is
+  announced. The block begins only on Enter. Before, the first character
+  followed the announcement right away and caught you unprepared. On days
+  with a new character the "New character" card stays; the "encore" starts
+  as before.
+
 ## 2.74
 
 - **Single characters, recording:** For every character with a time limit the

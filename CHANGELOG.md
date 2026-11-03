@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.75
+
+- **Tagesübung, Start:** Vor dem ersten Block wartet jetzt eine Karte
+  „Gleich geht es los“. Sie zeigt, was kommt (Modus, Lektion, Tempo), und wird
+  angesagt. Der Block beginnt erst mit Enter. Bisher folgte das erste Zeichen
+  gleich auf die Ansage, und man wurde davon überrascht. An Tagen mit neuem
+  Zeichen bleibt die Karte „Neues Zeichen“, die „Zugabe“ startet wie bisher.
+
 ## 2.74
 
 - **Einzelzeichen, Aufzeichnung:** Zu jedem Zeichen mit Zeitlimit wird jetzt
