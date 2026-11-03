@@ -157,9 +157,12 @@ class DailyRunner:
         return bool(self.app.refresh_var.get())
 
     # --- Start ---------------------------------------------------------------------
-    def start(self) -> None:
+    def start(self, ready_card: bool = False) -> None:
         """Beginnt die Tagesübung (nicht während eines Durchgangs): Lektion und
-        Tempo für heute bestimmen, Blöcke planen, ersten Block starten."""
+        Tempo für heute bestimmen, Blöcke planen, ersten Block starten.
+        Mit `ready_card` (der Start aus der Oberfläche) wartet vor dem ersten
+        Block eine Karte, was kommt, bis man mit Enter beginnt; sonst
+        erwischte das erste Zeichen einen unvorbereitet."""
         if self.active or self.app.running_mode:
             return
         app = self.app
@@ -213,6 +216,8 @@ class DailyRunner:
                             [preview_line(self.blocks[0], lesson, self.state["tempo"])],
                             then=lambda: self.card_open and self.active and app._play_new_char(chars),
                             spoken_title=title.format(char=tr(" und ").join(announcer.spell(ch) for ch in chars)))
+        elif ready_card:
+            self._show_card(tr("Gleich geht es los"), [preview_line(self.blocks[0], lesson, self.state["tempo"])])
         else:
             self._next_block()
 

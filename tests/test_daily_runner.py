@@ -172,6 +172,17 @@ class DailyRunnerTest(AppTestCase):
             self.assertEqual(self.app.daily_bar.card.winfo_manager(), "")
             self.runner.abort()
 
+    def test_ready_card_waits_before_first_block(self):
+        with mock.patch.object(daily, "plan", short_plan):
+            self.runner.start(ready_card=True)
+            self.assertTrue(self.runner.card_open)
+            self.assertIsNone(self.runner.mode)
+            self.assertIn("Gleich geht es los", str(self.app.daily_bar.card.cget("text")))
+            self.runner.card_shown -= daily_runner.ENTER_GRACE_S
+            self.runner.continue_now()
+            self.assertIs(self.runner.mode, self.mode("Einzelzeichen"))
+            self.runner.abort()
+
     def test_card_waits_for_continue_button(self):
         with mock.patch.object(daily, "plan", short_plan):
             self.runner.start()

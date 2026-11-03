@@ -581,6 +581,7 @@ EN.update({
         "With the tick, the outro after Koch brings a QSO or contest run with a log on some days. Without it, "
         "the outros practise callsigns and band conditions. Applies from the next daily practice.",
     "Weiter mit Enter": "Continue with Enter",
+    "Gleich geht es los": "Starting in a moment",
     "Tagesübung, {block}: {mode}, Block {n} von {total}, {elapsed} von {minutes} Minuten, {stars}.":
         "Daily practice, {block}: {mode}, block {n} of {total}, {elapsed} of {minutes} minutes, {stars}.",
     "noch kein Stern": "no star yet",
