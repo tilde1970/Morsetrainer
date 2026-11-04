@@ -30,3 +30,6 @@ morsetrainer_downloads.py
 /.import-*/
 /.stats-alt-*/
 /tmp*/
+
+# Claude-Code-Prüfer und Einstellungen (nur lokal)
+/.claude/
