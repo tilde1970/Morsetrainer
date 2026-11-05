@@ -192,8 +192,10 @@ class InsightsTest(unittest.TestCase):
         self.assertEqual(panel.wobbly_text(rows), "6 (Fach 5 → 1), I (Fach 3 → 1), X (Fach 5 → 3)")
 
     def test_the_first_week_is_marked_when_the_data_start_mid_week(self):
+        # Der erste Tag muss ein Mittwoch sein, sonst ist die Woche je nach Wochentag des Testlaufs vollständig.
+        wednesday = (datetime.now().weekday() - 2) % 7 + 7
         self.write(0, [("K", "", {})] * 6)
-        self.write(9, [("K", "", {})] * 6)
+        self.write(wednesday, [("K", "", {})] * 6)
         weeks = insights.causes_by_week()
         self.assertTrue(weeks[0]["partial"])
         self.assertFalse(weeks[-1]["partial"])
