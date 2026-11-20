@@ -71,3 +71,18 @@ class BackendDescriptionTest(unittest.TestCase):
                 self.assertIn("kein PulseAudio-Server", audio.backend_description())
             with mock.patch.object(pulse, "PulseStream"):
                 self.assertEqual(audio.backend_description(), "PulseAudio direkt")
+
+
+class ErrorLogPathTest(unittest.TestCase):
+    def test_entry_names_the_output_path(self):
+        import tempfile
+        from pathlib import Path
+
+        from morsetrainer.core import errorlog
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(errorlog, "LOG_FILE", Path(tmp) / "fehler.log"), \
+                mock.patch.object(audio, "active_path", return_value="PulseAudio"):
+            errorlog.record(ValueError, ValueError("x"), None, version="9.9")
+            errorlog.take_unseen()
+            text = (Path(tmp) / "fehler.log").read_text(encoding="utf-8")
+        self.assertIn("Tonausgabe: PulseAudio", text)

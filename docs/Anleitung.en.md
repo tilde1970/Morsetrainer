@@ -1129,6 +1129,13 @@ this order:
    voices are present, and says what is missing. On Linux `libportaudio2`
    and `python3-tk` belong here (see `docs/Entwicklung.en.md`).
 
+7. **Output path (Linux):** On Linux the Morsetrainer plays directly
+   through PulseAudio (also via `pipewire-pulse`) and falls back to
+   PortAudio if that does not work. The self-test (`Tonausgabe: …`) and
+   every entry of the error log show which path is used. The environment
+   variable `MORSETRAINER_AUDIO=portaudio` forces PortAudio, for example
+   for comparing.
+
 If none of this helps, please report the message including the text in
 brackets in the
 [Issues](https://github.com/tilde1970/Morsetrainer/issues).

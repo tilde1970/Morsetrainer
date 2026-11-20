@@ -1120,6 +1120,13 @@ erscheint „Keine Tonausgabe möglich“, prüfe der Reihe nach:
    vorhanden sind, und nennt, was fehlt. Unter Linux gehören `libportaudio2`
    und `python3-tk` dazu (siehe `docs/Entwicklung.md`).
 
+7. **Ausgabeweg (Linux):** Der Morsetrainer spielt unter Linux direkt über
+   PulseAudio (auch über `pipewire-pulse`) und fällt auf PortAudio
+   zurück, wenn das nicht geht. Welcher Weg gilt, steht im Selbsttest
+   (`Tonausgabe: …`) und in jedem Eintrag des Fehlerprotokolls. Mit der
+   Umgebungsvariable `MORSETRAINER_AUDIO=portaudio` erzwingst du PortAudio,
+   etwa zum Vergleichen.
+
 Hilft nichts davon, melde die Meldung samt dem Text in Klammern bei den
 [Issues](https://github.com/tilde1970/Morsetrainer/issues).
 

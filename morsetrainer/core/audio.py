@@ -50,6 +50,13 @@ def _use_pulse() -> bool:
             and os.environ.get("MORSETRAINER_AUDIO", "auto").lower() != "portaudio" and pulse.available())
 
 
+def active_path() -> str:
+    """„PulseAudio“ oder „PortAudio“: der Weg, den die Tonausgabe gerade
+    nimmt. Öffnet nichts (anders als backend_description), taugt also für
+    Fehlerprotokoll und andere Stellen, die nicht warten dürfen."""
+    return "PulseAudio" if _use_pulse() else "PortAudio"
+
+
 def backend_description() -> str:
     """Kurztext, welchen Ausgabeweg der Trainer nimmt und warum (Selbsttest,
     Fehlerberichte). Öffnet zur Probe kurz einen Strom, spielt aber nichts."""

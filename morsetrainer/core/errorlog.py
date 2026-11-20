@@ -29,6 +29,11 @@ def record(exc_type, exc, tb, version="") -> bool:
     """Schreibt den Fehler ins Protokoll. False, wenn das nicht ging."""
     global unseen, unwritten
     text = "".join(traceback.format_exception(exc_type, exc, tb))
+    try:
+        from morsetrainer.core import audio
+        text = f"Tonausgabe: {audio.active_path()}\n{text}"
+    except Exception:  # der Eintrag zählt mehr als diese Zeile
+        pass
     stamp = datetime.now().isoformat(sep=" ", timespec="seconds")
     with _lock:
         unseen += 1
