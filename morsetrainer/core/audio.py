@@ -50,6 +50,24 @@ def _use_pulse() -> bool:
             and os.environ.get("MORSETRAINER_AUDIO", "auto").lower() != "portaudio" and pulse.available())
 
 
+def backend_description() -> str:
+    """Kurztext, welchen Ausgabeweg der Trainer nimmt und warum (Selbsttest,
+    Fehlerberichte). Öffnet zur Probe kurz einen Strom, spielt aber nichts."""
+    if not sys.platform.startswith("linux"):
+        return "PortAudio"
+    if os.environ.get("MORSETRAINER_AUDIO", "auto").lower() == "portaudio":
+        return "PortAudio (MORSETRAINER_AUDIO=portaudio)"
+    if not pulse.available():
+        return "PortAudio (libpulse-simple nicht gefunden)"
+    if _pulse_failed:
+        return "PortAudio (PulseAudio ließ sich nicht öffnen)"
+    try:
+        pulse.PulseStream(SAMPLE_RATE, AUDIO_LATENCY, "Morsetrainer Selbsttest").close()
+    except OSError as exc:
+        return f"PortAudio (kein PulseAudio-Server: {exc})"
+    return "PulseAudio direkt"
+
+
 def _pulse_player():
     """Der Einzelton-Spieler (wird bei Bedarf geöffnet); None, wenn PulseAudio
     nicht geht – dann gilt ab jetzt PortAudio."""

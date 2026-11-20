@@ -28,7 +28,8 @@ def _libraries() -> str:
         tk_version = tkinter.Tcl().eval("info patchlevel")
     except Exception as exc:
         return f"Tcl/Tk fehlt: {exc}"
-    print(f"{portaudio}, Tcl/Tk {tk_version}")
+    from morsetrainer.core import audio
+    print(f"{portaudio}, Tcl/Tk {tk_version}; Tonausgabe: {audio.backend_description()}")
     return ""
 
 

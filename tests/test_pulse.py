@@ -49,3 +49,25 @@ class PulseChoiceTest(unittest.TestCase):
             audio.stop()
         player.play.assert_called_once_with(samples)
         player.cancel.assert_called_once()
+
+
+class BackendDescriptionTest(unittest.TestCase):
+    def test_reasons_for_portaudio(self):
+        with mock.patch.dict("os.environ", {"MORSETRAINER_AUDIO": "portaudio"}), \
+                mock.patch.object(audio.sys, "platform", "linux"):
+            self.assertIn("MORSETRAINER_AUDIO", audio.backend_description())
+        with mock.patch.dict("os.environ", {"MORSETRAINER_AUDIO": "auto"}), \
+                mock.patch.object(audio.sys, "platform", "linux"), \
+                mock.patch.object(pulse, "available", return_value=False):
+            self.assertIn("libpulse-simple", audio.backend_description())
+        with mock.patch.object(audio.sys, "platform", "win32"):
+            self.assertEqual(audio.backend_description(), "PortAudio")
+
+    def test_server_missing_and_present(self):
+        env = {"MORSETRAINER_AUDIO": "auto"}
+        with mock.patch.dict("os.environ", env), mock.patch.object(audio.sys, "platform", "linux"), \
+                mock.patch.object(pulse, "available", return_value=True):
+            with mock.patch.object(pulse, "PulseStream", side_effect=pulse.PulseError("Verbindung")):
+                self.assertIn("kein PulseAudio-Server", audio.backend_description())
+            with mock.patch.object(pulse, "PulseStream"):
+                self.assertEqual(audio.backend_description(), "PulseAudio direkt")
