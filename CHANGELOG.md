@@ -1,5 +1,16 @@
 # Änderungen
 
+## 2.77
+
+- **Linux, Tonausgabe:** Unter Linux spielt der Morsetrainer jetzt direkt
+  über PulseAudio (auch über `pipewire-pulse`) statt über PortAudio und ALSA.
+  Das behebt verschluckte Zeichen und Kratzen im Lautsprecher, die bei
+  manchen Systemen auftraten. Geht PulseAudio nicht (Bibliothek oder Server
+  fehlt), nimmt er wie bisher PortAudio; Windows und macOS ändern sich nicht.
+  Mit der Umgebungsvariable `MORSETRAINER_AUDIO=portaudio` erzwingst du den
+  alten Weg. Welcher Weg gilt, zeigen der Selbsttest und jeder Eintrag im
+  Fehlerprotokoll; die Hilfe „Kein Ton?“ erklärt es.
+
 ## 2.76
 
 - **Tagesübung, Namen:** Karten, Ansagen und F11 nennen jetzt den Reiter, in

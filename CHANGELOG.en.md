@@ -1,5 +1,16 @@
 # Changes
 
+## 2.77
+
+- **Linux, sound output:** On Linux the Morsetrainer now plays directly
+  through PulseAudio (also via `pipewire-pulse`) instead of PortAudio and
+  ALSA. This fixes swallowed characters and crackling in the speaker that
+  occurred on some systems. If PulseAudio does not work (library or server
+  missing), it uses PortAudio as before; Windows and macOS are unchanged.
+  The environment variable `MORSETRAINER_AUDIO=portaudio` forces the old
+  path. The self-test and every entry of the error log show which path is
+  used; the help "No sound?" explains it.
+
 ## 2.76
 
 - **Daily practice, names:** Cards, announcements and F11 now name the tab
