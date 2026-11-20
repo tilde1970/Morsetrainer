@@ -7,6 +7,9 @@ import sys
 import types
 from pathlib import Path
 
+# Die Tests bauen sounddevice nach, nicht PulseAudio.
+os.environ.setdefault("MORSETRAINER_AUDIO", "portaudio")
+
 # Die Tests prüfen deutsche Texte, unabhängig von der Spracheinstellung.
 os.environ["MORSETRAINER_LANG"] = "de"
 # Ohne Eingabemethode (ibus): Mit ihr kostet unter X11 jedes Tk-Fenster eine

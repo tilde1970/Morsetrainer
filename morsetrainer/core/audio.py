@@ -24,16 +24,47 @@ Alles davon läuft deshalb unter einer gemeinsamen Sperre (_lock), damit
 etwa der Pausen-Thread seinen Strom nicht genau dann schließt, wenn die
 Oberfläche das Schlusszeichen startet. Schreiben läuft ohne Sperre."""
 import contextlib
+import os
 import re
+import sys
 import threading
 import time
 
 import sounddevice as sd
 
+from morsetrainer.core import pulse
 from morsetrainer.core.morse import AUDIO_LATENCY, SAMPLE_RATE
 from morsetrainer.i18n import N_, tr
 
 ERRORS = (getattr(sd, "PortAudioError", OSError), OSError, ValueError)
+
+# Ausgabeweg: unter Linux zuerst PulseAudio direkt (pipewire-pulse bedient es
+# mit), sonst PortAudio über ALSA. MORSETRAINER_AUDIO=portaudio schaltet
+# PulseAudio ab, =pulse erzwingt es nicht, nur den Versuch.
+_pulse_failed = False
+_player = None
+
+
+def _use_pulse() -> bool:
+    return (not _pulse_failed and sys.platform.startswith("linux")
+            and os.environ.get("MORSETRAINER_AUDIO", "auto").lower() != "portaudio" and pulse.available())
+
+
+def _pulse_player():
+    """Der Einzelton-Spieler (wird bei Bedarf geöffnet); None, wenn PulseAudio
+    nicht geht – dann gilt ab jetzt PortAudio."""
+    global _player, _pulse_failed
+    with _lock:
+        if _player is not None and not _player.alive:
+            _player.close()
+            _player = None
+        if _player is None:
+            try:
+                _player = pulse.Player(SAMPLE_RATE, AUDIO_LATENCY)
+            except OSError:
+                _pulse_failed = True
+                return None
+        return _player
 _lock = threading.RLock()
 # Wann der zuletzt mit play() gestartete Ton zu Ende ist (time.time()).
 _tone_until = 0.0
@@ -116,6 +147,15 @@ def play(samples) -> None:
     Tonausgabe gibt; ist das Gerät verschwunden, wird einmal mit neu
     eingelesenen Geräten wiederholt."""
     global _tone_until
+    if _use_pulse():
+        player = _pulse_player()
+        if player is not None:
+            try:
+                player.play(samples)
+            except OSError as exc:
+                raise AudioError(describe(exc)) from exc
+            _tone_until = time.time() + len(samples) / SAMPLE_RATE + AUDIO_LATENCY
+            return
     if _keepalive is not None:
         keep_awake()  # nur wirksam, wenn der stille Strom inzwischen gestorben ist
     try:
@@ -143,6 +183,14 @@ def tone_remaining() -> float:
 def play_quietly(samples) -> None:
     """Wie play(), aber Fehler werden still übergangen (für Nebensächliches
     wie den Quittungston)."""
+    if _use_pulse():
+        try:
+            player = _pulse_player()
+            if player is not None:
+                player.play(samples)
+                return
+        except OSError:
+            return
     try:
         with _lock:
             sd.play(samples, SAMPLE_RATE, latency=AUDIO_LATENCY)
@@ -154,6 +202,8 @@ def stop() -> None:
     """Bricht eine laufende Wiedergabe von play()/play_quietly() ab."""
     global _tone_until
     _tone_until = 0.0
+    if _player is not None:
+        _player.cancel()
     try:
         with _lock:
             sd.stop()
@@ -163,6 +213,12 @@ def stop() -> None:
 
 def _open_stream():
     """Ausgabestrom öffnen und starten, unter der Sperre."""
+    global _pulse_failed
+    if _use_pulse():
+        try:
+            return pulse.PulseStream(SAMPLE_RATE, AUDIO_LATENCY)
+        except OSError:
+            _pulse_failed = True  # PulseAudio geht nicht: ab jetzt PortAudio
     with _lock:
         stream = sd.OutputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32", latency=AUDIO_LATENCY)
         try:
@@ -204,8 +260,13 @@ def _silence(outdata, frames, time_info, status) -> None:
 
 def keep_awake() -> None:
     """Stillen Strom öffnen (einmal); ohne Audiogerät ohne Wirkung. Ein
-    gestorbener Strom (Gerät weg, Ruhezustand) wird neu geöffnet."""
+    gestorbener Strom (Gerät weg, Ruhezustand) wird neu geöffnet. Mit
+    PulseAudio hält der Einzelton-Spieler das Gerät wach."""
     global _keepalive
+    if _use_pulse():
+        _pulse_player()
+        if _use_pulse():
+            return
     if _keepalive is not None:
         if getattr(_keepalive, "active", True):
             return
@@ -227,7 +288,11 @@ def keep_awake() -> None:
 
 def release() -> None:
     """Schließt den stillen Strom von keep_awake() (beim Programmende)."""
-    global _keepalive
+    global _keepalive, _player
+    with _lock:
+        player, _player = _player, None
+    if player is not None:
+        player.close()
     if _keepalive is None:
         return
     try:
