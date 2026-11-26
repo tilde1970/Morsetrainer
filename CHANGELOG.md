@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.78
+
+- **Linux, Kopfhörer:** Schließt du einen Kopfhörer (etwa per Bluetooth) erst
+  nach dem Programmstart an, spielt der Morsetrainer jetzt nach spätestens
+  zwei Sekunden dort weiter. Bisher blieb der Ton am Lautsprecher, und man
+  musste das Programm neu starten. Voraussetzung ist, dass das System den
+  Kopfhörer als Standardausgabe wählt.
+
 ## 2.77
 
 - **Linux, Tonausgabe:** Unter Linux spielt der Morsetrainer jetzt direkt

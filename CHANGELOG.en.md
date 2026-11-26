@@ -1,5 +1,13 @@
 # Changes
 
+## 2.78
+
+- **Linux, headphones:** If you connect headphones (for example via
+  Bluetooth) after the program has started, the Morsetrainer now follows
+  them within two seconds. Before, the sound stayed on the speaker and you
+  had to restart the program. This requires the system to select the
+  headphones as the default output.
+
 ## 2.77
 
 - **Linux, sound output:** On Linux the Morsetrainer now plays directly
