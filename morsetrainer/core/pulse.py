@@ -11,7 +11,10 @@ Bibliothek, ist available() False und audio.py bleibt bei sounddevice.
 import ctypes
 import ctypes.util
 import queue
+import shutil
+import subprocess
 import threading
+import time
 
 import numpy as np
 
@@ -19,6 +22,7 @@ _FLOAT32LE = 5
 _PLAYBACK = 1
 _UNSET = 0xFFFFFFFF
 _IDLE_CHUNK_SECONDS = 0.02
+_SINK_POLL_SECONDS = 2.0
 
 _lib = None
 _loaded = False
@@ -129,6 +133,20 @@ class PulseStream:
                 _lib.pa_simple_free(handle)
 
 
+def default_sink():
+    """Name der Standardausgabe (pactl), None wenn nicht ermittelbar. Ein offener
+    Strom folgt einem später angeschlossenen Gerät (Bluetooth-Kopfhörer) nicht
+    immer von selbst; der Player öffnet ihn deshalb bei Wechsel neu."""
+    pactl = shutil.which("pactl")
+    if pactl is None:
+        return None
+    try:
+        out = subprocess.run([pactl, "get-default-sink"], capture_output=True, text=True, timeout=2)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() or None if out.returncode == 0 else None
+
+
 class Player:
     """Dauerhaft offener Strom für Einzeltöne: play() stellt den Ton in die
     Warteschlange und kehrt sofort zurück, cancel() bricht ab."""
@@ -140,8 +158,21 @@ class Player:
         self._generation = 0
         self._closed = False
         self.error = None
+        self._sink = default_sink()
+        self._reopen = False
         self._thread = threading.Thread(target=self._run, name="pulse-player", daemon=True)
         self._thread.start()
+        if self._sink is not None:
+            threading.Thread(target=self._watch_sink, name="pulse-sink-watch", daemon=True).start()
+
+    def _watch_sink(self) -> None:
+        """Merkt einen Wechsel der Standardausgabe; der Spieler-Thread öffnet dann neu."""
+        while not self._closed:
+            time.sleep(_SINK_POLL_SECONDS)
+            sink = default_sink()
+            if sink is not None and sink != self._sink:
+                self._sink = sink
+                self._reopen = True
 
     @property
     def alive(self) -> bool:
@@ -173,6 +204,9 @@ class Player:
                 try:
                     job = self._queue.get_nowait()
                 except queue.Empty:
+                    if self._reopen:
+                        self._reopen = False
+                        self._switch_stream()
                     self.stream.write(silence)  # blockiert im Takt des Geräts
                     continue
                 if job is None:
@@ -184,3 +218,12 @@ class Player:
                     self.stream.write(samples[start:start + chunk])
         except OSError as exc:
             self.error = exc
+
+    def _switch_stream(self) -> None:
+        """Strom auf der neuen Standardausgabe öffnen; geht das nicht, bleibt der alte."""
+        try:
+            new = PulseStream(self.samplerate, self.stream.latency, "Morsetrainer")
+        except OSError:
+            return
+        old, self.stream = self.stream, new
+        old.close()

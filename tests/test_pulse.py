@@ -1,4 +1,5 @@
 """Ausgabeweg PulseAudio: Auswahl und Rückfall auf PortAudio."""
+import time
 import unittest
 from unittest import mock
 
@@ -49,6 +50,77 @@ class PulseChoiceTest(unittest.TestCase):
             audio.stop()
         player.play.assert_called_once_with(samples)
         player.cancel.assert_called_once()
+
+
+class FakeStream:
+    """Ersatz für PulseStream: zählt Schreibaufrufe, ohne Gerät."""
+    opened = []
+
+    def __init__(self, samplerate, latency, name="Morsetrainer"):
+        self.latency, self.closed, self.writes = latency, False, 0
+        FakeStream.opened.append(self)
+
+    def write(self, samples):
+        self.writes += 1
+        time.sleep(0.005)
+        return False
+
+    def flush(self):
+        pass
+
+    def close(self):
+        self.closed = True
+
+
+class SinkChangeTest(unittest.TestCase):
+    def test_new_default_sink_reopens_the_stream(self):
+        FakeStream.opened = []
+        sinks = ["lautsprecher"]
+        with mock.patch.object(pulse, "PulseStream", FakeStream), \
+                mock.patch.object(pulse, "default_sink", lambda: sinks[0]), \
+                mock.patch.object(pulse, "_SINK_POLL_SECONDS", 0.01):
+            player = pulse.Player(48000, 0.05)
+            try:
+                time.sleep(0.1)
+                self.assertEqual(len(FakeStream.opened), 1)  # kein Wechsel, kein Neuöffnen
+                sinks[0] = "bluetooth-kopfhoerer"
+                deadline = time.time() + 2
+                while len(FakeStream.opened) < 2 and time.time() < deadline:
+                    time.sleep(0.01)
+                self.assertEqual(len(FakeStream.opened), 2)
+                old, new = FakeStream.opened
+                self.assertTrue(old.closed)
+                self.assertIs(player.stream, new)
+                time.sleep(0.05)
+                self.assertGreater(new.writes, 0)
+            finally:
+                player.close()
+
+    def test_failed_reopen_keeps_the_old_stream(self):
+        FakeStream.opened = []
+        sinks = ["a"]
+
+        def opener(samplerate, latency, name="Morsetrainer"):
+            if FakeStream.opened:
+                raise pulse.PulseError("weg")
+            return FakeStream(samplerate, latency, name)
+
+        with mock.patch.object(pulse, "PulseStream", opener), \
+                mock.patch.object(pulse, "default_sink", lambda: sinks[0]), \
+                mock.patch.object(pulse, "_SINK_POLL_SECONDS", 0.01):
+            player = pulse.Player(48000, 0.05)
+            try:
+                sinks[0] = "b"
+                time.sleep(0.2)
+                self.assertTrue(player.alive)
+                self.assertIs(player.stream, FakeStream.opened[0])
+                self.assertFalse(FakeStream.opened[0].closed)
+            finally:
+                player.close()
+
+    def test_without_pactl_no_sink(self):
+        with mock.patch.object(pulse.shutil, "which", return_value=None):
+            self.assertIsNone(pulse.default_sink())
 
 
 class BackendDescriptionTest(unittest.TestCase):
