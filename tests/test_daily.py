@@ -501,6 +501,118 @@ class StarsTest(unittest.TestCase):
         self.assertEqual(daily.stars_on(self.state, TODAY), [daily.DABEI, daily.SAUBER])
 
 
+class ThresholdBoundaryTest(unittest.TestCase):
+    """Die Schwellen der Tagesübung auf den Wert genau, mit festen Zahlen statt der Konstanten:
+    Wer eine Schwelle verschiebt, soll es hier merken (Mutationsproben des Test-Prüfers)."""
+
+    def test_tempo_goes_up_from_90_percent_and_down_below_75_percent(self):
+        start = {"wpm": 20, "effective": 12}
+        up, down = {"wpm": 20, "effective": 13}, {"wpm": 20, "effective": 11}
+        self.assertEqual(daily.next_tempo(start, main_result(90, 100)), up)
+        self.assertEqual(daily.next_tempo(start, main_result(89, 100)), start)
+        self.assertEqual(daily.next_tempo(start, main_result(75, 100)), start)
+        self.assertEqual(daily.next_tempo(start, main_result(74, 100)), down)
+
+    def test_tempo_needs_100_characters(self):
+        start = {"wpm": 20, "effective": 12}
+        self.assertEqual(daily.next_tempo(start, main_result(99, 99)), start)
+        self.assertEqual(daily.next_tempo(start, main_result(50, 99)), start)  # auch nach unten erst ab 100
+        self.assertEqual(daily.next_tempo(start, main_result(100, 100)), {"wpm": 20, "effective": 13})
+        self.assertEqual(daily.next_tempo(start, main_result(50, 100)), {"wpm": 20, "effective": 11})
+
+    def test_pauses_only_from_95_percent_and_100_characters(self):
+        start = {"wpm": 20, "effective": 12}
+        shorter = {"wpm": 20, "effective": 13}
+        self.assertEqual(daily.next_tempo(start, main_result(95, 100), allow_up="pauses"), shorter)
+        self.assertEqual(daily.next_tempo(start, main_result(94, 100), allow_up="pauses"), start)
+        self.assertEqual(daily.next_tempo(start, main_result(99, 99), allow_up="pauses"), start)
+        full = {"wpm": 20, "effective": 20}  # ohne Farnsworth gibt es keine Pausen zu kürzen
+        self.assertEqual(daily.next_tempo(full, main_result(100, 100), allow_up="pauses"), full)
+
+    def test_dabei_from_9_75_minutes(self):
+        state = {"days": {}, "lesson": daily.POST_KOCH}
+        entry = daily.day_entry(state, TODAY)
+        entry["minutes"] = 9.74
+        self.assertEqual(daily.finish_day(state, TODAY, completed=True), [])
+        entry["minutes"] = 9.75
+        self.assertEqual(daily.finish_day(state, TODAY, completed=True), [daily.DABEI])
+
+    def test_too_tight_at_five_misses_and_more_than_40_percent(self):
+        self.assertFalse(daily.too_tight({"timeouts": 4, "total": 4}))     # alles verpasst, aber zu wenige
+        self.assertTrue(daily.too_tight({"timeouts": 5, "total": 12}))     # 41,7 %
+        self.assertFalse(daily.too_tight({"timeouts": 6, "total": 15}))    # genau 40 %: nicht mehr als 40
+        self.assertTrue(daily.too_tight({"timeouts": 7, "total": 15}))
+        self.assertFalse(daily.too_tight({"timeouts": 5, "total": 13}))    # 38 %
+        self.assertTrue(daily.too_tight({"timeouts": 30, "total": 74}))    # 40,5 %: knapp über der Grenze
+
+    def test_head_copy_qso_from_15_wpm_effective(self):
+        everything = koch.FINAL_CHARSET + koch.PROSIGN_ORDER
+        always = lambda mode: True  # noqa: E731
+        self.assertEqual(daily.qso_outros(14, everything, always), {daily.QSO_LOG})
+        self.assertEqual(daily.qso_outros(15, everything, always), {daily.QSO_HEAD, daily.QSO_LOG})
+
+    def test_extra_offer_from_75_percent_in_the_main_part(self):
+        for correct, expected in ((74, None), (75, (daily.WORD, ""))):
+            state = {"lesson": 20, "days": {}}
+            daily.finish_block(state, TODAY, main_block(), main_result(correct, 100))
+            self.assertEqual(daily.extra_offer(state, TODAY, 20, ""), expected, correct)
+
+    def test_sauber_needs_50_characters_and_90_percent(self):
+        def stars(correct, total, new_lesson=False):
+            state = {"days": {}, "lesson": daily.POST_KOCH, "tempo": {"wpm": 20, "effective": 12}}
+            if new_lesson:
+                state["lesson_since"] = TODAY.isoformat()
+            return daily.finish_block(state, TODAY, main_block(), main_result(correct, total))
+        self.assertEqual(stars(45, 49), [])                       # 91,8 %, aber zu wenige Zeichen
+        self.assertEqual(stars(45, 50), [daily.SAUBER])
+        self.assertEqual(stars(44, 50), [])                       # 88 %
+        # Ab 100 Zeichen kann das Tempo steigen (★ Weiter): hier zählt nur ★ Sauber.
+        self.assertNotIn(daily.SAUBER, stars(89, 100))            # 89 %: knapp darunter
+        self.assertIn(daily.SAUBER, stars(90, 100))
+        self.assertEqual(stars(40, 50, new_lesson=True), [daily.SAUBER])   # neue Lektion: 80 %
+        self.assertEqual(stars(39, 50, new_lesson=True), [])
+        self.assertNotIn(daily.SAUBER, stars(79, 100, new_lesson=True))   # 79 %
+        self.assertIn(daily.SAUBER, stars(80, 100, new_lesson=True))
+
+    def test_next_lesson_needs_50_characters_and_90_percent_at_fast_enough_chars(self):
+        self.assertEqual(daily.lesson_steps(main_result(45, 49), 20), 0)
+        self.assertEqual(daily.lesson_steps(main_result(45, 50), 20), 1)
+        self.assertEqual(daily.lesson_steps(main_result(44, 50), 20), 0)
+        self.assertEqual(daily.lesson_steps(main_result(50, 50), 17), 0)   # Zeichen unter 18 WPM: kein Aufstieg
+        self.assertEqual(daily.lesson_steps(main_result(50, 50), 18), 1)
+        # Wiedereinsteiger: ab 95 % drei, ab 85 % eine Lektion, ebenfalls ab 50 Zeichen.
+        self.assertEqual(daily.lesson_steps(main_result(95, 100), 20, refresh=True), 3)
+        self.assertEqual(daily.lesson_steps(main_result(94, 100), 20, refresh=True), 1)
+        self.assertEqual(daily.lesson_steps(main_result(85, 100), 20, refresh=True), 1)
+        self.assertEqual(daily.lesson_steps(main_result(84, 100), 20, refresh=True), 0)
+        self.assertEqual(daily.lesson_steps(main_result(49, 49), 20, refresh=True), 0)
+
+    def _band_state(self, shares, preset, total=100):
+        """Zustand mit einem ganzen Ausklang je Tag; `shares`: richtig von `total`, ältester Tag zuerst.
+        Bei „medium“ gehen zwei gute Tage in „light“ voraus, sonst stünde die Stufe nie dort."""
+        runs = [("light", 100, 100)] * 2 * (preset == "medium") + [(preset, c, total) for c in shares]
+        state = {"days": {}}
+        for index, (level, correct, count) in enumerate(runs):
+            day = TODAY - timedelta(days=len(runs) - index)
+            state["days"][day.isoformat()] = {"blocks": [{
+                "kind": daily.OUTRO, "mode": "continuous", "band": level, "correct": correct,
+                "total": count, "extra_keys": 0, "band_min": level}]}
+        return state
+
+    def test_band_level_rises_after_two_days_with_90_percent_and_100_characters(self):
+        self.assertEqual(daily.band_level(self._band_state([90, 90], "light"), TODAY), "medium")
+        self.assertEqual(daily.band_level(self._band_state([90, 89], "light"), TODAY), "light")
+        self.assertEqual(daily.band_level(self._band_state([90], "light"), TODAY), "light")  # ein Tag genügt nicht
+        self.assertEqual(daily.band_level(self._band_state([89, 89], "light", total=99), TODAY), "light")
+        self.assertEqual(daily.band_level(self._band_state([90, 90], "light", total=99), TODAY), "light")
+
+    def test_band_level_falls_after_two_runs_below_80_percent(self):
+        self.assertEqual(daily.band_level(self._band_state([79, 79], "medium"), TODAY), "light")
+        self.assertEqual(daily.band_level(self._band_state([80, 80], "medium"), TODAY), "medium")
+        self.assertEqual(daily.band_level(self._band_state([79], "medium"), TODAY), "medium")  # ein Fehlversuch genügt nicht
+        self.assertEqual(daily.band_level(self._band_state([79, 79], "medium", total=99), TODAY), "medium")
+
+
 class StorageTest(unittest.TestCase):
     def test_round_trip_and_broken_file(self):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
