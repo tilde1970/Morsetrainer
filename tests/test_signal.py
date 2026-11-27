@@ -162,6 +162,28 @@ class SwitchOnTest(unittest.TestCase):
             self.assertLess(float(np.max(np.abs(out[:48]))), 0.05, effect)  # erste Millisekunde
 
 
+class CarrierSwitchOffTest(unittest.TestCase):
+    def test_carrier_switched_off_glides_out_without_a_jump(self):
+        # Ein Träger, der beim Ausschalten (Reiter „Band“ aus) mitten im Ton abbricht, knackt.
+        conditions = band.conditions({"levels": {"carrier": 1.0}, "gain": 1.0, "seed": 5}, 600)
+        previous = None
+        for _ in range(60 * band.SAMPLE_RATE // 960):  # bis der Träger hörbar da ist
+            previous = conditions.mix([], 960, receiver_agc=False)
+            if float(np.max(np.abs(previous))) > 0.1:
+                break
+        else:
+            self.fail("kein Träger gehört")
+        conditions.enabled["carrier"] = False
+        out = conditions.mix([], 960, receiver_agc=False)
+        step = abs(float(out[0]) - float(previous[-1]))
+        typical = float(np.max(np.abs(np.diff(previous))))
+        self.assertLessEqual(step, 1.5 * typical + 1e-3)
+        self.assertGreater(float(np.max(np.abs(out[:48]))), 0.05)  # nicht auf einmal weg
+        for _ in range(10):  # nach dem Ausgleiten ist Ruhe
+            out = conditions.mix([], 960, receiver_agc=False)
+        self.assertLess(float(np.max(np.abs(out))), 0.01)
+
+
 class ReceiverModelTest(unittest.TestCase):
     def test_noise_cap_counts_behind_the_filter(self):
         # Ein schmales Filter lässt weniger Rauschen durch: Das Signal muss dafür nicht leiser werden.

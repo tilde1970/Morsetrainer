@@ -790,8 +790,10 @@ class BandConditions:
                 background += part * neighbour * neighbour_gain
                 if clicks is not None and len(clicks) == len(cw_qrm):
                     background += _loop_slice(clicks, pos, n)[1] * neighbour * click_gain
-        if self._on("carrier"):
-            background += self._carrier(n) * (MAX_CARRIER_AMPLITUDE * levels["carrier"])
+        # Gleitend aus- und einblenden wie die anderen Quellen; sonst springt der Träger beim Abschalten.
+        carrier_gain = self._smooth("carrier", MAX_CARRIER_AMPLITUDE * levels["carrier"] if self._on("carrier") else 0.0, n)
+        if np.any(carrier_gain):
+            background += self._carrier(n) * carrier_gain
         background_gain = self._smooth("background", self.background_gain, n) * agc
         out += background * background_gain
         if crashes is not None:
