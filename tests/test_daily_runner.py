@@ -65,6 +65,18 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(single.options_card.winfo_manager(), "")
         self.assertEqual(daily.load()["tempo"], {"wpm": 20, "effective": 12})
 
+    def test_warmup_uses_faster_header_tempo_main_part_keeps_daily_tempo(self):
+        self.app.wpm_var.set(25)
+        self.runner.start()
+        tempo = self.runner.state["tempo"]
+        warmup, main = daily.Block(daily.WARMUP, "single", 3), daily.Block(daily.MAIN, "group", 5)
+        self.assertEqual(self.runner._block_tempo(warmup), {"wpm": 25, "effective": tempo["effective"]})
+        self.assertEqual(self.runner._block_tempo(main), tempo)
+        self.app.wpm_var.set(15)  # langsamer als das Tagestempo: das Tagestempo gilt
+        self.runner.abort()
+        self.runner.start()
+        self.assertEqual(self.runner._block_tempo(warmup), self.runner.state["tempo"])
+
     def test_abort_restores_settings_and_keeps_tabs_free(self):
         self.app.charset_var.set("KMR")
         self.runner.start()

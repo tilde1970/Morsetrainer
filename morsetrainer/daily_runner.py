@@ -284,6 +284,21 @@ class DailyRunner:
         return {"charset": app.charset_var, "wpm": app.wpm_var, "farnsworth_enabled": app.farnsworth_enabled_var,
                 "farnsworth_wpm": app.farnsworth_wpm_var, "weighted": app.weighted_var}
 
+    def _block_tempo(self, block) -> dict:
+        """Tempo eines Blocks: das Aufwärmen hört die Zeichen so schnell wie in
+        der Kopfleiste eingestellt, wenn das über dem Tagestempo liegt; das
+        effektive Tempo (die Pausen) bleibt das des Tages."""
+        tempo = self.state["tempo"]
+        if block.kind != daily.WARMUP:
+            return tempo
+        try:
+            header = int(self.saved_shared["wpm"])
+        except (KeyError, TypeError, ValueError):
+            return tempo
+        if header <= tempo["wpm"] or header > daily.tempo.LIMITS[1]:
+            return tempo
+        return {"wpm": header, "effective": tempo["effective"]}
+
     def _apply_tempo(self, tempo: dict) -> None:
         app = self.app
         app.wpm_var.set(tempo["wpm"])
@@ -324,6 +339,7 @@ class DailyRunner:
         for other in app.notebook.tabs():
             if other != tab_id:
                 app.notebook.tab(other, state="disabled")
+        self._apply_tempo(self._block_tempo(block))
         review.focus = self._focus(block) if block.kind == daily.WARMUP else set()
         settings = {**MODE_SETTINGS[block.mode], **block.params}
         preset = settings.pop(daily.BAND_PRESET, None)
