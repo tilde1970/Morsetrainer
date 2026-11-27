@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 DIR_NAME = ".fenster"
+_mine = None  # die Datei dieses Fensters, solange es angemeldet ist
 
 
 def _alive(pid: int) -> bool:
@@ -46,7 +47,22 @@ def register(data_dir: Path) -> None:
         mine.touch()
     except OSError:
         return
-    atexit.register(mine.unlink, missing_ok=True)
+    global _mine
+    _mine = mine
+    atexit.register(unregister)
+
+
+def unregister() -> None:
+    """Entfernt die Datei dieses Fensters. Das Programm endet mit os._exit (siehe app.main),
+    das atexit überspringt; ohne diesen Aufruf bliebe die Datei, und läuft später ein
+    fremder Prozess mit derselben Nummer, sperrte sie „Daten einlesen“ für immer."""
+    global _mine
+    if _mine is not None:
+        try:
+            _mine.unlink(missing_ok=True)
+        except OSError:
+            pass
+        _mine = None
 
 
 def others(data_dir: Path) -> int:

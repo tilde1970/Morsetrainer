@@ -929,7 +929,8 @@ class MorseTrainerApp:
         if instances.others(DATA_DIR):
             dialog.showinfo(tr("Daten einlesen"), tr(
                 "Es ist noch ein anderes Morsetrainer-Fenster geöffnet. Bitte zuerst alle anderen Fenster "
-                "schließen: Sie würden sonst in die eingelesenen Daten schreiben."), parent=self.root)
+                "schließen: Sie würden sonst in die eingelesenen Daten schreiben. Läuft keines mehr, lösche den "
+                "Ordner „.fenster“ im Datenordner {folder}.").format(folder=DATA_DIR), parent=self.root)
             return True
         return False
 
@@ -2980,6 +2981,7 @@ def main():
         sys.stdout.flush()
         sys.stderr.flush()
         db.close()  # schreibt die WAL zurück: Die .db allein ist dann vollständig
+        instances.unregister()  # os._exit überspringt atexit
         os._exit(0)
 
 

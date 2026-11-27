@@ -39,6 +39,25 @@ class InstancesTest(unittest.TestCase):
         self.assertTrue((self.folder / str(os.getpid())).exists())
         self.assertEqual(instances.others(self.dir), 0)
 
+    def test_unregister_removes_the_own_entry_even_without_atexit(self):
+        # Das Programm endet mit os._exit, das atexit überspringt: unregister() räumt selbst auf.
+        with mock.patch("atexit.register"):
+            instances.register(self.dir)
+        mine = self.folder / str(os.getpid())
+        self.assertTrue(mine.exists())
+        instances.unregister()
+        self.assertFalse(mine.exists())
+        instances.unregister()  # ein zweites Mal ist harmlos
+
+    def test_entries_with_impossible_process_numbers_never_block(self):
+        # os.kill(0, …) träfe die ganze Prozessgruppe: solche Nummern gelten als nicht laufend.
+        for name in ("0", "-5"):
+            (self.folder / name).touch()
+        with mock.patch.object(instances.os, "kill") as kill:
+            self.assertEqual(instances.others(self.dir), 0)
+        kill.assert_not_called()
+        self.assertEqual(list(self.folder.iterdir()), [])
+
     def test_running_process_counts_and_dead_one_is_cleaned_up(self):
         child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
         try:

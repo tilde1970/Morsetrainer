@@ -193,9 +193,11 @@ EN.update({
     "Daten beiseitegelegt": "Data set aside",
     "Daten nicht verfügbar": "Data not available",
     "Es ist noch ein anderes Morsetrainer-Fenster geöffnet. Bitte zuerst alle anderen Fenster "
-    "schließen: Sie würden sonst in die eingelesenen Daten schreiben.":
+    "schließen: Sie würden sonst in die eingelesenen Daten schreiben. Läuft keines mehr, lösche den "
+    "Ordner „.fenster“ im Datenordner {folder}.":
         "Another Morsetrainer window is still open. Please close all other windows first: they would "
-        "otherwise write into the imported data.",
+        "otherwise write into the imported data. If none is running any more, delete the folder “.fenster” "
+        "in the data folder {folder}.",
     "Uhr geht vor": "Clock is ahead",
     "Die letzte gespeicherte Übung beginnt am {date}, also in der Zukunft. Entweder geht die "
     "Uhr dieses Rechners falsch oder ging es bei einer früheren Übung. Bitte stelle die Uhr "
