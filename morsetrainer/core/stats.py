@@ -482,18 +482,21 @@ def _clean_all_time(all_time: dict) -> dict:
     return clean
 
 
-def reset_all_time() -> None:
+def reset_all_time():
     """Gesamtstatistik löschen. Die Protokolle der einzelnen Durchgänge
     bleiben, nur die laufenden Summen werden geleert. Der Zeitpunkt wird
-    gemerkt, damit recent_char_data() ältere Protokolle übergeht."""
+    gemerkt, damit recent_char_data() ältere Protokolle übergeht. Gelingt das
+    nicht (Datenbank gesperrt oder voll), bleibt alles wie es war (eine
+    Transaktion), und die Meldung kommt als Text zurück; None bei Erfolg."""
     from morsetrainer.core import review
     try:
         with db.transaction():
             db.delete_state(ALL_TIME_KEY)
             review.reset()
             db.save_state(RESET_KEY, {"time": datetime.now().isoformat(timespec="seconds")})
-    except (db.Error, OSError):
-        pass
+    except (db.Error, OSError) as exc:
+        return str(exc) or exc.__class__.__name__
+    return None
 
 
 # Verwechslungen „vergessen“: nur Sitzungen der letzten so vielen Tage.

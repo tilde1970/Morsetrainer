@@ -747,6 +747,8 @@ EN.update({
     "Enter: abbrechen. Escape: abbrechen. Tab geht zu „{action}“.":
         "Enter: cancel. Escape: cancel. Tab goes to “{action}”.",
     "Statistik löschen": "Delete statistics",
+    "Das Zurücksetzen ist nicht gelungen, die Statistik ist unverändert:\n{error}":
+        "Resetting failed, the statistics are unchanged:\n{error}",
     "Daten ersetzen": "Replace data",
     "Entspannte Tagesübung (kein Zeitlimit im Aufwärmen)": "Relaxed daily practice (no time limit in the warm-up)",
     "Das Aufwärmen läuft ohne Zeitlimit. Diese Blöcke zählen nicht für die Lernkartei und die Diplome, die an ihr hängen "

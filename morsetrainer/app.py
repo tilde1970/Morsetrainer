@@ -2350,7 +2350,12 @@ class MorseTrainerApp:
                "„Einstellungen → Daten“ sichern."),
             confirm=tr("Statistik löschen"),
         ):
-            stats.reset_all_time()
+            error = stats.reset_all_time()
+            if error:
+                dialog.showerror(tr("Gesamtstatistik zurücksetzen"), tr(
+                    "Das Zurücksetzen ist nicht gelungen, die Statistik ist unverändert:\n{error}").format(
+                    error=error), parent=self.root)
+                return
             self._refresh_all_time()
 
     def _build_notebook(self):
