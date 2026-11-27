@@ -443,6 +443,38 @@ class ReviewThresholdsTest(unittest.TestCase):
         self.assertEqual(entry["box"], 3)
 
 
+class FluentLimitTest(unittest.TestCase):
+    """Die Flüssig-Grenze folgt dem Zeitlimit, das für die Antwort galt."""
+
+    def tally(self, answers):
+        from morsetrainer.core import stats
+        per_char = {}
+        for latency, limit, assumed in answers:
+            stats._tally(per_char, "K", "K", True, latency + 0.4, 15.0, latency, assumed, True, None, limit)
+        return per_char["K"]
+
+    def test_answer_inside_the_limit_is_fluent(self):
+        from morsetrainer.core import review
+        # Limit 1,8 s (10 WPM): 1,7 s zählte mit fester Grenze von 1,5 s als langsam.
+        e = self.tally([(1.7, 1.8, False)])
+        self.assertEqual(review.fluent_count(e), 1)
+
+    def test_without_limit_the_fixed_threshold_applies(self):
+        from morsetrainer.core import review
+        e = self.tally([(1.4, None, False), (1.7, None, False)])
+        self.assertEqual(review.fluent_count(e), 1)
+
+    def test_assumed_answer_is_never_fluent(self):
+        from morsetrainer.core import review
+        e = self.tally([(0.5, 1.8, True), (3.6, 1.8, True), (0.5, 1.8, False)])
+        self.assertEqual(review.fluent_count(e), 1)
+
+    def test_counts_without_slow_use_the_fixed_threshold(self):
+        from morsetrainer.core import review
+        e = {"good": 3, "wrong": 0, "latencies": [0.5, 1.2, 1.7], "assumed_latencies": [0.5]}
+        self.assertEqual(review.fluent_count(e), 1)  # 1,7 s langsam, der angenommene nie flüssig
+
+
 class ReviewShadowTest(unittest.TestCase):
     """Das Schattenmodell (FSRS-6) schreibt mit und ändert Fach und Termin nicht."""
 

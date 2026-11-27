@@ -13,7 +13,8 @@ Ehrliche Grundlage:
   einmal am Tag, sobald MIN_ATTEMPTS Versuche beisammen sind.
 - Flüssig ist ein Treffer nur ohne Wiederholen und rechtzeitig: nicht
   angenommen (siehe stats.record_char) und, wo gemessen, mit höchstens
-  FLUENT_LATENCY_S Latenz.
+  FLUENT_LATENCY_S Latenz; galt für das Zeichen ein Zeitlimit, ist dieses die
+  Grenze (fluent_cut): Was das Limit annimmt, ist auch flüssig.
 - Hochstufen nur aus Zufallszeichen (Einzelzeichen, Gruppen, Kontinuierlich
   mit Zufallszeichen) mit mindestens PROMOTE_MIN_CHARSET Zeichen im Satz:
   In Wörtern, Klartext oder QSOs verrät der Zusammenhang viele Zeichen, und
@@ -130,12 +131,27 @@ def is_due(entry, today=None) -> bool:
     return _due_date(entry) <= (today or date.today())
 
 
+def fluent_cut(limit=None) -> float:
+    """Höchste Latenz einer flüssigen Antwort: das Zeitlimit, das für sie galt
+    (nur Einzelzeichen mit Zeitlimit), sonst FLUENT_LATENCY_S. Das Limit hängt
+    vom Tempo und vom Zeichensatz ab (core/tempo.char_limit); eine feste Grenze
+    darunter machte angenommene Antworten „nicht flüssig“."""
+    return limit if limit else FLUENT_LATENCY_S
+
+
+def is_slow(latency, assumed: bool, limit=None) -> bool:
+    """Zählt eine richtige, gemessene Antwort nicht als flüssig? Angenommen ist
+    nie flüssig."""
+    return assumed or latency > fluent_cut(limit)
+
+
 def fluent_count(e: dict) -> int:
     """Flüssige Treffer eines Zeichens aus SessionStats.per_char."""
-    latencies = e.get("latencies", [])
-    assumed = e.get("assumed_latencies", [])
-    slow = sum(1 for lat in latencies if lat > FLUENT_LATENCY_S)
-    slow += sum(1 for lat in assumed if lat <= FLUENT_LATENCY_S)  # angenommen ist nie flüssig
+    if "slow" in e:
+        slow = e["slow"]  # schon je Antwort gegen ihr Limit gezählt (stats._tally)
+    else:  # Zähler ohne „slow“ (ältere Daten): feste Grenze
+        slow = sum(1 for lat in e.get("latencies", []) if lat > FLUENT_LATENCY_S)
+        slow += sum(1 for lat in e.get("assumed_latencies", []) if lat <= FLUENT_LATENCY_S)
     # Richtige ohne Zeit (F11-Ansage ohne Zeitlimit) sind weder flüssig noch langsam.
     return max(e["good"] - e.get("untimed", 0) - slow, 0)
 

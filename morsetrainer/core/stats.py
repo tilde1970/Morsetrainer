@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 
 from morsetrainer import DATA_DIR
 from morsetrainer.core import db
-from morsetrainer.core import tempo
+from morsetrainer.core import review, tempo
 from morsetrainer.core.koch import SLOW_CHAR_WPM
 from morsetrainer.core.morse import display_text, sounds_similar
 from morsetrainer.i18n import N_, ctrl_key, tr
@@ -61,12 +61,13 @@ def format_confusions(confusions: dict, causes=None) -> str:
     return "; ".join(part for part in (text, ", ".join(other)) if part)
 
 
-def _tally(per_char: dict, char, typed, correct, reaction_time, effective_wpm, latency, assumed, timed, cause) -> None:
+def _tally(per_char: dict, char, typed, correct, reaction_time, effective_wpm, latency, assumed, timed, cause,
+           limit=None) -> None:
     """Zählt eine Antwort in `per_char` ({Zeichen: Summen}) mit."""
     agg = per_char.setdefault(
         char, {"good": 0, "wrong": 0, "reaction_times": [], "effective_wpms": [], "correct_effective_wpms": [],
                "correct_reaction_times": [], "latencies": [], "assumed_latencies": [], "confusions": {},
-               "untimed": 0, "causes": {}})
+               "untimed": 0, "causes": {}, "slow": 0})
     if not correct:
         agg["wrong"] += 1
         # Nur ein anderes Zeichen ist eine Verwechslung; sonst zählt es unter "".
@@ -87,6 +88,8 @@ def _tally(per_char: dict, char, typed, correct, reaction_time, effective_wpm, l
             agg["latencies"].append(capped)
             if assumed:
                 agg["assumed_latencies"].append(capped)
+            if review.is_slow(capped, assumed, limit):
+                agg["slow"] += 1  # gegen das Limit dieser Antwort, siehe review.fluent_cut
     agg["reaction_times"].append(reaction_time)
     agg["effective_wpms"].append(effective_wpm)
 
@@ -220,7 +223,7 @@ class SessionStats:
             entry["untimed"] = True
         self.rounds.append(entry)
         self._write_line({"type": "char", **entry})
-        args = (char, typed, correct, reaction_time, effective_wpm, latency, assumed, timed, cause)
+        args = (char, typed, correct, reaction_time, effective_wpm, latency, assumed, timed, cause, limit)
         _tally(self.per_char, *args)
         if not retry:
             _tally(self.kept_char, *args)
