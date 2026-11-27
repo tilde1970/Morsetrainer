@@ -738,6 +738,26 @@ class DailyRunnerTest(AppTestCase):
         self.assertNotIn("Stand gehalten", held.spoken)
         held.close(follow=False)
 
+    def test_moment_line_spells_punctuation_for_the_voice(self):
+        from morsetrainer.widgets.daily_panel import moment_line
+        moment = {"kind": "latency", "char": "=", "before": 0.8, "now": 0.4}
+        self.assertEqual(moment_line(moment), "= sitzt jetzt: 0,40 s (letzte Woche 0,80 s)")  # Anzeige
+        self.assertEqual(moment_line(moment, spoken=True),
+                         "Trennung sitzt jetzt: 0,40 s (letzte Woche 0,80 s)")
+
+    def test_card_is_spoken_with_spelled_moments_but_shown_as_written(self):
+        moment = {"kind": "latency", "char": ".", "before": 0.8, "now": 0.4}
+        with mock.patch.object(daily, "plan", short_plan), \
+                mock.patch.object(daily, "char_moments", return_value=[moment]), \
+                mock.patch.object(self.runner.bar, "show_card", wraps=self.runner.bar.show_card) as show:
+            self.runner.start()
+            self._end_block()  # das Aufwärmen (Einzelzeichen) endet mit der Karte
+            lines = show.call_args[0][1]
+            card_text = self.runner.card_text
+            self.runner.abort(quiet=True)
+        self.assertIn(". sitzt jetzt: 0,40 s (letzte Woche 0,80 s)", lines)  # angezeigt wie geschrieben
+        self.assertIn("Punkt sitzt jetzt: 0,40 s (letzte Woche 0,80 s)", card_text)  # gesprochen buchstabiert
+
     def test_quit_asks_twice_during_daily_practice(self):
         self.runner.start()
         with mock.patch.object(self.app, "on_close") as close:

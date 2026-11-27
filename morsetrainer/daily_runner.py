@@ -563,8 +563,11 @@ class DailyRunner:
             else:
                 lines.append(tr("Nach der Pause: alle {tried} früher sicheren Zeichen saßen gleich wieder.")
                              .format(tried=check[0]))
+        spoken_lines = {}  # Zeile -> Fassung zum Vorlesen, wo sie sich unterscheidet
         if block.mode == "single":
-            lines += [moment_line(m) for m in daily.char_moments(self.today)]
+            for moment in daily.char_moments(self.today):
+                lines.append(moment_line(moment))
+                spoken_lines[lines[-1]] = moment_line(moment, spoken=True)
         tight = (block.kind == daily.WARMUP and not self.app.daily_relaxed_var.get()
                  and daily.too_tight(result))
         if tight:
@@ -581,17 +584,17 @@ class DailyRunner:
         following = self.blocks[self.index + 1]
         lines.append(preview_line(following, daily.current_lesson(self.state, 1), self._block_tempo(following)))
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
-        self._show_card(title, lines, strong)
+        self._show_card(title, lines, strong, spoken_lines=[spoken_lines.get(line, line) for line in lines])
 
-    def _show_card(self, title: str, lines, strong=(), then=None, spoken_title=None) -> None:
+    def _show_card(self, title: str, lines, strong=(), then=None, spoken_title=None, spoken_lines=None) -> None:
         """Die Karte bleibt stehen, bis man weitergeht (continue_now);
         `then` kommt nach ihrer Ansage, `spoken_title` ersetzt dort den Titel
-        (etwa mit buchstabiertem Zeichen)."""
+        (etwa mit buchstabiertem Zeichen), `spoken_lines` die Zeilen."""
         self.bar.show_card(title, lines, strong)
         self.card_open = True
         self.card_shown = time.time()
         # Ansage (Barrierefreiheit); F11 liest sie noch einmal vor.
-        self.card_text = ". ".join([spoken_title or title, *lines, tr("Weiter mit Enter")]) + "."
+        self.card_text = ". ".join([spoken_title or title, *(spoken_lines or lines), tr("Weiter mit Enter")]) + "."
         announcer.say(self.card_text, then=then)
         self.app.root.focus_set()  # Enter und Esc sollen ankommen
 

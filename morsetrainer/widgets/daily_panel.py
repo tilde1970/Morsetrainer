@@ -132,10 +132,12 @@ def block_lines(summary: dict) -> list:
     return lines
 
 
-def moment_line(moment: dict) -> str:
-    """Zeile „R sitzt jetzt: 0,41 s (letzte Woche 0,62 s)“ für die Zwischenkarte."""
+def moment_line(moment: dict, spoken: bool = False) -> str:
+    """Zeile „R sitzt jetzt: 0,41 s (letzte Woche 0,62 s)“ für die Zwischenkarte; zum
+    Vorlesen ist das Zeichen buchstabiert (Satzzeichen wie „=“ liest die Stimme sonst nicht)."""
     return tr("{char} sitzt jetzt: {now} s (letzte Woche {before} s)").format(
-        char=moment["char"], now=number(moment["now"], 2), before=number(moment["before"], 2))
+        char=announcer.spell(moment["char"]) if spoken else moment["char"],
+        now=number(moment["now"], 2), before=number(moment["before"], 2))
 
 
 # Modi, die im Reiter „Einzeln“ laufen (der Reiter nennt sich nicht nach dem Inhalt).

@@ -110,6 +110,13 @@ class InsightsTest(unittest.TestCase):
         self.assertIn("Erstes minus letztes Drittel: 0,0 Punkte", text)
         self.assertTrue(text.endswith("Kein sicheres Nachlassen erkennbar."))
 
+    def test_spoken_week_line_spells_the_characters(self):
+        # „=“ oder „.“ liest die Stimme nicht; buchstabiert klingt es wie bei den anderen Zeichen.
+        self.write(1, [("=", "", {})] * 5 + [("K", "K", {})] * 20)
+        week = insights.causes_by_week()[-1]
+        self.assertIn("nicht erkannt vor allem: =", panel._week_line(week))
+        self.assertIn("nicht erkannt vor allem: Trennung", panel._week_line(week, spoken=True))
+
     def test_fatigue_is_calculated_per_mode(self):
         for day in range(1, 11):  # Einzeln: deutlicher Abfall
             self.write(day, [("K", "K", {})] * 10 + [("K", "K", {})] * 10 + [("K", "M", {})] * 10, mode="single")

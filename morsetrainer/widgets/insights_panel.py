@@ -63,7 +63,7 @@ def _week_label(day) -> str:
     return f"{day.month}/{day.day}" if i18n.LANG == "en" else f"{day.day}.{day.month}."
 
 
-def _week_line(week: dict) -> str:
+def _week_line(week: dict, spoken: bool = False) -> str:
     counts = week["counts"]
     total = sum(counts.values())
     head = tr("Woche ab {day}").format(day=_week_label(week["first"]))
@@ -81,7 +81,8 @@ def _week_line(week: dict) -> str:
     top = [ch for ch, n in week["unrecognised"].most_common(insights.WEEK_CHARS_SHOWN)
            if n >= insights.MIN_WEEK_CHAR_ERRORS]
     if top:
-        line += "; " + tr("nicht erkannt vor allem: {chars}").format(chars=", ".join(display_text(ch) for ch in top))
+        spell = announcer.spell if spoken else display_text  # Satzzeichen liest die Stimme sonst nicht
+        line += "; " + tr("nicht erkannt vor allem: {chars}").format(chars=", ".join(spell(ch) for ch in top))
     return line
 
 
@@ -383,7 +384,7 @@ class InsightsPanel:
             parts.append(texts["lag"])
         weeks = texts.get("_weeks") or []
         if weeks:
-            parts.append(_week_line(weeks[-1]))
+            parts.append(_week_line(weeks[-1], spoken=True))
         for mode, text in texts.get("_fatigue") or []:
             parts.append(f"{mode_label(mode)}: " + text.split("\n")[-1])
         if texts.get("_pairs"):
