@@ -181,13 +181,16 @@ class Player:
     def play(self, samples) -> None:
         if not self.alive:
             raise self.error or PulseError("PulseAudio: Wiedergabe beendet")
+        # Nie hier verwerfen (flush): Es wartet auf den gerade blockierenden
+        # Schreibaufruf des Spieler-Threads und hielt so die Oberfläche bis zu
+        # Sekunden an (lange Pausen zwischen den Zeichen). Der Thread verwirft
+        # den Puffer selbst, sobald er den neuen Auftrag sieht.
         self._generation += 1
-        self.stream.flush()
         self._queue.put((self._generation, np.ascontiguousarray(samples, dtype=np.float32)))
 
     def cancel(self) -> None:
         self._generation += 1
-        self.stream.flush()
+        self._queue.put((self._generation, np.zeros(0, dtype=np.float32)))
 
     def close(self) -> None:
         self._closed = True
@@ -212,6 +215,9 @@ class Player:
                 if job is None:
                     return
                 generation, samples = job
+                if generation != self._generation:
+                    continue  # überholt: ein neuerer Auftrag oder Abbruch folgt
+                self.stream.flush()  # Stille und Rest des alten Tons verwerfen
                 for start in range(0, len(samples), chunk):
                     if generation != self._generation:
                         break

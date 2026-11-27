@@ -1,4 +1,5 @@
 """Ausgabeweg PulseAudio: Auswahl und Rückfall auf PortAudio."""
+import threading
 import time
 import unittest
 from unittest import mock
@@ -70,6 +71,47 @@ class FakeStream:
 
     def close(self):
         self.closed = True
+
+
+class BlockingStream(FakeStream):
+    """Wie PulseStream: write hält die Sperre, solange es auf das Gerät wartet,
+    und flush muss auf sie warten."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock = threading.Lock()
+        self.flushes = 0
+
+    def write(self, samples):
+        with self.lock:
+            time.sleep(0.2)
+        return False
+
+    def flush(self):
+        with self.lock:
+            self.flushes += 1
+
+
+class PlayDoesNotBlockTest(unittest.TestCase):
+    def test_play_and_cancel_return_at_once_while_a_write_blocks(self):
+        # Ein blockierendes flush im Aufrufer hielt die Oberfläche an
+        # (lange Pausen zwischen den Zeichen).
+        FakeStream.opened = []
+        with mock.patch.object(pulse, "PulseStream", BlockingStream), \
+                mock.patch.object(pulse, "default_sink", lambda: None):
+            player = pulse.Player(48000, 0.05)
+            try:
+                time.sleep(0.05)  # der Spieler-Thread steckt im blockierenden write
+                for call in (lambda: player.play(np.zeros(4800, dtype=np.float32)), player.cancel):
+                    start = time.perf_counter()
+                    call()
+                    self.assertLess(time.perf_counter() - start, 0.05)
+                deadline = time.time() + 2
+                while player.stream.flushes == 0 and time.time() < deadline:
+                    time.sleep(0.01)
+                self.assertGreater(player.stream.flushes, 0)  # verworfen wird im Thread
+            finally:
+                player.close()
 
 
 class SinkChangeTest(unittest.TestCase):
