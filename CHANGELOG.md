@@ -6,6 +6,31 @@
   an einem Tag um mehrere Lektionen auf, zeigte der Rückblick auf die
   Vorwoche nur eine Lektion mehr, zum Beispiel „Lektion 10 → 11“ statt
   „10 → 13“. Jetzt steht die richtige Lektion da.
+- **Tagesübung, Startkarte:** Die Karte vor dem Aufwärmen und die Vorschau
+  zwischen den Blöcken nennen jetzt das Tempo, das wirklich gespielt wird.
+  Steht in der Kopfleiste ein höheres Zeichentempo als das Tagestempo,
+  stand dort bisher das Tagestempo.
+- **Tagesübung, kein Ton:** Fällt die Tonausgabe schon beim ersten Block aus,
+  endet die Tagesübung jetzt mit dem Hinweis „Kein Ton: Die Tagesübung wurde
+  nicht gestartet, es zählt nichts.“ Bisher kam eine Abendbilanz mit „kein
+  Stern“, und die Reiter blieben gesperrt.
+- **Übungsdaten, Dateigröße:** Solange der Morsetrainer offen blieb, wuchs
+  eine Hilfsdatei der Übungsdaten mit jedem Durchgang (etwa 1 MB je 100
+  Zeichen), und das Beenden dauerte entsprechend länger. Sie wird jetzt nach
+  jedem Durchgang abgeglichen und bleibt klein. An deinen Daten ändert sich
+  nichts.
+- **Beschädigte Daten:** Ein beschädigter oder von Hand veränderter Eintrag
+  der Tagesübung oder ein unbekanntes Fach der Lernkartei konnte den Start
+  des Programms oder das Ende eines Durchgangs verhindern. Solche Einträge
+  werden jetzt beim Laden bereinigt.
+- **Update, kleine Bildschirme:** Der Dialog „Update verfügbar“ war bei
+  großer Schrift auf kleinen Bildschirmen größer als der Bildschirm, und die
+  Knöpfe lagen außerhalb. Das Textfeld passt sich jetzt an, und im Fenster
+  steht, dass Enter aktualisiert und Esc auf später verschiebt.
+- **Netzwerk, Eingaben:** Eine Adresse mit ungewöhnlichen Ziffern im Port
+  führte zu einem Fehler statt zur Meldung „Bitte die Adresse des Trainers
+  eingeben oder suchen.“, und ein gekürzter Name konnte ein Leerzeichen am
+  Ende behalten. Beides ist behoben.
 
 ## 2.80
 

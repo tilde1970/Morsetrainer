@@ -6,6 +6,29 @@
   moved up several lessons on one day, the review of the previous week showed
   only one lesson more, for example "Lesson 10 → 11" instead of "10 → 13".
   It now shows the correct lesson.
+- **Daily practice, start card:** The card before the warm-up and the
+  preview between the blocks now name the tempo that is actually played. If
+  the header bar shows a higher character tempo than the daily tempo, they
+  used to show the daily tempo.
+- **Daily practice, no sound:** If the sound output fails at the very first
+  block, the daily practice now ends with the note "No sound: the daily
+  practice was not started, nothing counts." Before, an evening summary
+  appeared with "no star", and the tabs stayed locked.
+- **Practice data, file size:** As long as the Morsetrainer stayed open, an
+  auxiliary file of the practice data grew with every run (about 1 MB per 100
+  characters), and closing took correspondingly longer. It is now merged
+  after every run and stays small. Nothing changes in your data.
+- **Damaged data:** A damaged or hand-edited daily practice entry or an
+  unknown box in the learning file could prevent the program from starting
+  or a run from ending. Such entries are now cleaned up when loading.
+- **Update, small screens:** The "Update available" dialog was larger than
+  the screen with large type on small screens, and the buttons were out of
+  reach. The text field now adapts, and the window says that Enter updates
+  and Esc postpones.
+- **Network, input:** An address with unusual digits in the port caused an
+  error instead of the message asking you to enter or search for the
+  trainer's address, and a shortened name could keep a trailing space. Both
+  are fixed.
 
 ## 2.80
 
