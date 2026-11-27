@@ -2693,6 +2693,8 @@ class MorseTrainerApp:
         # Esc beendet in jedem Übungsreiter den Durchgang, auch aus dem
         # Antwortfeld heraus (im Contest bricht es nur das Senden ab).
         if event.keysym == "Escape":
+            if not self.running_mode and self.announcer.cancel():
+                return  # im Leerlauf bricht Esc eine lange Ansage ab
             mode = self._active_mode()
             if mode is not None:
                 mode.on_key(event)

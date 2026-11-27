@@ -905,6 +905,8 @@ Block, die Übungszeit und die Sterne, im Reiter Statistik eine Übersicht
 Siegel, heute geübt, Vergleich und Woche). F9 und F11 wirken in jedem
 Fenster; in Einstellungen, Bandbedingungen, Hilfe und den Netzwerk-Fenstern
 sagt F11 den Namen des Fensters und das Bedienelement, auf dem du stehst.
+**Esc** bricht eine laufende Ansage ab, solange keine Übung läuft (etwa die
+Auswertungen oder die Abendbilanz); ein weiterer Druck wirkt wie sonst.
 
 ### Was angesagt wird
 

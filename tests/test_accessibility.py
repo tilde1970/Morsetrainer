@@ -742,6 +742,27 @@ class AnnouncerTest(AnnouncerCase):
         self.assertTrue(self.pump_until(lambda: "Bereit" in " ".join(self.said)))
         self.assertTrue(" ".join(self.said).startswith("Einzeln, Zeichen. Bereit"), self.said)
 
+    def test_escape_in_idle_cancels_a_long_announcement_and_frees_what_follows(self):
+        self.app.announcer.var.set(True)
+        done = []
+        del self.said[:]
+        self.app.announcer.say("Eins. Zwei. Drei. Vier. Fünf. " * 6, then=lambda: done.append(True), force=True)
+        self.assertTrue(self.pump_until(lambda: self.played))  # das erste Stück spielt
+        with mock.patch.object(self.announcer.audio, "stop") as stop, \
+                mock.patch.object(self.app.modes[0], "on_key") as on_key:
+            self.app._dispatch_key(mock.Mock(keysym="Escape", char="", widget=self.root))
+        stop.assert_called_once()
+        on_key.assert_not_called()  # die Taste galt der Ansage, nicht dem Reiter
+        self.assertTrue(self.pump_until(lambda: done))  # der Ablauf nach der Ansage geht weiter
+        self.assertFalse(self.app.announcer.cancel())  # nichts mehr zu beenden
+
+    def test_escape_without_announcement_still_reaches_the_tab(self):
+        self.app.announcer.var.set(False)
+        mode = self.app._active_mode()
+        with mock.patch.object(mode, "on_key") as on_key:
+            self.app._dispatch_key(mock.Mock(keysym="Escape", char="", widget=self.root))
+        on_key.assert_called_once()
+
     def test_group_answers_are_spelled(self):
         from tests.test_modes import GroupEvaluationTest
         self.app.announcer.var.set(True)

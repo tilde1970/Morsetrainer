@@ -912,7 +912,9 @@ block, the practice time and the stars, in the Statistics tab an overview
 (overall result, most errors, confusions, review box, insights, seals,
 practice today, comparison and week). F9 and F11 work in every window; in
 Settings, Band conditions, Help and the network windows F11 says the name
-of the window and the control you are on.
+of the window and the control you are on. **Esc** stops an announcement
+that is running while no exercise is running (for example the insights or
+the evening summary); another press works as usual.
 
 ### What is announced
 

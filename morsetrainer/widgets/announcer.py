@@ -223,6 +223,19 @@ class Announcer:
 
         poll()
 
+    def cancel(self) -> bool:
+        """Eine laufende (oder noch erzeugte) Ansage abbrechen, etwa mit Esc im Leerlauf: Lange
+        Ansagen (Auswertungen, Abendbilanz) lassen sich sonst nur aus- und wieder einschalten.
+        True, wenn eine lief. Was nach ihr kommen sollte (`then`), läuft weiter."""
+        speaking = self.done_token != self.token or time.time() < self.speaking_until
+        if not speaking:
+            return False
+        self.token += 1  # die Erzeugung der übrigen Stücke endet, poll() gibt `then` frei
+        self.done_token = self.token
+        self.speaking_until = 0.0
+        audio.stop()
+        return True
+
     def window_shown(self, window) -> None:
         """Ein Fenster ist erschienen: seinen Namen ansagen („Fenster
         Bandbedingungen.“). Kam gerade eben schon eine Ansage (etwa die des
