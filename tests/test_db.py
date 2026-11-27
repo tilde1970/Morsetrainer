@@ -55,6 +55,47 @@ class DbTest(unittest.TestCase):
 
     # --- Durchgänge ----------------------------------------------------------
 
+    def _wal_size(self) -> int:
+        wal = self.file.with_name(self.file.name + "-wal")
+        return wal.stat().st_size if wal.exists() else 0
+
+    def _write_sessions(self, count: int, in_transaction: bool) -> list:
+        """Schreibt `count` Durchgänge mit je 300 Zeichen und gibt die Größe der WAL
+        nach jedem zurück (die Datei schrumpft nicht, sie wird nach dem Abgleich
+        wiederverwendet: bleibt sie gleich groß, wird abgeglichen)."""
+        sizes = []
+        for number in range(count):
+            def one():
+                sid = db.start_session(_config(f"2026-10-03T10:{number:02d}:00"))
+                for _ in range(300):
+                    db.add_event(sid, {"type": "char", "char": "K", "typed": "K", "correct": True})
+                db.finish_session(sid, {"type": "summary"})
+            if in_transaction:
+                with db.transaction():
+                    one()
+            else:
+                one()
+            sizes.append(self._wal_size())
+        return sizes
+
+    def test_wal_does_not_grow_over_sessions_in_transaction(self):
+        """finish_session läuft in der Praxis innerhalb von transaction(); der Abgleich
+        der WAL darf dort nicht still scheitern, sonst wächst sie ohne Grenze."""
+        sizes = self._write_sessions(6, in_transaction=True)
+        self.assertLess(sizes[-1], sizes[0] * 1.5)
+
+    def test_wal_does_not_grow_over_sessions_outside_transaction(self):
+        sizes = self._write_sessions(6, in_transaction=False)
+        self.assertLess(sizes[-1], sizes[0] * 1.5)
+
+    def test_rolled_back_transaction_does_not_leave_checkpoint_pending(self):
+        with self.assertRaises(RuntimeError):
+            with db.transaction():
+                sid = db.start_session(_config("2026-10-03T10:00:00"))
+                db.finish_session(sid, {"type": "summary"})
+                raise RuntimeError("abbrechen")
+        self.assertFalse(db._checkpoint_due)
+
     def test_session_with_events_and_summary(self):
         sid = db.start_session(_config("2026-10-03T10:00:00"))
         db.add_event(sid, {"type": "char", "char": "K", "typed": "K", "correct": True})

@@ -116,6 +116,7 @@ aside_file = None
 ASIDE_KEY = "aside"  # meta: Tag, an dem eine defekte Datei beiseitegelegt wurde (die neue Datei ist leer)
 _failures = {}  # Datei -> "too_new"/"migration": nicht bei jedem Lesen neu öffnen
 _depth = 0  # Tiefe verschachtelter transaction()-Blöcke
+_checkpoint_due = False  # Abgleich der WAL steht aus, bis die äußerste transaction() endet
 # Gelesene config/summary abgeschlossener Durchgänge, {id: (config, summary)}:
 # Die ändern sich nicht mehr, sessions() muss sie nicht jedes Mal neu aus
 # JSON lesen. Gilt nur für die Datei der Generation in _heads_generation.
@@ -492,7 +493,7 @@ def transaction():
     """Alle Schreibvorgänge im Block gemeinsam festschreiben oder bei einem
     Fehler gemeinsam verwerfen (z. B. Zusammenfassung eines Durchgangs,
     Gesamtstatistik und Lernkartei). Darf verschachtelt werden."""
-    global _depth
+    global _depth, _checkpoint_due
     with _lock:
         conn = _connection()
         if _depth == 0:
@@ -505,6 +506,7 @@ def transaction():
             if _depth == 0 and conn.in_transaction:
                 conn.execute("ROLLBACK")
                 _heads.clear()  # könnte Verworfenes enthalten
+                _checkpoint_due = False
             raise
         _depth -= 1
         if _depth == 0:
@@ -514,7 +516,11 @@ def transaction():
                 if conn.in_transaction:
                     conn.execute("ROLLBACK")
                 _heads.clear()
+                _checkpoint_due = False
                 raise
+            if _checkpoint_due:
+                _checkpoint_due = False
+                _checkpoint()
 
 
 def _write(sql: str, params=()) -> int:
@@ -619,6 +625,17 @@ def finish_session(session_id: int, summary: dict) -> None:
     """Schließt den Durchgang `session_id` mit seiner Zusammenfassung ab."""
     _heads.pop(session_id, None)
     _write("UPDATE sessions SET summary = ? WHERE id = ?", (_dump(summary), session_id))
+    _request_checkpoint()
+
+
+def _request_checkpoint() -> None:
+    """WAL abgleichen, sobald keine Transaktion mehr offen ist (SQLite verweigert
+    den Abgleich mitten in einer Schreibtransaktion; die Automatik ist aus)."""
+    global _checkpoint_due
+    with _lock:
+        if _depth > 0:
+            _checkpoint_due = True
+            return
     _checkpoint()
 
 
