@@ -422,9 +422,11 @@ overview.
   trail behind the tone in Non-stop), **Error types per week** (last 6 weeks; the
   **Practise unrecognised characters** button practises the unrecognised
   ones), **Fatigue within a run** (accuracy in the first, middle and last
-  third of long runs), **Confusion pairs over time** (the **Practise these
+  third of long runs, per exercise mode), **Confusion pairs over time** (the **Practise these
   characters** button practises these pairs), **Characters over time**
-  (error rate per character, last 14 days against earlier) and **Shaky
+  (error rate per character and exercise mode, last 14 days against earlier;
+  a verdict such as “fewer errors” only appears once it stands out from
+  chance across at least three runs in each period) and **Shaky
   again** (characters that have fallen back at least two boxes in the
   review box).
 - **Awards** and **lifeline** (section 5) and the **progress history** per

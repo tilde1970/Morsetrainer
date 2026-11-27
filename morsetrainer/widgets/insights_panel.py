@@ -14,6 +14,7 @@ from morsetrainer.core.morse import display_text
 from morsetrainer.i18n import N_, number, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.help_window import HelpWindow
+from morsetrainer.widgets.stats_widget import MODE_NAMES
 
 CAUSE_NAMES = {stats.HEARD: N_("verwechselt"), insights.SWAPPED: N_("vertauscht"),
                insights.UNRECOGNISED: N_("nicht erkannt")}
@@ -123,6 +124,22 @@ def fatigue_text(data: dict) -> str:
     return "\n".join(lines + [verdict])
 
 
+def mode_label(mode: str) -> str:
+    """Name des Übungsmodus; unbekannte Modi zeigen ihren Schlüssel."""
+    return tr(MODE_NAMES[mode]) if mode in MODE_NAMES else mode or tr("Übung")
+
+
+def fatigue_blocks(by_mode: dict) -> list:
+    """[(Modus, Text)] je Modus mit genug Durchgängen (fatigue_text, leere fallen weg)."""
+    blocks = [(mode, fatigue_text(part)) for mode, part in by_mode.items()]
+    return [(mode, text) for mode, text in blocks if text]
+
+
+def fatigue_text_by_mode(blocks: list) -> str:
+    """Je Modus eine Überschrift mit den Dritteln und dem Urteil darunter; "" ohne Block."""
+    return "\n".join(f"{mode_label(mode)}:\n{text}" for mode, text in blocks)
+
+
 def _signed(value: float) -> str:
     """„+6“ oder „−2“ (ganze Punkte)."""
     rounded = round(value)
@@ -169,7 +186,8 @@ def chars_text(rows: list, spoken: bool = False) -> str:
     lines = []
     for row in rows:
         name = announcer.spell(row["char"]) if spoken else display_text(row["char"])
-        word = tr(CHAR_WORDS[insights.rate_verdict(row["before"], row["recent"], row["n_before"], row["n_recent"])])
+        name += f" ({mode_label(row['mode'])})"
+        word = tr(CHAR_WORDS[row["verdict"]])
         detail = tr(
             "früher {before} % falsch ({k_before} von {n_before}), zuletzt {recent} % ({k_recent} von {n_recent})"
         ).format(before=number(row["before"], 0), recent=number(row["recent"], 0), n_before=row["n_before"],
@@ -218,13 +236,13 @@ class InsightsPanel:
                 "trennst sie aber noch nicht sicher."),
              tr("Noch keine Fehler in den letzten Wochen.")),
             ("fatigue", tr("Ermüdung im Durchgang"), tr(
-                "Alle Durchgänge ab {n} Zeichen, jeder in drei Teile geteilt, zusammengezählt. Das erste Drittel fällt "
+                "Alle Durchgänge ab {n} Zeichen, jeder in drei Teile geteilt, je Übungsmodus zusammengezählt. Das erste Drittel fällt "
                 "oft besser aus (Aufwärmen, bekannte Zeichen). Die Reaktion stammt nur aus Einzelzeichen. Die Spanne "
                 "in Klammern ist das 95-%-Intervall über die Durchgänge; ein Urteil gibt es erst ab {verdict} "
                 "Durchgängen und nur, wenn die Spanne die Null nicht einschließt. Tempo und Zeichensatz passen sich "
                 "beim Üben an, der Vergleich ist ein Anhaltspunkt.").format(
                 n=insights.FATIGUE_MIN_CHARS, verdict=insights.FATIGUE_VERDICT_SESSIONS),
-             tr("Noch zu wenige lange Durchgänge (ab {n} Durchgängen mit je mindestens {chars} Zeichen).").format(
+             tr("Noch zu wenige lange Durchgänge (ab {n} Durchgängen in einem Modus mit je mindestens {chars} Zeichen).").format(
                  n=insights.FATIGUE_MIN_SESSIONS, chars=insights.FATIGUE_MIN_CHARS)),
             ("pairs", tr("Verwechslungspaare im Verlauf"), tr(
                 "Wie oft du ein Zeichen für ein anderes getippt hast. „6 als B getippt“ mit „zuletzt 14 %“ heißt: Von 100 "
@@ -240,9 +258,12 @@ class InsightsPanel:
                 "Wie oft ein Zeichen falsch war, gleich welche Fehlerart (verwechselt, vertauscht, nichts getippt). "
                 "Bei der 6 heißt „zuletzt 39 % (91 von 235)“: Von 235 gesendeten 6 war die Antwort 91-mal falsch. "
                 "Verglichen werden die letzten {days} Tage mit der Zeit davor. Gezeigt werden Zeichen mit mindestens {n} "
-                "Antworten in beiden Zeiträumen, die schwächsten zuerst, höchstens {shown}. Ein Unterschied zählt erst, "
-                "wenn er sich vom Zufall abhebt.").format(
-                days=insights.RECENT_DAYS, n=insights.CHAR_MIN_CASES, shown=insights.CHARS_SHOWN),
+                "Antworten in beiden Zeiträumen, die schwächsten zuerst, höchstens {shown}. Je Übungsmodus gerechnet, "
+                "denn dasselbe Zeichen ist einzeln, in Gruppen und am Stück verschieden schwer. Ein Unterschied "
+                "zählt erst, wenn er sich über die Durchgänge hinweg vom Zufall abhebt, dafür braucht es "
+                "mindestens {sessions} Durchgänge je Zeitraum.").format(
+                days=insights.RECENT_DAYS, n=insights.CHAR_MIN_CASES, shown=insights.CHARS_SHOWN,
+                sessions=insights.CLUSTER_MIN_SESSIONS),
              tr("Noch kein Zeichen hat auf beiden Seiten genug Antworten zum Vergleichen.")),
             ("wobbly", tr("Wieder wackelig"), tr(
                 "Zeichen, die in der Lernkartei schon in Fach 3 oder höher lagen und um mindestens zwei Fächer "
@@ -307,7 +328,12 @@ class InsightsPanel:
         weeks = []
         char_rows = []
         guarded("lag", lambda: lag_text(insights.lag_chars(data)))
-        guarded("fatigue", lambda: fatigue_text(insights.fatigue(data)))
+        fatigue = []
+
+        def make_fatigue():
+            fatigue.extend(fatigue_blocks(insights.fatigue_by_mode(data)))
+            return fatigue_text_by_mode(fatigue)
+        guarded("fatigue", make_fatigue)
 
         def make_causes():
             weeks.extend(insights.causes_by_week(data))
@@ -330,6 +356,7 @@ class InsightsPanel:
         except Exception:
             errorlog.record(*sys.exc_info(), version=version)
         texts["_pairs"], texts["_weeks"], texts["_chars"] = pairs, weeks, char_rows
+        texts["_fatigue"] = fatigue
         try:
             texts["_weak"] = "".join(ch for ch, _n in insights.weak_chars(data))
         except Exception:
@@ -357,8 +384,8 @@ class InsightsPanel:
         weeks = texts.get("_weeks") or []
         if weeks:
             parts.append(_week_line(weeks[-1]))
-        if texts.get("fatigue"):
-            parts.append(texts["fatigue"].split("\n")[-1])
+        for mode, text in texts.get("_fatigue") or []:
+            parts.append(f"{mode_label(mode)}: " + text.split("\n")[-1])
         if texts.get("_pairs"):
             parts.extend(_pair_line(row, spoken=True) for row in texts["_pairs"])
         if texts.get("_chars"):

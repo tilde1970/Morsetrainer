@@ -110,6 +110,23 @@ class InsightsTest(unittest.TestCase):
         self.assertIn("Erstes minus letztes Drittel: 0,0 Punkte", text)
         self.assertTrue(text.endswith("Kein sicheres Nachlassen erkennbar."))
 
+    def test_fatigue_is_calculated_per_mode(self):
+        for day in range(1, 11):  # Einzeln: deutlicher Abfall
+            self.write(day, [("K", "K", {})] * 10 + [("K", "K", {})] * 10 + [("K", "M", {})] * 10, mode="single")
+        for day in range(1, 11):  # Gruppen: kein Abfall
+            self.write(day, [("K", "K", {})] * 30, mode="group")
+        for day in range(1, 6):   # Am Stück: zu wenige Durchgänge
+            self.write(day, [("K", "K", {})] * 30, mode="continuous")
+        by_mode = insights.fatigue_by_mode()
+        self.assertEqual(sorted(by_mode), ["group", "single"])
+        text = panel.fatigue_text_by_mode(panel.fatigue_blocks(by_mode))
+        self.assertIn("Einzeln:\nErstes Drittel: 100 % richtig", text)
+        self.assertIn("Gruppen:\nErstes Drittel: 100 % richtig", text)
+        self.assertNotIn("Am Stück", text)
+        groups, single = text.split("Gruppen:")[1].split("Einzeln:")  # gleich viele Durchgänge: nach Namen
+        self.assertIn("Letztes Drittel: 100 % richtig", groups)
+        self.assertIn("Letztes Drittel: 0 % richtig", single)  # der Abfall gehört nur zu Einzeln
+
     def test_fatigue_needs_enough_long_runs(self):
         self.write(1, [("K", "K", {})] * 40)
         self.write(2, [("K", "K", {})] * 10)  # zu kurz
@@ -213,14 +230,50 @@ class InsightsTest(unittest.TestCase):
         self.assertEqual([row["char"] for row in rows], ["6"])  # K hatte davor zu wenige Antworten
         self.assertEqual((rows[0]["n_before"], rows[0]["n_recent"]), (80, 80))
         self.assertEqual(panel.chars_text(rows),
-                         "6: kein sicherer Unterschied\n    früher 38 % falsch (30 von 80), zuletzt 25 % (20 von 80)")
+                         "6 (Einzeln): kein sicherer Unterschied\n"
+                         "    früher 38 % falsch (30 von 80), zuletzt 25 % (20 von 80)")
         self.assertEqual(panel.chars_text(rows, spoken=True).replace("Sechs", "6"),
-                         "6: früher 38 % falsch (30 von 80), zuletzt 25 % (20 von 80): kein sicherer Unterschied")
+                         "6 (Einzeln): früher 38 % falsch (30 von 80), zuletzt 25 % (20 von 80): kein sicherer Unterschied")
+
+    def _six_sessions(self, days_ago, wrong_per_session, mode="single", count=5):
+        for day in range(count):
+            wrong = wrong_per_session[day % len(wrong_per_session)]
+            self.write(days_ago + day, [("6", "B", {})] * wrong + [("6", "6", {})] * (20 - wrong), mode=mode)
 
     def test_a_clear_change_of_a_character_is_named(self):
+        self._six_sessions(40, [14])  # davor 70 % falsch in jedem Durchgang
+        self._six_sessions(2, [6])    # zuletzt 30 %
+        self.assertIn("6 (Einzeln): weniger Fehler\n", panel.chars_text(insights.char_trend()))
+
+    def test_one_session_per_side_is_never_a_clear_change(self):
+        # Die Antworten eines Durchgangs hängen zusammen; mit einem Durchgang je Seite ist die Streuung
+        # unbekannt, auch bei 70 % gegen 30 %.
         self.write(40, [("6", "B", {})] * 70 + [("6", "6", {})] * 30)
         self.write(2, [("6", "B", {})] * 30 + [("6", "6", {})] * 70)
-        self.assertIn("6: weniger Fehler\n", panel.chars_text(insights.char_trend()))
+        self.assertEqual(insights.char_trend()[0]["verdict"], insights.UNSURE)
+
+    def test_swinging_sessions_are_no_clear_change_although_the_pooled_numbers_look_clear(self):
+        self._six_sessions(40, [20, 0], count=6)   # davor 50 %, aber mal alles, mal nichts falsch
+        self._six_sessions(2, [12, 0], count=6)    # zuletzt 30 %
+        row = insights.char_trend()[0]
+        self.assertEqual((row["before"], row["recent"]), (50.0, 30.0))
+        self.assertEqual(insights.rate_verdict(row["before"], row["recent"], row["n_before"], row["n_recent"]),
+                         insights.LESS)  # Antworten einzeln gezählt: scheinbar klar
+        self.assertEqual(row["verdict"], insights.UNSURE)  # Durchgänge gezählt: nicht belegt
+
+    def test_characters_are_compared_per_mode(self):
+        # Davor nur in Gruppen, zuletzt nur am Stück: kein Vergleich, der den Modus-Wechsel als Fortschritt zeigt.
+        self._six_sessions(40, [14], mode="group")
+        self._six_sessions(2, [6], mode="continuous")
+        self.assertEqual(insights.char_trend(), [])
+        # Mit beiden Zeiträumen in beiden Modi: je Modus eine Zeile mit eigenem Urteil.
+        self._six_sessions(40, [14], mode="continuous")
+        self._six_sessions(2, [14], mode="group")
+        rows = {row["mode"]: row["verdict"] for row in insights.char_trend()}
+        self.assertEqual(rows, {"continuous": insights.LESS, "group": insights.SAME})
+        text = panel.chars_text(insights.char_trend())
+        self.assertIn("6 (Am Stück): weniger Fehler", text)
+        self.assertIn("6 (Gruppen): unverändert", text)
 
     def test_unexpected_values_in_old_lines_do_not_break_the_insights(self):
         start = datetime.now().isoformat(timespec="seconds")

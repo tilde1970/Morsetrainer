@@ -415,9 +415,11 @@ liest eine Übersicht vor.
   Am Stück hinter dem Ton herschreibst), **Fehlerarten je Woche** (letzte 6 Wochen; der Knopf
   **Nicht erkannte Zeichen gezielt üben** übt die nicht erkannten),
   **Ermüdung im Durchgang** (Trefferquote im ersten, mittleren und letzten
-  Drittel langer Durchgänge), **Verwechslungspaare im Verlauf** (der Knopf
+  Drittel langer Durchgänge, je Übungsmodus), **Verwechslungspaare im Verlauf** (der Knopf
   **Diese Zeichen gezielt üben** übt diese Paare), **Zeichen im Verlauf**
-  (Fehlerquote je Zeichen, letzte 14 Tage gegen früher) und **Wieder
+  (Fehlerquote je Zeichen und Übungsmodus, letzte 14 Tage gegen früher; ein
+  Urteil wie „weniger Fehler“ gibt es erst, wenn es sich über mindestens drei
+  Durchgänge je Zeitraum vom Zufall abhebt) und **Wieder
   wackelig** (Zeichen, die in der Lernkartei um mindestens zwei Fächer
   zurückgefallen sind).
 - **Diplome** und **Lebenslinie** (Abschnitt 5) und der

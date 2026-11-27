@@ -34,6 +34,7 @@ PAIR_NOISE_FACTOR = 2.0  # und mindestens so viele Standardfehler des Unterschie
 PAIR_MIN_EXPECTED = 5   # und so viele erwartete Fälle auf jeder Seite (sonst trägt die Näherung nicht)
 SAME_MARGIN_PCT = 2.0   # „unverändert“ nur, wenn das 95-%-Intervall des Unterschieds höchstens so breit ist
 CHAR_MIN_CASES = 40     # so viele Antworten je Seite, damit ein Zeichen verglichen wird
+CLUSTER_MIN_SESSIONS = 3  # so viele Durchgänge je Seite, damit ein Urteil über ein Zeichen möglich ist
 CHARS_SHOWN = 6
 WEAK_CHARS_SHOWN = 5
 MIN_WEAK_ERRORS = 5     # so oft nicht erkannt, damit ein Zeichen als schwach gilt
@@ -166,16 +167,19 @@ def weak_chars(data=None, now=None) -> list:
     return [(char, n) for char, n in counts.most_common(WEAK_CHARS_SHOWN) if n >= MIN_WEAK_ERRORS]
 
 
-def fatigue(data=None, now=None) -> dict:
+def fatigue(data=None, now=None, mode=None) -> dict:
     """Erstes, mittleres und letztes Drittel der Durchgänge ab FATIGUE_MIN_CHARS
     Zeichen zusammen: {"sessions", "thirds": [{"good", "wrong", "latencies"}],
     "drops": [Prozentpunkte erstes minus letztes Drittel je Durchgang]}.
-    Zeichen ohne Zeitmessung zählen nicht, die Reaktion kommt wie in der
-    Vergleichszeile nur aus Einzelzeichen (stats.REACTION_MODE)."""
+    Mit `mode` nur die Durchgänge dieses Modus (sonst alle). Zeichen ohne Zeitmessung
+    zählen nicht, die Reaktion kommt wie in der Vergleichszeile nur aus Einzelzeichen
+    (stats.REACTION_MODE)."""
     thirds = [{"good": 0, "wrong": 0, "latencies": []} for _ in range(3)]
     drops = []
     sessions = 0
     for _start, config, chars in load(now) if data is None else data:
+        if mode is not None and config.get("mode") != mode:
+            continue
         chars = [obj for obj in chars if not obj.get("untimed")]
         if len(chars) < FATIGUE_MIN_CHARS:
             continue
@@ -193,6 +197,17 @@ def fatigue(data=None, now=None) -> dict:
                 part["latencies"].append(latency)
         drops.append((right[0] / size[0] - right[2] / size[2]) * 100)
     return {"sessions": sessions, "thirds": thirds, "drops": drops}
+
+
+def fatigue_by_mode(data=None, now=None) -> dict:
+    """fatigue() je Modus, der mindestens FATIGUE_MIN_SESSIONS lange Durchgänge hat, die
+    meisten zuerst: {Modus: fatigue()}. Die Modi unterscheiden sich so stark in Tempo und
+    Aufgabe, dass ein gemeinsamer Schnitt nur den Modus-Mix zeigt."""
+    data = load(now) if data is None else data
+    modes = {config.get("mode") for _start, config, _chars in data if isinstance(config.get("mode"), str)}
+    result = {mode: fatigue(data, mode=mode) for mode in modes}
+    result = {mode: part for mode, part in result.items() if part["sessions"] >= FATIGUE_MIN_SESSIONS}
+    return dict(sorted(result.items(), key=lambda item: (-item[1]["sessions"], item[0])))
 
 
 def fatigue_drop(data: dict):
@@ -222,6 +237,33 @@ def rate_verdict(before: float, recent: float, n_before: int, n_recent: int) -> 
             and abs(change) >= PAIR_NOISE_FACTOR * noise):
         return LESS if change < 0 else MORE
     return SAME if 1.96 * noise <= SAME_MARGIN_PCT else UNSURE
+
+
+def cluster_verdict(before: list, recent: list) -> str:
+    """LESS, MORE, SAME oder UNSURE für eine Fehlerrate zuletzt gegen davor, wenn die Antworten
+    zu Durchgängen gehören: `before` und `recent` sind Listen (falsch, Antworten) je Durchgang.
+    Die Antworten eines Durchgangs hängen zusammen (Tagesform, Tempo, Zeichensatz), deshalb
+    zählen die Durchgänge, nicht die Antworten, als Stichprobe: Der Fehler des Unterschieds
+    kommt aus der Streuung der Durchgangsraten (Verhältnisschätzer). Ein Unterschied zählt
+    ab PAIR_CHANGE_PCT Prozentpunkten und nur, wenn das 95-%-Intervall die Null nicht
+    einschließt; je Seite braucht es CLUSTER_MIN_SESSIONS Durchgänge. „Unverändert“ (SAME)
+    nur bei einem Intervall von höchstens SAME_MARGIN_PCT Breite, sonst UNSURE."""
+    if min(len(before), len(recent)) < CLUSTER_MIN_SESSIONS:
+        return UNSURE
+    variance, rates = 0.0, []
+    for sessions in (before, recent):
+        total = sum(n for _k, n in sessions)
+        if total <= 0:
+            return UNSURE
+        rate = sum(k for k, _n in sessions) / total
+        rates.append(rate * 100)
+        spread = sum((k - rate * n) ** 2 for k, n in sessions)
+        variance += spread * len(sessions) / (len(sessions) - 1) / total ** 2
+    change = rates[1] - rates[0]
+    margin = 1.96 * math.sqrt(variance) * 100
+    if abs(change) >= PAIR_CHANGE_PCT and abs(change) > margin:
+        return LESS if change < 0 else MORE
+    return SAME if margin <= SAME_MARGIN_PCT else UNSURE
 
 
 def pair_verdict(row: dict) -> str:
@@ -297,30 +339,45 @@ def reached_high_box(review_data=None) -> bool:
 
 
 def char_trend(data=None, now=None) -> list:
-    """Fehlerquote je Zeichen, letzte RECENT_DAYS Tage gegen die Zeit davor (alle Fehlerarten, ohne
-    Zeichen ohne Zeitmessung): [{"char", "before", "recent", "n_before", "n_recent", "k_before",
-    "k_recent"}] (Raten in Prozent, k falsche von n Antworten), für
-    Zeichen mit mindestens CHAR_MIN_CASES Antworten auf jeder Seite, die schwächsten (zuletzt) zuerst,
-    höchstens CHARS_SHOWN."""
+    """Fehlerquote je Zeichen und Modus, letzte RECENT_DAYS Tage gegen die Zeit davor (alle
+    Fehlerarten, ohne Zeichen ohne Zeitmessung): [{"char", "mode", "before", "recent",
+    "n_before", "n_recent", "k_before", "k_recent", "sessions_before", "sessions_recent",
+    "verdict"}] (Raten in Prozent, k falsche von n Antworten), für Zeichen mit mindestens
+    CHAR_MIN_CASES Antworten auf jeder Seite, die schwächsten (zuletzt) zuerst, höchstens
+    CHARS_SHOWN. Je Modus gerechnet: Dasselbe Zeichen ist einzeln, in Gruppen oder am Stück
+    verschieden schwer, und ein Modus-Wechsel würde sonst als Fortschritt oder Rückfall
+    erscheinen. Das Urteil zählt Durchgänge (cluster_verdict)."""
     now = now or datetime.now()
     split = now - timedelta(days=RECENT_DAYS)
-    seen = {"recent": Counter(), "before": Counter()}
-    wrong = {"recent": Counter(), "before": Counter()}
-    for start, _config, chars in load(now) if data is None else data:
+    cells = {}  # (Zeichen, Modus, Seite) -> [[falsch, Antworten] je Durchgang]
+    for start, config, chars in load(now) if data is None else data:
+        mode = config.get("mode")
+        mode = mode if isinstance(mode, str) else ""
         side = "recent" if start >= split else "before"
+        per_char = {}
         for obj in chars:
             if obj.get("untimed"):
                 continue
-            seen[side][obj["char"]] += 1
-            if obj.get("correct") is False:
-                wrong[side][obj["char"]] += 1
-    rows = [{"char": char, "n_before": seen["before"][char], "n_recent": seen["recent"][char],
-             "k_before": wrong["before"][char], "k_recent": wrong["recent"][char],
-             "before": wrong["before"][char] / seen["before"][char] * 100,
-             "recent": wrong["recent"][char] / seen["recent"][char] * 100}
-            for char in seen["recent"]
-            if seen["recent"][char] >= CHAR_MIN_CASES and seen["before"][char] >= CHAR_MIN_CASES]
-    return sorted(rows, key=lambda row: (-row["recent"], row["char"]))[:CHARS_SHOWN]
+            counts = per_char.setdefault(obj["char"], [0, 0])
+            counts[1] += 1
+            counts[0] += obj.get("correct") is False
+        for char, counts in per_char.items():
+            cells.setdefault((char, mode, side), []).append(counts)
+    rows = []
+    for (char, mode, side), recent in cells.items():
+        if side != "recent":
+            continue
+        before = cells.get((char, mode, "before"), [])
+        n_recent, n_before = sum(n for _k, n in recent), sum(n for _k, n in before)
+        if n_recent < CHAR_MIN_CASES or n_before < CHAR_MIN_CASES:
+            continue
+        k_recent, k_before = sum(k for k, _n in recent), sum(k for k, _n in before)
+        rows.append({"char": char, "mode": mode, "n_before": n_before, "n_recent": n_recent,
+                     "k_before": k_before, "k_recent": k_recent,
+                     "before": k_before / n_before * 100, "recent": k_recent / n_recent * 100,
+                     "sessions_before": len(before), "sessions_recent": len(recent),
+                     "verdict": cluster_verdict(before, recent)})
+    return sorted(rows, key=lambda row: (-row["recent"], row["char"], row["mode"]))[:CHARS_SHOWN]
 
 
 def median(values):
