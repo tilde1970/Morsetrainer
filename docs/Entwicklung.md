@@ -13,6 +13,11 @@ sudo apt install python3-venv python3-tk libportaudio2   # Debian, Ubuntu, Mint
 sudo dnf install python3-tkinter portaudio               # Fedora
 ```
 
+Unter Linux spielt der Ton direkt über PulseAudio (auch über
+`pipewire-pulse`, Bibliothek `libpulse-simple`) und fällt auf PortAudio
+zurück; PortAudio muss deshalb trotzdem installiert sein.
+`MORSETRAINER_AUDIO=portaudio` erzwingt PortAudio.
+
 Unter Windows und macOS bringt das Python von python.org Tk mit; PortAudio
 kommt dort mit dem Paket `sounddevice`. Für Intel-Macs gelten
 Einschränkungen, siehe Anleitung, Abschnitt „Ältere Macs mit
@@ -33,6 +38,11 @@ Nach einem `git pull` die Pakete mit `pip install -U -r requirements.txt`
 nachziehen; ohne `-U` bleiben ältere Versionen stehen, solange sie die
 Untergrenze erfüllen.
 
+`requirements.txt` nennt nur Unter- und Obergrenzen. Die festen Versionen der
+fertigen Programme stehen in `packaging/constraints.txt`; der Release-Build
+nutzt sie mit Python 3.12:
+`pip install -r requirements.txt -c packaging/constraints.txt`.
+
 Die Daten (`stats/`, `window_state.json` …) liegen dann im
 Projektverzeichnis.
 
@@ -51,7 +61,10 @@ Einstellungen eine andere.
 `--selftest` prüft, ob PortAudio, Tcl/Tk, beide Stimmen und der MP3-Export
 vorhanden sind und HTTPS Zertifikate findet (nötig für Rufzeichenliste und
 Update), schreibt eine kurze Probe als MP3 und endet mit Code 0
-(sonst 1 und dem Grund).
+(sonst 1 und dem Grund). Er nennt auch den Ausgabeweg (`Tonausgabe: …`).
+Sichtbar ist das nur, wenn du aus dem Quelltext im Terminal startest; die
+Windows-exe hat keine Konsole und zeigt weder Selbsttest noch `--version`
+an (der Exit-Code gilt trotzdem).
 
 ## Tests
 
@@ -94,8 +107,9 @@ main.py              Startdatei
 morsetrainer/
   app.py             Hauptfenster mit allen Reitern
   i18n.py            Sprache (Deutsch/Englisch), Texte in i18n_en.py
-  core/              Morsecode, Ton, Bandbedingungen, Texte, Statistik,
-                     Datenbank, Tagesübung, Diplome, Sicherung
+  core/              Morsecode, Ton (audio.py, unter Linux pulse.py),
+                     Bandbedingungen, Texte, Statistik, Datenbank,
+                     Tagesübung, Diplome, Sicherung
   modes/             ein Modul je Trainingsreiter
   net/               Netzwerkmodus (Trainer, Teilnehmer, Auswertung), Updates
   widgets/           wiederverwendbare Oberflächen-Bausteine, Hilfefenster

@@ -12,6 +12,10 @@ in it. With announcements on, the down arrow reads the next paragraph.
 which a screen reader reads well. In the Contest tab F1 sends CQ; there
 Ctrl+F1 opens the help.
 
+Daily practice has no tab of its own, so F1 never opens its chapter. To get
+there: in the help press Ctrl+F, type “4. Daily practice” and press
+Shift+Enter. That jumps to the last match, the heading of the chapter.
+
 **Language:** the program starts in German. Switch to English with
 Ctrl+Comma (the button is called “Einstellungen … (Strg+,)”) → “Sprache /
 Language”; it takes effect after a restart (“Jetzt neu starten” restarts
@@ -47,7 +51,7 @@ First turn the system volume down: the Morse tone has a fixed level and is
 not quiet. If there is no sound at all, see “No sound?” in section 10.
 
 1. Set **Koch lesson** at the top to 1 (K and M; already set on first
-   start). “▶ listen” plays the new character.
+   start). “▶ listen” plays the new character, in lesson 1 K and M.
 2. In the **One by one** tab choose **Content** “Characters” and practise.
    The **time limit** is on: there is no time to count, the character has
    to come as a sound pattern. After a run with at least 50 characters and
@@ -129,7 +133,8 @@ with Farnsworth the effective speed (“≈ 50 CPM effective” at 20/10).
 - **Returning to CW:** for everyone who used to know CW. Daily practice
   moves up faster (from 95 % on the first try by three lessons, from 85 %
   by one) and, if no speed is saved yet, starts at 15 WPM without
-  Farnsworth. You can untick the box at any time.
+  Farnsworth. You can untick the box at any time. Section 4 under “Do you
+  already know CW?” says which lesson to set before the first start.
 - **Band conditions:** set up the interference (section 6).
 
 ### Settings
@@ -145,7 +150,8 @@ with Farnsworth the effective speed (“≈ 50 CPM effective” at 20/10).
   counts. An invalid locator is named below the field.
 - **Practice:** the daily goal in minutes (default 10, 0 = no goal).
   **Relaxed daily practice** takes the time limit out of the warm-up, for
-  everyone who needs more than 1.5 seconds per answer. These warm-up
+  everyone who needs longer per answer than the time limit allows (see
+  the One by one tab, “Characters”). These warm-up
   blocks do not count for the review box and the awards that depend on it
   (Worked All Letters, All digits). The tick box **QSO or contest run in
   the daily practice outro** is on by default. Without it, the wind-downs
@@ -175,6 +181,12 @@ The tabs are **One by one**, **Non-stop**, **Speak**, **QSO**,
 **Contest**, **Network** and **Statistics** (Alt+1 to Alt+7). Start and
 stop with the button or F5 (F10 in Contest).
 
+If another program takes the focus during a run, your keys would go there.
+The Morsetrainer then brings its window to the front. If that fails, the
+run stops, and a message (also announced) says so; the answers up to then
+stay in the statistics. In daily practice and in Network there is only the
+notice.
+
 ### One by one
 
 Listen, answer, the next one. Under **Content** you choose
@@ -198,7 +210,8 @@ each answer you see your reaction time and the limit, e.g. “0.38 s, limit
   few characters, up to lesson 9, the key time is 1.2 s, then it falls to
   0.6 s by lesson 25. F11 (“Where am I?”) pauses the time limit while a
   character is waiting for your answer; the character then does not count
-  and comes again later.
+  and comes again later. You only switch the time limit on or off; you do
+  not set its length.
 - **Feedback beep:** a high beep for a correct answer, a low double tone
   for a wrong one (default off).
 - After a confusion you hear the correct character and the one you typed
@@ -421,8 +434,10 @@ overview.
 
 Can't be bothered to decide what to practise today? **▶ Daily practice
 (10 min, F12)** at the top puts together ten minutes from whatever is due
-and switches the tabs by itself. Afterwards the tab settings are back as
-they were. Warm-up, main part and wind-down depend on your level:
+and switches the tabs by itself. Before the first block a card, “Starting
+in a moment”, shows the mode, lesson and speed; the block begins with
+Enter. Afterwards the tab settings are back as they were. Warm-up, main
+part and wind-down depend on your level:
 
 - **Lessons 1–9:** warm-up with characters and time limit (3–4 min), main
   part groups at a fixed speed, wind-down Non-stop with groups of 3 (2
@@ -436,16 +451,20 @@ they were. Warm-up, main part and wind-down depend on your level:
   callsigns, QSO for head copy, callsigns, contest run with log or band
   conditions.
 
-The parts in detail:
+### The parts
 
 - **Warm-up:** all characters of the lesson; those due today in the review
   box come more often, or, if nothing is due, your most frequent
   confusions. With many due characters it takes up to 4 minutes, because
   each needs eight attempts for the review box to decide it today. The
-  time limit follows your effective speed. If you need longer, switch on
-  **Relaxed daily practice** in the settings.
+  time limit follows your effective speed. The characters come as fast as
+  set in the header if that is above the daily practice's character speed;
+  the pauses stay at the daily speed. If you need longer than the time
+  limit, switch on **Relaxed daily practice** in the settings: the warm-up
+  then runs without a time limit, and these blocks do not count for the
+  review box and the awards that depend on it.
 - **Speed:** the main part keeps a fixed speed (characters at least
-  18 WPM). It changes once a day, effective from the next: below 75 % on
+  18 WPM; only the start as a returning learner is at 15 WPM). It changes once a day, effective from the next: below 75 % on
   the first try (at least 100 characters) 1 WPM slower. After Koch, 90 % or
   more also makes it 1 WPM faster. Before that only the pauses get shorter
   (effective speed 1 WPM faster), from 95 % on a day without a lesson step,
@@ -453,12 +472,20 @@ The parts in detail:
 - **Lesson:** if the main part meets the Koch criterion (50 characters,
   90 % on the first try), the next lesson applies from the next day, no
   question asked. Daily practice keeps its own lesson for this (the first
-  time the one from the header); lesson and character set at the top stay
-  as you set them for free practice. On the first day of a new lesson a
+  time the one from the header); after that it cannot be changed in the
+  interface. Lesson and character set at the top stay as you set them for
+  free practice. On the first day of a new lesson a
   card shows the new character and plays it.
 - **Do you already know CW?** Switch on **Returning to CW** (header, “▸ More
-  options”). As a contester, set lesson 42 and your speed at the top
-  before the first time; daily practice takes both over.
+  options”). Before the first daily practice, set at the top the lesson you
+  want to start at (as a contester lesson 42). Daily practice takes it over
+  at the first start and keeps it itself from then on; later the starting
+  lesson cannot be changed in the interface. The speed starts at 15 WPM
+  without Farnsworth, even if the header shows more; only the warm-up plays
+  the characters as fast as the header. Daily practice moves up faster
+  (three lessons from 95 %, one from 85 % on the first try, each with at
+  least 50 characters), and the evening summary says how many characters
+  you have regained.
 - **Wind-down after Koch:** the **QSO for head copy** (short, “head copy +
   questions”) only comes once you have learned AR, KN, SK and BK and it
   fits into the four minutes at today's speed, questions included,
@@ -484,13 +511,25 @@ The parts in detail:
   A QSO already begun does not count for the block; its answers appear in
   the statistics. At the questions after the QSO the button has no effect.
   The block announcement and F11 name the shortcut.
-- **Three stars a day:** ★ *Showed up* for the full 10 minutes, ★ *Clean*
-  for 90 % on the first try in the main part (80 % in the first three days
-  of a new lesson), ★ *Ahead* for real progress: next lesson earned, a
-  character reaching box 3 of the review box for the first time, a daily
-  speed you never had before, or band “medium” in the wind-down for the
-  first time. A second daily practice on the same day can add missing
-  stars; earned stars are never lost, not even when you stop early.
+
+### Three stars a day
+
+Each star counts once a day. A second daily practice on the same day can
+add missing stars; earned stars are never lost, not even when you stop
+early.
+
+- ★ *Showed up:* all blocks run to the end, and the practice time of the
+  day reaches 10 minutes (a quarter of a minute of leeway).
+- ★ *Clean:* the main part has at least 50 characters, 90 % of them
+  correct on the first try. In the first three days of a new lesson 80 %
+  is enough.
+- ★ *Ahead:* for real progress, when at least one of these happens: the
+  next lesson is earned, a character reaches box 3 of the review box for
+  the first time, tomorrow's daily speed is one you never had before, or
+  band “medium” runs in the wind-down for the first time.
+
+### Cards, summary and week
+
 - **Between the blocks** a card shows the result, new stars and what comes
   next. With at least 4 mistakes and at least 5 % of the answers it also
   says what caused them (“Of 9 mistakes, 5 were mix-ups, 3 too slow, 1
@@ -1117,7 +1156,9 @@ this order:
    ist nicht mehr verfügbar” (the audio device is no longer available), or
    you connected a device after the start: the Morsetrainer only knows the
    devices from program start. Connect the device, choose it as default
-   output in the system and restart the program.
+   output in the system and restart the program. On Linux with PulseAudio
+   (step 7) the single tones usually follow a new default output by
+   themselves after about two seconds; if that does not help, restart.
 4. **Message “Das Audiogerät ist belegt” (the audio device is in use):**
    another program has the device to itself (exclusive mode), such as SDR,
    logging or audio software. Release the device there or close that
@@ -1213,8 +1254,8 @@ as a consistent state, even while you are practising. The voices
 
 This is how to bring a backup back on the same or a new computer:
 
-1. Close all other Morsetrainer windows. Open “Settings … → Data” and
-   choose **Restore …**.
+1. End a running exercise and close all other Morsetrainer windows. Open
+   “Settings … → Data” and choose **Restore …**.
 2. Choose the ZIP file. The database is checked first.
 3. Confirm the question. The current state is saved first as
    `vor-import-<time>.zip` in the data folder; the three newest such files

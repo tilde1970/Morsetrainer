@@ -11,6 +11,11 @@ darin. Mit Sprachansage liest Pfeil runter den nächsten Absatz vor.
 auch ein Screenreader gut liest. Im Reiter Contest sendet F1 CQ, dort
 öffnet Strg+F1 die Hilfe.
 
+Die Tagesübung hat keinen eigenen Reiter, deshalb öffnet F1 ihr Kapitel
+nie. So kommst du hin: In der Hilfe Strg+F drücken, „4. Tagesübung“ tippen
+und Umschalt+Enter drücken. Das springt zum letzten Treffer, der
+Überschrift des Kapitels.
+
 **Blind oder sehbehindert?** Abschnitt 8 „Barrierefreiheit“ beschreibt
 Ansage, Bedienung mit der Tastatur, Schriftgröße und Kontrast.
 
@@ -42,7 +47,8 @@ Lautstärke und ist nicht leise. Kommt gar kein Ton, hilft „Kein Ton?“ in
 Abschnitt 10.
 
 1. Stell oben **Koch-Lektion** auf 1 (K und M; beim ersten Start schon so
-   eingestellt). „▶ anhören“ spielt das neue Zeichen vor.
+   eingestellt). „▶ anhören“ spielt das neue Zeichen vor, in Lektion 1 K
+   und M.
 2. Wähle im Reiter **Einzeln** unter **Inhalt** „Zeichen“ und übe. Das
    **Zeitlimit** ist an: Es bleibt keine Zeit zum Zählen, das Zeichen muss
    als Klangbild kommen. Nach einem Durchgang mit mindestens 50 Zeichen und
@@ -123,7 +129,9 @@ Farnsworth das effektive („≈ 50 ZpM effektiv“ bei 20/10). Unter
 - **Wiedereinsteiger:** für alle, die CW früher konnten. Die Tagesübung
   steigt schneller auf (ab 95 % beim ersten Versuch um drei Lektionen, ab
   85 % um eine) und beginnt, wenn noch kein Tempo gespeichert ist, mit
-  15 WPM ohne Farnsworth. Du kannst den Haken jederzeit wegnehmen.
+  15 WPM ohne Farnsworth. Du kannst den Haken jederzeit wegnehmen. Welche
+  Lektion und welches Tempo du vor dem ersten Start einstellst, steht in
+  Abschnitt 4 unter „Du kannst CW schon?“.
 - **Bandbedingungen:** Störungen einstellen (Abschnitt 6).
 
 ### Einstellungen
@@ -140,7 +148,8 @@ einmal einstellt:
   deines Rufzeichens. Ein ungültiger Locator wird unter dem Feld genannt.
 - **Üben:** das Tagesziel in Minuten (Standard 10, 0 = ohne Ziel). Die
   **Entspannte Tagesübung** nimmt das Zeitlimit aus dem Aufwärmen, für alle,
-  die je Antwort länger als 1,5 Sekunden brauchen. Diese Aufwärmblöcke
+  die je Antwort länger als das Zeitlimit brauchen (siehe Reiter Einzeln,
+  „Zeichen“). Diese Aufwärmblöcke
   zählen nicht für die Lernkartei und die Diplome, die an ihr hängen (Worked
   All Letters, Alle Ziffern). Der Haken **QSO oder Contest-Run im
   Ausklang der Tagesübung** ist standardmäßig an. Ohne ihn üben die
@@ -170,6 +179,12 @@ Die Reiter heißen **Einzeln**, **Am Stück**, **Sprechen**, **QSO**,
 **Contest**, **Netzwerk** und **Statistik** (Alt+1 bis Alt+7). Start und
 Stopp gehen mit dem Knopf oder F5 (im Contest F10).
 
+Nimmt während eines Durchgangs ein anderes Programm den Fokus, kämen deine
+Tasten dort an. Der Morsetrainer holt sein Fenster dann nach vorn. Klappt
+das nicht, hält der Durchgang an, und eine Meldung (auch als Ansage) sagt
+es; die Antworten bis dahin bleiben in der Statistik. In der Tagesübung und
+im Netzwerk gibt es nur den Hinweis.
+
 ### Einzeln
 
 Hören, antworten, das nächste. Unter **Inhalt** wählst du **Zeichen**,
@@ -192,7 +207,8 @@ stehen Reaktionszeit und Limit da, z. B. „0,38 s, Limit 1,20 s“.
   langsamer übt, bekommt mehr Zeit. Mit wenigen Zeichen, bis zur Lektion 9,
   ist die Tastenzeit 1,2 s, danach sinkt sie bis zur Lektion 25 auf 0,6 s.
   F11 („Wo bin ich?“) hält das Zeitlimit an, solange ein Zeichen auf deine
-  Antwort wartet; das Zeichen zählt dann nicht und kommt später wieder.
+  Antwort wartet; das Zeichen zählt dann nicht und kommt später wieder. Du
+  schaltest das Zeitlimit nur an oder aus; die Dauer stellst du nicht ein.
 - **Quittungston:** ein heller Ton bei richtiger, ein tiefer Doppelton bei
   falscher Antwort (Standard aus).
 - Nach einer Verwechslung hörst du das richtige und dein getipptes Zeichen
@@ -412,8 +428,10 @@ liest eine Übersicht vor.
 
 Keine Lust zu entscheiden, was du heute übst? **▶ Tagesübung (10 Min, F12)**
 oben stellt zehn Minuten aus dem zusammen, was dran ist, und schaltet die
-Reiter selbst um. Danach sind die Einstellungen der Reiter wieder wie
-vorher. Aufwärmen, Hauptteil und Ausklang richten sich nach deinem Stand:
+Reiter selbst um. Vor dem ersten Block wartet die Karte „Gleich geht es
+los“ mit Modus, Lektion und Tempo; der Block beginnt mit Enter. Danach sind
+die Einstellungen der Reiter wieder wie vorher. Aufwärmen, Hauptteil und
+Ausklang richten sich nach deinem Stand:
 
 - **Lektion 1–9:** Aufwärmen mit Zeichen und Zeitlimit (3–4 Min), Hauptteil
   Gruppen im festen Tempo, Ausklang Am Stück mit Gruppen von 3 (2 Min).
@@ -426,17 +444,21 @@ vorher. Aufwärmen, Hauptteil und Ausklang richten sich nach deinem Stand:
   Rufzeichen, QSO zum Kopfhören, Rufzeichen, Contest-Run mit Log oder
   Bandbedingungen.
 
-Die Bausteine im Einzelnen:
+### Die Bausteine
 
 - **Aufwärmen:** alle Zeichen der Lektion; die heute fälligen der
   Lernkartei kommen öfter, ist nichts fällig, deine häufigsten
   Verwechslungen. Bei vielen fälligen Zeichen dauert es bis zu 4 Minuten,
   denn jedes braucht acht Versuche, damit die Lernkartei es heute
   entscheidet. Das Zeitlimit richtet sich nach deinem effektiven Tempo.
-  Brauchst du länger, schalte in den Einstellungen die **Entspannte
-  Tagesübung** ein.
+  Die Zeichen kommen so schnell wie in der Kopfleiste eingestellt, wenn das
+  über dem Zeichentempo der Tagesübung liegt; die Pausen bleiben beim
+  Tagestempo. Brauchst du länger als das Zeitlimit, schalte in den
+  Einstellungen die **Entspannte Tagesübung** ein: Das Aufwärmen läuft dann
+  ohne Zeitlimit, und diese Blöcke zählen nicht für die Lernkartei und die
+  Diplome, die an ihr hängen.
 - **Tempo:** Im Hauptteil bleibt das Tempo fest (Zeichen mindestens
-  18 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: Unter 75 %
+  18 WPM, nur der Start als Wiedereinsteiger liegt bei 15 WPM). Angepasst wird einmal am Tag, wirksam ab dem nächsten: Unter 75 %
   beim ersten Versuch (mindestens 100 Zeichen) wird es 1 WPM langsamer. Nach
   Koch wird es ab 90 % auch 1 WPM schneller. Vorher werden nur die Pausen
   kürzer (effektiv 1 WPM schneller), und zwar ab 95 % an einem Tag ohne
@@ -444,12 +466,20 @@ Die Bausteine im Einzelnen:
 - **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
   beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion, ohne
   Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim ersten Mal
-  die aus der Kopfleiste; Lektion und Zeichensatz oben bleiben fürs freie
-  Üben, wie du sie eingestellt hast. Am ersten Tag einer neuen Lektion zeigt
+  die aus der Kopfleiste; danach lässt sie sich in der Oberfläche nicht mehr
+  ändern. Lektion und Zeichensatz oben bleiben fürs freie Üben, wie du sie
+  eingestellt hast. Am ersten Tag einer neuen Lektion zeigt
   eine Karte das neue Zeichen und spielt es vor.
 - **Du kannst CW schon?** Schalte **Wiedereinsteiger** ein (Kopfleiste,
-  „▸ Weitere Optionen“). Als Contester stellst du vor dem ersten Mal oben
-  Lektion 42 und dein Tempo ein; die Tagesübung übernimmt beides.
+  „▸ Weitere Optionen“). Stell vor der ersten Tagesübung oben die Lektion
+  ein, bei der du anfangen willst (als Contester Lektion 42). Die
+  Tagesübung übernimmt sie beim ersten Start und führt sie danach selbst;
+  später lässt sie sich in der Oberfläche nicht mehr ändern. Das Tempo
+  beginnt als Wiedereinsteiger bei 15 WPM ohne Farnsworth, auch wenn die
+  Kopfleiste mehr zeigt; nur das Aufwärmen spielt die Zeichen so schnell wie
+  dort. Die Tagesübung steigt schneller auf (drei Lektionen ab 95 %, eine
+  ab 85 % beim ersten Versuch, jeweils mit mindestens 50 Zeichen), und die
+  Abendbilanz nennt, wie viele Zeichen du wiedererlangt hast.
 - **Ausklang nach Koch:** Das **QSO zum Kopfhören** (kurz, „Kopfhören +
   Fragen“) kommt erst, wenn du AR, KN, SK und BK gelernt hast und es im
   Tagestempo samt Fragen in die vier Minuten passt, etwa ab 18 WPM effektiv;
@@ -474,13 +504,25 @@ Die Bausteine im Einzelnen:
   so bleibt ★ *Dabei* erreichbar. Ein angefangenes QSO zählt nicht für den
   Block, seine Antworten stehen in der Statistik. Bei der Abfrage nach dem
   QSO wirkt der Knopf nicht. Die Blockansage und F11 nennen das Kürzel.
-- **Drei Sterne am Tag:** ★ *Dabei* für die vollen 10 Minuten, ★ *Sauber*
-  für 90 % beim ersten Versuch im Hauptteil (in den ersten drei Tagen einer
-  neuen Lektion 80 %), ★ *Weiter* für echten Fortschritt: Aufstieg
-  vorgemerkt, ein Zeichen erstmals in Fach 3 der Lernkartei, ein Tagestempo,
-  das du noch nie hattest, oder erstmals Band „mittel“ im Ausklang. Eine
-  zweite Tagesübung am selben Tag kann fehlende Sterne nachholen; verdiente
-  Sterne gehen nie verloren, auch nicht beim Abbrechen.
+
+### Drei Sterne am Tag
+
+Jeder Stern gilt einmal je Tag. Eine zweite Tagesübung am selben Tag kann
+fehlende Sterne nachholen; verdiente Sterne gehen nie verloren, auch nicht
+beim Abbrechen.
+
+- ★ *Dabei:* Alle Blöcke laufen zu Ende, und die Übungszeit des Tages
+  erreicht die 10 Minuten (eine Viertelminute Spielraum).
+- ★ *Sauber:* Im Hauptteil kommen mindestens 50 Zeichen vor, davon sind 90 %
+  beim ersten Versuch richtig. In den ersten drei Tagen einer neuen Lektion
+  reichen 80 %.
+- ★ *Weiter:* für echten Fortschritt, wenn mindestens eines davon eintritt:
+  der Aufstieg in die nächste Lektion ist vorgemerkt, ein Zeichen erreicht
+  erstmals Fach 3 der Lernkartei, das Tagestempo für morgen ist eines, das
+  du noch nie hattest, oder im Ausklang läuft erstmals Band „mittel“.
+
+### Karten, Bilanz und Woche
+
 - **Zwischen den Blöcken** zeigt eine Karte das Ergebnis, neue Sterne und
   was als Nächstes kommt. Bei mindestens 4 Fehlern und mindestens 5 % der
   Antworten steht auch, woran es lag („Von 9 Fehlern waren 5
@@ -1109,7 +1151,9 @@ erscheint „Keine Tonausgabe möglich“, prüfe der Reihe nach:
    mehr verfügbar“, oder hast du ein Gerät erst nach dem Start angeschlossen:
    Der Morsetrainer kennt nur die Geräte vom Programmstart. Schließe das
    Gerät an, wähle es im System als Standardausgabe und starte das Programm
-   neu.
+   neu. Unter Linux mit PulseAudio (Schritt 7) folgen die Einzeltöne einer
+   neuen Standardausgabe meist nach etwa zwei Sekunden von selbst; hilft das
+   nicht, starte neu.
 4. **Meldung „Das Audiogerät ist belegt“:** Ein anderes Programm hat das
    Gerät für sich allein (Exklusivmodus), etwa SDR-, Logbuch- oder
    Audio-Software. Gib das Gerät dort frei oder schließe das Programm.
@@ -1202,7 +1246,8 @@ kommt als stimmiger Stand hinein, auch wenn gerade geübt wird. Die Stimmen
 
 So holst du eine Sicherung auf demselben oder einem neuen Rechner zurück:
 
-1. Schließe alle anderen Morsetrainer-Fenster. Öffne „Einstellungen … →
+1. Beende eine laufende Übung und schließe alle anderen
+   Morsetrainer-Fenster. Öffne „Einstellungen … →
    Daten“ und wähle **Einlesen …**.
 2. Wähle die ZIP-Datei. Beim Einlesen wird die Datenbank vorher geprüft.
 3. Bestätige die Rückfrage. Der bisherige Stand landet vorher als

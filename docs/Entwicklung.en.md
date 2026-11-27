@@ -13,6 +13,11 @@ sudo apt install python3-venv python3-tk libportaudio2   # Debian, Ubuntu, Mint
 sudo dnf install python3-tkinter portaudio               # Fedora
 ```
 
+On Linux the sound plays directly through PulseAudio (also through
+`pipewire-pulse`, library `libpulse-simple`) and falls back to PortAudio;
+PortAudio must therefore be installed anyway.
+`MORSETRAINER_AUDIO=portaudio` forces PortAudio.
+
 On Windows and macOS the Python from python.org comes with Tk; PortAudio
 comes with the `sounddevice` package there. Intel Macs have some
 restrictions, see the manual, section “Older Macs with an Intel processor”.
@@ -32,6 +37,11 @@ After a `git pull`, update the packages with
 `pip install -U -r requirements.txt`; without `-U`, older versions stay as
 long as they meet the lower bound.
 
+`requirements.txt` only gives lower and upper bounds. The pinned versions of
+the finished programs are in `packaging/constraints.txt`; the release build
+uses them with Python 3.12:
+`pip install -r requirements.txt -c packaging/constraints.txt`.
+
 The data (`stats/`, `window_state.json` …) then lives in the project
 directory.
 
@@ -50,7 +60,10 @@ settings.
 `--selftest` checks that PortAudio, Tcl/Tk, both voices and the MP3 export
 are present and HTTPS finds certificates (needed for the callsign list and
 update), writes a short sample as MP3 and exits with code 0 (otherwise
-1 and the reason).
+1 and the reason). It also names the output path (`Tonausgabe: …`). You only
+see this when you start from source in a terminal; the Windows exe has no
+console and shows neither the self-test nor `--version` (the exit code
+still applies).
 
 ## Tests
 
@@ -93,8 +106,9 @@ main.py              start file
 morsetrainer/
   app.py             main window with all tabs
   i18n.py            language (German/English), texts in i18n_en.py
-  core/              Morse code, audio, band conditions, texts, statistics,
-                     database, daily practice, awards, backup
+  core/              Morse code, audio (audio.py, on Linux pulse.py), band
+                     conditions, texts, statistics, database, daily
+                     practice, awards, backup
   modes/             one module per training tab
   net/               network mode (trainer, participants, scoring), updates
   widgets/           reusable interface building blocks, help window
