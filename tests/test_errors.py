@@ -440,6 +440,15 @@ class StartupHintTest(unittest.TestCase):
         self.assertIn("libportaudio2", pa)
         self.assertIsNone(launcher.missing_library(ImportError("No module named 'numpy'")))
 
+    def test_too_old_python_gets_a_hint_instead_of_a_traceback(self):
+        import main as launcher
+        hint = launcher.old_python((3, 8, 10))
+        self.assertIn("Python 3.10", hint)
+        self.assertIn("3.8.10", hint)
+        self.assertIsNone(launcher.old_python((3, 10, 0)))
+        self.assertIsNone(launcher.old_python((3, 14, 1)))
+        self.assertIsNone(launcher.old_python())  # das laufende Python reicht (sonst liefe diese Suite nicht)
+
     def test_start_prints_the_hint_and_exits_instead_of_a_traceback(self):
         import builtins
         import io
