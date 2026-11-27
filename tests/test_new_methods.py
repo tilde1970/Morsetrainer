@@ -183,6 +183,130 @@ class Mp3Test(unittest.TestCase):
             self.assertAlmostEqual(writer.seconds, 1.0)
 
 
+class ReviewBoundaryTest(unittest.TestCase):
+    """Die Schwellen der Lernkartei auf den Wert genau, mit festen Zahlen statt der Konstanten
+    (Mutationsproben des Test-Prüfers): Wer eine Schwelle verschiebt, soll es hier merken."""
+    TODAY = date(2026, 10, 10)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.patch = mock.patch.object(stats, "STATS_DIR", Path(self.tmp.name))
+        self.patch.start()
+        self.addCleanup(self.tmp.cleanup)
+        self.addCleanup(self.patch.stop)
+
+    def entry(self, box=2, n=100, fluent=100, pn=100, pfluent=100, due=True, decided=False):
+        """Eintrag eines fälligen Zeichens in `box` mit den Zählern des heutigen Tages."""
+        entry = {"box": box, "n": n, "fluent": fluent, "pn": pn, "pfluent": pfluent, "decided": decided,
+                 "day": self.TODAY.isoformat()}
+        if due:
+            entry["due"] = (self.TODAY - timedelta(days=1)).isoformat()
+        return entry
+
+    def decide(self, **kwargs):
+        entry = self.entry(**kwargs)
+        review._decide("K", entry, self.TODAY)
+        return entry
+
+    def test_decision_needs_8_attempts(self):
+        self.assertFalse(self.decide(n=7, fluent=7, due=False)["decided"])
+        self.assertTrue(self.decide(n=8, fluent=8, due=False)["decided"])
+
+    def test_share_thresholds_90_80_75_percent(self):
+        # (Anteil flüssig in Prozent bei 100 Versuchen) -> Fach nach der Entscheidung (Start: Fach 3, Index 2)
+        for percent, box, decided in ((100, 3, True), (90, 3, True), (89, 2, False), (80, 2, False),
+                                      (79, 1, True), (75, 1, True), (74, 0, True), (0, 0, True)):
+            entry = self.decide(n=100, fluent=percent)
+            self.assertEqual((entry["box"], entry["decided"]), (box, decided), percent)
+
+    def test_a_shaky_character_never_falls_below_the_first_box(self):
+        entry = self.decide(box=0, n=100, fluent=79)
+        self.assertEqual((entry["box"], entry["decided"]), (0, True))
+        self.assertEqual(self.decide(box=1, n=100, fluent=79)["box"], 0)
+        self.assertEqual(self.decide(box=4, n=100, fluent=79)["box"], 3)
+
+    def test_untimed_correct_answers_are_neither_fluent_nor_slow(self):
+        # F11-Ansage ohne Zeitlimit: die Antwort ist richtig, sagt aber nichts über die Flüssigkeit.
+        e = {"good": 5, "wrong": 0, "untimed": 5, "latencies": [], "assumed_latencies": [], "slow": 0}
+        self.assertEqual(review.fluent_count(e), 0)
+        e = {"good": 8, "wrong": 0, "untimed": 3, "latencies": [0.5] * 5, "assumed_latencies": [], "slow": 0}
+        self.assertEqual(review.fluent_count(e), 5)
+
+    def test_promotion_needs_8_plain_attempts_with_90_percent_fluent(self):
+        self.assertEqual(self.decide(pn=7, pfluent=7)["box"], 2)        # zu wenige Zufallszeichen
+        self.assertEqual(self.decide(pn=8, pfluent=8)["box"], 3)
+        self.assertEqual(self.decide(pn=100, pfluent=89)["box"], 2)     # 89 % aus Zufallszeichen
+        self.assertEqual(self.decide(pn=100, pfluent=90)["box"], 3)
+
+    def test_only_a_due_character_moves_up(self):
+        entry = self.decide(due=False, n=100, fluent=100)  # ohne Fach: neu, gleich sicher -> erstes Fach
+        self.assertEqual(entry["box"], 0)
+        # Ein neues Zeichen bekommt auch bei knapp unter „sicher“ sein erstes Fach und einen Termin;
+        # die Schonzone (80–90 %) gilt nur für Zeichen, die schon in der Kartei liegen.
+        new = self.decide(due=False, n=100, fluent=85, box=0)
+        self.assertEqual((new["box"], new["decided"]), (0, True))
+        self.assertIn("due", new)
+        entry = self.entry(box=2)
+        entry["due"] = (self.TODAY + timedelta(days=1)).isoformat()  # erst morgen fällig
+        review._decide("K", entry, self.TODAY)
+        self.assertEqual((entry["box"], entry["decided"]), (2, False))
+
+    def test_one_decision_per_day(self):
+        entry = self.decide(n=100, fluent=100)
+        self.assertEqual(entry["box"], 3)
+        entry.update(n=200, fluent=0)  # später am Tag schlechter: gilt erst morgen
+        review._decide("K", entry, self.TODAY)
+        self.assertEqual(entry["box"], 3)
+
+    def test_boxes_come_back_after_1_2_4_8_16_32_days(self):
+        for box, days in enumerate((1, 2, 4, 8, 16, 32)):
+            entry = self.decide(box=max(box - 1, 0), n=100, fluent=100)
+            if box > 0:  # fällig und sicher: ein Fach höher
+                self.assertEqual(entry["box"], box)
+                self.assertEqual(entry["due"], (self.TODAY + timedelta(days=days)).isoformat())
+        top = self.decide(box=5, n=100, fluent=100)
+        self.assertEqual(top["box"], 5)  # höher als Fach 6 geht nicht
+        self.assertEqual(top["due"], (self.TODAY + timedelta(days=32)).isoformat())
+        first = self.decide(box=0, n=100, fluent=0)
+        self.assertEqual(first["due"], (self.TODAY + timedelta(days=1)).isoformat())
+
+    def test_without_a_limit_fluent_means_at_most_1_5_seconds(self):
+        def fluent(*latencies):
+            e = {"good": len(latencies), "wrong": 0, "latencies": list(latencies), "assumed_latencies": [], "slow": 0}
+            e["slow"] = sum(review.is_slow(lat, False) for lat in latencies)
+            return review.fluent_count(e)
+        self.assertEqual(fluent(1.5), 1)
+        self.assertEqual(fluent(1.51), 0)
+        self.assertEqual(fluent(1.0, 1.5, 1.6, 2.0), 2)
+
+    def test_with_a_limit_the_limit_is_the_threshold(self):
+        self.assertFalse(review.is_slow(1.8, False, limit=1.8))
+        self.assertTrue(review.is_slow(1.81, False, limit=1.8))
+        self.assertTrue(review.is_slow(0.2, True, limit=1.8))   # angenommen ist nie flüssig
+        self.assertEqual(review.fluent_cut(None), 1.5)
+        self.assertEqual(review.fluent_cut(2.4), 2.4)
+
+    def test_only_8_or_more_different_characters_can_promote(self):
+        self.assertFalse(review.can_promote("KMURESN"))
+        self.assertTrue(review.can_promote("KMURESNA"))
+        self.assertTrue(review.can_promote("KMURESNAK"))   # doppelte zählen einmal
+        self.assertFalse(review.can_promote("KKKKKKKKKK"))
+
+    def test_due_chars_weigh_double_and_focused_chars_fourfold(self):
+        from morsetrainer.core.weighting import CharPicker
+        today = date.today()
+        review._save({"K": {"box": 0, "due": "2000-01-01"}, "M": {"box": 0, "due": (today + timedelta(days=9)).isoformat()},
+                      "R": {"box": 0, "due": (today + timedelta(days=9)).isoformat()}})
+        self.addCleanup(review.focus.clear)
+        weights = dict(zip("KMR", CharPicker("KMR", weighted=True).weights()))
+        self.assertAlmostEqual(weights["K"] / weights["M"], 2.0)
+        review.focus.add("K")
+        review.focus.add("R")
+        weights = dict(zip("KMR", CharPicker("KMR", weighted=True).weights()))
+        self.assertAlmostEqual(weights["K"] / weights["M"], 4.0)
+        self.assertAlmostEqual(weights["R"] / weights["M"], 4.0)
+
+
 class ReviewTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
