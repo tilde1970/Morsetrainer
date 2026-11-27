@@ -538,7 +538,9 @@ beim Abbrechen.
   Esc beendet die Tagesübung.“), ebenso Strg+Q (Mac: Cmd+Q) und das
   Schließkreuz. So kostet ein Fehlgriff nicht den Tag.
 - **Abendbilanz:** Sterne und Stand zum Wochenziel, was gegenüber der
-  Vorwoche besser geworden ist (nur mit genug Daten, nie „schlechter“), wie
+  Vorwoche besser geworden ist (nur mit genug Daten und nur, wenn es sich vom
+  Zufall abhebt; sonst „keine deutliche Änderung“, bei einem deutlich
+  langsamer gewordenen Zeichen „etwas schwächer“), wie
   viel bis zur nächsten Lektion fehlt und das Tempo für morgen mit dem
   Grund. Lief der Hauptteil gut, gibt es einmal am Tag **Noch 5 Min** mit
   etwas anderem: deine Verwechslungen aus der Lektion, einen Rufz-Durchgang

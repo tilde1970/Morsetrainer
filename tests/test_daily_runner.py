@@ -725,6 +725,19 @@ class DailyRunnerTest(AppTestCase):
         self.assertNotIn(text, held.spoken)
         held.close(follow=False)
 
+    def test_evening_summary_names_weaker_chars_and_never_says_held_steady(self):
+        from morsetrainer.widgets.daily_panel import EveningSummary
+        worse = [{"kind": "latency", "char": "6", "before": 1.27, "now": 1.69}]
+        weaker = EveningSummary(self.app.root, [daily.DABEI], {"status": daily.WORSE, "better": [], "worse": worse})
+        self.assertIn("Etwas schwächer als in der Vorwoche: 6.", weaker.spoken.replace("Sechs", "6"))
+        self.assertIn("Schwankungen sind normal", weaker.spoken)
+        self.assertNotIn("Stand gehalten", weaker.spoken)
+        weaker.close(follow=False)
+        held = EveningSummary(self.app.root, [daily.DABEI], {"status": daily.HELD, "better": [], "worse": []})
+        self.assertIn("Keine deutliche Änderung gegenüber der Vorwoche.", held.spoken)
+        self.assertNotIn("Stand gehalten", held.spoken)
+        held.close(follow=False)
+
     def test_quit_asks_twice_during_daily_practice(self):
         self.runner.start()
         with mock.patch.object(self.app, "on_close") as close:

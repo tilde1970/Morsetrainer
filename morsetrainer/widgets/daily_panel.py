@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from morsetrainer.core import awards, daily, qso_text, stats, week
+from morsetrainer.core.morse import display_text
 from morsetrainer.i18n import N_, daily_key, number, skip_key, tr
 from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.ui_widgets import focus_keeper, wrap_pair
@@ -183,6 +184,18 @@ def _spoken_better(item: dict) -> str:
             wpm=item["wpm"], before=number(round(item["before"] * 100)), now=number(round(item["now"] * 100)))
     return tr("{char} kommt schneller, von {before} auf {now} Sekunden").format(
         char=announcer.spell(item["char"]), before=number(item["before"], 2), now=number(item["now"], 2))
+
+
+def worse_line(items: list, spoken: bool = False) -> str:
+    """„Etwas schwächer als in der Vorwoche: R, K.“ für die Abendbilanz; leer ohne Zeichen.
+    Schwankungen sind normal (das Tempo hat sich vielleicht auch erhöht); das steht dabei."""
+    if not items:
+        return ""
+    chars = ", ".join(announcer.spell(item["char"]) if spoken else display_text(item["char"]) for item in items)
+    return tr("Etwas schwächer als in der Vorwoche: {chars}. Schwankungen sind normal.").format(chars=chars)
+
+
+HELD_LINE = N_("Keine deutliche Änderung gegenüber der Vorwoche.")
 
 
 def band_change_line(change) -> str:
@@ -493,10 +506,13 @@ class EveningSummary:
 
         box = theme.card(frame, tr("Besser geworden (gegenüber der Vorwoche)"), padx=0, pady=(12, 0))
         lines = [better_line(item) for item in comparison.get("better", [])]
+        worse = worse_line(comparison.get("worse", []))
         self.today_text = ""
+        if worse:
+            lines.append(worse)
         if not lines:
             held = comparison.get("status") == daily.HELD
-            lines = [tr("Stand gehalten.") if held else tr("Für einen Vergleich mit der Vorwoche fehlen noch Daten.")]
+            lines = [tr(HELD_LINE) if held else tr("Für einen Vergleich mit der Vorwoche fehlen noch Daten.")]
             if not held and today:
                 # Ehrlich leer bleibt der Vergleich; die Zähler des Tages füllen die Lücke.
                 self.today_text = today
@@ -566,10 +582,14 @@ class EveningSummary:
         better = comparison.get("better", [])
         if better:
             parts.append(tr("Besser geworden: ") + "; ".join(_spoken_better(item) for item in better))
-        elif comparison.get("status") == daily.HELD:
-            parts.append(tr("Stand gehalten."))
-        elif self.today_text:
-            parts.append(self.today_text)
+        worse = worse_line(comparison.get("worse", []), spoken=True)
+        if worse:
+            parts.append(worse)
+        elif not better:
+            if comparison.get("status") == daily.HELD:
+                parts.append(tr(HELD_LINE))
+            elif self.today_text:
+                parts.append(self.today_text)
         if outlook:
             parts.append(outlook_line(outlook))
         parts.extend(self.tempo_lines)

@@ -544,8 +544,9 @@ early.
   the daily practice.”), and so do Ctrl+Q (Mac: Cmd+Q) and the window's
   close button. So a slip doesn't cost you the day.
 - **Evening summary:** stars and where you stand on the weekly goal, what
-  improved compared with the week before (only with enough data, never
-  “worse”), how much is missing for the next lesson and tomorrow's speed
+  improved compared with the week before (only with enough data and only if
+  it stands out from chance; otherwise “no clear change”, or “a little
+  weaker” for a character that has clearly become slower), how much is missing for the next lesson and tomorrow's speed
   with the reason. If the main part went well, you get **5 more min** once
   a day with something different: your confusions within the lesson, a RufZ
   run or words. After lesson 41 it points out the prosigns once; **Set

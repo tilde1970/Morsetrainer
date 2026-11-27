@@ -36,6 +36,7 @@ Gesamtstatistik stehen):
 import math
 from dataclasses import dataclass, field
 from datetime import date
+from statistics import NormalDist
 
 from morsetrainer.core import db, koch, review, tempo
 
@@ -564,8 +565,12 @@ def stars_on(state: dict, day: date) -> list:
 
 
 # --- Rückblick: Zwischenkarte und Abendbilanz ---------------------------------
-# Verglichen wird nur, was sich fair vergleichen lässt; es gibt kein
-# „schlechter“, nur „besser“, „Stand gehalten“ oder „noch zu wenig Daten“.
+# Verglichen wird nur, was sich fair vergleichen lässt: „besser“, „etwas schwächer“,
+# „keine deutliche Änderung“ oder „noch zu wenig Daten“. Ein Unterschied zählt nur,
+# wenn er die Hürde (BETTER_SHARE, BETTER_SECONDS) überschreitet und sich in einem
+# Rangtest vom Zufall abhebt; die Fehlalarmrate je Woche (WEEK_ALPHA) wird auf die
+# verglichenen Zeichen verteilt. Sonst fände man bei 5 bis 20 Zeichen und je etwa
+# 40 Antworten fast jede Woche ein Zeichen, das „schneller“ kam.
 
 WEEK_DAYS = 7
 # Reaktionszeit je Zeichen: Median der Zeit nach dem Zeichen, nur aus
@@ -579,12 +584,13 @@ LATENCY_WPM_SPREAD = 2
 LATENCY_TODAY_MIN = 10
 BETTER_SHARE = 0.15
 BETTER_SECONDS = 0.1
+WEEK_ALPHA = 0.15
 # Gruppen: Erstversuch-Anteil bei gleichem effektivem Tempo.
 GROUPS_WEEK_MIN_CHARS = 200
 GROUPS_BETTER_POINTS = 0.03
 MOMENTS_SHOWN = 2
 BETTER_SHOWN = 3
-BETTER, HELD, FEW = "better", "held", "few"
+BETTER, WORSE, HELD, FEW = "better", "worse", "held", "few"
 
 # „Noch 5 Min“ in der Abendbilanz: einmal am Tag, nur nach einem guten
 # Hauptteil, mit anderem Inhalt als heute.
@@ -653,6 +659,40 @@ def _faster(before: float, now: float) -> bool:
     return before - now >= max(before * BETTER_SHARE, BETTER_SECONDS)
 
 
+def _slower(before: float, now: float) -> bool:
+    """Um dieselbe Hürde langsamer (bezogen auf vorher, wie _faster)."""
+    return now - before >= max(before * BETTER_SHARE, BETTER_SECONDS) - 1e-9
+
+
+def _critical_z(comparisons: int) -> float:
+    """Einseitige Grenze für z, wenn `comparisons` Vergleiche zusammen höchstens
+    WEEK_ALPHA Fehlalarm haben sollen (Bonferroni)."""
+    return NormalDist().inv_cdf(1 - WEEK_ALPHA / max(comparisons, 1))
+
+
+def _rank_z(lower: list, higher: list) -> float:
+    """z des Rangsummentests (Mann-Whitney) dafür, dass die Werte in `lower` kleiner sind
+    als die in `higher`; groß = deutlich kleiner. Unendlich (verpasst) steht gleichauf
+    am oberen Ende; Bindungen bekommen den mittleren Rang und die Korrektur der Varianz."""
+    n, m = len(lower), len(higher)
+    total = n + m
+    pooled = sorted([(v, 0) for v in lower] + [(v, 1) for v in higher], key=lambda pair: pair[0])
+    rank_sum = ties = 0.0
+    start = 0
+    while start < total:
+        stop = start
+        while stop < total and pooled[stop][0] == pooled[start][0]:
+            stop += 1
+        size = stop - start
+        rank_sum += (start + 1 + stop) / 2 * sum(1 for k in range(start, stop) if pooled[k][1] == 0)
+        ties += size ** 3 - size
+        start = stop
+    spread = n * m / 12 * ((total + 1) - ties / (total * (total - 1)))
+    if spread <= 0:
+        return 0.0
+    return (n * m / 2 - (rank_sum - n * (n + 1) / 2)) / math.sqrt(spread)
+
+
 def _latency_pairs(now: dict, before: dict, now_min: int):
     """(Zeichen, jetzt, vorher) mit genug Werten bei vergleichbarem
     Zeichentempo (± LATENCY_WPM_SPREAD)."""
@@ -663,18 +703,34 @@ def _latency_pairs(now: dict, before: dict, now_min: int):
                 yield char, values, earlier
 
 
-def _latency_gains(now: dict, before: dict, now_min: int) -> list:
-    """Zeichen, die schneller kamen: [{"kind": "latency", "char", "before",
-    "now"}], je Zeichen einmal, größte Verbesserung zuerst. Ein Median von
-    unendlich (mehr als die Hälfte verpasst) wird nicht verglichen."""
-    gains = {}
-    for char, values, earlier in _latency_pairs(now, before, now_min):
+def _latency_changes(now: dict, before: dict, now_min: int) -> tuple:
+    """(schneller, langsamer): Zeichen mit deutlicher Veränderung der Reaktion,
+    [{"kind": "latency", "char", "before", "now"}] (Median in Sekunden, None für unendlich),
+    je Zeichen einmal, die größte Veränderung zuerst. Beides braucht Hürde und Rangtest über
+    alle verglichenen Zeichen (siehe oben). Schneller wird nicht mit unendlichem Median
+    verglichen (mehr als die Hälfte verpasst); langsamer gilt auch, wenn jetzt mehr als die
+    Hälfte fehlt, vorher nicht."""
+    pairs = list(_latency_pairs(now, before, now_min))
+    critical = _critical_z(len(pairs))
+    gains, losses = {}, {}
+    for char, values, earlier in pairs:
         old, new = _median(earlier), _median(values)
-        if math.isfinite(old) and math.isfinite(new) and _faster(old, new):
-            gain = {"kind": "latency", "char": char, "before": round(old, 2), "now": round(new, 2)}
+        old_ok, new_ok = math.isfinite(old), math.isfinite(new)
+        item = {"kind": "latency", "char": char, "before": round(old, 2) if old_ok else None,
+                "now": round(new, 2) if new_ok else None}
+        if old_ok and new_ok and _faster(old, new) and _rank_z(values, earlier) >= critical:
             if char not in gains or new - old < gains[char]["now"] - gains[char]["before"]:
-                gains[char] = gain
-    return sorted(gains.values(), key=lambda g: (g["now"] - g["before"], g["char"]))
+                gains[char] = item
+        elif old_ok and (not new_ok or _slower(old, new)) and _rank_z(earlier, values) >= critical:
+            if char not in losses or not new_ok:
+                losses[char] = item
+    return (sorted(gains.values(), key=lambda g: (g["now"] - g["before"], g["char"])),
+            sorted(losses.values(), key=lambda g: g["char"]))
+
+
+def _latency_gains(now: dict, before: dict, now_min: int) -> list:
+    """Nur die Zeichen, die schneller kamen (_latency_changes)."""
+    return _latency_changes(now, before, now_min)[0]
 
 
 def char_moments(today: date) -> list:
@@ -687,25 +743,31 @@ def char_moments(today: date) -> list:
 
 def week_comparison(today: date) -> dict:
     """Diese Woche (heute und sechs Tage davor) gegen die Woche davor:
-    {"status": BETTER/HELD/FEW, "better": [...]}; Einträge wie in
-    _latency_gains oder {"kind": "groups", "wpm", "before", "now"} (Anteile)."""
+    {"status": BETTER/WORSE/HELD/FEW, "better": [...], "worse": [...]}; Einträge wie in
+    _latency_changes oder {"kind": "groups", "wpm", "before", "now"} (Anteile).
+    WORSE: nichts wurde besser, aber ein Zeichen deutlich langsamer; HELD: verglichen, keine
+    deutliche Änderung (kein Beleg für „gleich geblieben“: bei etwa 40 Antworten je Zeichen
+    bleiben Unterschiede von ±10 % im Rauschen)."""
     day = today.toordinal()
     this_week = (date.fromordinal(day - WEEK_DAYS + 1), today)
     last_week = (date.fromordinal(day - 2 * WEEK_DAYS + 1), date.fromordinal(day - WEEK_DAYS))
     now, before = latencies(*this_week), latencies(*last_week)
     compared = any(True for _ in _latency_pairs(now, before, LATENCY_WEEK_MIN))
-    better = _latency_gains(now, before, LATENCY_WEEK_MIN)
+    better, worse = _latency_changes(now, before, LATENCY_WEEK_MIN)
     groups_now, groups_before = group_shares(*this_week), group_shares(*last_week)
-    for wpm in sorted(groups_now, reverse=True):
-        (new_ok, new_total), (old_ok, old_total) = groups_now[wpm], groups_before.get(wpm, (0, 0))
-        if new_total < GROUPS_WEEK_MIN_CHARS or old_total < GROUPS_WEEK_MIN_CHARS:
-            continue
+    levels = [wpm for wpm in sorted(groups_now, reverse=True)
+              if groups_now[wpm][1] >= GROUPS_WEEK_MIN_CHARS and groups_before.get(wpm, (0, 0))[1] >= GROUPS_WEEK_MIN_CHARS]
+    critical = _critical_z(len(levels))
+    for wpm in levels:
         compared = True
+        (new_ok, new_total), (old_ok, old_total) = groups_now[wpm], groups_before[wpm]
         old, new = old_ok / old_total, new_ok / new_total
-        if new - old >= GROUPS_BETTER_POINTS:
+        pooled = (old_ok + new_ok) / (old_total + new_total)
+        noise = math.sqrt(pooled * (1 - pooled) * (1 / old_total + 1 / new_total))
+        if new - old >= GROUPS_BETTER_POINTS and noise > 0 and (new - old) / noise >= critical:
             better.insert(0, {"kind": "groups", "wpm": wpm, "before": round(old, 3), "now": round(new, 3)})
-    status = BETTER if better else HELD if compared else FEW
-    return {"status": status, "better": better[:BETTER_SHOWN]}
+    status = BETTER if better else WORSE if worse else HELD if compared else FEW
+    return {"status": status, "better": better[:BETTER_SHOWN], "worse": worse[:BETTER_SHOWN]}
 
 
 def block_summary(block: Block, result: dict, due: str = "") -> dict:

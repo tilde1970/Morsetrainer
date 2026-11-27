@@ -580,11 +580,36 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(result["status"], daily.BETTER)
         self.assertEqual(result["better"], [{"kind": "latency", "char": "R", "before": 0.65, "now": 0.41}])
 
-    def test_held_and_too_few(self):
-        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.FEW, "better": []})
+    def test_held_worse_and_too_few(self):
+        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.FEW, "better": [], "worse": []})
         self.latency_week(TODAY - timedelta(days=8), "R", 0.5)
-        self.latency_week(TODAY, "R", 0.6)   # langsamer: nie „schlechter“, nur gehalten
-        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.HELD, "better": []})
+        self.latency_week(TODAY, "R", 0.52)  # kaum anders: keine deutliche Änderung, nicht „gehalten“
+        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.HELD, "better": [], "worse": []})
+
+    def test_clearly_slower_is_named_as_weaker(self):
+        self.latency_week(TODAY - timedelta(days=8), "R", 0.5)
+        self.latency_week(TODAY, "R", 0.65)  # 30 % langsamer, in allen Antworten
+        result = daily.week_comparison(TODAY)
+        self.assertEqual(result["status"], daily.WORSE)
+        self.assertEqual(result["worse"], [{"kind": "latency", "char": "R", "before": 0.5, "now": 0.65}])
+        self.assertEqual(result["better"], [])
+
+    def test_a_jump_of_the_median_in_overlapping_data_is_no_change(self):
+        # Zwei Gipfel (schnell/langsam): der Median springt von 0,9 auf 0,2, die Verteilungen
+        # unterscheiden sich kaum. Ohne Rangtest stünde dort „kommt schneller“.
+        write_session(self.dir, TODAY - timedelta(days=8), "single", [("R", 0.2)] * 8 + [("R", 0.9)] * 12)
+        write_session(self.dir, TODAY, "single", [("R", 0.2)] * 11 + [("R", 0.9)] * 9)
+        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.HELD, "better": [], "worse": []})
+
+    def test_rank_z(self):
+        self.assertAlmostEqual(daily._rank_z([1.0] * 10, [1.0] * 10), 0.0)  # alles gleich
+        self.assertGreater(daily._rank_z([0.4] * 20, [0.9] * 20), 5)         # deutlich kleiner
+        self.assertLess(daily._rank_z([0.9] * 20, [0.4] * 20), -5)           # andersherum negativ
+        # Verpasst (unendlich) steht am oberen Ende.
+        self.assertGreater(daily._rank_z([0.4] * 15, [float("inf")] * 15), 4)
+
+    def test_more_compared_characters_need_a_clearer_difference(self):
+        self.assertGreater(daily._critical_z(10), daily._critical_z(1))
 
     def test_self_assessed_and_assumed_do_not_count(self):
         self.latency_week(TODAY - timedelta(days=8), "R", 0.9)
@@ -608,7 +633,9 @@ class ReviewTest(unittest.TestCase):
         before = TODAY - timedelta(days=8)
         write_session(self.dir, before, "single", [("R", 0.4)] * 10 + [("R", 0.9)] * 10)
         write_session(self.dir, TODAY, "single", [("R", 0.4)] * 10 + [("R", None)] * 10)
-        self.assertEqual(daily.week_comparison(TODAY), {"status": daily.HELD, "better": []})
+        result = daily.week_comparison(TODAY)
+        self.assertEqual(result["better"], [])  # nicht „schneller“; es fehlt jetzt die Hälfte: eher schwächer
+        self.assertEqual(result["status"], daily.WORSE)
 
     def test_group_share_at_same_tempo(self):
         summary = {"first_try_correct": 170, "first_try_total": 200}

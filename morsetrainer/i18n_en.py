@@ -666,7 +666,9 @@ EN.update({
     "Weiter ▶": "Continue ▶",
     "Enter geht weiter, zweimal Esc beendet die Tagesübung": "Enter continues, Esc twice ends the daily practice",
     "Besser geworden (gegenüber der Vorwoche)": "Improved (compared with the week before)",
-    "Stand gehalten.": "Held steady.",
+    "Keine deutliche Änderung gegenüber der Vorwoche.": "No clear change compared with last week.",
+    "Etwas schwächer als in der Vorwoche: {chars}. Schwankungen sind normal.":
+        "A little weaker than last week: {chars}. Ups and downs are normal.",
     "Für einen Vergleich mit der Vorwoche fehlen noch Daten.": "Not enough data yet to compare with last week.",
     "Fast geschafft": "Almost there",
     "Fertig": "Done",
