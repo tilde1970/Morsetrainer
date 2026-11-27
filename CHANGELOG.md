@@ -1,5 +1,12 @@
 # Änderungen
 
+## 2.81
+
+- **Tagesübung, Wochenrückblick:** Stieg ein Wiedereinsteiger („Auffrischung“)
+  an einem Tag um mehrere Lektionen auf, zeigte der Rückblick auf die
+  Vorwoche nur eine Lektion mehr, zum Beispiel „Lektion 10 → 11“ statt
+  „10 → 13“. Jetzt steht die richtige Lektion da.
+
 ## 2.80
 
 - **Tagesübung, Aufwärmen:** Das Aufwärmen spielt die Zeichen jetzt so

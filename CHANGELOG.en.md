@@ -1,5 +1,12 @@
 # Changes
 
+## 2.81
+
+- **Daily practice, weekly review:** If a returning learner ("refresher")
+  moved up several lessons on one day, the review of the previous week showed
+  only one lesson more, for example "Lesson 10 → 11" instead of "10 → 13".
+  It now shows the correct lesson.
+
 ## 2.80
 
 - **Daily practice, warm-up:** The warm-up now plays the characters as fast
