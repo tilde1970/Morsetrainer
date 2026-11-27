@@ -31,6 +31,7 @@ Gesamtstatistik stehen):
  "tempo_best" (höchstes effektives Tagestempo), "plateau_hint" (Tag des
  letzten Stillstand-Hinweises),
  "days": {"JJJJ-MM-TT": {"stars", "minutes", "blocks", "progress", "lesson",
+ "lesson_to" (Ziel eines Aufstiegs an diesem Tag),
  "tempo" (effektives Tagestempo im Hauptteil, für die Lebenslinie)}}}"""
 import math
 from dataclasses import dataclass, field
@@ -490,6 +491,7 @@ def finish_block(state: dict, today: date, block: Block, result: dict, refresh: 
         steps = lesson_steps(result, result.get("wpm", 0), refresh)
         if lesson < POST_KOCH and state.get("pending_lesson") is None and steps:
             state.update(pending_lesson=min(lesson + steps, POST_KOCH), pending_since=today.isoformat())
+            entry["lesson_to"] = state["pending_lesson"]  # für den Wochenrückblick
             progress |= _add_progress(entry, LESSON_UP)
         current = state.get("tempo") or {}
         if current.get("effective"):

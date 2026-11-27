@@ -42,13 +42,14 @@ class ProtocolTest(unittest.TestCase):
     def test_parse_address(self):
         self.assertEqual(protocol.parse_address(" 192.168.1.20 "), ("192.168.1.20", protocol.DEFAULT_PORT))
         self.assertEqual(protocol.parse_address("pc:7400"), ("pc", 7400))
-        for bad in ("", "pc:", ":7400", "pc:x", "pc:70000"):
+        for bad in ("", "pc:", ":7400", "pc:x", "pc:70000", "pc:7\u00b273"):
             self.assertIsNone(protocol.parse_address(bad), bad)
 
     def test_clean_name(self):
         self.assertEqual(protocol.clean_name("  DL4YM\n"), "DL4YM")
         self.assertEqual(protocol.clean_name("A" * 50), "A" * protocol.NAME_MAX)
         self.assertEqual(protocol.clean_name(None), "")
+        self.assertEqual(protocol.clean_name("a" * (protocol.NAME_MAX - 1) + " b"), "a" * (protocol.NAME_MAX - 1))
 
     def test_decode_rejects_garbage(self):
         for line in (b"{", b"[]", b'{"n": 1}', b"\xff"):

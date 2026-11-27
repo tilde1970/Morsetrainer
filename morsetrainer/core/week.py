@@ -88,7 +88,10 @@ def last_week_review(state: dict, practice_data: dict, goal_seconds: float, toda
         if isinstance(lesson, int) and not isinstance(lesson, bool):
             # Ein Aufstieg an diesem Tag gilt ab dem nächsten, gehört aber zu dieser Woche.
             up = daily.LESSON_UP in entry.get("progress", [])
-            lessons.append((lesson, lesson + 1 if up else lesson))
+            target = entry.get("lesson_to")
+            if not (isinstance(target, int) and not isinstance(target, bool) and target > lesson):
+                target = lesson + 1
+            lessons.append((lesson, target if up else lesson))
     lesson_from = min(a for a, _ in lessons) if lessons else None
     lesson_to = max(b for _, b in lessons) if lessons else None
     return {"days": days, "stars": stars_in_week(state, first), "lesson_from": lesson_from, "lesson_to": lesson_to}

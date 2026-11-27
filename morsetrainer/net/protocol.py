@@ -169,7 +169,7 @@ def clean_name(name) -> str:
     """Anzeigename eines Teilnehmers: getrimmt, ohne Steuerzeichen, gekürzt."""
     if not isinstance(name, str):
         return ""
-    return "".join(ch for ch in name if ch.isprintable()).strip()[:NAME_MAX]
+    return "".join(ch for ch in name if ch.isprintable()).lstrip()[:NAME_MAX].strip()
 
 
 def local_address() -> str:
@@ -194,6 +194,6 @@ def parse_address(text: str):
     host, sep, port = text.rpartition(":")
     if not sep:
         return text, DEFAULT_PORT
-    if not host or not port.isdigit() or not 0 < int(port) < 65536:
+    if not host or not (port.isascii() and port.isdigit()) or not 0 < int(port) < 65536:
         return None
     return host, int(port)

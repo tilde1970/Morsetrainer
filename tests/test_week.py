@@ -10,9 +10,9 @@ MONDAY = date(2026, 10, 5)
 GOAL = 600  # Tagesziel 10 Min
 
 
-def day_with(stars, lesson=12, progress=()):
+def day_with(stars, lesson=12, progress=(), **extra):
     return {"stars": list(stars), "blocks": [{"kind": daily.MAIN}], "minutes": 10.0,
-            "progress": list(progress), "lesson": lesson}
+            "progress": list(progress), "lesson": lesson, **extra}
 
 
 def iso(offset):
@@ -74,6 +74,13 @@ class ReviewTest(unittest.TestCase):
         self.assertEqual(daily_panel.outlook_line({"lesson": daily.POST_KOCH, "missing": 3}),
                          "Noch 3 % beim ersten Versuch bis zum Koch-Abschluss")
         self.assertIn("Koch geschafft", daily_panel.outlook_line({"lesson": daily.POST_KOCH, "pending": True}))
+
+
+class ReviewJumpTest(unittest.TestCase):
+    def test_refresh_jump_of_several_lessons(self):
+        state = {"days": {iso(-3): day_with([daily.DABEI], lesson=10, progress=[daily.LESSON_UP], lesson_to=13)}}
+        review = week.last_week_review(state, {}, GOAL, MONDAY + timedelta(days=1))
+        self.assertEqual((review["lesson_from"], review["lesson_to"]), (10, 13))
 
 
 class LessonPerDayTest(unittest.TestCase):
