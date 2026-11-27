@@ -13,6 +13,8 @@ from morsetrainer.widgets import announcer, theme
 from morsetrainer.widgets.help_window import render, setup_tags
 
 WATCH_MS = 200
+SCREEN_GAP = 40  # je Seite: Fensterrahmen und ein Rest Bildschirmrand
+MIN_TEXT_LINES, MIN_TEXT_CHARS = 4, 30  # so klein wird das Textfeld der Neuerungen höchstens
 HINT, DECLINED, STARTED = "hint", "declined", "started"
 # Überschriften der Neuerungen („- **Am Stück:** …“) für die Ansage.
 _NOTE_TITLE = re.compile(r"^\s*[-*]\s+\*\*(.+?)\*\*", re.MULTILINE)
@@ -39,8 +41,8 @@ class UpdateDialog:
             ttk.Label(frame, text=tr("Neu in Version {version}:").format(version=version)).pack(anchor="w")
             box = ttk.Frame(frame)
             box.pack(fill="both", expand=True, pady=(2, 8))
-            text = tk.Text(box, height=12, width=70, wrap="word", padx=10, pady=6, cursor="arrow",
-                           font="TkDefaultFont")
+            text = self.notes_text = tk.Text(box, height=12, width=70, wrap="word", padx=10, pady=6,
+                                             cursor="arrow", font="TkDefaultFont")
             scroll = ttk.Scrollbar(box, orient="vertical", command=text.yview)
             text.configure(yscrollcommand=scroll.set)
             scroll.pack(side="right", fill="y")
@@ -56,6 +58,8 @@ class UpdateDialog:
         self.progress_label = ttk.Label(frame, textvariable=self.progress_var, wraplength=520, justify="left")
         self.buttons = ttk.Frame(frame)
         self.buttons.pack(fill="x", pady=(12, 0))
+        # Auch sichtbar, wo die Ansage aus ist: Enter und Esc stehen im Fenster.
+        theme.hint(self.buttons, text=tr("Enter: jetzt aktualisieren. Escape: später.")).pack(side="left")
         self.later_button = ttk.Button(self.buttons, text=tr("Später"), command=lambda: self.answer.set("no"))
         self.later_button.pack(side="right")
         self.yes_button = ttk.Button(self.buttons, text=tr("Jetzt aktualisieren"), style="Accent.TButton",
@@ -67,10 +71,27 @@ class UpdateDialog:
         top.bind("<Return>", lambda e: self.answer.get() or self.answer.set("yes"))
         top.bind("<KP_Enter>", lambda e: self.answer.get() or self.answer.set("yes"))
         top.bind("<Escape>", lambda e: self.answer.get() in ("", "failed") and self._escape())
-        top.bind("<F11>", lambda e: announcer.say(self.spoken))
+        top.bind("<F11>", lambda e: announcer.get() and announcer.get().say(self.spoken, force=True))
         top.protocol("WM_DELETE_WINDOW", self._escape)
         self.yes_button.focus_set()
+        self.fit_to_screen(top.winfo_screenwidth(), top.winfo_screenheight())
         announcer.say(self.spoken)
+
+    def fit_to_screen(self, screen_width: int, screen_height: int) -> None:
+        """Das Textfeld der Neuerungen schrumpft, bis das Fenster auf den Bildschirm
+        passt (große Schrift auf kleinem Bildschirm); sonst lägen die Knöpfe außerhalb.
+        Der Rest des Textes bleibt über die Bildlaufleiste erreichbar."""
+        text = getattr(self, "notes_text", None)
+        if text is None:
+            return
+        room_w, room_h = screen_width - 2 * SCREEN_GAP, screen_height - 2 * SCREEN_GAP
+        self.top.update_idletasks()
+        while int(text.cget("height")) > MIN_TEXT_LINES and self.top.winfo_reqheight() > room_h:
+            text.configure(height=int(text.cget("height")) - 1)
+            self.top.update_idletasks()
+        while int(text.cget("width")) > MIN_TEXT_CHARS and self.top.winfo_reqwidth() > room_w:
+            text.configure(width=int(text.cget("width")) - 5)
+            self.top.update_idletasks()
 
     def _escape(self):
         if self.answer.get() == "failed":

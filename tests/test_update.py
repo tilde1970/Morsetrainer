@@ -298,6 +298,26 @@ class UpdaterTest(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_dialog_fits_a_small_screen_with_buttons_inside(self):
+        notes = "\n".join(f"- **Punkt {n}:** Eine längere Neuerung, die einige Zeilen im Fenster braucht." for n in range(30))
+        dialog = updater_module.UpdateDialog(self.root, "2.16", "Version 2.16 ist erschienen, du hast 2.15.", notes)
+        try:
+            for width, height in ((1024, 600), (800, 480)):
+                dialog.fit_to_screen(width, height)
+                self.assertLessEqual(dialog.top.winfo_reqheight(), height - 2 * updater_module.SCREEN_GAP)
+                self.assertLessEqual(dialog.top.winfo_reqwidth(), width - 2 * updater_module.SCREEN_GAP)
+            self.assertGreaterEqual(int(dialog.notes_text.cget("height")), updater_module.MIN_TEXT_LINES)
+        finally:
+            dialog.close()
+
+    def test_dialog_shows_enter_and_escape_hint(self):
+        dialog = updater_module.UpdateDialog(self.root, "2.16", "Neu.")
+        try:
+            labels = [str(w.cget("text")) for w in dialog.buttons.winfo_children() if w.winfo_class() in ("Label", "TLabel")]
+            self.assertIn("Enter: jetzt aktualisieren. Escape: später.", labels)
+        finally:
+            dialog.close()
+
     def test_dialog_yes_shows_progress_and_failure(self):
         from morsetrainer.widgets import announcer
         with mock.patch.object(announcer, "say") as say:
