@@ -1,5 +1,12 @@
 # Änderungen
 
+## 2.79
+
+- **Linux, Einzelzeichen:** Zwischen den Zeichen gab es ab und zu
+  ungewöhnlich lange Pausen, nach einer Eingabe bis zu zwei Sekunden. Die
+  Oberfläche wartete beim Starten eines Tons auf die PulseAudio-Ausgabe.
+  Jetzt läuft das im Hintergrund, und das nächste Zeichen kommt ohne Verzug.
+
 ## 2.78
 
 - **Linux, Kopfhörer:** Schließt du einen Kopfhörer (etwa per Bluetooth) erst

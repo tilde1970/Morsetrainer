@@ -1,5 +1,12 @@
 # Changes
 
+## 2.79
+
+- **Linux, single characters:** There were occasional unusually long pauses
+  between characters, up to two seconds after an entry. The interface waited
+  for the PulseAudio output when starting a tone. This now happens in the
+  background, and the next character follows without delay.
+
 ## 2.78
 
 - **Linux, headphones:** If you connect headphones (for example via
