@@ -27,9 +27,16 @@ EN.update({
     "Wiedereinsteiger: Tagesübung steigt schneller auf (drei Lektionen bei 95 %)":
         "Returning to CW: the daily practice moves up faster (three lessons at 95 %)",
     "Wiedereinsteiger": "returning to CW",
-    "Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“ den Haken "
-    "„Wiedereinsteiger“ setzen.":
-        "New here? Start with ▶ Daily practice. Knew CW before? Tick “Returning to CW” under “▸ More options”.",
+    "Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“: "
+    "„Wiedereinsteiger“ und Start-Lektion setzen.":
+        "New here? Start with ▶ Daily practice. Knew CW before? Under “▸ More options” set “Returning to CW” "
+        "and the starting lesson.",
+    "Tagesübung ab Lektion": "Daily practice from lesson",
+    "Setzen": "Set",
+    "Sterne und Verlauf bleiben; 42 = nach Koch": "Stars and history stay; 42 = after Koch",
+    "Nicht während einer Übung. Danach noch einmal versuchen.": "Not during an exercise. Try again afterwards.",
+    "Die Tagesübung beginnt schon mit Lektion {lesson}.": "The daily practice already starts with lesson {lesson}.",
+    "Die Tagesübung beginnt jetzt mit Lektion {lesson}.": "The daily practice now starts with lesson {lesson}.",
     "Wiedereinsteiger: {known} von {total} Zeichen wiedererlangt": "Returning: {known} of {total} characters regained",
     "Locator": "Locator",
     "Maidenhead, z. B. JO41: bestimmt, woher die erzeugten Stationen kommen":

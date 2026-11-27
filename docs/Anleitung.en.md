@@ -134,7 +134,7 @@ with Farnsworth the effective speed (“≈ 50 CPM effective” at 20/10).
   moves up faster (from 95 % on the first try by three lessons, from 85 %
   by one) and, if no speed is saved yet, starts at 15 WPM without
   Farnsworth. You can untick the box at any time. Section 4 under “Do you
-  already know CW?” says which lesson to set before the first start.
+  already know CW?” says how to choose the starting lesson.
 - **Band conditions:** set up the interference (section 6).
 
 ### Settings
@@ -472,15 +472,18 @@ part and wind-down depend on your level:
 - **Lesson:** if the main part meets the Koch criterion (50 characters,
   90 % on the first try), the next lesson applies from the next day, no
   question asked. Daily practice keeps its own lesson for this (the first
-  time the one from the header); after that it cannot be changed in the
-  interface. Lesson and character set at the top stay as you set them for
+  time the one from the header); after that only “Daily practice from
+  lesson” under more options changes it. Lesson and character set at the top stay as you set them for
   free practice. On the first day of a new lesson a
   card shows the new character and plays it.
 - **Do you already know CW?** Switch on **Returning to CW** (header, “▸ More
-  options”). Before the first daily practice, set at the top the lesson you
-  want to start at (as a contester lesson 42). Daily practice takes it over
-  at the first start and keeps it itself from then on; later the starting
-  lesson cannot be changed in the interface. The speed starts at 15 WPM
+  options”). Under “▸ More options” choose the lesson you want to
+  start at in **Daily practice from lesson** (as a contester lesson 42) and
+  press **Set**. Daily practice keeps it itself from then on; you can set
+  it again there at any time, except during an exercise. Stars and history
+  stay, a pending step up is dropped. Without this choice, the very first
+  start uses the lesson of the header; after that the header no longer
+  changes daily practice. The speed starts at 15 WPM
   without Farnsworth, even if the header shows more; only the warm-up plays
   the characters as fast as the header. Daily practice moves up faster
   (three lessons from 95 %, one from 85 % on the first try, each with at

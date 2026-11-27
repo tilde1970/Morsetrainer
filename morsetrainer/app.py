@@ -632,6 +632,19 @@ class MorseTrainerApp:
             variable=self.refresh_var,
         ).pack(anchor="w", pady=2)
 
+        # Die Lektion der Kopfleiste gilt für die Tagesübung nur beim allerersten Start; danach
+        # steigt sie von selbst auf. Hier lässt sie sich jederzeit setzen (Wiedereinsteiger).
+        lesson_row = ttk.Frame(self.more_frame)
+        lesson_row.pack(fill="x", pady=2)
+        ttk.Label(lesson_row, text=tr("Tagesübung ab Lektion")).pack(side="left", padx=(0, 6))
+        self.daily_lesson_var = tk.IntVar(value=1)
+        self.daily_lesson_spinbox = ttk.Spinbox(lesson_row, from_=1, to=daily.POST_KOCH,
+                                                textvariable=self.daily_lesson_var, width=3)
+        self.daily_lesson_spinbox.pack(side="left")
+        self.daily_lesson_spinbox.bind("<Return>", lambda e: self._set_daily_lesson())
+        ttk.Button(lesson_row, text=tr("Setzen"), command=self._set_daily_lesson).pack(side="left", padx=(6, 8))
+        theme.hint(lesson_row, text=tr("Sterne und Verlauf bleiben; 42 = nach Koch")).pack(side="left")
+
         # Einstellungen, die man einmal vornimmt (Station, Sprache,
         # Barrierefreiheit, Daten): eigenes Fenster (Strg+Komma), damit der
         # Bereich über den Reitern nur Übungsoptionen enthält. Beim Start
@@ -1559,6 +1572,20 @@ class MorseTrainerApp:
         self.new_char_button.pack(side="left")
         self.charset_var.trace_add("write", lambda *_: self._sync_lesson())
         self._sync_lesson()
+
+    def show_daily_lesson(self, lesson: int) -> None:
+        """Das Feld „Tagesübung ab Lektion“ auf die geltende Lektion stellen."""
+        if getattr(self, "daily_lesson_var", None) is not None:
+            self.daily_lesson_var.set(lesson)
+
+    def _set_daily_lesson(self) -> None:
+        try:
+            lesson = self.daily_lesson_var.get()
+        except tk.TclError:
+            self.show_daily_lesson(self.daily.lesson_now())  # keine Zahl im Feld: es zeigt wieder, was gilt
+            return
+        announcer.say(self.daily.set_lesson(lesson))
+        self.show_daily_lesson(self.daily.lesson_now())
 
     def _lesson_field_left(self):
         """Eine getippte andere Lektion gilt auch ohne Enter. Bei eigenen Zeichen im

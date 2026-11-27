@@ -2417,7 +2417,7 @@ class FirstStartTest(AnnouncerCase):
         # Der Hinweis der Leiste (Wiedereinsteiger) wäre sonst nur auf dem Bildschirm zu lesen,
         # ohne die Knopfzeichen ▶ ▸.
         self.assertIn("Los geht es mit Tagesübung.", spoken)
-        self.assertIn("Haken „Wiedereinsteiger“", spoken)
+        self.assertIn("Start-Lektion", spoken)
         self.assertNotIn("▸", spoken)
         self.assertNotIn("stumm", spoken)
         self.assertFalse(self.app.announcer.var.get())  # nur gesagt, nicht eingeschaltet

@@ -129,9 +129,9 @@ Farnsworth das effektive („≈ 50 ZpM effektiv“ bei 20/10). Unter
 - **Wiedereinsteiger:** für alle, die CW früher konnten. Die Tagesübung
   steigt schneller auf (ab 95 % beim ersten Versuch um drei Lektionen, ab
   85 % um eine) und beginnt, wenn noch kein Tempo gespeichert ist, mit
-  15 WPM ohne Farnsworth. Du kannst den Haken jederzeit wegnehmen. Welche
-  Lektion und welches Tempo du vor dem ersten Start einstellst, steht in
-  Abschnitt 4 unter „Du kannst CW schon?“.
+  15 WPM ohne Farnsworth. Du kannst den Haken jederzeit wegnehmen. Wie
+  du die Start-Lektion wählst, steht in Abschnitt 4 unter „Du kannst CW
+  schon?“.
 - **Bandbedingungen:** Störungen einstellen (Abschnitt 6).
 
 ### Einstellungen
@@ -466,15 +466,18 @@ Ausklang richten sich nach deinem Stand:
 - **Lektion:** Erfüllt der Hauptteil das Koch-Kriterium (50 Zeichen, 90 %
   beim ersten Versuch), gilt ab dem nächsten Tag die nächste Lektion, ohne
   Nachfrage. Die Tagesübung führt dafür ihre eigene Lektion, beim ersten Mal
-  die aus der Kopfleiste; danach lässt sie sich in der Oberfläche nicht mehr
-  ändern. Lektion und Zeichensatz oben bleiben fürs freie Üben, wie du sie
+  die aus der Kopfleiste; danach ändert nur „Tagesübung ab Lektion“ in den
+  weiteren Optionen sie. Lektion und Zeichensatz oben bleiben fürs freie Üben, wie du sie
   eingestellt hast. Am ersten Tag einer neuen Lektion zeigt
   eine Karte das neue Zeichen und spielt es vor.
 - **Du kannst CW schon?** Schalte **Wiedereinsteiger** ein (Kopfleiste,
-  „▸ Weitere Optionen“). Stell vor der ersten Tagesübung oben die Lektion
-  ein, bei der du anfangen willst (als Contester Lektion 42). Die
-  Tagesübung übernimmt sie beim ersten Start und führt sie danach selbst;
-  später lässt sie sich in der Oberfläche nicht mehr ändern. Das Tempo
+  „▸ Weitere Optionen“). Wähle in „▸ Weitere Optionen“ unter
+  **Tagesübung ab Lektion** die Lektion, bei der du anfangen willst (als
+  Contester Lektion 42), und drücke **Setzen**. Die Tagesübung führt sie
+  danach selbst; du kannst sie dort jederzeit neu setzen, außer während
+  einer Übung. Sterne und Verlauf bleiben, ein vorgemerkter Aufstieg
+  entfällt. Beim allerersten Start gilt ohne diese Wahl die Lektion der
+  Kopfleiste; danach ändert die Kopfleiste die Tagesübung nicht mehr. Das Tempo
   beginnt als Wiedereinsteiger bei 15 WPM ohne Farnsworth, auch wenn die
   Kopfleiste mehr zeigt; nur das Aufwärmen spielt die Zeichen so schnell wie
   dort. Die Tagesübung steigt schneller auf (drei Lektionen ab 95 %, eine

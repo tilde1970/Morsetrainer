@@ -51,6 +51,37 @@ class DailyRunnerTest(AppTestCase):
         if self.runner.card_open:
             self.runner._next_block()
 
+    def test_start_lesson_can_be_set_later_and_keeps_history(self):
+        # Die Lektion der Kopfleiste gilt nur beim ersten Start; „Tagesübung ab Lektion“
+        # ändert sie danach, ohne Verlauf und Sterne anzutasten.
+        state = daily.load()
+        state.update(lesson=5, pending_lesson=6, pending_since="2020-01-01", days={"2020-01-01": {"stars": ["dabei"]}})
+        daily.save(state)
+        self.runner.refresh_idle()
+        self.assertEqual(self.app.daily_lesson_var.get(), 5)
+        self.app.daily_lesson_var.set(20)
+        with mock.patch.object(app_module.announcer, "say") as say:
+            self.app._set_daily_lesson()
+        self.assertIn("20", say.call_args[0][0])
+        state = daily.load()
+        self.assertEqual(state["lesson"], 20)
+        self.assertIsNone(state["pending_lesson"])
+        self.assertEqual(state["days"], {"2020-01-01": {"stars": ["dabei"]}})
+        self.assertEqual(self.runner.lesson_now(), 20)
+
+    def test_start_lesson_is_clamped_and_unchanged_value_is_said(self):
+        self.runner.set_lesson(daily.POST_KOCH + 9)
+        self.assertEqual(daily.load()["lesson"], daily.POST_KOCH)
+        message = self.runner.set_lesson(daily.POST_KOCH)
+        self.assertIn("schon", message)
+
+    def test_start_lesson_is_not_set_during_the_exercise(self):
+        self.runner.start()
+        before = daily.load().get("lesson")
+        message = self.runner.set_lesson(3)
+        self.assertIn("Nicht während", message)
+        self.assertEqual(daily.load().get("lesson"), before)
+
     def test_start_uses_lesson_and_daily_tempo(self):
         self.app.charset_var.set("KMR")  # eigener Zeichensatz: Lektion aus dem Feld
         self.app.lesson_var.set(12)

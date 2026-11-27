@@ -36,8 +36,8 @@ CONTEST_KINDS = tuple(kind for kind in qso_text.QSO_TYPES if kind != qso_text.RA
 WELCOME_BACK_NOTE = N_("Schön, dass du wieder da bist. Nach einer Pause sind die ersten Tage schwerer – "
                        "das Tempo gleicht sich an.")
 # Solange noch keine Tagesübung lief, steht das in der Leiste.
-FIRST_START_NOTE = N_("Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“ "
-                      "den Haken „Wiedereinsteiger“ setzen.")
+FIRST_START_NOTE = N_("Neu hier? Los geht es mit ▶ Tagesübung. CW früher gekonnt? Unter „▸ Weitere Optionen“: "
+                      "„Wiedereinsteiger“ und Start-Lektion setzen.")
 
 
 def spoken_note(text: str) -> str:
@@ -122,6 +122,9 @@ class DailyRunner:
             if gap is not None and gap >= daily.WELCOME_BACK_DAYS:
                 note = tr(WELCOME_BACK_NOTE)
         self.idle_note = note
+        show_lesson = getattr(self.app, "show_daily_lesson", None)
+        if show_lesson is not None:
+            show_lesson(self.lesson_now())  # das Feld „Tagesübung ab Lektion“ zeigt, was gilt
         self.bar.show_idle(note)
         self.refresh_week(practice_data, state)
 
@@ -165,6 +168,27 @@ class DailyRunner:
         if self._skippable():
             text += " " + tr("Überspringen mit {key}.").format(key=skip_key())
         return text
+
+    def lesson_now(self) -> int:
+        """Lektion, mit der die Tagesübung heute beginnt (wie start(): die
+        gespeicherte, beim ersten Mal die der Kopfleiste)."""
+        fallback = koch.lesson_of(self.app.charset_var.get().strip().upper()) or self._lesson_field()
+        return daily.current_lesson(daily.load(), fallback)
+
+    def set_lesson(self, lesson: int) -> str:
+        """Die Tagesübung beginnt ab sofort mit `lesson` (Wiedereinsteiger, falsche
+        Wahl beim ersten Start). Sterne, Verlauf und Tempo bleiben; ein vorgemerkter
+        Aufstieg entfällt. Liefert die Meldung für den Nutzer."""
+        if self.active or self.app.running_mode:
+            return tr("Nicht während einer Übung. Danach noch einmal versuchen.")
+        lesson = min(max(lesson, 1), daily.POST_KOCH)
+        if lesson == self.lesson_now():
+            return tr("Die Tagesübung beginnt schon mit Lektion {lesson}.").format(lesson=lesson)
+        state = daily.load()
+        state.update(lesson=lesson, lesson_since=date.today().isoformat(), pending_lesson=None, pending_since=None)
+        daily.save(state)
+        self.refresh_idle()
+        return tr("Die Tagesübung beginnt jetzt mit Lektion {lesson}.").format(lesson=lesson)
 
     def _refresh(self) -> bool:
         """Ist „Wiedereinsteiger“ in den weiteren Optionen angehakt?"""
