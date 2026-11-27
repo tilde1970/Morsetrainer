@@ -351,6 +351,201 @@ class AwardsTest(unittest.TestCase):
         self.assertEqual(dates("digits", data(review=review)), [day(9)])
 
 
+def reached(key, d, level=0):
+    """Hat das Diplom `key` mit den Daten `d` die Stufe `level` (0 = Bronze) erreicht?"""
+    return dates(key, d)[level] is not None
+
+
+class AwardBoundaryTest(unittest.TestCase):
+    """Die Schwellen der Diplome auf den Wert genau, mit festen Zahlen statt der Konstanten
+    (Mutationsproben des Test-Prüfers): Wer eine Schwelle verschiebt, soll es hier merken."""
+
+    def test_levels_and_first_lessons_are_fixed(self):
+        expected = {
+            "koch": ((10, 25, koch.FINAL_LESSON), 1), "wal": ((1, 2, 3), 1), "flow": ((10, 15, 22), 15),
+            "qrq": ((20, 25, 30, 35), 40), "highspeed": ((25, 30, 35, 40), koch.LCWO_LESSONS),
+            "qrn": ((1, 2, 3), 25), "rufz": ((2000, 3500, 5500, 7500), 27),
+            "contest": ((1, 2, 3), koch.FINAL_LESSON), "wpx": ((100, 400, 1200, 2000), 25),
+            "headphones": ((15, 20, 25), koch.FINAL_LESSON), "confusion": ((1, 3, 6), 5),
+            "endurance": ((10, 50, 150, 365), None), "stars": ((50, 200, 500, 1000), None),
+            "heard": ((5000, 25000, 100000, 250000), None), "club": ((1, 5, 15, 40), None),
+        }
+        for key, (targets, from_lesson) in expected.items():
+            award = awards.BY_KEY[key]
+            self.assertEqual((award.targets, award.from_lesson), (targets, from_lesson), key)
+
+    def test_a_full_run_is_at_least_180_seconds(self):
+        flow = dict(content="plain", charset=koch.lesson_charset(20), completed=True, total=100, correct=100,
+                    extra_keys=0, wpm=20)
+        qrq = dict(content="chars", group_len=5, charset=koch.lesson_charset(40), completed=True, total=100,
+                   correct=100, extra_keys=0, wpm=20)
+        highspeed = dict(content="qso", charset=koch.lesson_charset(40), completed=True, total=100,
+                         correct=100, extra_keys=0, wpm=25)
+        for key, config in (("flow", flow), ("qrq", qrq), ("highspeed", highspeed)):
+            self.assertTrue(reached(key, data([session("continuous", 0, duration_s=180, **config)])), key)
+            self.assertFalse(reached(key, data([session("continuous", 0, duration_s=179, **config)])), key)
+
+    def test_clean_runs_need_90_percent_after_extra_keys(self):
+        flow = dict(content="plain", charset=koch.lesson_charset(20), completed=True, duration_s=200, total=100,
+                    wpm=20)
+        qrq = dict(content="chars", group_len=5, charset=koch.lesson_charset(40), completed=True, duration_s=200,
+                   total=100, wpm=20)
+        highspeed = dict(content="qso", charset=koch.lesson_charset(40), completed=True, duration_s=200,
+                         total=100, wpm=25)
+        for key, config in (("flow", flow), ("qrq", qrq), ("highspeed", highspeed)):
+            ok = session("continuous", 0, correct=90, extra_keys=0, **config)
+            low = session("continuous", 0, correct=89, extra_keys=0, **config)
+            extra = session("continuous", 0, correct=95, extra_keys=5, **config)       # 90 %
+            too_many = session("continuous", 0, correct=95, extra_keys=6, **config)    # 89 %
+            self.assertTrue(reached(key, data([ok])), key)
+            self.assertFalse(reached(key, data([low])), key)
+            self.assertTrue(reached(key, data([extra])), key)
+            self.assertFalse(reached(key, data([too_many])), key)
+
+    def test_flow_with_single_words_counts_at_most_21_9_wpm(self):
+        run = dict(content="words", charset=koch.lesson_charset(20), completed=True, duration_s=200, total=100,
+                   correct=100, extra_keys=0, wpm=30)
+        self.assertEqual(awards.evaluate(data([session("continuous", 0, **run)]), today=day(1))["flow"].value, 21.9)
+        run["content"] = "qso"
+        self.assertEqual(awards.evaluate(data([session("continuous", 0, **run)]), today=day(1))["flow"].value, 30)
+
+    def test_flow_needs_18_wpm_characters_and_qrq_5_character_groups(self):
+        flow = dict(content="plain", charset=koch.lesson_charset(20), completed=True, duration_s=200, total=100,
+                    correct=100, extra_keys=0)
+        self.assertTrue(reached("flow", data([session("continuous", 0, wpm=18, **flow)])))
+        self.assertFalse(reached("flow", data([session("continuous", 0, wpm=17, **flow)])))
+        qrq = dict(content="chars", charset=koch.lesson_charset(40), completed=True, duration_s=200, total=100,
+                   correct=100, extra_keys=0, wpm=20)
+        self.assertTrue(reached("qrq", data([session("continuous", 0, group_len=5, **qrq)])))
+        self.assertFalse(reached("qrq", data([session("continuous", 0, group_len=4, **qrq)])))
+
+    def test_qrn_conditions_on_the_value(self):
+        base = dict(charset=koch.lesson_charset(25), total=200, correct=200, accuracy_pct=100.0, band="light",
+                    farnsworth_wpm=12, band_gain=100, wpm=20)
+        self.assertTrue(reached("qrn", data([session("group", 0, **base)])))
+        for change in ({"band_gain": 99}, {"total": 199}, {"wpm": 19}, {"farnsworth_wpm": 11},
+                       {"charset": koch.lesson_charset(24)}):
+            self.assertFalse(reached("qrn", data([session("group", 0, **{**base, **change})])), change)
+
+    def test_qrn_share_85_percent_for_heavy_90_for_the_others(self):
+        base = dict(charset=koch.lesson_charset(25), total=200, farnsworth_wpm=12, band_gain=100, wpm=20)
+
+        def reaches(band, percent):
+            run = session("group", 0, band=band, correct=percent * 2, accuracy_pct=float(percent), **base)
+            return reached("qrn", data([run]))
+        self.assertTrue(reaches("heavy", 85))
+        self.assertFalse(reaches("heavy", 84))
+        self.assertTrue(reaches("light", 90))
+        self.assertFalse(reaches("light", 89))
+        self.assertTrue(reaches("medium", 90))
+        self.assertFalse(reaches("medium", 89))
+
+    def test_rufz_needs_50_callsigns_and_20_wpm_at_the_start(self):
+        self.assertTrue(reached("rufz", data(results=[result("rufz", 0, total=50, score=2000, start_wpm=20)])))
+        self.assertFalse(reached("rufz", data(results=[result("rufz", 0, total=49, score=2000, start_wpm=20)])))
+        self.assertFalse(reached("rufz", data(results=[result("rufz", 0, total=50, score=2000, start_wpm=19)])))
+
+    def contest_level(self, **fields):
+        """Höchste Stufe, die zwei gleiche Läufe an zwei Tagen erreichen (ab Silber nötig)."""
+        run = {**dict(wpm=20, activity=1, minutes=10, correct=10, total=10), **fields}
+        found = dates("contest", data(results=[result("contest", 0, **run), result("contest", 1, **run)]))
+        return sum(d is not None for d in found)
+
+    def test_contest_level_1_needs_20_wpm_10_qsos_in_10_minutes_and_10_percent_errors(self):
+        self.assertEqual(self.contest_level(), 1)
+        self.assertEqual(self.contest_level(wpm=19), 0)
+        self.assertEqual(self.contest_level(correct=9, total=9), 0)
+        self.assertEqual(self.contest_level(minutes=9.5), 0)                       # kürzer als 10 Minuten
+        self.assertEqual(self.contest_level(minutes=20, correct=19, total=19), 0)  # 9,5 QSOs in 10 Minuten
+        self.assertEqual(self.contest_level(minutes=20, correct=20, total=20), 1)  # 10 QSOs in 10 Minuten
+        self.assertEqual(self.contest_level(correct=100, total=100, busted=10), 1)  # genau 10 %
+        self.assertEqual(self.contest_level(correct=100, total=100, busted=11), 0)
+
+    def test_contest_level_2_needs_25_wpm_activity_2_20_qsos_and_5_percent_errors(self):
+        silver = dict(wpm=25, activity=2, correct=100, total=100)
+        self.assertEqual(self.contest_level(**{**silver, "busted": 5}), 2)     # genau 5 %
+        self.assertEqual(self.contest_level(**{**silver, "busted": 6}), 1)
+        self.assertEqual(self.contest_level(**{**silver, "wpm": 24}), 1)
+        self.assertEqual(self.contest_level(**{**silver, "activity": 1}), 1)
+        self.assertEqual(self.contest_level(**{**silver, "correct": 19, "total": 19}), 1)
+        self.assertEqual(self.contest_level(**{**silver, "correct": 20, "total": 20}), 2)
+
+    def test_contest_level_3_needs_30_wpm_activity_3_25_qsos_and_at_most_1_error(self):
+        gold = dict(wpm=30, activity=3, correct=25, total=100)
+        self.assertEqual(self.contest_level(**gold), 3)
+        self.assertEqual(self.contest_level(**{**gold, "busted": 1}), 3)
+        self.assertEqual(self.contest_level(**{**gold, "busted": 2}), 2)      # 2 Fehler: nur 2 % -> Silber
+        self.assertEqual(self.contest_level(**{**gold, "wpm": 29}), 2)
+        self.assertEqual(self.contest_level(**{**gold, "activity": 2}), 2)
+        self.assertEqual(self.contest_level(**{**gold, "correct": 24}), 2)
+
+    def test_endurance_counts_days_with_10_minutes_and_club_evenings_10_minutes(self):
+        practice = {day(i).isoformat(): 600 for i in range(10)}
+        self.assertTrue(reached("endurance", data(practice=practice)))
+        practice[day(9).isoformat()] = 599
+        self.assertFalse(reached("endurance", data(practice=practice)))
+
+        def evening(seconds):
+            return data([session("network", 0, duration_s=seconds)])
+        self.assertTrue(reached("club", evening(600)))
+        self.assertFalse(reached("club", evening(599)))
+
+    def test_worked_all_letters_boxes_and_counts(self):
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+        def box(**by_char):
+            return {ch: {"box": 0, "best_box": by_char.get(ch, 0), "award_box": by_char.get(ch, 0),
+                         "best_day": day(0).isoformat(), "award_day": day(0).isoformat()}
+                    for ch in letters + "0123456789"}
+        nine = box(**{ch: 2 for ch in letters[:9]})
+        ten = box(**{ch: 2 for ch in letters[:10]})
+        self.assertFalse(reached("wal", data(review=nine)))        # 9 Buchstaben in Fach 3 reichen nicht
+        self.assertTrue(reached("wal", data(review=ten)))
+        gold = box(**{**{ch: 5 for ch in letters}, **{d: 3 for d in "0123456789"}})
+        self.assertTrue(reached("wal", data(review=gold), level=2))
+        letters_low = box(**{**{ch: 4 for ch in letters}, **{d: 3 for d in "0123456789"}})
+        self.assertFalse(reached("wal", data(review=letters_low), level=2))   # Buchstaben nur in Fach 5
+        digits_low = box(**{**{ch: 5 for ch in letters}, **{d: 2 for d in "0123456789"}})
+        self.assertFalse(reached("wal", data(review=digits_low), level=2))    # Ziffern nur in Fach 3
+
+
+class ConfusionBoundaryTest(unittest.TestCase):
+    """„Verwechslung überwunden“: wann ein Paar als Problem gilt (30 Tage, die häufigsten 10,
+    mindestens 5 Verwechslungen, mindestens 5 % Anteil)."""
+
+    @staticmethod
+    def pair_state(sessions):
+        _overcome, open_pairs, _attempts, _confusions = awards._confusion_state(data(sessions))
+        return open_pairs
+
+    @staticmethod
+    def one_run(offset, confusions, tries_each, first="B", second="D"):
+        """Ein Durchgang: `confusions`-mal `first` als `second` getippt; je Zeichen `tries_each` Versuche."""
+        chars = ([(first, second, False)] * confusions + [(first, first, True)] * (tries_each - confusions)
+                 + [(second, second, True)] * tries_each)
+        return session("single", offset, chars=chars)
+
+    def test_at_least_5_confusions(self):
+        self.assertEqual(list(self.pair_state([self.one_run(0, 5, 20)])), [frozenset("BD")])
+        self.assertEqual(self.pair_state([self.one_run(0, 4, 20)]), {})
+
+    def test_at_least_5_percent_of_the_tries(self):
+        self.assertEqual(list(self.pair_state([self.one_run(0, 5, 50)])), [frozenset("BD")])   # 5 von 100
+        self.assertEqual(self.pair_state([self.one_run(0, 5, 51)]), {})                         # 5 von 102
+
+    def test_window_is_30_days(self):
+        inside = [self.one_run(0, 3, 10), self.one_run(29, 2, 10)]     # Tag 0 und Tag 29: im Fenster
+        outside = [self.one_run(0, 3, 10), self.one_run(30, 2, 10)]    # Tag 0 fällt heraus
+        self.assertEqual(list(self.pair_state(inside)), [frozenset("BD")])
+        self.assertEqual(self.pair_state(outside), {})
+
+    def test_only_the_10_most_frequent_pairs_count(self):
+        others = ["AEIOUHSTMN"[i] for i in range(10)]
+        crowd = [self.one_run(0, 6, 20, first=ch, second="X") for ch in others]   # zehn Paare mit je 6
+        self.assertNotIn(frozenset("BD"), self.pair_state(crowd + [self.one_run(0, 5, 20)]))   # nur Platz 11
+        self.assertIn(frozenset("BD"), self.pair_state(crowd[:9] + [self.one_run(0, 5, 20)]))  # Platz 10
+
+
 class OverviewTest(unittest.TestCase):
     def test_progress_and_second_day(self):
         koch_runs = [session("group", 0, lesson=18, first_try_correct=50, first_try_total=50)]
