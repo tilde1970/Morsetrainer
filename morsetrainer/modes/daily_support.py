@@ -35,6 +35,12 @@ class DailyModeMixin:
     next_waiting = False  # nächstes Zeichen bzw. nächste Sequenz wartet auf eine Ansage
     daily_skipping = False  # Block wird übersprungen: keine Ansage vom Stoppen
     daily_relaxed = False  # Block der entspannten Tagesübung: ohne Zeitlimit, nicht für die Lernkartei
+    daily_audio_error = None  # Text, wenn die Tonausgabe den Block beendet hat (AudioError)
+
+    def daily_audio_failed(self, exc) -> None:
+        """Merkt, dass die Tonausgabe versagt hat; die Tagesübung erfährt es beim Stoppen
+        und beendet sich dann mit eigener Meldung statt mit einer Bilanz."""
+        self.daily_audio_error = str(exc)
 
     def daily_configure(self, minutes: float, **values) -> None:
         """Merkt die Werte der `daily_keys`, setzt die festen Werte `values`, die
@@ -60,6 +66,7 @@ class DailyModeMixin:
         self.daily_minutes = None
         self.daily_relaxed = False
         self.daily_skipping = False
+        self.daily_audio_error = None
         self.set_options_visible(True)
 
     def daily_result(self):

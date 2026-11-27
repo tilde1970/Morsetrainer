@@ -77,6 +77,14 @@ class DailyRunnerTest(AppTestCase):
         self.runner.start()
         self.assertEqual(self.runner._block_tempo(warmup), self.runner.state["tempo"])
 
+    def test_start_card_names_the_tempo_the_warmup_really_plays(self):
+        self.app.wpm_var.set(25)  # schneller als das Tagestempo (20)
+        with mock.patch.object(self.runner, "_show_card") as card:
+            self.runner.start(ready_card=True)
+        lines = card.call_args.args[1]
+        self.assertIn("25", lines[0])
+        self.assertNotIn("20/", lines[0])
+
     def test_abort_restores_settings_and_keeps_tabs_free(self):
         self.app.charset_var.set("KMR")
         self.runner.start()
@@ -89,6 +97,22 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(str(self.app.daily_bar.start_button["state"]), "normal")
         self.assertNotEqual(self.mode("Einzelzeichen").options_card.winfo_manager(), "")
         self.assertEqual(review.focus, set())
+
+    def test_no_sound_at_first_block_ends_quietly_without_summary_or_day(self):
+        # Fällt die Tonausgabe beim Start des ersten Blocks aus, endet die Tagesübung
+        # mit einem Hinweis: keine Bilanz, kein Tageseintrag, kein Ersatzblock, Reiter frei.
+        single = self.mode("Einzelzeichen")
+        with mock.patch.object(app_module.audio, "play", side_effect=app_module.audio.AudioError("Kein Gerät")), \
+                mock.patch.object(type(single), "daily_audio_failed", wraps=single.daily_audio_failed) as failed:
+            self.runner.start()
+        failed.assert_called_once()
+        self.assertFalse(self.runner.active)
+        self.assertIsNone(self.runner.summary)
+        self.assertNotIn(date.today().isoformat(), daily.load().get("days", {}))
+        self.assertFalse(self.app.running_mode)
+        self.assertTrue(all(self.app.notebook.tab(t, "state") == "normal" for t in self.app.notebook.tabs()))
+        self.assertIn("Kein Ton", self.app.daily_bar.note_var.get())
+        self.assertIsNone(single.daily_audio_error)  # Zustand zurückgesetzt
 
     def _key(self, keysym):
         self.app._dispatch_key(type("E", (), {"keysym": keysym, "widget": self.app.root})())

@@ -213,11 +213,11 @@ class DailyRunner:
             title = (tr("Neue Zeichen: {char}") if len(chars) > 1 else tr("Neues Zeichen: {char}"))
             shown = tr(" und ").join(chars)
             self._show_card(title.format(char=shown),
-                            [preview_line(self.blocks[0], lesson, self.state["tempo"])],
+                            [preview_line(self.blocks[0], lesson, self._block_tempo(self.blocks[0]))],
                             then=lambda: self.card_open and self.active and app._play_new_char(chars),
                             spoken_title=title.format(char=tr(" und ").join(announcer.spell(ch) for ch in chars)))
         elif ready_card:
-            self._show_card(tr("Gleich geht es los"), [preview_line(self.blocks[0], lesson, self.state["tempo"])])
+            self._show_card(tr("Gleich geht es los"), [preview_line(self.blocks[0], lesson, self._block_tempo(self.blocks[0]))])
         else:
             self._next_block()
 
@@ -402,6 +402,8 @@ class DailyRunner:
         self.block_started = time.time()
         if not mode.running:  # sonst schon mit dem Start-Knopf während der Ansage gestartet
             mode.start()
+        if not self.active:
+            return  # der Start scheiterte (kein Ton) und hat die Tagesübung schon beendet
         if not mode.running:
             mode.daily_release()
             self.mode = None
@@ -430,6 +432,7 @@ class DailyRunner:
             return
         block = self.blocks[self.index]
         result = mode.daily_result() or {}
+        no_sound = getattr(mode, "daily_audio_error", None) is not None
         if block.params.get(daily.BAND_PRESET):
             # Schwächste Stufe im Lauf: wer leichter stellt, steigt damit nicht auf.
             result = {**result, "band_min": getattr(mode, "band_rank_min", None)}
@@ -441,6 +444,9 @@ class DailyRunner:
         review.focus = set()
         self.mode = None
         self.block_started = None
+        if no_sound and not result.get("minutes"):
+            self._finish(completed=False, no_sound=True)  # nichts gespielt: keine Bilanz, es zählt nichts
+            return
         if self.skipping and not self.aborting:
             self.skipping = False
             self._swap_for_callsigns(block)
@@ -535,7 +541,7 @@ class DailyRunner:
         if block.kind == daily.MAIN and daily.slower_tomorrow(self.state, self.today):
             lines.append(tr("Das kommt vor – morgen läuft es etwas langsamer, bis es wieder sitzt."))
         following = self.blocks[self.index + 1]
-        lines.append(preview_line(following, daily.current_lesson(self.state, 1), self.state["tempo"]))
+        lines.append(preview_line(following, daily.current_lesson(self.state, 1), self._block_tempo(following)))
         title = tr("{block} geschafft").format(block=tr(BLOCK_LABELS[block.kind]))
         self._show_card(title, lines, strong)
 
@@ -569,11 +575,13 @@ class DailyRunner:
         else:
             self._finish(completed=False)
 
-    def _finish(self, completed: bool) -> None:
+    def _finish(self, completed: bool, no_sound: bool = False) -> None:
         """Beendet die Tagesübung (fertig oder abgebrochen): Reiter-Einstellungen
         zurück, Tag mit Sternen speichern, Ende ansagen und die Abendbilanz
         zeigen (nach einer Zugabe nur neue Siegel; beim stillen Abbruch, etwa
-        am Programmende, nichts davon)."""
+        am Programmende, nichts davon). Mit `no_sound` (die Tonausgabe versagte
+        schon beim Start des Blocks) gibt es weder Bilanz noch einen Eintrag für
+        den Tag, nur den Hinweis, dass nichts zählt."""
         if not self.active:
             return
         self.active = False
@@ -587,8 +595,9 @@ class DailyRunner:
             self.mode = None
         self._release_band()
         review.focus = set()
-        daily.finish_day(self.state, self.today, completed)
-        daily.save(self.state)
+        if not no_sound:
+            daily.finish_day(self.state, self.today, completed)
+            daily.save(self.state)
         if self.saved_shared is not None:
             for key, var in self._shared().items():
                 var.set(self.saved_shared[key])
@@ -600,7 +609,9 @@ class DailyRunner:
             self.saved_content = None
         self.bar.set_enabled(True)
         stars = daily.stars_on(self.state, self.today)
-        if self.extra:
+        if no_sound:
+            note = tr("Kein Ton: Die Tagesübung wurde nicht gestartet, es zählt nichts.")
+        elif self.extra:
             note = tr("Zugabe geschafft.") if completed else tr("Zugabe beendet.")
         else:
             note = end_note(completed, stars)
@@ -609,7 +620,7 @@ class DailyRunner:
             announcer.say(note)
         self.refresh_week(state=self.state)
         self.app.finish_daily()
-        if self.aborting and self.quiet:
+        if no_sound or (self.aborting and self.quiet):
             return
         if self.extra:
             self.app.show_pending_seals()

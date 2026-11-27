@@ -862,6 +862,7 @@ class SequenceModeFrame(DailyModeMixin):
         try:
             audio.play(samples)
         except audio.AudioError as exc:
+            self.daily_audio_failed(exc)
             self.stop()
             announcer.problem(self.status_var, str(exc))
             return False

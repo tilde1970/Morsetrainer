@@ -710,6 +710,8 @@ EN.update({
     "Morgen: {tempo} – einen Schritt langsamer, damit es wieder sitzt ({share} % beim ersten Versuch richtig).":
         "Tomorrow: {tempo} – one step slower so that it sits again ({share} % right on the first try).",
     "Ab {up} % geht es schneller.": "From {up} % it gets faster.",
+    "Kein Ton: Die Tagesübung wurde nicht gestartet, es zählt nichts.":
+        "No sound: the daily practice was not started, nothing counts.",
     "Tagesübung beendet – für heute kein Stern. Morgen fängt es neu an.":
         "Daily practice ended – no star for today. Tomorrow starts fresh.",
     "{n} Zeichen gehört": "{n} characters heard",
