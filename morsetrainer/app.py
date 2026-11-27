@@ -937,7 +937,7 @@ class MorseTrainerApp:
                 "vor-import-….zip im Datenordner {folder} gesichert. Danach beendet sich das Programm, bitte neu "
                 "starten.").format(
                 created=str(info.get("created", "?")).replace("T", " "), version=info.get("version", "?"),
-                folder=DATA_DIR), parent=self.root):
+                folder=DATA_DIR), parent=self.root, confirm=tr("Daten ersetzen")):
             return
         try:
             backup.import_data(Path(path), __version__)

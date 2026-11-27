@@ -431,6 +431,18 @@ class ImportWhileRunningTest(AppTestCase):
         read_info.assert_not_called()
         import_data.assert_not_called()
 
+    def test_replace_question_defaults_to_no(self):
+        # Enter darf die Sicherung nicht einfach einspielen: Die Frage hat einen
+        # eigenen Ja-Knopf, sodass Enter als Nein gilt.
+        from morsetrainer import app as app_module
+        with mock.patch.object(app_module.instances, "others", return_value=0), \
+                mock.patch.object(app_module.dialog, "askyesno", return_value=False) as ask, \
+                mock.patch.object(backup, "read_info", return_value={"created": "2026-01-01T10:00", "version": "2.0"}), \
+                mock.patch.object(backup, "import_data") as import_data:
+            self.app._read_import("/irgendwo/sicherung.zip")
+        self.assertTrue(ask.call_args.kwargs.get("confirm"))
+        import_data.assert_not_called()
+
     def test_another_window_blocks_import(self):
         from morsetrainer import app as app_module
         with mock.patch.object(app_module.instances, "others", return_value=1), \
