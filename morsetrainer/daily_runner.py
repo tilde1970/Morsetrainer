@@ -40,6 +40,11 @@ FIRST_START_NOTE = N_("Neu hier? Los geht es mit ▶ Tagesübung. CW früher gek
                       "den Haken „Wiedereinsteiger“ setzen.")
 
 
+def spoken_note(text: str) -> str:
+    """Hinweis der Leiste als Ansage: Die Knopfzeichen ▶ ▸ liest die Stimme nicht."""
+    return text.replace("▶ ", "").replace("▸ ", "").strip()
+
+
 def block_text(block) -> str:
     """Ansage vor einem Block, z. B. „Tagesübung, Aufwärmen: Zeichen,
     3 Minuten.“"""
@@ -98,6 +103,7 @@ class DailyRunner:
         self.extra = False
         self.pause_sure = ""
         self.summary = None
+        self.idle_note = ""  # Hinweis der Leiste im Ruhezustand, für F11
         self.refresh_idle()
 
     # --- Anzeige ---------------------------------------------------------------
@@ -115,8 +121,16 @@ class DailyRunner:
             gap = daily.days_since_practice(state, date.today())
             if gap is not None and gap >= daily.WELCOME_BACK_DAYS:
                 note = tr(WELCOME_BACK_NOTE)
+        self.idle_note = note
         self.bar.show_idle(note)
         self.refresh_week(practice_data, state)
+
+    def idle_note_spoken(self) -> str:
+        """Der Hinweis der Leiste (Wochenrückblick, Einstieg, Willkommen zurück)
+        als Ansage; leer, solange die Tagesübung läuft."""
+        if self.active:
+            return ""
+        return spoken_note(self.idle_note)
 
     def refresh_week(self, practice_data=None, state=None) -> None:
         """Wochenstreifen und Stand zum Wochenziel."""

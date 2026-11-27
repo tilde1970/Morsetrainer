@@ -738,8 +738,9 @@ class AnnouncerTest(AnnouncerCase):
 
     def test_f11_reads_tab_and_status_even_when_off(self):
         self.app._dispatch_key(mock.Mock(keysym="F11", char=""))
-        self.assertTrue(self.pump_until(lambda: self.said))
-        self.assertTrue(self.said[0].startswith("Einzeln, Zeichen. Bereit"), self.said)
+        # Ein langer Text wird in Stücken erzeugt; erst alle zusammen sind die Ansage.
+        self.assertTrue(self.pump_until(lambda: "Bereit" in " ".join(self.said)))
+        self.assertTrue(" ".join(self.said).startswith("Einzeln, Zeichen. Bereit"), self.said)
 
     def test_group_answers_are_spelled(self):
         from tests.test_modes import GroupEvaluationTest
@@ -2413,8 +2414,25 @@ class FirstStartTest(AnnouncerCase):
         self.assertIn("F9 schaltet die Sprachansage ein.", spoken)
         self.assertIn("F11 sagt, wo du bist.", spoken)
         self.assertIn("F12 startet die Tagesübung.", spoken)
+        # Der Hinweis der Leiste (Wiedereinsteiger) wäre sonst nur auf dem Bildschirm zu lesen,
+        # ohne die Knopfzeichen ▶ ▸.
+        self.assertIn("Los geht es mit Tagesübung.", spoken)
+        self.assertIn("Haken „Wiedereinsteiger“", spoken)
+        self.assertNotIn("▸", spoken)
         self.assertNotIn("stumm", spoken)
         self.assertFalse(self.app.announcer.var.get())  # nur gesagt, nicht eingeschaltet
+
+    def test_status_reads_the_idle_note_of_the_daily_bar(self):
+        self.app.announcer.var.set(True)
+        self.app.show_mode("Einzelzeichen")
+        self.app.daily.refresh_idle("Letzte Woche: 4 Tage, 6 ★")
+        with mock.patch.object(self.app.announcer, "say") as say:
+            self.app.read_status()
+        self.assertIn("Letzte Woche: 4 Tage, 6 ★", say.call_args[0][0])
+        # Läuft die Tagesübung, gehört die Leiste ihr, nicht dem Hinweis.
+        self.app.daily.active = True
+        self.assertEqual(self.app.daily.idle_note_spoken(), "")
+        self.app.daily.active = False
 
     def test_screen_reader_switches_it_on(self):
         spoken = self.greet(reader=True)

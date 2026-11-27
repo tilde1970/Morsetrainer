@@ -20,7 +20,7 @@ from morsetrainer import DATA_DIR, i18n
 from morsetrainer.core import (audio, awards, backup, band, daily, db, errorlog, instances, koch, migration, practice, qso_text, review,
                                 screenreader, sfx, speech, stats, storage, tempo, week, weighting)
 from morsetrainer.core.morse import build_text, display_text, key_hint, sounds_similar
-from morsetrainer.daily_runner import DailyRunner
+from morsetrainer.daily_runner import FIRST_START_NOTE, DailyRunner, spoken_note
 from morsetrainer.i18n import N_, ctrl_key, tr
 from morsetrainer.modes.callsign_mode import CallsignModeFrame
 from morsetrainer.modes.continuous_mode import ContinuousModeFrame
@@ -1031,10 +1031,12 @@ class MorseTrainerApp:
             text = tr("Morsetrainer. Die Sprachansage ist eingeschaltet, weil ein Screenreader läuft. "
                       "{announce} schaltet sie aus. {where} sagt, wo du bist. {daily} startet die Tagesübung. "
                       "Stell den Screenreader beim Üben stumm; die Anleitung sagt wie.").format(**keys)
+            text += " " + spoken_note(tr(FIRST_START_NOTE))
             self.root.after(SCREEN_READER_GREETING_MS, lambda: self.announcer.say(text, force=True))
             return
         text = tr("Morsetrainer. {announce} schaltet die Sprachansage ein. "
                   "{where} sagt, wo du bist. {daily} startet die Tagesübung.").format(**keys)
+        text += " " + spoken_note(tr(FIRST_START_NOTE))
         self.announcer.say(text, force=True)
 
     def toggle_announce(self) -> None:
@@ -1170,6 +1172,9 @@ class MorseTrainerApp:
         idle_hint = getattr(mode, "idle_hint", None)
         if idle_hint is not None and not getattr(mode, "running", False):
             parts.append(idle_hint())
+        # Hinweis der Tagesübungs-Leiste (Wochenrückblick, Einstieg): wer nicht hinsieht,
+        # erführe sonst nie davon.
+        parts.append(self.daily.idle_note_spoken())
         self.announcer.say(announcer.sentences(parts) + self._list_text(listed), force=True)
 
     def select_tab(self, index: int) -> None:
