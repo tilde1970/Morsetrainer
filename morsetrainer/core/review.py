@@ -81,8 +81,10 @@ def _clean(entry: dict) -> dict:
     beschädigt) brauchbar machen: ein unlesbares Fach gilt als erstes Fach,
     unlesbare Tageszähler beginnen neu."""
     for key in BOX_FIELDS:
-        if key in entry and not _is_int(entry[key]):
-            entry[key] = 0
+        if key in entry:
+            # Ein Fach außerhalb der bekannten (von Hand verändert, aus einer Version mit mehr
+            # Fächern) gilt als das nächstliegende; INTERVALS[box] würde sonst abstürzen.
+            entry[key] = min(max(entry[key], 0), len(INTERVALS) - 1) if _is_int(entry[key]) else 0
     shadow = [entry.get(key) for key in SHADOW_FIELDS]
     if any(key in entry for key in SHADOW_FIELDS) and not _shadow_ok(*shadow):
         for key in SHADOW_FIELDS:

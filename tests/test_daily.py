@@ -513,6 +513,39 @@ class StorageTest(unittest.TestCase):
             self.assertEqual(daily.load(), {"days": {}})
             self.assertEqual(len(db._read("SELECT key FROM state WHERE key LIKE 'daily.defekt-%'")), 1)
 
+    def test_broken_day_entries_are_cleaned_on_load(self):
+        from datetime import timedelta
+        from morsetrainer.core import week
+        monday = TODAY - timedelta(days=TODAY.weekday())
+        last_week = monday - timedelta(days=7)
+        broken = {"days": {
+            last_week.isoformat(): {"blocks": [{}, "x", 3], "lesson": 5, "progress": 1, "stars": "SAUBER", "minutes": "viel"},
+            (last_week + timedelta(days=1)).isoformat(): ["kein dict"],
+            "gestern": {"blocks": [{}]},
+            TODAY.isoformat(): {"progress": [daily.LESSON_UP, 4, None], "stars": [daily.DABEI, 7], "minutes": float("nan")},
+        }}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
+            db.save_state("daily", broken)
+            state = daily.load()
+            days = state["days"]
+            self.assertEqual(set(days), {last_week.isoformat(), TODAY.isoformat()})
+            entry = days[last_week.isoformat()]
+            self.assertEqual((entry["blocks"], entry["progress"], entry["stars"], entry["minutes"]), ([{}], [], [], 0.0))
+            today = days[TODAY.isoformat()]
+            self.assertEqual((today["progress"], today["stars"], today["minutes"]), ([daily.LESSON_UP], [daily.DABEI], 0.0))
+            # Weiterverarbeitung stürzt nicht ab.
+            review_data = week.last_week_review(state, {last_week.isoformat(): 900}, 600, monday + timedelta(days=1))
+            self.assertEqual((review_data["days"], review_data["lesson_from"]), (1, 5))
+            daily.finish_block(state, TODAY, main_block(), main_result(50, 50))
+            self.assertIn(daily.SAUBER, daily.stars_on(state, TODAY))
+
+    def test_load_without_any_cleaning_needed_is_unchanged(self):
+        state = {"days": {TODAY.isoformat(): {"stars": [daily.DABEI], "blocks": [{"kind": daily.MAIN}], "minutes": 10.0,
+                                              "progress": [], "lesson": 12}}, "lesson": 12}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(stats, "STATS_DIR", Path(tmp)):
+            db.save_state("daily", state)
+            self.assertEqual(daily.load(), state)
+
 
 def write_session(directory: Path, day: date, mode: str, chars=(), config=None, summary=None, index=0):
     """Durchgang wie von SessionStats: config, Zeichen, summary.

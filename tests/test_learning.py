@@ -584,6 +584,22 @@ class ReviewShadowTest(unittest.TestCase):
         ok = review._clean({"box": 1, "s": 3.0, "d": 5.0, "last": "2026-01-01"})
         self.assertEqual(ok["s"], 3.0)
 
+    def test_box_outside_the_known_boxes_is_clamped_on_load(self):
+        from morsetrainer.core import review
+        top = len(review.INTERVALS) - 1
+        for bad, expected in ((7, top), (99, top), (-4, 0), ("x", 0), (True, 0), (3, 3)):
+            entry = review._clean({"box": bad, "best_box": bad, "award_box": bad})
+            self.assertEqual((entry["box"], entry["best_box"], entry["award_box"]), (expected,) * 3, bad)
+
+    def test_out_of_range_box_no_longer_breaks_the_decision_at_the_end_of_a_session(self):
+        from datetime import date
+        from morsetrainer.core import review
+        today = date.today()
+        entry = review._clean({"box": 7, "due": today.isoformat()})
+        self._decide(entry, 10, 8, today)  # 80 %: Neutralzone mit Zurückstufen
+        self.assertGreaterEqual(entry["box"], 0)
+        self.assertLessEqual(entry["box"], len(review.INTERVALS) - 1)
+
     def test_corrupt_box_does_not_break_the_decision(self):
         from datetime import date
         today = date.today()

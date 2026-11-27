@@ -141,7 +141,33 @@ def load() -> dict:
     data = db.load_state(STATE_KEY, {})
     if not isinstance(data.get("days"), dict):
         data["days"] = {}
+    _clean_days(data["days"])
     return data
+
+
+def _clean_days(days: dict) -> None:
+    """Beschädigte oder von Hand veränderte Tageseinträge brauchbar machen: Einträge
+    ohne Datum als Schlüssel oder ohne dict werden verworfen, falsch typisierte
+    Felder (Sterne, Blöcke, Fortschritt, Minuten) auf leere Werte gesetzt. So
+    stürzen Auswertung, Wochenrückblick und Start der Tagesübung nicht ab."""
+    for key in list(days):
+        entry = days[key]
+        try:
+            date.fromisoformat(key)
+        except (TypeError, ValueError):
+            del days[key]
+            continue
+        if not isinstance(entry, dict):
+            del days[key]
+            continue
+        for name, kind in (("stars", str), ("progress", str), ("blocks", dict)):
+            if name in entry:
+                value = entry[name]
+                entry[name] = [item for item in value if isinstance(item, kind)] if isinstance(value, list) else []
+        minutes = entry.get("minutes")
+        if "minutes" in entry and not (isinstance(minutes, (int, float)) and not isinstance(minutes, bool)
+                                       and math.isfinite(minutes)):
+            entry["minutes"] = 0.0
 
 
 def save(state: dict) -> None:
