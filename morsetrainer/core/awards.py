@@ -158,7 +158,8 @@ class Digest:
 
 # Steigt, wenn sich ändert, was im Auszug steht oder wie er gezählt wird:
 # Gespeicherte Auszüge einer anderen Fassung werden neu berechnet.
-DIGEST_VERSION = 2
+# 3: erneute Abfragen nach einem Fehler (`retry`) zählen nicht mehr.
+DIGEST_VERSION = 3
 
 
 def digest_of(chars, groups) -> Digest:
@@ -245,10 +246,14 @@ _session_cache = {}
 
 
 def _events_digest(events: list) -> Digest:
-    """Auszug aus den gespeicherten Zeilen eines Durchgangs."""
+    """Auszug aus den gespeicherten Zeilen eines Durchgangs. Erneute Abfragen
+    nach einem Fehler (`retry`) zählen nicht, wie in der Gesamtstatistik, der
+    Lernkartei und der Gewichtung (siehe stats.record_char)."""
     chars, groups = [], []
     for obj in events:
         kind = obj.get("type")
+        if kind == "char" and obj.get("retry"):
+            continue
         if kind == "char":
             cause = obj.get("cause")
             chars.append((_text(obj.get("char")), _text(obj.get("typed")), bool(obj.get("correct")),

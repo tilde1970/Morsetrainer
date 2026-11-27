@@ -486,6 +486,19 @@ class DigestTest(unittest.TestCase):
         self.assertEqual(d.legacy_ok, {"DK1AB": 1})
         self.assertEqual(awards._digest_from_json(json.loads(json.dumps(awards._digest_to_json(d)))), d)
 
+    def test_retries_after_an_error_do_not_count(self):
+        # Die erneute Abfrage nach einem Fehler zählt in Statistik, Lernkartei und Gewichtung
+        # nicht (stats.record_char); sonst hörte man für das Diplom „Zeichen gehört“ mehr Zeichen.
+        lines = [DIGEST_LINES[0],
+                 {"type": "char", "char": "K", "typed": "R", "correct": False},
+                 {"type": "char", "char": "K", "typed": "K", "correct": True, "retry": True},
+                 {"type": "char", "char": "M", "typed": "M", "correct": True},
+                 {"type": "summary", "total": 3}]
+        tests.write_session(lines)
+        [loaded] = awards._load_sessions()
+        self.assertEqual(loaded.digest.correct, 1)
+        self.assertEqual(loaded.digest.attempts, {"K": 1, "M": 1})
+
     def test_stored_digest_is_used_instead_of_the_lines(self):
         session_id = tests.write_session(DIGEST_LINES)
         [first] = awards._load_sessions()
