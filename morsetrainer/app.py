@@ -905,7 +905,8 @@ class MorseTrainerApp:
             return
         dialog.showinfo(tr("Daten sichern"), tr(
             "{count} Dateien gesichert in\n{path}\n\nAuf dem neuen Rechner unter „Einstellungen → Daten → "
-            "Einlesen …“ wieder einlesen.").format(count=count, path=path), parent=self.root)
+            "Einlesen …“ wieder einlesen.").format(count=count, path=path), parent=self.root,
+            full_paths=True)  # wer nichts sieht, muss den Ort der Sicherung hören
 
     def _import_data(self):
         """Sicherung einlesen; ersetzt alle Daten, danach beendet sich das

@@ -157,13 +157,33 @@ def preview_diploma(award, level, call: str, holder: str = "") -> str:
     return error or tr("Vorschau im Browser geöffnet: {path}").format(path=path)
 
 
+def _luminance(color: str) -> float:
+    channels = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast(a: str, b: str) -> float:
+    high, low = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (high + 0.05) / (low + 0.05)
+
+
+def star_color(fill: str) -> str:
+    """Farbe des Sterns auf einem Siegel mit der Fläche `fill`: die Textfarbe, solange sie dort
+    lesbar ist (mindestens 4,5:1), sonst Schwarz oder Weiß, was besser passt. Im Hohen Kontrast
+    ist die Textfarbe Weiß, und die Siegel sind hell."""
+    if _contrast(theme.TEXT, fill) >= 4.5:
+        return theme.TEXT
+    return max(("#000000", "#ffffff"), key=lambda color: _contrast(color, fill))
+
+
 def draw_seal(parent, award, level) -> tk.Canvas:
     """Rundes Siegel in der Farbe der Stufe."""
     fill, edge = diploma.seal_colors(level, award.levels)
     canvas = tk.Canvas(parent, width=SEAL_SIZE, height=SEAL_SIZE, background=theme.BG, highlightthickness=0)
     canvas.create_oval(3, 3, SEAL_SIZE - 3, SEAL_SIZE - 3, fill=fill, outline=edge, width=4)
     canvas.create_oval(9, 9, SEAL_SIZE - 9, SEAL_SIZE - 9, outline="#ffffff", width=1)
-    canvas.create_text(SEAL_SIZE / 2, SEAL_SIZE / 2, text="★", fill=theme.TEXT, font=theme.HEADING)
+    canvas.create_text(SEAL_SIZE / 2, SEAL_SIZE / 2, text="★", fill=star_color(fill), font=theme.HEADING)
     return canvas
 
 

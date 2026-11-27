@@ -654,6 +654,29 @@ class DiplomaTest(unittest.TestCase):
         self.assertEqual(diploma.morse_svg("E", "#000").count("<rect"), 1)
 
 
+class SealStarTest(unittest.TestCase):
+    """Der Stern auf dem Siegel ist in jeder Palette lesbar (im Hohen Kontrast ist die Textfarbe
+    Weiß, die Siegel sind hell)."""
+
+    def test_star_is_readable_on_every_seal_in_both_palettes(self):
+        from morsetrainer.widgets import theme
+        before = theme.PALETTE
+        self.addCleanup(theme.set_palette, before)
+        fills = [fill for fill, _edge in diploma.SEAL_COLORS] + [diploma.SEAL_PLAIN[0]]
+        for name in ("light", "contrast"):
+            theme.set_palette(name)
+            for fill in fills:
+                self.assertGreaterEqual(panel._contrast(panel.star_color(fill), fill), 4.5, (name, fill))
+
+    def test_star_keeps_the_text_color_where_that_is_readable(self):
+        from morsetrainer.widgets import theme
+        self.addCleanup(theme.set_palette, theme.PALETTE)
+        theme.set_palette("light")
+        self.assertEqual(panel.star_color("#ffffff"), theme.TEXT)
+        theme.set_palette("contrast")
+        self.assertEqual(panel.star_color("#e3b53b"), "#000000")  # Gold, helle Fläche: Weiß wäre kaum zu sehen
+
+
 class DiplomaNumberTest(unittest.TestCase):
     DAY = date(2026, 10, 4)
 

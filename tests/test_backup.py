@@ -431,6 +431,15 @@ class ImportWhileRunningTest(AppTestCase):
         read_info.assert_not_called()
         import_data.assert_not_called()
 
+    def test_export_message_reads_the_whole_path_aloud(self):
+        # Wer nichts sieht, muss hören, wo die Sicherung liegt (sonst nur der Dateiname).
+        from morsetrainer import app as app_module
+        with mock.patch.object(backup, "export_data", return_value=7), \
+                mock.patch.object(app_module.dialog, "showinfo") as info:
+            self.app._write_export("/home/test/Sicherungen/Morsetrainer-Sicherung.zip")
+        self.assertTrue(info.call_args.kwargs.get("full_paths"))
+        self.assertIn("/home/test/Sicherungen/Morsetrainer-Sicherung.zip", info.call_args[0][1])
+
     def test_replace_question_defaults_to_no(self):
         # Enter darf die Sicherung nicht einfach einspielen: Die Frage hat einen
         # eigenen Ja-Knopf, sodass Enter als Nein gilt.
