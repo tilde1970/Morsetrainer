@@ -1,5 +1,12 @@
 # Changes
 
+## 2.80
+
+- **Daily practice, warm-up:** The warm-up now plays the characters as fast
+  as set in the header bar if that is above the daily tempo. The pauses stay
+  at the daily tempo, and the main part and outro do not change. If the
+  header bar shows less than the daily tempo, the daily tempo applies.
+
 ## 2.79
 
 - **Linux, single characters:** There were occasional unusually long pauses

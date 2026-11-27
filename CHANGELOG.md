@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.80
+
+- **Tagesübung, Aufwärmen:** Das Aufwärmen spielt die Zeichen jetzt so
+  schnell, wie es in der Kopfleiste eingestellt ist, wenn das über dem
+  Tagestempo liegt. Die Pausen bleiben beim Tagestempo, Hauptteil und
+  Ausklang ändern sich nicht. Steht in der Kopfleiste weniger als das
+  Tagestempo, gilt das Tagestempo.
+
 ## 2.79
 
 - **Linux, Einzelzeichen:** Zwischen den Zeichen gab es ab und zu
