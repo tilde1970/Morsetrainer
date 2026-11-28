@@ -46,7 +46,7 @@ interface. German overview: [README.md](README.md).
 
 ### Copying at Koch speed
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Main window (German interface) in the One by one tab with the content Groups. At the top Koch lesson 15, 20 WPM, 600 Hz and Farnsworth 10. In the middle of a run: the answer field with ESJ, the feedback “Richtig: ESJ” (correct) and below it the statistics of the run, 3 of 3 correct.">
+<img src="docs/bilder/gruppen.png" width="640" alt="Main window (German interface) in the One by one tab with the content Groups. At the top Koch lesson 15, 20 WPM, 600 Hz and Farnsworth 10. In the middle of a run: the answer field with ESJ, the feedback “Richtig: ESJ” (correct) and below it the history and the statistics of the run, 3 of 3 correct.">
 
 ### Award to print
 

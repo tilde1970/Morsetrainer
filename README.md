@@ -45,7 +45,7 @@ eigenen Rechner oder gemeinsam am Clubabend im lokalen Netz.
 
 ### Mitschreiben im Koch-Tempo
 
-<img src="docs/bilder/gruppen.png" width="640" alt="Hauptfenster im Reiter Einzeln mit dem Inhalt Gruppen. Oben Koch-Lektion 15, 20 WPM, 600 Hz und Farnsworth 10. Mitten im Durchgang: das Antwortfeld mit ESJ, die Rückmeldung „Richtig: ESJ“ und darunter die Statistik des Durchgangs, 3 von 3 richtig.">
+<img src="docs/bilder/gruppen.png" width="640" alt="Hauptfenster im Reiter Einzeln mit dem Inhalt Gruppen. Oben Koch-Lektion 15, 20 WPM, 600 Hz und Farnsworth 10. Mitten im Durchgang: das Antwortfeld mit ESJ, die Rückmeldung „Richtig: ESJ“ und darunter der Verlauf und die Statistik des Durchgangs, 3 von 3 richtig.">
 
 ### Diplom zum Ausdrucken
 
