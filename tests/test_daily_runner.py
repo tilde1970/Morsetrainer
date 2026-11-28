@@ -715,6 +715,19 @@ class DailyRunnerTest(AppTestCase):
         self.assertEqual(self.runner.pause_sure, "")
         self.runner.abort(quiet=True)
 
+    def test_evening_summary_fits_a_small_screen_with_its_button(self):
+        from morsetrainer.widgets.daily_panel import EveningSummary
+        summary = EveningSummary(self.app.root, [daily.DABEI], {"status": daily.FEW, "better": []},
+                                 seals=["Siegel %d mit einer ganz langen Zeile" % n for n in range(12)])
+        try:
+            summary.fit_to_screen(500)
+            summary.window.update_idletasks()
+            # Die Höhe des Inhalts folgt dem Bildschirm; der Knopf bleibt darunter im Bild.
+            self.assertLessEqual(summary.window.winfo_reqheight(), 500)
+            self.assertGreaterEqual(summary.scroller.inner.winfo_reqheight(), summary.scroller.canvas.winfo_reqheight())
+        finally:
+            summary.close(follow=False)
+
     def test_evening_summary_fills_the_gap_with_todays_numbers(self):
         from morsetrainer.widgets.daily_panel import EveningSummary
         text = "Heute: 190 Zeichen gehört."

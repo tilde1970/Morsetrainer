@@ -14,7 +14,7 @@ from morsetrainer.core import awards, daily, qso_text, stats, week
 from morsetrainer.core.morse import display_text
 from morsetrainer.i18n import N_, daily_key, number, skip_key, tr
 from morsetrainer.widgets import announcer, theme
-from morsetrainer.widgets.ui_widgets import focus_keeper, wrap_pair
+from morsetrainer.widgets.ui_widgets import ScrollableFrame, focus_keeper, wrap_pair
 
 FULL_STAR, EMPTY_STAR = "★", "☆"
 BLOCK_LABELS = {daily.WARMUP: N_("Aufwärmen"), daily.MAIN: N_("Hauptteil"), daily.OUTRO: N_("Ausklang"),
@@ -466,6 +466,8 @@ class DailyBar:
 # Enter direkt nach dem Erscheinen von Zwischenkarte oder Abendbilanz
 # gehört noch zur letzten Antwort und soll sie nicht gleich wegklicken.
 ENTER_GRACE_S = 0.8
+# Platz für Fensterrahmen, Titelleiste und Taskleiste.
+SCREEN_GAP = 120
 
 
 # Text des einmaligen Hinweises auf die Betriebszeichen (siehe daily.prosign_hint_due).
@@ -496,8 +498,16 @@ class EveningSummary:
         window.configure(background=theme.BG)
         window.transient(root)
         window.resizable(False, False)
-        frame = ttk.Frame(window, padding=16)
-        frame.pack(fill="both", expand=True)
+        outer = ttk.Frame(window, padding=16)
+        outer.pack(fill="both", expand=True)
+        # Knöpfe fest unten, der Inhalt darüber rollt, wenn er bei großer Schrift
+        # nicht auf den Bildschirm passt.
+        self.bar = ttk.Frame(outer)
+        self.bar.pack(side="bottom", fill="x", pady=(14, 0))
+        holder = ttk.Frame(outer)
+        holder.pack(side="top", fill="both", expand=True)
+        self.scroller = ScrollableFrame(holder)
+        frame = self.scroller.inner
         title = end_note(completed, stars)
         ttk.Label(frame, text=title, style="Status.TLabel").pack(anchor="w")
         ttk.Label(frame, text=star_text(stars), style="Score.TLabel").pack(anchor="w", pady=(8, 0))
@@ -542,8 +552,7 @@ class EveningSummary:
             box = theme.card(frame, tr("Betriebszeichen"), padx=0, pady=(8, 0))
             ttk.Label(box, text=tr(PROSIGN_HINT_TEXT), wraplength=theme.scaled(460), justify="left").pack(anchor="w")
 
-        buttons = ttk.Frame(frame)
-        buttons.pack(fill="x", pady=(14, 0))
+        buttons = self.bar
         self.done_button = ttk.Button(buttons, text=tr("Fertig"), style="Accent.TButton", command=self.close)
         self.done_button.pack(side="right")
         self.extra_button = None
@@ -560,10 +569,20 @@ class EveningSummary:
         window.bind("<Escape>", lambda e: self.close())
         window.protocol("WM_DELETE_WINDOW", self.close)
         self.done_button.focus_set()
+        self.fit_to_screen(window.winfo_screenheight())
         # Ansage (Barrierefreiheit): alles in Sätzen, F11 im Fenster wiederholt.
         self.spoken = self._spoken(title, stars, comparison, outlook, seals, week_stars, completed)
         window.bind("<F11>", lambda e: announcer.get() and announcer.get().say(self.spoken, force=True))
         announcer.say(self.spoken)
+
+    def fit_to_screen(self, screen_height: int) -> None:
+        """Der Inhalt bekommt höchstens so viel Höhe, dass das Fenster samt Knöpfen
+        auf den Bildschirm passt (Rest per Bildlaufleiste); sonst läge „Fertig“
+        bei 200 % Schrift auf kleinem Bildschirm außerhalb."""
+        self.window.update_idletasks()
+        room = screen_height - SCREEN_GAP - self.bar.winfo_reqheight() - 2 * 16 - 14
+        inner = self.scroller.inner
+        self.scroller.canvas.config(width=inner.winfo_reqwidth(), height=max(min(inner.winfo_reqheight(), room), 60))
 
     def _spoken(self, title, stars, comparison, outlook, seals, week_stars, completed=True) -> str:
         """Die Abendbilanz als gesprochener Text: Sterne, Wochenziel, Vergleich,
