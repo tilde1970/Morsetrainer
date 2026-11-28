@@ -757,7 +757,9 @@ class ExtraInterferenceTest(unittest.TestCase):
         x, conditions = self.run_band({"levels": {"fence": 1.0}, "gain": 1.0}, 15)
         low, high = band.FENCE_PERIOD_SECONDS
         self.assertTrue(low <= conditions.fence_period <= high)
-        loud = np.flatnonzero(np.abs(x) > 0.1)
+        # Nur der Weidezaun ist an. Die Rauschtabelle, aus der ein Tick geschnitten wird, ist bei
+        # jedem Programmlauf anders; bei etwa jeder sechzigsten bleibt ein Tick unter 0,1.
+        loud = np.flatnonzero(np.abs(x) > 0.01)
         onsets = loud[np.concatenate([[True], np.diff(loud) > band.SAMPLE_RATE // 10])]
         gaps = np.diff(onsets) / band.SAMPLE_RATE
         self.assertGreaterEqual(len(gaps), 8)
