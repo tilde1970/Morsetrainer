@@ -1,5 +1,47 @@
 # Änderungen
 
+## 2.82
+
+- **Tagesübung, Start-Lektion:** Die Lektion, ab der die Tagesübung beginnt,
+  lässt sich jetzt jederzeit setzen („Tagesübung ab Lektion …“), nicht nur
+  vor dem ersten Lauf. Der Hinweis für Wiedereinsteiger nennt diese
+  Einstellung.
+- **Lernkartei, „flüssig“:** Ob eine richtige Antwort als flüssig zählt,
+  richtet sich jetzt nach dem Zeitlimit dieser Antwort, das vom Tempo
+  abhängt. Bisher galt fest 1,5 Sekunden, und bei Anfängern und bei Tempo
+  unter etwa 13 WPM wurde eine Antwort innerhalb des Limits als „nicht
+  flüssig“ gewertet.
+- **Abendbilanz, Wochenlob:** „Kommt schneller“ und „sitzt jetzt“ erscheinen
+  nur noch, wenn der Unterschied zur Vorwoche über den Zufall hinausgeht.
+  Bisher meldete das Programm auch bei reinem Zufall oft ein Zeichen als schneller.
+  Neu ist die Zeile „Etwas schwächer als in der Vorwoche: …“, und aus „Stand
+  gehalten“ wird „Keine deutliche Änderung gegenüber der Vorwoche.“
+- **Statistik, Auswertungen:** Urteile wie „weniger Fehler“ und das
+  Nachlassen zum Ende eines Durchgangs werden je Übungsart berechnet, und
+  ein Urteil gibt es erst, wenn mehrere Durchgänge es tragen. Vorher
+  mischten sie Einzeln, Gruppen und Am Stück.
+- **Diplom „Zeichen gehört“:** Erneute Abfragen nach einem Fehler zählen
+  nicht mehr mit. Das Diplom wird beim nächsten Start neu berechnet; sein
+  Stand kann dabei sinken.
+- **Daten einlesen:** In der Rückfrage „Ersetzen“ bricht Enter jetzt ab. Die
+  Daten werden nur nach ausdrücklicher Bestätigung ersetzt.
+- **Gesamtstatistik zurücksetzen:** Gelingt das Zurücksetzen nicht, zum
+  Beispiel weil die Datenbank gesperrt ist, steht jetzt eine Meldung da, und
+  die Statistik bleibt unverändert. Vorher blieb der Fehler unbemerkt.
+- **Vorlesen:** Wochenrückblick, Einstiegshinweis und „Willkommen zurück“
+  werden vorgelesen (F11, Begrüßung); wer nichts sieht, erfuhr davon bisher
+  nichts. Satzzeichen in der Zwischenkarte und in der Wochenzeile werden
+  buchstabiert. Esc bricht im Leerlauf eine laufende Ansage ab. Der Pfad der
+  Sicherung wird ganz vorgelesen.
+- **Hoher Kontrast:** Der Stern auf dem Siegel der Diplome ist jetzt auch im
+  Hohen Kontrast lesbar.
+- **Band, Träger:** Beim Ausschalten des Trägers knackte es; er blendet jetzt
+  gleitend aus.
+- **Zweites Fenster:** Die Datei, die ein zweites Programmfenster sperrt,
+  wird beim Beenden entfernt, und die Sperrmeldung nennt den Ordner.
+- **Zu altes Python:** Beim Start aus dem Quelltext mit Python unter 3.10
+  steht jetzt eine lesbare Meldung statt eines Traceback.
+
 ## 2.81
 
 - **Tagesübung, Wochenrückblick:** Stieg ein Wiedereinsteiger („Auffrischung“)

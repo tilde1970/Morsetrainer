@@ -1,5 +1,44 @@
 # Changes
 
+## 2.82
+
+- **Daily practice, start lesson:** The lesson the daily practice starts from
+  can now be set at any time ("Daily practice from lesson …"), not only
+  before the first run. The hint for returning learners names this setting.
+- **Review box, "fluent":** Whether a correct answer counts as fluent now
+  follows the time limit of that answer, which depends on the tempo. It used
+  to be a fixed 1.5 seconds, so for beginners and below about 13 WPM an
+  answer within the limit could still count as "not fluent".
+- **Evening summary, weekly praise:** "Comes faster" and "now sits" appear
+  only when the difference to the previous week goes beyond chance. Before,
+  the program often reported a character as faster even from pure chance. New is the
+  line "A bit weaker than last week: …", and "Held its ground" now reads "No
+  clear change compared with last week."
+- **Statistics, evaluations:** Verdicts such as "fewer errors" and the drop
+  towards the end of a run are calculated per kind of practice, and a verdict
+  appears only when several runs support it. Before, they mixed One by one,
+  Groups and Continuous.
+- **"Character heard" diploma:** Repeated queries after a mistake no longer
+  count. The diploma is recalculated at the next start; its level can drop.
+- **Import data:** In the "Replace" confirmation, Enter now cancels. The data
+  is replaced only after explicit confirmation.
+- **Reset overall statistics:** If the reset fails, for example because the
+  database is locked, a message now says so and the statistics stay as they
+  were. Before, the failure went unnoticed.
+- **Read aloud:** The weekly review, the first-start hint and "Welcome back"
+  are read aloud (F11, greeting); anyone who cannot see the screen did not
+  learn about them before. Punctuation in the interim card and in the weekly
+  line is spelled out. Esc cancels an announcement in progress when idle. The
+  path of the backup is read out in full.
+- **High contrast:** The star on the diploma seal is now legible in high
+  contrast as well.
+- **Band, carrier:** Switching the carrier off made a click; it now fades out
+  smoothly.
+- **Second window:** The file that locks a second program window is removed
+  when the program quits, and the lock message names the folder.
+- **Python too old:** Starting from source with Python below 3.10 now shows a
+  readable message instead of a traceback.
+
 ## 2.81
 
 - **Daily practice, weekly review:** If a returning learner ("refresher")
