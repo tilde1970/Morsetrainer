@@ -296,6 +296,139 @@ class InsightsTest(unittest.TestCase):
         insights.lag_chars(data), insights.causes_by_week(data), insights.weak_chars(data)
         insights.fatigue(data), insights.confusion_trend(data)
 
+    def test_loading_reaches_back_exactly_the_insight_days(self):
+        self.write(89.5, [("K", "K", {})])
+        self.write(90.5, [("K", "K", {})])
+        self.assertEqual(len(insights.load()), 1)
+
+
+NOW = datetime(2026, 11, 25, 12, 0)  # ein Mittwoch
+
+
+def _row(char, typed, extra=None):
+    extra = extra or {}
+    row = {"type": "char", "char": char, "typed": typed, "correct": char == typed, **extra}
+    if char != typed:
+        row.setdefault("cause", "heard" if typed else "missed")
+    return row
+
+
+def _session(days_ago, rows, mode="single"):
+    """Ein Durchgang so, wie insights.load() ihn liefert: (Startzeit, Konfiguration, Zeichen-Zeilen)."""
+    return NOW - timedelta(days=days_ago), {"mode": mode}, [_row(*row) for row in rows]
+
+
+class InsightsLimitsTest(unittest.TestCase):
+    """Die Schwellen der Auswertungen auf den Wert genau: eine Stufe darunter noch kein Urteil,
+    auf dem Wert das Urteil."""
+
+    def test_weeks_shown(self):
+        data = [_session(7 * week, [("K", "", {})] * 6) for week in range(8)]
+        self.assertEqual(len(insights.causes_by_week(data, NOW)), 6)
+
+    def test_lag_needs_enough_values_per_run(self):
+        short = _session(1, [("K", "K", {"lag_chars": 1.0})] * 9, "continuous")
+        enough = _session(1, [("K", "K", {"lag_chars": 3.0})] * 10, "continuous")
+        self.assertEqual(insights.lag_chars([short, enough], NOW)["recent"], [3.0])
+
+    def test_lag_is_shown_from_enough_runs_per_side(self):
+        lag = {"recent": [2.0] * 4, "before": [1.0] * 5}
+        text = panel.lag_text(lag)
+        self.assertNotIn("letzte 14 Tage", text)
+        self.assertIn("früher: 1,0 Zeichen", text)
+
+    def _week_text(self, rows):
+        return panel.causes_text(insights.causes_by_week([_session(1, rows)], NOW))
+
+    def test_a_week_is_split_from_enough_errors(self):
+        self.assertIn("zu wenige für eine Aufteilung",
+                      self._week_text([("K", "M", {})] * 4 + [("K", "K", {})] * 20))
+        self.assertIn("Fehler je 100 Zeichen",
+                      self._week_text([("K", "M", {})] * 5 + [("K", "K", {})] * 20))
+
+    def test_a_week_names_the_most_frequent_unrecognised_characters(self):
+        text = self._week_text([(char, "", {}) for char in "KKKKRRRMMSS"])
+        self.assertTrue(text.endswith("nicht erkannt vor allem: K, R, M"), text)  # S ist das vierte
+        text = self._week_text([("K", "", {})] * 4 + [("R", "", {})] * 1)
+        self.assertTrue(text.endswith("nicht erkannt vor allem: K"), text)  # R nur einmal
+
+    def test_a_run_needs_enough_characters_for_the_thirds(self):
+        short = _session(1, [("K", "K", {})] * 29)
+        long = _session(1, [("K", "K", {})] * 30)
+        self.assertEqual(insights.fatigue([short, long], NOW)["sessions"], 1)
+
+    def test_a_mode_needs_enough_runs_for_the_fatigue(self):
+        runs = [_session(day, [("K", "K", {})] * 30) for day in range(10)]
+        self.assertEqual(list(insights.fatigue_by_mode(runs[:-1], NOW)), [])
+        self.assertEqual(list(insights.fatigue_by_mode(runs, NOW)), ["single"])
+
+    def test_weak_characters_are_limited(self):
+        data = [_session(1, [(char, "", {}) for char in "ABCDEF" * 5])]
+        self.assertEqual(len(insights.weak_chars(data, NOW)), 5)
+
+    def test_pair_rates_need_enough_cases_of_the_sent_character(self):
+        def rows(n):
+            return [("D", "U", {})] * 3 + [("D", "D", {})] * (n - 3)
+        few = insights.confusion_trend([_session(40, rows(19)),
+                                        _session(2, rows(20))], NOW)[0]
+        self.assertIsNone(few["before"])
+        self.assertIsNotNone(few["recent"])
+        enough = insights.confusion_trend([_session(40, rows(20))], NOW)[0]
+        self.assertIsNotNone(enough["before"])
+
+    def test_pairs_are_limited(self):
+        pairs = ("DU", "B6", "SH", "V4")
+        data = [_session(2, [(sent, typed, {}) for sent, typed in pairs for _ in range(3)])]
+        rows = insights.confusion_trend(data, NOW)
+        self.assertEqual(len({frozenset((row["sent"], row["typed"])) for row in rows}), 3)
+
+    def test_a_rate_changes_from_the_smallest_difference(self):
+        big = 100000  # so genau, dass nur die Mindestdifferenz entscheidet
+        self.assertEqual(insights.rate_verdict(10.0, 13.0, big, big), insights.MORE)
+        self.assertEqual(insights.rate_verdict(13.0, 10.0, big, big), insights.LESS)
+        self.assertEqual(insights.rate_verdict(10.0, 12.9, big, big), insights.SAME)
+
+    def test_a_rate_change_must_exceed_the_noise_twice(self):
+        # 5 Punkte Unterschied: bei 224 Fällen je Seite 1,6 Standardfehler, bei 504 Fällen 2,4
+        self.assertEqual(insights.rate_verdict(10.0, 15.0, 224, 224), insights.UNSURE)
+        self.assertEqual(insights.rate_verdict(10.0, 15.0, 504, 504), insights.MORE)
+
+    def test_a_rate_change_needs_enough_expected_cases(self):
+        self.assertEqual(insights.rate_verdict(0.0, 40.0, 25, 25), insights.MORE)    # erwartet 5,0 je Seite
+        self.assertEqual(insights.rate_verdict(0.0, 40.0, 22, 22), insights.UNSURE)  # erwartet 4,4
+
+    def test_unchanged_needs_a_narrow_interval(self):
+        self.assertEqual(insights.rate_verdict(10.0, 10.0, 2400, 2400), insights.SAME)    # Breite 1,7 Punkte
+        self.assertEqual(insights.rate_verdict(10.0, 10.0, 1100, 1100), insights.UNSURE)  # Breite 2,5 Punkte
+
+    def test_a_character_needs_enough_sessions_on_each_side(self):
+        before, recent = [(14, 20)], [(6, 20)]
+        self.assertEqual(insights.cluster_verdict(before * 2, recent * 2), insights.UNSURE)
+        self.assertEqual(insights.cluster_verdict(before * 3, recent * 3), insights.LESS)
+
+    def test_a_character_changes_from_the_smallest_difference(self):
+        self.assertEqual(insights.cluster_verdict([(10, 100)] * 3, [(13, 100)] * 3), insights.MORE)
+        self.assertEqual(insights.cluster_verdict([(10, 100)] * 3, [(129, 1000)] * 3), insights.SAME)
+
+    def test_a_character_is_unchanged_only_with_a_narrow_interval(self):
+        narrow = [(9, 90), (10, 90), (11, 90)]    # Intervall 1,8 Punkte breit
+        wide = [(10, 130), (12, 130), (14, 130)]  # Intervall 2,5 Punkte breit
+        self.assertEqual(insights.cluster_verdict(narrow, narrow), insights.SAME)
+        self.assertEqual(insights.cluster_verdict(wide, wide), insights.UNSURE)
+
+    def test_a_character_needs_enough_answers_on_each_side(self):
+        def rows(n):
+            return [("6", "B", {})] * (n // 2) + [("6", "6", {})] * (n - n // 2)
+        enough = 40
+        self.assertEqual(len(insights.char_trend([_session(40, rows(enough)), _session(2, rows(enough))], NOW)), 1)
+        self.assertEqual(insights.char_trend([_session(40, rows(39)), _session(2, rows(enough))], NOW), [])
+        self.assertEqual(insights.char_trend([_session(40, rows(enough)), _session(2, rows(39))], NOW), [])
+
+    def test_characters_over_time_are_limited(self):
+        rows = [(char, "", {}) for char in "ABCDEFG" for _ in range(40)]
+        data = [_session(40, rows), _session(2, rows)]
+        self.assertEqual(len(insights.char_trend(data, NOW)), 6)
+
 
 if __name__ == "__main__":
     unittest.main()

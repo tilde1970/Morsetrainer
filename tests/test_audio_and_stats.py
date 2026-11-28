@@ -349,6 +349,57 @@ class StatsTest(unittest.TestCase):
         tests.write_session(rows + [{"type": "summary"}])
         self.assertEqual(stats.period_numbers(stats.period_comparison()[stats.RECENT])[0], 100.0)
 
+    def _write_days_ago(self, days_ago, rows, mode="single"):
+        from datetime import datetime, timedelta
+        start = (datetime.now() - timedelta(days=days_ago)).isoformat(timespec="seconds")
+        lines = [{"type": "config", "mode": mode, "start_time": start}]
+        lines += [{"type": "char", "char": c, "typed": t, "correct": c == t} for c, t in rows]
+        tests.write_session(lines + [{"type": "summary"}])
+
+    def test_recent_confusions_reach_back_exactly_30_days(self):
+        self._write_days_ago(29.5, [("K", "K")])
+        self._write_days_ago(30.5, [("M", "M")])
+        self.assertEqual(list(stats.recent_char_data()), ["K"])
+
+    def test_the_period_before_reaches_back_exactly_30_days_from_the_last_7(self):
+        self._write_days_ago(36.5, [("K", "K")] * 2)
+        self._write_days_ago(37.5, [("K", "K")] * 5)
+        self.assertEqual(stats.period_comparison()[stats.BEFORE]["good"], 2)
+
+    def test_char_trend_needs_20_measurements_on_each_side(self):
+        def chars(before, recent):
+            return {"K": {stats.BEFORE: {"latencies": [0.8] * before}, stats.RECENT: {"latencies": [0.5] * recent}}}
+        self.assertIsNone(stats.char_trend(chars(20, 19), "K"))
+        self.assertIsNone(stats.char_trend(chars(19, 20), "K"))
+        self.assertEqual(stats.char_trend(chars(20, 20), "K"), (0.8, 0.5))
+
+    def test_a_reaction_is_capped_at_5_seconds(self):
+        self.assertEqual(stats._measured({"correct": True, "latency_s": 4.5}), 4.5)
+        self.assertEqual(stats._measured({"correct": True, "latency_s": 100.0}), 5.0)
+        self.assertEqual(stats._measured({"correct": True, "latency_s": -1.0}), 0.0)
+
+    def test_the_list_of_confusions_names_three(self):
+        self.assertEqual(stats.format_confusions({"A": 5, "B": 4, "C": 3, "D": 2}), "A (5), B (4), C (3)")
+
+    def test_the_cause_review_needs_4_errors_and_5_percent_of_the_answers(self):
+        def line(total, answers):
+            return stats.error_review_line({"total": total, "answers": answers, "causes": {"late": total}, "pair": None})
+        self.assertEqual(line(3, 10), "")
+        self.assertNotEqual(line(4, 10), "")
+        self.assertEqual(line(4, 100), "")  # 4 % der Antworten
+        self.assertNotEqual(line(4, 80), "")  # genau 5 %
+
+    def test_the_cause_review_names_a_pair_from_two_confusions(self):
+        def pair(count):
+            return stats.error_review({"K": {"good": 8, "wrong": count, "causes": {"heard": count},
+                                             "confusions": {"M": count}}})["pair"]
+        self.assertIsNone(pair(1))
+        self.assertEqual(pair(2), ("K", "M", 2))
+
+    def test_the_weakest_characters_need_5_answers(self):
+        self.assertEqual(stats.weakest_chars({"K": {"good": 3, "wrong": 1}}, {}), [])
+        self.assertEqual(stats.weakest_chars({"K": {"good": 4, "wrong": 1}}, {}), [("K", 0.2)])
+
     def test_char_trend_is_a_median_from_enough_measurements(self):
         from datetime import datetime, timedelta
 

@@ -211,6 +211,15 @@ class WeightingErrorsTest(unittest.TestCase):
         weights = dict(zip("B6E", picker.weights()))
         self.assertAlmostEqual(weights["6"], weights["E"])
 
+    def test_a_confusion_gives_a_bonus_from_the_third_time(self):
+        def bonus(count):
+            recent = {"B": {"good": 10, "wrong": count, "confusions": {"6": count}}, "6": {"good": 16, "wrong": 0},
+                      "E": {"good": 16, "wrong": 0}}
+            weights = dict(zip("B6E", self.picker("B6E", {}, recent).weights()))
+            return weights["6"] - weights["E"]
+        self.assertAlmostEqual(bonus(2), 0.0)
+        self.assertGreater(bonus(3), 0.0)
+
     def test_latency_follows_the_last_days(self):
         old = {"K": {"total_latency_s": 200.0, "latency_count": 100}}  # früher im Schnitt 2 s
         recent = {"K": {"good": 10, "wrong": 0, "latencies": [0.4, 0.5, 0.5, 0.6, 0.5], "assumed_latencies": []}}
