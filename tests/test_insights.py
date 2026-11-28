@@ -211,9 +211,25 @@ class InsightsTest(unittest.TestCase):
                 "A": {"due": "2026-10-01", "box": 1, "best_box": 2},       # Fach 3 -> 2: nur ein Fach
                 "R": {"due": "2026-10-01", "box": 3, "best_box": 4},       # nur ein Fach
                 "M": {"box": 0, "best_box": 5}}                            # nicht in der Kartei
-        rows = insights.wobbly(data)
+        log = [{"c": ch, "day": day, "share": 0.5} for ch in "6XIKARM" for day in ("2026-09-20", "2026-09-21")]
+        rows = insights.wobbly(data, log)
         self.assertEqual(rows, [("6", 5, 1), ("I", 3, 1), ("X", 5, 3)])
         self.assertEqual(panel.wobbly_text(rows), "6 (Fach 5 → 1), I (Fach 3 → 1), X (Fach 5 → 3)")
+
+    def test_wobbly_needs_two_weak_days_since_the_best_box(self):
+        entry = {"due": "2026-10-01", "box": 0, "best_box": 4, "best_day": "2026-09-10"}
+        one_day = [{"c": "6", "day": "2026-09-20", "share": 0.5}]
+        self.assertEqual(insights.wobbly({"6": entry}, one_day), [])  # ein schlechter Tag kann Zufall sein
+        same_day_twice = one_day + [{"c": "6", "day": "2026-09-20", "share": 0.6}]
+        self.assertEqual(insights.wobbly({"6": entry}, same_day_twice), [])
+        two_days = one_day + [{"c": "6", "day": "2026-09-21", "share": 0.89}]
+        self.assertEqual(insights.wobbly({"6": entry}, two_days), [("6", 5, 1)])
+        sure_second = one_day + [{"c": "6", "day": "2026-09-21", "share": 0.9}]  # 90 % ist sicher
+        self.assertEqual(insights.wobbly({"6": entry}, sure_second), [])
+        before_best = [{"c": "6", "day": "2026-09-01", "share": 0.5}, {"c": "6", "day": "2026-09-10", "share": 0.5},
+                       {"c": "6", "day": "2026-09-20", "share": 0.5}]
+        self.assertEqual(insights.wobbly({"6": entry}, before_best), [])  # nur Tage nach dem besten Fach
+        self.assertEqual(insights.wobbly({"6": entry}, []), [])
 
     def test_the_first_week_is_marked_when_the_data_start_mid_week(self):
         # Der erste Tag muss ein Mittwoch sein, sonst ist die Woche je nach Wochentag des Testlaufs vollständig.

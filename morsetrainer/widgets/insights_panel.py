@@ -268,8 +268,9 @@ class InsightsPanel:
              tr("Noch kein Zeichen hat auf beiden Seiten genug Antworten zum Vergleichen.")),
             ("wobbly", tr("Wieder wackelig"), tr(
                 "Zeichen, die in der Lernkartei schon in Fach 3 oder höher lagen und um mindestens zwei Fächer "
-                "zurückgestuft wurden. Sie sind keine Anfänger-Fehler, sondern Zeichen, die einmal saßen; ein paar "
-                "Wiederholungen bringen sie meist zurück. Ein Rückfall um nur ein Fach zählt nicht, er ist normal."),
+                "zurückgestuft wurden, und zwar an mindestens zwei verschiedenen Tagen nicht sicher waren (ein einzelner "
+                "schlechter Tag kann Zufall sein). Sie sind keine Anfänger-Fehler, sondern Zeichen, die einmal saßen; "
+                "ein paar Wiederholungen bringen sie meist zurück. Ein Rückfall um nur ein Fach zählt nicht, er ist normal."),
              tr("Kein Zeichen ist aus Fach 3 oder höher um zwei Fächer zurückgefallen.")),
         )
         for key, heading, explanation, empty in sections:

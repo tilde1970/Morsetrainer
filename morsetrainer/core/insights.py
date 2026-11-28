@@ -40,6 +40,7 @@ WEAK_CHARS_SHOWN = 5
 MIN_WEAK_ERRORS = 5     # so oft nicht erkannt, damit ein Zeichen als schwach gilt
 WOBBLY_MIN_BOX = 2      # früher mindestens Fach 3 (Wiederholung nach 4 Tagen) erreicht
 WOBBLY_DROP = 2         # und um so viele Fächer zurückgestuft
+WOBBLY_DAYS = 2         # an so vielen verschiedenen Tagen seit dem besten Fach nicht sicher (ein Tag kann Zufall sein)
 UNRECOGNISED = "unrecognised"  # nichts getippt, zu spät oder erst nach Wiederholung
 SWAPPED = "swap"        # mit dem Nachbarn vertauscht (Mitschreib-Fehler, keine Klangverwechslung)
 
@@ -315,18 +316,32 @@ def confusion_trend(data=None, now=None) -> list:
     return rows
 
 
-def wobbly(review_data=None) -> list:
+def wobbly(review_data=None, log=None) -> list:
     """[(Zeichen, bestes Fach, jetziges Fach)] (Fächer ab 1 gezählt) der Zeichen, die
-    früher mindestens Fach WOBBLY_MIN_BOX + 1 erreicht hatten und seitdem um
-    WOBBLY_DROP Fächer oder mehr zurückgestuft wurden, stärkster Rückfall zuerst."""
+    früher mindestens Fach WOBBLY_MIN_BOX + 1 erreicht hatten, seitdem um
+    WOBBLY_DROP Fächer oder mehr zurückgestuft wurden und an mindestens WOBBLY_DAYS
+    Tagen nach dem besten Fach nicht sicher waren (Anteil flüssiger Treffer unter
+    review.SURE_SHARE, laut Protokoll `log`): Auch ein sicheres Zeichen fällt an
+    einem einzelnen Tag mit einigen Prozent Wahrscheinlichkeit durch. Stärkster
+    Rückfall zuerst."""
     review_data = review.load() if review_data is None else review_data
+    log = review.load_log() if log is None else log
+    weak_days = {}  # Zeichen -> Tage mit Entscheidung unter der Sicher-Schwelle
+    for entry in log:
+        try:
+            if entry["share"] < review.SURE_SHARE:
+                weak_days.setdefault(entry["c"], set()).add(str(entry["day"]))
+        except (KeyError, TypeError):
+            continue
     rows = []
     for char, entry in review_data.items():
         if not isinstance(entry, dict) or "due" not in entry or not isinstance(char, str):
             continue
         best, box = review.best_box(entry), int(entry.get("box", 0))
         if best >= WOBBLY_MIN_BOX and best - box >= WOBBLY_DROP:
-            rows.append((char, best + 1, box + 1))
+            since = str(entry.get("best_day", ""))
+            if len([day for day in weak_days.get(char, ()) if day > since]) >= WOBBLY_DAYS:
+                rows.append((char, best + 1, box + 1))
     return sorted(rows, key=lambda row: (row[2] - row[1], row[0]))
 
 
